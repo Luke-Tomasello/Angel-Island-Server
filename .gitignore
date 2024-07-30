@@ -8,3 +8,6 @@ desktop.ini
 .vs/
 .svn/
 
+./bin/DEBUG/net6.0/Saves
+
+./bin/release/net6.0/Saves

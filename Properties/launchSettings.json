@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Angel Island 6.0": {
-      "commandName": "Project",
-      "commandLineArgs": "-uosp -usedb -nopatch"
-    }
-  }
-}
