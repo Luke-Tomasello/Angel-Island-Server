@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>block1</ID>
+  <Name>block1</Name>
+  <Components Count="13">
+    <Component Flags="0x04">
+      <ItemID>3703</ItemID>
+      <X>-1</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3703</ItemID>
+      <X>0</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>541</ItemID>
+      <X>2</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>6942</ItemID>
+      <X>-1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>4335</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3098</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3561</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>4335</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>4653</ItemID>
+      <X>2</X>
+      <Y>1</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3703</ItemID>
+      <X>1</X>
+      <Y>-1</Y>
+      <Z>2</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3703</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>5</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3703</ItemID>
+      <X>0</X>
+      <Y>-1</Y>
+      <Z>6</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>6571</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>12</Z>
+      <Light>Circle300</Light>
+    </Component>
+  </Components>
+</AddonData>

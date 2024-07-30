@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>Forge2</ID>
+  <Name>Forge2</Name>
+  <Components Count="3">
+    <Component Flags="0x00">
+      <ItemID>6554</ItemID>
+      <X>0</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6550</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6546</ItemID>
+      <X>0</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+  </Components>
+</AddonData>

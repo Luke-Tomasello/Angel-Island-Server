@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>stairdoor</ID>
+  <Name>stairdoor</Name>
+  <Components Count="9">
+    <Component Flags="0x00">
+      <ItemID>1848</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1848</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1848</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>5</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1848</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>5</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1848</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>10</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1848</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>10</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1848</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>15</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1848</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>15</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1849</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>15</Z>
+    </Component>
+  </Components>
+</AddonData>

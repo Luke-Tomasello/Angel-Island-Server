@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>PineTree1</ID>
+  <Name>PineTree1</Name>
+  <Components Count="2">
+    <Component Flags="0x04">
+      <ItemID>3286</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3287</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+  </Components>
+</AddonData>

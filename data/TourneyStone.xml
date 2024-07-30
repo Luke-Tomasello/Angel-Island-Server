@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Ruleset version="1.6">
+	<Rule>
+		<Desc>Disallow pre-poisoned weapons</Desc>
+		<FailText>No pre-poisoned weapons are permitted.</FailText>
+
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>1</Limit>
+			<Property>PoisonCharges</Property>
+			<ItemType>BaseWeapon</ItemType>
+		</Condition>
+	</Rule>
+	<Rule>
+		<Desc>Disallow magic weapons</Desc>
+		<FailText>No magic weapons are permitted.</FailText>
+
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>1</Limit>
+			<ItemType>BaseWeapon</ItemType>
+			<Property>DamageLevel</Property>
+			<PropertyVal>Regular</PropertyVal>
+		</Condition>
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>1</Limit>
+			<ItemType>BaseWeapon</ItemType>
+			<Property>DurabilityLevel</Property>
+			<PropertyVal>Regular</PropertyVal>
+		</Condition>
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>1</Limit>
+			<ItemType>BaseWeapon</ItemType>
+			<Property>AccuracyLevel</Property>
+			<PropertyVal>Regular</PropertyVal>
+		</Condition>
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>-1</Limit>
+			<ItemType>BaseWeapon</ItemType>
+			<Property>Quality</Property>
+			<PropertyVal>Exceptional</PropertyVal>
+		</Condition>
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>-1</Limit>
+			<Property>LootType</Property>
+			<PropertyVal>Newbied</PropertyVal>
+			<ItemType>BaseWeapon</ItemType>
+		</Condition>
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>1</Limit>
+			<Property>PlayerCrafted</Property>
+			<PropertyVal>true</PropertyVal>
+			<ItemType>BaseWeapon</ItemType>
+		</Condition>
+	</Rule>
+	<Rule>
+		<Desc>Disallow magic armour</Desc>
+		<FailText>No magic armour is permitted.</FailText>
+
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>1</Limit>
+			<ItemType>BaseArmor</ItemType>
+			<Property>ProtectionLevel</Property>
+			<PropertyVal>Regular</PropertyVal>
+		</Condition>
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>-1</Limit>
+			<ItemType>BaseArmor</ItemType>
+			<Property>Quality</Property>
+			<PropertyVal>Exceptional</PropertyVal>
+		</Condition>
+		<Condition>
+			<Typ>Item</Typ>
+			<Limit>-1</Limit>
+			<ItemType>BoneMagiArms</ItemType>
+		</Condition>
+		<Condition>
+			<Typ>Item</Typ>
+			<Limit>-1</Limit>
+			<ItemType>BoneMagiLegs</ItemType>
+		</Condition>
+		<Condition>
+			<Typ>Item</Typ>
+			<Limit>-1</Limit>
+			<ItemType>BoneMagiArmor</ItemType>
+		</Condition>
+		<Condition>
+			<Typ>Item</Typ>
+			<Limit>-1</Limit>
+			<ItemType>BoneMagiGloves</ItemType>
+		</Condition>
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>1</Limit>
+			<Property>PlayerCrafted</Property>
+			<PropertyVal>true</PropertyVal>
+			<ItemType>BaseArmor</ItemType>
+		</Condition>
+	</Rule>
+	<Rule>
+		<Desc>Disallow magic clothes, jewellery and petals</Desc>
+		<FailText>No magic clothes, jewellery or petals permitted.</FailText>
+
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>1</Limit>
+			<Property>MagicCharges</Property>
+			<ItemType>BaseClothing</ItemType>
+		</Condition>
+		<Condition>
+			<Typ>ItemProperty</Typ>
+			<Limit>1</Limit>
+			<Property>MagicCharges</Property>
+			<ItemType>BaseJewel</ItemType>
+		</Condition>
+		<Condition>
+			<Typ>Item</Typ>
+			<Limit>1</Limit>
+			<ItemType>OrangePetals</ItemType>
+		</Condition>
+	</Rule>
+	<Rule>
+		<Desc>Limit Inscription to %Condition1_Quantity%</Desc>
+		<FailText>Scribes with more than %Condition1_Quantity% skill may not take part.</FailText>
+
+		<Condition>
+			<Typ>Property</Typ>
+			<Limit>1</Limit>
+			<Property>skill Inscribe</Property>
+			<Configurable>true</Configurable>
+		</Condition>
+	</Rule>
+	<Rule>
+		<Desc>Limit Poisoning to %Condition1_Quantity%</Desc>
+		<FailText>Poisoners with more than %Condition1_Quantity% skill may not take part.</FailText>
+
+		<Condition>
+			<Typ>Property</Typ>
+			<Limit>1</Limit>
+			<Property>skill Poisoning</Property>
+			<Configurable>true</Configurable>
+		</Condition>
+	</Rule>
+	<Rule>
+		<Desc>%Condition1_Quantity% heal, %Condition2_Quantity% cure, %Condition3_Quantity% refresh, %Condition4_Quantity% max</Desc>
+		<FailText>You are only allowed %Condition1_Quantity% heal, %Condition2_Quantity% cure, %Condition3_Quantity% refresh, %Condition4_Quantity% overall potions.</FailText>
+
+		<Condition>
+			<Typ>Item</Typ>
+			<Limit>1</Limit>
+			<ItemType>BaseHealPotion</ItemType>
+			<Quantity>10</Quantity>
+			<Configurable>true</Configurable>
+		</Condition>
+		<Condition>
+			<Typ>Item</Typ>
+			<Limit>1</Limit>
+			<ItemType>BaseCurePotion</ItemType>
+			<Quantity>10</Quantity>
+			<Configurable>true</Configurable>
+		</Condition>
+		<Condition>
+			<Typ>Item</Typ>
+			<Limit>1</Limit>
+			<ItemType>BaseRefreshPotion</ItemType>
+			<Quantity>10</Quantity>
+			<Configurable>true</Configurable>
+		</Condition>
+		<Condition>
+			<Typ>Item</Typ>
+			<Limit>1</Limit>
+			<ItemType>BasePotion</ItemType>
+			<Quantity>30</Quantity>
+			<Configurable>true</Configurable>
+		</Condition>
+	</Rule>
+	<Rule>
+		<Desc>Require %Condition1_Quantity% intelligence</Desc>
+		<FailText>You must have %Condition1_Quantity% intelligence to take part.</FailText>
+
+		<Condition>
+			<Typ>Property</Typ>
+			<Limit>0</Limit>
+			<Property>Int</Property>
+			<Quantity>80</Quantity>
+			<Configurable>true</Configurable>
+		</Condition>
+	</Rule>
+	<Rule>
+		<Desc>Disallow pre-casted magic reflect/reactive armour</Desc>
+		<FailText>No pre-casted reflect or reactive armour allowed.</FailText>
+
+		<Condition>
+			<Typ>Property</Typ>
+			<Limit>1</Limit>
+			<Property>MeleeDamageAbsorb</Property>
+		</Condition>
+		<Condition>
+			<Typ>Property</Typ>
+			<Limit>1</Limit>
+			<Property>MagicDamageAbsorb</Property>
+		</Condition>
+	</Rule>
+	<Rule>
+		<Desc>Disallow stat modifications.</Desc>
+		<FailText>Modifications from your base stats (str, bless etc.) are not permitted.</FailText>
+
+		<Condition>
+			<Typ>Property</Typ>
+			<Limit>1</Limit>
+			<Property>StatModCount</Property>
+		</Condition>
+	</Rule>
+</Ruleset>
+
+

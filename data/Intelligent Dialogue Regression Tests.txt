@@ -1,0 +1,64 @@
+#########################################
+## IntelligentDialogue Regression Tests
+#########################################
+## people
+thief guildmaster
+where might I find the thief guildmaster
+where might I find the thief guildmaster in Britian     // typo 
+where might I find the thief guild master               // <== guildmaster
+
+where is the provisioner 
+where is the provisionir                                // <== typo
+
+where is the provisioner in jhelom
+where is the provisioner in jhellom                     // <== typo
+where is provisioner in jhellom	                        // <== typo
+healer                                                  // exersizes FixThe() processing
+wandering healer
+where is the wandering healer in Oc'Nivelle
+blacksmith yew                                          // there is no blacksmith in yew
+blacksmith britain
+blacksmith minoc
+
+## places
+where might I find the rusty anchor
+where might I find the rusty anchir                     // <== typo (0.52!)
+the healer in yew 	
+healer in yew	
+where might I find the thief guild 	                    //there is no thief guild)
+where might I find the rogues guild                     //there is no rogues guild)
+where might I find the counselors guild
+where might I find the counselirs guold                 // 2 typos
+docks
+Buccaneers Den docks
+Jhelom docks
+Magincia docks
+Moonglow docks
+Nujel'm docks
+Ocllo docks
+Skara Brae East docks
+Skara Brae West docks
+Trinsic docks
+Vesper docks
+
+## custom places
+west britain stables
+Oc'Nivelle
+
+## special (mapped) places
+stabel
+stabels
+<npc name> bank
+<npc name> bank in yew
+<npc name> bank in minoc
+
+## things
+where might I find the yew moongate
+where might I find the yew moon gate
+moongate
+yew moongate
+where might I find Arms of the Bone Magi
+Arms of the Bone Magi
+strength potion
+iron ingots
+name change deed

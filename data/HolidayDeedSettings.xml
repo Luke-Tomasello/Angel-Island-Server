@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<HolidayDeedSettings version="0">
+  <HintMessage>Give this ticket to the elf at Britan Bank.</HintMessage>
+  <GiveToType>ChristmasElf</GiveToType>
+  <Gifts Count="12">
+    <Gift version="0">
+      <Type>Snowman|Snowman|SnowPile|SnowPile|EternalEmbers|EternalEmbers|RedPoinsettia|WhitePoinsettia</Type>
+      <Name />
+      <Hue />
+    </Gift>
+    <Gift version="0">
+      <Type>RoastPig</Type>
+      <Name />
+      <Hue />
+    </Gift>
+    <Gift version="0">
+      <Type>CandleLong</Type>
+      <Name />
+      <Hue>0|3343|72|7|1274|53</Hue>
+    </Gift>
+    <Gift version="0">
+      <Type>Cookies</Type>
+      <Name>Christmas cookies</Name>
+      <Hue />
+    </Gift>
+    <Gift version="0">
+      <Type />
+      <Name />
+      <Hue />
+    </Gift>
+    <Gift version="0">
+      <Type />
+      <Name />
+      <Hue />
+    </Gift>
+    <Gift version="0">
+      <Type />
+      <Name />
+      <Hue />
+    </Gift>
+    <Gift version="0">
+      <Type />
+      <Name />
+      <Hue />
+    </Gift>
+    <Gift version="0">
+      <Type />
+      <Name />
+      <Hue />
+    </Gift>
+    <Gift version="0">
+      <Type />
+      <Name />
+      <Hue />
+    </Gift>
+    <Gift version="0">
+      <Type />
+      <Name />
+      <Hue />
+    </Gift>
+    <Gift version="0">
+      <Type />
+      <Name />
+      <Hue />
+    </Gift>
+  </Gifts>
+</HolidayDeedSettings>

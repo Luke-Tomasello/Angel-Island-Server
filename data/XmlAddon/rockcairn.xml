@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>rockcairn</ID>
+  <Name>rockcairn</Name>
+  <Components Count="8">
+    <Component Flags="0x04">
+      <ItemID>3633</ItemID>
+      <X>-1</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x07">
+      <ItemID>12278</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Hue>1150</Hue>
+      <Name>a rock cairn</Name>
+      <Light>DarkCircle300</Light>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>4963</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>9</Z>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>6882</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>9</Z>
+      <Hue>232</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>6883</ItemID>
+      <X>0</X>
+      <Y>1</Y>
+      <Z>9</Z>
+      <Hue>232</Hue>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>4967</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>12</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>4970</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>17</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>4964</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>19</Z>
+    </Component>
+  </Components>
+</AddonData>

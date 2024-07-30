@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>marketstall</ID>
+  <Name>marketstall</Name>
+  <Components Count="35">
+    <Component Flags="0x00">
+      <ItemID>29</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2829</ItemID>
+      <X>1</X>
+      <Y>3</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2829</ItemID>
+      <X>2</X>
+      <Y>3</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2829</ItemID>
+      <X>3</X>
+      <Y>3</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>44</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>41</ItemID>
+      <X>3</X>
+      <Y>0</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>43</ItemID>
+      <X>0</X>
+      <Y>1</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>43</ItemID>
+      <X>3</X>
+      <Y>1</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>42</ItemID>
+      <X>0</X>
+      <Y>2</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>44</ItemID>
+      <X>1</X>
+      <Y>2</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2602</ItemID>
+      <X>2</X>
+      <Y>2</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>40</ItemID>
+      <X>3</X>
+      <Y>2</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>46</ItemID>
+      <X>0</X>
+      <Y>3</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>49</ItemID>
+      <X>1</X>
+      <Y>3</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>49</ItemID>
+      <X>2</X>
+      <Y>3</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>45</ItemID>
+      <X>3</X>
+      <Y>3</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3248</ItemID>
+      <X>4</X>
+      <Y>3</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>888</ItemID>
+      <X>0</X>
+      <Y>4</Y>
+      <Z>1</Z>
+      <Hue>137</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>888</ItemID>
+      <X>1</X>
+      <Y>4</Y>
+      <Z>1</Z>
+      <Hue>235</Hue>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3245</ItemID>
+      <X>1</X>
+      <Y>4</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>888</ItemID>
+      <X>2</X>
+      <Y>4</Y>
+      <Z>1</Z>
+      <Hue>137</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>888</ItemID>
+      <X>3</X>
+      <Y>4</Y>
+      <Z>1</Z>
+      <Hue>235</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>15774</ItemID>
+      <X>4</X>
+      <Y>1</Y>
+      <Z>3</Z>
+      <Hue>137</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1536</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>15</Z>
+      <Hue>137</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1536</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>15</Z>
+      <Hue>235</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1536</ItemID>
+      <X>2</X>
+      <Y>0</Y>
+      <Z>15</Z>
+      <Hue>137</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1536</ItemID>
+      <X>3</X>
+      <Y>0</Y>
+      <Z>15</Z>
+      <Hue>235</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1561</ItemID>
+      <X>0</X>
+      <Y>2</Y>
+      <Z>15</Z>
+      <Hue>137</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1561</ItemID>
+      <X>1</X>
+      <Y>2</Y>
+      <Z>15</Z>
+      <Hue>235</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1561</ItemID>
+      <X>2</X>
+      <Y>2</Y>
+      <Z>15</Z>
+      <Hue>137</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1561</ItemID>
+      <X>3</X>
+      <Y>2</Y>
+      <Z>15</Z>
+      <Hue>235</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1539</ItemID>
+      <X>0</X>
+      <Y>1</Y>
+      <Z>18</Z>
+      <Hue>137</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1539</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>18</Z>
+      <Hue>235</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1539</ItemID>
+      <X>2</X>
+      <Y>1</Y>
+      <Z>18</Z>
+      <Hue>137</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>1539</ItemID>
+      <X>3</X>
+      <Y>1</Y>
+      <Z>18</Z>
+      <Hue>235</Hue>
+    </Component>
+  </Components>
+</AddonData>

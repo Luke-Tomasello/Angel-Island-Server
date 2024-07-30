@@ -1,0 +1,53 @@
+#
+# Song: Tribute (Tenacious D)
+# Author: Galois
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Chatter: true
+# Tempo: 0
+# ConcertMode: False
+#
+
+say '[play .5 +319 -d ah .27 +81 -d -a .27 +309 -d -a .27 +81 -d -a .12 d .12'
+say '[play +319 -f gh .09 -c ah +943 .14 +81 .12 -f -c .14 +309 cl f .26 +81 -f -c .27'
+
+say '[play +319 -cl gh .1 dh ah .1 +81 -cl gh .1 -g eh .11 +309 -cl gh .1 dh ah .1 +81 -cl gh .12 -c .12'
+say '[play +319 -d -g .12 +943 .14 +81 -d -g .27 +309 -d -g .27 +81 -d -g .14 -d .13'
+
+say '[play +319 -f gh .27 +81 a fh .1 -f eh .1 +309 a fh .29 +81 -cl -f .27'
+say '[play +319 -cl -f .12 +943 .12 +81 -cl -f .12 -c .12 +309 -cl -f .12 -c .12 +81 -cl -f .12 eh .12'
+
+say '[play +319 -cl fh .1 as gh .1 +81 c fh .1 -cl eh .11 +309 c fh .29 +81 -cl -f .27'
+say '[play +319 .14 +943 .14 +81 c fh .27 +309 a fh .1 g eh .1 +81 f dh .1 +943 a fh .11'
+
+say '[play +319 -a eh .27 +81 -e -a .27 +309 -a +e .27 +81 -a +e .11 -e .1'
+say '[play +319 +e .13 +943 .14 +81 -e -a .27 +309 -e .11 -a -eh .11 +81 +eh .28'
+
+say '[play +319 -d +dh .1 -g dh .12 +81 .12 -d +dh .12 +309 .12 -g +c .12 +81 .12 -g +dh .12'
+say '[play +319 -e +eh .12 +943 .14 +81 -a +c .27 +309 .29 +81 -a +a .11 -e .11'
+
+say '[play +319 -a .28 +81 -e -a .27 +309 -e -a .27 +81 -e -a .11 e .11'
+say '[play +319 -a +b .11 +943 c .11 +81 +c .28 +309 -a +c .27 +81 -e +b .27'
+
+say '[play +319 -a e +a'
+
+say 'Ah!'
+wait 1200
+say 'Ah-ah!'
+wait 1300
+say 'Ah-ah ah ah-ah-ah!'
+wait 2400
+say 'Whoah-oh-oh-oh'
+wait 2400
+say 'Ah-whoah-oh oh-oh-oh'
+wait 1600
+say 'Oh, oh-oh-oh-oh-oh...'
+wait 1600
+say 'This is not'
+wait 1600
+say 'the greatest song in the wo-o-orld'
+wait 4100
+say 'This is just a'
+wait 800
+say 'TRIBUUT'

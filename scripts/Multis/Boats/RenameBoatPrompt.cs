@@ -1,0 +1,40 @@
+/***************************************************************************
+ *
+ *   RunUO                   : May 1, 2002
+ *   portions copyright      : (C) The RunUO Software Team
+ *   email                   : info@runuo.com
+ *   
+ *   Angel Island UO Shard   : March 25, 2004
+ *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   email                   : luke@tomasello.com
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ ***************************************************************************/
+
+using Server.Prompts;
+
+namespace Server.Multis
+{
+    public class RenameBoatPrompt : Prompt
+    {
+        private BaseBoat m_Boat;
+
+        public RenameBoatPrompt(BaseBoat boat)
+        {
+            m_Boat = boat;
+        }
+
+        public override void OnResponse(Mobile from, string text)
+        {
+            m_Boat.EndRename(from, text);
+        }
+    }
+}

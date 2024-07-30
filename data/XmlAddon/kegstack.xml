@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>kegstack</ID>
+  <Name>kegstack</Name>
+  <Components Count="12">
+    <Component Flags="0x00">
+      <ItemID>3711</ItemID>
+      <X>0</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3699</ItemID>
+      <X>1</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>4014</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3699</ItemID>
+      <X>-1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3700</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>4014</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>3</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>4014</ItemID>
+      <X>0</X>
+      <Y>1</Y>
+      <Z>3</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>4014</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>6</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>4014</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>6</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>4014</ItemID>
+      <X>0</X>
+      <Y>1</Y>
+      <Z>9</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3700</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>12</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3711</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>12</Z>
+    </Component>
+  </Components>
+</AddonData>

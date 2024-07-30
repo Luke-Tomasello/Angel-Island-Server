@@ -1,0 +1,99 @@
+/***************************************************************************
+ *
+ *   RunUO                   : May 1, 2002
+ *   portions copyright      : (C) The RunUO Software Team
+ *   email                   : info@runuo.com
+ *   
+ *   Angel Island UO Shard   : March 25, 2004
+ *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   email                   : luke@tomasello.com
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ ***************************************************************************/
+
+/* Scripts/Items/Special/Holiday/Winter/SnowyTree.cs
+ * Changelog:
+ *	11/27/21, Yoar
+ *		Initial version.
+ */
+
+namespace Server.Items
+{
+    public class SnowyTree : Item, IHolidayItem
+    {
+        private int m_Year;
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public int Year
+        {
+            get { return m_Year; }
+            set { m_Year = value; InvalidateProperties(); }
+        }
+
+        [Constructable]
+        public SnowyTree()
+            : this(2004)
+        {
+        }
+
+        [Constructable]
+        public SnowyTree(int year) : base(0x2377)
+        {
+            Weight = 1.0;
+            m_Year = year;
+        }
+
+        public SnowyTree(Serial serial) : base(serial)
+        {
+        }
+
+        public override void OnSingleClick(Mobile from)
+        {
+            base.OnSingleClick(from);
+
+            if (m_Year == 2004)
+                LabelTo(from, 1070880); // Winter 2004
+            else
+                LabelTo(from, "Winter {0}", m_Year);
+        }
+
+        public override void GetProperties(ObjectPropertyList list)
+        {
+            base.GetProperties(list);
+
+            if (m_Year == 2004)
+                list.Add(1070880); // Winter 2004
+            else
+                list.Add("Winter {0}", m_Year);
+        }
+
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+
+            writer.Write((int)1); // version
+
+            writer.WriteEncodedInt(m_Year);
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+
+            int version = reader.ReadInt();
+
+            if (version >= 1)
+                m_Year = reader.ReadEncodedInt();
+            else
+                m_Year = 2004;
+        }
+    }
+}

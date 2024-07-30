@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Angel Island 6.0")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+44fb774a5be8ed0c78a631d89f0598a718af36c1")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b58bb3b3abfa01832ea383036da2005fbdbbd1e7")]
 [assembly: System.Reflection.AssemblyProductAttribute("Angel Island 6.0")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Angel Island 6.0")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

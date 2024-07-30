@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>lighthouse_base</ID>
+  <Name>lighthouse_base</Name>
+  <Components Count="16">
+    <Component Flags="0x01">
+      <ItemID>16127</ItemID>
+      <X>-1</X>
+      <Y>3</Y>
+      <Z>0</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16128</ItemID>
+      <X>0</X>
+      <Y>3</Y>
+      <Z>0</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16117</ItemID>
+      <X>-1</X>
+      <Y>-3</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16128</ItemID>
+      <X>0</X>
+      <Y>-3</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16129</ItemID>
+      <X>1</X>
+      <Y>-3</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16120</ItemID>
+      <X>-2</X>
+      <Y>-2</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16133</ItemID>
+      <X>2</X>
+      <Y>-2</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16115</ItemID>
+      <X>-3</X>
+      <Y>-1</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16132</ItemID>
+      <X>3</X>
+      <Y>-1</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16121</ItemID>
+      <X>-3</X>
+      <Y>0</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16121</ItemID>
+      <X>3</X>
+      <Y>0</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16124</ItemID>
+      <X>-3</X>
+      <Y>1</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16118</ItemID>
+      <X>3</X>
+      <Y>1</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16133</ItemID>
+      <X>-2</X>
+      <Y>2</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16120</ItemID>
+      <X>2</X>
+      <Y>2</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+    <Component Flags="0x01">
+      <ItemID>16122</ItemID>
+      <X>1</X>
+      <Y>3</Y>
+      <Z>1</Z>
+      <Hue>2406</Hue>
+    </Component>
+  </Components>
+</AddonData>

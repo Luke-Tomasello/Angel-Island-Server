@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>pileoftwigs</ID>
+  <Name>pileoftwigs</Name>
+  <Components Count="16">
+    <Component Flags="0x00">
+      <ItemID>7047</ItemID>
+      <X>-1</X>
+      <Y>-2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7049</ItemID>
+      <X>0</X>
+      <Y>-2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7050</ItemID>
+      <X>1</X>
+      <Y>-2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7046</ItemID>
+      <X>-1</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7057</ItemID>
+      <X>0</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7058</ItemID>
+      <X>1</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7051</ItemID>
+      <X>2</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7048</ItemID>
+      <X>-2</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7055</ItemID>
+      <X>-1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7056</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7045</ItemID>
+      <X>-1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7054</ItemID>
+      <X>0</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7059</ItemID>
+      <X>2</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7044</ItemID>
+      <X>-1</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7043</ItemID>
+      <X>0</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7042</ItemID>
+      <X>1</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+  </Components>
+</AddonData>

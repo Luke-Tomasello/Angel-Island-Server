@@ -1,0 +1,494 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<ResourcePool version="3">
+  <PaymentFactor>0.9</PaymentFactor>
+  <FailsafePriceHike>2</FailsafePriceHike>
+  <ResourceData version="1">
+    <Name>Arrow</Name>
+    <Type>Server.Items.Arrow</Type>
+    <BunchName>Quiver of Arrows</BunchName>
+    <ResalePrice>6</ResalePrice>
+    <WholesalePrice>6</WholesalePrice>
+    <ItemID>3903</ItemID>
+    <Hue>0</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>True</ValidFailsafe>
+    <EquivalentResources Count="0" />
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Bolt</Name>
+    <Type>Server.Items.Bolt</Type>
+    <BunchName>Quiver of Bolts</BunchName>
+    <ResalePrice>6</ResalePrice>
+    <WholesalePrice>6</WholesalePrice>
+    <ItemID>7163</ItemID>
+    <Hue>0</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>True</ValidFailsafe>
+    <EquivalentResources Count="0" />
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Shaft</Name>
+    <Type>Server.Items.Shaft</Type>
+    <BunchName>Bundle of Shafts</BunchName>
+    <ResalePrice>4</ResalePrice>
+    <WholesalePrice>4</WholesalePrice>
+    <ItemID>7124</ItemID>
+    <Hue>0</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>True</ValidFailsafe>
+    <EquivalentResources Count="0" />
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Feather</Name>
+    <Type>Server.Items.Feather</Type>
+    <BunchName>Bundle of Feathers</BunchName>
+    <ResalePrice>2</ResalePrice>
+    <WholesalePrice>2</WholesalePrice>
+    <ItemID>7121</ItemID>
+    <Hue>0</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>True</ValidFailsafe>
+    <EquivalentResources Count="0" />
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Iron Ingot</Name>
+    <Type>Server.Items.IronIngot</Type>
+    <BunchName>Stack of Iron Ingots</BunchName>
+    <ResalePrice>5</ResalePrice>
+    <WholesalePrice>5</WholesalePrice>
+    <ItemID>7154</ItemID>
+    <Hue>0</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>True</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.IronOre</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for ore than ingots, because they have to smelt them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Dull Copper Ingot</Name>
+    <Type>Server.Items.DullCopperIngot</Type>
+    <BunchName>Stack of Dull Copper Ingots</BunchName>
+    <ResalePrice>6</ResalePrice>
+    <WholesalePrice>6</WholesalePrice>
+    <ItemID>7154</ItemID>
+    <Hue>2419</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.DullCopperOre</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for ore than ingots, because they have to smelt them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Shadow Iron Ingot</Name>
+    <Type>Server.Items.ShadowIronIngot</Type>
+    <BunchName>Stack of Shadow Iron Ingots</BunchName>
+    <ResalePrice>7</ResalePrice>
+    <WholesalePrice>7</WholesalePrice>
+    <ItemID>7154</ItemID>
+    <Hue>2406</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.ShadowIronOre</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for ore than ingots, because they have to smelt them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Copper Ingot</Name>
+    <Type>Server.Items.CopperIngot</Type>
+    <BunchName>Stack of Copper Ingots</BunchName>
+    <ResalePrice>8</ResalePrice>
+    <WholesalePrice>8</WholesalePrice>
+    <ItemID>7154</ItemID>
+    <Hue>2413</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.CopperOre</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for ore than ingots, because they have to smelt them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Bronze Ingot</Name>
+    <Type>Server.Items.BronzeIngot</Type>
+    <BunchName>Stack of Bronze Ingots</BunchName>
+    <ResalePrice>9</ResalePrice>
+    <WholesalePrice>9</WholesalePrice>
+    <ItemID>7154</ItemID>
+    <Hue>2418</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.BronzeOre</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for ore than ingots, because they have to smelt them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Gold Ingot</Name>
+    <Type>Server.Items.GoldIngot</Type>
+    <BunchName>Stack of Gold Ingots</BunchName>
+    <ResalePrice>10</ResalePrice>
+    <WholesalePrice>10</WholesalePrice>
+    <ItemID>7154</ItemID>
+    <Hue>2213</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.GoldOre</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for ore than ingots, because they have to smelt them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Agapite Ingot</Name>
+    <Type>Server.Items.AgapiteIngot</Type>
+    <BunchName>Stack of Agapite Ingots</BunchName>
+    <ResalePrice>11</ResalePrice>
+    <WholesalePrice>11</WholesalePrice>
+    <ItemID>7154</ItemID>
+    <Hue>2425</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.AgapiteOre</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for ore than ingots, because they have to smelt them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Verite Ingot</Name>
+    <Type>Server.Items.VeriteIngot</Type>
+    <BunchName>Stack of Verite Ingots</BunchName>
+    <ResalePrice>13</ResalePrice>
+    <WholesalePrice>13</WholesalePrice>
+    <ItemID>7154</ItemID>
+    <Hue>2207</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.VeriteOre</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for ore than ingots, because they have to smelt them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Valorite Ingot</Name>
+    <Type>Server.Items.ValoriteIngot</Type>
+    <BunchName>Stack of Valorite Ingots</BunchName>
+    <ResalePrice>15</ResalePrice>
+    <WholesalePrice>15</WholesalePrice>
+    <ItemID>7154</ItemID>
+    <Hue>2219</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.ValoriteOre</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for ore than ingots, because they have to smelt them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Cloth</Name>
+    <Type>Server.Items.Cloth</Type>
+    <BunchName>Stack of Cloths</BunchName>
+    <ResalePrice>3</ResalePrice>
+    <WholesalePrice>3</WholesalePrice>
+    <ItemID>5990</ItemID>
+    <Hue>0</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>True</ValidFailsafe>
+    <EquivalentResources Count="8">
+      <EquivalentResource version="0">
+        <Type>Server.Items.BoltOfCloth</Type>
+        <AmountFactor>50</AmountFactor>
+        <PriceFactor>1</PriceFactor>
+        <Message>One bolt will convert to 50 yards of cloth.</Message>
+      </EquivalentResource>
+      <EquivalentResource version="0">
+        <Type>Server.Items.UncutCloth</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>1</PriceFactor>
+        <Message>This will be sold as standard cloth for no extra fee.</Message>
+      </EquivalentResource>
+      <EquivalentResource version="0">
+        <Type>Server.Items.Cotton</Type>
+        <AmountFactor>60</AmountFactor>
+        <PriceFactor>0.75</PriceFactor>
+        <Message>One bale of cotton will convert to 60 yards of cloth. NPCs pay less for cotton than cloth, because they have to weave it.</Message>
+      </EquivalentResource>
+      <EquivalentResource version="0">
+        <Type>Server.Items.Wool</Type>
+        <AmountFactor>30</AmountFactor>
+        <PriceFactor>0.75</PriceFactor>
+        <Message>One pile of wool will convert to 30 yards of cloth. NPCs pay less for wool than cloth, because they have to weave it.</Message>
+      </EquivalentResource>
+      <EquivalentResource version="0">
+        <Type>Server.Items.DarkYarn</Type>
+        <AmountFactor>10</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>One ball of yarn will convert to 10 yards of cloth. NPCs pay less for yarn than cloth, because they have to weave it.</Message>
+      </EquivalentResource>
+      <EquivalentResource version="0">
+        <Type>Server.Items.LightYarn</Type>
+        <AmountFactor>10</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>One ball of yarn will convert to 10 yards of cloth. NPCs pay less for yarn than cloth, because they have to weave it.</Message>
+      </EquivalentResource>
+      <EquivalentResource version="0">
+        <Type>Server.Items.LightYarnUnraveled</Type>
+        <AmountFactor>10</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>One ball of yarn will convert to 10 yards of cloth. NPCs pay less for yarn than cloth, because they have to weave it.</Message>
+      </EquivalentResource>
+      <EquivalentResource version="0">
+        <Type>Server.Items.SpoolOfThread</Type>
+        <AmountFactor>10</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>One spool of thread will convert to 10 yards of cloth. NPCs pay less for thread than cloth, because they have to weave it.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Leather</Name>
+    <Type>Server.Items.Leather</Type>
+    <BunchName>Roll of Leathers</BunchName>
+    <ResalePrice>4</ResalePrice>
+    <WholesalePrice>4</WholesalePrice>
+    <ItemID>4225</ItemID>
+    <Hue>0</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>True</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.Hides</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for hides than cut leather, because they have to cut them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Spined Leather</Name>
+    <Type>Server.Items.SpinedLeather</Type>
+    <BunchName>Roll of Spined leather</BunchName>
+    <ResalePrice>6</ResalePrice>
+    <WholesalePrice>6</WholesalePrice>
+    <ItemID>4225</ItemID>
+    <Hue>1030</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.SpinedHides</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for hides than leather, because they have to cut them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Horned Leather</Name>
+    <Type>Server.Items.HornedLeather</Type>
+    <BunchName>Roll of Horned Leather</BunchName>
+    <ResalePrice>7</ResalePrice>
+    <WholesalePrice>7</WholesalePrice>
+    <ItemID>4225</ItemID>
+    <Hue>1821</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.HornedHides</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for hides than leather, because they have to cut them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Barbed Leather</Name>
+    <Type>Server.Items.BarbedLeather</Type>
+    <BunchName>Roll of Barbed Leather</BunchName>
+    <ResalePrice>8</ResalePrice>
+    <WholesalePrice>8</WholesalePrice>
+    <ItemID>4225</ItemID>
+    <Hue>1813</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.BarbedHides</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for hides than leather, because they have to cut them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Board</Name>
+    <Type>Server.Items.Board</Type>
+    <BunchName>Stack of Boards</BunchName>
+    <ResalePrice>4</ResalePrice>
+    <WholesalePrice>4</WholesalePrice>
+    <ItemID>7127</ItemID>
+    <Hue>0</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>True</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.Log</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for logs than boards, because they have to cut them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Oak Board</Name>
+    <Type>Server.Items.OakBoard</Type>
+    <BunchName>Stack of Oak Boards</BunchName>
+    <ResalePrice>5</ResalePrice>
+    <WholesalePrice>5</WholesalePrice>
+    <ItemID>7127</ItemID>
+    <Hue>2010</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.OakLog</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for logs than boards, because they have to cut them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Ash Board</Name>
+    <Type>Server.Items.AshBoard</Type>
+    <BunchName>Stack of Ash Boards</BunchName>
+    <ResalePrice>7</ResalePrice>
+    <WholesalePrice>7</WholesalePrice>
+    <ItemID>7127</ItemID>
+    <Hue>1191</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.AshLog</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for logs than boards, because they have to cut them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Yew Board</Name>
+    <Type>Server.Items.YewBoard</Type>
+    <BunchName>Stack of Yew Boards</BunchName>
+    <ResalePrice>8</ResalePrice>
+    <WholesalePrice>8</WholesalePrice>
+    <ItemID>7127</ItemID>
+    <Hue>1192</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.YewLog</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for logs than boards, because they have to cut them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Heartwood Board</Name>
+    <Type>Server.Items.HeartwoodBoard</Type>
+    <BunchName>Stack of Heartwood Boards</BunchName>
+    <ResalePrice>10</ResalePrice>
+    <WholesalePrice>10</WholesalePrice>
+    <ItemID>7127</ItemID>
+    <Hue>1193</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.HeartwoodLog</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for logs than boards, because they have to cut them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Bloodwood Board</Name>
+    <Type>Server.Items.BloodwoodBoard</Type>
+    <BunchName>Stack of Bloodwood Boards</BunchName>
+    <ResalePrice>12</ResalePrice>
+    <WholesalePrice>12</WholesalePrice>
+    <ItemID>7127</ItemID>
+    <Hue>1194</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.BloodwoodLog</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for logs than boards, because they have to cut them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+  <ResourceData version="1">
+    <Name>Frostwood Board</Name>
+    <Type>Server.Items.FrostwoodBoard</Type>
+    <BunchName>Stack of Frostwood Boards</BunchName>
+    <ResalePrice>14</ResalePrice>
+    <WholesalePrice>14</WholesalePrice>
+    <ItemID>7127</ItemID>
+    <Hue>1151</Hue>
+    <SmallestFirstFactor>0.5</SmallestFirstFactor>
+    <ValidFailsafe>False</ValidFailsafe>
+    <EquivalentResources Count="1">
+      <EquivalentResource version="0">
+        <Type>Server.Items.FrostwoodLog</Type>
+        <AmountFactor>1</AmountFactor>
+        <PriceFactor>0.5</PriceFactor>
+        <Message>NPCs pay less for logs than boards, because they have to cut them.</Message>
+      </EquivalentResource>
+    </EquivalentResources>
+  </ResourceData>
+</ResourcePool>

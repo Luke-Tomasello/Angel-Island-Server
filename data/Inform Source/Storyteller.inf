@@ -1,0 +1,99 @@
+Include "Parser";
+Include "VerbLib";
+
+Object Britannia "$eat():~Britannia~"
+	with description "$eat():description",
+	before [; Look: return false;],
+	has light;
+
+Class NPC
+	with life [;
+		Answer,Ask,Order,Tell:
+		print_ret "Just use T[ALK] [TO ", (the) self, "].";
+	],
+	has animate;
+
+Class Storybook
+	has proper;
+		
+Storybook ZorkI "ZorkI" Britannia
+	!! 'I' is not a valid dictionary word :(
+	with name 'zorki' 'book' 'game',
+	description
+		"The original Zork I adventure.",
+		file_name "zorki";
+		
+Storybook ZorkII "ZorkII" Britannia
+	with name 'zorkii' 'book' 'game',
+	description
+		"The original Zork II adventure.",
+		file_name "zorkii";
+		
+NPC Storyteller "Helga" Britannia 
+	with name 'storyteller' 'bard' 'Helga',
+	description
+		"Helga is one of an ancient Celtic order of minstrel poets
+		who composed and recited verses celebrating the legendary 
+		exploits of chieftains and heroes.",
+	initial [;
+		print "Helga stops writing just long enough
+		to greet you with a smile.^";
+		if (location hasnt visited) {
+			print "^~Hello, I was just about to play a game, are you interested?~^";
+			print "^~If so, tell me you would like to play a game.~^";
+		}
+	],
+	times_spoken_to 0, ! for counting the conversation topics
+	life [;
+		Play: print_ret "~Okay, which story?~"; 
+		Give:
+			move noun to self;
+			switch (random(3))
+			{
+				1: print "~Oh, good choice.~";
+				2: print "~My favorite!~";
+				3: print "~Yeah, alright.~";
+			}
+			deadflag = 3;
+			print "$load_sf(", (string)noun.file_name, ")";
+			return true;
+		Talk:
+			self.times_spoken_to = self.times_spoken_to + 1;
+			switch (self.times_spoken_to) {
+				1: score = score + 1;
+					print_ret "You warmly thank Helga for the apple.";
+				2: print_ret "~See you again soon.~";
+				default:
+					return false;
+			}
+	],
+	has female proper transparent;
+
+[ 
+	Initialise;
+	location = Britannia;
+	
+	!! you can't go any where
+	location.Object::cant_go = "You may go where ever you like, don't me stop you.";
+];
+Include "Grammar";
+
+[ TalkSub;
+	if (noun == player) print_ret "Nothing you hear surprises you.";
+	if (RunLife(noun,##Talk) ~= false) return;  ! consult life[; Talk: ]
+	print_ret "At the moment, you can't think of anything to say.";
+];
+
+Verb 'talk' 't//' 'converse' 'chat' 'gossip'
+    * 'to'/'with' creature          -> Talk
+    * creature                      -> Talk;
+
+[ PlaySub;
+	if (noun == player) print_ret "Nothing you hear surprises you.";
+	if (RunLife(noun,##Play) ~= false) return;  ! consult life[; Play: ]
+	print_ret "error.";
+];
+
+Verb 'play' 'p//' 'game' 'story'
+    * 'to'/'with' creature          -> Play
+    * creature                      -> Play;

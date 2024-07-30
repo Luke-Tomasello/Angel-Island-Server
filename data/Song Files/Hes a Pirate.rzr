@@ -1,0 +1,254 @@
+# Hes a Pirate, performed by Skeeve
+# Author: Skeeve
+# Song: Hes a Pirate
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 100
+# ConcertMode: False
+    
+#intro
+say '[play d 0.2 d 0.1 -dh 0.2'
+say '[play d 0.1 -dh 0.2'
+say '[play d 0.1 -dh 0.1 d 0.1 -dh 0.1 d 0.2'
+say '[play d 0.1 -dh 0.2'
+say '[play d 0.1 -dh 0.2'
+say '[play -dh 0.1 d 0.1 -dh 0.1 d 0.2'
+say '[play -d 0.01 -fh 0.01 -ah 0.01'
+say '[play d 0.2 d 0.1 -dh 0.2'
+say '[play d 0.1 -dh 0.2 d 0.1 -dh 0.1'
+
+say '[play -a 0.01 a 0.1 cl 0.01 c 0.1' 
+####page 1
+####bar 1
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play d 0.01 dh 0.2 d 0.01 dh 0.2 d 0.01 dh 0.1 e 0.01 eh 0.1'
+wait 800
+say '[play -as 0.01 -dh 0.01 -fh 0.01'
+say '[play f 0.01 fh 0.2 f 0.01 fh 0.2 f 0.01 fh 0.1 g 0.01 gh 0.1'
+say '[play -a 0.01 -c 0.01 -eh 0.01'
+say '[play e 0.01 eh 0.2 e 0.01 eh 0.01 0.2 d 0.01 dh 0.1 cl 0.01 c 0.1'
+wait 1200
+
+###bar 2
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play cl 0.01 c 0.1 d 0.01 dh 0.3 -ah 0.01 a 0.1 cl 0.01 c 0.1'
+say '[play -as 0.01 -dh 0.01 -fh 0.01'
+say '[play d 0.01 dh 0.2 d 0.01 dh 0.2 d 0.01 dh 0.1 e 0.01 eh 0.1'
+wait 1200
+say '[play -fh 0.01 -ah 0.01 -ch 0.01'
+say '[play f 0.01 fh 0.2 f 0.01 fh 0.2 f 0.01 fh 0.1 g 0.01 gh 0.1'
+say '[play -c 0.01 -eh 0.01 -gh 0.01'
+say '[play e 0.01 eh 0.2 e 0.01 eh 0.2 d 0.01 dh 0.1 cl 0.01 c 0.1'
+wait 1200
+##
+###bar 3
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play d 0.01 dh 0.4 -a 0.01 a 0.1 cl 0.01 c 0.1'
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play d 0.01 dh 0.2 d 0.01 dh 0.2 d 0.01 dh 0.1 f 0.01 fh 0.1'
+wait 1200
+say '[play -as 0.01 -dh 0.01 -gh 0.01'
+say '[play g 0.01 gh 0.2 g 0.01 gh 0.2 g 0.01 gh 0.1 a 0.01 ah 0.1'
+say '[play -g 0.01 -as 0.01 -dh 0.01'
+say '[play as 0.01 ash 0.2 as 0.01 ash 0.2 a 0.01 ah 0.1 a 0.01 ah 0.1'
+wait 1200
+##
+###bar 4 
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play a 0.01 ah 0.1 d 0.01 dh 0.3 d 0.01 dh 0.1 e 0.01 eh 0.1'
+say '[play -as 0.01 -dh 0.01 -fh 0.01'
+say '[play f 0.01 fh 0.2 f 0.01 fh 0.2 g 0.01 gh 0.2'
+wait 1200
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play a 0.01 ah 0.1 d 0.01 dh 0.3 d 0.01 dh 0.1 f 0.01 fh 0.1'
+say '[play -a 0.01 -cs 0.01 -eh 0.01'
+say '[play e 0.01 eh 0.2 e 0.01 eh 0.2 f 0.01 fh 0.1 d 0.01 dh 0.1'
+wait 1200
+##
+###bar 5
+say '[play -a 0.01 -cs 0.01 -eh 0.01'
+say '[play e 0.01 eh 0.4 -ah 0.01 a 0.1 cl 0.01 c 0.1'
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play d 0.01 dh 0.2 d 0.01 dh 0.2 d 0.01 dh 0.1 e 0.01 eh 0.1'
+wait 1200
+say '[play -as 0.01 -dh 0.01 -fh 0.01'
+say '[play f 0.01 fh 0.2 f 0.01 fh 0.2 f 0.01 fh 0.1 g 0.01 gh 0.1'
+say '[play -a 0.01 -c 0.01 -eh 0.01'
+say '[play e 0.01 eh 0.2 e 0.01 eh 0.2 d 0.01 dh 0.1 cl 0.01 c 0.1'
+wait 1200
+####
+####page 2
+####bar 1
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play cl 0.01 c 0.1 d 0.01 dh 0.3 -ah 0.01 a 0.1 cl 0.01 c 0.1'
+say '[play -as 0.01 -dh 0.01 -fh 0.01'
+say '[play d 0.01 dh 0.2 d 0.01 dh 0.2 d 0.01 dh 0.1 e 0.01 eh 0.1'
+wait 1500
+say '[play -fh 0.01 -ah 0.01 -ch 0.01'
+say '[play f 0.01 fh 0.2 f 0.01 fh 0.2 f 0.01 fh 0.1 g 0.01 gh 0.1'
+say '[play -c 0.01 -eh 0.01 -gh 0.01'
+say '[play e 0.01 eh 0.2 e 0.01 eh 0.2 d 0.01 dh 0.1 cl 0.01 c 0.1'
+wait 1500
+####
+####bar 2
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play d 0.01 dh 0.4 -ah 0.01 a 0.1 cl 0.01 c 0.1'
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play d 0.01 dh 0.2 d 0.01 dh 0.2 d 0.01 dh 0.1 f 0.01 fh 0.1'
+wait 1500
+say '[play -as 0.01 -dh 0.01 -gh 0.01'
+say '[play g 0.01 gh 0.2 g 0.01 gh 0.2 g 0.01 gh 0.1 a 0.01 ah 0.1'
+say '[play -g 0.01 -as 0.01 -dh 0.01'
+say '[play as 0.01 ash 0.2 as 0.01 ash 0.2 a 0.01 ah 0.1 a 0.01 ah 0.1'
+wait 1500
+####
+####bar 3
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play a 0.01 ah 0.1 d 0.01 dh 0.3 d 0.01 dh 0.1 e 0.01 eh 0.1'
+say '[play -as 0.01 -dh 0.01 -fh 0.01'
+say '[play f 0.01 fh 0.2 f 0.01 fh 0.2 g 0.01 gh 0.2'
+wait 1500
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play a 0.01 ah 0.1 d 0.01 dh 0.3 d 0.01 dh 0.1 f 0.01 fh 0.1'
+say '[play -a 0.01 -cs 0.01 -eh 0.01'
+say '[play e 0.01 eh 0.2 e 0.01 eh 0.2 d 0.01 dh 0.1 csl 0.01 cs 0.1'
+wait 1500
+####
+####bar 4
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play d 0.01 dh 0.2 -d 0.01 d 0.01 dh 0.2 -cs 0.01 e 0.01 eh 0.2'
+say '[play -c 0.01 f 0.01 fh 0.2 -c 0.01 f 0.01 fh 0.2 -as 0.01 g 0.01 gh 0.2'
+wait 1500
+say '[play -a 0.01 -dh 0.01 -fh 0.01'
+say '[play a 0.01 ah 0.4 f 0.01 fh 0.1 d 0.01 dh 0.1'
+say '[play -ah 0.01 a 0.6'
+wait 1500
+####
+####bar 5
+say '[play -g 0.01 -as 0.01 -dh 0.01'
+say '[play as 0.01 ash 0.4 f 0.01 fh 0.1 d 0.01 dh 0.1'
+say '[play -ash 0.01 as 0.6'
+wait 1500
+say '[play -a 0.01 -cs 0.01 -eh 0.01'
+say '[play e 0.01 eh 0.3 f 0.01 fh 0.2 f 0.01 fh 0.5' 
+
+####
+####page 3
+####bar 1
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play a 0.01 ah 0.2 a 0.01 ah 0.2 a 0.01 ah 0.2' 
+say '[play as 0.01 ash 0.1 a 0.01 ah 0.5'
+wait 1300
+say '[play -c 0.01 -eh 0.01 -gh 0.01'
+say '[play g 0.01 gh 0.2 g 0.01 gh 0.2 g 0.01 gh 0.2'
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play g 0.01 gh 0.1 a 0.01 ah 0.5'
+wait 1300
+####
+####bar 2
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play a 0.01 ah 0.2 a 0.01 ah 0.2 a 0.01 ah 0.2' 
+say '[play as 0.01 ash 0.1 a 0.01 ah 0.5'
+wait 1300
+say '[play -g 0.01 -as 0.01 -dh 0.01'
+say '[play g 0.01 gh 0.2 f 0.01 fh 0.2 -a 0.01 -cs 0.01 -eh 0.01 e 0.01 eh 0.2'
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play d 0.01 dh 0.4 d 0.01 dh 0.1 e 0.01 eh 0.1'
+wait 1300
+####
+####bar 3
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play f 0.01 fh 0.3 g 0.01 gh 0.1 a 0.01 ah 0.2'
+say '[play -c 0.01 -eh 0.01 -gh 0.01'
+say '[play g 0.01 gh 0.2 f 0.01 fh 0.2 e 0.01 eh 0.2'
+wait 1300
+say '[play -fh 0.01 -ah 0.01 -ch 0.01'
+say '[play f 0.01 fh 0.2 g 0.01 gh 0.2 a 0.01 ah 0.2'
+say '[play -c 0.01 -eh 0.01 -gh 0.01' 
+say '[play g 0.01 gh 0.3 f 0.01 fh 0.1 g 0.01 gh 0.2'
+wait 1300
+####
+####bar 4
+say '[play -fh 0.01 -ah 0.01 -ch 0.01'
+say '[play a 0.01 ah 0.3 g 0.01 gh 0.1 f 0.01 fh 0.2'
+say '[play a 0.01 cs 0.01 eh 0.01'
+say '[play e 0.01 eh 0.2 f 0.01 fh 0.2 e 0.01 eh 0.2'
+wait 1300
+say '[play -d 0.01 -f 0.01 -a 0.01'
+say '[play d 0.01 dh 0.3 e 0.01 eh 0.1 -cl 0.01 -e 0.01 -g 0.01 cl 0.01 c 0.2'
+say '[play -d 0.01 -f 0.01 -a 0.01' 
+say '[play d 0.01 dh 0.4 d 0.01 dh 0.1 e 0.01 eh 0.1'
+wait 1300
+####
+####bar 5
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play f 0.01 fh 0.3 e 0.01 eh 0.1 f 0.01 fh 0.2'
+say '[play -c 0.01 -eh 0.01 -gh 0.01'
+say '[play g 0.01 gh 0.2 f 0.01 fh 0.2 g 0.01 gh 0.2'
+wait 1200
+say '[play -fh 0.01 -ah 0.01 -ch 0.01'
+say '[play a 0.01 ah 0.2 g 0.01 gh 0.2 f 0.01 fh 0.2'
+say '[play -as 0.01 -dh 0.01 -fh 0.01' 
+say '[play d 0.01 dh 0.4 d 0.01 dh 0.1 e 0.01 eh 0.1'
+wait 1300
+###
+###page 4
+###bar 1
+say '[play -d 0.01 -f 0.01 -a 0.01'
+say '[play f 0.01 fh 0.2 g 0.01 gh 0.2 a 0.01 ah 0.2'
+say '[play -g 0.01 -as 0.01 -dh 0.01'
+say '[play as 0.01 ash 0.2 d 0.01 dh 0.2 g 0.01 gh 0.2'
+wait 1200
+say '[play -a 0.01 -cs 0.01 -eh 0.01'
+say '[play f 0.01 fh 0.3 g 0.01 gh 0.1 e 0.01 eh 0.2'
+say '[play -d 0.01 -f 0.01 -a 0.01'
+say '[play d 0.01 dh 0.6'  
+wait 1200
+####
+####bar 2
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play a 0.01 ah 0.6'
+say '[play -as 0.01 -dh 0.01 -fh 0.01'
+say '[play as 0.01 ash 0.6'
+wait 1200
+say '[play -fh 0.01 -ah 0.01 -ch 0.01'
+say '[play a 0.01 ah 0.2 a 0.01 ah 0.2 a 0.01 ah 0.2'
+say '[play -c 0.01 -eh 0.01 -gh 0.01'
+say '[play a 0.01 ah 0.1 g 0.01 gh 0.5'
+wait 1200
+####
+####bar 3
+say '[play -g 0.01 -as 0.01 -dh 0.01'
+say '[play g 0.01 gh 0.6'
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play f 0.01 fh 0.6'
+wait 1200
+say '[play -a 0.01 -cs 0.01 -eh 0.01'
+say '[play e 0.01 eh 0.2 f 0.01 fh 0.2 e 0.01 eh 0.2'
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play e 0.01 eh 0.1 d 0.01 dh 0.2 d 0.01 dh 0.1 e 0.01 eh 0.1 f 0.01 fh 0.1'
+wait 1200
+####
+####bar 4 
+say '[play -dh 0.01 -fh 0.01 -ah 0.01' 
+say '[play a 0.01 ah 0.3 d 0.01 dh 0.1 e 0.01 eh 0.1 f 0.01 fh 0.1'
+say '[play -as 0.01 -dh 0.01 -fh 0.01'
+say '[play as 0.01 ash 0.3 d 0.01 dh 0.1 e 0.01 eh 0.1 f 0.01 fh 0.1'
+wait 1200
+say '[play -fh 0.01 -ah 0.01 -ch 0.01'
+say '[play a 0.01 ah 0.2 a 0.01 ah 0.2 c 0.01 ch 0.2'
+say '[play -c 0.01 -eh 0.01 -gh 0.01'
+say '[play a 0.01 ah 0.1 g 0.01 gh 0.5'
+wait 1200
+####
+####bar 5
+say '[play -g 0.01 -as 0.01 -dh 0.01'
+say '[play g 0.01 gh 0.6'
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play f 0.01 fh 0.6'
+wait 1200
+say '[play -a 0.01 -cs 0.01 -eh 0.01'
+say '[play e 0.01 eh 0.2 f 0.01 fh 0.2 e 0.01 eh 0.2'
+say '[play -dh 0.01 -fh 0.01 -ah 0.01'
+say '[play d 0.01 dh' 

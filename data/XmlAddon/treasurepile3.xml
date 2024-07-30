@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>treasurepile3</ID>
+  <Name>treasurepile3</Name>
+  <Components Count="12">
+    <Component Flags="0x00">
+      <ItemID>6982</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6982</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6983</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6984</ItemID>
+      <X>2</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6981</ItemID>
+      <X>3</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6978</ItemID>
+      <X>0</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6978</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6979</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6980</ItemID>
+      <X>2</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6977</ItemID>
+      <X>0</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6976</ItemID>
+      <X>1</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>6975</ItemID>
+      <X>2</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+  </Components>
+</AddonData>

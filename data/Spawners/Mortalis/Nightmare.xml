@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<SPAWNERS Count="3">
+	<Spawner_Properties>
+		<Location>(5584, 2012, 0)</Location>
+		<Map>Felucca</Map>
+		<Version>11</Version>
+		<NavDest>None</NavDest>
+		<MobDirection>0</MobDirection>
+		<WayPoint>0</WayPoint>
+		<Group>0</Group>
+		<MinDelay>120</MinDelay>
+		<MaxDelay>180</MaxDelay>
+		<Count>1</Count>
+		<Team>0</Team>
+		<HomeRange>30</HomeRange>
+		<CreatureCount>1</CreatureCount>
+		<Line0>nightmare</Line0>
+		<Running>1</Running>
+		<NextSpawn>138.0417441</NextSpawn>
+	</Spawner_Properties>
+	<Spawner_Properties>
+		<Location>(772, 1404, 0)</Location>
+		<Map>Felucca</Map>
+		<Version>11</Version>
+		<NavDest>None</NavDest>
+		<MobDirection>0</MobDirection>
+		<WayPoint>0</WayPoint>
+		<Group>0</Group>
+		<MinDelay>120</MinDelay>
+		<MaxDelay>240</MaxDelay>
+		<Count>1</Count>
+		<Team>0</Team>
+		<HomeRange>10</HomeRange>
+		<CreatureCount>1</CreatureCount>
+		<Line0>nightmare</Line0>
+		<Running>1</Running>
+		<NextSpawn>147.9263943</NextSpawn>
+	</Spawner_Properties>
+	<Spawner_Properties>
+		<Location>(5303, 1608, 0)</Location>
+		<Map>Felucca</Map>
+		<Version>11</Version>
+		<NavDest>None</NavDest>
+		<MobDirection>0</MobDirection>
+		<WayPoint>0</WayPoint>
+		<Group>0</Group>
+		<MinDelay>240</MinDelay>
+		<MaxDelay>300</MaxDelay>
+		<Count>1</Count>
+		<Team>0</Team>
+		<HomeRange>4</HomeRange>
+		<CreatureCount>1</CreatureCount>
+		<Line0>nightmare</Line0>
+		<Running>0</Running>
+	</Spawner_Properties>
+</SPAWNERS>

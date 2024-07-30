@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>lift_platform</ID>
+  <Name>lift_platform</Name>
+  <Components Count="20">
+    <Component Flags="0x00">
+      <ItemID>2149</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2147</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2148</ItemID>
+      <X>0</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2146</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1216</ItemID>
+      <X>0</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1212</ItemID>
+      <X>1</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1215</ItemID>
+      <X>2</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1209</ItemID>
+      <X>0</X>
+      <Y>3</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1206</ItemID>
+      <X>1</X>
+      <Y>3</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1211</ItemID>
+      <X>2</X>
+      <Y>3</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1209</ItemID>
+      <X>0</X>
+      <Y>4</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1207</ItemID>
+      <X>1</X>
+      <Y>4</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1211</ItemID>
+      <X>2</X>
+      <Y>4</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2149</ItemID>
+      <X>0</X>
+      <Y>5</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1214</ItemID>
+      <X>0</X>
+      <Y>5</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2147</ItemID>
+      <X>1</X>
+      <Y>5</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1210</ItemID>
+      <X>1</X>
+      <Y>5</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1213</ItemID>
+      <X>2</X>
+      <Y>5</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2148</ItemID>
+      <X>0</X>
+      <Y>6</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2146</ItemID>
+      <X>1</X>
+      <Y>6</Y>
+      <Z>0</Z>
+    </Component>
+  </Components>
+</AddonData>
