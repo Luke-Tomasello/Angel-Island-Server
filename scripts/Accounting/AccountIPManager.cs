@@ -75,8 +75,25 @@ namespace Server.Accounting
             return list;
         }
 
-        const int MMAccountId = 747135;
-        const string MMlicenseKey = "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";
+        private static int MMAccountId
+        {
+            get
+            {
+                string temp = Environment.GetEnvironmentVariable("AI.MMAccountId");
+                if (int.TryParse(temp, out int id))
+                    return id;
+                else
+                    return 0;
+            }
+        }
+        private static string MMlicenseKey
+        {
+            get
+            {
+                string temp = Environment.GetEnvironmentVariable("AI.MMlicenseKey");
+                return temp;
+            }
+        }
         const string MMHost = "geolite.info";
         public static void AcquireIpInfo()
         {

@@ -19,6 +19,27 @@
  *
  ***************************************************************************/
 
+/***************************************************************************
+ * We use GeoLite2 Free Geolocation Data from MaxMind
+ * https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
+ * EditionIDs GeoLite2-ASN GeoLite2-City GeoLite2-Country
+ * 
+ * We use this web service to lookup login IP Addresses and tell us the following:
+ * 1. Hosting Provider/Data Center, 
+ * 2. VPN, 
+ * 3. Residential Proxy, 
+ * 4. Tor Exit Node, 
+ * 5. and Public Proxy.
+ * 
+ * With this knowledge, and other tools, we can reasonably determine if a user is using some sort of proxy 
+ * to get around our MAX CONNECTIONS limits.
+ * 
+ * You'll want to visit the URL above and sign up for the free GeoLite2.
+ * You will get an AccountID and LicenseKey. 
+ * 
+ * See usage in this file: AcquireIpInfo()
+ ***************************************************************************/
+
 /* Scripts/Accounting/AccountHandler.cs
  * ChangeLog:
  *  9/29/2023, Adam (Delete Character and Tor Exit Node)
@@ -757,7 +778,7 @@ namespace Server.Misc
             // cleanup encrypted username and password from an early version of client security
             UnFuck(e);
 
-            if (!World.IsSystemAcct(e.State.Address))
+            if (!World.IsSystemAcct(e.State.Address) && Core.GeoIPCheck())
             {
                 AccountIPManager.UserIPRequest.Enqueue(new UserIPInfo(e.State.Address.ToString(), e.Username));
 

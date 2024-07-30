@@ -1501,6 +1501,14 @@ namespace Server
             else
                 Utility.ConsoleWriteLine("[Some or all of the required Email environment variables are not set.]", ConsoleColorWarning());
             #endregion Email
+
+            #region GeoIP
+            if (GeoIPCheck() == true)
+                Utility.ConsoleWriteLine("[Geo IP Configured.]", ConsoleColorInformational());
+            else
+                Utility.ConsoleWriteLine("[Geo IP is not configured. See AccountHandler.cs for setup instructions.]", ConsoleColorWarning());
+            #endregion GeoIP
+
             #region Boot Errors
             if (Directory.Exists(Path.Combine(Core.DataDirectory)) == false)
                 Core.LoggerShortcuts.BootError(String.Format("Configuration error \"{0}\" is missing.", Core.DataDirectory));
@@ -1693,7 +1701,18 @@ namespace Server
 
             return true;
         }
+        public static bool GeoIPCheck()
+        {
+            string MMAccountId = Environment.GetEnvironmentVariable("AI.MMAccountId");    
+            string MMlicenseKey = Environment.GetEnvironmentVariable("AI.MMlicenseKey");
+            
+            if (MMAccountId == null || MMlicenseKey == null)
+            {
+                return false;
+            }
 
+            return true;
+        }
         private static string m_arguments;
         public static string Arguments
         {
