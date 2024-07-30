@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>Cove Invasion 2024 - Crafter's Challenge - 2nd Place</ID>
+  <Name>Cove Invasion 2024 - Crafter's Challenge - 2nd Place</Name>
+  <Components Count="2">
+    <Component Flags="0x03">
+      <ItemID>4643</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Hue>2207</Hue>
+      <Name>Cove Invasion 2024 Crafter's Challenge         2nd Prize</Name>
+    </Component>
+    <Component Flags="0x03">
+      <ItemID>8416</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>11</Z>
+      <Hue>2207</Hue>
+      <Name>Cove Invasion 2024 Crafter's Challenge         2nd Prize</Name>
+    </Component>
+  </Components>
+</AddonData>

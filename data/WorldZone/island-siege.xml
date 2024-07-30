@@ -1,0 +1,50 @@
+<WorldZone>
+  <ID>island-siege</ID>
+  <Map>Felucca</Map>
+  <MarkerOffset>4</MarkerOffset>
+  <MarkerIDLand>4962</MarkerIDLand>
+  <MarkerIDWater>942</MarkerIDWater>
+  <Area>
+    <Rectangle3D X="3290" Y="0" Z="-128" Width="1828" Height="4096" Depth="255" />
+  </Area>
+  <WrapBounds>
+    <Rectangle2D X="3290" Y="16" Width="1828" Height="4064" />
+  </WrapBounds>
+  <StartingCities>
+    <CityInfo City="Ocllo" Building="Ocllo Bank" X="3679" Y="2515" Z="0" Map="Trammel" />
+  </StartingCities>
+  <PMList Number="#1012001" SelNumber="#1012013" Map="Felucca">
+    <Entries>
+      <PMEntry X="3746" Y="2505" Z="47" Number="Ocllo" Description="" />
+      <PMEntry X="3563" Y="2139" Z="34" Number="#1012010" Description="#1005396" />
+      <PMEntry X="4467" Y="1283" Z="5" Number="#1012003" Description="#1005389" />
+      <PMEntry X="3569" Y="1228" Z="0" Number="Nujel'm" Description="" />
+    </Entries>
+  </PMList>
+  <UnstuckLocations>
+    <Point3D X="3737" Y="2588" Z="40" />
+  </UnstuckLocations>
+  <StrandedLocations>
+    <Point2D X="4512" Y="3936" />
+    <Point2D X="4440" Y="3120" />
+    <Point2D X="4192" Y="3672" />
+    <Point2D X="4720" Y="3472" />
+    <Point2D X="3744" Y="2768" />
+    <Point2D X="3480" Y="2432" />
+    <Point2D X="3560" Y="2136" />
+    <Point2D X="3792" Y="2112" />
+    <Point2D X="4576" Y="1456" />
+    <Point2D X="4680" Y="1152" />
+    <Point2D X="4304" Y="1104" />
+    <Point2D X="4496" Y="984" />
+    <Point2D X="4248" Y="696" />
+    <Point2D X="4040" Y="616" />
+    <Point2D X="3896" Y="248" />
+    <Point2D X="4176" Y="384" />
+    <Point2D X="3672" Y="1104" />
+    <Point2D X="3520" Y="1152" />
+    <Point2D X="3720" Y="1360" />
+    <Point2D X="3448" Y="208" />
+    <Point2D X="3432" Y="608" />
+  </StrandedLocations>
+</WorldZone>

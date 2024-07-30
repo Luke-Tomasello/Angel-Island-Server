@@ -1,0 +1,472 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{0C99688B-4730-4AF8-93FD-BBE65801FB41}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>Server</AssemblyName>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Server</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>..\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;DEBUG;LOAD_SCRIPTS_DLL;  </DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>618888</NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>full</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+    <PlatformTarget>x64</PlatformTarget>
+    <WarningsAsErrors>0114</WarningsAsErrors>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>..\</OutputPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE;LOAD_SCRIPTS_DLL;  </DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>false</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>618888</NoWarn>
+    <Optimize>true</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>none</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+    <PlatformTarget>x64</PlatformTarget>
+    <WarningsAsErrors>0114</WarningsAsErrors>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetZone>LocalIntranet</TargetZone>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>false</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+    <Reference Include="System.Data">
+      <Name>System.Data</Name>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Name>System.XML</Name>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Accounting\Account.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Attributes.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Body.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ClientVersion.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Cliloc.enu.cs" />
+    <Compile Include="Combat\AggressorInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Commands.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ContextMenus\ContextMenu.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ContextMenus\ContextMenuEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ContextMenus\OpenBackpackEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ContextMenus\PaperdollEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DefensiveSpell.cs" />
+    <Compile Include="Diagnostics\BaseProfile.cs" />
+    <Compile Include="Diagnostics\GumpProfile.cs" />
+    <Compile Include="Diagnostics\LogHelper.cs" />
+    <Compile Include="Diagnostics\PacketProfile.cs" />
+    <Compile Include="Diagnostics\TargetProfile.cs" />
+    <Compile Include="Diagnostics\TimerProfile.cs" />
+    <Compile Include="Effects.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EventLog.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EventSink.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ExpansionInfo.cs" />
+    <Compile Include="Geometry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Guilds\Guild.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\Gump.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpAlphaRegion.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpBackground.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpButton.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpCheck.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpGroup.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpHtml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpHtmlLocalized.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpImage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpImageTiled.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpLabel.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpLabelCropped.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpPage.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpRadio.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\GumpTextEntry.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Gumps\RelayInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HuePickers\HuePicker.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HuePickers\HuePickerCollection.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IEntity.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Insensitive.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Interfaces.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Item.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ItemBounds.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Items\BankBox.cs" />
+    <Compile Include="Items\BaseMulti.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Items\Container.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Items\SecureTradeContainer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Items\VirtualHair.cs" />
+    <Compile Include="JobManager.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="KeywordList.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Map.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Menus\IMenu.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Menus\ItemLists\ItemListMenu.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Menus\MenuCollection.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Menus\Questions\QuestionMenu.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Misc\WOW6432Node.cs" />
+    <Compile Include="Mobile.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Mobiles\BaseVendor.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Movement\Movement.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MultiData.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\BufferPool.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\ByteQueue.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\Compression.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\EncodedPacketHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\EncodedReader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\Listener.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\MessagePump.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\NetState.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\PacketHandler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\PacketHandlers.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\PacketProfile.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\PacketReader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\Packets.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\PacketWriter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\SendQueue.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Network\SocketPool.cs" />
+    <Compile Include="Notoriety.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ObjectPropertyList.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Party.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Point3DList.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Poison.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Prompts\Prompt.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="QuestArrow.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Race.cs" />
+    <Compile Include="Region.cs" />
+    <Compile Include="ScriptCompiler.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Sector.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SecureTrade.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Serial.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Serialization.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Skills.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Targeting\LandTarget.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Targeting\MultiTarget.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Targeting\StaticTarget.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Targeting\Target.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Targeting\TargetCancelType.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Targeting\TargetFlags.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TileData.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TileList.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TileMatrix.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TileMatrixPatch.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="TimedLock.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Timer.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Utility.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="VirtueInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="World.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <None Include="app.config" />
+    <None Include="AUTHORS" />
+    <None Include="COPYING" />
+    <None Include="Properties\app.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>"$(TargetDir)"net5.0\BuildInfo.exe</PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>

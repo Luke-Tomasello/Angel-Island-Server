@@ -1,0 +1,209 @@
+# Song: Toto - Africa
+# Author: Galois
+# Price: 10000
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: False
+
+#Chords
+say '[play -e -a -cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.31'
+say '[play fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14'
+say '[play eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.28'
+
+say '[play -e -a -cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.31'
+say '[play fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14'
+say '[play eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.28'
+wait 9000
+
+#Verse 1
+#stanza 1
+say '[play -ds -b 0.14 fs 0.14 -fsh 0.14 fs 0.13 -b -dsh fs 0.31 -b 0.14 -fs 0.13'
+say '[play -ds -dsh fs 0.14 -fsh 0.14 -fs 0.29 -b -dsh gs 0.31 as 0.14 b 0.14'
+say '[play -ds -gs 0.31 -ds 0.30 -b -gsh 0.31 -b 0.29'
+say '[play -fs -b -dsh 0.14 ds 0.44 -b -dsh e 0.31 -fsh 0.14'
+say '[play fs 0.31 -fs 0.14 e 0.29 -a -cs e 0.31 ds 0.29 -fs -0 -a csl 0.14 -e 0.14 -gs 0.31'
+say '[play -e -gs csl 0.31 -b 0.29 -ds -gs ds 0.62 -ds -gs 0.14 csl 0.14 -b 0.31'
+
+say '[play -e -a -cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.62'
+wait 11000
+
+#stanza 2
+say '[play -ds -b 0.31 -fsh 0.14 fs 0.13 -b -dsh fs 0.31 -b 0.14 -fs 0.13'
+say '[play -ds -dsh fs 0.14 -fsh 0.14 -fs 0.29 -b -dsh gs 0.31 as 0.14 b 0.14'
+say '[play -ds -gs 0.31 -ds 0.30 -b -gsh 0.31 -b 0.29'
+say '[play -fs -b -dsh 0.14 ds 0.44 -b -dsh e 0.31 -fsh 0.14'
+say '[play fs 0.31 -fs 0.14 e 0.29 -a -cs e 0.31 ds 0.29 -fs -0 -a csl 0.14 -e 0.14 -gs 0.31'
+say '[play -e -gs csl 0.31 -b 0.29 -ds -gs ds 0.62 -ds -gs 0.14 csl 0.14 -b 0.31'
+
+say '[play -e -a -cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.62'
+wait 11000
+
+#stanza 3 / bridge
+say '[play -ds -b 0.31 -fsh 0.14 fs 0.13 -b -dsh fs 0.31 -b 0.14 -fs 0.13'
+say '[play -ds -dsh fs 0.14 -fsh 0.14 -fs 0.29 -b -dsh gs 0.31 as 0.14 b 0.14'
+say '[play -ds -gs 0.31 -ds 0.30 -b -gsh 0.31 -b 0.29'
+say '[play -gs b dsh 0.14 +dsh 0.31 cs eh 0.14 -b -gs 0.30 dsh fsh 0.29'
+say '[play -a cs fsh 0.14 eh 0.29 -a cs eh 0.31 dsh 0.13 -a cs eh 0.29'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.62'
+wait 7000
+
+#Chorus
+say '[play -csl -cs 0.45 csl cs 0.45 -csl -cs 0.45 csl cs 0.45 -csl -cs 0.31 -csl -cs 0.31'
+say '[play -fs csl a 0.29 -cs fs ah 0.14 +ah 0.12 -fs cs fs ah 0.31 ah 0.12 -d dh fsh +ah 0.45 -d -dh 0.29'
+say '[play -d fsh ah 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.29'
+say '[play -a -ah 0.14 -e 0.14 gsh 0.12 -e b eh +gsh 0.31 -e 0.14 e gs 0.13 -b -eh a 0.45 e gs 0.29'
+
+say '[play -fs csl fs a 0.29 -cs fs +ah 0.29 -fs cs fs ah 0.14 +ah 0.14 ah 0.12 -d dh fsh +ah 0.14 ah 0.14 +ah 0.14 -d -dh 0.29'
+say '[play -d fsh ah 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.14 ah 0.13'
+say '[play -a -ah +ah 0.14 -e gsh 0.29 -e b eh +gsh 0.31 -e 0.14 e gs 0.13 -b -eh a 0.45 e gs 0.29'
+
+say '[play -fs csl a 0.29 -cs fs ah 0.28 -fs cs fs ah 0.31 a 0.13 -d dh fsh 0.45 -d -dh 0.29'
+say '[play -d fsh ah 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.29'
+say '[play -a -ah 0.14 -e 0.14 gsh 0.12 -e b eh +gsh 0.31 -e 0.14 e gs 0.13 -b -eh a 0.45 e gs 0.29'
+
+say '[play -fs csl a 0.29 -cs fs ah 0.14 +ah 0.12 -fs cs fs ah 0.31 ah 0.12 -d dh fsh +ah 0.43 -d -dh ah 0.14 +ah 0.13'
+say '[play -d fs 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.14 ah 0.13'
+say '[play -a -ah +ah 0.13 -cs e gsh 0.43 -cs b eh +gsh 0.63 -cs -gsh 0.14 fsh 0.14 eh 0.29'
+say '[play -e b eh gsh 0.63 -e -b 0.14 ah 0.14 gsh 0.29 -fs a cs fsh 0.45 -fs 0.14 -cs -fsh 0.13 -gs b eh 0.45'
+wait 27000
+
+#Chords
+say '[play -e -a cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.31'
+say '[play fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14'
+say '[play eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.28'
+
+say '[play -e -a -cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.31'
+say '[play fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14'
+say '[play eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.28'
+wait 9000
+
+#Verse 2
+#stanza 1
+say '[play -ds -b 0.14 fs 0.14 -fsh 0.14 fs 0.13 -b -dsh fs 0.31 -b 0.14 -fs 0.13'
+say '[play -ds -dsh fs 0.14 -fsh 0.14 -fs 0.29 -b -dsh gs 0.31 as 0.14 b 0.14'
+say '[play -ds -gs 0.31 -ds 0.30 -b -gsh 0.31 -b 0.29'
+say '[play -fs -b -dsh 0.14 ds 0.44 -b -dsh e 0.31 -fsh 0.14'
+say '[play fs 0.31 -fs 0.14 e 0.29 -a -cs e 0.31 ds 0.29 -fs -0 -a csl 0.14 -e 0.14 -gs 0.31'
+say '[play -e -gs csl 0.31 -b 0.29 -ds -gs ds 0.62 -ds -gs 0.14 csl 0.14 -b 0.31'
+
+say '[play -e -a -cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.62'
+wait 11000
+
+#stanza 2
+say '[play -ds -b 0.31 -fsh 0.14 fs 0.13 -b -dsh fs 0.31 -b 0.14 -fs 0.13'
+say '[play -ds -dsh fs 0.14 -fsh 0.14 -fs 0.29 -b -dsh gs 0.31 as 0.14 b 0.14'
+say '[play -ds -gs 0.31 -ds 0.30 -b -gsh 0.31 -b 0.29'
+say '[play -fs -b -dsh 0.14 ds 0.44 -b -dsh e 0.31 -fsh 0.14'
+say '[play fs 0.31 -fs 0.14 e 0.29 -a -cs e 0.31 ds 0.29 -fs -0 -a csl 0.14 -e 0.14 -gs 0.31'
+say '[play -e -gs csl 0.31 -b 0.29 -ds -gs ds 0.62 -ds -gs 0.14 csl 0.14 -b 0.31'
+
+say '[play -e -a -cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.62'
+wait 11000
+
+#stanza 3 / bridge
+say '[play -ds -b 0.31 fs 0.29 -b -dsh fs 0.31 -b -fsh 0.14 fs 0.13'
+say '[play -ds -dsh 0.14 fs 0.14 -fs 0.13 b dsh 0.13 -b -dsh 0.13 fs cs 0.14 -as 0.13 gs b 0.14'
+say '[play -ds -gs 0.31 -ds 0.30 -b -gsh 0.31 -b 0.29'
+say '[play -gs b dsh 0.14 +dsh 0.31 cs eh 0.14 -b -gs 0.30 dsh fsh 0.29'
+say '[play -a cs fsh 0.14 eh 0.29 -a cs eh 0.31 dsh 0.13 -a cs eh 0.29'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.62'
+wait 7000
+
+#Chorus
+say '[play -csl -cs 0.45 csl cs 0.45 -csl -cs 0.45 csl cs 0.45 -csl -cs 0.31 -csl -cs 0.31'
+say '[play -fs csl a 0.29 -cs fs ah 0.14 +ah 0.12 -fs cs fs ah 0.31 ah 0.12 -d dh fsh +ah 0.45 -d -dh 0.29'
+say '[play -d fsh ah 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.29'
+say '[play -a -ah 0.14 -e 0.14 gsh 0.12 -e b eh +gsh 0.31 -e 0.14 e gs 0.13 -b -eh a 0.45 e gs 0.29'
+
+say '[play -fs csl fs a 0.29 -cs fs +ah 0.29 -fs cs fs ah 0.14 +ah 0.14 ah 0.12 -d dh fsh +ah 0.14 ah 0.14 +ah 0.14 -d -dh 0.29'
+say '[play -d fsh ah 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.14 ah 0.13'
+say '[play -a -ah +ah 0.14 -e gsh 0.29 -e b eh +gsh 0.31 -e 0.14 e gs 0.13 -b -eh a 0.45 e gs 0.29'
+
+say '[play -fs csl a 0.29 -cs fs ah 0.28 -fs cs fs ah 0.31 a 0.13 -d dh fsh 0.45 -d -dh 0.29'
+say '[play -d fsh ah 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.29'
+say '[play -a -ah 0.14 -e 0.14 gsh 0.12 -e b eh +gsh 0.31 -e 0.14 e gs 0.13 -b -eh a 0.45 e gs 0.29'
+
+say '[play -fs csl a 0.29 -cs fs ah 0.14 +ah 0.12 -fs cs fs ah 0.31 ah 0.12 -d dh fsh +ah 0.43 -d -dh ah 0.14 +ah 0.13'
+say '[play -d fs 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.14 ah 0.13'
+say '[play -a -ah +ah 0.13 -cs e gsh 0.43 -cs b eh +gsh 0.63 -cs -gsh 0.14 fsh 0.14 eh 0.29'
+say '[play -e b eh gsh 0.63 -e -b 0.14 ah 0.14 gsh 0.29 -fs a cs fsh 0.45 -fs 0.14 -cs -fsh 0.13 -gs b eh 0.45'
+wait 27000
+
+#Chords
+say '[play -e -a cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.31'
+say '[play fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14'
+say '[play eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.28'
+
+say '[play -e -a -cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.31'
+say '[play fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14'
+say '[play eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.28'
+wait 9000
+
+#Solo
+say '[play -b 0.14 dsh 0.14 cs 0.13 -b b 0.12 -dsh -fsh cs 0.14 bh 0.14 gsh 0.14 bh 0.12'
+say '[play -ds -dsh gsh 0.14 fsh 0.14 gsh 0.13 -as fsh 0.12 -dsh -fsh dsh 0.14 fsh 0.14 dsh 0.14 cs 0.13'
+say '[play -gs dsh 0.14 cs 0.14 b 0.13 -b cs 0.12 -dsh -gsh b 0.14 gs 0.14 b 0.30'
+say '[play -fs -fsh 0.31 cs 0.09 b 0.09 -b ds 0.08 -ds -fs csl 0.63'
+say '[play -a 0.14 e 0.14 a 0.09 -a cs 0.08 -cs -eh eh 0.09 dsh 0.14 cs 0.14 b 0.14 a 0.13'
+say '[play -fs gs 0.14 fs 0.30 -b b 0.13 -e -gs 0.14 a 0.31 gs 0.13 -gs fs 0.14 e 0.30 -b ds 0.12'
+say '[play -e -gs b 0.19 gs 0.19 fs 0.065 e 0.065'
+
+say '[play -e -a -cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.63'
+
+say '[play csl 0.14 -b 0.14 csl 0.13 -b ds 0.12 -ds -fs csl 0.14 ds 0.14 fs 0.14 ds 0.13 '
+say '[play -ds fs 0.14 gs 0.14 fs 0.11 -as as 0.01 b dsh 0.13 -ds -fs 0.12 gs as cs 0.29 fs gs b 0.14'
+say '[play -gs -gsh 0.45 -b 0.13 -dsh -gsh 0.63'
+
+say '[play -gs b dsh 0.14 +dsh 0.31 cs eh 0.14 -b -gs 0.30 dsh fsh 0.29'
+say '[play -a cs fsh 0.14 eh 0.29 -a cs eh 0.31 dsh 0.13 -a cs eh 0.29'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.62'
+
+say '[play -csl -cs csl 0.14 -b 0.14 csl 0.12 -cs cs e 0.14 csl 0.14 e 0.12 -csl -cs fs 0.14 gs 0.14'
+say '[play fs 0.09 e 0.09 csl 0.09 e 0.09 fs 0.09 gs 0.09 cs 0.30 -csl -cs 0.29'
+wait 21000
+
+#Chorus
+say '[play -fs csl a 0.29 -cs fs ah 0.14 +ah 0.12 -fs cs fs ah 0.31 ah 0.12 -d dh fsh +ah 0.45 -d -dh 0.29'
+say '[play -d fsh ah 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.29'
+say '[play -a -ah 0.14 -e 0.14 gsh 0.12 -e b eh +gsh 0.31 -e 0.14 e gs 0.13 -b -eh a 0.45 e gs 0.29'
+
+say '[play -fs csl fs a 0.29 -cs fs +ah 0.29 -fs cs fs ah 0.14 +ah 0.14 ah 0.12 -d dh fsh +ah 0.14 ah 0.14 +ah 0.14 -d -dh 0.29'
+say '[play -d fsh ah 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.14 ah 0.13'
+say '[play -a -ah +ah 0.14 -e gsh 0.29 -e b eh +gsh 0.31 -e 0.14 e gs 0.13 -b -eh a 0.45 e gs 0.29'
+
+say '[play -fs csl a 0.29 -cs fs ah 0.28 -fs cs fs ah 0.31 a 0.13 -d dh fsh 0.45 -d -dh 0.29'
+say '[play -d fsh ah 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.29'
+say '[play -a -ah 0.14 -e 0.14 gsh 0.12 -e b eh +gsh 0.31 -e 0.14 e gs 0.13 -b -eh a 0.45 e gs 0.29'
+
+say '[play -fs csl a 0.29 -cs fs ah 0.14 +ah 0.12 -fs cs fs ah 0.31 ah 0.12 -d dh fsh +ah 0.43 -d -dh ah 0.14 +ah 0.13'
+say '[play -d fs 0.29 -d fsh ah 0.29 -csl eh ah 0.29 -e -eh 0.14 ah 0.13'
+say '[play -a -ah +ah 0.13 -cs e gsh 0.43 -cs b eh +gsh 0.63 -cs -gsh 0.14 fsh 0.14 eh 0.29'
+say '[play -e b eh gsh 0.63 -e -b 0.14 ah 0.14 gsh 0.29 -fs a cs fsh 0.45 -fs 0.14 -cs -fsh 0.13 -gs b eh 0.45'
+wait 25000
+
+#Chords
+say '[play -e -a cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.31'
+say '[play fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14'
+say '[play eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.28'
+
+say '[play -e -a -cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.31'
+say '[play fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14'
+say '[play eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.14 cs 0.14 b 0.14 cs 0.14 fsh 0.14 eh 0.28'
+
+say '[play -e -a -cs 0.44 -e -a -cs 0.28 -e -a -cs 0.29 -cs 0.13'
+say '[play -e -a csl 0.28 -ds -gs -b 0.29 -gs -cs -eh 0.31'

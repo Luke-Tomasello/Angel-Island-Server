@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<ClassTranslator count="22">
+	<Translate>
+		<NamePart>leather chest</NamePart>
+		<LabelPart>leather tunic</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>leather arms</NamePart>
+		<LabelPart>leather sleeves</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>leather bustier arms</NamePart>
+		<LabelPart>leather bustier</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>ringmail chest</NamePart>
+		<LabelPart>ringmail tunic</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>ringmail arms</NamePart>
+		<LabelPart>ringmail sleeves</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>chain chest</NamePart>
+		<LabelPart>chainmail tunic</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>chain legs</NamePart>
+		<LabelPart>chainmail leggings</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>plate arms</NamePart>
+		<LabelPart>platemail arms</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>plate legs</NamePart>
+		<LabelPart>platemail legs</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>plate chest</NamePart>
+		<LabelPart>platemail tunic</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>plate gloves</NamePart>
+		<LabelPart>platemail gloves</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>plate gorget</NamePart>
+		<LabelPart>platemail gorget</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>dragon arms</NamePart>
+		<LabelPart>dragon sleeves</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>dragon chest</NamePart>
+		<LabelPart>dragon breastplate</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>studded bustier arms</NamePart>
+		<LabelPart>studded bustier</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>studded chest</NamePart>
+		<LabelPart>studded tunic</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>studded arms</NamePart>
+		<LabelPart>studded sleeves</LabelPart>
+	</Translate>
+	<Translate>
+		<NamePart>wooden kite shield</NamePart>
+		<LabelPart>tear kite shield</LabelPart>
+	</Translate>
+  <Translate>
+    <NamePart>base refresh potion</NamePart>
+    <LabelPart>refresh potion</LabelPart>
+  </Translate>
+  <Translate>
+    <NamePart>base cure potion</NamePart>
+    <LabelPart>cure potion</LabelPart>
+  </Translate>
+  <Translate>
+    <NamePart>base heal potion</NamePart>
+    <LabelPart>heal potion</LabelPart>
+  </Translate>
+  <Translate>
+    <NamePart>base potion</NamePart>
+    <LabelPart>potion</LabelPart>
+  </Translate>
+</ClassTranslator>

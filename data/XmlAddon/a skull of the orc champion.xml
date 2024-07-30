@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>a skull of the orc champion</ID>
+  <Name>a skull of the orc champion</Name>
+  <Components Count="2">
+    <Component Flags="0x01">
+      <ItemID>4643</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Hue>1154</Hue>
+    </Component>
+    <Component Flags="0x02">
+      <ItemID>8707</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>12</Z>
+      <Name>skull of the orc champion</Name>
+    </Component>
+  </Components>
+</AddonData>

@@ -1,0 +1,41 @@
+# Beware The Forests Mushrooms, composed by Yoko Shimomura
+# Instrument: harp
+# Prefetch: True
+# NewTimer: True
+# ConcertMode: True
+# Tempo: 0
+# Author: Bravado
+# Song: Beware The Forest's Mushrooms
+# Napster: false
+# Price: 5000
+
+say '[play v20'
+
+wait 300
+
+say '[play cs 0.12 dsh 0.12 eh 0.12 fsh 0.12 gsh 0.3 +cs 0.3 bh 0.3 gsh 0.3 ash 0.08 bh 0.08 ash 0.3'
+say '[play bh 0.3 gsh 0.12 ash 0.12 bh 0.3 ash 0.12 fsh 0.12 dsh 0.3 eh 0.3 dsh 0.08 eh 0.08 dsh 0.3'
+say '[play cs 0.12 dsh 0.12 eh 0.12 fsh 0.12 eh 0.3 dsh 0.12 eh 0.12 fsh 0.3 eh 0.08 fsh 0.08 eh 0.09'
+say '[play dsh 0.3 cs 0.3 fsh 0.3 eh 0.12 dsh 0.12 cs 0.3 dsh 0.12 eh 0.12 fsh 0.3 eh 0.08 fsh 0.08'
+say '[play eh 0.09 fsh 0.11 gsh 0.3 cs 0.01 gs 0.11 dsh 0.01 b 0.11 eh 0.01 cs 0.11 fsh 0.01 dsh 0.11'
+say '[play gsh 0.01 eh 0.23 +cs 0.01 gsh 0.23 bh 0.01 gsh 0.23 gsh 0.01 eh 0.29 ash 0.01 fsh 0.08'
+say '[play bh 0.08 ash 0.24 bh 0.01 gsh 0.23 gsh 0.01 eh 0.11 ash 0.01 fsh 0.11 bh 0.01 gsh 0.23'
+say '[play ash 0.01 fsh 0.11 +fs 0.01 cs 0.11 dsh 0.01 as 0.23 eh 0.01 cs 0.29 dsh 0.01 b 0.08 eh 0.08'
+say '[play dsh 0.24 cs 0.01 a 0.11 dsh 0.01 b 0.11 eh 0.01 cs 0.11 fsh 0.01 dsh 0.11 eh 0.01 cs 0.23'
+say '[play dsh 0.01 b 0.11 eh 0.01 cs 0.11 fsh 0.01 dsh 0.23 eh 0.01 cs 0.11 dsh 0.01 b 0.11'
+say '[play cs 0.01 a 0.24 fsh 0.01 b 0.23 eh 0.01 a 0.11 dsh 0.01 gs 0.11 cs 0.01 fs 0.23'
+say '[play dsh 0.01 gs 0.11 eh 0.01 a 0.11 fsh 0.01 b 0.23 eh 0.01 a 0.11 fsh 0.01 cs 0.11'
+say '[play gsh 0.01 dsh 0.48' 
+say '[play +cs 0.12 bh 0.12 ah 0.12 gsh 0.12 fsh 0.12 gsh 0.12 ah 0.12 bh 0.12'
+say '[play +cs 0.3 +fsh 0.3 +eh 0.3 +cs 0.3 +dsh 0.09 +eh 0.09 +dsh 0.3 +eh 0.3'
+say '[play +cs 0.12 +dsh 0.12 +eh 0.3 +dsh 0.12 bh 0.12 gsh 0.3 ah 0.3 gsh 0.08 ah 0.08'
+say '[play gsh 0.3 fsh 0.12 gsh 0.12 ah 0.12 bh 0.12 ah 0.3 gsh 0.12 ah 0.12 bh 0.3'
+say '[play ah 0.08 bh 0.08 ah 0.12 fsh 0.36 bh 0.3 ah 0.12 gsh 0.12 fsh 0.3'
+say '[play gsh 0.12 ah 0.12 bh 0.3 ah 0.08 bh 0.08 ah 0.08 bh 0.3'
+say '[play +cs 0.12 bh 0.12 ah 0.12 gsh 0.12 fsh 0.01 fs 0.11 gsh 0.01 gs 0.11 ah 0.01 a 0.11'
+say '[play bh 0.01 b 0.11 +cs 0.01 cs 0.29 +fsh 0.01 fsh 0.29 +ah 0.01 ah 0.29 +gsh 0.01 gsh 0.11'
+say '[play +fsh 0.01 fsh 0.11 +eh 0.01 eh 0.29 +cs 0.01 cs 0.29 bh 0.01 b 0.29 ah 0.01 a 0.29'
+say '[play gsh 0.01 gs 0.29 ah 0.01 a 0.29 bh 0.01 b 0.29 +cs 0.01 fsh 0.11 gsh 0.12 ah 0.12'
+say '[play bh 0.12 +cs 0.3 +fsh 0.3 +ah 0.01 fsh 0.3 +gsh 0.12 +fsh 0.12 +eh 0.01 gsh 0.3'
+say '[play +cs 0.3 +fsh 0.01 ah 0.3 +eh 0.12 +dh 0.12 +cs 0.3 bh 0.01 gsh 0.3 ah 0.01 fsh 0.3'
+say '[play gsh 0.01 eh 0.29 ah 0.01 fsh 0.29 bh 0.01 gsh 0.29 ash 0.01 fsh 0.3'

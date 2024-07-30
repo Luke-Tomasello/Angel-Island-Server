@@ -1,0 +1,31 @@
+#
+# Dungeon Strut, performed by Pastor Wydstrin: Jan 2022
+# Author: Pastor Wydstrin
+# Place: 0
+# Song: Dungeon Strut
+# Instrument: lapharp
+# Price: 222
+#
+say '[play f 0.1 fh 0.1 gs 0.1 fh 0.1 f 0.3 gs 0.3 f 0.3 gs 0.1 gsh 0.1 f 0.1 gsh 0.1 gs 0.3'
+wait 3500
+say '[play e 0.1 eh 0.1 g 0.1 eh 0.1 e 0.3 g 0.3 e 0.3 g 0.1 gh 0.1 e 0.1 gh 0.1 g 0.3'
+wait 3500
+say '[play f 0.1 fh 0.1 gs 0.1 fh 0.1 f 0.3 gs 0.1 ash 0.1 f 0.1 ch 0.1 gs 0.1 gsh 0.1 f 0.1 gsh 0.1 gs 0.1 fh 0.1'
+wait 3500
+say '[play e 0.1 eh 0.1 g 0.1 eh 0.1 e 0.3 g 0.1 gsh 0.1 e 0.1 ash 0.1 g 0.1 gh 0.1 e 0.1 gh 0.1 g 0.1 eh 0.1'
+wait 3500
+# 2nd line
+say '[play f 0.1 fh 0.1 gs 0.1 fh 0.1 f 0.3 gs 0.1 ash 0.1 f 0.1 ch 0.1 gs 0.1 gsh 0.1 f 0.1 gsh 0.1 gs 0.1 fh 0.1'
+wait 3500
+say '[play e 0.1 eh 0.1 g 0.1 eh 0.1 e 0.3 g 0.1 gsh 0.1 e 0.1 ash 0.1 g 0.1 gh 0.1 e 0.1 gh 0.1 g 0.1 eh 0.1'
+wait 3500
+say '[play f 0.1 fh 0.1 gs 0.1 fh 0.1 f 0.3 gs 0.1 ch 0.1 f 0.1 ash 0.1 gs 0.1 gsh 0.1 f 0.1 gsh 0.1 gs 0.1 ash 0.1'
+wait 3500
+say '[play e 0.1 eh 0.1 g 0.1 eh 0.1 e 0.3 g 0.1 ash 0.1 e 0.1 gsh 0.1 g 0.1 gh 0.1 e 0.1 gh 0.1 g 0.1 ch 0.1'
+wait 3500
+# 3rd line
+say '[play f 0.1 fh 0.1 gs 0.1 fh 0.1 f 0.3 gs 0.3 f 0.3 gs 0.1 gsh 0.1 f 0.1 gsh 0.1 gs 0.3'
+wait 3500
+say '[play e 0.1 eh 0.1 g 0.1 eh 0.1 e 0.3 g 0.3 e 0.3 g 0.1 gh 0.1 e 0.1 gh 0.1 g 0.3'
+wait 3500
+say '[play f 0.3 gs 0.3 f 0.3 gs 0.3 f 0.3 gs 0.3 f 0.1 gs 0.1 gs 0.3 gs 0.0 gs 0.0 gs'

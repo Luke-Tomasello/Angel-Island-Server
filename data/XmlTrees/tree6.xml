@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>tree6</ID>
+  <Name>tree6</Name>
+  <Components Count="12">
+    <Component Flags="0x00">
+      <ItemID>1</ItemID>
+      <X>-2</X>
+      <Y>-2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3442</ItemID>
+      <X>2</X>
+      <Y>-2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3455</ItemID>
+      <X>2</X>
+      <Y>-2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3454</ItemID>
+      <X>1</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3441</ItemID>
+      <X>1</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3453</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3440</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>1</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3439</ItemID>
+      <X>-1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3452</ItemID>
+      <X>-1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3451</ItemID>
+      <X>-2</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>3438</ItemID>
+      <X>-2</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+  </Components>
+</AddonData>

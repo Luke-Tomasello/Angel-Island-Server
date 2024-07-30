@@ -1,0 +1,101 @@
+# Author: Loser Girl
+# Song: Chase
+# Instrument: lapharp
+# Prefetch: true
+# NewTimer: true
+# Price: 500
+# Napster: false
+# Tempo: 10 
+say '[play tempo 100 
+wait 1000
+say '[play cl e -g 0.29 d f -a 0.29 f a cl 0.61 cl e -g 0.62 -a -e 0.48'
+say 'We all love U O'
+wait 3400
+say 'You all know I do'
+say '[play a c e 0.27 b dh f 0.27 c eh g 0.59 g b d 0.59 a c e 0.48'
+wait 3400
+say 'Some say its, too. much. dude....'
+say '[play -a -e 0.20 -d -g 0.29 -d -g 0.61 -a -e 0.61 -cl -f 0.60 -f -cl 0.73'
+wait 3400
+say 'OH but I dont care I say I dont care!'
+say '[play cl e -g 0.29 d f -a 0.28 -a f a cl 0.31 -b 0.31 -c cl e -g 0.31 -e 0.29 -a -e 0.31 -d 0.28'
+wait 2500
+say '[play -cl a c e 0.28 -d b dh f 0.28 -e c eh g 0.31 -f 0.28 -d g b d 0.31 -g 0.28 -a a c e 0.48'
+wait 4000
+say '[play tempo 400
+wait 500
+say '[play -e -f -g -a -b cl d e f g a b c'
+say '[play -g -a -b cl d e f g a b c'
+say 'let me take you back!'
+say '[play cl d e f g a b c'
+say '[play -e -f -g -a -b cl d e f g a b c
+say '[play -e -f -g -a -b cl d e f g a b c'
+say '[play cl d e f g a b c'
+say 'WAY Back!'
+say '[play -e -f -g -a -b cl d e f g a b c'
+say 'Back in da time!'
+say '[play -e -f -g -a -b cl d e f g a b c'
+say '[play -e -f -g -a -b cl d e f g a b c'
+wait 7500
+say '[play tempo 900
+say '[play cl e g d f -a e d f a c f a c d g e dh eh fh a f e f g e c dh eh fh gh f' 
+say '[play g a b a b b g c cl a ah e g f a a b c c e cl f e fh e c a' 
+say '[play e fh e c a d cl f g b c g' ah e g f a a b c g d f e f g gh' 
+say '[play a b c dh eh fh a f e f g e c dh eh fh ch a b a b b g c'
+wait 7000
+say '[play cl d f e f g a b a g f g a b c g f c b d a' 
+say '[play a c e b d f e -e dh e g f a a b c c e cl f e'
+say '[play fh e c a d cl f g b c g e d f a c f a c'
+say '[play cl d c gh -e -f  b c dh eh fh gh -f -b -g c eh dh fh cl -a d -b e cl f -g -e'
+say '[play d g e dh eh fh a f -e -f -g e c dh eh fh gh f g a b -a -b b g c cl a dh b -b -a d e f' 
+say '[play -f -g -a -b cl g a b -g -f eh gh fh -a e f g a c b a g f e d -e a -b cl d -g f -e -f'
+wait 1000
+#dclick 0x4000D842
+wait 1000
+#dclick 0x4000D842
+wait 1000
+#dclick 0x4000D842
+wait 1000
+#dclick 0x4000D842
+wait 1000
+#dclick 0x4000D842
+wait 5000
+#dclick 0x4000D842
+wait 5000
+#dclick 0x4000D842
+say '[play -f -g -cl -d -f -e -f -g -a -b -a -g -f -g -a -b -c -g -f -c -b -d -a -a -c -e -b -d'
+wait 2000
+#dclick 0x4000D842
+say '[play -f -e -e -dh -e -g -f -a -a -b -c -c -e -cl -f -e -fh -e -c -a -d -cl -f -g -b -c -g' 
+wait 3000
+#dclick 0x4000D842
+say '[play -e -d -f -a -c -f -a -c -d -g -e -dh -eh -fh -a -f -e -f -g -e -c -dh -eh -fh -gh -f d cl' 
+wait 1000
+#dclick 0x4000D842
+wait 1000
+#dclick 0x4000D842
+wait 1000
+#dclick 0x4000D842
+wait 1000
+#dclick 0x4000D842
+say '[play -g -a -b -a -b -b -g -c -cl -a' e 0.3 b 0.3 eh 0.3 d 0.4 a 0.4 dh 0.4 
+wait 1000
+#dclick 0x4000D842
+wait 1000
+#dclick 0x4000D842
+wait 1000
+#dclick 0x4000D842
+wait 1000
+#dclick 0x4000D842
+say '[play cl 0.5 g 0.5 c 0.5
+wait 1000
+say '[play cl 0.3 g 0.3 c 0.3
+#dclick 0x4000D842
+wait 300
+#dclick 0x4000D842
+wait 300
+#dclick 0x4000D842
+wait 300
+#dclick 0x4000D842
+wait 300
+#dclick 0x4000D842

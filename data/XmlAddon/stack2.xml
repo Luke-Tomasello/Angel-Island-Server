@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>stack2</ID>
+  <Name>stack2</Name>
+  <Components Count="24">
+    <Component Flags="0x04">
+      <ItemID>3117</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3561</ItemID>
+      <X>-2</X>
+      <Y>-2</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3561</ItemID>
+      <X>0</X>
+      <Y>-2</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>226</ItemID>
+      <X>0</X>
+      <Y>-2</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>4334</ItemID>
+      <X>1</X>
+      <Y>-2</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3117</ItemID>
+      <X>-1</X>
+      <Y>-1</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>230</ItemID>
+      <X>-1</X>
+      <Y>-1</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3561</ItemID>
+      <X>1</X>
+      <Y>-1</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>4338</ItemID>
+      <X>1</X>
+      <Y>-1</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3102</ItemID>
+      <X>2</X>
+      <Y>-1</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>4334</ItemID>
+      <X>-2</X>
+      <Y>0</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3091</ItemID>
+      <X>-1</X>
+      <Y>0</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>225</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>220</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3117</ItemID>
+      <X>2</X>
+      <Y>0</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3094</ItemID>
+      <X>-1</X>
+      <Y>1</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>4321</ItemID>
+      <X>0</X>
+      <Y>1</Y>
+      <Z>1</Z>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>227</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>4338</ItemID>
+      <X>2</X>
+      <Y>1</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>4334</ItemID>
+      <X>1</X>
+      <Y>2</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3561</ItemID>
+      <X>1</X>
+      <Y>2</Y>
+      <Z>1</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3703</ItemID>
+      <X>0</X>
+      <Y>-1</Y>
+      <Z>2</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3561</ItemID>
+      <X>-1</X>
+      <Y>1</Y>
+      <Z>2</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3703</ItemID>
+      <X>0</X>
+      <Y>-1</Y>
+      <Z>8</Z>
+      <Light>Circle300</Light>
+    </Component>
+  </Components>
+</AddonData>

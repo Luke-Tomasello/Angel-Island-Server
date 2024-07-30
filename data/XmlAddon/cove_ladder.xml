@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>cove_ladder</ID>
+  <Name>cove_ladder</Name>
+  <Components Count="3">
+    <Component Flags="0x00">
+      <ItemID>2209</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2207</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>12</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>2208</ItemID>
+      <X>-1</X>
+      <Y>0</Y>
+      <Z>22</Z>
+    </Component>
+  </Components>
+</AddonData>

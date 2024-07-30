@@ -1,0 +1,27 @@
+#
+# Song: Bare Necessities
+# Author: Galois
+# Instrument: lapharp
+# NewTimer: true
+# Prefetch: true
+# ConcertMode: false
+#
+
+say '[play g as 0.29 c 0.28 g dsh 0.29 0.28 ds as gh 0.29 0.3 fsh 0.28'
+say '[play as gh 0.28 -ds fh 0.14 dsh 0.14 -f 0.29 -g 0.14 dsh 0.13'
+say '[play -gs fh 0.28 c dsh 0.28 -ds fh 0.28 b dsh 0.28'
+say '[play -gs fh 0.28 fs dsh 0.14 c 0.14 -g 0.29 -f 0.14 as 0.13'
+say '[play -ds dsh 0.28 g as 0.28 -ds dsh 0.26 -csl as gh 0.28'
+say '[play -cl ch 0.13 eh ash 0.14 0.28 -c gsh 0.26 as eh gh 0.26'
+say '[play -f a fh 0.26 -g as fh 0.26 -gs b fh 0.26 -a c +fh 0.10 -as dh fh 0.14'
+
+say '[play 0.3 ash 0.26 -as fsh ch 0.29 ash 0.29'
+say '[play -ds 0.26 cs gsh ch 0.29 -as 0.28 cs ash 0.26'
+say '[play -ds gsh ch 0.28 cs ash 0.14 gh 0.14 -ds 0.29 -g 0.14 ds 0.13'
+say '[play -gs fh 0.28 c dsh 0.28 -gs fh 0.28 c dsh 0.28'
+say '[play -a ch 0.28 a +dsh 0.14 dsh 0.14 -gs 0.28 gs fh 0.28'
+say '[play -ds gh 0.26 -ds fh ash 0.28 -cl gh 0.26 -cl eh ash 0.28'
+say '[play -f gh 0.26 -f a dsh 0.14 c 0.14 -c 0.26 -c gs as 0.26'
+say '[play -ds g +dsh 0.14 dsh 0.29 fsh 0.13 -gs dsh 0.07 fsh 0.07 fh 0.07 +dsh 0.07 c 0.14 as 0.11'
+
+say '[play -ds g dsh'  

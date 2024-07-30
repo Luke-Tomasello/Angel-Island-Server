@@ -1,0 +1,42 @@
+Log start : 7/28/2024 1:24:41 AM
+Importing stables from pets.ai.export.
+An error occurred: System.IO.FileNotFoundException: Could not find file 'C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Angel-Island\bin\Debug\net6.0\pets.ai.export.stb'.
+File name: 'C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Angel-Island\bin\Debug\net6.0\pets.ai.export.stb'
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategy(FileStream fileStream, String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access)
+   at Server.Commands.StableTransfer.StableImport_OnCommand(CommandEventArgs e) in C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Angel-Island\scripts\Commands\StableTransfer.cs:line 145
+An error occurred: System.IO.FileNotFoundException: Could not find file 'C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Angel-Island\bin\Debug\net6.0\pets.ai.export.idx'.
+File name: 'C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Angel-Island\bin\Debug\net6.0\pets.ai.export.idx'
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategy(FileStream fileStream, String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access)
+   at Server.Commands.ObjectTransfer.Import(String filename, String& message) in C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Angel-Island\scripts\Commands\ObjectTransfer.cs:line 131
+Completed in 1.6019148 seconds, 3 entries logged
+Log start : 7/28/2024 9:26:16 PM
+Importing stables from pets.ai.export.
+An error occurred: System.IO.FileNotFoundException: Could not find file 'C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\bin\Debug\net6.0\pets.ai.export.stb'.
+File name: 'C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\bin\Debug\net6.0\pets.ai.export.stb'
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategy(FileStream fileStream, String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access)
+   at Server.Commands.StableTransfer.StableImport_OnCommand(CommandEventArgs e) in C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\scripts\Commands\StableTransfer.cs:line 145
+An error occurred: System.IO.FileNotFoundException: Could not find file 'C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\bin\Debug\net6.0\pets.ai.export.idx'.
+File name: 'C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\bin\Debug\net6.0\pets.ai.export.idx'
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategy(FileStream fileStream, String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access)
+   at Server.Commands.ObjectTransfer.Import(String filename, String& message) in C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\scripts\Commands\ObjectTransfer.cs:line 131
+Completed in 1.1703059 seconds, 3 entries logged

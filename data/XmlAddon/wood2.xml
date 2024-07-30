@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>wood2</ID>
+  <Name>wood2</Name>
+  <Components Count="12">
+    <Component Flags="0x00">
+      <ItemID>7047</ItemID>
+      <X>-1</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3555</ItemID>
+      <X>0</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7049</ItemID>
+      <X>0</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7050</ItemID>
+      <X>1</X>
+      <Y>-1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>3555</ItemID>
+      <X>-1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7046</ItemID>
+      <X>-1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>6571</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7045</ItemID>
+      <X>-1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>6571</ItemID>
+      <X>-1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7059</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x00">
+      <ItemID>7042</ItemID>
+      <X>0</X>
+      <Y>2</Y>
+      <Z>0</Z>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>6571</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>13</Z>
+      <Light>Circle300</Light>
+    </Component>
+  </Components>
+</AddonData>

@@ -1,0 +1,63 @@
+#
+# The Decisive Battle FFVI, performed by a sheep: Jan 2022
+# Author: a sheep
+# Place: 1st
+# Song: The Decisive Battle FFVI
+# Instrument: lute
+# Price: 0
+#
+##A
+wait 1700
+say '[play eh c a fh c a fsh c a fh c a eh c b dh'
+wait 1700
+say '[play eh c a fh c a fsh c a fh c a eh c b dh'
+wait 1700
+say '[play eh c a fh c a fsh c a fh c a eh c b dh'
+wait 1700
+say '[play eh c a fh c a fsh c a fh c a eh c b dh'
+wait 1700
+##B
+say '[play a a eh eh dh c c b b c dh dh b b g g a 0.3 b 0.3 c 0.3 eh 0.3'
+wait 1700
+##B'
+say '[play a a eh eh dh c c b b c dh dh b b g g a 0.8'
+wait 7500
+##C
+say '[play  a 0.2 a 0.2 a 0.2 a 0.2 a 0.1 g 0.1'
+wait 1700
+##C
+say '[play  a 0.2 a 0.2 a 0.2 a 0.2 a 0.1 g 0.1'
+wait 1700
+##D
+say '[play eh ah bh ch bh ah eh c b b c a a c b c'
+wait 1700
+say '[play dh dh eh c c eh dh eh fh b c fh ah dh gs ah'
+wait 1700
+##D'
+say '[play ah eh ch bh ah eh c a b b c a a c b c'
+wait 1700
+say '[play dh dh eh c c eh dh eh fh dh gh eh ah fh bh gsh'
+wait 1700
+##E
+say '[play fh fh fh fh fh fh c c b b b c c c dh dh'
+wait 1700
+say '[play eh eh eh fh fh fh gh gh c c c c b b b a'
+wait 1700
+say '[play a a a fh fh fh c c b b b a a a g g'
+##E'
+wait 1700
+say '[play a a a a a a a a a a b b c c eh eh'
+wait 1700
+say '[play fh fh fh fh fh fh c c b b b c c c dh dh'
+wait 1700
+say '[play eh eh eh fh fh fh gh gh fsh fsh fsh gh gh gh ah ah'
+wait 1700
+say '[play ch ch ch ch ch ch cl cl ch ah gh fh c a g f'
+wait 1700
+say '[play cl cl cl cl cl cl cl cl ds ds ds ds fs fs fs fs'
+wait 1700
+say '[play b b b dh dh dh b b dh dh dh gh gh gh dh dh'
+wait 1700
+say '[play eh eh eh gh gh gh eh eh eh fh eh dh c b a gs'
+wait 1700
+loop

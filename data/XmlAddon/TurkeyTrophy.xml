@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>TurkeyTrophy</ID>
+  <Name>TurkeyTrophy</Name>
+  <Components Count="2">
+    <Component Flags="0x03">
+      <ItemID>7978</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Hue>2101</Hue>
+      <Name>Turkey Trophy</Name>
+    </Component>
+    <Component Flags="0x07">
+      <ItemID>8412</ItemID>
+      <X>0</X>
+      <Y>0</Y>
+      <Z>9</Z>
+      <Hue>2101</Hue>
+      <Name>Turkey Trophy</Name>
+      <Light>Circle300</Light>
+    </Component>
+  </Components>
+</AddonData>

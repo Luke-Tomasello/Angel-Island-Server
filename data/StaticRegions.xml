@@ -1,0 +1,1673 @@
+<StaticRegions>  
+  <!-- BEGIN Moongates -->
+  <region type="StaticRegion" map="Felucca" priority="50" name="Moongates">
+    <rect x="1330" y="1991" width="13" height="13" />
+    <rect x="1494" y="3767" width="12" height="11" />
+    <rect x="2694" y="685" width="15" height="16" />
+    <rect x="1823" y="2943" width="11" height="11" />
+    <rect x="761" y="741" width="19" height="21" />
+    <rect x="638" y="2062" width="12" height="11" />
+    <rect x="4459" y="1276" width="16" height="16" />
+    <rect x="3554" y="2132" width="18" height="18" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="EnableGuards" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="40" name="Moongate Houseblockers">
+    <rect x="1320" y="1981" width="31" height="31" />
+    <rect x="1483" y="3755" width="31" height="31" />
+    <rect x="2685" y="676" width="31" height="31" />
+    <rect x="1812" y="2932" width="31" height="31" />
+    <rect x="755" y="736" width="31" height="31" />
+    <rect x="627" y="2051" width="31" height="31" />
+    <rect x="4451" y="1267" width="31" height="31" />
+    <rect x="3547" y="2123" width="31" height="31" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Angel Island" ruleset="AngelIsland">
+    <rect x="150" y="700" width="250" height="160" />
+    <rect x="5742" y="323" width="22" height="41" />
+    <go x="354" y="836" z="20" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CannotEnter" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Britain Graveyard">
+    <rect x="1333" y="1441" width="84" height="82" />
+    <go x="1384" y="1492" z="10" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <!-- END Moongates -->
+  
+  <!-- BEGIN Towns -->
+	<region type="StaticRegion" map="Felucca" priority="50" name="Cove">
+		<rect x="2200" y="1110" width="50" height="50" />
+		<rect x="2200" y="1160" width="86" height="86" />
+		<go x="2275" y="1210" z="0" />
+		<music name="Cove" />
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="EnableGuards" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Britain">
+
+	  <rect x="1416" y="1498" width="324" height="279" zmin="-10" zmax="32768" />
+	  <rect x="1500" y="1408" width="46" height="90" />
+	  <rect x="1385" y="1538" width="31" height="239" zmin="-10" zmax="32768" />
+	  <rect x="1416" y="1777" width="324" height="60" />
+	  <rect x="1385" y="1777" width="31" height="130" />
+	  <rect x="1093" y="1538" width="292" height="369" />
+	  <go x="1495" y="1629" z="10" />
+	  <music name="Britain1" />
+	  <zrange min="0" />
+	  
+    <innrect x="1492" y="1602" width="8" height="19" />
+    <innrect x="1500" y="1610" width="8" height="16" />
+    <innrect x="1576" y="1584" width="24" height="16" />
+    <innrect x="1456" y="1512" width="16" height="16" />
+    <innrect x="1472" y="1512" width="8" height="8" />
+    <innrect x="1486" y="1684" width="8" height="8" />
+    <innrect x="1494" y="1676" width="8" height="24" />
+    <innrect x="1424" y="1712" width="8" height="24" />
+    <innrect x="1432" y="1712" width="8" height="12" />
+    <innrect x="1608" y="1584" width="24" height="8" />
+    <innrect x="1616" y="1576" width="8" height="8" />
+    <innrect x="1544" y="1760" width="16" height="16" />
+    <innrect x="1560" y="1760" width="8" height="8" />
+    
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="EnableGuards" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+    <flag name="EnableSmartGuards" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="49" name="Jhelom Islands">
+	  <rect x="1111" y="3567" width="33" height="21" />
+	  <rect x="1078" y="3588" width="124" height="121" />
+	  <rect x="1224" y="3592" width="309" height="473" />
+	  <go x="1383" y="3815" z="0" />
+	  <music name="Jhelom" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Jhelom">
+	  <rect x="1303" y="3670" width="189" height="225" />
+	  <rect x="1338" y="3895" width="74" height="28" />
+	  <rect x="1383" y="3951" width="109" height="94" />
+	  <go x="1383" y="3815" z="0" />
+	  <music name="Jhelom" />
+	  <zrange min="-20" />
+	  
+    <innrect x="1352" y="3800" width="16" height="32" />
+    <innrect x="1368" y="3808" width="8" height="16" />
+    <innrect x="1432" y="3768" width="32" height="8" />
+    <innrect x="1440" y="3776" width="24" height="8" />
+	  
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="EnableGuards" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+  </region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Minoc">
+		<rect x="2411" y="366" width="135" height="241" />
+		<rect x="2548" y="495" width="72" height="55" />
+		<rect x="2564" y="585" width="3" height="42" />
+		<rect x="2567" y="585" width="61" height="61" />
+		<rect x="2499" y="627" width="68" height="63" />
+		<go x="2466" y="544" z="0" />
+		<music name="Minoc" />
+
+		<innrect x="2457" y="397" width="40" height="8" />
+		<innrect x="2465" y="405" width="8" height="8" />
+		<innrect x="2481" y="405" width="8" height="8" />
+
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="EnableGuards" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Ocllo">
+		<rect x="3587" y="2456" width="119" height="99" />
+		<rect x="3706" y="2460" width="2" height="95" />
+		<rect x="3587" y="2555" width="106" height="73" />
+		<rect x="3590" y="2628" width="103" height="58" />
+		<rect x="3693" y="2555" width="61" height="144" />
+		<rect x="3754" y="2558" width="7" height="141" />
+		<rect x="3761" y="2555" width="7" height="144" zmin="-32768" zmax="51" />
+		<rect x="3695" y="2699" width="66" height="13" />
+		<go x="3650" y="2519" z="0" />
+		<music name="Ocllo" />
+
+		<innrect x="3664" y="2608" width="16" height="16" />
+		<innrect x="3664" y="2640" width="8" height="16" />
+		<innrect x="3672" y="2648" width="8" height="8" />
+
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Trinsic">
+		<rect x="1856" y="2636" width="75" height="28" />
+		<rect x="1816" y="2664" width="283" height="231" />
+		<rect x="2099" y="2782" width="18" height="25" />
+		<rect x="1970" y="2895" width="47" height="32" />
+		<rect x="1796" y="2696" width="20" height="67" zmin="0" zmax="32768" />
+		<rect x="1800" y="2796" width="16" height="52" zmin="0" zmax="32768" />
+		<go x="1867" y="2780" z="0" />
+		<music name="Trinsic" />
+		<innrect x="1834" y="2728" width="22" height="16" />
+		<innrect x="2024" y="2784" width="16" height="20" />
+		<innrect x="2026" y="2804" width="14" height="2" />
+		<innrect x="2024" y="2806" width="16" height="7" />
+		<innrect x="1923" y="2786" width="12" height="22" />
+		<innrect x="1935" y="2786" width="7" height="14" />
+
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="EnableGuards" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Vesper">
+		<rect x="2893" y="598" width="121" height="50" />
+		<rect x="2816" y="648" width="249" height="365" />
+		<rect x="2734" y="944" width="82" height="4" />
+		<rect x="2728" y="948" width="88" height="53" />
+		<go x="2899" y="676" z="0" />
+		<music name="Vesper" />
+
+		<innrect x="2952" y="864" width="16" height="32" />
+		<innrect x="2968" y="872" width="8" height="16" />
+		<innrect x="2776" y="952" width="16" height="32" />
+		<innrect x="2768" y="960" width="8" height="16" />
+		<innrect x="2892" y="901" width="16" height="19" />
+		<innrect x="2908" y="904" width="8" height="8" />
+
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Yew">
+		<rect x="92" y="656" width="349" height="225" />
+		<rect x="441" y="746" width="216" height="135" />
+		<rect x="258" y="881" width="399" height="380" />
+		<rect x="657" y="922" width="42" height="307" />
+		<rect x="657" y="806" width="17" height="28" />
+		<rect x="718" y="874" width="38" height="22" />
+		<go x="546" y="992" z="0" />
+		<music name="Yew" />
+		<zrange min="0" max="39" />
+
+		<innrect x="600" y="808" width="24" height="24" />
+
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Wind">
+		<rect x="5294" y="19" width="72" height="120" />
+		<rect x="5132" y="58" width="81" height="68" />
+		<rect x="5197" y="126" width="55" height="78" />
+		<rect x="5132" y="3" width="70" height="55" />
+		<rect x="5252" y="112" width="42" height="58" />
+		<rect x="5213" y="98" width="39" height="28" />
+		<rect x="5279" y="57" width="15" height="55" />
+		<rect x="5252" y="170" width="32" height="8" />
+		<rect x="5286" y="25" width="8" height="32" />
+		<rect x="5252" y="178" width="20" height="5" />
+		<rect x="5252" y="183" width="10" height="10" />
+		<go x="5223" y="190" z="5" />
+		<music name="Wind" />
+
+		<innrect x="5159" y="15" width="25" height="9" />
+		<innrect x="5159" y="24" width="9" height="16" />
+		<innrect x="5175" y="24" width="9" height="8" />
+		<innrect x="5212" y="159" width="9" height="24" />
+		<innrect x="5221" y="171" width="7" height="12" />
+		<innrect x="5206" y="164" width="6" height="15" />
+		<innrect x="5303" y="28" width="16" height="14" />
+
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Serpent's Hold">
+		<rect x="2868" y="3324" width="205" height="195" />
+		<go x="3010" y="3371" z="15" />
+		<music name="Serpents" />
+		<zrange min="0" />
+
+		<innrect x="2960" y="3400" width="16" height="16" />
+		<innrect x="2968" y="3416" width="8" height="16" />
+		<innrect x="3008" y="3450" width="14" height="14" />
+
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Skara Brae">
+		<rect x="538" y="2107" width="150" height="190" />
+		<go x="632" y="2233" z="0" />
+		<music name="Skarabra" />
+
+		<innrect x="600" y="2232" width="16" height="24" />
+		<innrect x="592" y="2240" width="8" height="16" />
+		<innrect x="616" y="2240" width="8" height="16" />
+		<innrect x="552" y="2168" width="16" height="24" />
+		<innrect x="568" y="2168" width="8" height="8" />
+
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="EnableGuards" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Nujel'm">
+		<rect x="3475" y="1000" width="360" height="435" />
+		<go x="3732" y="1279" z="0" />
+		<music name="Nujelm" />
+		<zrange min="0" />
+		<innrect x="3736" y="1184" width="16" height="23" />
+		<innrect x="3728" y="1192" width="8" height="15" />
+		<innrect x="3728" y="1288" width="23" height="15" />
+		<innrect x="3728" y="1303" width="16" height="9" />
+		<innrect x="3728" y="1312" width="12" height="8" />
+		<innrect x="3728" y="1320" width="16" height="23" />
+		<innrect x="3744" y="1328" width="7" height="15" />
+		<innrect x="3760" y="1216" width="12" height="24" />
+		<innrect x="3772" y="1220" width="4" height="16" />
+		<innrect x="3776" y="1224" width="8" height="8" />
+		<innrect x="3728" y="1248" width="16" height="24" />
+		<innrect x="3744" y="1264" width="8" height="8" />
+		<innrect x="3744" y="1248" width="8" height="8" />
+
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="EnableGuards" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Moonglow">
+		<rect x="4535" y="844" width="20" height="3" />
+		<rect x="4530" y="847" width="31" height="61" />
+		<rect x="4521" y="914" width="56" height="49" />
+		<rect x="4278" y="915" width="54" height="19" />
+		<rect x="4283" y="944" width="53" height="73" />
+		<rect x="4377" y="1015" width="59" height="37" zmin="-10" zmax="32768" />
+		<rect x="4367" y="1050" width="142" height="145" />
+		<rect x="4539" y="1036" width="27" height="18" />
+		<rect x="4517" y="1053" width="23" height="22" />
+		<rect x="4389" y="1198" width="47" height="39" />
+		<rect x="4466" y="1211" width="32" height="25" />
+		<rect x="4700" y="1108" width="17" height="18" />
+		<rect x="4656" y="1127" width="26" height="13" />
+		<rect x="4678" y="1162" width="25" height="25" />
+		<rect x="4613" y="1196" width="23" height="22" />
+		<rect x="4646" y="1212" width="14" height="17" />
+		<rect x="4677" y="1214" width="26" height="22" />
+		<rect x="4622" y="1316" width="22" height="24" />
+		<rect x="4487" y="1353" width="59" height="21" />
+		<rect x="4477" y="1374" width="69" height="35" />
+		<rect x="4659" y="1387" width="40" height="40" />
+		<rect x="4549" y="1482" width="29" height="27" />
+		<rect x="4405" y="1451" width="23" height="23" />
+		<rect x="4483" y="1468" width="21" height="13" />
+		<go x="4442" y="1172" z="0" />
+		<music name="Moonglow" />
+		<zrange min="0" />
+
+		<innrect x="4384" y="1152" width="8" height="24" />
+		<innrect x="4392" y="1160" width="16" height="8" />
+		<innrect x="4400" y="1152" width="8" height="8" />
+		<innrect x="4480" y="1056" width="8" height="16" />
+		<innrect x="4488" y="1060" width="4" height="8" />
+		<innrect x="4476" y="1060" width="4" height="8" />
+
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="EnableGuards" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Magincia">
+	  <rect x="3653" y="2046" width="27" height="48" />
+	  <rect x="3752" y="2046" width="52" height="48" />
+	  <rect x="3680" y="2045" width="72" height="49" />
+	  <rect x="3652" y="2094" width="160" height="180" />
+	  <rect x="3649" y="2256" width="54" height="47" />
+	  <go x="3714" y="2220" z="20" />
+	  <music name="Magincia" />
+	  
+    <innrect x="3680" y="2152" width="24" height="8" />
+    <innrect x="3720" y="2216" width="16" height="16" />
+    
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="EnableGuards" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+	<region type="StaticRegion" map="Felucca" priority="50" name="Buccaneer's Den">
+		<rect x="2612" y="2057" width="164" height="210" />
+		<rect x="2604" y="2065" width="8" height="189" zmin="0" zmax="32768" />
+		<go x="2706" y="2163" z="0" />
+		<music name="Bucsden" />
+		<guards disabled="true" />
+
+		<innrect x="2712" y="2080" width="16" height="16" />
+		<innrect x="2712" y="2096" width="8" height="8" />
+		<innrect x="2664" y="2232" width="24" height="8" />
+		<innrect x="2672" y="2240" width="16" height="8" />
+
+		<flag name="EnableStuckMenu" />
+		<flag name="CanUsePotions" />
+		<flag name="CanRessurect" />
+		<flag name="EnableMusic" />
+		<flag name="AllowTravelSpellsInRegion" />
+	</region>
+  <!-- END Towns -->
+  
+  <!-- BEGIN T2A Towns -->
+  <region type="StaticRegion" map="Felucca" priority="50" name="Delucia">
+    <rect x="5123" y="3942" width="192" height="122" />
+    <rect x="5147" y="4064" width="125" height="20" />
+    <rect x="5235" y="3930" width="80" height="12" />
+    <innrect x="5194" y="4053" width="10" height="20" />
+    <go x="5228" y="3978" z="37" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="EnableGuards" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Papua">
+    <rect x="5639" y="3095" width="192" height="223" />
+    <rect x="5831" y="3237" width="20" height="30" />
+    <innrect x="5757" y="3150" width="24" height="24" />
+    <go x="5769" y="3176" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="EnableGuards" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <!-- END T2A Towns -->
+  
+  <!-- BEGIN Dungeons -->
+  <region type="StaticRegion" map="Felucca" priority="50" name="Covetous" ruleset="Dungeon">
+    <rect x="5376" y="1793" width="201" height="255" />
+    <rect x="5576" y="1791" width="57" height="257" />
+    <music name="Dungeon9" />
+    <go x="5456" y="1862" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Deceit" ruleset="Dungeon">
+    <rect x="5122" y="518" width="248" height="252" />
+    <music name="Dungeon9" />
+    <go x="5187" y="635" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Despise" ruleset="Dungeon">
+    <rect x="5377" y="516" width="254" height="506" />
+    <music name="Dungeon9" />
+    <go x="5501" y="570" z="59" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Destard" ruleset="Dungeon">
+    <rect x="5120" y="770" width="251" height="258" />
+    <music name="Dungeon9" />
+    <go x="5243" y="1004" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Hythloth" ruleset="Dungeon">
+    <rect x="5898" y="2" width="238" height="244" />
+    <music name="Dungeon9" />
+    <go x="5905" y="22" z="44" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Shame" ruleset="Dungeon">
+    <rect x="5377" y="2" width="257" height="260" />
+    <rect x="5635" y="2" width="260" height="124" />
+    <music name="Dungeon9" />
+    <go x="5395" y="126" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Wrong" ruleset="Dungeon">
+    <rect x="5633" y="511" width="253" height="510" />
+    <music name="Dungeon9" />
+    <go x="5825" y="599" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Terathan Keep" ruleset="Dungeon">
+    <rect x="5404" y="3099" width="77" height="68" />
+    <rect x="5120" y="1530" width="254" height="258" />
+    <music name="Dungeon9" />
+    <go x="5451" y="3143" z="-60" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Fire" ruleset="Dungeon">
+    <rect x="5635" y="1285" width="245" height="235" />
+    <music name="Dungeon9" />
+    <go x="5760" y="2908" z="15" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Ice" ruleset="Dungeon">
+    <rect x="5668" y="130" width="220" height="138" />
+    <rect x="5800" y="319" width="63" height="65" />
+    <rect x="5654" y="300" width="54" height="40" />
+    <music name="Dungeon9" />
+    <go x="5210" y="2322" z="30" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Khaldun" ruleset="Dungeon">
+    <rect x="5384" y="1283" width="248" height="225" />
+    <music name="Dungeon9" />
+    <go x="5395" y="126" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+    <restrictedspell name="MarkSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Misc Dungeons">
+    <rect x="5886" y="1281" width="257" height="254" />
+    <music name="Dungeon9" />
+    <go x="6032" y="1499" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <!-- END Dungeons -->
+  
+  <!-- BEGIN Special -->
+  <region type="StaticRegion" map="Felucca" priority="50" name="Jail" ruleset="Jail">
+    <rect x="5271" y="1159" width="41" height="33" />
+    <go x="5275" y="1163" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CannotEnter" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="1" name="Green Acres" ruleset="GreenAcres">
+	<rect x="5376" y="1023" width="767" height="256" zmin="-128" zmax="128" />
+	<rect x="5887" y="512" width="256" height="511" zmin="-128" zmax="128" />
+    <go x="5445" y="1153" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CannotEnter" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Britannia Royal Zoo">
+    <rect x="4478" y="1353" width="69" height="48" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="EnableGuards" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <restrictedspell name="TeleportSpell" />
+    <restrictedspell name="GateTravelSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Baby Green Acres" lightlevel="0">
+    <rect x="5120" y="256" width="15" height="255" />
+    <go x="0" y="0" z="0" />
+    <flag name="CannotEnter" />
+  </region>
+  <!-- END Special -->
+  
+  <!-- BEGIN Misc -->
+  <region type="StaticRegion" map="Felucca" priority="50" name="Cave 1">
+    <rect x="2373" y="900" width="22" height="28" />
+    <rect x="2395" y="903" width="14" height="16" />
+    <rect x="2373" y="928" width="10" height="9" />
+    <rect x="2359" y="927" width="14" height="18" />
+    <go x="2367" y="942" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Cave 2">
+    <rect x="1887" y="354" width="33" height="23" />
+    <go x="1903" y="365" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Cave 3">
+    <rect x="1925" y="307" width="18" height="18" />
+    <go x="1934" y="316" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Cave 4">
+    <rect x="2323" y="809" width="45" height="42" />
+    <go x="2345" y="830" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Britain Mine 1">
+    <rect x="1436" y="1215" width="29" height="37" />
+    <go x="1443" y="1228" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Britain Mine 2">
+    <rect x="1611" y="1175" width="51" height="29" />
+    <go x="1629" y="1189" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Minoc Cave 1">
+    <rect x="2406" y="168" width="22" height="16" />
+    <go x="2426" y="177" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Minoc Cave 2">
+    <rect x="2418" y="81" width="24" height="32" />
+    <go x="2440" y="94" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Minoc Cave 3">
+    <rect x="2447" y="39" width="42" height="28" />
+    <go x="2471" y="64" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Minoc Mine">
+    <rect x="2556" y="501" width="6" height="3" />
+    <rect x="2556" y="474" width="26" height="27" />
+    <go x="2558" y="499" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Avatar Isle Cave">
+    <rect x="4594" y="3807" width="23" height="17" />
+    <go x="4605" y="3815" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Ice Isle Cave 1">
+    <rect x="4018" y="421" width="49" height="49" />
+    <go x="4054" y="440" z="3" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Ice Isle Cave 2">
+    <rect x="4002" y="310" width="43" height="41" />
+    <rect x="4005" y="298" width="22" height="12" />
+    <go x="4030" y="325" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="North Territory Cave">
+    <rect x="1973" y="251" width="21" height="23" />
+    <go x="1984" y="262" z="8" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Yew Cave">
+    <rect x="766" y="1683" width="12" height="14" />
+    <go x="773" y="1684" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="North Territory Mine 1">
+    <rect x="1713" y="1055" width="40" height="25" />
+    <go x="1723" y="1065" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="North Territory Mine 2">
+    <rect x="1604" y="958" width="46" height="51" />
+    <go x="1638" y="974" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Mt Kendall">
+    <rect x="2552" y="448" width="71" height="59" />
+    <rect x="2547" y="380" width="43" height="68" />
+    <rect x="2590" y="413" width="33" height="35" />
+    <go x="2593" y="477" z="60" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Covetous Mine">
+    <rect x="2429" y="866" width="19" height="45" />
+    <rect x="2448" y="879" width="27" height="28" />
+    <rect x="2456" y="907" width="19" height="34" />
+    <go x="2445" y="880" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Shame Entrance">
+    <rect x="488" y="1560" width="50" height="25" />
+    <music name="Mountn_a" />
+    <go x="512" y="1566" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Hythloth Entrance">
+    <rect x="4711" y="3814" width="20" height="14" />
+    <music name="Mountn_a" />
+    <go x="4723" y="3825" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Destard Entrance">
+    <rect x="1166" y="2636" width="20" height="10" />
+    <music name="Mountn_a" />
+    <go x="1176" y="2636" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Deceit Entrance">
+    <rect x="4101" y="431" width="20" height="18" />
+    <music name="Mountn_a" />
+    <go x="4111" y="431" z="5" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Ice Entrance">
+    <rect x="1962" y="72" width="60" height="30" />
+    <music name="Mountn_a" />
+    <go x="1999" y="84" z="4" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Wrong Entrance">
+    <rect x="1939" y="215" width="134" height="137" />
+    <music name="Mountn_a" />
+    <go x="2043" y="236" z="13" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Covetous Entrance">
+    <rect x="2433" y="846" width="128" height="128" />
+    <music name="Vesper" />
+    <go x="2499" y="918" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Despise Entrance">
+    <rect x="1289" y="1064" width="32" height="37" />
+    <go x="1298" y="1081" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Despise Passage">
+    <rect x="1338" y="1060" width="51" height="62" />
+    <rect x="1354" y="1122" width="42" height="121" />
+    <rect x="1349" y="1122" width="5" height="102" />
+    <go x="1380" y="1114" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <!-- END Misc -->
+  
+  <!-- BEGIN Angel Island Custom -->
+  <region type="StaticRegion" map="Felucca" priority="150" name="fight arena" shard="AngelIsland" lightlevel="0">
+    <rect x="828" y="937" width="20" height="4" />
+    <go x="0" y="0" z="0" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="NoRecallInto" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="GateTravelSpell" />
+  </region>
+  <region type="StaticRegion" map="Trammel" priority="144" name="New Player Starting Zone" shard="AngelIsland">
+    <rect x="5700" y="940" width="65" height="60" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableGuards" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <restrictedskill name="Alchemy" />
+    <restrictedskill name="Anatomy" />
+    <restrictedskill name="AnimalLore" />
+    <restrictedskill name="ItemID" />
+    <restrictedskill name="ArmsLore" />
+    <restrictedskill name="Parry" />
+    <restrictedskill name="Begging" />
+    <restrictedskill name="Blacksmith" />
+    <restrictedskill name="Fletching" />
+    <restrictedskill name="Peacemaking" />
+    <restrictedskill name="Camping" />
+    <restrictedskill name="Carpentry" />
+    <restrictedskill name="Cartography" />
+    <restrictedskill name="Cooking" />
+    <restrictedskill name="DetectHidden" />
+    <restrictedskill name="Discordance" />
+    <restrictedskill name="EvalInt" />
+    <restrictedskill name="Healing" />
+    <restrictedskill name="Fishing" />
+    <restrictedskill name="Forensics" />
+    <restrictedskill name="Herding" />
+    <restrictedskill name="Hiding" />
+    <restrictedskill name="Provocation" />
+    <restrictedskill name="Inscribe" />
+    <restrictedskill name="Lockpicking" />
+    <restrictedskill name="Magery" />
+    <restrictedskill name="MagicResist" />
+    <restrictedskill name="Tactics" />
+    <restrictedskill name="Snooping" />
+    <restrictedskill name="Musicianship" />
+    <restrictedskill name="Poisoning" />
+    <restrictedskill name="Archery" />
+    <restrictedskill name="SpiritSpeak" />
+    <restrictedskill name="Stealing" />
+    <restrictedskill name="Tailoring" />
+    <restrictedskill name="AnimalTaming" />
+    <restrictedskill name="TasteID" />
+    <restrictedskill name="Tinkering" />
+    <restrictedskill name="Tracking" />
+    <restrictedskill name="Veterinary" />
+    <restrictedskill name="Swords" />
+    <restrictedskill name="Macing" />
+    <restrictedskill name="Fencing" />
+    <restrictedskill name="Wrestling" />
+    <restrictedskill name="Lumberjacking" />
+    <restrictedskill name="Mining" />
+    <restrictedskill name="Meditation" />
+    <restrictedskill name="Stealth" />
+    <restrictedskill name="RemoveTrap" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Broken ML Map" shard="AngelIsland" lightlevel="0">
+    <rect x="1399" y="1421" width="26" height="36" />
+    <go x="1402" y="1459" z="10" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CannotEnter" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <restrictedspell name="TeleportSpell" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="GateTravelSpell" />
+  </region>
+  <region type="StaticRegion" map="Malas" priority="144" name="Sole Survivor Winter Fortress Arena" shard="AngelIsland" lightlevel="0">
+    <rect x="2123" y="478" width="215" height="177" />
+    <go x="0" y="0" z="0" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="IOBArea" />
+    <flag name="NoGateInto" />
+    <flag name="NoGhostBlindness" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="GateTravelSpell" />
+    <restrictedskill name="Hiding" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Oc'Nivelle" shard="AngelIsland" lightlevel="0" vendoraccess="AnyoneAccess">
+    <rect x="802" y="1037" width="41" height="55" />
+    <music name="Stones2" />
+    <go x="828" y="1082" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="New Region" shard="AngelIsland" lightlevel="0">
+    <rect x="5194" y="1738" width="35" height="23" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+    <restrictedspell name="MarkSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Nujel'm Cemetery" shard="AngelIsland">
+    <rect x="802" y="1037" width="41" height="55" />
+    <music name="Stones2" />
+    <go x="3537" y="1158" z="20" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Trammel" priority="150" name="Rings" shard="AngelIsland">
+    <rect x="344" y="883" width="10" height="10" />
+    <rect x="361" y="883" width="10" height="10" />
+    <go x="0" y="0" z="0" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <restrictedspell name="TeleportSpell" />
+    <restrictedspell name="GateTravelSpell" />
+  </region>
+  <region type="StaticRegion" map="Trammel" priority="150" name="Arena" shard="AngelIsland">
+    <rect x="370" y="894" width="1" height="9" />
+    <rect x="344" y="894" width="27" height="9" />
+    <rect x="355" y="888" width="5" height="6" />
+    <rect x="355" y="882" width="5" height="5" />
+    <rect x="336" y="872" width="35" height="10" />
+    <rect x="336" y="882" width="7" height="5" />
+    <rect x="371" y="896" width="4" height="7" />
+    <rect x="368" y="860" width="3" height="13" />
+    <rect x="361" y="860" width="11" height="7" />
+    <go x="0" y="0" z="0" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <restrictedspell name="ClumsySpell" />
+    <restrictedspell name="FeeblemindSpell" />
+    <restrictedspell name="MagicArrowSpell" />
+    <restrictedspell name="WeakenSpell" />
+    <restrictedspell name="AgilitySpell" />
+    <restrictedspell name="CunningSpell" />
+    <restrictedspell name="CureSpell" />
+    <restrictedspell name="HarmSpell" />
+    <restrictedspell name="StrengthSpell" />
+    <restrictedspell name="BlessSpell" />
+    <restrictedspell name="FireballSpell" />
+    <restrictedspell name="PoisonSpell" />
+    <restrictedspell name="TelekinesisSpell" />
+    <restrictedspell name="TeleportSpell" />
+    <restrictedspell name="WallOfStoneSpell" />
+    <restrictedspell name="ArchCureSpell" />
+    <restrictedspell name="ArchProtectionSpell" />
+    <restrictedspell name="CurseSpell" />
+    <restrictedspell name="FireFieldSpell" />
+    <restrictedspell name="GreaterHealSpell" />
+    <restrictedspell name="LightningSpell" />
+    <restrictedspell name="ManaDrainSpell" />
+    <restrictedspell name="BladeSpiritsSpell" />
+    <restrictedspell name="DispelFieldSpell" />
+    <restrictedspell name="MindBlastSpell" />
+    <restrictedspell name="ParalyzeSpell" />
+    <restrictedspell name="PoisonFieldSpell" />
+    <restrictedspell name="SummonCreatureSpell" />
+    <restrictedspell name="DispelSpell" />
+    <restrictedspell name="EnergyBoltSpell" />
+    <restrictedspell name="ExplosionSpell" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="MassCurseSpell" />
+    <restrictedspell name="ParalyzeFieldSpell" />
+    <restrictedspell name="RevealSpell" />
+    <restrictedspell name="ChainLightningSpell" />
+    <restrictedspell name="EnergyFieldSpell" />
+    <restrictedspell name="FlameStrikeSpell" />
+    <restrictedspell name="GateTravelSpell" />
+    <restrictedspell name="ManaVampireSpell" />
+    <restrictedspell name="MassDispelSpell" />
+    <restrictedspell name="MeteorSwarmSpell" />
+    <restrictedspell name="EarthquakeSpell" />
+    <restrictedspell name="EnergyVortexSpell" />
+    <restrictedspell name="AirElementalSpell" />
+    <restrictedspell name="SummonDaemonSpell" />
+    <restrictedspell name="EarthElementalSpell" />
+    <restrictedspell name="FireElementalSpell" />
+    <restrictedspell name="WaterElementalSpell" />
+    <restrictedskill name="Peacemaking" />
+    <restrictedskill name="DetectHidden" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the undead stronghold of Necropolis" shard="AngelIsland" iobalignment="Undead">
+    <rect x="892" y="250" width="194" height="341" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableHousing" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="ShowIOBMessage" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Nujel'm Odd Spots " shard="AngelIsland" lightlevel="0">
+    <rect x="3509" y="1193" width="30" height="18" />
+    <rect x="3510" y="1211" width="8" height="9" />
+    <go x="0" y="0" z="0" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Vesper Cemetery" shard="AngelIsland">
+    <rect x="802" y="1037" width="41" height="55" />
+    <music name="Stones2" />
+    <go x="2765" y="866" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Memorial of the fallen" shard="AngelIsland">
+    <rect x="1305" y="492" width="70" height="68" />
+    <music name="OldUlt02" />
+    <go x="0" y="0" z="0" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="NoMurderCounts" />
+    <flag name="EnableMusic" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Fire Temple" shard="AngelIsland">
+    <rect x="4576" y="3581" width="41" height="46" />
+    <rect x="4562" y="3549" width="74" height="36" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="GateTravelSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="150" name="Esperidei's lair" shard="AngelIsland" iobalignment="Undead">
+    <rect x="1016" y="495" width="42" height="66" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="ShowIOBMessage" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="The Palm Grove" shard="AngelIsland" lightlevel="0">
+    <rect x="1732" y="3371" width="10" height="12" />
+    <go x="0" y="0" z="0" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="IsIsolated" />
+    <flag name="IsMagicIsolated" />
+    <flag name="RestrictCreatureMagic" />
+    <flag name="AllowTravelSpellsInRegion" />
+    <flag name="NoExternalHarmful" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the brigand stronghold" shard="AngelIsland" iobalignment="Brigand">
+    <rect x="2761" y="3329" width="320" height="303" />
+    <innrect x="2959" y="3400" width="15" height="17" />
+    <music name="Serpents" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="ShowIOBMessage" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the pirate stronghold at Buccaneer's Den" shard="AngelIsland" iobalignment="Pirate" vendoraccess="AnyoneAccess">
+    <rect x="2557" y="1933" width="326" height="429" />
+    <innrect x="2712" y="2080" width="8" height="24" />
+    <innrect x="2719" y="2080" width="9" height="16" />
+    <music name="Bucsden" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="ShowIOBMessage" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the savage crypts" shard="AngelIsland" iobalignment="Savage">
+    <rect x="918" y="664" width="123" height="185" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="ShowIOBMessage" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the orcish stronghold" shard="AngelIsland" iobalignment="Orcish">
+    <rect x="557" y="1424" width="179" height="129" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableHousing" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="ShowIOBMessage" />
+    <restrictedspell name="TeleportSpell" />
+    <restrictedspell name="FireFieldSpell" />
+    <restrictedspell name="BladeSpiritsSpell" />
+    <restrictedspell name="PoisonFieldSpell" />
+    <restrictedspell name="ParalyzeFieldSpell" />
+    <restrictedspell name="MeteorSwarmSpell" />
+    <restrictedspell name="EarthquakeSpell" />
+    <restrictedspell name="EnergyVortexSpell" />
+    <restrictedspell name="AirElementalSpell" />
+    <restrictedspell name="SummonDaemonSpell" />
+    <restrictedspell name="EarthElementalSpell" />
+    <restrictedspell name="FireElementalSpell" />
+    <restrictedspell name="WaterElementalSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the Council stronghold" shard="AngelIsland" ruleset="Dungeon" iobalignment="Council">
+    <rect x="5120" y="7" width="248" height="247" />
+    <innrect x="5196" y="156" width="19" height="21" />
+    <innrect x="5161" y="16" width="6" height="24" />
+    <innrect x="5166" y="16" width="18" height="8" />
+    <innrect x="5176" y="23" width="7" height="7" />
+    <innrect x="5304" y="29" width="15" height="13" />
+    <music name="Wind" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="ShowIOBMessage" />
+    <flag name="EnableMusic" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="GateTravelSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the undead stronghold" shard="AngelIsland" ruleset="Dungeon" iobalignment="Undead">
+    <rect x="5122" y="518" width="248" height="252" />
+    <music name="Dungeon9" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="ShowIOBMessage" />
+    <flag name="EnableMusic" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="GateTravelSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Island Siege" shard="AngelIsland">
+    <rect x="3304" y="2340" width="541" height="637" />
+    <innrect x="3664" y="2608" width="16" height="16" />
+    <innrect x="3664" y="2648" width="16" height="8" />
+    <innrect x="3664" y="2640" width="8" height="8" />
+    <music name="Ocllo" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+    <restrictedspell name="RecallSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the Militia stronghold in Vesper" shard="AngelIsland" iobalignment="Good">
+    <rect x="2893" y="598" width="121" height="50" />
+    <rect x="2816" y="648" width="249" height="365" />
+    <rect x="2734" y="944" width="82" height="4" />
+    <innrect x="2952" y="864" width="16" height="32" />
+    <innrect x="2968" y="872" width="8" height="16" />
+    <innrect x="2892" y="901" width="16" height="19" />
+    <innrect x="2908" y="904" width="8" height="8" />
+    <music name="Vesper" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="ShowIOBMessage" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the militia camp" shard="AngelIsland" iobalignment="Good">
+    <rect x="808" y="1643" width="84" height="84" />
+    <music name="Vesper" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableHousing" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="ShowIOBMessage" />
+    <restrictedspell name="TeleportSpell" />
+    <restrictedspell name="FireFieldSpell" />
+    <restrictedspell name="BladeSpiritsSpell" />
+    <restrictedspell name="PoisonFieldSpell" />
+    <restrictedspell name="ParalyzeFieldSpell" />
+    <restrictedspell name="MeteorSwarmSpell" />
+    <restrictedspell name="EarthquakeSpell" />
+    <restrictedspell name="EnergyVortexSpell" />
+    <restrictedspell name="AirElementalSpell" />
+    <restrictedspell name="SummonDaemonSpell" />
+    <restrictedspell name="EarthElementalSpell" />
+    <restrictedspell name="FireElementalSpell" />
+    <restrictedspell name="WaterElementalSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Yew Orc Fort Small Area" shard="AngelIsland">
+    <rect x="613" y="1477" width="8" height="17" />
+    <go x="613" y="1477" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Ilshenar" priority="144" shard="AngelIsland" lightlevel="0">
+    <rect x="1665" y="952" width="32" height="40" />
+    <go x="0" y="0" z="0" />
+    <flag name="NoRecallInto" />
+    <flag name="IsMagicIsolated" />
+    <flag name="NoExternalHarmful" />
+    <restrictedspell name="ClumsySpell" />
+    <restrictedspell name="FeeblemindSpell" />
+    <restrictedspell name="HealSpell" />
+    <restrictedspell name="MagicArrowSpell" />
+    <restrictedspell name="NightSightSpell" />
+    <restrictedspell name="ReactiveArmorSpell" />
+    <restrictedspell name="WeakenSpell" />
+    <restrictedspell name="AgilitySpell" />
+    <restrictedspell name="CunningSpell" />
+    <restrictedspell name="CureSpell" />
+    <restrictedspell name="HarmSpell" />
+    <restrictedspell name="MagicTrapSpell" />
+    <restrictedspell name="RemoveTrapSpell" />
+    <restrictedspell name="ProtectionSpell" />
+    <restrictedspell name="StrengthSpell" />
+    <restrictedspell name="BlessSpell" />
+    <restrictedspell name="FireballSpell" />
+    <restrictedspell name="MagicLockSpell" />
+    <restrictedspell name="PoisonSpell" />
+    <restrictedspell name="TelekinesisSpell" />
+    <restrictedspell name="TeleportSpell" />
+    <restrictedspell name="UnlockSpell" />
+    <restrictedspell name="WallOfStoneSpell" />
+    <restrictedspell name="ArchCureSpell" />
+    <restrictedspell name="ArchProtectionSpell" />
+    <restrictedspell name="CurseSpell" />
+    <restrictedspell name="FireFieldSpell" />
+    <restrictedspell name="GreaterHealSpell" />
+    <restrictedspell name="LightningSpell" />
+    <restrictedspell name="ManaDrainSpell" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="BladeSpiritsSpell" />
+    <restrictedspell name="DispelFieldSpell" />
+    <restrictedspell name="IncognitoSpell" />
+    <restrictedspell name="MagicReflectSpell" />
+    <restrictedspell name="MindBlastSpell" />
+    <restrictedspell name="ParalyzeSpell" />
+    <restrictedspell name="PoisonFieldSpell" />
+    <restrictedspell name="SummonCreatureSpell" />
+    <restrictedspell name="DispelSpell" />
+    <restrictedspell name="EnergyBoltSpell" />
+    <restrictedspell name="ExplosionSpell" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="MassCurseSpell" />
+    <restrictedspell name="ParalyzeFieldSpell" />
+    <restrictedspell name="RevealSpell" />
+    <restrictedspell name="ChainLightningSpell" />
+    <restrictedspell name="EnergyFieldSpell" />
+    <restrictedspell name="FlameStrikeSpell" />
+    <restrictedspell name="GateTravelSpell" />
+    <restrictedspell name="ManaVampireSpell" />
+    <restrictedspell name="MassDispelSpell" />
+    <restrictedspell name="MeteorSwarmSpell" />
+    <restrictedspell name="PolymorphSpell" />
+    <restrictedspell name="EarthquakeSpell" />
+    <restrictedspell name="EnergyVortexSpell" />
+    <restrictedspell name="AirElementalSpell" />
+    <restrictedspell name="SummonDaemonSpell" />
+    <restrictedspell name="EarthElementalSpell" />
+    <restrictedspell name="FireElementalSpell" />
+    <restrictedspell name="WaterElementalSpell" />
+    <restrictedskill name="AnimalLore" />
+    <restrictedskill name="Fletching" />
+    <restrictedskill name="Peacemaking" />
+    <restrictedskill name="DetectHidden" />
+    <restrictedskill name="EvalInt" />
+    <restrictedskill name="Healing" />
+    <restrictedskill name="Provocation" />
+    <restrictedskill name="Magery" />
+    <restrictedskill name="Musicianship" />
+    <restrictedskill name="Archery" />
+    <restrictedskill name="Tracking" />
+    <restrictedskill name="Swords" />
+    <restrictedskill name="Macing" />
+    <restrictedskill name="Fencing" />
+    <restrictedskill name="Wrestling" />
+    <restrictedskill name="Stealth" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Last Man Standing" shard="AngelIsland" lightlevel="0">
+    <go x="4595" y="3574" z="75" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="NoGhostBlindness" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Marble Island Arena" shard="AngelIsland">
+    <rect x="1872" y="2067" width="65" height="38" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <restrictedspell name="WallOfStoneSpell" />
+    <restrictedspell name="FireFieldSpell" />
+    <restrictedspell name="BladeSpiritsSpell" />
+    <restrictedspell name="PoisonFieldSpell" />
+    <restrictedspell name="ParalyzeFieldSpell" />
+    <restrictedspell name="EnergyVortexSpell" />
+    <restrictedspell name="SummonDaemonSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the savage homeland" shard="AngelIsland" iobalignment="Savage">
+    <rect x="1060" y="2922" width="219" height="132" />
+    <innrect x="1229" y="2948" width="9" height="5" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="ShowIOBMessage" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="GateTravelSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Moonglow Cemetary" shard="AngelIsland" lightlevel="0">
+    <rect x="4536" y="1297" width="21" height="38" />
+    <rect x="4528" y="1314" width="8" height="21" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="New Region" shard="AngelIsland" lightlevel="0">
+    <rect x="5655" y="419" width="22" height="11" />
+    <go x="0" y="0" z="0" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="IsMagicIsolated" />
+    <flag name="NoExternalHarmful" />
+    <restrictedspell name="ClumsySpell" />
+    <restrictedspell name="FeeblemindSpell" />
+    <restrictedspell name="MagicArrowSpell" />
+    <restrictedspell name="WeakenSpell" />
+    <restrictedspell name="MagicTrapSpell" />
+    <restrictedspell name="RemoveTrapSpell" />
+    <restrictedspell name="StrengthSpell" />
+    <restrictedspell name="FireballSpell" />
+    <restrictedspell name="PoisonSpell" />
+    <restrictedspell name="TelekinesisSpell" />
+    <restrictedspell name="TeleportSpell" />
+    <restrictedspell name="UnlockSpell" />
+    <restrictedspell name="WallOfStoneSpell" />
+    <restrictedspell name="FireFieldSpell" />
+    <restrictedspell name="LightningSpell" />
+    <restrictedspell name="ManaDrainSpell" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="BladeSpiritsSpell" />
+    <restrictedspell name="DispelFieldSpell" />
+    <restrictedspell name="IncognitoSpell" />
+    <restrictedspell name="MagicReflectSpell" />
+    <restrictedspell name="MindBlastSpell" />
+    <restrictedspell name="ParalyzeSpell" />
+    <restrictedspell name="PoisonFieldSpell" />
+    <restrictedspell name="SummonCreatureSpell" />
+    <restrictedspell name="DispelSpell" />
+    <restrictedspell name="EnergyBoltSpell" />
+    <restrictedspell name="ExplosionSpell" />
+    <restrictedspell name="InvisibilitySpell" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="ParalyzeFieldSpell" />
+    <restrictedspell name="ChainLightningSpell" />
+    <restrictedspell name="EnergyFieldSpell" />
+    <restrictedspell name="FlameStrikeSpell" />
+    <restrictedspell name="GateTravelSpell" />
+    <restrictedspell name="ManaVampireSpell" />
+    <restrictedspell name="MassDispelSpell" />
+    <restrictedspell name="MeteorSwarmSpell" />
+    <restrictedspell name="PolymorphSpell" />
+    <restrictedspell name="EarthquakeSpell" />
+    <restrictedspell name="EnergyVortexSpell" />
+    <restrictedspell name="AirElementalSpell" />
+    <restrictedspell name="SummonDaemonSpell" />
+    <restrictedspell name="EarthElementalSpell" />
+    <restrictedspell name="FireElementalSpell" />
+    <restrictedspell name="WaterElementalSpell" />
+    <restrictedskill name="AnimalLore" />
+    <restrictedskill name="Camping" />
+    <restrictedskill name="DetectHidden" />
+    <restrictedskill name="Hiding" />
+    <restrictedskill name="Provocation" />
+    <restrictedskill name="Magery" />
+    <restrictedskill name="Stealth" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Bludchok'a-hai" shard="AngelIsland" iobalignment="Orcish">
+    <rect x="946" y="1276" width="78" height="71" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="NoRecallInto" />
+    <flag name="ShowIOBMessage" />
+    <restrictedspell name="RecallSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Invasion Spawn" shard="AngelIsland">
+    <rect x="1429" y="1388" width="15" height="26" />
+    <go x="1431" y="1390" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="New Region" shard="AngelIsland" lightlevel="0">
+    <rect x="4007" y="500" width="95" height="112" />
+    <go x="4013" y="593" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the Militia stronghold in Yew" shard="AngelIsland" iobalignment="Good">
+    <rect x="440" y="746" width="217" height="134" />
+    <rect x="258" y="880" width="392" height="381" />
+    <rect x="657" y="922" width="42" height="307" />
+    <rect x="657" y="806" width="17" height="28" />
+    <rect x="718" y="874" width="38" height="22" />
+    <innrect x="600" y="808" width="24" height="24" />
+    <music name="Yew" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="ShowIOBMessage" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Restricted Area" shard="AngelIsland" lightlevel="0" defaultlogoutdelay="1.00:00:00">
+    <rect x="5633" y="2040" width="511" height="8" />
+    <rect x="5936" y="1537" width="208" height="503" />
+    <rect x="5425" y="1536" width="511" height="240" />
+    <rect x="5376" y="1536" width="39" height="256" />
+    <rect x="1322" y="1040" width="7" height="4" />
+    <rect x="5576" y="1776" width="64" height="16" />
+    <rect x="5417" y="1536" width="8" height="240" />
+    <rect x="5632" y="1792" width="8" height="248" />
+    <rect x="5120" y="2048" width="1024" height="256" />
+    <music name="Linelle" />
+    <go x="0" y="0" z="0" />
+    <flag name="CannotEnter" />
+    <flag name="EnableGuards" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="EnableMusic" />
+    <restrictedspell name="TeleportSpell" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="InvisibilitySpell" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="GateTravelSpell" />
+    <restrictedskill name="Hiding" />
+    <restrictedskill name="Mining" />
+  </region>
+  <region type="StaticRegion" map="Ilshenar" priority="144" name="Sole Survivor Castle Arena" shard="AngelIsland" lightlevel="0">
+    <rect x="1317" y="1011" width="88" height="103" />
+    <go x="1363" y="1105" z="-26" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="AllowTravelSpellsInRegion" />
+    <flag name="NoGhostBlindness" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="GateTravelSpell" />
+    <restrictedskill name="Hiding" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="the pirate stronghold on Moonglow island" shard="AngelIsland" iobalignment="Pirate">
+    <rect x="4581" y="1255" width="148" height="271" />
+    <music name="Moonglow" />
+    <go x="0" y="0" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="IOBArea" />
+    <flag name="ShowIOBMessage" />
+    <flag name="EnableMusic" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="Eiffel Island" shard="AngelIsland">
+    <rect x="1632" y="1930" width="165" height="119" />
+    <rect x="1705" y="1925" width="27" height="6" />
+    <rect x="1695" y="1915" width="47" height="16" />
+    <go x="0" y="0" z="0" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="CanRessurect" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="GateTravelSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="144" name="a dangerous area" shard="AngelIsland" ruleset="House" iobalignment="Undead">
+    <rect x="825" y="921" width="30" height="30" />
+    <rect x="838" y="951" width="4" height="1" />
+    <rect x="804" y="900" width="64" height="63" />
+    <go x="0" y="0" z="0" />
+    <flag name="ShowEnterMessage" />
+    <flag name="ShowExitMessage" />
+    <flag name="CanUsePotions" />
+    <flag name="NoMurderCounts" />
+    <flag name="IOBArea" />
+    <flag name="NoGateInto" />
+    <flag name="NoRecallInto" />
+    <flag name="NoGhostBlindness" />
+    <restrictedspell name="TeleportSpell" />
+    <restrictedspell name="RecallSpell" />
+    <restrictedspell name="MarkSpell" />
+    <restrictedspell name="ChainLightningSpell" />
+    <restrictedspell name="GateTravelSpell" />
+    <restrictedspell name="MeteorSwarmSpell" />
+    <restrictedspell name="EarthquakeSpell" />
+    <restrictedspell name="ResurrectionSpell" />
+  </region>
+  <region type="StaticRegion" map="Felucca" priority="50" name="Ocllo Island" shard="AngelIsland">
+    <rect x="3304" y="2340" width="541" height="637" />
+    <go x="3650" y="2653" z="0" />
+    <flag name="EnableStuckMenu" />
+    <flag name="CanUsePotions" />
+    <flag name="CanRessurect" />
+    <flag name="AllowTravelSpellsInRegion" />
+  </region>
+  <!-- END Angel Island Custom -->
+</StaticRegions>

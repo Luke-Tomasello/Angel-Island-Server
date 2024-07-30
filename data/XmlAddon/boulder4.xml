@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<AddonData version="2">
+  <ID>boulder4</ID>
+  <Name>boulder4</Name>
+  <Components Count="3">
+    <Component Flags="0x04">
+      <ItemID>4953</ItemID>
+      <X>1</X>
+      <Y>0</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>4951</ItemID>
+      <X>0</X>
+      <Y>1</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+    <Component Flags="0x04">
+      <ItemID>4952</ItemID>
+      <X>1</X>
+      <Y>1</Y>
+      <Z>0</Z>
+      <Light>Circle300</Light>
+    </Component>
+  </Components>
+</AddonData>

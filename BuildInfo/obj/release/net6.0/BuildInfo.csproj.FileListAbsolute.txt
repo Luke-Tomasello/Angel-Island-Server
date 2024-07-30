@@ -1,0 +1,14 @@
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\bin\Release\net6.0\BuildInfo.exe
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\bin\Release\net6.0\BuildInfo.deps.json
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\bin\Release\net6.0\BuildInfo.runtimeconfig.json
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\bin\Release\net6.0\BuildInfo.dll
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\bin\Release\net6.0\BuildInfo.pdb
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\obj\Release\net6.0\BuildInfo.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\obj\Release\net6.0\BuildInfo.AssemblyInfoInputs.cache
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\obj\Release\net6.0\BuildInfo.AssemblyInfo.cs
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\obj\Release\net6.0\BuildInfo.csproj.CoreCompileInputs.cache
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\obj\Release\net6.0\BuildInfo.dll
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\obj\Release\net6.0\refint\BuildInfo.dll
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\obj\Release\net6.0\BuildInfo.pdb
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\obj\Release\net6.0\BuildInfo.genruntimeconfig.cache
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\Shard.GIT\BuildInfo\obj\Release\net6.0\ref\BuildInfo.dll
