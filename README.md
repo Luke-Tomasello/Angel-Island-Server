@@ -39,5 +39,5 @@ Siege Perilous is a fairly accurate OSI Publish 13.6 spawn.<br/>
 Both worlds contain the Custom Housing Preview area. This is an area where players can see and purchase any of our 56 Custom Houses. (you don't want to recreate this by hand.)<br/>
 I also left all Townships intact so that your new staff can see, evaluate, and understand how elaborate they can be (before deleting, and/or awarding them in some way.)<br/>
 Finally, these world files contain the complete collection of player-composed music with the Angel Island Music System. There are probably ~100 songs in the library. Note, AI & SP's music libraries likely differ.<br/>
-You can get a feel for the as well as many other features on my YouTube channel
+You can get a feel for the music system as well as many other features on my YouTube channel
 https://www.youtube.com/@UltimaOnlineFreeShard
