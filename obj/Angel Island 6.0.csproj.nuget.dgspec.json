@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\luket\\Documents\\Software\\Development\\Product\\Src\\Angel Island\\Shard.GIT.Server\\Angel Island 6.0.csproj": {}
+    "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island\\Angel Island 6.0.csproj": {}
   },
   "projects": {
-    "C:\\Users\\luket\\Documents\\Software\\Development\\Product\\Src\\Angel Island\\Shard.GIT.Server\\Angel Island 6.0.csproj": {
+    "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island\\Angel Island 6.0.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\luket\\Documents\\Software\\Development\\Product\\Src\\Angel Island\\Shard.GIT.Server\\Angel Island 6.0.csproj",
+        "projectUniqueName": "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island\\Angel Island 6.0.csproj",
         "projectName": "Angel Island 6.0",
-        "projectPath": "C:\\Users\\luket\\Documents\\Software\\Development\\Product\\Src\\Angel Island\\Shard.GIT.Server\\Angel Island 6.0.csproj",
+        "projectPath": "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island\\Angel Island 6.0.csproj",
         "packagesPath": "C:\\Users\\luket\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\luket\\Documents\\Software\\Development\\Product\\Src\\Angel Island\\Shard.GIT.Server\\obj\\",
+        "outputPath": "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\luket\\AppData\\Roaming\\NuGet\\NuGet.Config",
