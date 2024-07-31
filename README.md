@@ -43,5 +43,5 @@ You can get a feel for the music system as well as many other features on my You
 https://www.youtube.com/@UltimaOnlineFreeShard
 
 # Getting Started Videos
-https://youtu.be/0kauX-W5BLI
+https://youtu.be/0kauX-W5BLI <br/>
 https://youtu.be/8zNv5ryd6_U
