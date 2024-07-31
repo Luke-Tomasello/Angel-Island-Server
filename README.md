@@ -41,3 +41,7 @@ I also left all Townships intact so that your new staff can see, evaluate, and u
 Finally, these world files contain the complete collection of player-composed music with the Angel Island Music System. There are probably ~100 songs in the library. Note, AI & SP's music libraries likely differ.<br/>
 You can get a feel for the music system as well as many other features on my YouTube channel
 https://www.youtube.com/@UltimaOnlineFreeShard
+
+# Getting Started Videos
+https://youtu.be/0kauX-W5BLI
+https://youtu.be/8zNv5ryd6_U
