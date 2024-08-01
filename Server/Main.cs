@@ -1703,9 +1703,9 @@ namespace Server
         }
         public static bool GeoIPCheck()
         {
-            string MMAccountId = Environment.GetEnvironmentVariable("AI.MMAccountId");    
+            string MMAccountId = Environment.GetEnvironmentVariable("AI.MMAccountId");
             string MMlicenseKey = Environment.GetEnvironmentVariable("AI.MMlicenseKey");
-            
+
             if (MMAccountId == null || MMlicenseKey == null)
             {
                 return false;
