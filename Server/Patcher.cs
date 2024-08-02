@@ -473,7 +473,7 @@ namespace Server
 
                 patches += PatchV107(m_PatchID++);
 
-                patches += PatchV108(m_PatchID++); // Retirement - boot all staff
+                //patches += PatchV108(m_PatchID++); // Retirement - boot all staff
 
                 #endregion NEW PATCHER
 
