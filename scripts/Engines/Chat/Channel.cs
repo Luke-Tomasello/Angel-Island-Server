@@ -83,7 +83,7 @@ namespace Server.Engines.Chat
                 {
                     newValue = value.Trim();
 
-                    if (newValue == null || newValue == String.Empty)
+                    if (newValue == null || newValue == string.Empty)
                         newValue = null;
                 }
 

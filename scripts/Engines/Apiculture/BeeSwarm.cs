@@ -89,7 +89,7 @@ namespace Server.Engines.Apiculture
                 }
 
                 m.LocalOverheadMessage(MessageType.Emote, m.SpeechHue, true, "* The swarm of bees bites and stings your flesh! *");
-                m.NonlocalOverheadMessage(MessageType.Emote, m.SpeechHue, true, String.Format("* {0} is stung by a swarm of bees *", m.Name));
+                m.NonlocalOverheadMessage(MessageType.Emote, m.SpeechHue, true, string.Format("* {0} is stung by a swarm of bees *", m.Name));
             }
 
             m.FixedParticles(0x91C, 10, 180, 9539, EffectLayer.Waist);

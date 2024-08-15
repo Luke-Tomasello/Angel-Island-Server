@@ -7,4 +7,9 @@
     <BaseOutputPath>bin\</BaseOutputPath>
   </PropertyGroup>
 
+	<PropertyGroup>
+		<OutputPath>..\</OutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	</PropertyGroup>
 </Project>

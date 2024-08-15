@@ -77,7 +77,7 @@ namespace Server.Items
             PlayerQuestManager.Deeds.Add(this);                     // add to our managers list
             PlayerQuestManager.Announce();                          // force an announcement now
             LogHelper Logger = new LogHelper("PlayerQuest.log", false);
-            string temp = String.Format("A Player Quest Deed({0}) has been created.", this.Serial);
+            string temp = string.Format("A Player Quest Deed({0}) has been created.", this.Serial);
             Logger.Log(LogType.Item, m_container, temp);
             Logger.Finish();
         }
@@ -116,9 +116,9 @@ namespace Server.Items
                 LogHelper Logger = new LogHelper("PlayerQuest.log", false);
                 string temp;
                 if (m_container == null)
-                    temp = String.Format("Orphaned Quest Deed({0}) loaded for nonexistent Chest(0x{1:X}).", this.Serial, m_PrizeID);
+                    temp = string.Format("Orphaned Quest Deed({0}) loaded for nonexistent Chest(0x{1:X}).", this.Serial, m_PrizeID);
                 else // Expired == true
-                    temp = String.Format("Expired Quest Deed({0}) loaded for (non)existent Chest(0x{1:X}).", this.Serial, m_PrizeID);
+                    temp = string.Format("Expired Quest Deed({0}) loaded for (non)existent Chest(0x{1:X}).", this.Serial, m_PrizeID);
                 Logger.Log(LogType.Text, temp);
                 Logger.Finish();
             }
@@ -135,7 +135,7 @@ namespace Server.Items
             {
                 int hours = Expires.Hours;
                 int minutes = Expires.Minutes;
-                text = String.Format("[Expires: {0} {1}, and {2} {3}]",
+                text = string.Format("[Expires: {0} {1}, and {2} {3}]",
                     hours, hours == 1 ? "hour" : "hours",
                     minutes, minutes == 1 ? "minute" : "minutes");
             }
@@ -160,7 +160,7 @@ namespace Server.Items
                 m_container.RetrieveItemFromIntStorage(from.Location, from.Map);    // get from safe storage
                 m_claimed = true;
                 from.SendMessage("You have completed the quest!");
-                string temp = String.Format("Mobile({0}) using Deed({1}) has completed the quest.", from.Serial, this.Serial);
+                string temp = string.Format("Mobile({0}) using Deed({1}) has completed the quest.", from.Serial, this.Serial);
                 Logger.Log(LogType.Item, m_container, temp);
             }
             else
@@ -168,7 +168,7 @@ namespace Server.Items
                 from.SendMessage("That quest item has expired.");
                 if (m_container != null && m_container.Deleted == false)
                     m_container.Delete();                                           // the quest is over, delete the container, ticket deleted below
-                string temp = String.Format("Quest expired for Mobile({0}) using Deed({1}) on quest Chest(0x{2:X}).", from.Serial, this.Serial, m_PrizeID);
+                string temp = string.Format("Quest expired for Mobile({0}) using Deed({1}) on quest Chest(0x{2:X}).", from.Serial, this.Serial, m_PrizeID);
                 Logger.Log(LogType.Text, temp);
             }
 
@@ -334,24 +334,24 @@ namespace Server.Items
                         if (root is Mobile)
                         {
                             Mobile mob = root as Mobile;
-                            lines[0] = String.Format(
+                            lines[0] = string.Format(
                                 "{0} was last seen near {1}. {2} is not to be trusted.",
                                 mob.Name,
                                 BaseOverland.DescribeLocation(mob),
                                 mob.Female == true ? "She" : "He");
 
-                            lines[1] = String.Format(
+                            lines[1] = string.Format(
                                 "Do what you will with {0}, but get that quest ticket {1} carries.",
                                 mob.Female == true ? "her" : "him",
                                 mob.Female == true ? "she" : "he");
                         }
                         else
                         {
-                            lines[0] = String.Format(
+                            lines[0] = string.Format(
                                 "A quest ticket was last seen near {0}",
                                 BaseOverland.DescribeLocation(root == null ? pqd : root as Item));
 
-                            lines[1] = String.Format(
+                            lines[1] = string.Format(
                                 "It may be of significant value, but be careful!");
                         }
 

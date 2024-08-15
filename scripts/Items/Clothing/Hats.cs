@@ -87,7 +87,7 @@ namespace Server.Items
             string suffix = base.GetOldSuffix();
 
             if (m_IsShipwreckedItem)
-                suffix = String.Concat(suffix, " recovered from a shipwreck");
+                suffix = string.Concat(suffix, " recovered from a shipwreck");
 
             return suffix;
         }
@@ -704,9 +704,9 @@ namespace Server.Items
 
             string modName = this.Serial.ToString();
 
-            StatMod strMod = new StatMod(StatType.Str, String.Format("[Magic Hat] -Str {0}", modName), -5, TimeSpan.Zero);
-            StatMod dexMod = new StatMod(StatType.Dex, String.Format("[Magic Hat] -Dex {0}", modName), -5, TimeSpan.Zero);
-            StatMod intMod = new StatMod(StatType.Int, String.Format("[Magic Hat] +Int {0}", modName), +5, TimeSpan.Zero);
+            StatMod strMod = new StatMod(StatType.Str, string.Format("[Magic Hat] -Str {0}", modName), -5, TimeSpan.Zero);
+            StatMod dexMod = new StatMod(StatType.Dex, string.Format("[Magic Hat] -Dex {0}", modName), -5, TimeSpan.Zero);
+            StatMod intMod = new StatMod(StatType.Int, string.Format("[Magic Hat] +Int {0}", modName), +5, TimeSpan.Zero);
 
             m.AddStatMod(strMod);
             m.AddStatMod(dexMod);
@@ -720,9 +720,9 @@ namespace Server.Items
 
             string modName = this.Serial.ToString();
 
-            m.RemoveStatMod(String.Format("[Magic Hat] -Str {0}", modName));
-            m.RemoveStatMod(String.Format("[Magic Hat] -Dex {0}", modName));
-            m.RemoveStatMod(String.Format("[Magic Hat] +Int {0}", modName));
+            m.RemoveStatMod(string.Format("[Magic Hat] -Str {0}", modName));
+            m.RemoveStatMod(string.Format("[Magic Hat] -Dex {0}", modName));
+            m.RemoveStatMod(string.Format("[Magic Hat] +Int {0}", modName));
         }
 
         public override void OnAdded(object parent)

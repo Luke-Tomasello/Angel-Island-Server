@@ -36,7 +36,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format("{0} stahlrim", Amount);
+                return string.Format("{0} stahlrim", Amount);
             }
         }
 

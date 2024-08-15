@@ -67,7 +67,7 @@ namespace Server.Items
                         // create the identity
                         m_Cert.Used = true;
                         m_Cert.Mobile = Crafter;
-                        m_Cert.Name = String.Format("a certificate of identity for {0}", Crafter.Name);
+                        m_Cert.Name = string.Format("a certificate of identity for {0}", Crafter.Name);
                         from.SendMessage("You have created {0}", m_Cert.Name);
                     }
                 }
@@ -79,7 +79,7 @@ namespace Server.Items
                 // create the identity
                 m_Cert.Used = true;
                 m_Cert.Mobile = pm;
-                m_Cert.Name = String.Format("a certificate of identity for {0}", pm.Name);
+                m_Cert.Name = string.Format("a certificate of identity for {0}", pm.Name);
                 from.SendMessage("You have created {0}", m_Cert.Name);
             }
             else
@@ -211,7 +211,7 @@ namespace Server.Items
 
             if (m_Mobile == null && (m_flags & iFlags.Used) > 0)
             {
-                Name = String.Format("a certificate of death");
+                Name = string.Format("a certificate of death");
             }
         }
 
@@ -235,7 +235,7 @@ namespace Server.Items
                     if ((m_flags & iFlags.Used) > 0)
                     {
                         from.SendMessage("It is a sad day, but this player no longer exists in this world.");
-                        Name = String.Format("a certificate of death");
+                        Name = string.Format("a certificate of death");
                     }
                     else
                     {

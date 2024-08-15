@@ -229,7 +229,7 @@ namespace Server.Items
                 if (m_Guild != null)
                     return m_Guild.Name;
 
-                return String.Empty;
+                return string.Empty;
             }
         }
 
@@ -241,7 +241,7 @@ namespace Server.Items
                 if (m_Guild != null)
                     return m_Guild.Abbreviation;
 
-                return String.Empty;
+                return string.Empty;
             }
         }
 
@@ -527,7 +527,7 @@ namespace Server.Items
 
         public void UpdateRegionName()
         {
-            CustomRegion.Name = String.Format("The township of {0}", GuildName);
+            CustomRegion.Name = string.Format("The township of {0}", GuildName);
         }
 
         public override CustomRegion CreateRegion(CustomRegionControl rc)
@@ -820,7 +820,7 @@ namespace Server.Items
                 if (m_Date != DateTime.MinValue)
                     sb.AppendFormat("[{0} {1}] ", m_Date.ToShortDateString(), m_Date.ToShortTimeString());
 
-                if (!String.IsNullOrEmpty(m_Description))
+                if (!string.IsNullOrEmpty(m_Description))
                     sb.AppendFormat("{0}: ", m_Description);
 
                 sb.Append(m_Value.ToString("N0"));
@@ -999,7 +999,7 @@ namespace Server.Items
             else if ((name = m_Guild.Name) == null || (name = name.Trim()).Length <= 0)
                 name = "(unnamed)";
 
-            return String.Format($"0x{this.Serial.Value:X} \"{name}\"");
+            return string.Format($"0x{this.Serial.Value:X} \"{name}\"");
         }
         public bool DoDailyTownshipFees()
         {
@@ -2721,7 +2721,7 @@ namespace Server.Items
 
         bool IOracleDestination.WasNamed(SpeechEventArgs e)
         {
-            return ((!String.IsNullOrEmpty(GuildName) && Insensitive.Equals(e.Speech, GuildName)) || (!String.IsNullOrEmpty(GuildAbbreviation) && Insensitive.Equals(e.Speech, GuildAbbreviation)));
+            return ((!string.IsNullOrEmpty(GuildName) && Insensitive.Equals(e.Speech, GuildName)) || (!string.IsNullOrEmpty(GuildAbbreviation) && Insensitive.Equals(e.Speech, GuildAbbreviation)));
         }
 
         string IOracleDestination.Format()
@@ -2906,7 +2906,7 @@ namespace Server.Items
             GuildMessage(text);
 
             if (allies)
-                AllyMessage(String.Format("[{0} of {1}]: {2}", GetTownshipSizeDesc(ActivityLevel), GuildName, text));
+                AllyMessage(string.Format("[{0} of {1}]: {2}", GetTownshipSizeDesc(ActivityLevel), GuildName, text));
 
             AddMessage(text);
         }

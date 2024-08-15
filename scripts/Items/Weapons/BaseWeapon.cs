@@ -3235,7 +3235,7 @@ namespace Server.Items
             string name = this.Name;
 
             if (name == null)
-                name = String.Format("#{0}", LabelNumber);
+                name = string.Format("#{0}", LabelNumber);
 
             return name;
         }
@@ -3674,7 +3674,7 @@ namespace Server.Items
                     if ((article == Article.A || article == Article.An) && prefix.Length == 0)
                         article = info.Article;
 
-                    prefix += String.Concat(info.Name.ToLower(), " ");
+                    prefix += string.Concat(info.Name.ToLower(), " ");
                 }
             }
 
@@ -3722,7 +3722,7 @@ namespace Server.Items
                 suffix += " crafted by " + m_Crafter.Name;
 
             if (m_Poison != null && m_PoisonCharges > 0)
-                suffix += String.Format(" (poison charges: {0})", m_PoisonCharges);
+                suffix += string.Format(" (poison charges: {0})", m_PoisonCharges);
 
             return suffix;
         }

@@ -918,10 +918,10 @@ namespace Server.Regions
             {
                 string regionName = this.Name;
 
-                if (String.IsNullOrEmpty(regionName))
+                if (string.IsNullOrEmpty(regionName))
                     regionName = "your stronghold";
 
-                IOBSystem.SendKinMessage(m_IOBAlignment, String.Format("Come quickly, the {0} are attacking {1}!", IOBSystem.GetIOBName(pm.IOBRealAlignment), regionName));
+                IOBSystem.SendKinMessage(m_IOBAlignment, string.Format("Come quickly, the {0} are attacking {1}!", IOBSystem.GetIOBName(pm.IOBRealAlignment), regionName));
 
                 m_IOBNextMessage = DateTime.UtcNow + IOBMessageDelay;
             }
@@ -1745,7 +1745,7 @@ namespace Server.Regions
             Write(xml, "map", Map.Name);
             Write(xml, "priority", Priority);
 
-            if (!String.IsNullOrEmpty(Prefix))
+            if (!string.IsNullOrEmpty(Prefix))
                 Write(xml, "prefix", Prefix);
 
             Write(xml, "name", Name);
@@ -2401,7 +2401,7 @@ namespace Server.Regions
                 if (!File.Exists(fileName))
                     return 0;
 
-                Console.Write("Loading static regions from \"{0}\"...\n", fileName);
+                Console.Write("Loading static regions from \"{0}\"...\n", Utility.GetShortPath(fileName));
 
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load(fileName);

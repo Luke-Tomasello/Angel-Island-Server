@@ -1106,10 +1106,10 @@ namespace Server.Mobiles
 
             string result = "";
 
-            if (!String.IsNullOrEmpty(coords))
+            if (!string.IsNullOrEmpty(coords))
                 result += coords;
 
-            if (!String.IsNullOrEmpty(region))
+            if (!string.IsNullOrEmpty(region))
                 result += " in " + region;
 
             return result;
@@ -1141,7 +1141,7 @@ namespace Server.Mobiles
 
                 bestRegion = region;
 
-                if (!String.IsNullOrEmpty(bestRegion.Name) && IsInterestingRegion(bestRegion))
+                if (!string.IsNullOrEmpty(bestRegion.Name) && IsInterestingRegion(bestRegion))
                     break;
             }
 

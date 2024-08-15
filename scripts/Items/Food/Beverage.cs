@@ -156,7 +156,7 @@ namespace Server.Items
             get
             {
                 if (!IsEmpty)
-                    return String.Format("a cask of {0}", Content.ToString());
+                    return string.Format("a cask of {0}", Content.ToString());
                 else
                     return "a cask";
             }

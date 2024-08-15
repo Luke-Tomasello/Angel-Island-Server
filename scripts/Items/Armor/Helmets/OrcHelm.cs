@@ -99,17 +99,17 @@ namespace Server.Items
             string modName = this.Serial.ToString();
             // When equipped, your strength is increased by ten points (even over skill cap of 100). 
             // You will lose ten points in dexterity or intelligence, whichever is higher.
-            StatMod strMod = new StatMod(StatType.Str, String.Format("[Magic Hat] +Str {0}", modName), +10, TimeSpan.Zero);
+            StatMod strMod = new StatMod(StatType.Str, string.Format("[Magic Hat] +Str {0}", modName), +10, TimeSpan.Zero);
             m.AddStatMod(strMod);
 
             if (m.Dex > m.Int)
             {
-                StatMod dexMod = new StatMod(StatType.Dex, String.Format("[Magic Hat] -Dex {0}", modName), -10, TimeSpan.Zero);
+                StatMod dexMod = new StatMod(StatType.Dex, string.Format("[Magic Hat] -Dex {0}", modName), -10, TimeSpan.Zero);
                 m.AddStatMod(dexMod);
             }
             else
             {
-                StatMod intMod = new StatMod(StatType.Int, String.Format("[Magic Hat] -Int {0}", modName), -10, TimeSpan.Zero);
+                StatMod intMod = new StatMod(StatType.Int, string.Format("[Magic Hat] -Int {0}", modName), -10, TimeSpan.Zero);
                 m.AddStatMod(intMod);
             }
         }
@@ -121,9 +121,9 @@ namespace Server.Items
 
             string modName = this.Serial.ToString();
 
-            m.RemoveStatMod(String.Format("[Magic Hat] +Str {0}", modName));
-            m.RemoveStatMod(String.Format("[Magic Hat] -Dex {0}", modName));
-            m.RemoveStatMod(String.Format("[Magic Hat] -Int {0}", modName));
+            m.RemoveStatMod(string.Format("[Magic Hat] +Str {0}", modName));
+            m.RemoveStatMod(string.Format("[Magic Hat] -Dex {0}", modName));
+            m.RemoveStatMod(string.Format("[Magic Hat] -Int {0}", modName));
         }
 
         public override void OnAdded(object parent)

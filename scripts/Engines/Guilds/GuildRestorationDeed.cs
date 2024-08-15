@@ -182,7 +182,7 @@ namespace Server.Items
                     from.SendMessage("The guildstone cannot be found.");
                     try
                     {
-                        throw new ApplicationException(String.Format("The Guildstone {1} for GuildRestorationDeed {0} is missing. Check GuildDisbanded.log.", this.Serial, this.m_Serial));
+                        throw new ApplicationException(string.Format("The Guildstone {1} for GuildRestorationDeed {0} is missing. Check GuildDisbanded.log.", this.Serial, this.m_Serial));
                     }
                     catch (Exception exp)
                     {

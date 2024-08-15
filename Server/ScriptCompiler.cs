@@ -206,10 +206,10 @@ namespace Server
 
         private static string GetUnusedPath(string name)
         {
-            string path = Path.Combine(Core.BaseDirectory, String.Format("Scripts/Output/{0}.dll", name));
+            string path = Path.Combine(Core.BaseDirectory, string.Format("Scripts/Output/{0}.dll", name));
 
             for (int i = 2; File.Exists(path) && i <= 1000; ++i)
-                path = Path.Combine(Core.BaseDirectory, String.Format("Scripts/Output/{0}.{1}.dll", name, i));
+                path = Path.Combine(Core.BaseDirectory, string.Format("Scripts/Output/{0}.{1}.dll", name, i));
 
             return path;
         }

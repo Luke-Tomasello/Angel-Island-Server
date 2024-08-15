@@ -70,9 +70,9 @@ namespace Server.Commands
                             if (di is DODInstance)
                             {
                                 if (di.RareTemplate == null)
-                                    Logger.Log(LogType.Text, String.Format("DODInstance {0} has a null RareTemplate.", di.Name));
+                                    Logger.Log(LogType.Text, string.Format("DODInstance {0} has a null RareTemplate.", di.Name));
                                 else
-                                    Logger.Log(LogType.Item, di.RareTemplate, String.Format("DODInstance {0}: ({1}).", di.Name, di.RareTemplate.GetType().ToString()));
+                                    Logger.Log(LogType.Item, di.RareTemplate, string.Format("DODInstance {0}: ({1}).", di.Name, di.RareTemplate.GetType().ToString()));
 
                             }
                         }
@@ -86,9 +86,9 @@ namespace Server.Commands
                     if (di is DODInstance)
                     {
                         if (di.RareTemplate == null)
-                            Logger.Log(LogType.Text, String.Format("DODInstance {0} has a null RareTemplate.", di.Name));
+                            Logger.Log(LogType.Text, string.Format("DODInstance {0} has a null RareTemplate.", di.Name));
                         else
-                            Logger.Log(LogType.Item, di.RareTemplate, String.Format("DODInstance {0}: ({1}).", di.Name, di.RareTemplate.GetType().ToString()));
+                            Logger.Log(LogType.Item, di.RareTemplate, string.Format("DODInstance {0}: ({1}).", di.Name, di.RareTemplate.GetType().ToString()));
                     }
                 }
 
@@ -310,7 +310,7 @@ namespace Server.Commands
                                 }
                                 else
                                 {
-                                    LogFailure(String.Format("Could not find the group \"{0}\" with a rarity of {1}", e.Arguments[0], iRarity));
+                                    LogFailure(string.Format("Could not find the group \"{0}\" with a rarity of {1}", e.Arguments[0], iRarity));
                                 }
                             }
                             else

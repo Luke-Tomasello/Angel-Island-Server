@@ -253,7 +253,7 @@ namespace Server.Mobiles
             if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.SeaGypsyUsageReport))
                 Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Administrator,
                 0x482,
-                String.Format("{0}, {1} ", m.Name, text));
+                string.Format("{0}, {1} ", m.Name, text));
         }
 
         public SeaGypsy(Serial serial)

@@ -78,9 +78,9 @@ namespace Server.Items
                 if (m_CreepyName != null)
                 {
                     if (m_CreepyTitle != null)
-                        return String.Format("the creepy bust of {0} the {1}", m_CreepyName, m_CreepyTitle);
+                        return string.Format("the creepy bust of {0} the {1}", m_CreepyName, m_CreepyTitle);
                     else
-                        return String.Format("the creepy bust of {0}", m_CreepyName);
+                        return string.Format("the creepy bust of {0}", m_CreepyName);
                 }
                 else
                 {

@@ -458,7 +458,7 @@ namespace Server.Engines.ChampionSpawn
         private void NotifyStaff()
         {
             int hue = Utility.RandomSpecialHue(hash: m_LevelCounter);
-            Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.GameMaster, hue, String.Format("[{0}] Champ {1} is on level {2}", "System", m_Type, m_LevelCounter));
+            Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.GameMaster, hue, string.Format("[{0}] Champ {1} is on level {2}", "System", m_Type, m_LevelCounter));
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -1494,10 +1494,10 @@ namespace Server.Engines.ChampionSpawn
             LogHelper logger = new LogHelper("champSpawner.log", false);
             try
             {
-                logger.Log(LogType.Text, String.Format("this = {0}", this));
-                logger.Log(LogType.Text, String.Format("m_LevelCounter = {0}", m_LevelCounter));
-                logger.Log(LogType.Text, String.Format("SpawnLevels.Count = {0}", SpawnLevels.Count));
-                logger.Log(LogType.Text, String.Format("((ChampLevelData)SpawnLevels [m_LevelCounter]).Monsters.Length = {0}", ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Monsters.Length));
+                logger.Log(LogType.Text, string.Format("this = {0}", this));
+                logger.Log(LogType.Text, string.Format("m_LevelCounter = {0}", m_LevelCounter));
+                logger.Log(LogType.Text, string.Format("SpawnLevels.Count = {0}", SpawnLevels.Count));
+                logger.Log(LogType.Text, string.Format("((ChampLevelData)SpawnLevels [m_LevelCounter]).Monsters.Length = {0}", ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Monsters.Length));
                 //logger.Log(LogType.Text, "X = {0}", X);
             }
             catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }

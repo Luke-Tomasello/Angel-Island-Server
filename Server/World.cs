@@ -188,7 +188,7 @@ namespace Server
 
         public static void Broadcast(int hue, bool ascii, string format, params object[] args)
         {
-            Broadcast(hue, ascii, String.Format(format, args));
+            Broadcast(hue, ascii, string.Format(format, args));
         }
 
         private interface IEntityEntry
@@ -511,7 +511,7 @@ namespace Server
 
                                 Console.WriteLine("Types will not be deleted. An exception will be thrown when you press return");
 
-                                throw new Exception(String.Format("Bad type '{0}'", typeName));
+                                throw new Exception(string.Format("Bad type '{0}'", typeName));
                             }
 
                             ConstructorInfo ctor = t.GetConstructor(ctorTypes);
@@ -522,7 +522,7 @@ namespace Server
                             }
                             else
                             {
-                                throw new Exception(String.Format("Type '{0}' does not have a serialization constructor", t));
+                                throw new Exception(string.Format("Type '{0}' does not have a serialization constructor", t));
                             }
                         }
 
@@ -605,7 +605,7 @@ namespace Server
 
                                 Console.WriteLine("Types will not be deleted. An exception will be thrown when you press return");
 
-                                throw new Exception(String.Format("Bad type '{0}'", typeName));
+                                throw new Exception(string.Format("Bad type '{0}'", typeName));
                             }
 
                             ConstructorInfo ctor = t.GetConstructor(ctorTypes);
@@ -616,7 +616,7 @@ namespace Server
                             }
                             else
                             {
-                                throw new Exception(String.Format("Type '{0}' does not have a serialization constructor", t));
+                                throw new Exception(string.Format("Type '{0}' does not have a serialization constructor", t));
                             }
                         }
 
@@ -747,7 +747,7 @@ namespace Server
                                 m.Deserialize(reader);
 
                                 if (reader.Position != (entry.Position + entry.Length))
-                                    throw new Exception(String.Format("***** Bad serialize on {0} *****", m.GetType()));
+                                    throw new Exception(string.Format("***** Bad serialize on {0} *****", m.GetType()));
                             }
                             catch (Exception e)
                             {
@@ -789,7 +789,7 @@ namespace Server
                                 item.Deserialize(reader);
 
                                 if (reader.Position != (entry.Position + entry.Length))
-                                    throw new Exception(String.Format("***** Bad serialize on {0} *****", item.GetType()));
+                                    throw new Exception(string.Format("***** Bad serialize on {0} *****", item.GetType()));
                             }
                             catch (Exception e)
                             {
@@ -832,7 +832,7 @@ namespace Server
                                 g.Deserialize(reader);
 
                                 if (reader.Position != (entry.Position + entry.Length))
-                                    throw new Exception(String.Format("***** Bad serialize on Guild {0} *****", g.Id));
+                                    throw new Exception(string.Format("***** Bad serialize on Guild {0} *****", g.Id));
                             }
                             catch (Exception e)
                             {
@@ -873,7 +873,7 @@ namespace Server
                                 r.Deserialize(reader);
 
                                 if (reader.Position != (entry.Position + entry.Length))
-                                    throw new Exception(String.Format("***** Bad serialize on {0} *****", r.GetType()));
+                                    throw new Exception(string.Format("***** Bad serialize on {0} *****", r.GetType()));
                             }
                             catch (Exception e)
                             {
@@ -943,7 +943,7 @@ namespace Server
                 Console.WriteLine("After pressing return an exception will be thrown and the server will terminate");
                 Console.ReadLine();
 
-                throw new Exception(String.Format("Load failed (items={0}, mobiles={1}, guilds={2}, regions={3}, type={4}, serial={5})", failedItems, failedMobiles, failedGuilds, failedRegions, failedType, failedSerial), failed);
+                throw new Exception(string.Format("Load failed (items={0}, mobiles={1}, guilds={2}, regions={3}, type={4}, serial={5})", failedItems, failedMobiles, failedGuilds, failedRegions, failedType, failedSerial), failed);
             }
 
             EventSink.InvokeWorldLoad();

@@ -45,7 +45,7 @@ namespace Server.Factions.NewGumps.Ethics
 
             AddBackground(350, 95 + 30 * ((powers.Length + 1) / 2));
 
-            AddHtml(20, 15, 310, 26, String.Format("<center><i>{0} Powers</i></center>", pl.Ethic.Definition.Title.String), false, false);
+            AddHtml(20, 15, 310, 26, string.Format("<center><i>{0} Powers</i></center>", pl.Ethic.Definition.Title.String), false, false);
 
             AddSeparator(20, 40, 310);
 

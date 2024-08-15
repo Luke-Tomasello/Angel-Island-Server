@@ -19,7 +19,7 @@
  *
  ***************************************************************************/
 
-/* Scripts/Engines/Pathing/SectorPathAlgorithm.cs
+/* Scripts\Items\Maps\SeaChart.cs
  * CHANGELOG
  *  7/1/23, Yoar
  *      Removed old location generator

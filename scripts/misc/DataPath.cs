@@ -91,12 +91,12 @@ namespace Server.Misc
                     IntPtr key;
                     int error;
                     // adam: 8/21/22, first try the "Angel Island" key
-                    error = WOW6432Node.RegOpenKeyEx(WOW6432Node.HKEY_LOCAL_MACHINE, String.Format(@"SOFTWARE\Angel Island\{0}\1.0", subName),
+                    error = WOW6432Node.RegOpenKeyEx(WOW6432Node.HKEY_LOCAL_MACHINE, string.Format(@"SOFTWARE\Angel Island\{0}\1.0", subName),
                         0, WOW6432Node.KEY_READ | WOW6432Node.KEY_WOW64_32KEY, out key);
 
                     // adam: 8/21/22, next try the standard "Origin Worlds Online" key
                     if (error != 0)
-                        error = WOW6432Node.RegOpenKeyEx(WOW6432Node.HKEY_LOCAL_MACHINE, String.Format(@"SOFTWARE\Origin Worlds Online\{0}\1.0", subName),
+                        error = WOW6432Node.RegOpenKeyEx(WOW6432Node.HKEY_LOCAL_MACHINE, string.Format(@"SOFTWARE\Origin Worlds Online\{0}\1.0", subName),
                         0, WOW6432Node.KEY_READ | WOW6432Node.KEY_WOW64_32KEY, out key);
 
                     if (error != 0)
@@ -131,7 +131,7 @@ namespace Server.Misc
                 else
                 {
 #if false
-                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(String.Format(@"SOFTWARE\Origin Worlds Online\{0}\1.0", subName)))
+                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(string.Format(@"SOFTWARE\Origin Worlds Online\{0}\1.0", subName)))
                     {
                         if (key == null)
                             return null;

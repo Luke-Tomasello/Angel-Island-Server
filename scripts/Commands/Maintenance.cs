@@ -265,11 +265,11 @@ namespace Server.Misc
                 else
                 {   // tell everyone
                     if (Maintenance.Countdown > 1)
-                        text = String.Format("Server restarting in {0} minutes for maintenance...", Maintenance.Countdown);
+                        text = string.Format("Server restarting in {0} minutes for maintenance...", Maintenance.Countdown);
                     else if (Maintenance.Countdown == 1)
-                        text = String.Format("Server restarting in {0} minute for maintenance...", Maintenance.Countdown);
+                        text = string.Format("Server restarting in {0} minute for maintenance...", Maintenance.Countdown);
                     else
-                        text = String.Format("Server restarting now...");
+                        text = string.Format("Server restarting now...");
 
                     World.Broadcast(0x22, true, text);
                 }

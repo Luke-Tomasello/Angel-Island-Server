@@ -211,7 +211,7 @@ namespace Server.Guilds
                     if (m_Alignment == AlignmentType.None)
                         GuildMessage("Your guild is now unaligned.");
                     else
-                        GuildMessage(String.Format("Your guild is now {0} aligned.", AlignmentSystem.GetName(m_Alignment)));
+                        GuildMessage(string.Format("Your guild is now {0} aligned.", AlignmentSystem.GetName(m_Alignment)));
                 }
             }
         }
@@ -540,7 +540,7 @@ namespace Server.Guilds
 
         public void GuildMessage(int num, string format, params object[] args)
         {
-            GuildMessage(num, String.Format(format, args));
+            GuildMessage(num, string.Format(format, args));
         }
 
         public void GuildMessage(int num, string append)
@@ -689,7 +689,7 @@ namespace Server.Guilds
                 if (Abbreviation != null) abbreviation = Abbreviation;
                 if (Name != null) name = Name;
                 if (m_Guildstone != null) sx = m_Guildstone.Serial;
-                string text = String.Format("The Guild \"{0}\" [{1}] ({2}) was disbanded.", name, abbreviation, sx.ToString());
+                string text = string.Format("The Guild \"{0}\" [{1}] ({2}) was disbanded.", name, abbreviation, sx.ToString());
                 Logger.Log(LogType.Text, text);
                 Logger.Finish();
                 Utility.ConsoleWriteLine(text, ConsoleColor.Yellow);
@@ -1177,7 +1177,7 @@ namespace Server.Guilds
 
             #region Alignment
             if (AlignmentSystem.Enabled && AlignmentSystem.GetTitleDisplay(mob).HasFlag(TitleDisplay.GuildSuffix) && m_Alignment != AlignmentType.None)
-                return String.Format(" ({0})", AlignmentSystem.GetName(m_Alignment));
+                return string.Format(" ({0})", AlignmentSystem.GetName(m_Alignment));
             #endregion
 
             return null;

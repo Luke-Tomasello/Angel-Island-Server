@@ -2487,7 +2487,7 @@ namespace Server.Mobiles
                     if (CoreAI.WatchListShowExceptions)
                         Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor,
                             0x482,
-                            String.Format("WatchListed player {0} has logged in.", pm.Name));
+                            string.Format("WatchListed player {0} has logged in.", pm.Name));
                 }
                 else
                 {
@@ -2504,7 +2504,7 @@ namespace Server.Mobiles
                     if (CoreAI.WatchListShowExceptions)
                         Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor,
                             0x482,
-                            String.Format("WatchListed account {0} (char: {1}) has logged in.", acct.Username, pm.Name));
+                            string.Format("WatchListed account {0} (char: {1}) has logged in.", acct.Username, pm.Name));
                 }
                 else
                 {
@@ -2553,7 +2553,7 @@ namespace Server.Mobiles
                     {
                         if (ts.IsMember(pm) && ts.RLDaysLeftInFund < 7.0)
                         {
-                            string tsMessage = String.Format("Your guild's township has {0:0.00} days left in its fund before the township is demolished.", ts.RLDaysLeftInFund);
+                            string tsMessage = string.Format("Your guild's township has {0:0.00} days left in its fund before the township is demolished.", ts.RLDaysLeftInFund);
                             from.SendGump(new NoticeGump(1060637, 30720, tsMessage, 0xFFC000, 300, 140, null, null));
                         }
                     }
@@ -2613,12 +2613,12 @@ namespace Server.Mobiles
                 if (acct.ValidClient == false)
                 {
                     //pm.SendMessage(0x35, "Your client is out of date. Please update your client with the Launcher.");
-                    Utility.ConsoleOut(String.Format("Invalid client detected for: {0}: Account '{1}'",
+                    Utility.ConsoleOut(string.Format("Invalid client detected for: {0}: Account '{1}'",
                         pm.NetState, acct.Username), ConsoleColor.Red);
                 }
                 else
                 {
-                    Utility.ConsoleOut(String.Format("Valid client detected for: {0}: Account '{1}'",
+                    Utility.ConsoleOut(string.Format("Valid client detected for: {0}: Account '{1}'",
                         pm.NetState, acct.Username), ConsoleColor.Yellow);
                 }
 
@@ -2724,7 +2724,7 @@ namespace Server.Mobiles
                             string name = weapon.Name;
 
                             if (name == null)
-                                name = String.Format("#{0}", weapon.LabelNumber);
+                                name = string.Format("#{0}", weapon.LabelNumber);
 
                             from.SendLocalizedMessage(1062001, name); // You can no longer wield your ~1_WEAPON~
                             from.AddToBackpack(weapon);
@@ -2768,7 +2768,7 @@ namespace Server.Mobiles
                             string name = armor.Name;
 
                             if (name == null)
-                                name = String.Format("#{0}", armor.LabelNumber);
+                                name = string.Format("#{0}", armor.LabelNumber);
 
                             if (armor is BaseShield)
                                 from.SendLocalizedMessage(1062003, name); // You can no longer equip your ~1_SHIELD~
@@ -3290,7 +3290,7 @@ namespace Server.Mobiles
                 int curWeight = Mobile.BodyWeight + this.TotalWeight;
 
                 if (curWeight > maxWeight)
-                    this.SendLocalizedMessage(1019035, true, String.Format(" : {0} / {1}", curWeight, maxWeight));
+                    this.SendLocalizedMessage(1019035, true, string.Format(" : {0} / {1}", curWeight, maxWeight));
             }
         }
 
@@ -3703,7 +3703,7 @@ namespace Server.Mobiles
             {
                 Mobile prot = (Mobile)m_JusticeProtectors[i];
 
-                string args = String.Format("{0}\t{1}", this.Name, prot.Name);
+                string args = string.Format("{0}\t{1}", this.Name, prot.Name);
 
                 prot.SendLocalizedMessage(1049371, args); // The protective relationship between ~1_PLAYER1~ and ~2_PLAYER2~ has been ended.
                 this.SendLocalizedMessage(1049371, args); // The protective relationship between ~1_PLAYER1~ and ~2_PLAYER2~ has been ended.
@@ -5155,7 +5155,7 @@ namespace Server.Mobiles
 
             m_Reported = DateTime.UtcNow;
             m_ReportLogger = new LogHelper(GetReportLogName(m_Reported.ToString("MM-dd-yyyy HH-mm-ss")));
-            m_ReportLogger.Log(LogType.Text, String.Format("{0} (acct {1}, SN {2}, IP {3}) reported by {4} (acct {5}, SN {6}) at {7}, at {8}.\r\n\r\n",
+            m_ReportLogger.Log(LogType.Text, string.Format("{0} (acct {1}, SN {2}, IP {3}) reported by {4} (acct {5}, SN {6}) at {7}, at {8}.\r\n\r\n",
                 this.Name, ((Account)this.Account).Username, this.Serial, ((this.NetState != null) ? this.NetState.ToString() : ""), from.Name, ((Account)from.Account).Username, from.Serial, DateTime.UtcNow, from.Location));
             //Console.WriteLine("{0} (acct {1}, SN {2}, IP {3}) reported by {4} (acct {5}, SN {6}) at {7}, at {8}.\r\n\r\n",
             //    this.Name, ((Account)this.Account).Username, this.Serial, this.NetState.ToString(), from.Name, ((Account)from.Account).Username, from.Serial, DateTime.UtcNow, from.Location);
@@ -5168,7 +5168,7 @@ namespace Server.Mobiles
 
         private string GetReportLogName(string datestring)
         {
-            string filename = String.Format("{0} {1}.log", datestring, this.Name);
+            string filename = string.Format("{0} {1}.log", datestring, this.Name);
 
             char[] illegalcharacters = { '\\', '/', ':', '*', '?', '\"', '<', '>', '|' };
 
@@ -5326,7 +5326,7 @@ namespace Server.Mobiles
                         && mob.AccessLevel > this.AccessLevel)
                     {
                         if (p == null)
-                            p = Packet.Acquire(new UnicodeMessage(this.Serial, this.Body, MessageType.Regular, this.SpeechHue, 3, this.Language, this.Name, String.Format("[Allied]: {0}", text)));
+                            p = Packet.Acquire(new UnicodeMessage(this.Serial, this.Body, MessageType.Regular, this.SpeechHue, 3, this.Language, this.Name, string.Format("[Allied]: {0}", text)));
 
                         ns.Send(p);
                     }
@@ -5365,7 +5365,7 @@ namespace Server.Mobiles
                         && mob.AccessLevel > this.AccessLevel)
                     {
                         if (p == null)
-                            p = Packet.Acquire(new UnicodeMessage(this.Serial, this.Body, MessageType.Regular, this.SpeechHue, 3, this.Language, this.Name, String.Format("[Guild]: {0}", text)));
+                            p = Packet.Acquire(new UnicodeMessage(this.Serial, this.Body, MessageType.Regular, this.SpeechHue, 3, this.Language, this.Name, string.Format("[Guild]: {0}", text)));
 
                         ns.Send(p);
                     }
@@ -6789,7 +6789,7 @@ namespace Server.Mobiles
                 if (suffix.Length == 0)
                     suffix = "(Young)";
                 else
-                    suffix = String.Concat(suffix, " (Young)");
+                    suffix = string.Concat(suffix, " (Young)");
             }
 
             #region Ethics
@@ -6800,14 +6800,14 @@ namespace Server.Mobiles
                     if (suffix.Length == 0)
                         suffix = "(Fallen Hero)";
                     else
-                        suffix = String.Concat(suffix, " (Fallen Hero)");
+                        suffix = string.Concat(suffix, " (Fallen Hero)");
                 }
                 else
                 {
                     if (suffix.Length == 0)
                         suffix = m_EthicPlayer.Ethic.Definition.Adjunct.String;
                     else
-                        suffix = String.Concat(suffix, " ", m_EthicPlayer.Ethic.Definition.Adjunct.String);
+                        suffix = string.Concat(suffix, " ", m_EthicPlayer.Ethic.Definition.Adjunct.String);
                 }
             }
             #endregion
@@ -7240,19 +7240,19 @@ namespace Server.Mobiles
                             Faction faction = pl.Faction;
 
                             if (faction.Commander == this)
-                                text = String.Concat(this.Female ? "(Commanding Lady of the " : "(Commanding Lord of the ", faction.Definition.FriendlyName, ")");
+                                text = string.Concat(this.Female ? "(Commanding Lady of the " : "(Commanding Lord of the ", faction.Definition.FriendlyName, ")");
                             else if (pl.Sheriff != null)
-                                text = String.Concat("(The Sheriff of ", pl.Sheriff.Definition.FriendlyName, ", ", faction.Definition.FriendlyName, ")");
+                                text = string.Concat("(The Sheriff of ", pl.Sheriff.Definition.FriendlyName, ", ", faction.Definition.FriendlyName, ")");
                             else if (pl.Finance != null)
-                                text = String.Concat("(The Finance Minister of ", pl.Finance.Definition.FriendlyName, ", ", faction.Definition.FriendlyName, ")");
+                                text = string.Concat("(The Finance Minister of ", pl.Finance.Definition.FriendlyName, ", ", faction.Definition.FriendlyName, ")");
                             else
                             {
                                 ascii = true;
 
                                 if (pl.MerchantTitle != MerchantTitle.None)
-                                    text = String.Concat("(", MerchantTitles.GetInfo(pl.MerchantTitle).Title.String, ", ", faction.Definition.FriendlyName, ")");
+                                    text = string.Concat("(", MerchantTitles.GetInfo(pl.MerchantTitle).Title.String, ", ", faction.Definition.FriendlyName, ")");
                                 else
-                                    text = String.Concat("(", pl.Rank.Title.String, ", ", faction.Definition.FriendlyName, ")");
+                                    text = string.Concat("(", pl.Rank.Title.String, ", ", faction.Definition.FriendlyName, ")");
                             }
 
                             int hue = (Faction.Find(from) == faction ? 98 : 38);
@@ -7272,7 +7272,7 @@ namespace Server.Mobiles
                                 int hue = Notoriety.GetHue(notoriety);
                                 // I use history here since it represents the greatest life force acquired.
                                 //	not sure if this is right :/
-                                PrivateOverheadMessage(MessageType.Label, hue, true, String.Format("You have mastered sphere {0} and have {1} units of life force remaining.", myEPL.History / 10, myEPL.Power), from.NetState);
+                                PrivateOverheadMessage(MessageType.Label, hue, true, string.Format("You have mastered sphere {0} and have {1} units of life force remaining.", myEPL.History / 10, myEPL.Power), from.NetState);
                             }
                         }
                     }
@@ -7286,7 +7286,7 @@ namespace Server.Mobiles
 
                     if (alignment != AlignmentType.None)
                     {
-                        string text = String.Format("({0}, {1})", AlignmentSystem.GetRankTitle(this), AlignmentSystem.GetName(alignment));
+                        string text = string.Format("({0}, {1})", AlignmentSystem.GetRankTitle(this), AlignmentSystem.GetName(alignment));
 
                         AlignmentType observerAlignment = AlignmentSystem.Find(from);
 

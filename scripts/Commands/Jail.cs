@@ -146,7 +146,7 @@ namespace Server.Commands
                         {
                             int count = e.Arguments.Length - index;
 
-                            comment = String.Join(" ", e.Arguments, index, count);
+                            comment = string.Join(" ", e.Arguments, index, count);
 
                             index += count;
                             break;
@@ -216,7 +216,7 @@ namespace Server.Commands
                 else if (jailer.AccessLevel >= AccessLevel.GameMaster) // need GM access to see usernames
                     username = acct.Username;
                 else
-                    username = String.Format("Acct. of {0}", toJail.Name);
+                    username = string.Format("Acct. of {0}", toJail.Name);
 
                 AddBackground(0, 0, 420, 288, 9200);
 
@@ -231,7 +231,7 @@ namespace Server.Commands
                 AddButton(110, 34, 4011, 4013, 3, GumpButtonType.Reply, 0); // view account
                 AddHtml(145, 35, 240, 20, Color(username), false, false);
 
-                AddHtml(20, 59, 120, 20, Color(String.Format("Cell (1-{0}):", m_Cells.Length)), false, false);
+                AddHtml(20, 59, 120, 20, Color(string.Format("Cell (1-{0}):", m_Cells.Length)), false, false);
                 AddTextEntry(145, 59, 90, 20, 0x481, 0, cell.ToString());
 
                 AddHtml(20, 83, 90, 20, Color("Sentence (hrs):"), false, false);
@@ -369,7 +369,7 @@ namespace Server.Commands
         {
             Account acct = toJail.Account as Account;
 
-            if (String.IsNullOrEmpty(comment))
+            if (string.IsNullOrEmpty(comment))
                 comment = "None";
 
             // stable the players pets
@@ -400,7 +400,7 @@ namespace Server.Commands
         {
             Account acct = toJail.Account as Account;
 
-            if (String.IsNullOrEmpty(comment))
+            if (string.IsNullOrEmpty(comment))
                 comment = "None";
 
             // stable the players pets
@@ -454,7 +454,7 @@ namespace Server.Commands
         private static string FormatComment(int tagCount, string comment, int sentence, bool trouble)
         {
             // TODO: Simplify comment? There's no need to add the current date or the tag count. But then update GetDefaultSentence!
-            return String.Format("{0}\nTag count: {1}\nJailed{2} for {3} hours. Reason: {4}", DateTime.UtcNow, tagCount, trouble ? "TroubleMaker" : "", sentence, comment);
+            return string.Format("{0}\nTag count: {1}\nJailed{2} for {3} hours. Reason: {4}", DateTime.UtcNow, tagCount, trouble ? "TroubleMaker" : "", sentence, comment);
         }
     }
 }

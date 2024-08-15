@@ -19,8 +19,10 @@
  *
  ***************************************************************************/
 
-/* ...\BuildInfo\Program.cs
+/* BuildInfo\Program.cs
  * ChangeLog
+ *  8/13/2024, Adam
+ *      Add a notion of BuildInfoDir. This directory contains the "build.info" file
  *  7/28/2024, Adam
  *      Bump the major version to 7. This will be our new GitHub version
  *  12/26/21, Adam 
@@ -63,7 +65,7 @@ namespace BuildInfo
             const int minor = 1;    // if you change this, update Version History above
 
             Console.WriteLine("BuildInfo: Generating Build Information...");
-            string buildInfoFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "build.info");
+            string buildInfoFile = Path.Combine(BuildInfoDir, "build.info");
             bool okay = false;
             int buildNo = GetBuild();
             try
@@ -93,10 +95,18 @@ namespace BuildInfo
 
             return 0;
         }
-
+        public static string BuildInfoDir
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AI.BuildInfoDir")))
+                    return Environment.GetEnvironmentVariable("AI.BuildInfoDir");
+                return "./";
+            }
+        }
         public static int GetBuild()
         {
-            string buildInfoFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "build.info");
+            string buildInfoFile = Path.Combine(BuildInfoDir, "build.info");
             try
             {
                 // open our version info file

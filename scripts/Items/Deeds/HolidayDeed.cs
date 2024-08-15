@@ -129,13 +129,13 @@ namespace Server.Items
 
             if (place >= 1 && place <= 3)
             {
-                m_Signature = String.Format("{2} Halloween Prize: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, PlaceText);
-                Name = String.Format("a {2} Halloween Prize Ticket: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, PlaceText);
+                m_Signature = string.Format("{2} Halloween Prize: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, PlaceText);
+                Name = string.Format("a {2} Halloween Prize Ticket: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, PlaceText);
             }
             else
             {
-                m_Signature = String.Format("Halloween Prize: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year);
-                Name = String.Format("Halloween Prize Ticket: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year);
+                m_Signature = string.Format("Halloween Prize: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year);
+                Name = string.Format("Halloween Prize Ticket: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year);
             }
         }
 
@@ -252,7 +252,7 @@ namespace Server.Items
                         {
                             m_Place = 1;
                             string PlaceText = "1st place";
-                            m_Signature = String.Format("{2} Halloween Prize: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, PlaceText);
+                            m_Signature = string.Format("{2} Halloween Prize: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, PlaceText);
                         }
                         goto default;
                     }

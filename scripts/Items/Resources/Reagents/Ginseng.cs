@@ -30,7 +30,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format("{0} ginseng", Amount);
+                return string.Format("{0} ginseng", Amount);
             }
         }
 

@@ -212,10 +212,10 @@ namespace Server.Commands
         public static string GetFileName(string root, string name, string ext)
         {
             int index = 0;
-            string file = String.Concat(name, ext);
+            string file = string.Concat(name, ext);
 
             while (File.Exists(Path.Combine(root, file)))
-                file = String.Concat(name, ++index, ext);
+                file = string.Concat(name, ++index, ext);
 
             return file;
         }
@@ -315,7 +315,7 @@ namespace Server.Commands
 
             if (info != null)
             {
-                aliased = String.Format("<a href=\"{0}\">{1}</a>", info.m_FileName, info.m_TypeName);
+                aliased = string.Format("<a href=\"{0}\">{1}</a>", info.m_FileName, info.m_TypeName);
             }
             else
             {
@@ -332,7 +332,7 @@ namespace Server.Commands
                     aliased = realType.Name;
             }
 
-            return String.Concat(prepend, aliased, append, name);
+            return string.Concat(prepend, aliased, append, name);
         }
 
         private static Hashtable m_Types;
@@ -954,7 +954,7 @@ namespace Server.Commands
                             break;
                     }
 
-                    html.WriteLine("            <td width=\"{0}\"{1} class=\"entry\">&nbsp;</td>", count * 25, count == 1 ? "" : String.Format(" colspan=\"{0}\"", count));
+                    html.WriteLine("            <td width=\"{0}\"{1} class=\"entry\">&nbsp;</td>", count * 25, count == 1 ? "" : string.Format(" colspan=\"{0}\"", count));
                 }
             }
 
@@ -970,7 +970,7 @@ namespace Server.Commands
 
             lbod.Entries = LargeBulkEntry.ConvertEntries(lbod, entries);
 
-            WriteSmithBODHeader(html, String.Format("(Large) {0}: Normal", name));
+            WriteSmithBODHeader(html, string.Format("(Large) {0}: Normal", name));
 
             lbod.RequireExceptional = false;
             for (BulkMaterialType mat = BulkMaterialType.None; mat <= BulkMaterialType.Valorite; ++mat)
@@ -984,7 +984,7 @@ namespace Server.Commands
 
             html.WriteLine("      <br><br>");
 
-            WriteSmithBODHeader(html, String.Format("(Large) {0}: Exceptional", name));
+            WriteSmithBODHeader(html, string.Format("(Large) {0}: Exceptional", name));
 
             lbod.RequireExceptional = true;
             for (BulkMaterialType mat = BulkMaterialType.None; mat <= BulkMaterialType.Valorite; ++mat)
@@ -1183,7 +1183,7 @@ namespace Server.Commands
                             break;
                     }
 
-                    html.WriteLine("            <td width=\"{0}\"{1} class=\"entry\">&nbsp;</td>", count * 25, count == 1 ? "" : String.Format(" colspan=\"{0}\"", count));
+                    html.WriteLine("            <td width=\"{0}\"{1} class=\"entry\">&nbsp;</td>", count * 25, count == 1 ? "" : string.Format(" colspan=\"{0}\"", count));
                 }
             }
 
@@ -1954,7 +1954,7 @@ namespace Server.Commands
                 Type checkType = (Type)m_Tooltips[i, 0];
 
                 if (paramType == checkType)
-                    return String.Format((string)m_Tooltips[i, 1], HtmlNewLine);
+                    return string.Format((string)m_Tooltips[i, 1], HtmlNewLine);
             }
 
             if (paramType.IsEnum)

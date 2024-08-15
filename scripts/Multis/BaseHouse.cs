@@ -1452,7 +1452,7 @@ namespace Server.Multis
                         if (a.EmailAddress != null && a.EmailAddress.Length > 0 && SmtpDirect.CheckEmailAddy(a.EmailAddress, false) == true)
                         {
                             string subject = "Angel Island: Your house is in danger of collapsing";
-                            string body = String.Format("\nThis message is to inform you that your house at {2} on the '{0}' account is in danger of collapsing (IDOC). If you do not return to refresh your house, it will fall on {1}.\n\nBest Regards,\n  The Angel Island Team\n\n", a.ToString(), DateTime.UtcNow + TimeSpan.FromMinutes(m_DecayMinutesStored), BanLocation);
+                            string body = string.Format("\nThis message is to inform you that your house at {2} on the '{0}' account is in danger of collapsing (IDOC). If you do not return to refresh your house, it will fall on {1}.\n\nBest Regards,\n  The Angel Island Team\n\n", a.ToString(), DateTime.UtcNow + TimeSpan.FromMinutes(m_DecayMinutesStored), BanLocation);
                             Emailer mail = new Emailer();
                             mail.SendEmail(a.EmailAddress, subject, body, false);
                         }
@@ -1475,7 +1475,7 @@ namespace Server.Multis
             else if (Utility.RandomDouble() < CoreAI.IDOCBroadcastChance && (Core.RuleSets.AngelIslandRules()))
             {
                 string[] lines = new string[1];
-                lines[0] = String.Format("Lord British has condemned the estate of {0} near {1}.", this.Owner.Name, DescribeLocation());
+                lines[0] = string.Format("Lord British has condemned the estate of {0} near {1}.", this.Owner.Name, DescribeLocation());
                 m_IDOC_Broadcast_TCE = new TownCrierEntry(lines, TimeSpan.FromMinutes(m_DecayMinutesStored), Serial.MinusOne);
                 GlobalTownCrierEntryList.Instance.AddEntry(m_IDOC_Broadcast_TCE);
                 announced = true;
@@ -1622,13 +1622,13 @@ namespace Server.Multis
                 return;
 
             if (ix.Stackable == true)
-                Logger.Log(LogType.Item, ix, String.Format("Amount = {0}", ix.Amount));
+                Logger.Log(LogType.Item, ix, string.Format("Amount = {0}", ix.Amount));
 
             if (ix is CommodityDeed)
-                Logger.Log(LogType.Item, ix, String.Format("Commodity = {0}, Amount = {1}", (ix as CommodityDeed).Commodity, (ix as CommodityDeed).CommodityAmount));
+                Logger.Log(LogType.Item, ix, string.Format("Commodity = {0}, Amount = {1}", (ix as CommodityDeed).Commodity, (ix as CommodityDeed).CommodityAmount));
 
             if (ix is BankCheck)
-                Logger.Log(LogType.Item, ix, String.Format("Amount = {0}", (ix as BankCheck).Worth));
+                Logger.Log(LogType.Item, ix, string.Format("Amount = {0}", (ix as BankCheck).Worth));
 
             return;
         }
@@ -1833,7 +1833,7 @@ namespace Server.Multis
             bool valid = Sextant.Format(p, this.Map, ref xLong, ref yLat, ref xMins, ref yMins, ref xEast, ref ySouth);
 
             if (valid)
-                location = String.Format("{0}� {1}'{2}, {3}� {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W");
+                location = string.Format("{0}� {1}'{2}, {3}� {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W");
             else
                 location = "????";
 
@@ -3297,7 +3297,7 @@ namespace Server.Multis
                 bool valid = m_House != null && Sextant.Format(m_House.Location, m_House.Map, ref xLong, ref yLat, ref xMins, ref yMins, ref xEast, ref ySouth);
 
                 if (valid)
-                    location = String.Format("{0}� {1}'{2}, {3}� {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W");
+                    location = string.Format("{0}� {1}'{2}, {3}� {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W");
                 else
                     location = "????";
 
@@ -4642,7 +4642,7 @@ namespace Server.Multis
             if (idocannc) // idoc announcement was running when we saved, re-create it
             {
                 string[] lines = new string[1];
-                lines[0] = String.Format("Lord British has condemned the estate of {0} near {1}.", this.Owner.Name, DescribeLocation());
+                lines[0] = string.Format("Lord British has condemned the estate of {0} near {1}.", this.Owner.Name, DescribeLocation());
                 m_IDOC_Broadcast_TCE = new TownCrierEntry(lines, TimeSpan.FromMinutes(m_DecayMinutesStored), Serial.MinusOne);
                 GlobalTownCrierEntryList.Instance.AddEntry(m_IDOC_Broadcast_TCE);
             }
@@ -4862,7 +4862,7 @@ namespace Server.Multis
                 if (m_LockboxCount != count)
                 {
                     LogHelper Logger = new LogHelper("PhantomLockboxCleanup.log", false);
-                    Logger.Log(LogType.Item, this.Sign, String.Format("Adjusting LockBoxCount by {0}", m_LockboxCount - count));
+                    Logger.Log(LogType.Item, this.Sign, string.Format("Adjusting LockBoxCount by {0}", m_LockboxCount - count));
 
                     m_LockboxCount = count;
                 }
@@ -5589,7 +5589,7 @@ namespace Server.Multis
 
         public void LogCommand(Mobile from, string command, object targeted)
         {
-            CommandLogging.WriteLine(from, String.Format("{0} {1} ('{2}') used command '{3}' on '{4}'", from.AccessLevel, from, ((Account)from.Account).Username, command, targeted.ToString()));
+            CommandLogging.WriteLine(from, string.Format("{0} {1} ('{2}') used command '{3}' on '{4}'", from.AccessLevel, from, ((Account)from.Account).Username, command, targeted.ToString()));
         }
 
         #region Lockboxes

@@ -180,8 +180,8 @@ namespace Server.Engines.Craft
 
                 if (name.Number > 0)
                     AddHtmlLocalized(context.DoNotColor ? 60 : 50, 165 + 20 * m_NumLines, 250, 18, name.Number, resourceCount.ToString(), LabelColor, false, false);
-                else if (!String.IsNullOrEmpty(name.String))
-                    AddHtml(context.DoNotColor ? 60 : 50, 165 + 20 * m_NumLines, 250, 18, Color(String.Format("{0} ({1})", name.String, resourceCount.ToString())), false, false);
+                else if (!string.IsNullOrEmpty(name.String))
+                    AddHtml(context.DoNotColor ? 60 : 50, 165 + 20 * m_NumLines, 250, 18, Color(string.Format("{0} ({1})", name.String, resourceCount.ToString())), false, false);
             }
             // ****************************************
 
@@ -219,8 +219,8 @@ namespace Server.Engines.Craft
 
                 if (name.Number > 0)
                     AddHtmlLocalized(context.DoNotColor ? 60 : 50, 185 + 20 * m_NumLines, 250, 18, name.Number, resourceCount.ToString(), LabelColor, false, false);
-                else if (!String.IsNullOrEmpty(name.String))
-                    AddHtml(context.DoNotColor ? 60 : 50, 185 + 20 * m_NumLines, 250, 18, Color(String.Format("{0} ({1})", name.String, resourceCount.ToString())), false, false);
+                else if (!string.IsNullOrEmpty(name.String))
+                    AddHtml(context.DoNotColor ? 60 : 50, 185 + 20 * m_NumLines, 250, 18, Color(string.Format("{0} ({1})", name.String, resourceCount.ToString())), false, false);
             }
             // ****************************************
 
@@ -274,8 +274,8 @@ namespace Server.Engines.Craft
 
                 if (subResource.Name.Number > 0)
                     AddHtmlLocalized(255, 63 + (index * 20), 250, 18, subResource.Name.Number, resourceCount.ToString(), LabelColor, false, false);
-                else if (!String.IsNullOrEmpty(subResource.Name.String))
-                    AddHtml(255, 63 + (index * 20), 250, 18, Color(String.Format("{0} ({1})", subResource.Name.String, resourceCount.ToString())), false, false);
+                else if (!string.IsNullOrEmpty(subResource.Name.String))
+                    AddHtml(255, 63 + (index * 20), 250, 18, Color(string.Format("{0} ({1})", subResource.Name.String, resourceCount.ToString())), false, false);
             }
         }
 

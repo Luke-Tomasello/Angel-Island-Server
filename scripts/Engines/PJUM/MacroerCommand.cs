@@ -154,17 +154,17 @@ namespace Server.PJUM
 
                 // make the message reflect whether or not there is an actual/reasonable bounty
                 if (HasGold(pm) > 100 || BountyKeeper.CurrentLBBonusAmount > 100)
-                    lns[0] = String.Format("A bounty has been placed on the head of {0} for unlawful resource gathering.", pm.Name);
+                    lns[0] = string.Format("A bounty has been placed on the head of {0} for unlawful resource gathering.", pm.Name);
                 else
-                    lns[0] = String.Format("{0} is an enemy of the kingdom for unlawful resource gathering.", pm.Name);
+                    lns[0] = string.Format("{0} is an enemy of the kingdom for unlawful resource gathering.", pm.Name);
 
-                lns[1] = String.Format("{0} was last seen at {1}.", pm.Name, location);
+                lns[1] = string.Format("{0} was last seen at {1}.", pm.Name, location);
 
                 // Adam: changed to 4 hours from 8
                 ListEntry TCTextHandle = PJUM.AddMacroer(lns, pm, DateTime.UtcNow + TimeSpan.FromHours(4));
 
                 //Add bounty to player
-                string name = String.Format("Officer {0}", Utility.RandomBool() ? NameList.RandomName("male") : NameList.RandomName("female"));
+                string name = string.Format("Officer {0}", Utility.RandomBool() ? NameList.RandomName("male") : NameList.RandomName("female"));
 
                 int bountyAmount = 0;
                 Container cont = pm.BankBox;
@@ -201,7 +201,7 @@ namespace Server.PJUM
 
                 //Add comment to account
                 Account acc = pm.Account as Account;
-                string comment = String.Format("On {0}, {1} caught {2} unattended macroing at {3} : reported using the [macroer command",
+                string comment = string.Format("On {0}, {1} caught {2} unattended macroing at {3} : reported using the [macroer command",
                     DateTime.UtcNow,
                     from != null ? from.Name : "auto-RTT",
                     pm.Name,

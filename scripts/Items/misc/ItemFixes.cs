@@ -107,7 +107,7 @@ namespace Server.Items
                 {
                     ItemData id = TileData.ItemTable[itemID & TileData.MaxItemValue];
 
-                    id.Name = String.Concat(clilocStr.ToLower(), " scroll%s");
+                    id.Name = string.Concat(clilocStr.ToLower(), " scroll%s");
 
                     TileData.ItemTable[itemID & TileData.MaxItemValue] = id;
                 }

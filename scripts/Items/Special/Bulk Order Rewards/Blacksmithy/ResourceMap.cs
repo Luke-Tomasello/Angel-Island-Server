@@ -151,7 +151,7 @@ namespace Server.Items
             else
                 prefix = "a fair";
 
-            this.Name = String.Format("{0} {1} map", prefix, CraftResources.GetName(m_Resource).ToLower());
+            this.Name = string.Format("{0} {1} map", prefix, CraftResources.GetName(m_Resource).ToLower());
         }
 
         private void UpdateHue()

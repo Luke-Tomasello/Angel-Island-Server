@@ -118,7 +118,7 @@ namespace Server.Misc
                 {
                     NetState compState = NetState.Instances[i];
                     if (ourAddress.Equals(compState.Address) && compState.Mobile != null)
-                        compState.Mobile.SendMessage(0x35, String.Format("You are not authorized more than {0} concurrent connection{1} from this IP address.", MaxConcurrentAddresses, MaxConcurrentAddresses == 1 ? "" : "s"));
+                        compState.Mobile.SendMessage(0x35, string.Format("You are not authorized more than {0} concurrent connection{1} from this IP address.", MaxConcurrentAddresses, MaxConcurrentAddresses == 1 ? "" : "s"));
                 }
         }
 

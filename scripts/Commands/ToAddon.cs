@@ -57,7 +57,7 @@ namespace Server.Commands
 
         public override void End(CommandEventArgs e)
         {
-            AddResponse(String.Format("Done! Converted {0} item(s).", m_Converted));
+            AddResponse(string.Format("Done! Converted {0} item(s).", m_Converted));
         }
 
         public override void Execute(CommandEventArgs e, object obj)

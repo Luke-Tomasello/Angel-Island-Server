@@ -35,7 +35,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format("{0} dragonglass", Amount);
+                return string.Format("{0} dragonglass", Amount);
             }
         }
         public override string DefaultName { get { return "dragonglass"; } }

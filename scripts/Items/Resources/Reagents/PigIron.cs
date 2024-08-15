@@ -29,7 +29,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format("{0} pig iron", Amount);
+                return string.Format("{0} pig iron", Amount);
             }
         }
 

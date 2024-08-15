@@ -84,7 +84,7 @@ namespace Server.Mobiles
                         "{0}!!  You will pay for that!"
                     };
 
-                this.Say(true, String.Format(toSay[Utility.Random(toSay.Length)], from.Name));
+                this.Say(true, string.Format(toSay[Utility.Random(toSay.Length)], from.Name));
             }
 
             base.OnDamage(amount, from, willKill, source_weapon);

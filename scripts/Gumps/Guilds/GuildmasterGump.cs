@@ -99,7 +99,7 @@ namespace Server.Gumps
                 if (m_Guild.IOBAlignment == IOBAlignment.None)
                     kinName = "Unaligned";
                 else
-                    kinName = String.Format("Aligned with {0}", Engines.IOBSystem.IOBSystem.GetIOBName(m_Guild.IOBAlignment));
+                    kinName = string.Format("Aligned with {0}", Engines.IOBSystem.IOBSystem.GetIOBName(m_Guild.IOBAlignment));
 
                 tags.Add(kinName);
             }
@@ -111,7 +111,7 @@ namespace Server.Gumps
                 if (m_Guild.Alignment == AlignmentType.None)
                     alignName = "Unaligned";
                 else
-                    alignName = String.Format("Aligned with {0}", AlignmentSystem.GetName(m_Guild.Alignment));
+                    alignName = string.Format("Aligned with {0}", AlignmentSystem.GetName(m_Guild.Alignment));
 
                 tags.Add(alignName);
             }
@@ -121,7 +121,7 @@ namespace Server.Gumps
             if (tags.Count == 0)
                 strGuildType = "Change guild type";
             else
-                strGuildType = String.Format("Change guild type: (Currently: {0})", String.Join(", ", tags));
+                strGuildType = string.Format("Change guild type: (Currently: {0})", string.Join(", ", tags));
 
             if (guild.Peaceful)
                 AddImage(20, 100, 4020);

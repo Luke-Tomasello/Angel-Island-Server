@@ -65,6 +65,7 @@ using System.Data;
 using System.Data.SQLite;
 using System.IO;
 using System.Xml;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Server.Accounting
 {
@@ -219,7 +220,7 @@ namespace Server.Accounting
                     string ip = xmlElem["ip"].InnerText;
                     int limit = Utility.ToInt32(xmlElem["number"].InnerText);
 
-                    if (!String.IsNullOrEmpty(ip) && limit != 0)
+                    if (!string.IsNullOrEmpty(ip) && limit != 0)
                     {
                         m_Table[ip] = limit;
                         count++;
@@ -245,13 +246,14 @@ namespace Server.Accounting
     {
         public static bool Verbose = true;
 
-        private static string GetDatabasePath()
+        public static string GetDatabasePath(ref bool error)
         {
             string path = Environment.GetEnvironmentVariable("AI.IPEXCEPTIONDB");
 
-            if (String.IsNullOrWhiteSpace(path))
+            if (string.IsNullOrWhiteSpace(path))
                 path = @"C:\AIDB\ipexception.db";
 
+            error = false;
             if (!File.Exists(path))
             {   // initialize database
                 string directory = Path.GetDirectoryName(path);
@@ -259,14 +261,21 @@ namespace Server.Accounting
                     Directory.CreateDirectory(directory);
                 // this creates a zero-byte file
                 SQLiteConnection.CreateFile(path);
+
+                if (!File.Exists(path))
+                    error = true;
             }
+
+            if (!Core.UseLoginDB)
+                ;// why are we here?
 
             return path;
         }
 
         private static SQLiteConnection Connect()
         {
-            return new SQLiteConnection(String.Format("Data Source={0};Pooling=True;Max Pool Size=100;", GetDatabasePath()));
+            bool error = false;
+            return new SQLiteConnection(string.Format("Data Source={0};Pooling=True;Max Pool Size=100;", GetDatabasePath(ref error)));
         }
 
         private static void EnsureTable()

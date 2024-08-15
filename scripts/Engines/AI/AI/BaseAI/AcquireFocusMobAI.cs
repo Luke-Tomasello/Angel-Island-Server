@@ -164,7 +164,7 @@ namespace Server.Mobiles
             // it's okay to not have an "aggression specification" as something like attack Aggressors is totally fine.
             //  We filter for trammel here since our New Player Starting Area has some specially abstracted mobs that don't fit this model.
             if (acqType == 0 && m_Mobile.Map != Map.Trammel && false)
-                Utility.ConsoleWriteLine(String.Format("Mobile({0}) {1}", m_Mobile, "has no acquire type."), ConsoleColor.Red);
+                Utility.ConsoleWriteLine(string.Format("Mobile({0}) {1}", m_Mobile, "has no acquire type."), ConsoleColor.Red);
             #endregion DEBUG
 
             try
@@ -181,7 +181,7 @@ namespace Server.Mobiles
                 }
                 else
                 {   // 10/24/22, Adam: Update. We're testing allowing FightMode None - although we still complain
-                    //Utility.ConsoleOut(String.Format("Mobile({0}) {1}", m_Mobile, "has no fightmode."), ConsoleColor.Yellow);
+                    //Utility.ConsoleOut(string.Format("Mobile({0}) {1}", m_Mobile, "has no fightmode."), ConsoleColor.Yellow);
                 }
             }
             catch (Exception ex)
@@ -604,7 +604,7 @@ namespace Server.Mobiles
             Memory.ObjectMemory om = InvestigativeMemory.Recall(m as object);
             if (om == null)
             {   // nope, don't remember him. Let's remember him and whether we can path to him
-                m_Mobile.DebugSay(DebugFlags.AI, String.Format("Remembering {0} in InvestigativeMemory.", m));
+                m_Mobile.DebugSay(DebugFlags.AI, string.Format("Remembering {0} in InvestigativeMemory.", m));
 
                 // can we get there from here?
                 Movement.MovementObject obj_start = new Movement.MovementObject(m_Mobile.Location, m_Mobile.IAIGetPoint(m), null);
@@ -627,7 +627,7 @@ namespace Server.Mobiles
             else
             {
                 bool canPath = (om != null && om.Context != null);
-                m_Mobile.DebugSay(DebugFlags.AI, String.Format("I remember {0}, {1} path to him.", m, canPath ? "and can" : "but cannot"));
+                m_Mobile.DebugSay(DebugFlags.AI, string.Format("I remember {0}, {1} path to him.", m, canPath ? "and can" : "but cannot"));
                 if (m_Mobile.IAIQuerySuccess(m))
                     m_Mobile.IAIResult(m, canPath: canPath);
                 else

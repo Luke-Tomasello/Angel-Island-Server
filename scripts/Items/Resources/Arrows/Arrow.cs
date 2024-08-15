@@ -35,7 +35,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} arrow" : "{0} arrows", Amount);
+                return string.Format(Amount == 1 ? "{0} arrow" : "{0} arrows", Amount);
             }
         }
 

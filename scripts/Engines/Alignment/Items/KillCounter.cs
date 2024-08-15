@@ -138,7 +138,7 @@ namespace Server.Engines.Alignment
 
         private void DisplayResult(Mobile m, KillCountResult result)
         {
-            string text = String.Format("{0} : {1}", AlignmentSystem.GetName(result.Alignment), result.Kills);
+            string text = string.Format("{0} : {1}", AlignmentSystem.GetName(result.Alignment), result.Kills);
 
             if (m == null)
                 PublicOverheadMessage(MessageType.Regular, 0x3B2, false, text);
@@ -223,7 +223,7 @@ namespace Server.Engines.Alignment
 
             public override string ToString()
             {
-                return String.Format("{0}: {1}", Alignment, Kills);
+                return string.Format("{0}: {1}", Alignment, Kills);
             }
         }
 

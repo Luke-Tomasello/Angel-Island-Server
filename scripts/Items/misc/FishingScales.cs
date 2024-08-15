@@ -99,13 +99,13 @@ namespace Server.Items
                     else
                         format = "This fish is lighter than a feather.";
 
-                    m_Scales.PublicOverheadMessage(MessageType.Regular, 0, false, String.Format(format, bigFish.Weight));
+                    m_Scales.PublicOverheadMessage(MessageType.Regular, 0, false, string.Format(format, bigFish.Weight));
 
-                    if (!String.IsNullOrEmpty(bigFish.Fisher) || bigFish.Caught != DateTime.MinValue)
+                    if (!string.IsNullOrEmpty(bigFish.Fisher) || bigFish.Caught != DateTime.MinValue)
                     {
                         string message = "This fish was caught";
 
-                        if (!String.IsNullOrEmpty(bigFish.Fisher))
+                        if (!string.IsNullOrEmpty(bigFish.Fisher))
                             message += " by " + bigFish.Fisher;
 
                         if (bigFish.Caught != DateTime.MinValue)

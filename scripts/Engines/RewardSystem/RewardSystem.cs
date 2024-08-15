@@ -72,7 +72,7 @@ namespace Server.Engines.RewardSystem
                 string filePath = Path.Combine("Saves/Rewards", "Rewards.xml");
                 if (File.Exists(filePath) == false && File.Exists(Path.Combine(Core.DataDirectory, "Rewards.xml")) == false)
                 {
-                    Core.LoggerShortcuts.BootError(String.Format("Error while reading Rewards from \"{0}\".", Path.Combine(Core.DataDirectory, "Rewards.xml")));
+                    Core.LoggerShortcuts.BootError(string.Format("Error while reading Rewards from \"{0}\".", Path.Combine(Core.DataDirectory, "Rewards.xml")));
                     Enabled = false;
                     return;
                 }

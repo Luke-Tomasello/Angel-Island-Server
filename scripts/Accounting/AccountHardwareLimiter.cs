@@ -73,7 +73,7 @@ namespace Server.Misc
                     Server.Accounting.Account current = compState.Mobile.Account as Server.Accounting.Account;
                     if (HardwareOk(acct) && HardwareOk(current) && compState.Mobile != null)
                         if (acct.HardwareHashRaw == current.HardwareHashRaw)
-                            compState.Mobile.SendMessage(0x35, String.Format("You are only allowed {0} account(s) on this server.", CoreAI.MaxAccountsPerMachine));
+                            compState.Mobile.SendMessage(0x35, string.Format("You are only allowed {0} account(s) on this server.", CoreAI.MaxAccountsPerMachine));
                 }
         }
 
@@ -181,15 +181,15 @@ namespace Server.Misc
         }
         private static void Report(Account acct, List<Account> legal, List<Account> illegal)
         {
-            LogBlockedConnection(String.Format("--- Login Report ---"));
-            LogBlockedConnection(String.Format("Login: {0}: Past machine limit threshold", acct));
-            LogBlockedConnection(String.Format("Legal accounts:"));
+            LogBlockedConnection(string.Format("--- Login Report ---"));
+            LogBlockedConnection(string.Format("Login: {0}: Past machine limit threshold", acct));
+            LogBlockedConnection(string.Format("Legal accounts:"));
             foreach (Account a in legal)
-                LogBlockedConnection(String.Format("\t{0}", a));
-            LogBlockedConnection(String.Format("Illegal accounts:"));
+                LogBlockedConnection(string.Format("\t{0}", a));
+            LogBlockedConnection(string.Format("Illegal accounts:"));
             foreach (Account a in illegal)
-                LogBlockedConnection(String.Format("\t{0}", a));
-            LogBlockedConnection(String.Format("--- End Report ---"));
+                LogBlockedConnection(string.Format("\t{0}", a));
+            LogBlockedConnection(string.Format("--- End Report ---"));
         }
         public static void Initialize()
         {

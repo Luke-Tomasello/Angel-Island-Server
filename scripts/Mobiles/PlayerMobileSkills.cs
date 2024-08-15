@@ -244,8 +244,8 @@ namespace Server.Mobiles
 
             if (m_RoTSkillRolloverCredits[index] != 0)
             {
-                Utility.DebugOut(String.Format("Last Gain           :{0}", SkillGainEpoch + TimeSpan.FromMinutes(m_LastRoTSkillGainTime[index])), ConsoleColor.Red);
-                Utility.DebugOut(String.Format("Last Gain + Credits :{0}", SkillGainEpoch + TimeSpan.FromMinutes(m_LastRoTSkillGainTime[index] - m_RoTSkillRolloverCredits[index])), ConsoleColor.Red);
+                Utility.DebugOut(string.Format("Last Gain           :{0}", SkillGainEpoch + TimeSpan.FromMinutes(m_LastRoTSkillGainTime[index])), ConsoleColor.Red);
+                Utility.DebugOut(string.Format("Last Gain + Credits :{0}", SkillGainEpoch + TimeSpan.FromMinutes(m_LastRoTSkillGainTime[index] - m_RoTSkillRolloverCredits[index])), ConsoleColor.Red);
             }
 
             // rather than storing 49 DateTime structs (392 bytes) for each player,

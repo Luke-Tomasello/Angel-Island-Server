@@ -56,14 +56,14 @@ namespace Server.Factions.NewGumps.TownMenu
 
             AddBackground(350, 195 + 30 * ((count + 1) / 2));
 
-            AddHtml(20, 15, 310, 26, String.Format("<center><i>{0}</i></center>", town.Definition.FriendlyName), false, false);
+            AddHtml(20, 15, 310, 26, string.Format("<center><i>{0}</i></center>", town.Definition.FriendlyName), false, false);
 
             AddSeparator(20, 40, 310);
 
             AddStatistic(20, 50, 150, "<i>Owned By</i>", FormatFaction(m_Town.Owner));
             AddStatistic(20, 80, 150, "<i>Sheriff</i>", FormatName(m_Town.Sheriff));
             AddStatistic(20, 110, 150, "<i>Finance MIN</i>", FormatName(m_Town.Finance));
-            AddStatistic(20, 140, 150, "<i>Tax Rate</i>", String.Concat(m_Town.Tax.ToString("+#;-#;0"), '%'));
+            AddStatistic(20, 140, 150, "<i>Tax Rate</i>", string.Concat(m_Town.Tax.ToString("+#;-#;0"), '%'));
 
             AddSeparator(20, 172, 310);
 

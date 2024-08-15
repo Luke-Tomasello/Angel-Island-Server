@@ -29,7 +29,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format("{0} bat wing", Amount);
+                return string.Format("{0} bat wing", Amount);
             }
         }
 

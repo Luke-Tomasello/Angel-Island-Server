@@ -245,7 +245,7 @@ namespace Server.Diagnostics
             {
                 LogHelper Logger = new LogHelper("Exception.log", false);
                 Logger.Log(LogType.Text, Core.Server);
-                string text = String.Format("{0}\r\n{1}", ex.Message, ex.StackTrace);
+                string text = string.Format("{0}\r\n{1}", ex.Message, ex.StackTrace);
                 Logger.Log(LogType.Text, text);
                 Logger.Finish();
                 Utility.ConsoleWriteLine(text, ConsoleColor.Red);
@@ -263,7 +263,7 @@ namespace Server.Diagnostics
             try
             {
                 LogHelper Logger = new LogHelper("Exception.log", false);
-                string text = String.Format("{0}\r\n{1}\r\n{2}", additionalMessage, ex.Message, ex.StackTrace);
+                string text = string.Format("{0}\r\n{1}\r\n{2}", additionalMessage, ex.Message, ex.StackTrace);
                 Logger.Log(LogType.Text, text);
                 Logger.Finish();
                 Console.WriteLine(text);
@@ -592,7 +592,7 @@ namespace Server.Diagnostics
         private static void EventSink_AddItem(AddItemEventArgs e)
         {
             LogHelper lh = new LogHelper("AddItem.log", false, true);
-            lh.Log(LogType.Mobile, e.from, String.Format("Used [Add Item to create ItemID:{0}, Serial:{1}", e.item.ItemID.ToString(), e.item.Serial.ToString()));
+            lh.Log(LogType.Mobile, e.from, string.Format("Used [Add Item to create ItemID:{0}, Serial:{1}", e.item.ItemID.ToString(), e.item.Serial.ToString()));
             lh.Finish();
         }
 

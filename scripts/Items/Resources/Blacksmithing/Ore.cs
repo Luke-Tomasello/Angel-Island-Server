@@ -40,7 +40,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format("{0} {1} ore", Amount, CraftResources.GetName(m_Resource).ToLower());
+                return string.Format("{0} {1} ore", Amount, CraftResources.GetName(m_Resource).ToLower());
             }
         }
 

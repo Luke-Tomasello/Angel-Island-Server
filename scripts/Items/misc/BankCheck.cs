@@ -113,7 +113,7 @@ namespace Server.Items
 
         public override void OnSingleClick(Mobile from)
         {
-            from.Send(new MessageLocalizedAffix(Serial, ItemID, MessageType.Label, 0x3B2, 3, 1041361, "", AffixType.Append, String.Concat(" ", m_Worth.ToString("N0") /*m_Worth.ToString()*/), "")); // A bank check:
+            from.Send(new MessageLocalizedAffix(Serial, ItemID, MessageType.Label, 0x3B2, 3, 1041361, "", AffixType.Append, string.Concat(" ", m_Worth.ToString("N0") /*m_Worth.ToString()*/), "")); // A bank check:
         }
 
         public override void OnDoubleClick(Mobile from)
@@ -592,7 +592,7 @@ namespace Server.Items
 
         public override void OnSingleClick(Mobile from)
         {
-            //from.Send(new MessageLocalizedAffix(Serial, ItemID, MessageType.Label, 0x3B2, 3, 1041361, "unemployment check", AffixType.Append, String.Concat(" ", Worth.ToString()), "")); // A bank check:
+            //from.Send(new MessageLocalizedAffix(Serial, ItemID, MessageType.Label, 0x3B2, 3, 1041361, "unemployment check", AffixType.Append, string.Concat(" ", Worth.ToString()), "")); // A bank check:
 
             LabelTo(from, "An unemployment check worth {0}", Worth);
         }

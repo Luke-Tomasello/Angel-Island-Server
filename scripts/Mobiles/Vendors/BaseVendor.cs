@@ -600,7 +600,7 @@ namespace Server.Mobiles
                     split[i] = Char.ToUpper(split[i][0]).ToString();
             }
 
-            this.Title = String.Join(" ", split);
+            this.Title = string.Join(" ", split);
         }
 
         public virtual int GetHairHue()

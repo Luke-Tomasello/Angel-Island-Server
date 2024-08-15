@@ -538,7 +538,7 @@ namespace Server.Commands
                         if (!bSilent)
                             m.SendMessage("Guild points are now {0}.", (m as PlayerMobile).NpcGuildPoints);
                         Console.Clear();
-                        Utility.ConsoleWriteLine(String.Format("Start test at {0}", DateTime.UtcNow), ConsoleColor.Red);
+                        Utility.ConsoleWriteLine(string.Format("Start test at {0}", DateTime.UtcNow), ConsoleColor.Red);
                     }
                     else
                         return true;
@@ -1048,7 +1048,7 @@ namespace Server.Commands
                         // still need instrument wraparound
                         index += (opx == "+" ? offset : -offset);
                         if (index < 0 || index >= NoteLookup.Length)
-                            chunks[mx] = String.Empty;  // drop the note
+                            chunks[mx] = string.Empty;  // drop the note
                         else
                             chunks[mx] = NoteLookup[index];
                     }
@@ -1141,9 +1141,9 @@ namespace Server.Commands
             // lets see who's using the music system
             if (Utility.Random(10) == 0)
                 if (IsCommandLine)
-                    Utility.DebugOut(String.Format("{0} composing music.", m), ConsoleColor.Cyan);
+                    Utility.DebugOut(string.Format("{0} composing music.", m), ConsoleColor.Cyan);
                 else
-                    Utility.DebugOut(String.Format("{0} is listening to music.", m), ConsoleColor.Cyan);
+                    Utility.DebugOut(string.Format("{0} is listening to music.", m), ConsoleColor.Cyan);
 
             // Allows dynamic control through the CoreManagementConsole.
             if (m.AccessLevel < CoreAI.PlayAccessLevel)
@@ -1398,13 +1398,13 @@ namespace Server.Commands
                 if (delta >= .1 || display == 120)
                     m.SendMessage("Your skill in CoreMusicPlayer Composition increased. It is now {0:N1}", display);
             // else, don't show sub .1 gains
-            Utility.DebugOut(String.Format("{1}: skill is now {0}", display, m), ConsoleColor.Cyan);
+            Utility.DebugOut(string.Format("{1}: skill is now {0}", display, m), ConsoleColor.Cyan);
             if (real >= 1200)
             {
-                Utility.DebugOut(String.Format("{1}: skill is now {0}", display, m), ConsoleColor.Red);
+                Utility.DebugOut(string.Format("{1}: skill is now {0}", display, m), ConsoleColor.Red);
                 if (MusicConfig[m].SkillTesting)
                 {
-                    Utility.DebugOut(String.Format("End test at {0}", DateTime.UtcNow), ConsoleColor.Red);
+                    Utility.DebugOut(string.Format("End test at {0}", DateTime.UtcNow), ConsoleColor.Red);
                     MusicConfig[m].SkillTesting = false;
                 }
             }

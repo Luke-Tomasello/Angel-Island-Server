@@ -132,7 +132,7 @@ namespace Custom.Gumps
             AddColorButton(30, 19); // solen
             AddColorButton(31, 20); // other mutation
 
-            AddLabel(480, 420, 2100, String.Format("Total Seeds: {0}", m_SeedBox.SeedCount()));
+            AddLabel(480, 420, 2100, string.Format("Total Seeds: {0}", m_SeedBox.SeedCount()));
 
             SeedBox.TypeInfo typeInfo = m_SeedBox.GetTypeInfo(m_TypeIndex);
 
@@ -163,7 +163,7 @@ namespace Custom.Gumps
             if (count > 0)
                 AddButton(x, y, 0xFA5, 0xFA6, HueButtonOffset + hueIndex, GumpButtonType.Reply, 0);
 
-            AddLabel(x + 40, y + 3, count == 0 ? 808 : hueInfo.Hue, String.Format("{0} {1}", count, hueInfo.Name));
+            AddLabel(x + 40, y + 3, count == 0 ? 808 : hueInfo.Hue, string.Format("{0} {1}", count, hueInfo.Name));
         }
 
         public override void OnResponse(NetState state, RelayInfo info)

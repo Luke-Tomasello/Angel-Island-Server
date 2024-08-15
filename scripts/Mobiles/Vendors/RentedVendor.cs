@@ -502,7 +502,7 @@ namespace Server.Mobiles
                 log.Log(LogType.Mobile, this, "Vendor");
                 log.Log(LogType.Mobile, this.Owner != null ? this.Owner : "(null)", "Vendor owner");
                 log.Log(LogType.Item, this.House != null ? this.House : "(null)", "Vendor house");
-                log.Log(LogType.Text, String.Format("BankAccount={0}, HoldGold={1}, RentalGold={2}, RenewalPrice={3}", BankAccount, HoldGold, RentalGold, RenewalPrice));
+                log.Log(LogType.Text, string.Format("BankAccount={0}, HoldGold={1}, RentalGold={2}, RenewalPrice={3}", BankAccount, HoldGold, RentalGold, RenewalPrice));
                 log.Finish();
             }
 
@@ -541,7 +541,7 @@ namespace Server.Mobiles
                 if (this.Owner != null)
                     log.Log(LogType.Mobile, this.Owner, "Vendor owner");
                 log.Log(LogType.Mobile, this, "Vendor");
-                log.Log(LogType.Text, String.Format("Not set to renew. BankAccount={0}, HoldGold={1}, RentalGold={2}.", BankAccount, HoldGold, RentalGold));
+                log.Log(LogType.Text, string.Format("Not set to renew. BankAccount={0}, HoldGold={1}, RentalGold={2}.", BankAccount, HoldGold, RentalGold));
                 log.Finish();
 
                 Destroy(true);
@@ -564,7 +564,7 @@ namespace Server.Mobiles
                 log.Log(LogType.Mobile, this, "Vendor");
                 log.Log(LogType.Mixed, this.Owner != null ? this.Owner : "(null)", "Vendor owner");
                 log.Log(LogType.Mixed, this.House != null ? this.House : "(null)", "Vendor house");
-                log.Log(LogType.Text, String.Format("Unable to pay the vendor rental fees. BankAccount={0}, HoldGold={1}, RentalGold={2}, RenewalPrice={3}", BankAccount, HoldGold, RentalGold, RenewalPrice));
+                log.Log(LogType.Text, string.Format("Unable to pay the vendor rental fees. BankAccount={0}, HoldGold={1}, RentalGold={2}, RenewalPrice={3}", BankAccount, HoldGold, RentalGold, RenewalPrice));
                 log.Finish();
 
                 this.Destroy(true);

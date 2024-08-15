@@ -131,7 +131,7 @@ namespace Server.Gumps
                                                                                                                   //Tell staff that an exploit is in progress
                                                                                                                   //Server.Commands.CommandHandlers.BroadcastMessage( AccessLevel.Counselor, 
                                                                                                                   //0x482, 
-                                                                                                                  //String.Format( "Exploit in progress at {0}. Stay hidden, Jail involved players, get acct name, ban.", m_House.Location.ToString() ) );
+                                                                                                                  //string.Format( "Exploit in progress at {0}. Stay hidden, Jail involved players, get acct name, ban.", m_House.Location.ToString() ) );
                         return;
                     }
 

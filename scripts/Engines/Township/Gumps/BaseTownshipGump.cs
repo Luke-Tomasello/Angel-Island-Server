@@ -74,7 +74,7 @@ namespace Server.Township
 
         protected void AddLine(string format, params object[] args)
         {
-            AddHtml(20, m_Y, m_Width - 40, 20, String.Format(format, args), false, false);
+            AddHtml(20, m_Y, m_Width - 40, 20, string.Format(format, args), false, false);
 
             if (m_LineBreaks)
                 m_Y += LineHeight;
@@ -82,7 +82,7 @@ namespace Server.Township
 
         protected void AddText(int height, string format, params object[] args)
         {
-            AddHtml(20, m_Y, m_Width - 40, height, String.Format(format, args), false, false);
+            AddHtml(20, m_Y, m_Width - 40, height, string.Format(format, args), false, false);
 
             if (m_LineBreaks)
                 m_Y += height;
@@ -106,7 +106,7 @@ namespace Server.Township
 
             int width = (m_Width - 40) / cols;
 
-            AddHtml(20 + width * col, m_Y, width, 20, String.Format(format, args), false, false);
+            AddHtml(20 + width * col, m_Y, width, 20, string.Format(format, args), false, false);
 
             if (m_LineBreaks && col == cols - 1)
                 m_Y += LineHeight;

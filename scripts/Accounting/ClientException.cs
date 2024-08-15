@@ -253,7 +253,7 @@ namespace Server.Accounting
                 {
                     string ip = xmlElem["ip"].InnerText;
 
-                    if (!String.IsNullOrEmpty(ip))
+                    if (!string.IsNullOrEmpty(ip))
                     {
                         m_Table.Add(ip);
                         count++;

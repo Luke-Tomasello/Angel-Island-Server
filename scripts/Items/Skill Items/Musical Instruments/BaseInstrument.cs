@@ -726,7 +726,7 @@ namespace Server.Items
                             success++;
                     }
 
-                    from.SendMessage(String.Format("{0} successes {1} failures", success, fail));
+                    from.SendMessage(string.Format("{0} successes {1} failures", success, fail));
                 }
             }
         }

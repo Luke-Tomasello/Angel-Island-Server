@@ -238,7 +238,7 @@ namespace Server.Commands
 
         private static string FormatDirectory(string root, string name, string timeStamp)
         {
-            return Path.Combine(root, String.Format("{0}", name));
+            return Path.Combine(root, string.Format("{0}", name));
         }
 
         private static DirectoryInfo Match(string[] paths, string match)

@@ -198,7 +198,7 @@ namespace Server.Items
                 {
                     String sx = null;
                     foreach (int ix in m_Regions)
-                        sx += String.Format("{0}, ", ix);
+                        sx += string.Format("{0}, ", ix);
                     return sx.TrimEnd(new char[] { ' ', ',' });
                 }
                 else

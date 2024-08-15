@@ -29,7 +29,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} feather" : "{0} feathers", Amount);
+                return string.Format(Amount == 1 ? "{0} feather" : "{0} feathers", Amount);
             }
         }
 

@@ -569,7 +569,7 @@ namespace Server.Mobiles
 
             public override void OnPurchase(TreeOfKnowledge tok, Mobile master, BaseCreature pet)
             {
-                tok.SayTo(master, String.Format("Your pet, \"{0}\", is at {1}.", pet.Name, GetSextantLocation(pet)));
+                tok.SayTo(master, string.Format("Your pet, \"{0}\", is at {1}.", pet.Name, GetSextantLocation(pet)));
 
                 if (0.05 > Utility.RandomDouble())
                 {
@@ -599,12 +599,12 @@ namespace Server.Mobiles
                 if (valid)
                     location = Sextant.Format(xLong, yLat, xMins, yMins, xEast, ySouth);
                 else
-                    location = String.Format("{0} {1}", m.X, m.Y);
+                    location = string.Format("{0} {1}", m.X, m.Y);
 
                 Region reg = m.Region;
 
                 if (reg != map.DefaultRegion)
-                    location = String.Format("{0} in {1}", location, reg);
+                    location = string.Format("{0} in {1}", location, reg);
 
                 return location;
             }
@@ -859,7 +859,7 @@ namespace Server.Mobiles
                 if (!match)
                     return false;
 
-                if (String.IsNullOrEmpty(petName))
+                if (string.IsNullOrEmpty(petName))
                 {
                     tok.SayTo(from, "You did not name a pet!");
                     return true;
@@ -1002,7 +1002,7 @@ namespace Server.Mobiles
 
                 LogHelper Logger = new LogHelper("tok.log", false, true);
 
-                Logger.Log(LogType.Mobile, from, String.Format("Used TOK to {0} {1} for {2:N0} gp.", Service, pet, price));
+                Logger.Log(LogType.Mobile, from, string.Format("Used TOK to {0} {1} for {2:N0} gp.", Service, pet, price));
 
                 Logger.Finish();
 

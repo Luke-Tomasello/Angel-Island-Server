@@ -79,7 +79,7 @@ namespace Server.Items
             base.OnSingleClick(from);
 
             if (m_Guild != null)
-                LabelTo(from, String.Format("{0} [{1}]", TownshipNPCHelper.GetNPCName(NPCType), m_Guild.Abbreviation));
+                LabelTo(from, string.Format("{0} [{1}]", TownshipNPCHelper.GetNPCName(NPCType), m_Guild.Abbreviation));
             else
                 LabelTo(from, TownshipNPCHelper.GetNPCName(NPCType));
         }

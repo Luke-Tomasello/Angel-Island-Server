@@ -153,7 +153,7 @@ namespace Server.Mobiles
                 if (!Core.RuleSets.CanBuyHouseRules() && price > 0)
                 {
                     PublicOverheadMessage(MessageType.Regular, 0x3B2, true,
-                        String.Format("That deed is worth about {0} gold pieces to someone willing to buy it.", price));
+                        string.Format("That deed is worth about {0} gold pieces to someone willing to buy it.", price));
                 }
                 else if (price > 0)
                 {

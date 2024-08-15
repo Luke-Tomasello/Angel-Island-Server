@@ -513,7 +513,7 @@ namespace Server.Network
 
         public void WriteConsole(string format, params object[] args)
         {
-            WriteConsole(String.Format(format, args));
+            WriteConsole(string.Format(format, args));
         }
 
         public void AddMenu(IMenu menu)
@@ -2023,12 +2023,12 @@ namespace Server.Network
 
         public void WriteConsole(string text)
         {
-            Utility.ConsoleOut(String.Format("Client: {0}: {1}", this, text), ConsoleColor.Yellow);
+            Utility.ConsoleOut(string.Format("Client: {0}: {1}", this, text), ConsoleColor.Yellow);
         }
 
         public void WriteConsole(string format, params object[] args)
         {
-            WriteConsole(String.Format(format, args));
+            WriteConsole(string.Format(format, args));
         }
 
         public void AddMenu(IMenu menu)
@@ -2324,7 +2324,7 @@ namespace Server.Network
                 }
                 catch (CapacityExceededException)
                 {
-                    Utility.ConsoleOut(String.Format("Client: {0}: Too much data pending, disconnecting...", this), ConsoleColor.Yellow);
+                    Utility.ConsoleOut(string.Format("Client: {0}: Too much data pending, disconnecting...", this), ConsoleColor.Yellow);
                     Dispose(false);
                 }
 
@@ -2337,7 +2337,7 @@ namespace Server.Network
             }
             else
             {
-                Utility.ConsoleOut(String.Format("Client: {0}: null buffer send, disconnecting...", this), ConsoleColor.Yellow);
+                Utility.ConsoleOut(string.Format("Client: {0}: null buffer send, disconnecting...", this), ConsoleColor.Yellow);
                 using (StreamWriter op = new StreamWriter("null_send.log", true))
                 {
                     op.WriteLine("{0} Client: {1}: null buffer send, disconnecting...", DateTime.UtcNow, this);
@@ -2524,7 +2524,7 @@ namespace Server.Network
                 return true;
             }
 
-            Utility.ConsoleOut(String.Format("Client: {0}: Disconnecting due to inactivity...", this), ConsoleColor.Yellow);
+            Utility.ConsoleOut(string.Format("Client: {0}: Disconnecting due to inactivity...", this), ConsoleColor.Yellow);
 
             Dispose();
             return false;

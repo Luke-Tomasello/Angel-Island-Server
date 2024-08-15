@@ -279,7 +279,7 @@ namespace Server.PathAlgorithms.Sector
                 string filename = Path.Combine(Core.DataDirectory, "SectorPathData.dat");
                 if (File.Exists(filename) == false)
                 {
-                    Core.LoggerShortcuts.BootError(String.Format("Error while reading SectorNode data from \"{0}\".", filename));
+                    Core.LoggerShortcuts.BootError(string.Format("Error while reading SectorNode data from \"{0}\".", filename));
                     return;
                 }
                 Console.Write("Loading SectorNodes...");

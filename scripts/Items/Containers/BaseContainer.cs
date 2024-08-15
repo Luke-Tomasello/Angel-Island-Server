@@ -188,7 +188,7 @@ namespace Server.Items
                     bool bRecord = (house.IsFriend(from) == false || from.AccessLevel > AccessLevel.Player);
                     if (Movable == false && this.RootParent as Mobile == null && bRecord)
                     {
-                        string text = String.Format("Looting: Non friend of house lifting item {0} from {1}.", item.Serial, this.Serial);
+                        string text = string.Format("Looting: Non friend of house lifting item {0} from {1}.", item.Serial, this.Serial);
                         RecordCheater.TrackIt(from, text, true);
                     }
                 }

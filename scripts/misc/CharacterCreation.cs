@@ -757,6 +757,15 @@ namespace Server.Misc
             };
 
         #endregion
+        //private static bool MakeOwner(Account acct, bool adminChar)
+        //{
+        //    if (adminChar || 
+        //        (Accounting.Accounts.Table.Values.Count == 1 &&
+        //        acct.AccessLevel >= AccessLevel.Administrator))
+        //        return true;
+        //    else
+        //        return false;
+        //}
         private static void EventSink_CharacterCreated(CharacterCreatedEventArgs args)
         {
             Mobile newChar = CreateMobile(args.Account as Account);
@@ -768,23 +777,22 @@ namespace Server.Misc
             }
 
             args.Mobile = newChar;
+            Account acct = (Account)args.Account;
             m_Mobile = newChar;
 
             // create a special role for Login Server administrator
-            bool adminChar = Core.RuleSets.LoginServerRules() && args.State != null && args.State.Address != null && Server.Commands.OwnerTools.IsOwnerIP(args.State.Address);
-            if (adminChar == true)
+            bool LoginAdmin = Core.RuleSets.LoginServerRules() && args.State != null && args.State.Address != null && Server.Commands.OwnerTools.IsOwnerIP(args.State.Address);
+            if (LoginAdmin == true)
                 Utility.ConsoleWriteLine("Administrative account ({0}) logging into Login Server", ConsoleColor.Red, args.State.Address);
 
             newChar.Player = true;
-            newChar.AccessLevel = adminChar == true ? AccessLevel.Administrator : ((Account)args.Account).AccessLevel;
+            
+            //// setup the owner. First admin account created
+            newChar.AccessLevelInternal = LoginAdmin ? AccessLevel.Owner : ((Account)args.Account).AccessLevel;
             newChar.Female = args.Female;
             newChar.Body = newChar.Female ? 0x191 : 0x190;
             newChar.Hue = Utility.ClipSkinHue(args.Hue & 0x3FFF) | 0x8000;
             newChar.Hunger = 20;
-
-            // setup the owner. First admin account created
-            if (newChar.AccessLevel == AccessLevel.Administrator && Accounting.Accounts.Table.Values.Count == 1)
-                newChar.AccessLevelInternal = AccessLevel.Owner;
 
             // Adam: Mortalis
             if (Core.RuleSets.MortalisRules() && newChar is PlayerMobile && newChar.AccessLevel == AccessLevel.Player)

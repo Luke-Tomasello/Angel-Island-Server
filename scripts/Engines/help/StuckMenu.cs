@@ -455,7 +455,7 @@ namespace Server.Menus.Questions
                         else
                         {
                             LogHelper log = new LogHelper("HelpStuck.log");
-                            log.Log(LogType.Mobile, m_Mobile, String.Format("Moved stuck player to {0} ({1}) (T2A={2})", m_TargetLocation, m_TargetMap, Utility.World.LostLandsWrap.Contains(m_TargetLocation)));
+                            log.Log(LogType.Mobile, m_Mobile, string.Format("Moved stuck player to {0} ({1}) (T2A={2})", m_TargetLocation, m_TargetMap, Utility.World.LostLandsWrap.Contains(m_TargetLocation)));
                             log.Finish();
 
                             if (m_Mobile.Alive && m_Mobile.Region.IsDungeonRules)
@@ -546,7 +546,7 @@ namespace Server.Menus.Questions
                         else
                         {
                             LogHelper log = new LogHelper("HelpStuck.log");
-                            log.Log(LogType.Mobile, m_Mobile, String.Format("Moved stuck player to {0} ({1}) (T2A={2})", m_TargetLocation, m_TargetMap, Utility.World.LostLandsWrap.Contains(m_TargetLocation)));
+                            log.Log(LogType.Mobile, m_Mobile, string.Format("Moved stuck player to {0} ({1}) (T2A={2})", m_TargetLocation, m_TargetMap, Utility.World.LostLandsWrap.Contains(m_TargetLocation)));
                             log.Finish();
 
                             if (m_Mobile.Alive && m_Mobile.Region.IsDungeonRules)
@@ -571,7 +571,7 @@ namespace Server.Menus.Questions
 
         public static bool DoHelpStuck(Mobile from)
         {
-            Utility.ConsoleWriteLine(String.Format("Player {0} is unstucking...", from), ConsoleColor.Magenta);
+            Utility.ConsoleWriteLine(string.Format("Player {0} is unstucking...", from), ConsoleColor.Magenta);
 
             if (Utility.BadZ(from) && !Utility.CheatingZ(from))
             {
@@ -1082,7 +1082,7 @@ namespace Server.Menus.Questions
             else
                 format = "There's {0} is nearby!";
 
-            from.LocalOverheadMessage(MessageType.Regular, 0x3B2, false, String.Format(format, name, dirStr));
+            from.LocalOverheadMessage(MessageType.Regular, 0x3B2, false, string.Format(format, name, dirStr));
         }
 
         private static bool CanGetThere(Point3D here, Point3D there, Mobile from)

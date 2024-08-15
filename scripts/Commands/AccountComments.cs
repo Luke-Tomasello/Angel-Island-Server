@@ -147,9 +147,9 @@ namespace Server.Commands
                 string title;
 
                 if (from.AccessLevel >= AccessLevel.GameMaster) // need GM access to see usernames
-                    title = String.Format("Comments for {0}", m_Account.Username);
+                    title = string.Format("Comments for {0}", m_Account.Username);
                 else if (m_Target != null)
-                    title = String.Format("Comments for Acct. of {0}", m_Target.Name);
+                    title = string.Format("Comments for Acct. of {0}", m_Target.Name);
                 else
                     title = "Comments";
 
@@ -240,7 +240,7 @@ namespace Server.Commands
                         {
                             if (i >= m_Index && added < CommentsPerPage)
                             {
-                                string html = String.Format("[Added By: {0} on {1}]<br>{2}", c.AddedBy, c.LastModified.ToString("H:mm M/d/yy"), c.Content);
+                                string html = string.Format("[Added By: {0} on {1}]<br>{2}", c.AddedBy, c.LastModified.ToString("H:mm M/d/yy"), c.Content);
                                 AddHtml(20, 64 + (added * 90), 380, 80, html, true, true);
 
                                 if (select)
@@ -257,7 +257,7 @@ namespace Server.Commands
                 int currentPage = m_Index / CommentsPerPage + 1;
                 int totalPages = Math.Max(1, (count + CommentsPerPage - 1) / CommentsPerPage);
 
-                AddHtml(145, 64 + m_Height, 130, 20, Color(Center(String.Format("Page {0} of {1}", currentPage, totalPages))), false, false);
+                AddHtml(145, 64 + m_Height, 130, 20, Color(Center(string.Format("Page {0} of {1}", currentPage, totalPages))), false, false);
 
                 if (currentPage > 1)
                 {
@@ -345,7 +345,7 @@ namespace Server.Commands
                                     {
                                         string text = info.GetTextEntry(0).Text;
 
-                                        if (String.IsNullOrEmpty(text))
+                                        if (string.IsNullOrEmpty(text))
                                         {
                                             from.SendGump(new AccountCommentsGump(from, m_Target, m_Account, m_Index, m_FilterSystem, Page.Add, null, "Text field is empty - enter the new comment."));
                                         }

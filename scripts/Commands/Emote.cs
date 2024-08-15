@@ -169,7 +169,7 @@ namespace Server.Commands
             private void AddButtonLabeled(int x, int y, int buttonID, string text)
             {
                 AddButton(x, y - 1, 4005, 4007, buttonID, GumpButtonType.Reply, 0);
-                AddHtml(x + 35, y, 240, 20, String.Format("<BASEFONT COLOR=#FFFFFF>{0}</BASEFONT>", text), false, false);
+                AddHtml(x + 35, y, 240, 20, string.Format("<BASEFONT COLOR=#FFFFFF>{0}</BASEFONT>", text), false, false);
             }
 
             public override void OnResponse(NetState sender, RelayInfo info)
@@ -270,7 +270,7 @@ namespace Server.Commands
 
             protected virtual void DoOverheadEmote(Mobile from)
             {
-                from.Emote(String.Format("*{0}*", m_Emote));
+                from.Emote(string.Format("*{0}*", m_Emote));
             }
 
             protected virtual int GetSoundID(Mobile from)

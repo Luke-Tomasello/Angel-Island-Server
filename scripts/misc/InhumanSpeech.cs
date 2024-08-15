@@ -439,7 +439,7 @@ namespace Server.Misc
             for (int i = 0; i < syllableCount; ++i)
                 syllables[i] = GetRandomSyllable();
 
-            return String.Concat(syllables);
+            return string.Concat(syllables);
         }
 
         public string ConstructSentance(int wordCount)

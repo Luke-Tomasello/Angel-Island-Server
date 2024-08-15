@@ -78,7 +78,7 @@ namespace Server.Engines.Breeding
 
                 if (!Enum.TryParse(e.GetString(0), true, out type))
                 {
-                    LogFailure(String.Format("Invalid key \"{0}\".", e.GetString(0)));
+                    LogFailure(string.Format("Invalid key \"{0}\".", e.GetString(0)));
                     return;
                 }
 

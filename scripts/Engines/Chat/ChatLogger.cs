@@ -38,7 +38,7 @@ namespace Server.Engines.Chat
         public static void Log(NetState state, string lang, int actionID, string param)
         {
             LogHelper logger = new LogHelper("Chat.log", false, true);
-            string text = String.Format("Client: {0}: Chat action 0x{1:X}: {2}", state, actionID, param);
+            string text = string.Format("Client: {0}: Chat action 0x{1:X}: {2}", state, actionID, param);
             logger.Log(text);
             logger.Finish();
         }

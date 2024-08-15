@@ -552,7 +552,7 @@ namespace Server.SkillHandlers
                         if (!IsInGuild(mobRoot) && IsInnocentTo(m_Thief, mobRoot))
                             m_Thief.CriminalAction(false);
 
-                        string message = String.Format("You notice {0} trying to steal from {1}.", m_Thief.Name, mobRoot.Name);
+                        string message = string.Format("You notice {0} trying to steal from {1}.", m_Thief.Name, mobRoot.Name);
 
                         foreach (NetState ns in m_Thief.GetClientsInRange(8))
                         {   // 5/6/2024, Adam: Add the LOS check here. Players shouldn't report things they cannot see

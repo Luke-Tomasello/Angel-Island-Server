@@ -387,7 +387,7 @@ namespace Server.Engines.OldSchoolCraft
                     // can the user make this?
                     bool allRequiredSkills = false;
                     if (found.CraftItem.GetSuccessChance(Craft.From, typeof(IronIngot), Craft.CraftSystem, false, ref allRequiredSkills) > 0.0 && allRequiredSkills)
-                        selections.Add(new Selection(new ItemListEntry(String.Format("{0}: {1} {2}", found.Name, found.Amount, "Ingots"), found.ItemID), (int)context));
+                        selections.Add(new Selection(new ItemListEntry(string.Format("{0}: {1} {2}", found.Name, found.Amount, "Ingots"), found.ItemID), (int)context));
                 }
             }
 

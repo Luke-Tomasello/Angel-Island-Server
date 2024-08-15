@@ -490,7 +490,7 @@ namespace Server
             // setup the new map drop chance at 3x normal (something like 10%)
             CoreAI.TreasureMapDrop *= 3.0;
 
-            string line = String.Format("Crazy Map Day has begun!");
+            string line = string.Format("Crazy Map Day has begun!");
             World.Broadcast(0x22, true, line);  // tell the world
 
             Console.WriteLine("CrazyMapDayAES: Start event.");
@@ -513,14 +513,14 @@ namespace Server
 
                 // what we want the Town Crier to say
                 string[] lines = new string[4];
-                lines[0] = String.Format(
+                lines[0] = string.Format(
                     "Crazy Map Day starting in about {0} {1}.",
                     bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
                     bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes");
 
-                lines[1] = String.Format("Monsters dropping maps at 3x the normal rate.");
-                lines[2] = String.Format("Stock up on your treasure maps.");
-                lines[3] = String.Format("Beware; the murderous shall be among us.");
+                lines[1] = string.Format("Monsters dropping maps at 3x the normal rate.");
+                lines[2] = string.Format("Stock up on your treasure maps.");
+                lines[3] = string.Format("Beware; the murderous shall be among us.");
 
                 // use the smaller of the time spans
                 TimeSpan s1 = EventStartTime - AdjustedDateTime.GameTime;
@@ -564,7 +564,7 @@ namespace Server
             bool bInHours = HowLong > TimeSpan.FromMinutes(120.0);
 
             string[] lines = new string[1];
-            lines[0] = String.Format(
+            lines[0] = string.Format(
                 "Crazy Map Day starting in about {0} {1}.",
                 bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
                 bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes");
@@ -755,7 +755,7 @@ namespace Server
             }
             else
             {
-                string line = String.Format("The Britain guards are nowhere to be found.");
+                string line = string.Format("The Britain guards are nowhere to be found.");
                 World.Broadcast(0x22, true, line);                      // tell the world
             }
 
@@ -784,7 +784,7 @@ namespace Server
                 // let the fun end!
                 m_ChampionSpawn.Running = false;                             // stop the creatures;
 
-                string line = String.Format("The Britain guards are now on duty.");
+                string line = string.Format("The Britain guards are now on duty.");
                 World.Broadcast(0x22, true, line);                      // tell the world
             }
 
@@ -806,8 +806,8 @@ namespace Server
                 {
                     case 0:
                         {
-                            lines[0] = String.Format("An evil swarm approaches.");
-                            lines[1] = String.Format(
+                            lines[0] = string.Format("An evil swarm approaches.");
+                            lines[1] = string.Format(
                                 "Expect this plague in about {0} {1}.",
                                 bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
                                 bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes");
@@ -816,8 +816,8 @@ namespace Server
 
                     case 1:
                         {
-                            lines[0] = String.Format("Doom marches ever nearer.");
-                            lines[1] = String.Format(
+                            lines[0] = string.Format("Doom marches ever nearer.");
+                            lines[1] = string.Format(
                                 "We have but {0} {1} to prepare",
                                 bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
                                 bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes");
@@ -826,8 +826,8 @@ namespace Server
 
                     case 2:
                         {
-                            lines[0] = String.Format("We do not deserve this!.");
-                            lines[1] = String.Format(
+                            lines[0] = string.Format("We do not deserve this!.");
+                            lines[1] = string.Format(
                                 "Rally ye citizens, we only have {0} {1}.",
                                 bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
                                 bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes");
@@ -875,7 +875,7 @@ namespace Server
                 // warn PK's to get out of town!!
                 if (span.TotalMinutes <= 30)
                 {
-                    string line = String.Format("The Britain guards are coming on duty soon.");
+                    string line = string.Format("The Britain guards are coming on duty soon.");
                     World.Broadcast(0x22, true, line);                      // tell the world
                 }
 
@@ -901,7 +901,7 @@ namespace Server
             TimeSpan HowLong = EventStartTime - AdjustedDateTime.GameTime;
             bool bInHours = HowLong > TimeSpan.FromMinutes(120.0);
 
-            string line = String.Format(
+            string line = string.Format(
                 "The Britain guards going on break in about {0} {1}.",
                 bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
                 bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes");
@@ -1248,7 +1248,7 @@ namespace Server
             }
             else
             {
-                string line = String.Format("{0} is a very dangerous place.", m_RegionName);
+                string line = string.Format("{0} is a very dangerous place.", m_RegionName);
                 World.Broadcast(0x22, true, line);                      // tell the world
             }
 
@@ -1293,15 +1293,15 @@ namespace Server
                 string[] lines = new string[4];
                 if (Utility.RandomBool())
                 {
-                    lines[0] = String.Format(
+                    lines[0] = string.Format(
                         "{2} Ransom Quest in about {0} {1}.",
                         bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
                         bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes",
                         IOBSystem.GetIOBName(m_IOBAlignment));
 
-                    lines[1] = String.Format("The {0} will be protecting their treasure.", IOBSystem.GetIOBName(m_IOBAlignment));
-                    lines[2] = String.Format("Enemies of the {0} will try to loot this treasure.", IOBSystem.GetIOBName(m_IOBAlignment));
-                    lines[3] = String.Format("You will need a treasure hunter to aid in your quest.");
+                    lines[1] = string.Format("The {0} will be protecting their treasure.", IOBSystem.GetIOBName(m_IOBAlignment));
+                    lines[2] = string.Format("Enemies of the {0} will try to loot this treasure.", IOBSystem.GetIOBName(m_IOBAlignment));
+                    lines[3] = string.Format("You will need a treasure hunter to aid in your quest.");
                 }
                 else
                 {
@@ -1330,8 +1330,8 @@ namespace Server
                 string[] lines = new string[2];
                 if (Utility.RandomBool())
                 {
-                    lines[0] = String.Format("Assult on the {0} has begun.", IOBSystem.GetIOBName(m_IOBAlignment));
-                    lines[1] = String.Format("Head to the stronghold of the {0} now!", IOBSystem.GetIOBName(m_IOBAlignment));
+                    lines[0] = string.Format("Assult on the {0} has begun.", IOBSystem.GetIOBName(m_IOBAlignment));
+                    lines[1] = string.Format("Head to the stronghold of the {0} now!", IOBSystem.GetIOBName(m_IOBAlignment));
                 }
                 else
                 {
@@ -1339,15 +1339,15 @@ namespace Server
                     bool bInHours = HowLong > TimeSpan.FromMinutes(120.0);
 
                     // what we want the Town Crier to say
-                    lines[0] = String.Format(
+                    lines[0] = string.Format(
                         "Take your treasure hunter to the stronghold of the {0}.",
                         IOBSystem.GetIOBName(m_IOBAlignment));
                     // gives too much away
-                    //lines[1] = String.Format(
+                    //lines[1] = string.Format(
                     //"The chest can be opened in about {0} {1}.",
                     //bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
                     //bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes" );
-                    lines[1] = String.Format(
+                    lines[1] = string.Format(
                         "Protect your treasure hunter, for the stronghold of the {0} is a dangerous place.",
                         IOBSystem.GetIOBName(m_IOBAlignment));
                 }
@@ -1374,7 +1374,7 @@ namespace Server
             TimeSpan HowLong = EventStartTime - AdjustedDateTime.GameTime;
             bool bInHours = HowLong > TimeSpan.FromMinutes(120.0);
 
-            string line = String.Format(
+            string line = string.Format(
                 "{2} Ransom Quest in about {0} {1}.",
                 bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
                 bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes",
@@ -1405,7 +1405,7 @@ namespace Server
 
 
             // We now keep it quiet as to when the chest can be opened
-            //string line = String.Format("Human skills may now open the chest!");
+            //string line = string.Format("Human skills may now open the chest!");
             //World.Broadcast( 0x22, true, line );
             Console.WriteLine("KinRansomAES: Unlock the chest and announce.");
         }
@@ -1806,14 +1806,14 @@ namespace Server
 
                 // what we want the Town Crier to say
                 string[] lines = new string[4];
-                lines[0] = String.Format(
+                lines[0] = string.Format(
                     "Server Wars starting in about {0} {1}.",
                     bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
                     bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes");
 
-                lines[1] = String.Format("There are no World Saves during Server Wars.");
-                lines[2] = String.Format("Please plan accordingly.");
-                lines[3] = String.Format("Wait for the system message stating server wars have started.");
+                lines[1] = string.Format("There are no World Saves during Server Wars.");
+                lines[2] = string.Format("Please plan accordingly.");
+                lines[3] = string.Format("Wait for the system message stating server wars have started.");
 
                 // use the smaller of the time spans
                 TimeSpan s1 = EventStartTime - AdjustedDateTime.GameTime;
@@ -1857,7 +1857,7 @@ namespace Server
             TimeSpan HowLong = EventStartTime - AdjustedDateTime.GameTime;
             bool bInHours = HowLong > TimeSpan.FromMinutes(120.0);
 
-            string line = String.Format(
+            string line = string.Format(
                 "Server Wars starting in about {0} {1}.",
                 bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
                 bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes");
@@ -1907,7 +1907,7 @@ namespace Server
             {
                 Console.WriteLine("ServerWarsAES: Initializing ServerWars");
                 World.SaveType = World.SaveOption.NoSaves;              // disable all saves from any source
-                string line = String.Format("Server Wars have begun!");
+                string line = string.Format("Server Wars have begun!");
                 World.Broadcast(0x22, true, line);                      // tell the world
             }
         }

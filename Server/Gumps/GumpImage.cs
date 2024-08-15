@@ -94,9 +94,9 @@ namespace Server.Gumps
         public override string Compile()
         {
             if (m_Hue == 0)
-                return String.Format("{{ gumppic {0} {1} {2} }}", m_X, m_Y, m_GumpID);
+                return string.Format("{{ gumppic {0} {1} {2} }}", m_X, m_Y, m_GumpID);
             else
-                return String.Format("{{ gumppic {0} {1} {2} hue={3} }}", m_X, m_Y, m_GumpID, m_Hue);
+                return string.Format("{{ gumppic {0} {1} {2} hue={3} }}", m_X, m_Y, m_GumpID, m_Hue);
         }
 
         private static byte[] m_LayoutName = Gump.StringToBuffer("gumppic");

@@ -66,7 +66,7 @@ namespace Server.Items
             set
             {
                 m_IOBAlignment = value;
-                Name = String.Format("Ransom chest of the {0}", IOBSystem.GetIOBName(m_IOBAlignment));
+                Name = string.Format("Ransom chest of the {0}", IOBSystem.GetIOBName(m_IOBAlignment));
             }
         }
 

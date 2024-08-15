@@ -266,14 +266,14 @@ namespace Server
             EffectInfo info = GetInfo(effect);
 
             if (info == null)
-                return String.Empty;
+                return string.Empty;
 
             string name = info.OldName;
 
             if (name == null && !Server.Text.Cliloc.Lookup.TryGetValue(info.Label, out name))
-                return String.Empty;
+                return string.Empty;
 
-            return String.Format("{0} (charges: {1})", name.ToLower(), charges);
+            return string.Format("{0} (charges: {1})", name.ToLower(), charges);
         }
 
         public static void ConsumeCharge(Mobile from, Item item)

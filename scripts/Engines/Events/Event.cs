@@ -239,9 +239,9 @@ namespace Server.Engines
                 m_Countdown = TimeSpan.Zero;
 
             if (this.EventDebug && EventRunning == false)
-                DebugOut(String.Format("Event timer tick. Countdown = {0}", m_Countdown), m_ConsoleHue);
+                DebugOut(string.Format("Event timer tick. Countdown = {0}", m_Countdown), m_ConsoleHue);
             else if (this.EventDebug && EventRunning == true)
-                DebugOut(String.Format("Event timer tick. Checking for begin/end of event"), m_ConsoleHue);
+                DebugOut(string.Format("Event timer tick. Checking for begin/end of event"), m_ConsoleHue);
 
             CheckTimer();
             CheckBeginEnd();
@@ -282,7 +282,7 @@ namespace Server.Engines
                     EventStarted();
                 }
                 else if (this.EventDebug)
-                    DebugOut(String.Format("Event running with {0} remaining", EventTimeRemaining), m_ConsoleHue);
+                    DebugOut(string.Format("Event running with {0} remaining", EventTimeRemaining), m_ConsoleHue);
             }
 
             if (yourTime > EventEndInternal)
@@ -359,14 +359,14 @@ namespace Server.Engines
                 ResetTimer(start: true);
                 // don't report the new timer if we are already running
                 if (this.EventDebug && EventRunning == false)
-                    DebugOut(String.Format("Event timer started."), m_ConsoleHue);
+                    DebugOut(string.Format("Event timer started."), m_ConsoleHue);
             }
 
             if (yourTime > EventEndInternal)
             {
                 ResetTimer(start: false);
                 if (this.EventDebug)
-                    DebugOut(String.Format("Event timer stopped."), m_ConsoleHue);
+                    DebugOut(string.Format("Event timer stopped."), m_ConsoleHue);
             }
 
             // this keeps us ticking
@@ -446,7 +446,7 @@ namespace Server.Engines
                 mis.Invoke(m_item, new object[] { m_context });
             }
             if (this.EventDebug)
-                DebugOut(String.Format("Event started."), m_ConsoleHue);
+                DebugOut(string.Format("Event started."), m_ConsoleHue);
         }
         private void EventEnded()
         {
@@ -456,7 +456,7 @@ namespace Server.Engines
                 mie.Invoke(m_item, new object[] { m_context });
             }
             if (this.EventDebug)
-                DebugOut(String.Format("Event ended."), m_ConsoleHue);
+                DebugOut(string.Format("Event ended."), m_ConsoleHue);
         }
         private void DebugOut(string text, ConsoleColor color)
         {

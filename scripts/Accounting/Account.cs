@@ -400,12 +400,19 @@ namespace Server.Accounting
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public int HardwareHash
         {
-            get { SyncHardwareHash(); return m_HardwareHash; }
+            get 
+            {
+                if (Core.UseLoginDB)
+                    SyncHardwareHash(); 
+                return m_HardwareHash; 
+            }
             set
             {
-                SyncHardwareHashAcquired(value);
+                SetHardwareHashAcquired(value);
                 // initialize the last known good hardware hash
-                m_HardwareHash = value; if (Core.UseLoginDB) AccountsDatabase.SaveAccount(this);
+                m_HardwareHash = value; 
+                if (Core.UseLoginDB) 
+                    AccountsDatabase.SaveAccount(this);
                 // now add this hash to the list of 'machines' this user has access to.
                 if (!m_Machines.Contains(value))
                     m_Machines.Add(value);
@@ -454,7 +461,13 @@ namespace Server.Accounting
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public string ResetPassword
         {
-            get { SyncCredentials(); return m_ResetPassword; }
+            get 
+            {
+                if (Core.UseLoginDB)
+                    SyncCredentials(); 
+                
+                return m_ResetPassword; 
+            }
         }
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public DateTime ResetPasswordRequestedTime
@@ -543,7 +556,12 @@ namespace Server.Accounting
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public string PlainPassword
         {
-            get { SyncCredentials(); return m_PlainPassword; }
+            get 
+            {
+                if (Core.UseLoginDB)
+                    SyncCredentials(); 
+                return m_PlainPassword; 
+            }
         }
         /// <summary>
         /// Account password. Hashed with MD5. May be null.
@@ -551,7 +569,12 @@ namespace Server.Accounting
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public string CryptPassword
         {
-            get { SyncCredentials(); return m_CryptPassword; }
+            get 
+            { 
+                if (Core.UseLoginDB)
+                    SyncCredentials(); 
+                return m_CryptPassword; 
+            }
         }
         /// <summary>
         /// Account Email.
@@ -684,7 +707,7 @@ namespace Server.Accounting
         /// <summary>
         /// Synchronizes the hardware hash acquired date.
         /// </summary>
-        public void SyncHardwareHashAcquired(int hardwareHash)
+        public void SetHardwareHashAcquired(int hardwareHash)
         {
             // only record the first time the m_HardwareHash is set.
             if (m_HardwareHashAcquired == DateTime.MinValue)
@@ -882,10 +905,15 @@ namespace Server.Accounting
         /// </summary>
         public void SyncCredentials()
         {
-            AccountsDBEntry? dbAccount = AccountsDatabase.GetAccount(m_Username);
+            if (Core.UseLoginDB)
+            {
+                AccountsDBEntry? dbAccount = AccountsDatabase.GetAccount(m_Username);
 
-            if (dbAccount != null)
-                SetRawCredentials(dbAccount.Value.CryptPassword, dbAccount.Value.PlainPassword, dbAccount.Value.ResetPassword);
+                if (dbAccount != null)
+                    SetRawCredentials(dbAccount.Value.CryptPassword, dbAccount.Value.PlainPassword, dbAccount.Value.ResetPassword);
+            }
+            else
+                Utility.ConsoleWriteLine("Error: SyncCredentials should not be called here.", ConsoleColor.DarkRed); // debug break
         }
 
         /// <summary>
@@ -931,7 +959,8 @@ namespace Server.Accounting
 
         public void SetPassword(string plainPassword, bool saveDbAccount)
         {
-            SyncCredentials();
+            if (Core.UseLoginDB)
+                SyncCredentials();
 
             if (AccountHandler.ProtectPasswords)
             {
@@ -950,7 +979,8 @@ namespace Server.Accounting
 
         public void SetResetPassword(string resetPassword)
         {
-            SyncCredentials();
+            if (Core.UseLoginDB)
+                SyncCredentials();
 
             m_ResetPasswordRequestedTime = DateTime.UtcNow;
             m_ResetPassword = resetPassword;
@@ -959,15 +989,14 @@ namespace Server.Accounting
                 AccountsDatabase.SaveAccount(this);
         }
 
-
-
         public bool CheckPassword(string plainPassword)
         {
             // always reject null, empty or whitespace passwords
-            if (String.IsNullOrWhiteSpace(plainPassword))
+            if (string.IsNullOrWhiteSpace(plainPassword))
                 return false;
 
-            SyncCredentials();
+            if (Core.UseLoginDB)
+                SyncCredentials();
 
             bool passwordValid = false;
             bool saveDbAccount = false;

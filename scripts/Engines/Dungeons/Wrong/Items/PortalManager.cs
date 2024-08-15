@@ -144,11 +144,11 @@ namespace Server.Items
                 return;
 
 
-            LabelTo(from, String.Format("{0}", DefaultName));
+            LabelTo(from, string.Format("{0}", DefaultName));
             if (Running)
-                LabelTo(from, String.Format("({0})", "Active"));
+                LabelTo(from, string.Format("({0})", "Active"));
             else
-                LabelTo(from, String.Format("({0})", "Inactive"));
+                LabelTo(from, string.Format("({0})", "Inactive"));
             return;
         }
 

@@ -129,7 +129,7 @@ namespace Server.Mobiles
                 string list = "";
                 foreach (string key_name in ConversationTriggers.Keys)
                     list += (key_name + "\n");
-                this.Say(String.Format("{0} Which would you like to play?", list));
+                this.Say(string.Format("{0} Which would you like to play?", list));
                 return false;
             }
             else

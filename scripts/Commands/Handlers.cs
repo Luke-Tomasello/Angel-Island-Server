@@ -563,7 +563,7 @@ namespace Server.Commands
 
                 e.Mobile.SendGump(
                     new WarningGump(1060635, 30720,
-                    String.Format("You are about to delete {0} object{1} from this facet.  Do you really wish to continue?",
+                    string.Format("You are about to delete {0} object{1} from this facet.  Do you really wish to continue?",
                     list.Count, list.Count == 1 ? "" : "s"),
                     0xFFC000, 360, 260, new WarningGumpCallback(DeleteList_Callback), list));
             }
@@ -698,7 +698,7 @@ namespace Server.Commands
                 {
                     Item item = (Item)m.Items[i];
 
-                    entries[i] = new ItemListEntry(String.Format("{0}: {1}", item.Layer, item.GetType().Name), item.ItemID, item.Hue);
+                    entries[i] = new ItemListEntry(string.Format("{0}: {1}", item.Layer, item.GetType().Name), item.ItemID, item.Hue);
                 }
 
                 return entries;
@@ -732,7 +732,7 @@ namespace Server.Commands
                     private Item m_Item;
 
                     public EquipDetailsMenu(Mobile m, Item item)
-                        : base(String.Format("{0}: {1}", item.Layer, item.GetType().Name), new string[] { "Move", "Delete", "Props" })
+                        : base(string.Format("{0}: {1}", item.Layer, item.GetType().Name), new string[] { "Move", "Delete", "Props" })
                     {
                         m_Mobile = m;
                         m_Item = item;
@@ -833,7 +833,7 @@ namespace Server.Commands
                         }
                         else
                         {
-                            m.PrivateOverheadMessage(MessageType.Regular, 0x3B2, true, String.Format("Bank container has {0} items, {1} stones", box.TotalItems, box.TotalWeight), from.NetState);
+                            m.PrivateOverheadMessage(MessageType.Regular, 0x3B2, true, string.Format("Bank container has {0} items, {1} stones", box.TotalItems, box.TotalWeight), from.NetState);
                             box.DisplayTo(from);
                         }
                     }
@@ -916,11 +916,11 @@ namespace Server.Commands
             protected override void OnTarget(Mobile from, object targeted)
             {
                 if (targeted is Mobile)
-                    from.SendMessage(String.Format("RangeExit is {0} tiles.", from.GetDistanceToSqrt(targeted as Mobile)));
+                    from.SendMessage(string.Format("RangeExit is {0} tiles.", from.GetDistanceToSqrt(targeted as Mobile)));
                 else if (targeted is Item)
-                    from.SendMessage(String.Format("RangeExit is {0} tiles.", from.GetDistanceToSqrt((targeted as Item).Location)));
+                    from.SendMessage(string.Format("RangeExit is {0} tiles.", from.GetDistanceToSqrt((targeted as Item).Location)));
                 else
-                    from.SendMessage(String.Format("RangeExit is Unknown."));
+                    from.SendMessage(string.Format("RangeExit is Unknown."));
             }
         }
 
@@ -1427,7 +1427,7 @@ namespace Server.Commands
         [Description("Broadcasts a message to all online staff.")]
         public static void StaffMessage_OnCommand(CommandEventArgs e)
         {
-            BroadcastMessage(AccessLevel.Counselor, e.Mobile.SpeechHue, String.Format("[{0}] {1}", e.Mobile.Name, e.ArgString));
+            BroadcastMessage(AccessLevel.Counselor, e.Mobile.SpeechHue, string.Format("[{0}] {1}", e.Mobile.Name, e.ArgString));
         }
 
         [Usage("BCast <text>")]
@@ -1435,7 +1435,7 @@ namespace Server.Commands
         [Description("Broadcasts a message to everyone online.")]
         public static void BroadcastMessage_OnCommand(CommandEventArgs e)
         {
-            BroadcastMessage(AccessLevel.Player, 0x482, String.Format("Staff message from {0}:", e.Mobile.Name));
+            BroadcastMessage(AccessLevel.Player, 0x482, string.Format("Staff message from {0}:", e.Mobile.Name));
             BroadcastMessage(AccessLevel.Player, 0x482, e.ArgString);
         }
 
@@ -1655,7 +1655,7 @@ namespace Server.Commands
         [Description("Reminds of the current shard configuraton.")]
         public static void Shard_OnCommand(CommandEventArgs e)
         {
-            e.Mobile.SendMessage(String.Format("You are on {0}{1}{2} ({3}).", Core.Server, Core.UOTC_CFG ? " Test Center" : "", Core.UOEV_CFG ? " Event Shard" : "", Environment.MachineName));
+            e.Mobile.SendMessage(string.Format("You are on {0}{1}{2} ({3}).", Core.Server, Core.UOTC_CFG ? " Test Center" : "", Core.UOEV_CFG ? " Event Shard" : "", Environment.MachineName));
         }
 
 

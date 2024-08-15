@@ -361,7 +361,7 @@ namespace Server.Misc
         public static string FormatShort(Mobile m)
         {
             if (m.ShowFameTitle && (m.Player || m.Body.IsHuman) && m.Fame >= 10000)
-                return String.Concat(m.Female ? "Lady " : "Lord ", m.Name);
+                return string.Concat(m.Female ? "Lady " : "Lord ", m.Name);
             else
                 return m.Name;
         }

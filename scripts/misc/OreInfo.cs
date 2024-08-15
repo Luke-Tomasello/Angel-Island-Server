@@ -630,7 +630,7 @@ namespace Server.Items
         {
             CraftResourceInfo info = GetInfo(resource);
 
-            return (info == null ? String.Empty : info.Name);
+            return (info == null ? string.Empty : info.Name);
         }
 
         /// <summary>

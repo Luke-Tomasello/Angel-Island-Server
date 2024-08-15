@@ -94,7 +94,7 @@ namespace Server.Items
                     if ((article == Article.A || article == Article.An) && prefix.Length == 0)
                         article = info.Article;
 
-                    prefix += String.Concat(info.Name.ToLower(), " ");
+                    prefix += string.Concat(info.Name.ToLower(), " ");
                 }
             }
 

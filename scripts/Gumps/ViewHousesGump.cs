@@ -121,7 +121,7 @@ namespace Server.Gumps
 
                     object name = FindHouseName((BaseHouse)list[i]);
 
-                    AddHtml(15, 40 + ((i % 15) * 20), 20, 20, Color(String.Format("{0}.", i + 1), White), false, false);
+                    AddHtml(15, 40 + ((i % 15) * 20), 20, 20, Color(string.Format("{0}.", i + 1), White), false, false);
 
                     if (name is int)
                         AddHtmlLocalized(35, 40 + ((i % 15) * 20), 160, 20, (int)name, White16, false, false);
@@ -285,7 +285,7 @@ namespace Server.Gumps
 
         public string Right(string text)
         {
-            return String.Format("<div align=right>{0}</div>", text);
+            return string.Format("<div align=right>{0}</div>", text);
         }
 
         public void AddBlackAlpha(int x, int y, int width, int height)

@@ -421,7 +421,7 @@ namespace Server.Engines
             KeyValuePair<string, List<Rectangle2D>>? tmp = FindDistrict(listToFind);
 
             if (tmp == null)
-                return String.Empty;
+                return string.Empty;
 
             return tmp.GetValueOrDefault().Key;
 

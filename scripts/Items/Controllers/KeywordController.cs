@@ -236,7 +236,7 @@ namespace Server.Items
             {
                 if (mode == KeyWordMatchMode.Standard)
                 {
-                    string pattern = String.Concat("^", te.String.Replace("*", ".*?"), "$");
+                    string pattern = string.Concat("^", te.String.Replace("*", ".*?"), "$");
 
                     if (Regex.IsMatch(e.Speech, pattern, RegexOptions.IgnoreCase))
                         return true;
@@ -302,7 +302,7 @@ namespace Server.Items
                         if (e.Mobile.Name != null)
                             return e.Mobile.Name;
                         else
-                            return String.Empty;
+                            return string.Empty;
                     }
                 case "timeofday":
                     {
@@ -572,9 +572,9 @@ namespace Server.Items
             public override string ToString()
             {
                 if (m_Requires != -1)
-                    return String.Format("{0}->{1} (Req. {2})", m_Keywords.ToString(), m_Replies.ToString(), m_Requires);
+                    return string.Format("{0}->{1} (Req. {2})", m_Keywords.ToString(), m_Replies.ToString(), m_Requires);
                 else
-                    return String.Format("{0}->{1}", m_Keywords.ToString(), m_Replies.ToString());
+                    return string.Format("{0}->{1}", m_Keywords.ToString(), m_Replies.ToString());
             }
         }
 

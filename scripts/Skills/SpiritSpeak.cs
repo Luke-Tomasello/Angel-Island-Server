@@ -526,7 +526,7 @@ namespace Server.SkillHandlers
             if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.SpiritSpeakUsageReport))
                 Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Administrator,
                 0x482,
-                String.Format("At location: {0}, {1} ", m.Location, text));
+                string.Format("At location: {0}, {1} ", m.Location, text));
         }
     }
 }

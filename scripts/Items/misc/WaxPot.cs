@@ -91,7 +91,7 @@ namespace Server.Items
             base.OnSingleClick(from);
 
             if (m_Quantity > 0)
-                LabelToAffix(from, 1077826, AffixType.Append, String.Format(": {0}", m_Quantity)); // Quantity: ~1_QUANTITY~
+                LabelToAffix(from, 1077826, AffixType.Append, string.Format(": {0}", m_Quantity)); // Quantity: ~1_QUANTITY~
         }
 
         private static object m_Targeted;

@@ -580,7 +580,7 @@ namespace Server.Items.Triggers
 
             public override string ToString()
             {
-                return String.Format("x{0} {1}", m_Amount, m_ConditionStr);
+                return string.Format("x{0} {1}", m_Amount, m_ConditionStr);
             }
         }
     }

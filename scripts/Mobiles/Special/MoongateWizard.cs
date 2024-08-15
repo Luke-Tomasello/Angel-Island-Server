@@ -417,7 +417,7 @@ namespace Server.Mobiles
             {
                 if (m_RequiresFunds)
                 {
-                    SayTo(m, String.Format("You lack the necessary funds of {0} gp.", cost));
+                    SayTo(m, string.Format("You lack the necessary funds of {0} gp.", cost));
                     return false;
                 }
                 else
@@ -427,7 +427,7 @@ namespace Server.Mobiles
                 }
             }
 
-            SayTo(m, String.Format("I have withdrawn {0} gp from your account.", cost));
+            SayTo(m, string.Format("I have withdrawn {0} gp from your account.", cost));
 
             BountySystem.BountyKeeper.LBFund += cost;
 

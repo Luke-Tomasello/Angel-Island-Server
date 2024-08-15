@@ -485,7 +485,7 @@ namespace Server.Misc
 
             if (editing)
             {
-                AddHtml(22, 22, 294, 20, Color(String.Format("{0} total", totalVotes), LabelColor32), false, false);
+                AddHtml(22, 22, 294, 20, Color(string.Format("{0} total", totalVotes), LabelColor32), false, false);
                 AddButton(287, 23, 0x2622, 0x2623, 2, GumpButtonType.Reply, 0);
             }
 
@@ -505,7 +505,7 @@ namespace Server.Misc
                 {
                     double perc = option.Votes / (double)totalVotes;
 
-                    text = String.Format("[{1}: {2}%] {0}", text, option.Votes, (int)(perc * 100));
+                    text = string.Format("[{1}: {2}%] {0}", text, option.Votes, (int)(perc * 100));
                 }
 
                 int optHeight = option.ComputeHeight();
@@ -613,11 +613,11 @@ namespace Server.Misc
             if (m.Groups[1].Success)
             {
                 if (m.Groups[2].Success)
-                    return String.Format("<a href=\"{0}\">{1}</a>", m.Groups[1].Value, m.Groups[2].Value);
+                    return string.Format("<a href=\"{0}\">{1}</a>", m.Groups[1].Value, m.Groups[2].Value);
             }
             else if (m.Groups[2].Success)
             {
-                return String.Format("<a href=\"{0}\">{0}</a>", m.Groups[2].Value);
+                return string.Format("<a href=\"{0}\">{0}</a>", m.Groups[2].Value);
             }
 
             return m.Value;

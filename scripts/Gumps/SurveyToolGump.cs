@@ -53,7 +53,7 @@ namespace Server.Gumps
             AddBackground(10, 10, 190, 140, 0x242C);
 
 
-            AddHtml(30, 30, 150, 75, String.Format("<div align=CENTER>{0}</div>", "This house seems to fit here."), false, false);
+            AddHtml(30, 30, 150, 75, string.Format("<div align=CENTER>{0}</div>", "This house seems to fit here."), false, false);
 
 
             AddButton(40, 85, 4005, 4007, 0, GumpButtonType.Reply, 0);

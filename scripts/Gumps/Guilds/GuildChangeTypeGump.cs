@@ -299,7 +299,7 @@ namespace Server.Gumps
 
                 AddBackground(10, 10, 190, 140, 0x242C);
 
-                AddHtml(25, 30, 160, 80, String.Format("<center>Are you sure you wish to set your guild type to: {0}?</center>", option.Label), false, false);
+                AddHtml(25, 30, 160, 80, string.Format("<center>Are you sure you wish to set your guild type to: {0}?</center>", option.Label), false, false);
 
                 AddButton(40, 105, 0x81A, 0x81B, 0x1, GumpButtonType.Reply, 0); // Okay
                 AddButton(110, 105, 0x819, 0x818, 0x2, GumpButtonType.Reply, 0); // Cancel

@@ -251,7 +251,7 @@ namespace Server.Items
                 AddBackground(25, 85, 350, TopicLines * 20, 0x1400);
 
                 if (m_Box.Topic != null)
-                    AddHtml(30, 85, 340, TopicLines * 20, String.Format("<BASEFONT COLOR=#BDBDBD>{0}</BASEFONT>", m_Box.Topic), false, false);
+                    AddHtml(30, 85, 340, TopicLines * 20, string.Format("<BASEFONT COLOR=#BDBDBD>{0}</BASEFONT>", m_Box.Topic), false, false);
 
                 AddHtmlLocalized(0, 90 + TopicLines * 20, 400, 35, 1011003, false, false); // <center>votes</center>
 
@@ -290,7 +290,7 @@ namespace Server.Items
 
                     AddButton(20, 115 + TopicLines * 20 + line * 25, 0xFA5, 0xFA7, 3 + i, GumpButtonType.Reply, 0);
                     AddLabelCropped(55, 117 + TopicLines * 20 + line * 25, 100, 35, 0x0, candidate.Label);
-                    AddLabel(155, 117 + TopicLines * 20 + line * 25, 0x0, String.Format("[{0}]", candidate.Votes));
+                    AddLabel(155, 117 + TopicLines * 20 + line * 25, 0x0, string.Format("[{0}]", candidate.Votes));
 
                     if (totalVotes > 0)
                         AddImageTiled(205, 117 + TopicLines * 20 + line * 25, (candidate.Votes * 150) / totalVotes, 10, 0xD6);
@@ -424,7 +424,7 @@ namespace Server.Items
             private void Complete(Mobile from)
             {
                 if (m_Lines != null)
-                    m_Box.Topic = String.Join("<br>", m_Lines);
+                    m_Box.Topic = string.Join("<br>", m_Lines);
 
                 from.SendLocalizedMessage(500376, "", 0x35); // Ballot entry complete.
 

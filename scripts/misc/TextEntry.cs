@@ -172,7 +172,7 @@ namespace Server
 
             if (te.String != null)
             {
-                string pattern = String.Concat("^", te.String.Replace("*", ".*?"), "$");
+                string pattern = string.Concat("^", te.String.Replace("*", ".*?"), "$");
 
                 if (Regex.IsMatch(e.Speech, pattern, RegexOptions.IgnoreCase))
                     return true;
@@ -193,7 +193,7 @@ namespace Server
             else if (te.String != null)
             {
                 if (stringColor >= 0)
-                    g.AddHtml(x, y, width, height, String.Format("<BASEFONT COLOR=#{0:X6}>{1}</BASEFONT>", stringColor, te.String), background, scrollbar);
+                    g.AddHtml(x, y, width, height, string.Format("<BASEFONT COLOR=#{0:X6}>{1}</BASEFONT>", stringColor, te.String), background, scrollbar);
                 else
                     g.AddHtml(x, y, width, height, te.String, background, scrollbar);
             }
@@ -229,19 +229,19 @@ namespace Server
             if (m_Number > 0)
             {
                 if (m_String != null)
-                    return String.Format("#{0}|{1}", m_Number, m_String);
+                    return string.Format("#{0}|{1}", m_Number, m_String);
                 else
-                    return String.Format("#{0}", m_Number);
+                    return string.Format("#{0}", m_Number);
             }
             else if (m_String != null)
                 return m_String;
 
-            return String.Empty;
+            return string.Empty;
         }
 
         public static TextEntry Parse(string value)
         {
-            if (String.IsNullOrEmpty(value))
+            if (string.IsNullOrEmpty(value))
                 return TextEntry.Empty;
 
             if (value[0] != '#' || value.Length <= 1)
@@ -336,7 +336,7 @@ namespace Server
         {
             TEList list = new TEList();
 
-            if (!String.IsNullOrEmpty(value))
+            if (!string.IsNullOrEmpty(value))
             {
                 string[] split = value.Replace("(", "").Replace(")", "").Split('|');
 
@@ -350,11 +350,11 @@ namespace Server
         public override string ToString()
         {
             if (this.Count == 0)
-                return String.Empty;
+                return string.Empty;
             else if (this.Count == 1)
                 return this[0].ToString();
             else
-                return String.Format("({0})", String.Join("|", this));
+                return string.Format("({0})", string.Join("|", this));
         }
     }
 }

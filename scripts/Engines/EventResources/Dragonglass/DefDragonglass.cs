@@ -152,7 +152,7 @@ namespace Server.Engines.EventResources
 
                 string directoryName = Path.GetDirectoryName(FilePath);
 
-                if (!String.IsNullOrEmpty(directoryName) && !Directory.Exists(directoryName))
+                if (!string.IsNullOrEmpty(directoryName) && !Directory.Exists(directoryName))
                     Directory.CreateDirectory(directoryName);
 
                 XmlTextWriter writer = new XmlTextWriter(FilePath, Encoding.Default);

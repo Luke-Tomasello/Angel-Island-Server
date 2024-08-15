@@ -192,9 +192,9 @@ namespace Server.Factions.NewGumps.FactionMenu
                         string name = FormatName(player.Mobile);
 
                         if (m == player.Mobile)
-                            name = String.Format("<basefont color=#006600>{0}</basefont>", name);
+                            name = string.Format("<basefont color=#006600>{0}</basefont>", name);
                         else if (player.Mobile.NetState != null)
-                            name = String.Format("<basefont color=#000066>{0}</basefont>", name);
+                            name = string.Format("<basefont color=#000066>{0}</basefont>", name);
 
                         AddHtmlText(x, y, width, height, name, false, false);
 
@@ -205,7 +205,7 @@ namespace Server.Factions.NewGumps.FactionMenu
                         Guild guild = player.Mobile.Guild as Guild;
 
                         if (guild != null)
-                            AddHtmlText(x, y, width, height, String.Format("({0}){1}", guild.Abbreviation, guild.Leader == player.Mobile ? "*" : String.Empty), false, false);
+                            AddHtmlText(x, y, width, height, string.Format("({0}){1}", guild.Abbreviation, guild.Leader == player.Mobile ? "*" : string.Empty), false, false);
 
                         break;
                     }

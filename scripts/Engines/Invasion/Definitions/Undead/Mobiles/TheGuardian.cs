@@ -152,7 +152,7 @@ namespace Server.Engines.Invasion
                     int goldDropped = GoodiesTimer.DropGoodies(this.Location, this.Map, GoodiesRadius, GoodiesTotalMin, GoodiesTotalMax);
 
                     LogHelper logger = new LogHelper("TheGuardian.log", false, true);
-                    logger.Log(LogType.Mobile, this, String.Format("Dropped a total of {0} gold in goodies.", goldDropped.ToString()));
+                    logger.Log(LogType.Mobile, this, string.Format("Dropped a total of {0} gold in goodies.", goldDropped.ToString()));
                     logger.Finish();
                 }
 
@@ -533,7 +533,7 @@ namespace Server.Engines.Invasion
                 m_DamageEntries.Add(from, amount);
 
             if (Core.UOTC_CFG)
-                from.SendMessage(String.Format("Total Damage: {0}", m_DamageEntries[from]));
+                from.SendMessage(string.Format("Total Damage: {0}", m_DamageEntries[from]));
         }
 
         private Mobile[] Lottery(int count)
@@ -637,7 +637,7 @@ namespace Server.Engines.Invasion
             m.SendMessage("For your valor in combating the Guardian, a special artifact has been bestowed on you.");
 
             LogHelper logger = new LogHelper("TheGuardian.log", false, true);
-            logger.Log(LogType.Mobile, m, String.Format("Received an artifact: {0} ({1}).", artifact.ToString(), artifact.GetType().Name));
+            logger.Log(LogType.Mobile, m, string.Format("Received an artifact: {0} ({1}).", artifact.ToString(), artifact.GetType().Name));
             logger.Finish();
         }
 

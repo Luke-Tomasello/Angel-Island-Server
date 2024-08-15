@@ -327,7 +327,7 @@ namespace Server.Items
     {
         public const int MaxQuantity = 6;
 
-        public override string DefaultName { get { return String.Format("a pack of {0} seeds", m_Type.ToString().ToLower()); } }
+        public override string DefaultName { get { return string.Format("a pack of {0} seeds", m_Type.ToString().ToLower()); } }
 
         private CropType m_Type;
         private int m_Quantity;
@@ -403,7 +403,7 @@ namespace Server.Items
         {
             base.OnSingleClick(from);
 
-            LabelTo(from, String.Format("{0} square feet", 16 * m_Quantity));
+            LabelTo(from, string.Format("{0} square feet", 16 * m_Quantity));
         }
 
         public override void OnDoubleClick(Mobile from)

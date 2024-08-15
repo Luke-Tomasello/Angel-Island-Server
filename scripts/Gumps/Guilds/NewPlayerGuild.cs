@@ -188,7 +188,7 @@ namespace Server.Gumps
             m.GuildTitle = "Citizen";
             m.GuildFealty = g.Leader;
 
-            g.GuildMessage(String.Format("{0} has just joined {1}.", m.Name, g.Abbreviation));
+            g.GuildMessage(string.Format("{0} has just joined {1}.", m.Name, g.Abbreviation));
         }
 
         private class JoinGump : Gump
@@ -198,7 +198,7 @@ namespace Server.Gumps
             {
                 AddBackground(10, 10, 190, 140, 0x242C);
 
-                AddHtml(30, 30, 150, 75, String.Format("<div align=CENTER>{0}</div>", "Would you like to join the guild for new players?"), false, false);
+                AddHtml(30, 30, 150, 75, string.Format("<div align=CENTER>{0}</div>", "Would you like to join the guild for new players?"), false, false);
 
                 AddButton(40, 105, 0x81A, 0x81B, 0x1, GumpButtonType.Reply, 0); // Okay
                 AddButton(110, 105, 0x819, 0x818, 0x2, GumpButtonType.Reply, 0); // Cancel

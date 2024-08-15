@@ -256,7 +256,7 @@ namespace Server
             bool hasException = ClientException.IsException((state as Mobile).NetState.Address);
             if (!CoreAI.ForceGMNCUO || hasException)
             {
-                string text = String.Format("Player '{0}' failed the CUO 'Code' test{1}.", m, hasException ? ", but has a client exception" : "");
+                string text = string.Format("Player '{0}' failed the CUO 'Code' test{1}.", m, hasException ? ", but has a client exception" : "");
                 Utility.ConsoleWriteLine(text, ConsoleColor.Red);
                 LogHelper logger = new LogHelper("Failed Code Tests.log", overwrite: false, sline: true, quiet: true);
                 if (!logger.Contains(text))
@@ -433,7 +433,7 @@ namespace Server
             {
                 acct.HardwareInfo = info;
                 acct.HardwareHash = info.GetHashCode();     // serialized - used again when no hardwareinfo is sent
-                Utility.ConsoleWriteLine(String.Format("Hardware info acquired for account {0}", acct.ToString()), ConsoleColor.DarkGreen);
+                Utility.ConsoleWriteLine(string.Format("Hardware info acquired for account {0}", acct.ToString()), ConsoleColor.DarkGreen);
                 Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(CheckDisconnect), new object[] { acct });
             }
             else
@@ -484,18 +484,18 @@ namespace Server
 
                     m_Table.Remove(seed);
 
-                    Utility.ConsoleWriteLine(String.Format("Valid Client detected for: {0}: Account '{1}'",
+                    Utility.ConsoleWriteLine(string.Format("Valid Client detected for: {0}: Account '{1}'",
                         state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Yellow);
                 }
                 else
                 {
-                    Utility.ConsoleWriteLine(String.Format("Previous invalid Client detected for: {0}: Account '{1}'",
+                    Utility.ConsoleWriteLine(string.Format("Previous invalid Client detected for: {0}: Account '{1}'",
                         state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Red);
                 }
             }
             else
             {
-                Utility.ConsoleWriteLine(String.Format("Invalid Client detected for: {0}: Account '{1}'",
+                Utility.ConsoleWriteLine(string.Format("Invalid Client detected for: {0}: Account '{1}'",
                         state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Red);
                 // if they failed the test, remove the seed from the table, but don't stop the timer
                 //  this prevents someone from just blasting all three valid responses and getting a win
@@ -512,7 +512,7 @@ namespace Server
                 if (!AccountHardwareLimiter.IsOk(acct))
                 {
                     Server.Diagnostics.LogHelper.LogBlockedConnection(
-                        String.Format("Login: {0}: Past machine limit threshold. Player will be kicked", acct)
+                        string.Format("Login: {0}: Past machine limit threshold. Player will be kicked", acct)
                         );
                     // tell other accounts on this machine what's going on
                     AccountHardwareLimiter.Notify(acct);

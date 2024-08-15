@@ -73,10 +73,10 @@ namespace Server.Commands
                 default: title = ""; break;
             }
 
-            String message1 = String.Format("{0}{1} is presently holding court at {2} Counselor's Guild, located at {3}.", title, staffName, town, place);
-            String message2 = String.Format("Please drop by to ask questions or just to chat.");
-            String message3 = String.Format("{0} is not protected by guards. Enter at your own risk!", town);
-            String message4 = String.Format("The guards in {0} are currently off duty. Enter at your own risk!", town);
+            String message1 = string.Format("{0}{1} is presently holding court at {2} Counselor's Guild, located at {3}.", title, staffName, town, place);
+            String message2 = string.Format("Please drop by to ask questions or just to chat.");
+            String message3 = string.Format("{0} is not protected by guards. Enter at your own risk!", town);
+            String message4 = string.Format("The guards in {0} are currently off duty. Enter at your own risk!", town);
 
             if (e.Mobile.Region is GuardedRegion)
             {

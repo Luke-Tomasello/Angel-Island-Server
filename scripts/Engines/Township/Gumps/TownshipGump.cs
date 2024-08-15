@@ -137,7 +137,7 @@ namespace Server.Gumps
 
             AddBackground();
 
-            AddTitle(String.Format("The {0} of {1}", TownshipStone.GetTownshipSizeDesc(m_Stone.ActivityLevel).ToLower(), m_Stone.GuildName));
+            AddTitle(string.Format("The {0} of {1}", TownshipStone.GetTownshipSizeDesc(m_Stone.ActivityLevel).ToLower(), m_Stone.GuildName));
 
             m_Y = 380;
 
@@ -285,7 +285,7 @@ namespace Server.Gumps
             {
                 Type type = buyArray[index];
 
-                AddButton((int)Button.NPCPurchase + index, String.Format("Buy {0} ({1} gp, {2} gp per RL day)", TownshipNPCHelper.GetNPCName(type), TownshipNPCHelper.GetNPCCharge(type).ToString("N0"), m_Stone.ModifyNPCFee(TownshipNPCHelper.GetNPCFee(type)).ToString("N0")));
+                AddButton((int)Button.NPCPurchase + index, string.Format("Buy {0} ({1} gp, {2} gp per RL day)", TownshipNPCHelper.GetNPCName(type), TownshipNPCHelper.GetNPCCharge(type).ToString("N0"), m_Stone.ModifyNPCFee(TownshipNPCHelper.GetNPCFee(type)).ToString("N0")));
             });
         }
 
@@ -345,7 +345,7 @@ namespace Server.Gumps
         {
             AddLine("Enemy List");
 
-            AddButton((int)Button.SyncEnemyList, String.Format("Update Enemy List ({0} gp)", TownshipSettings.UpdateEnemyCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader));
+            AddButton((int)Button.SyncEnemyList, string.Format("Update Enemy List ({0} gp)", TownshipSettings.UpdateEnemyCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader));
 
             AddList(m_Stone.Enemies, 8, delegate (int index)
             {
@@ -612,7 +612,7 @@ namespace Server.Gumps
                             m_Stone.SyncEnemies();
                             m_Stone.GoldHeld -= TownshipSettings.UpdateEnemyCharge;
 
-                            m_Stone.RecordWithdrawal(TownshipSettings.UpdateEnemyCharge, String.Format("{0} updated the enemy list", from.Name));
+                            m_Stone.RecordWithdrawal(TownshipSettings.UpdateEnemyCharge, string.Format("{0} updated the enemy list", from.Name));
 
                             from.SendMessage("The enemy list has been updated from the ban lists of the guild and ally houses in the township.");
                         }

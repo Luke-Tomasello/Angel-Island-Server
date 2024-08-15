@@ -99,7 +99,7 @@ namespace Server.Engines.ResourcePool
             {
                 int x = (int)(51 + (double)((m_Data.Length > 760) ? 761 : 760) / m_xTicks * i);
                 gfx.DrawLine(p, x, 240, x, 244);
-                gfx.DrawString(String.Format("{0}", (int)((m_xMax - m_xMin) / m_xTicks * i) + m_xMin),
+                gfx.DrawString(string.Format("{0}", (int)((m_xMax - m_xMin) / m_xTicks * i) + m_xMin),
                     f, b, x, 244, sf);
             }
 
@@ -108,7 +108,7 @@ namespace Server.Engines.ResourcePool
             {
                 int y = (int)(40 + (double)200 / m_yTicks * i);
                 gfx.DrawLine(p, 47, y, 51, y);
-                gfx.DrawString(String.Format("{0}", (m_yMax - m_yMin) / m_yTicks * (m_yTicks - i) + m_yMin),
+                gfx.DrawString(string.Format("{0}", (m_yMax - m_yMin) / m_yTicks * (m_yTicks - i) + m_yMin),
                     f, b, 47, y - f.Height / 2, sf);
             }
 

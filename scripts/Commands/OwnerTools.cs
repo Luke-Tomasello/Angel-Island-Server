@@ -1157,7 +1157,7 @@ namespace Server.Commands
                 StaticTarget st = targeted as StaticTarget;
                 IPoint3D loc = (tl != null) ? tl.Location : (mt != null) ? mt.Location : (it != null) ? it.Location : (st != null) ? st.Location : Point3D.Zero;
                 Spells.SpellHelper.GetSurfaceTop(ref loc);
-                from.SendMessage(String.Format("GetSurfaceTop: Z:{0}", loc.Z));
+                from.SendMessage(string.Format("GetSurfaceTop: Z:{0}", loc.Z));
             }
         }
         [Usage("GetAverageZ")]
@@ -1184,7 +1184,7 @@ namespace Server.Commands
 
                 int landZ = 0, landAvg = 0, landTop = 0;
                 from.Map.GetAverageZ(loc.X, loc.Y, ref landZ, ref landAvg, ref landTop);
-                from.SendMessage(String.Format("GetAverageZ(loc.X={0}, loc.Y={1}, landZ={2}, landAvg={3}, landTop={4})",
+                from.SendMessage(string.Format("GetAverageZ(loc.X={0}, loc.Y={1}, landZ={2}, landAvg={3}, landTop={4})",
                     loc.X, loc.Y, landZ, landAvg, landTop));
             }
         }
@@ -1441,10 +1441,10 @@ namespace Server.Commands
                 List<int> Zs = new();
                 int count = StackDepth(loc.X, loc.Y, from.Map, Zs);
                 Zs.Sort();
-                from.SendMessage(String.Format("There are {0} items stacked at {1}, Z{3}={2}", count, new Point2D(loc.X, loc.Y),
+                from.SendMessage(string.Format("There are {0} items stacked at {1}, Z{3}={2}", count, new Point2D(loc.X, loc.Y),
                     (count == 0) ? from.Map.GetAverageZ(loc.X, loc.Y) :
                     (count == 1) ? Zs[0].ToString() :
-                    String.Format("{0}-{1}", Zs.First(), Zs.Last()),
+                    string.Format("{0}-{1}", Zs.First(), Zs.Last()),
                     count > 1 ? "s" : ""
                     ));
             }
@@ -1991,7 +1991,7 @@ namespace Server.Commands
 
                 // Initialize the ResourcePool
                 count = InitializeResourcePool();
-                if (e.Mobile != null) e.Mobile.SendMessage(String.Format("{0} resource pool consignments deleted.", count));
+                if (e.Mobile != null) e.Mobile.SendMessage(string.Format("{0} resource pool consignments deleted.", count));
 
                 // all done
                 if (e.Mobile != null) e.Mobile.SendMessage("Wipe Complete.");
@@ -2023,12 +2023,12 @@ namespace Server.Commands
             if (ResourcePool.Consignments != null)
             {
                 count = ResourcePool.Consignments.Count;
-                //EchoOut(String.Format("{0} resource pool consignments detected.", rpc), ConsoleColor.Magenta);
+                //EchoOut(string.Format("{0} resource pool consignments detected.", rpc), ConsoleColor.Magenta);
                 ResourcePool.Consignments.Clear();
-                //EchoOut(String.Format("{0} resource pool consignments deleted.", rpc), ConsoleColor.Magenta);
+                //EchoOut(string.Format("{0} resource pool consignments deleted.", rpc), ConsoleColor.Magenta);
             }
             //else
-            //EchoOut(String.Format("No resource pool consignments to deleted."), ConsoleColor.Magenta);
+            //EchoOut(string.Format("No resource pool consignments to deleted."), ConsoleColor.Magenta);
             return count;
         }
         public static void RecursiveDelete(DirectoryInfo baseDir)

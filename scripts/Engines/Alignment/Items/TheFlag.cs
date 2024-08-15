@@ -225,7 +225,7 @@ namespace Server.Engines.Alignment
 
                     Hue = AlignmentSystem.GetHue(value);
 
-                    PublicOverheadMessage(MessageType.Regular, 0x3B2, false, String.Format("THE FLAG CHANGED HANDS TO : {0}", ToUpper(AlignmentSystem.GetName(m_Alignment))));
+                    PublicOverheadMessage(MessageType.Regular, 0x3B2, false, string.Format("THE FLAG CHANGED HANDS TO : {0}", ToUpper(AlignmentSystem.GetName(m_Alignment))));
                 }
             }
         }
@@ -422,7 +422,7 @@ namespace Server.Engines.Alignment
 
         private void DisplayResult(Mobile m, HeldTimeResult result)
         {
-            string text = String.Format("{0} : {1}", ToUpper(AlignmentSystem.GetName(result.Alignment)), FormatTime(result.Time));
+            string text = string.Format("{0} : {1}", ToUpper(AlignmentSystem.GetName(result.Alignment)), FormatTime(result.Time));
 
             if (m == null)
                 PublicOverheadMessage(MessageType.Regular, 0x3B2, false, text);
@@ -477,7 +477,7 @@ namespace Server.Engines.Alignment
                     AlignmentType alignment = AlignmentSystem.Find(mob, true, true);
 
                     if (alignment != AlignmentType.None)
-                        mob.PublicOverheadMessage(MessageType.Regular, 0x3B2, false, String.Format("{0} CAPTURED THE FLAG!!!", ToUpper(mob.Name)));
+                        mob.PublicOverheadMessage(MessageType.Regular, 0x3B2, false, string.Format("{0} CAPTURED THE FLAG!!!", ToUpper(mob.Name)));
                 }
 
                 mob.SolidHueOverride = m_CarryHue;
@@ -721,7 +721,7 @@ namespace Server.Engines.Alignment
 
             public override string ToString()
             {
-                return String.Format("{0}: {1}", Alignment, Time);
+                return string.Format("{0}: {1}", Alignment, Time);
             }
         }
 

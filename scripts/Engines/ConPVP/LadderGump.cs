@@ -179,7 +179,7 @@ namespace Server.Engines.ConPVP
             else
                 AddImage(466, height - 12 - 2 - 16, 0x2622);
 
-            AddHtml(16, height - 12 - 2 - 18, 400, 20, Color(String.Format("Top {3} of {0:N0} duelists, page {1} of {2}", list.Count, page + 1, (lc + 14) / 15, lc), 0xFFC000), false, false);
+            AddHtml(16, height - 12 - 2 - 18, 400, 20, Color(string.Format("Top {3} of {0:N0} duelists, page {1} of {2}", list.Count, page + 1, (lc + 14) / 15, lc), 0xFFC000), false, false);
 
             AddColumnHeader(75, "Rank");
             AddColumnHeader(115, "Level");
@@ -243,7 +243,7 @@ namespace Server.Engines.ConPVP
                 AddBorderedText(x, y, 60, Center(entry.Losses.ToString()), 0xFFFFFF, 0);
                 x += 60;
 
-                //AddBorderedText( 292 + 15, y, 115 - 30, String.Format( "{0} <DIV ALIGN=CENTER>/</DIV> <DIV ALIGN=RIGHT>{1}</DIV>", entry.Wins, entry.Losses ), 0xFFC000, 0 );
+                //AddBorderedText( 292 + 15, y, 115 - 30, string.Format( "{0} <DIV ALIGN=CENTER>/</DIV> <DIV ALIGN=RIGHT>{1}</DIV>", entry.Wins, entry.Losses ), 0xFFC000, 0 );
             }
         }
 

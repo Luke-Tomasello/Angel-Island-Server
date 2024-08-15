@@ -98,7 +98,7 @@ namespace Server.Items
         {
             // Say what colour it is
 
-            if (String.IsNullOrEmpty(m_StoredColorName))
+            if (string.IsNullOrEmpty(m_StoredColorName))
                 from.SendMessage("This swatch has not yet been soaked in any dye.");
             else
                 from.SendMessage("You examine your swatch and note it is " + m_StoredColorName.ToLower() + ".");

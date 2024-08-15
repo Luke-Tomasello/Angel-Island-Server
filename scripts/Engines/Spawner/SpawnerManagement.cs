@@ -81,7 +81,7 @@ namespace Server.Engines
             }
 
             // empty the "definitive spawner list patch.cfg"
-            File.WriteAllText(Path.Combine(Core.LogsDirectory, "definitive spawner list patch.cfg"), String.Empty);
+            File.WriteAllText(Path.Combine(Core.LogsDirectory, "definitive spawner list patch.cfg"), string.Empty);
 
             // keep track of overlapping areas
             List<Serial> areaOverlap = new();
@@ -144,7 +144,7 @@ namespace Server.Engines
             List<Spawner> StackedSpawnerTable = new();
 
             // empty the "definitive spawner list patch.cfg"
-            File.WriteAllText(Path.Combine(Core.LogsDirectory, "definitive spawner list patch.cfg"), String.Empty);
+            File.WriteAllText(Path.Combine(Core.LogsDirectory, "definitive spawner list patch.cfg"), string.Empty);
 
             // keep track of overlapping areas
             List<Serial> areaOverlap = new();
@@ -374,7 +374,7 @@ namespace Server.Engines
                 }
                 List<string> lines = new();
                 foreach (var record in records)
-                    lines.Add(String.Format("{0}:{1}:{2}:{3}", record.Item1, record.Item2, record.Item3, record.Item4));
+                    lines.Add(string.Format("{0}:{1}:{2}:{3}", record.Item1, record.Item2, record.Item3, record.Item4));
 
                 File.WriteAllLines(pathName, lines);
             }
@@ -618,7 +618,7 @@ namespace Server.Engines
         }
         private static string GetOverrideString(string[] overrides, string match)
         {
-            string o = String.Empty;
+            string o = string.Empty;
             for (int ix = 0; ix < overrides.Length; ix++)
             {
                 if (overrides[ix] != null && overrides[ix].ToLower().StartsWith(match.ToLower()))
@@ -650,7 +650,7 @@ namespace Server.Engines
         }
         private static SpawnerModeAttribs GetOverrideSpawnerAttribs(string[] overrides, string match)
         {
-            string o = String.Empty;
+            string o = string.Empty;
             for (int ix = 0; ix < overrides.Length; ix++)
             {
                 if (overrides[ix] != null && overrides[ix].ToLower().StartsWith(match.ToLower()))
@@ -667,7 +667,7 @@ namespace Server.Engines
         }
         private static ShardConfig GetOverrideShardConfig(string[] overrides, string match)
         {
-            string o = String.Empty;
+            string o = string.Empty;
             for (int ix = 0; ix < overrides.Length; ix++)
             {
                 if (overrides[ix] != null && overrides[ix].ToLower().StartsWith(match.ToLower()))

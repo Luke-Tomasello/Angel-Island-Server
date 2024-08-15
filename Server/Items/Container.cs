@@ -2062,7 +2062,7 @@ namespace Server.Items
 
                 // tell staff what's going on
                 Point3D location = this.GetWorldLocation();
-                LogHelper.BroadcastMessage(AccessLevel.GameMaster, 52, String.Format("Possible container overflow exploit at: {0}", location));
+                LogHelper.BroadcastMessage(AccessLevel.GameMaster, 52, string.Format("Possible container overflow exploit at: {0}", location));
 
                 // one of the problems with these lower level functions is that they don't properly account for items added and removed.
                 //  therefore we climb back up the container stack (to the parent mobile) and update totals.

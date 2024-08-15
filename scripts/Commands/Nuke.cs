@@ -1051,6 +1051,18 @@ namespace Server.Commands
                     case "removeallstaff":
                         RemoveAllStaff(e);
                         break;
+
+                    case "dupeplayers":
+                        DupePlayers(e);
+                        break;
+
+                    case "restoreplayerclones":
+                        RestorePlayerClones(e);
+                        break;
+
+                    case "removeplayerclones":
+                        RemovePlayerClones(e);
+                        break;
                 }
             }
             catch (Exception ex)
@@ -1058,6 +1070,442 @@ namespace Server.Commands
                 LogHelper.LogException(ex);
             }
         }
+        #region 20 Year Tribute to the Players!
+        public static void RemovePlayerClones(CommandEventArgs e)
+        {
+            if (e.Mobile.AccessLevel < AccessLevel.Owner)
+            {
+                e.Mobile.SendMessage("Not authorized.");
+                Console.WriteLine("RestorePlayers: Not authorized.", ConsoleColor.Red);
+                return;
+            }
+            int deleted = 0;
+            foreach (Mobile m in World.Mobiles.Values)
+                if (m is PlayerClone)
+                {
+                    m.Delete();
+                    deleted++;
+                }
+
+            e.Mobile.SendMessage($"{deleted} player clones deleted.");
+        }
+        public class PlayerDesc
+        {
+            public string Layers;
+            public string Name;
+            public string Title;
+            public int Hue;
+            public int Body;
+            public bool Female;
+            public int Fame;
+            public int Karma;
+            public bool Murderer;
+            public DateTime Created;    // (PlayerToCopy.Account as Accounting.Account).Created.ToString()
+            public DateTime LastLogin;  // (PlayerToCopy.Account as Accounting.Account).LastLogin.ToString()
+            // guild
+            public string GuildAlignment;
+            public string GuildName;
+            public string GuildAbbr;
+
+            public PlayerDesc(
+                string layers,
+                string name,
+                string title,
+                int hue,
+                int body,
+                bool female,
+                int fame,
+                int karma,
+                bool murderer,
+                DateTime created,
+                DateTime last_login,
+                string guild_alignment,
+                string guild_name,
+                string guild_abbr
+                )
+            {
+                Layers = layers;
+                Name = name;
+                Title = title;
+                Hue = hue;
+                Body = body;
+                Female = female;
+                Fame = fame;
+                Karma = karma;
+                Murderer = murderer;
+                Created = created;
+                LastLogin = last_login;
+                // guild
+                GuildAlignment = guild_alignment;
+                GuildName = guild_name;
+                GuildAbbr = guild_abbr;
+            }
+        }
+
+        public static void RestorePlayerClones(CommandEventArgs e)
+        {
+            if (e.Mobile.AccessLevel<AccessLevel.Owner)
+            {
+                e.Mobile.SendMessage("Not authorized.");
+                Console.WriteLine("RestorePlayers: Not authorized.", ConsoleColor.Red);
+                return;
+            }
+            
+            string[] filenames = new string[] { "AI 3.0.bin", "AI 7.0.bin", "SP 7.0.bin" };
+
+            List<PlayerDesc> list = new();
+            foreach (string filename in filenames)
+            {
+                string pathname = Path.Combine("./AIPlayerHistory", filename);
+                if (File.Exists(pathname))
+                {
+                    List<PlayerDesc> temp = ReadPlayers(pathname);
+                    e.Mobile.SendMessage($"{temp.Count} players read from {pathname}.");
+                    list.AddRange(temp);
+                }
+                else
+                    e.Mobile.SendMessage($"{pathname} does not exist.");
+            }
+
+            list.OrderByDescending(x => x.LastLogin - x.Created);
+
+            StaticRegion britain = Region.FindByName("Britain", Map.Felucca) as StaticRegion;
+
+            if (britain == null || britain.Coords == null || britain.Coords.Count == 0)
+            {
+                e.Mobile.SendMessage($"Britain region does not exist.");
+                return;
+            }
+
+            List<Point2D> points = new();
+            foreach(var rect in britain.Coords)
+            {
+                Rectangle2D rect2d = new(rect);
+                
+                points.AddRange(rect2d.PointsInRect2D());
+            }
+
+            points.RemoveAll(x => DockCraft.IsWaterOrShore(Map.Felucca,x.X, x.Y ));
+
+            Rectangle2D preimum = new(1411, 1669, 46, 46);
+            List<Point2D> preimum_points = new();
+            foreach (var point in points)
+                if (preimum.Contains(point))
+                    preimum_points.Add(point);
+
+            foreach (var point in preimum_points)
+                points.Remove(point);
+
+            int restored = 0;
+            foreach (PlayerDesc p in list)
+            {
+                restored++;
+                try
+                {
+                    PlayerClone m_to = new PlayerClone(p.Created, p.LastLogin, p.GuildAlignment, p.GuildName, p.GuildAbbr, murderer: false);
+                    WipeLayers(m_to);
+                    m_to.Name = p.Name;
+                    m_to.Title = p.Title;
+                    m_to.Hue = p.Hue;
+                    m_to.Body = p.Body;
+                    m_to.Female = p.Female;
+                    m_to.Fame = p.Fame;
+                    m_to.Karma = p.Karma;
+                    // created
+                    // last login
+                    // guild alignment
+                    // guild name
+                    // build abbr
+                    // murderer
+                    RestoreLayers(m_to, p.Layers);
+
+                    List<Point2D> select_points = null;
+                    if (restored <= 100)
+                        select_points = preimum_points;
+                    else
+                        select_points = points;
+
+                    Point3D p3dOut = new();
+                    for (int ix = 0; ix < 100; ix++)
+                    {
+                        Point2D p2d = select_points[Utility.Random(select_points.Count) % select_points.Count];
+                        Point3D p3d = new(p2d, Map.Felucca.GetAverageZ(p2d.X, p2d.Y));
+                        p3dOut = Spawner.GetSpawnPosition(Map.Felucca, p3d, 10, SpawnFlags.None, m_to);
+                        if (p3d != p3dOut && !Nuke.IsBlocked(p3dOut, Map.Felucca))
+                            break;
+                        else
+                            ;
+                    }
+
+                    m_to.Home = p3dOut;
+                    m_to.RangeHome = 10;
+                    m_to.MoveToWorld(p3dOut, Map.Felucca);
+                }
+                catch
+                {
+                    ;
+                }
+            }
+        }
+        public static void DupePlayers(CommandEventArgs e)
+        {
+            string Server = e.GetString(1).ToUpper();
+            if (e.Mobile.AccessLevel < AccessLevel.Owner)
+            {
+                e.Mobile.SendMessage("Not authorized.");
+                Console.WriteLine("DupePlayers: Not authorized.", ConsoleColor.Red);
+                return;
+            }
+            if (string.IsNullOrEmpty(Server))
+            {
+                e.Mobile.SendMessage("You must specify a server. Either SP or AI.");
+                Console.WriteLine("DupePlayers: You must specify a server. Either SP or AI.", ConsoleColor.Red);
+                return;
+            }
+            int created = 0;
+            List<PlayerDesc> list = new List<PlayerDesc>();
+            foreach (Mobile m in World.Mobiles.Values)
+                if (m is PlayerMobile PlayerToCopy)
+                {   // copy
+                    string layers = CopyLayers(PlayerToCopy);
+                    string Name = PlayerToCopy.Name;
+                    string Title = PlayerToCopy.Title;
+                    int Hue = PlayerToCopy.Hue;
+                    int Body = (PlayerToCopy.Female) ? 401 : 400;   // get the correct body
+                    bool Female = PlayerToCopy.Female;              // get the correct sex
+                    int Fame = PlayerToCopy.Fame;
+                    int Karma = PlayerToCopy.Karma;
+                    bool Murderer = PlayerToCopy.LongTermMurders >= 5;
+                    DateTime Created = (PlayerToCopy.Account != null) ? (PlayerToCopy.Account as Accounting.Account).Created : DateTime.MinValue;
+                    DateTime LastLogin = (PlayerToCopy.Account != null) ? (PlayerToCopy.Account as Accounting.Account).LastLogin : DateTime.MinValue;
+                    string GuildAlignment = null;
+                    string GuildName = null;
+                    string GuildAbbr = null;
+                    if (PlayerToCopy.Guild != null)
+                    {
+                        if (Server == "SP") 
+                            GuildAlignment = ((Server.Guilds.Guild)PlayerToCopy.Guild).Alignment.ToString();
+                        else
+                            GuildAlignment = ((Server.Guilds.Guild)PlayerToCopy.Guild).IOBAlignment.ToString();
+                        GuildName = PlayerToCopy.Guild.Name;
+                        GuildAbbr = PlayerToCopy.Guild.Abbreviation;
+                    }
+
+                    if (string.IsNullOrEmpty(Title))
+                    {
+                        string server_name = (Server == "SP") ? "Siege Perilous" : "Angel Island";
+                        Title = string.Format($"[{server_name} {Created.Year.ToString()}]");
+                    }
+                    else
+                        ;
+
+                    list.Add(new PlayerDesc(
+                        layers,
+                        Name,
+                        Title,
+                        Hue,
+                        Body,
+                        Female,
+                        Fame,
+                        Karma,
+                        Murderer,
+                        Created,
+                        LastLogin,
+                        GuildAlignment,
+                        GuildName,
+                        GuildAbbr
+                        ));
+                }
+
+            string filename = null;
+            if (Server == "SP")
+                filename = "SP 7.0.bin";
+            else
+                filename = "AI 7.0.bin";
+
+            WritePlayers(filename, list);
+
+            e.Mobile.SendMessage($"{list.Count} players duped to {filename}.");
+        }
+        private static void WritePlayers(string shard, List<PlayerDesc> list)
+        {
+            Console.WriteLine("Saving {0}...", shard);
+            try
+            {
+                BinaryFileWriter writer = new BinaryFileWriter(shard, true);
+                int version = 0;
+                writer.Write(version);
+
+                switch (version)
+                {
+                    case 0:
+                        {
+                            writer.Write(list.Count);
+                            foreach (var pd in list)
+                            {   
+                                writer.Write(pd.Layers);
+                                writer.Write(pd.Name);
+                                writer.Write(pd.Title);
+                                writer.Write(pd.Hue);
+                                writer.Write(pd.Body);
+                                writer.Write(pd.Female);
+                                writer.Write(pd.Fame);
+                                writer.Write(pd.Karma);
+                                writer.Write(pd.Murderer);
+                                writer.Write(pd.Created);
+                                writer.Write(pd.LastLogin);
+                                writer.Write(pd.GuildAlignment);
+                                writer.Write(pd.GuildName);
+                                writer.Write(pd.GuildAbbr);
+                            }
+                            break;
+                        }
+                }
+
+                writer.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error writing {0}", shard);
+                Console.WriteLine(ex.ToString());
+            }
+        }
+        public static List<PlayerDesc> ReadPlayers(string shard)
+        {
+            List<PlayerDesc> PlayerDescriptions = new List<PlayerDesc>();
+            Console.WriteLine("Loading {0}...", shard);
+            try
+            {
+                BinaryFileReader reader = new BinaryFileReader(new BinaryReader(new FileStream(shard, FileMode.Open, FileAccess.Read)));
+                int version = reader.ReadInt();
+
+                switch (version)
+                {
+                    case 0:
+                        {
+                            int count = reader.ReadInt();
+                            for (int ix = 0; ix < count; ix++)
+                                PlayerDescriptions.Add(
+                                    // string layers, string name, string title, int hue, int body, bool female
+                                    new PlayerDesc(
+                                        reader.ReadString(),    // layers
+                                        reader.ReadString(),    // name
+                                        reader.ReadString(),    // title
+                                        reader.ReadInt(),       // hue
+                                        reader.ReadInt(),       // body
+                                        reader.ReadBool(),      // female
+                                        reader.ReadInt(),       // fame
+                                        reader.ReadInt(),       // karma
+                                        reader.ReadBool(),      // murderer
+                                        reader.ReadDateTime(),  // created
+                                        reader.ReadDateTime(),  // last login
+                                        reader.ReadString(),    // guild alignment
+                                        reader.ReadString(),    // guild name
+                                        reader.ReadString()     // guild abbr
+                                        )
+                                    );
+                            break;
+                        }
+                }
+
+                reader.Close();
+            }
+            catch
+            {
+                Utility.PushColor(ConsoleColor.Red);
+                Console.WriteLine("Error reading {0}", shard);
+                Utility.PopColor();
+            }
+
+            return PlayerDescriptions;
+        }
+        public static void RestoreLayers(Mobile dest, string layers)
+        {
+            string[] table = layers.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (string sr in table)
+            {
+                string s = sr.Trim();
+                string[] attrs = s.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+                if (attrs.Length != 3)
+                    continue;
+
+                string item_type = attrs[0].Trim();
+                int hue = int.Parse(attrs[1].Trim());
+                Layer layer = (Layer)Enum.Parse(typeof(Layer), attrs[2].Trim());
+
+                Item item = null;
+                try
+                {
+                    if (ScriptCompiler.FindTypeByFullName(item_type) == typeof(RingmailGlovesOfMining))
+                        item = new RingmailGlovesOfMining(100);
+                    else if (ScriptCompiler.FindTypeByFullName(item_type) == typeof(StuddedGlovesOfMining))
+                        item = new StuddedGlovesOfMining(100);
+                    else
+                        item = (Item)Activator.CreateInstance(ScriptCompiler.FindTypeByFullName(item_type));
+                }
+                catch
+                {
+                    ;
+                }
+                if (item != null)
+                {
+                    item.Hue = hue;
+                    dest.AddItem(item);
+                }
+            }
+
+        }
+        public static string CopyLayers(Mobile src)
+        {
+            string result = string.Empty;
+            try
+            {
+                Item[] items = new Item[21];
+                items[0] = src.FindItemOnLayer(Layer.Shoes);
+                items[1] = src.FindItemOnLayer(Layer.Pants);
+                items[2] = src.FindItemOnLayer(Layer.Shirt);
+                items[3] = src.FindItemOnLayer(Layer.Helm);
+                items[4] = src.FindItemOnLayer(Layer.Gloves);
+                items[5] = src.FindItemOnLayer(Layer.Neck);
+                items[6] = src.FindItemOnLayer(Layer.Waist);
+                items[7] = src.FindItemOnLayer(Layer.InnerTorso);
+                items[8] = src.FindItemOnLayer(Layer.MiddleTorso);
+                items[9] = src.FindItemOnLayer(Layer.Arms);
+                items[10] = src.FindItemOnLayer(Layer.Cloak);
+                items[11] = src.FindItemOnLayer(Layer.OuterTorso);
+                items[12] = src.FindItemOnLayer(Layer.OuterLegs);
+                items[13] = src.FindItemOnLayer(Layer.InnerLegs);
+                items[14] = src.FindItemOnLayer(Layer.Bracelet);
+                items[15] = src.FindItemOnLayer(Layer.Ring);
+                items[16] = src.FindItemOnLayer(Layer.Earrings);
+                items[17] = src.FindItemOnLayer(Layer.OneHanded);
+                items[18] = src.FindItemOnLayer(Layer.TwoHanded);
+                items[19] = src.FindItemOnLayer(Layer.Hair);
+                items[20] = src.FindItemOnLayer(Layer.FacialHair);
+                for (int i = 0; i < items.Length; i++)
+                {
+                    if (items[i] != null)
+                    {
+                        string item = items[i].GetType().FullName;
+                        string hue = items[i].Hue.ToString();
+                        string layer = items[i].Layer.ToString();
+                        result += string.Format($"{item}, {hue}, {layer}; ");
+                    }
+                }
+            }
+            catch (Exception exc)
+            {
+                LogHelper.LogException(exc);
+                System.Console.WriteLine("Send to Zen please: ");
+                System.Console.WriteLine("Exception caught in Spawner.CopyLayers: " + exc.Message);
+                System.Console.WriteLine(exc.StackTrace);
+            }
+
+            return result;
+        }
+        #endregion 20 Year Tribute to the Players!
         #region Remove All Staff
         public static void RemoveAllStaff(CommandEventArgs e)
         {
@@ -2383,7 +2831,7 @@ namespace Server.Commands
                     ;
                     if (case1 || case2 || case3)
                     {
-                        table.Add(item, String.Format("{0}:{1}", item.GetWorldLocation(), item.Map));
+                        table.Add(item, string.Format("{0}:{1}", item.GetWorldLocation(), item.Map));
                         count++;
                     }
                     ;
@@ -7692,7 +8140,7 @@ namespace Server.Commands
             // 11/1/22, Adam: record all our pricing info.
             //  A similad database exists in \Data and was a capture of bot hAI's and RunUO's items and mobiles for buy/sell.
             string filename = "vendor pricing.txt";
-            string output = String.Format("{0}: {1}: {2}", name, buy_sell, price);
+            string output = string.Format("{0}: {1}: {2}", name, buy_sell, price);
             if (!seen_it.Contains(output))
             {
                 System.IO.File.AppendAllLines(filename, new string[] { output });
@@ -9705,7 +10153,7 @@ namespace Server.Commands
             }
             else
             {
-                e.Mobile.SendMessage(String.Format("{0} does not exist", Path.Combine(Core.LogsDirectory, "PreserveTeleporter.log")));
+                e.Mobile.SendMessage(string.Format("{0} does not exist", Path.Combine(Core.LogsDirectory, "PreserveTeleporter.log")));
                 return;
             }
 
@@ -9835,7 +10283,7 @@ namespace Server.Commands
 
 
             // log what we found that we need to review
-            LogHelper review = new LogHelper(String.Format("Angel Island {0}.log", type.Name), true, true, true);
+            LogHelper review = new LogHelper(string.Format("Angel Island {0}.log", type.Name), true, true, true);
             foreach (Item item in (e.Mobile as PlayerMobile).JumpList)
                 review.Log(LogType.Text, string.Format("{0} {1} {2} {3} {4}", item.Serial.Value, item.X, item.Y, item.Z, item.Map));
             review.Finish();
@@ -9843,14 +10291,14 @@ namespace Server.Commands
 
             // log what we found in RunUO
             //  Note: the serial numbers will be invalid since we will delete these items
-            LogHelper found = new LogHelper(String.Format("All proposed RunUO {0}s.log", type.Name), true, true, true);
+            LogHelper found = new LogHelper(string.Format("All proposed RunUO {0}s.log", type.Name), true, true, true);
             foreach (KeyValuePair<Item, Tuple<Point3D, Map, bool>> kvp in RunUO)
                 found.Log(LogType.Text, string.Format("{0} {1} {2} {3} {4}", -1, kvp.Value.Item1.X, kvp.Value.Item1.Y, kvp.Value.Item1.Z, kvp.Value.Item2));
             found.Finish();
 
             // log what we found in Trammel (why?)
 #if false
-            found = new LogHelper(String.Format("All proposed Trammel {0}s.log", type.Name), true, true, true);
+            found = new LogHelper(string.Format("All proposed Trammel {0}s.log", type.Name), true, true, true);
             foreach (Item item in TrammelItemsOf(type))
                 found.Log(LogType.Text, string.Format("{0} {1} {2} {3} {4}", item.Serial, item.X, item.Y, item.Z, item.Map));
             found.Finish();
@@ -9961,7 +10409,7 @@ namespace Server.Commands
             }
             else
             {
-                e.Mobile.SendMessage(String.Format("{0} does not exist", Path.Combine(Core.LogsDirectory, "PreserveTeleporter.log")));
+                e.Mobile.SendMessage(string.Format("{0} does not exist", Path.Combine(Core.LogsDirectory, "PreserveTeleporter.log")));
                 return;
             }
 
@@ -10112,7 +10560,7 @@ namespace Server.Commands
                 }
                 xmlDoc.Save(fileName);
             }
-            e.Mobile.SendMessage(String.Format("Done! Patched {0} blueprints.", count));
+            e.Mobile.SendMessage(string.Format("Done! Patched {0} blueprints.", count));
         }
         #endregion
         #region Reset Bard Points
@@ -10499,7 +10947,7 @@ namespace Server.Commands
 
             logger.Finish();
 
-            e.Mobile.SendMessage(String.Format("Patched the maturity of {0} pets", count));
+            e.Mobile.SendMessage(string.Format("Patched the maturity of {0} pets", count));
         }
         #endregion
         #region Replace Sealed Bows
@@ -10654,7 +11102,7 @@ namespace Server.Commands
 
                         if (statFactor < 0.69) // we've undergone a stat drop
                         {
-                            logger.Log(LogType.Mobile, bc, String.Format("Str={0},Dex={1},Int={2}", bc.RawStr, bc.RawDex, bc.RawInt));
+                            logger.Log(LogType.Mobile, bc, string.Format("Str={0},Dex={1},Int={2}", bc.RawStr, bc.RawDex, bc.RawInt));
 
                             // we don't know what the pet's stats were before the drop, let's be generous and maximize them
                             bc.RawStr = bc.StrMax;
@@ -10673,7 +11121,7 @@ namespace Server.Commands
 
             logger.Finish();
 
-            e.Mobile.SendMessage(String.Format("Patched the stats of {0} pets", count));
+            e.Mobile.SendMessage(string.Format("Patched the stats of {0} pets", count));
         }
         #endregion
         #region Patch Spawners For Level Six Chests

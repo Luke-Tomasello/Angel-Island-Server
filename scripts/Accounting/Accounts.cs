@@ -21,6 +21,8 @@
 
 /* Scripts/Accounting/Accounts.cs
  * CHANGELOG
+ *  8/10/2024, Adam: Rework initial account creation 'access'.
+ *      Now handled in AccountPrompt and CharacterCreation.
  * 8/18/22, Adam(Utc)
  * Convert all read/write of times to handle UTC (the server format.)
  *  All DateTime objects are written as UTC.
@@ -171,8 +173,10 @@ namespace Server.Accounting
             if (acct == null)
             {
                 Account a = new Account(user, pass);
-                if (m_Accounts[0].Count == 0)
-                    a.AccessLevel = AccessLevel.Administrator;
+                // 8/10/2024, Adam: Rework initial account creation 'access'.
+                //  Now handled in AccountPrompt and CharacterCreation.
+                //if (m_Accounts[0].Count == 0)
+                //    a.AccessLevel = AccessLevel.Administrator;
 
                 m_Accounts[0][a.Username] = a;
 

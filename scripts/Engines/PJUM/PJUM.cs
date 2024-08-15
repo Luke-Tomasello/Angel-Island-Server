@@ -116,7 +116,7 @@ namespace Server.PJUM
                     }
                 }
 
-                le.Lines[1] = String.Format("{0} was last seen at {1}.", le.Mobile.Name, location);
+                le.Lines[1] = string.Format("{0} was last seen at {1}.", le.Mobile.Name, location);
 
                 //Next update if no bounty
                 PlayerMobile pm = le.Mobile as PlayerMobile;
@@ -124,7 +124,7 @@ namespace Server.PJUM
                 {
                     if (BountyKeeper.BountiesOnPlayer(pm) <= 0)
                     {
-                        le.Lines[0] = String.Format("{0} is an enemy of the kingdom for unlawful resource gathering.", pm.Name);
+                        le.Lines[0] = string.Format("{0} is an enemy of the kingdom for unlawful resource gathering.", pm.Name);
                     }
                 }
             }

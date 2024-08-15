@@ -226,7 +226,7 @@ namespace Server.Engines.EventResources
             }
 
             LogHelper logger = new LogHelper("EventResource.log", false, true);
-            logger.Log(LogType.Mobile, from, String.Format("Crafted item {0} ({1}) with event resource {2}. MagicEffect={3}, MagicCharges={4}, Slayer={5}.",
+            logger.Log(LogType.Mobile, from, string.Format("Crafted item {0} ({1}) with event resource {2}. MagicEffect={3}, MagicCharges={4}, Slayer={5}.",
                 item.ToString(),
                 item.GetType().Name,
                 m_Resource,

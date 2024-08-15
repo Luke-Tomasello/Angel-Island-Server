@@ -21,6 +21,8 @@
 
 /* Server/Utility.cs
  * ChangeLog:
+ *  8/13/2024, Adam
+ *      Add a notion of BuildInfoDir. This directory contains the "build.info" file
  *  2/8/2024, Adam
  *      CAUTION: CopyProperties
  *      CopyProperties does not work for all items.
@@ -1631,7 +1633,7 @@ namespace Server
                     if (!mi.IsStatic)
                         return "-null-";
                     // okay, wtf is going on!
-                    throw new ApplicationException(String.Format("{0} was null", prop.ToString()));
+                    throw new ApplicationException(string.Format("{0} was null", prop.ToString()));
                 }
 
                 return ValueToString(prop.GetValue(obj, null));
@@ -1639,7 +1641,7 @@ namespace Server
             catch (Exception e)
             {
                 LogHelper.LogException(e);
-                return String.Format("!{0}!", e.GetType());
+                return string.Format("!{0}!", e.GetType());
             }
         }
         public static string ValueToString(object o)
@@ -1654,7 +1656,7 @@ namespace Server
             }
             else if (o is string)
             {
-                return String.Format("\"{0}\"", (string)o);
+                return string.Format("\"{0}\"", (string)o);
             }
             else if (o is bool)
             {
@@ -1662,7 +1664,7 @@ namespace Server
             }
             else if (o is char)
             {
-                return String.Format("0x{0:X} '{1}'", (int)(char)o, (char)o);
+                return string.Format("0x{0:X} '{1}'", (int)(char)o, (char)o);
             }
             else if (o is Serial)
             {
@@ -1672,27 +1674,27 @@ namespace Server
                 {
                     if (s.IsItem)
                     {
-                        return String.Format("(I) 0x{0:X}", s.Value);
+                        return string.Format("(I) 0x{0:X}", s.Value);
                     }
                     else if (s.IsMobile)
                     {
-                        return String.Format("(M) 0x{0:X}", s.Value);
+                        return string.Format("(M) 0x{0:X}", s.Value);
                     }
                 }
 
-                return String.Format("(?) 0x{0:X}", s.Value);
+                return string.Format("(?) 0x{0:X}", s.Value);
             }
             else if (o is byte || o is sbyte || o is short || o is ushort || o is int || o is uint || o is long || o is ulong)
             {
-                return String.Format("{0} (0x{0:X})", o);
+                return string.Format("{0} (0x{0:X})", o);
             }
             else if (o is Mobile)
             {
-                return String.Format("(M) 0x{0:X} \"{1}\"", ((Mobile)o).Serial.Value, ((Mobile)o).Name);
+                return string.Format("(M) 0x{0:X} \"{1}\"", ((Mobile)o).Serial.Value, ((Mobile)o).Name);
             }
             else if (o is Item)
             {
-                return String.Format("(I) 0x{0:X}", ((Item)o).Serial.Value);
+                return string.Format("(I) 0x{0:X}", ((Item)o).Serial.Value);
             }
             else if (o is Type)
             {
@@ -3277,7 +3279,7 @@ namespace Server
             string filePath = Path.Combine(Core.DataDirectory, "StandardObjects.xml");
             if (System.IO.File.Exists(filePath) == false)
             {
-                Core.LoggerShortcuts.BootError(String.Format("Error while reading StandardObjects from \"{0}\".", Path.Combine(Core.DataDirectory, "StandardObjects.xml")));
+                Core.LoggerShortcuts.BootError(string.Format("Error while reading StandardObjects from \"{0}\".", Path.Combine(Core.DataDirectory, "StandardObjects.xml")));
                 return null;
             }
 
@@ -3444,7 +3446,7 @@ namespace Server
                                         if (typeFound != null)
                                             if (HasParameterlessConstructor(typeFound))
                                                 if (GetItemID(typeFound) == itemID)
-                                                    aliases.Add(String.Format("ItemID: {0}, Display Name: {1}", itemID, GetDisplayName(type)));
+                                                    aliases.Add(string.Format("ItemID: {0}, Display Name: {1}", itemID, GetDisplayName(type)));
                                     }
                                 }
                             }
@@ -3666,7 +3668,7 @@ namespace Server
             {
                 if (obj is Mobile mob)
                 {
-                    ErrorOut(String.Format("Warning: Unsure what the 'ID' of a mobile should be. Using BodyValue {0}.", mob.BodyValue), ConsoleColor.Red);
+                    ErrorOut(string.Format("Warning: Unsure what the 'ID' of a mobile should be. Using BodyValue {0}.", mob.BodyValue), ConsoleColor.Red);
                     foreach (int type in exclude)
                         if (mob.BodyValue == type)
                             return true;
@@ -5990,7 +5992,7 @@ namespace Server
         {
             Item item = thing as Item;
             Mobile mobile = thing as Mobile;
-            string name = String.Empty;
+            string name = string.Empty;
             if (item != null)
             {
                 name = item.Name;
@@ -6019,8 +6021,10 @@ namespace Server
 
             return name;
         }
-        public static string GetShortPath(string path)
+        public static string GetShortPath(string path, bool raw = false)
         {
+            if (raw == false)
+            { 
             string short_path = "";
             try
             {
@@ -6052,6 +6056,36 @@ namespace Server
             }
 
             return "...\\" + short_path;
+            }
+            else
+            {   // example: C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island.
+                // to: C:\Users\luket\...\Src\Angel Island.
+                // reduce >= 9 components to 6.
+                List<string> components = new(path.Split(new char[] {'\\', '/'}, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                if (components.Count < 9)
+                    return path;
+
+                List<string> left = components.Take<string>(9/2).ToList();
+                List<string> right = components.Skip(9/2).Take<string>(9).ToList();
+                for(int ix=0; ix < 100; ix++)
+                {
+                    if (left.Count + right.Count >= 6)
+                        left.RemoveAt(left.Count - 1);
+                    else break;
+
+                    if (left.Count + right.Count >= 6)
+                        right.RemoveAt(0);
+                    else break;
+                }
+
+                left.Add("...");
+
+                // rebuild new shortened path
+                string new_path = string.Join("/", left);
+                new_path += '/' + string.Join("/", right);
+
+                return new_path;
+            }
         }
         public static double GetDistanceToSqrt(Point3D p1, Point3D p2)
         {
@@ -6085,7 +6119,7 @@ namespace Server
             try
             {
                 // open our version info file
-                string buildInfoFile = Path.Combine(Environment.CurrentDirectory, "build.info");
+                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "build.info");
                 StreamReader sr = new StreamReader(buildInfoFile);
                 //the first line of text will be the version
                 string line = sr.ReadLine();
@@ -6106,7 +6140,7 @@ namespace Server
         {
             try
             {
-                string buildInfoFile = Path.Combine(Environment.CurrentDirectory, "build.info");
+                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "build.info");
                 // open our version info file
                 StreamReader sr = new StreamReader(buildInfoFile);
                 //the first line of text will be the build
@@ -6130,7 +6164,7 @@ namespace Server
         {
             try
             {
-                string buildInfoFile = Path.Combine(Environment.CurrentDirectory, "build.info");
+                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "build.info");
                 // open our version info file
                 StreamReader sr = new StreamReader(buildInfoFile);
                 //the first line of text will be the build
@@ -6156,7 +6190,7 @@ namespace Server
         {
             try
             {
-                string buildInfoFile = Path.Combine(Environment.CurrentDirectory, "build.info");
+                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "build.info");
                 // open our version info file
                 StreamReader sr = new StreamReader(buildInfoFile);
                 //the first line of text will be the build
@@ -6552,7 +6586,7 @@ namespace Server
         }
         public static void DebugOut(string format, ConsoleColor color = ConsoleColor.White, params object[] args)
         {
-            DebugOut(String.Format(format, args), color);
+            DebugOut(string.Format(format, args), color);
         }
         public static void ConsoleWrite(string text, ConsoleColor color)
         {
@@ -6573,7 +6607,7 @@ namespace Server
         }
         public static void ConsoleWriteLine(string format, ConsoleColor color, params object[] args)
         {
-            ConsoleWriteLine(String.Format(format, args), color);
+            ConsoleWriteLine(string.Format(format, args), color);
         }
         public static void ErrorOut(string text, ConsoleColor color)
         {
@@ -6586,7 +6620,7 @@ namespace Server
         }
         public static void ErrorOut(string format, ConsoleColor color, params object[] args)
         {
-            ErrorOut(String.Format(format, args), color);
+            ErrorOut(string.Format(format, args), color);
         }
         public static string FileInfo([System.Runtime.CompilerServices.CallerFilePath] string filePath = "", [System.Runtime.CompilerServices.CallerLineNumber] int lineNumber = 0)
         {
@@ -6947,9 +6981,9 @@ namespace Server
             if (str == null)
                 return null;
             else if (str.Length == 0)
-                return String.Empty;
+                return string.Empty;
 
-            return String.Intern(str);
+            return string.Intern(str);
         }
 
         public static void Intern(ref string str)
@@ -8060,6 +8094,16 @@ namespace Server
         public static string SplitCamelCase(string str)
         {
             return System.Text.RegularExpressions.Regex.Replace(str, "([A-Z])", " $1", System.Text.RegularExpressions.RegexOptions.Compiled).Trim();
+        }
+
+        public static string CamelCase(string input)
+        {
+            string[] words = input.Split(' ');
+            for (int i = 0; i < words.Length; i++)
+            {
+                words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1);
+            }
+            return string.Join(" ", words);
         }
 
         #region Serialization

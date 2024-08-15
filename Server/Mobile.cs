@@ -1408,7 +1408,7 @@ namespace Server
             string name = Name;
 
             if (name == null)
-                name = String.Empty;
+                name = string.Empty;
 
             string prefix = "";
 
@@ -1425,9 +1425,9 @@ namespace Server
             if (guild != null && (m_Player || m_DisplayGuildTitle))
             {
                 if (suffix.Length > 0)
-                    suffix = String.Format("{0} [{1}]", suffix, Utility.FixHtml(guild.Abbreviation));
+                    suffix = string.Format("{0} [{1}]", suffix, Utility.FixHtml(guild.Abbreviation));
                 else
-                    suffix = String.Format("[{0}]", Utility.FixHtml(guild.Abbreviation));
+                    suffix = string.Format("[{0}]", Utility.FixHtml(guild.Abbreviation));
             }
 
             suffix = ApplyNameSuffix(suffix);
@@ -2312,7 +2312,7 @@ namespace Server
 
         public override string ToString()
         {
-            return String.Format("0x{0:X} \"{1}\"", m_Serial.Value, Name);
+            return string.Format("0x{0:X} \"{1}\"", m_Serial.Value, Name);
         }
 
         public long NextActionTime
@@ -4049,9 +4049,9 @@ namespace Server
                 {
                     Utility.TimeCheck tc = new Utility.TimeCheck();
                     tc.Start();
-                    from.SendMessage(String.Format("That mobile {0} blocked", m.IsBlocked(m_numTiles) ? "is" : "is not"));
+                    from.SendMessage(string.Format("That mobile {0} blocked", m.IsBlocked(m_numTiles) ? "is" : "is not"));
                     tc.End();
-                    from.SendMessage(String.Format("check took {0}", tc.TimeTaken));
+                    from.SendMessage(string.Format("check took {0}", tc.TimeTaken));
                 }
                 else
                 {
@@ -7616,12 +7616,12 @@ namespace Server
 
         public void SayTo(Mobile to, string format, params object[] args)
         {
-            SayTo(to, false, String.Format(format, args));
+            SayTo(to, false, string.Format(format, args));
         }
 
         public void SayTo(Mobile to, bool ascii, string format, params object[] args)
         {
-            SayTo(to, ascii, String.Format(format, args));
+            SayTo(to, ascii, string.Format(format, args));
         }
 
         public void SayTo(Mobile to, int number)
@@ -7646,7 +7646,7 @@ namespace Server
 
         public void Say(string format, params object[] args)
         {
-            Say(String.Format(format, args));
+            Say(string.Format(format, args));
         }
 
         public void Say(int number, AffixType type, string affix, string args)
@@ -7671,7 +7671,7 @@ namespace Server
 
         public void Emote(string format, params object[] args)
         {
-            Emote(String.Format(format, args));
+            Emote(string.Format(format, args));
         }
 
         public void Emote(int number)
@@ -7691,7 +7691,7 @@ namespace Server
 
         public void Whisper(string format, params object[] args)
         {
-            Whisper(String.Format(format, args));
+            Whisper(string.Format(format, args));
         }
 
         public void Whisper(int number)
@@ -7711,7 +7711,7 @@ namespace Server
 
         public void Yell(string format, params object[] args)
         {
-            Yell(String.Format(format, args));
+            Yell(string.Format(format, args));
         }
 
         public void Yell(int number)
@@ -8060,7 +8060,7 @@ namespace Server
                             if (p == null)
                             {
                                 if (ascii)
-                                    p = new AsciiMessage(m_Serial, Body, e.Type, e.Hue, 3, Name, String.Format("Squelched: {0}", e.Speech));
+                                    p = new AsciiMessage(m_Serial, Body, e.Type, e.Hue, 3, Name, string.Format("Squelched: {0}", e.Speech));
                                 else
                                     p = new UnicodeMessage(m_Serial, Body, e.Type, e.Hue, 3, Language, Name, e.Speech);
 
@@ -13172,7 +13172,7 @@ namespace Server
 
         public void SendMessage(string format, params object[] args)
         {
-            SendMessage(0x3B2, String.Format(format, args));
+            SendMessage(0x3B2, string.Format(format, args));
         }
 
         public void SendMessage(int hue, string text)
@@ -13188,7 +13188,7 @@ namespace Server
 
         public void SendMessage(int hue, string format, params object[] args)
         {
-            SendMessage(hue, String.Format(format, args));
+            SendMessage(hue, string.Format(format, args));
         }
 
         public void SendAsciiMessage(string text)
@@ -13198,7 +13198,7 @@ namespace Server
 
         public void SendAsciiMessage(string format, params object[] args)
         {
-            SendAsciiMessage(0x3B2, String.Format(format, args));
+            SendAsciiMessage(0x3B2, string.Format(format, args));
         }
 
         public void SendAsciiMessage(int hue, string text)
@@ -13214,7 +13214,7 @@ namespace Server
 
         public void SendAsciiMessage(int hue, string format, params object[] args)
         {
-            SendAsciiMessage(hue, String.Format(format, args));
+            SendAsciiMessage(hue, string.Format(format, args));
         }
         public void SendAsciiMessageTo(NetState ns, int hue, string text)
         {
@@ -13486,7 +13486,7 @@ namespace Server
                     else
                         title = title.Trim();
 
-                    string text = String.Format(title.Length <= 0 ? "[{1}]{2}" : "[{0}, {1}]{2}", title, guild.Abbreviation, guild.GetSuffix(this));
+                    string text = string.Format(title.Length <= 0 ? "[{1}]{2}" : "[{0}, {1}]{2}", title, guild.Abbreviation, guild.GetSuffix(this));
 
                     PrivateOverheadMessage(MessageType.Regular, SpeechHue, true, text, from.NetState);
                 }
@@ -13519,7 +13519,7 @@ namespace Server
             string name = Name;
 
             if (name == null)
-                name = String.Empty;
+                name = string.Empty;
 
             string prefix = "";
 
@@ -13539,16 +13539,16 @@ namespace Server
             // Adam: June 2, 2001 probably means Publish 12 which was July 24, 2001
             if (IsInvulnerable && !Core.RuleSets.AnyAIShardRules() && PublishInfo.Publish < 12)
                 if ((this is BaseVendor || this is PlayerVendor))
-                    suffix = String.Concat(suffix, " ", "(invulnerable)");
+                    suffix = string.Concat(suffix, " ", "(invulnerable)");
 
             string val;
 
             if (prefix.Length > 0 && suffix.Length > 0)
-                val = String.Concat(prefix, " ", name, " ", suffix);
+                val = string.Concat(prefix, " ", name, " ", suffix);
             else if (prefix.Length > 0)
-                val = String.Concat(prefix, " ", name);
+                val = string.Concat(prefix, " ", name);
             else if (suffix.Length > 0)
-                val = String.Concat(name, " ", suffix);
+                val = string.Concat(name, " ", suffix);
             else
                 val = name;
 
@@ -13812,6 +13812,18 @@ namespace Server
             {
                 m_NextSpellTime = value;
             }
+        }
+
+        public Serial ReassignSerial(Serial s)
+        {
+            SendRemovePacket();
+            World.RemoveMobile(this);
+            m_Serial = s;
+            World.AddMobile(this);
+            //m_WorldPacket = null;
+            //Delta(ItemDelta.Update);
+
+            return m_Serial;
         }
 
         /// <summary>
@@ -14306,7 +14318,7 @@ namespace Server
                 else
                     // update hair
                     if (hair != null)
-                    hair.ItemID = value;
+                        hair.ItemID = value;
 
                 Delta(MobileDelta.Hair);
             }
@@ -14346,7 +14358,7 @@ namespace Server
                 else
                     // update facial hair
                     if (hair != null)
-                    hair.ItemID = value;
+                        hair.ItemID = value;
 
                 Delta(MobileDelta.FacialHair);
             }

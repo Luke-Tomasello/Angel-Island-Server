@@ -36,7 +36,7 @@ namespace Server.Items
 
         string ICommodity.Description
         {
-            get { return String.Format("{0} high quality marble", Amount); }
+            get { return string.Format("{0} high quality marble", Amount); }
         }
 
         [Constructable]

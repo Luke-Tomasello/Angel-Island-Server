@@ -3119,7 +3119,7 @@ namespace Server.Network
             {
                 if (ph.Ingame && state.Mobile == null)
                 {
-                    Utility.ConsoleOut(String.Format("Client: {0}: Sent ingame packet (0xD7x{1:X2}) before having been attached to a mobile", state, packetID), ConsoleColor.Yellow);
+                    Utility.ConsoleOut(string.Format("Client: {0}: Sent ingame packet (0xD7x{1:X2}) before having been attached to a mobile", state, packetID), ConsoleColor.Yellow);
                     state.Dispose();
                 }
                 else if (ph.Ingame && state.Mobile.Deleted)
@@ -3641,7 +3641,7 @@ namespace Server.Network
                     }
                 default:
                     {
-                        Utility.ConsoleOut(String.Format("Client: {0}: Unknown text-command type 0x{1:X2}: {2}", state, type, command), ConsoleColor.Yellow);
+                        Utility.ConsoleOut(string.Format("Client: {0}: Unknown text-command type 0x{1:X2}: {2}", state, type, command), ConsoleColor.Yellow);
                         break;
                     }
             }
@@ -4387,7 +4387,7 @@ namespace Server.Network
             {
                 if (ph.Ingame && state.Mobile == null)
                 {
-                    Utility.ConsoleOut(String.Format("Client: {0}: Sent ingame packet (0xBFx{1:X2}) before having been attached to a mobile", state, packetID), ConsoleColor.Yellow);
+                    Utility.ConsoleOut(string.Format("Client: {0}: Sent ingame packet (0xBFx{1:X2}) before having been attached to a mobile", state, packetID), ConsoleColor.Yellow);
                     state.Dispose();
                 }
                 else if (ph.Ingame && state.Mobile.Deleted)

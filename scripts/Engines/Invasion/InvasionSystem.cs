@@ -493,7 +493,7 @@ namespace Server.Engines.Invasion
                 m.SendMessage(m_ArtifactMessage);
 
             LogHelper logger = new LogHelper("Invasion.log", false, true);
-            logger.Log(LogType.Mobile, m, String.Format("Received an artifact: {0} ({1}).", artifact.ToString(), artifact.GetType().Name));
+            logger.Log(LogType.Mobile, m, string.Format("Received an artifact: {0} ({1}).", artifact.ToString(), artifact.GetType().Name));
             logger.Finish();
         }
 
@@ -559,7 +559,7 @@ namespace Server.Engines.Invasion
                 bc.PackItem(loot);
 
                 LogHelper logger = new LogHelper("Invasion.log", false, true);
-                logger.Log(LogType.Mobile, bc, String.Format("Received pack loot: {0} ({1}).", loot.ToString(), loot.GetType().Name));
+                logger.Log(LogType.Mobile, bc, string.Format("Received pack loot: {0} ({1}).", loot.ToString(), loot.GetType().Name));
                 logger.Finish();
             }
         }
@@ -840,7 +840,7 @@ namespace Server.Engines.Invasion
 
         public override string ToString()
         {
-            return String.Format("{0}: {1}", m_Mobile, m_DamagePoints);
+            return string.Format("{0}: {1}", m_Mobile, m_DamagePoints);
         }
     }
 
@@ -957,7 +957,7 @@ namespace Server.Engines.Invasion
 
         public override string ToString()
         {
-            return String.Format("{0}: {1}", m_Mobile, m_Score);
+            return string.Format("{0}: {1}", m_Mobile, m_Score);
         }
     }
 }

@@ -553,7 +553,7 @@ namespace Server.Engines.BulkOrders
                         else if (name is string)
                             AddLabel(316, y, 1152, (string)name);
 
-                        AddLabel(421, y, 1152, String.Format("{0} / {1}", sub.AmountCur, e.AmountMax));
+                        AddLabel(421, y, 1152, string.Format("{0} / {1}", sub.AmountCur, e.AmountMax));
 
                         y += 32;
                     }
@@ -587,7 +587,7 @@ namespace Server.Engines.BulkOrders
                     else if (name is string)
                         AddLabel(316, y, 1152, (string)name);
 
-                    AddLabel(421, y, 1152, String.Format("{0} / {1}", e.AmountCur, e.AmountMax));
+                    AddLabel(421, y, 1152, string.Format("{0} / {1}", e.AmountCur, e.AmountMax));
 
                     y += 32;
                 }

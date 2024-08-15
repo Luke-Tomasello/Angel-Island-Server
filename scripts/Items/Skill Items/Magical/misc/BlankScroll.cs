@@ -40,7 +40,7 @@ namespace Server.Items
     {
         string ICommodity.Description
         {
-            get { return String.Format(Amount == 1 ? "{0} blank scroll" : "{0} blank scrolls", Amount); }
+            get { return string.Format(Amount == 1 ? "{0} blank scroll" : "{0} blank scrolls", Amount); }
         }
 
         [Constructable]

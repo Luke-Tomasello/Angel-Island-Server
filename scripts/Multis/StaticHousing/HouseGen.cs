@@ -187,7 +187,7 @@ namespace Server.Commands
                     {
                         blueprint.Version = Math.Floor(existing.Version + 1.0);
 
-                        if (String.IsNullOrEmpty(blueprint.Description))
+                        if (string.IsNullOrEmpty(blueprint.Description))
                             blueprint.Description = existing.Description;
 
                         blueprint.OriginalOwnerName = existing.OriginalOwnerName;
@@ -681,7 +681,7 @@ namespace Server.Commands
             {
                 int color = (type == ReportType.Warning || type == ReportType.Error) ? 0x22 : 0x40;
 
-                m_Mobile.SendMessage(color, String.Concat(type.ToString(), ": ", String.Format(format, args)));
+                m_Mobile.SendMessage(color, string.Concat(type.ToString(), ": ", string.Format(format, args)));
             }
         }
 
@@ -757,7 +757,7 @@ namespace Server.Commands
             if (!Directory.Exists(StaticHouseHelper.ExportFolder))
                 Directory.CreateDirectory(StaticHouseHelper.ExportFolder);
 
-            string fileName = Path.Combine(StaticHouseHelper.ExportFolder, String.Format("{0}-{1}.xml", blueprint.ID, blueprint.Description));
+            string fileName = Path.Combine(StaticHouseHelper.ExportFolder, string.Format("{0}-{1}.xml", blueprint.ID, blueprint.Description));
 #endif
 
             XmlDocument xmlDoc = new XmlDocument();
@@ -873,8 +873,8 @@ namespace Server.Commands
                     default: return;
                 }
 
-                string zMin = String.Empty;
-                string zMax = String.Empty;
+                string zMin = string.Empty;
+                string zMax = string.Empty;
 
                 // process text entries
                 foreach (TextRelay text in info.TextEntries)
@@ -951,7 +951,7 @@ namespace Server.Commands
 
             private static bool Verify(Mobile from, InternalState state, string zMin, string zMax)
             {
-                if (String.IsNullOrEmpty(state.HouseID))
+                if (string.IsNullOrEmpty(state.HouseID))
                 {
                     from.SendMessage(0x22, "Error: You must specify a HID for your blueprint.");
                     return false;
@@ -973,7 +973,7 @@ namespace Server.Commands
                     return false;
                 }
 
-                if (!state.Update && String.IsNullOrEmpty(state.Description))
+                if (!state.Update && string.IsNullOrEmpty(state.Description))
                     from.SendMessage(0x22, "Warning: You should specify a description for this house.");
 
                 try

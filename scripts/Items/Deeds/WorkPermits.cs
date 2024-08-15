@@ -131,9 +131,9 @@ namespace Server.Items
                     {
                         BaseHouse house = (target as HouseSign).Structure;
                         Logger = new LogHelper("WorkPermit.log", false);
-                        Logger.Log(LogType.Item, house, String.Format("WorkPermit applied: {0}", m_Deed.ToString()));
+                        Logger.Log(LogType.Item, house, string.Format("WorkPermit applied: {0}", m_Deed.ToString()));
                         house.MaximumBarkeepCount++;
-                        from.SendMessage(String.Format("Permit Accepted. You may now employ up to {0} barkeepers.", house.MaximumBarkeepCount));
+                        from.SendMessage(string.Format("Permit Accepted. You may now employ up to {0} barkeepers.", house.MaximumBarkeepCount));
                         m_Deed.Delete();
                     }
                 }

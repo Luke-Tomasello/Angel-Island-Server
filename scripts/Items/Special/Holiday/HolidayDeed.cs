@@ -106,7 +106,7 @@ namespace Server.Items
             base.GetProperties(list);
 
             if (Name == "Holiday Deed")
-                list.Add(String.Format(HolidayDeedSystem.GetSeasonLabel(m_Season), m_Year));
+                list.Add(string.Format(HolidayDeedSystem.GetSeasonLabel(m_Season), m_Year));
         }
 
         public override void OnSingleClick(Mobile from)
@@ -114,7 +114,7 @@ namespace Server.Items
             base.OnSingleClick(from);
 
             if (Name == "Holiday Deed")
-                LabelTo(from, String.Format(HolidayDeedSystem.GetSeasonLabel(m_Season), m_Year));
+                LabelTo(from, string.Format(HolidayDeedSystem.GetSeasonLabel(m_Season), m_Year));
         }
 
         public override void OnDoubleClick(Mobile from)
@@ -377,7 +377,7 @@ namespace Server.Items
         {
             Container giftBox = new GiftBox();
 
-            giftBox.Name = String.Format(GetSeasonLabel(season), year);
+            giftBox.Name = string.Format(GetSeasonLabel(season), year);
 
             try
             {
@@ -385,12 +385,12 @@ namespace Server.Items
                 {
                     HolidayGiftEntry entry = Gifts[i];
 
-                    if (String.IsNullOrEmpty(entry.Type))
+                    if (string.IsNullOrEmpty(entry.Type))
                         continue;
 
                     string giftTypeName = GetValue(entry.Type);
 
-                    if (String.IsNullOrEmpty(giftTypeName))
+                    if (string.IsNullOrEmpty(giftTypeName))
                         throw new InvalidOperationException("InvalidGiftType");
 
                     Type giftType = SpawnerType.GetType(giftTypeName);
@@ -403,17 +403,17 @@ namespace Server.Items
                     if (item == null)
                         throw new InvalidOperationException("NullGift");
 
-                    if (!String.IsNullOrEmpty(entry.Name))
+                    if (!string.IsNullOrEmpty(entry.Name))
                     {
                         string name = GetValue(entry.Name);
 
-                        if (String.IsNullOrEmpty(name))
+                        if (string.IsNullOrEmpty(name))
                             throw new InvalidOperationException("InvalidGiftName");
 
                         item.Name = name;
                     }
 
-                    if (!String.IsNullOrEmpty(entry.Hue))
+                    if (!string.IsNullOrEmpty(entry.Hue))
                     {
                         string hueStr = GetValue(entry.Hue);
 
@@ -438,7 +438,7 @@ namespace Server.Items
                 for (int i = 0; i < itemList.Length; i++)
                     itemList[i] = giftBox.Items[i].ToString();
 
-                logger.Log(LogType.Mobile, m, String.Format("Gift creation: {0} containing {1}", giftBox.ToString(), String.Join(", ", itemList)));
+                logger.Log(LogType.Mobile, m, string.Format("Gift creation: {0} containing {1}", giftBox.ToString(), string.Join(", ", itemList)));
                 logger.Finish();
 
                 return giftBox;
@@ -458,7 +458,7 @@ namespace Server.Items
 
         private static string GetValue(string str)
         {
-            if (String.IsNullOrEmpty(str))
+            if (string.IsNullOrEmpty(str))
                 return null;
 
             string[] split = str.Split('|');
@@ -491,7 +491,7 @@ namespace Server.Items
 
         private static readonly string[] m_SeasonLabels = new string[]
             {
-                String.Empty,
+                string.Empty,
 
                 "April Fool's Day {0}",
                 "Christmas {0}", // OSI typically labels "Winter"
@@ -509,7 +509,7 @@ namespace Server.Items
             if (index >= 0 && index < m_SeasonLabels.Length)
                 return m_SeasonLabels[index];
 
-            return String.Concat(season.ToString(), " {0}");
+            return string.Concat(season.ToString(), " {0}");
         }
     }
 

@@ -116,21 +116,21 @@ namespace Server.Gumps
 
         public static string FormatTimeSpan(TimeSpan ts)
         {
-            return String.Format("{0:D2}:{1:D2}:{2:D2}:{3:D2}", ts.Days, ts.Hours % 24, ts.Minutes % 60, ts.Seconds % 60);
+            return string.Format("{0:D2}:{1:D2}:{2:D2}:{3:D2}", ts.Days, ts.Hours % 24, ts.Minutes % 60, ts.Seconds % 60);
         }
 
         public static string FormatByteAmount(long totalBytes)
         {
             if (totalBytes > 1000000000)
-                return String.Format("{0:F1} GB", (double)totalBytes / 1073741824);
+                return string.Format("{0:F1} GB", (double)totalBytes / 1073741824);
 
             if (totalBytes > 1000000)
-                return String.Format("{0:F1} MB", (double)totalBytes / 1048576);
+                return string.Format("{0:F1} MB", (double)totalBytes / 1048576);
 
             if (totalBytes > 1000)
-                return String.Format("{0:F1} KB", (double)totalBytes / 1024);
+                return string.Format("{0:F1} KB", (double)totalBytes / 1024);
 
-            return String.Format("{0} Bytes", totalBytes);
+            return string.Format("{0} Bytes", totalBytes);
         }
 
         public static void Initialize()

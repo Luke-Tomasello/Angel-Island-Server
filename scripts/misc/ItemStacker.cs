@@ -19,7 +19,7 @@
  *
  ***************************************************************************/
 
-/* Misc/ItemStacker.cs
+/* Scripts\misc\ItemStacker.cs
  * CHANGELOG:
  *  9/08/21, Yoar
  *		First commit. Automated item stacking.

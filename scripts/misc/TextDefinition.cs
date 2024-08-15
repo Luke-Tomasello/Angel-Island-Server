@@ -31,7 +31,7 @@ namespace Server
         public int Number { get { return m_Number; } }
         public string String { get { return m_String; } }
 
-        public bool IsEmpty { get { return (m_Number == 0 && String.IsNullOrEmpty(m_String)); } }
+        public bool IsEmpty { get { return (m_Number == 0 && string.IsNullOrEmpty(m_String)); } }
 
         public TextDefinition(int number) : this(number, null)
         {
@@ -100,7 +100,7 @@ namespace Server
                     g.AddHtmlLocalized(x, y, width, height, text.Number, back, scroll);
             else if (text != null && text.String != null)
                 if (stringColor >= 0)
-                    g.AddHtml(x, y, width, height, String.Format("<BASEFONT COLOR=#{0:X6}>{1}</BASEFONT>", stringColor, text.String), back, scroll);
+                    g.AddHtml(x, y, width, height, string.Format("<BASEFONT COLOR=#{0:X6}>{1}</BASEFONT>", stringColor, text.String), back, scroll);
                 else
                     g.AddHtml(x, y, width, height, text.String, back, scroll);
         }

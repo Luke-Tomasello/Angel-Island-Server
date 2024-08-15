@@ -121,7 +121,7 @@ namespace Server.Engines
             // all int switches MUST be exactly of the form "-x=nn" where nn is the int portion. no spaces allowed
             try
             {   // extract the integer argument from the arg-string.
-                string argID = String.Format("{0}=", pattern);
+                string argID = string.Format("{0}=", pattern);
                 int startIndex = args.IndexOf(argID);
                 if (startIndex == -1) throw new ApplicationException();
                 int whiteIndex = args.IndexOf(' ', startIndex);
@@ -211,7 +211,7 @@ namespace Server.Engines
                     {
                         Mobile m = GetFirst(ad.mobileList, mustBeOnline) as Mobile;                     // just first (online) mobile
                         if (m != null)
-                            e.Mobile.SendMessage(String.Format("mob:{2}, gold:{0}, loc:{1}", node.gold, node.location, m));
+                            e.Mobile.SendMessage(string.Format("mob:{2}, gold:{0}, loc:{1}", node.gold, node.location, m));
                     }
                 }
 

@@ -135,7 +135,7 @@ namespace Server.Township
 
             deposited += toAdd;
 
-            m_Stone.RecordDeposit(deposited, String.Format("{0} deposited a gold pile", from.Name));
+            m_Stone.RecordDeposit(deposited, string.Format("{0} deposited a gold pile", from.Name));
 
             return DepositResult.Success;
         }
@@ -160,7 +160,7 @@ namespace Server.Township
 
             deposited += toAdd;
 
-            m_Stone.RecordDeposit(deposited, String.Format("{0} deposited a bank check", from.Name));
+            m_Stone.RecordDeposit(deposited, string.Format("{0} deposited a bank check", from.Name));
 
             return DepositResult.Success;
         }

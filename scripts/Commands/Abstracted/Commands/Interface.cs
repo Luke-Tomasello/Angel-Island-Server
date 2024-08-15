@@ -76,7 +76,7 @@ namespace Server.Commands
             else
                 AddEntryHeader(20);
 
-            AddEntryHtml(160, Center(String.Format("Page {0} of {1}", m_Page + 1, (m_List.Count + EntriesPerPage - 1) / EntriesPerPage)));
+            AddEntryHtml(160, Center(string.Format("Page {0} of {1}", m_Page + 1, (m_List.Count + EntriesPerPage - 1) / EntriesPerPage)));
 
             if ((m_Page + 1) * EntriesPerPage < m_List.Count)
                 AddEntryButton(20, ArrowRightID1, ArrowRightID2, 2, ArrowRightWidth, ArrowRightHeight);
@@ -217,7 +217,7 @@ namespace Server.Commands
 
         private void InvokeCommand(string ip)
         {
-            Server.CommandSystem.Handle(m_From, String.Format("{0}{1}", Server.CommandSystem.CommandPrefix, ip));
+            Server.CommandSystem.Handle(m_From, string.Format("{0}{1}", Server.CommandSystem.CommandPrefix, ip));
         }
 
         public override void OnResponse(NetState sender, RelayInfo info)
@@ -258,7 +258,7 @@ namespace Server.Commands
                 case 4: // Go there
                     {
                         m_From.SendGump(new InterfaceItemGump(m_From, m_List, m_Page, m_Item));
-                        InvokeCommand(String.Format("Go {0}", m_Item.Serial.Value));
+                        InvokeCommand(string.Format("Go {0}", m_Item.Serial.Value));
                         break;
                     }
                 case 5: // Move to target
@@ -370,7 +370,7 @@ namespace Server.Commands
 
         private void InvokeCommand(string ip)
         {
-            Server.CommandSystem.Handle(m_From, String.Format("{0}{1}", Server.CommandSystem.CommandPrefix, ip));
+            Server.CommandSystem.Handle(m_From, string.Format("{0}{1}", Server.CommandSystem.CommandPrefix, ip));
         }
 
         public override void OnResponse(NetState sender, RelayInfo info)
@@ -415,7 +415,7 @@ namespace Server.Commands
                 case 4: // Go there
                     {
                         m_From.SendGump(new InterfaceMobileGump(m_From, m_List, m_Page, m_Mobile));
-                        InvokeCommand(String.Format("Go {0}", m_Mobile.Serial.Value));
+                        InvokeCommand(string.Format("Go {0}", m_Mobile.Serial.Value));
                         break;
                     }
                 case 5: // Bring them here

@@ -113,7 +113,7 @@ namespace Server.Engines.ConPVP
                 if (tourny.HasParticipant(m))
                     return;
 
-                PrivateOverheadMessage(MessageType.Regular, 0x35, false, String.Format("Hello m'{0}. Dost thou wish to enter this tournament? You need only to write your name in this book.", m.Female ? "Lady" : "Lord"), m.NetState);
+                PrivateOverheadMessage(MessageType.Regular, 0x35, false, string.Format("Hello m'{0}. Dost thou wish to enter this tournament? You need only to write your name in this book.", m.Female ? "Lady" : "Lord"), m.NetState);
                 m.BeginAction(this);
                 Timer.DelayCall(TimeSpan.FromSeconds(10.0), new TimerStateCallback(ReleaseLock_Callback), m);
             }
@@ -466,7 +466,7 @@ namespace Server.Engines.ConPVP
                 case GroupingType.Random: groupText = "Random"; break;
             }
 
-            AddBorderedText(35, y, 190, 20, String.Format("Grouping: {0}", groupText), LabelColor32, BlackColor32);
+            AddBorderedText(35, y, 190, 20, string.Format("Grouping: {0}", groupText), LabelColor32, BlackColor32);
             y += 20;
 
             string tieText = null;
@@ -480,22 +480,22 @@ namespace Server.Engines.ConPVP
                 case TieType.FullElimination: tieText = (tourny.ParticipantsPerMatch == 2 ? "Both eliminated" : "Everyone eliminated"); break;
             }
 
-            AddBorderedText(35, y, 190, 20, String.Format("Tiebreaker: {0}", tieText), LabelColor32, BlackColor32);
+            AddBorderedText(35, y, 190, 20, string.Format("Tiebreaker: {0}", tieText), LabelColor32, BlackColor32);
             y += 20;
 
             string sdText = "Off";
 
             if (tourny.SuddenDeath > TimeSpan.Zero)
             {
-                sdText = String.Format("{0}:{1:D2}", (int)tourny.SuddenDeath.TotalMinutes, tourny.SuddenDeath.Seconds);
+                sdText = string.Format("{0}:{1:D2}", (int)tourny.SuddenDeath.TotalMinutes, tourny.SuddenDeath.Seconds);
 
                 if (tourny.SuddenDeathRounds > 0)
-                    sdText = String.Format("{0} (first {1} rounds)", sdText, tourny.SuddenDeathRounds);
+                    sdText = string.Format("{0} (first {1} rounds)", sdText, tourny.SuddenDeathRounds);
                 else
-                    sdText = String.Format("{0} (all rounds)", sdText);
+                    sdText = string.Format("{0} (all rounds)", sdText);
             }
 
-            AddBorderedText(35, y, 240, 20, String.Format("Sudden Death: {0}", sdText), LabelColor32, BlackColor32);
+            AddBorderedText(35, y, 240, 20, string.Format("Sudden Death: {0}", sdText), LabelColor32, BlackColor32);
             y += 20;
 
             y += 6;
@@ -503,11 +503,11 @@ namespace Server.Engines.ConPVP
             AddImageTiled(42, y + 1, 264, 1, 9157);
             y += 6;
 
-            AddBorderedText(35, y, 190, 20, String.Format("Ruleset: {0}", basedef.Title), LabelColor32, BlackColor32);
+            AddBorderedText(35, y, 190, 20, string.Format("Ruleset: {0}", basedef.Title), LabelColor32, BlackColor32);
             y += 20;
 
             for (int i = 0; i < ruleset.Flavors.Count; ++i, y += 18)
-                AddBorderedText(35, y, 190, 20, String.Format(" + {0}", ((Ruleset)ruleset.Flavors[i]).Title), LabelColor32, BlackColor32);
+                AddBorderedText(35, y, 190, 20, string.Format(" + {0}", ((Ruleset)ruleset.Flavors[i]).Title), LabelColor32, BlackColor32);
 
             y += 4;
 
@@ -658,7 +658,7 @@ namespace Server.Engines.ConPVP
                                         else
                                         {
                                             m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                                                0x35, false, String.Format("{0} has not yet proven themselves a worthy dueler.", mob.Name), from.NetState);
+                                                0x35, false, string.Format("{0} has not yet proven themselves a worthy dueler.", mob.Name), from.NetState);
                                         }
                                     }
 
@@ -677,7 +677,7 @@ namespace Server.Engines.ConPVP
                                         else
                                         {
                                             m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                                                0x35, false, String.Format("{0} has already entered this tournament.", mob.Name), from.NetState);
+                                                0x35, false, string.Format("{0} has already entered this tournament.", mob.Name), from.NetState);
                                         }
                                     }
 
@@ -696,7 +696,7 @@ namespace Server.Engines.ConPVP
                                         else
                                         {
                                             m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                                                0x35, false, String.Format("{0} has already entered another tournament.", mob.Name), from.NetState);
+                                                0x35, false, string.Format("{0} has already entered another tournament.", mob.Name), from.NetState);
                                         }
                                     }
 
@@ -715,7 +715,7 @@ namespace Server.Engines.ConPVP
                                         else
                                         {
                                             m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                                                0x35, false, String.Format("{0} is already assigned to a duel. They must yield it before joining this tournament.", mob.Name), from.NetState);
+                                                0x35, false, string.Format("{0} is already assigned to a duel. They must yield it before joining this tournament.", mob.Name), from.NetState);
                                         }
                                     }
 
@@ -741,10 +741,10 @@ namespace Server.Engines.ConPVP
                                 if (minutesUntil == 0)
                                     timeUntil = "momentarily";
                                 else
-                                    timeUntil = String.Format("in {0} minute{1}", minutesUntil, minutesUntil == 1 ? "" : "s");
+                                    timeUntil = string.Format("in {0} minute{1}", minutesUntil, minutesUntil == 1 ? "" : "s");
 
                                 m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                                    0x35, false, String.Format(fmt, from.Female ? "Lady" : "Lord", timeUntil), from.NetState);
+                                    0x35, false, string.Format(fmt, from.Female ? "Lady" : "Lord", timeUntil), from.NetState);
                             }
 
                             TournyParticipant part = new TournyParticipant(from);
@@ -873,7 +873,7 @@ namespace Server.Engines.ConPVP
 
                     if (m_Registrar != null)
                         m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                            0x59, false, String.Format("As you command m'{0}. I've given your offer to {1}.", from.Female ? "Lady" : "Lord", mob.Name), from.NetState);
+                            0x59, false, string.Format("As you command m'{0}. I've given your offer to {1}.", from.Female ? "Lady" : "Lord", mob.Name), from.NetState);
                 }
             }
         }
@@ -1001,7 +1001,7 @@ namespace Server.Engines.ConPVP
             AddBorderedText(22, 22, 294, 20, Center(sb.ToString()), LabelColor32, BlackColor32);
 
             AddBorderedText(22, 50, 294, 40,
-                String.Format("You have been asked to partner with {0} in a tournament. Do you accept?", from.Name),
+                string.Format("You have been asked to partner with {0} in a tournament. Do you accept?", from.Name),
                 0xB0C868, BlackColor32);
 
             AddImageTiled(32, 88, 264, 1, 9107);
@@ -1019,7 +1019,7 @@ namespace Server.Engines.ConPVP
                 case GroupingType.Random: groupText = "Random"; break;
             }
 
-            AddBorderedText(35, y, 190, 20, String.Format("Grouping: {0}", groupText), LabelColor32, BlackColor32);
+            AddBorderedText(35, y, 190, 20, string.Format("Grouping: {0}", groupText), LabelColor32, BlackColor32);
             y += 20;
 
             string tieText = null;
@@ -1033,22 +1033,22 @@ namespace Server.Engines.ConPVP
                 case TieType.FullElimination: tieText = (tourny.ParticipantsPerMatch == 2 ? "Both eliminated" : "Everyone eliminated"); break;
             }
 
-            AddBorderedText(35, y, 190, 20, String.Format("Tiebreaker: {0}", tieText), LabelColor32, BlackColor32);
+            AddBorderedText(35, y, 190, 20, string.Format("Tiebreaker: {0}", tieText), LabelColor32, BlackColor32);
             y += 20;
 
             string sdText = "Off";
 
             if (tourny.SuddenDeath > TimeSpan.Zero)
             {
-                sdText = String.Format("{0}:{1:D2}", (int)tourny.SuddenDeath.TotalMinutes, tourny.SuddenDeath.Seconds);
+                sdText = string.Format("{0}:{1:D2}", (int)tourny.SuddenDeath.TotalMinutes, tourny.SuddenDeath.Seconds);
 
                 if (tourny.SuddenDeathRounds > 0)
-                    sdText = String.Format("{0} (first {1} rounds)", sdText, tourny.SuddenDeathRounds);
+                    sdText = string.Format("{0} (first {1} rounds)", sdText, tourny.SuddenDeathRounds);
                 else
-                    sdText = String.Format("{0} (all rounds)", sdText);
+                    sdText = string.Format("{0} (all rounds)", sdText);
             }
 
-            AddBorderedText(35, y, 240, 20, String.Format("Sudden Death: {0}", sdText), LabelColor32, BlackColor32);
+            AddBorderedText(35, y, 240, 20, string.Format("Sudden Death: {0}", sdText), LabelColor32, BlackColor32);
             y += 20;
 
             y += 6;
@@ -1056,11 +1056,11 @@ namespace Server.Engines.ConPVP
             AddImageTiled(42, y + 1, 264, 1, 9157);
             y += 6;
 
-            AddBorderedText(35, y, 190, 20, String.Format("Ruleset: {0}", basedef.Title), LabelColor32, BlackColor32);
+            AddBorderedText(35, y, 190, 20, string.Format("Ruleset: {0}", basedef.Title), LabelColor32, BlackColor32);
             y += 20;
 
             for (int i = 0; i < ruleset.Flavors.Count; ++i, y += 18)
-                AddBorderedText(35, y, 190, 20, String.Format(" + {0}", ((Ruleset)ruleset.Flavors[i]).Title), LabelColor32, BlackColor32);
+                AddBorderedText(35, y, 190, 20, string.Format(" + {0}", ((Ruleset)ruleset.Flavors[i]).Title), LabelColor32, BlackColor32);
 
             y += 4;
 
@@ -1128,10 +1128,10 @@ namespace Server.Engines.ConPVP
             if (m_Registrar != null)
             {
                 m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                    0x22, false, String.Format("{0} seems unresponsive.", m_Requested.Name), m_From.NetState);
+                    0x22, false, string.Format("{0} seems unresponsive.", m_Requested.Name), m_From.NetState);
 
                 m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                    0x22, false, String.Format("You have declined the partnership with {0}.", m_From.Name), m_Requested.NetState);
+                    0x22, false, string.Format("You have declined the partnership with {0}.", m_From.Name), m_Requested.NetState);
             }
         }
 
@@ -1209,10 +1209,10 @@ namespace Server.Engines.ConPVP
                     if (m_Registrar != null)
                     {
                         m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                            0x59, false, String.Format("{0} has accepted your offer of partnership.", mob.Name), from.NetState);
+                            0x59, false, string.Format("{0} has accepted your offer of partnership.", mob.Name), from.NetState);
 
                         m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                            0x59, false, String.Format("You have accepted the partnership with {0}.", from.Name), mob.NetState);
+                            0x59, false, string.Format("You have accepted the partnership with {0}.", from.Name), mob.NetState);
                     }
                 }
             }
@@ -1226,10 +1226,10 @@ namespace Server.Engines.ConPVP
                 if (m_Registrar != null)
                 {
                     m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                        0x22, false, String.Format("{0} has declined your offer of partnership.", mob.Name), from.NetState);
+                        0x22, false, string.Format("{0} has declined your offer of partnership.", mob.Name), from.NetState);
 
                     m_Registrar.PrivateOverheadMessage(MessageType.Regular,
-                        0x22, false, String.Format("You have declined the partnership with {0}.", from.Name), mob.NetState);
+                        0x22, false, string.Format("You have declined the partnership with {0}.", from.Name), mob.NetState);
                 }
             }
         }
@@ -2192,13 +2192,13 @@ namespace Server.Engines.ConPVP
                     try
                     {
                         if (m_EventController != null && m_EventController.HasTeamNames)
-                            Alert("The tournament has completed!", String.Format("Team {0} has won!", m_EventController.GetTeamName(((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner))));
+                            Alert("The tournament has completed!", string.Format("Team {0} has won!", m_EventController.GetTeamName(((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner))));
                         else if (m_TournyType == TournyType.RandomTeam)
-                            Alert("The tournament has completed!", String.Format("Team {0} has won!", ((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner) + 1));
+                            Alert("The tournament has completed!", string.Format("Team {0} has won!", ((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner) + 1));
                         else if (m_TournyType == TournyType.RedVsBlue)
-                            Alert("The tournament has completed!", String.Format("Team {0} has won!", ((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner) == 0 ? "Red" : "Blue"));
+                            Alert("The tournament has completed!", string.Format("Team {0} has won!", ((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner) == 0 ? "Red" : "Blue"));
                         else
-                            Alert("The tournament has completed!", String.Format("{0} {1} the champion{2}.", winner.NameList, winner.Players.Count > 1 ? "are" : "is", winner.Players.Count == 1 ? "" : "s"));
+                            Alert("The tournament has completed!", string.Format("{0} {1} the champion{2}.", winner.NameList, winner.Players.Count > 1 ? "are" : "is", winner.Players.Count == 1 ? "" : "s"));
                     }
                     catch
                     {
@@ -2270,13 +2270,13 @@ namespace Server.Engines.ConPVP
                                     try
                                     {
                                         if (m_EventController != null && m_EventController.HasTeamNames)
-                                            Alert("The tournament has completed!", String.Format("Team {0} has won", m_EventController.GetTeamName(((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner))));
+                                            Alert("The tournament has completed!", string.Format("Team {0} has won", m_EventController.GetTeamName(((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner))));
                                         else if (m_TournyType == TournyType.RandomTeam)
-                                            Alert("The tournament has completed!", String.Format("Team {0} has won!", ((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner) + 1));
+                                            Alert("The tournament has completed!", string.Format("Team {0} has won!", ((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner) + 1));
                                         else if (m_TournyType == TournyType.RedVsBlue)
-                                            Alert("The tournament has completed!", String.Format("Team {0} has won!", ((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner) == 0 ? "Red" : "Blue"));
+                                            Alert("The tournament has completed!", string.Format("Team {0} has won!", ((TournyMatch)((PyramidLevel)m_Pyramid.Levels[0]).Matches[0]).Participants.IndexOf(winner) == 0 ? "Red" : "Blue"));
                                         else
-                                            Alert("The tournament has completed!", String.Format("{0} {1} the champion{2}.", winner.NameList, winner.Players.Count > 1 ? "are" : "is", winner.Players.Count == 1 ? "" : "s"));
+                                            Alert("The tournament has completed!", string.Format("{0} {1} the champion{2}.", winner.NameList, winner.Players.Count > 1 ? "are" : "is", winner.Players.Count == 1 ? "" : "s"));
                                     }
                                     catch
                                     {
@@ -2334,7 +2334,7 @@ namespace Server.Engines.ConPVP
 
         public void Log(string format, params object[] args)
         {
-            string toLog = String.Format(format, args);
+            string toLog = string.Format(format, args);
 
             LogHelper Logger = new LogHelper("tournament.log", false, true);
             Logger.Log(LogType.Text, toLog);
@@ -2736,7 +2736,7 @@ namespace Server.Engines.ConPVP
 
         public void AddLog(string format, params object[] args)
         {
-            AddLog(String.Format(format, args));
+            AddLog(string.Format(format, args));
         }
 
         public void WonMatch(TournyMatch match)
@@ -2931,11 +2931,11 @@ namespace Server.Engines.ConPVP
                                 secs %= 60;
 
                                 if (mins > 0 && secs > 0)
-                                    text = String.Format("The tournament will begin in {0} minute{1} and {2} second{3}.", mins, mins == 1 ? "" : "s", secs, secs == 1 ? "" : "s");
+                                    text = string.Format("The tournament will begin in {0} minute{1} and {2} second{3}.", mins, mins == 1 ? "" : "s", secs, secs == 1 ? "" : "s");
                                 else if (mins > 0)
-                                    text = String.Format("The tournament will begin in {0} minute{1}.", mins, mins == 1 ? "" : "s");
+                                    text = string.Format("The tournament will begin in {0} minute{1}.", mins, mins == 1 ? "" : "s");
                                 else if (secs > 0)
-                                    text = String.Format("The tournament will begin in {0} second{1}.", secs, secs == 1 ? "" : "s");
+                                    text = string.Format("The tournament will begin in {0} second{1}.", secs, secs == 1 ? "" : "s");
                                 else
                                     text = "The tournament will begin shortly.";
                             }
@@ -2999,7 +2999,7 @@ namespace Server.Engines.ConPVP
                             case GroupingType.Random: groupText = "Random"; break;
                         }
 
-                        AddHtml(35, y, 190, 20, String.Format("Grouping: {0}", groupText), false, false);
+                        AddHtml(35, y, 190, 20, string.Format("Grouping: {0}", groupText), false, false);
                         y += 20;
 
                         string tieText = null;
@@ -3013,31 +3013,31 @@ namespace Server.Engines.ConPVP
                             case TieType.FullElimination: tieText = (tourny.ParticipantsPerMatch == 2 ? "Both eliminated" : "Everyone eliminated"); break;
                         }
 
-                        AddHtml(35, y, 190, 20, String.Format("Tiebreaker: {0}", tieText), false, false);
+                        AddHtml(35, y, 190, 20, string.Format("Tiebreaker: {0}", tieText), false, false);
                         y += 20;
 
                         string sdText = "Off";
 
                         if (tourny.SuddenDeath > TimeSpan.Zero)
                         {
-                            sdText = String.Format("{0}:{1:D2}", (int)tourny.SuddenDeath.TotalMinutes, tourny.SuddenDeath.Seconds);
+                            sdText = string.Format("{0}:{1:D2}", (int)tourny.SuddenDeath.TotalMinutes, tourny.SuddenDeath.Seconds);
 
                             if (tourny.SuddenDeathRounds > 0)
-                                sdText = String.Format("{0} (first {1} rounds)", sdText, tourny.SuddenDeathRounds);
+                                sdText = string.Format("{0} (first {1} rounds)", sdText, tourny.SuddenDeathRounds);
                             else
-                                sdText = String.Format("{0} (all rounds)", sdText);
+                                sdText = string.Format("{0} (all rounds)", sdText);
                         }
 
-                        AddHtml(35, y, 240, 20, String.Format("Sudden Death: {0}", sdText), false, false);
+                        AddHtml(35, y, 240, 20, string.Format("Sudden Death: {0}", sdText), false, false);
                         y += 20;
 
                         y += 8;
 
-                        AddHtml(35, y, 190, 20, String.Format("Ruleset: {0}", basedef.Title), false, false);
+                        AddHtml(35, y, 190, 20, string.Format("Ruleset: {0}", basedef.Title), false, false);
                         y += 20;
 
                         for (int i = 0; i < ruleset.Flavors.Count; ++i, y += 18)
-                            AddHtml(35, y, 190, 20, String.Format(" + {0}", ((Ruleset)ruleset.Flavors[i]).Title), false, false);
+                            AddHtml(35, y, 190, 20, string.Format(" + {0}", ((Ruleset)ruleset.Flavors[i]).Title), false, false);
 
                         y += 4;
 
@@ -3079,7 +3079,7 @@ namespace Server.Engines.ConPVP
                             m_List = new ArrayList(tourny.Participants);
 
                         AddLeftArrow(25, 11, ToButtonID(0, 0));
-                        AddHtml(25, 35, 250, 20, Center(String.Format("{0} Participant{1}", m_List.Count, m_List.Count == 1 ? "" : "s")), false, false);
+                        AddHtml(25, 35, 250, 20, Center(string.Format("{0} Participant{1}", m_List.Count, m_List.Count == 1 ? "" : "s")), false, false);
 
                         int index, count, y;
                         StartPage(out index, out count, out y, 12);
@@ -3137,7 +3137,7 @@ namespace Server.Engines.ConPVP
                             y += 18;
                         }
 
-                        AddHtml(25, y, 200, 20, String.Format("Free Advances: {0}", part.FreeAdvances == 0 ? "None" : part.FreeAdvances.ToString()), false, false);
+                        AddHtml(25, y, 200, 20, string.Format("Free Advances: {0}", part.FreeAdvances == 0 ? "None" : part.FreeAdvances.ToString()), false, false);
                         y += 20;
 
                         AddHtml(25, y, 200, 20, "Log:", false, false);
@@ -3176,12 +3176,12 @@ namespace Server.Engines.ConPVP
                         Ladder ladder = Ladder.Instance;
                         LadderEntry entry = (ladder == null ? null : ladder.Find(mob));
 
-                        AddHtml(25, 53, 250, 20, String.Format("Name: {0}", mob.Name), false, false);
-                        AddHtml(25, 73, 250, 20, String.Format("Guild: {0}", mob.Guild == null ? "None" : mob.Guild.Name + " [" + mob.Guild.Abbreviation + "]"), false, false);
-                        AddHtml(25, 93, 250, 20, String.Format("Rank: {0}", entry == null ? "N/A" : LadderGump.Rank(entry.Index + 1)), false, false);
-                        AddHtml(25, 113, 250, 20, String.Format("Level: {0}", entry == null ? 0 : Ladder.GetLevel(entry.Experience)), false, false);
-                        AddHtml(25, 133, 250, 20, String.Format("Wins: {0:N0}", entry == null ? 0 : entry.Wins), false, false);
-                        AddHtml(25, 153, 250, 20, String.Format("Losses: {0:N0}", entry == null ? 0 : entry.Losses), false, false);
+                        AddHtml(25, 53, 250, 20, string.Format("Name: {0}", mob.Name), false, false);
+                        AddHtml(25, 73, 250, 20, string.Format("Guild: {0}", mob.Guild == null ? "None" : mob.Guild.Name + " [" + mob.Guild.Abbreviation + "]"), false, false);
+                        AddHtml(25, 93, 250, 20, string.Format("Rank: {0}", entry == null ? "N/A" : LadderGump.Rank(entry.Index + 1)), false, false);
+                        AddHtml(25, 113, 250, 20, string.Format("Level: {0}", entry == null ? 0 : Ladder.GetLevel(entry.Experience)), false, false);
+                        AddHtml(25, 133, 250, 20, string.Format("Wins: {0:N0}", entry == null ? 0 : entry.Wins), false, false);
+                        AddHtml(25, 153, 250, 20, string.Format("Losses: {0:N0}", entry == null ? 0 : entry.Losses), false, false);
 
                         break;
                     }
@@ -3224,9 +3224,9 @@ namespace Server.Engines.ConPVP
                         if (m_List == null)
                             m_List = new ArrayList(level.Matches);
 
-                        AddRightArrow(25, 53, ToButtonID(5, 0), String.Format("Free Advance: {0}", level.FreeAdvance == null ? "None" : level.FreeAdvance.NameList));
+                        AddRightArrow(25, 53, ToButtonID(5, 0), string.Format("Free Advance: {0}", level.FreeAdvance == null ? "None" : level.FreeAdvance.NameList));
 
-                        AddHtml(25, 73, 200, 20, String.Format("{0} Match{1}", m_List.Count, m_List.Count == 1 ? "" : "es"), false, false);
+                        AddHtml(25, 73, 200, 20, string.Format("{0} Match{1}", m_List.Count, m_List.Count == 1 ? "" : "es"), false, false);
 
                         int index, count, y;
                         StartPage(out index, out count, out y, 10);
@@ -3273,11 +3273,11 @@ namespace Server.Engines.ConPVP
                                     string txt;
 
                                     if (m_Tournament.EventController != null && m_Tournament.EventController.HasTeamNames)
-                                        txt = String.Format("Team {0} ({1})", m_Tournament.EventController.GetTeamName(j), part.Players.Count);
+                                        txt = string.Format("Team {0} ({1})", m_Tournament.EventController.GetTeamName(j), part.Players.Count);
                                     else if (m_Tournament.TournyType == TournyType.RandomTeam)
-                                        txt = String.Format("Team {0} ({1})", j + 1, part.Players.Count);
+                                        txt = string.Format("Team {0} ({1})", j + 1, part.Players.Count);
                                     else
-                                        txt = String.Format("Team {0} ({1})", j == 0 ? "Red" : "Blue", part.Players.Count);
+                                        txt = string.Format("Team {0} ({1})", j == 0 ? "Red" : "Blue", part.Players.Count);
 
                                     if (color == -1 && match.Context != null && match.Winner == part)
                                         txt = Color(txt, 0x336633);
@@ -3317,9 +3317,9 @@ namespace Server.Engines.ConPVP
                         AddLeftArrow(25, 11, ToButtonID(0, 5));
                         AddHtml(25, 35, 250, 20, Center("Rounds"), false, false);
 
-                        AddHtml(25, 53, 250, 20, String.Format("Winner: {0}", match.Winner == null ? "N/A" : match.Winner.NameList), false, false);
-                        AddHtml(25, 73, 250, 20, String.Format("State: {0}", match.InProgress ? "In progress" : match.Context != null ? "Complete" : "Waiting"), false, false);
-                        AddHtml(25, 93, 250, 20, String.Format("Participants:"), false, false);
+                        AddHtml(25, 53, 250, 20, string.Format("Winner: {0}", match.Winner == null ? "N/A" : match.Winner.NameList), false, false);
+                        AddHtml(25, 73, 250, 20, string.Format("State: {0}", match.InProgress ? "In progress" : match.Context != null ? "Complete" : "Waiting"), false, false);
+                        AddHtml(25, 93, 250, 20, string.Format("Participants:"), false, false);
 
                         if (m_Tournament.TournyType == TournyType.Standard)
                         {
@@ -3337,11 +3337,11 @@ namespace Server.Engines.ConPVP
                                 TournyParticipant part = (TournyParticipant)match.Participants[i];
 
                                 if (m_Tournament.EventController != null && m_Tournament.EventController.HasTeamNames)
-                                    AddRightArrow(25, 113 + (i * 18), ToButtonID(6, i), String.Format("Team {0} ({1})", m_Tournament.EventController.GetTeamName(i), part.Players.Count));
+                                    AddRightArrow(25, 113 + (i * 18), ToButtonID(6, i), string.Format("Team {0} ({1})", m_Tournament.EventController.GetTeamName(i), part.Players.Count));
                                 else if (m_Tournament.TournyType == TournyType.RandomTeam)
-                                    AddRightArrow(25, 113 + (i * 18), ToButtonID(6, i), String.Format("Team {0} ({1})", i + 1, part.Players.Count));
+                                    AddRightArrow(25, 113 + (i * 18), ToButtonID(6, i), string.Format("Team {0} ({1})", i + 1, part.Players.Count));
                                 else
-                                    AddRightArrow(25, 113 + (i * 18), ToButtonID(6, i), String.Format("Team {0} ({1})", i == 0 ? "Red" : "Blue", part.Players.Count));
+                                    AddRightArrow(25, 113 + (i * 18), ToButtonID(6, i), string.Format("Team {0} ({1})", i == 0 ? "Red" : "Blue", part.Players.Count));
                             }
                         }
                         else if (m_Tournament.TournyType == TournyType.FreeForAll)

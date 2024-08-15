@@ -29,12 +29,12 @@ namespace Server.Factions
     {
         public string Right(string text)
         {
-            return String.Format("<DIV ALIGN=RIGHT>{0}</DIV>", text);
+            return string.Format("<DIV ALIGN=RIGHT>{0}</DIV>", text);
         }
 
         public static string FormatTimeSpan(TimeSpan ts)
         {
-            return String.Format("{0:D2}:{1:D2}:{2:D2}:{3:D2}", ts.Days, ts.Hours % 24, ts.Minutes % 60, ts.Seconds % 60);
+            return string.Format("{0:D2}:{1:D2}:{2:D2}:{3:D2}", ts.Days, ts.Hours % 24, ts.Minutes % 60, ts.Seconds % 60);
         }
 
         public const int LabelColor = 0xFFFFFF;

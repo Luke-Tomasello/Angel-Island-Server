@@ -556,7 +556,7 @@ namespace Server.Engines.Alignment
             string team1Name = (team1.Length == 1 ? team1[0].Owner.Name : GetName(Find(team1[0].Owner, false, true)));
             string team2Name = (team2.Length == 1 ? team2[0].Owner.Name : GetName(Find(team2[0].Owner, false, true)));
 
-            string args = String.Format("{0}\t{1}\t{2}", award, team2Name, team1Name);
+            string args = string.Format("{0}\t{1}\t{2}", award, team2Name, team1Name);
 
             for (int i = 0; i < team1.Length; i++)
             {

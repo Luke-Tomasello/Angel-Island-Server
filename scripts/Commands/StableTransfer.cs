@@ -56,7 +56,7 @@ namespace Server.Commands
 
             LogHelper logger = new LogHelper("StableTransfer.log");
 
-            logger.Log(LogType.Text, String.Format("Exporting stables to {0}.", filename));
+            logger.Log(LogType.Text, string.Format("Exporting stables to {0}.", filename));
 
             Dictionary<Serial, Serial> ownership = new Dictionary<Serial, Serial>();
             List<IEntity> toExport = new List<IEntity>();
@@ -91,11 +91,11 @@ namespace Server.Commands
                     stbWriter.Close();
                 }
 
-                message = String.Format("Successfully exported stable table containing {0} pets to {1}.", ownership.Count, filename);
+                message = string.Format("Successfully exported stable table containing {0} pets to {1}.", ownership.Count, filename);
             }
             catch (Exception ex)
             {
-                message = String.Format("An error occurred: {0}", ex.ToString());
+                message = string.Format("An error occurred: {0}", ex.ToString());
             }
             finally
             {
@@ -132,7 +132,7 @@ namespace Server.Commands
 
             LogHelper logger = new LogHelper("StableTransfer.log");
 
-            logger.Log(LogType.Text, String.Format("Importing stables from {0}.", filename));
+            logger.Log(LogType.Text, string.Format("Importing stables from {0}.", filename));
 
             Dictionary<Serial, Serial> ownership = new Dictionary<Serial, Serial>();
 
@@ -158,11 +158,11 @@ namespace Server.Commands
                     }
                 }
 
-                message = String.Format("Successfully imported stable table containing {0} pets to {1}.", ownership.Count, filename);
+                message = string.Format("Successfully imported stable table containing {0} pets to {1}.", ownership.Count, filename);
             }
             catch (Exception ex)
             {
-                message = String.Format("An error occurred: {0}", ex.ToString());
+                message = string.Format("An error occurred: {0}", ex.ToString());
             }
             finally
             {
@@ -190,14 +190,14 @@ namespace Server.Commands
 
                 if (owner == null)
                 {
-                    logger.Log(LogType.Text, String.Format("Failed to import stabled pet {0}. Old owner ({1:X6}) is gone.", res.Entity, ownerSerial));
+                    logger.Log(LogType.Text, string.Format("Failed to import stabled pet {0}. Old owner ({1:X6}) is gone.", res.Entity, ownerSerial));
                     res.Entity.Delete();
                     continue;
                 }
 
                 if (HasPetWithSerial(owner, res.OldSerial))
                 {
-                    logger.Log(LogType.Text, String.Format("Failed to import stabled pet {0}. Owner ({1}) already has a pet with this serial ({2:X6}).", res.Entity, owner, res.OldSerial));
+                    logger.Log(LogType.Text, string.Format("Failed to import stabled pet {0}. Owner ({1}) already has a pet with this serial ({2:X6}).", res.Entity, owner, res.OldSerial));
                     res.Entity.Delete();
                     continue;
                 }
@@ -206,7 +206,7 @@ namespace Server.Commands
 
                 if (pet == null)
                 {
-                    logger.Log(LogType.Text, String.Format("Failed to import stabled pet {0}. We are not a creature?!", res.Entity));
+                    logger.Log(LogType.Text, string.Format("Failed to import stabled pet {0}. We are not a creature?!", res.Entity));
                     res.Entity.Delete();
                     continue;
                 }
@@ -227,7 +227,7 @@ namespace Server.Commands
 
                 pet.LastStableChargeTime = DateTime.UtcNow;
 
-                logger.Log(LogType.Text, String.Format("Successfully imported stabled pet {0} of owner {1}.", res.Entity, owner));
+                logger.Log(LogType.Text, string.Format("Successfully imported stabled pet {0} of owner {1}.", res.Entity, owner));
             }
 
             logger.Finish();
@@ -235,7 +235,7 @@ namespace Server.Commands
 
         private static string GetStbFilename(string name)
         {
-            return String.Concat(name, ".stb");
+            return string.Concat(name, ".stb");
         }
 
         private static bool HasPetWithSerial(Mobile owner, Serial petSerial)

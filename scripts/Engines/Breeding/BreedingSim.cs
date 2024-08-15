@@ -73,8 +73,8 @@ namespace Server.Engines.Breeding
                 return;
             }
 
-            e.Mobile.SendMessage(String.Format("Done! It took {0:F3} seconds. Results are exported to " + FileName + ".", (DateTime.UtcNow - start).TotalSeconds));
-            e.Mobile.SendMessage(String.Format("Max. value of {0:F3} after {1} iteration{2}.", res.Value, res.Iter, res.Iter == 1 ? "" : "s"));
+            e.Mobile.SendMessage(string.Format("Done! It took {0:F3} seconds. Results are exported to " + FileName + ".", (DateTime.UtcNow - start).TotalSeconds));
+            e.Mobile.SendMessage(string.Format("Max. value of {0:F3} after {1} iteration{2}.", res.Value, res.Iter, res.Iter == 1 ? "" : "s"));
         }
 
         private delegate T ArgGetter<T>(int index);
@@ -92,15 +92,15 @@ namespace Server.Engines.Breeding
             if (type == null)
                 throw new ArgumentNullException("The value of \"type\" cannot be null.");
             if (!typeof(BaseCreature).IsAssignableFrom(type))
-                throw new ArgumentException(String.Format("Type \"{0}\" does not derive from \"BaseCreature\".", type.Name));
+                throw new ArgumentException(string.Format("Type \"{0}\" does not derive from \"BaseCreature\".", type.Name));
             if (!Genetics.HasGene(type, gene))
-                throw new ArgumentException(String.Format("Type \"{0}\" does not define the gene \"{1}\".", type.Name, gene));
+                throw new ArgumentException(string.Format("Type \"{0}\" does not define the gene \"{1}\".", type.Name, gene));
             if (batchSize < 2)
-                throw new ArgumentException(String.Format("The value of \"batchSize\" must be greater than or equal to 2.", type.Name));
+                throw new ArgumentException(string.Format("The value of \"batchSize\" must be greater than or equal to 2.", type.Name));
             if (reproductiveFactor < 1)
-                throw new ArgumentException(String.Format("The value of \"reproductiveFactor\" must be greater than or equal to 1.", type.Name));
+                throw new ArgumentException(string.Format("The value of \"reproductiveFactor\" must be greater than or equal to 1.", type.Name));
             if (iterations < 0)
-                throw new ArgumentException(String.Format("The value of \"iterations\" must be greater than or equal to 0.", type.Name));
+                throw new ArgumentException(string.Format("The value of \"iterations\" must be greater than or equal to 0.", type.Name));
 
             GeneComparer comp = new GeneComparer(gene);
 
@@ -202,7 +202,7 @@ namespace Server.Engines.Breeding
                     }
 
                     // write results
-                    writer.WriteLine(String.Format("{0}\t{1}", i + 1, String.Join("\t", results)));
+                    writer.WriteLine(string.Format("{0}\t{1}", i + 1, string.Join("\t", results)));
 
                     double value = results[results.Length - 1];
 

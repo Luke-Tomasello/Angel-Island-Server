@@ -76,7 +76,7 @@ namespace Server.Engines.Harvest
 
         private static string GetFileName(Map map, string id)
         {
-            return Path.Combine(Folder, String.Format("{0}_{1}.bin", id, map));
+            return Path.Combine(Folder, string.Format("{0}_{1}.bin", id, map));
         }
 
         private static void WriteBanks(HarvestDefinition def, Map map, string id, List<Type> types)

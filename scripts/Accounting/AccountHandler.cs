@@ -42,6 +42,10 @@
 
 /* Scripts/Accounting/AccountHandler.cs
  * ChangeLog:
+ *  8/15/2024, Adam (GetBestUNMatch)
+ *      unfortunately, SQLite database is case-sensitive.
+ *      Example: Create the "Adam Ant" account. Next login is with "adam ant". SQLite won't recognize "adam ant"
+ *      We will look for the best match here
  *  9/29/2023, Adam (Delete Character and Tor Exit Node)
  *      If a player entered our shard via a Tor Exit Node, the likelihood that they are a bad actor is very high.
  *      Don't know what they are up to, but we have sent them to prison, and disallow them from deleting their character
@@ -485,7 +489,7 @@ namespace Server.Misc
 
                     if (bDelete)
                     {
-                        Utility.ConsoleWriteLine(String.Format("Client: {0}: Deleting character {1} (name:{3}) (0x{2:X})", state, index, m.Serial.Value, m.Name), ConsoleColor.Yellow);
+                        Utility.ConsoleWriteLine(string.Format("Client: {0}: Deleting character {1} (name:{3}) (0x{2:X})", state, index, m.Serial.Value, m.Name), ConsoleColor.Yellow);
                         m.Delete();
                     }
 
@@ -556,7 +560,7 @@ namespace Server.Misc
                 {
                     acct.SetRawCredentials(dbAccount.Value.CryptPassword, dbAccount.Value.PlainPassword, dbAccount.Value.ResetPassword);
                     acct.HardwareHashRaw = dbAccount.Value.HardwareHash;
-                    acct.SyncHardwareHashAcquired(acct.HardwareHashRaw);
+                    acct.SetHardwareHashAcquired(acct.HardwareHashRaw);
                 }
                 else
                 {
@@ -614,6 +618,34 @@ namespace Server.Misc
 
             return grandfathered;
         }
+        private static string GetBestUNMatch(Account acct)
+        {   // unfortunately, SQLite database is case-sensitive.
+            // Example: Create the "Adam Ant" account. Next login is with "adam ant". SQLite won't recognize "adam ant"
+            // We will look for the best match here
+            string cryptPassword = acct.CryptPassword;
+
+            // first see if the remote database matches what's in our local database
+            AccountsDBEntry? dbAccount = AccountsDatabase.GetAccount(acct.Username);
+            if (dbAccount != null && dbAccount.Value.CryptPassword == cryptPassword)
+                return acct.Username;
+
+            // okay, try lowercase
+            dbAccount = AccountsDatabase.GetAccount(acct.Username.ToLower());
+            if (dbAccount != null && dbAccount.Value.CryptPassword == cryptPassword)
+                return acct.Username.ToLower();
+
+            // okay, try uppercase (unusual)
+            dbAccount = AccountsDatabase.GetAccount(acct.Username.ToUpper());
+            if (dbAccount != null && dbAccount.Value.CryptPassword == cryptPassword)
+                return acct.Username.ToUpper();
+
+            // okay, try camelcase 
+            dbAccount = AccountsDatabase.GetAccount(Utility.CamelCase(acct.Username.ToLower()));
+            if (dbAccount != null && dbAccount.Value.CryptPassword == cryptPassword)
+                return Utility.CamelCase(acct.Username.ToLower());
+
+            return acct.Username;
+        }
         public static void EventSink_AccountLogin(AccountLoginEventArgs e)
         {
             string un = e.Username;
@@ -634,6 +666,10 @@ namespace Server.Misc
             // does accounts.xml have an entry for this acct?
             Account acct = Accounts.GetAccount(un);
 
+            // unfortunately, SQLite database is case-sensitive. We will look for the best match
+            if (acct != null && Core.UseLoginDB)
+                un = GetBestUNMatch(acct);
+
             // if we have a preexisting SHARD account, and this is not MO or SP, allow it since we don't have working
             //  shard specific IPExceptions
             grandfathered = GrandfatheredAccount(acct != null);
@@ -652,7 +688,7 @@ namespace Server.Misc
                 {
                     if (!ok)
                     {
-                        Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Bad Comm '{1}'", e.State, un));
+                        Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Bad Comm '{1}'", e.State, un));
                         e.RejectReason = ALRReason.BadComm;
                         return;
                     }
@@ -670,24 +706,24 @@ namespace Server.Misc
 
                     if (!ok)
                     {
-                        Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Bad Comm '{1}'", e.State, un));
+                        Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Bad Comm '{1}'", e.State, un));
                         e.RejectReason = ALRReason.BadComm;
                     }
                 }
                 else
                 {
-                    Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Invalid username '{1}'", e.State, un));
+                    Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Invalid username '{1}'", e.State, un));
                     e.RejectReason = ALRReason.Invalid;
                 }
             }
 
             if (acct == null)
             {
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Failed '{1}': {2}", e.State, un, e.RejectReason));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Failed '{1}': {2}", e.State, un, e.RejectReason));
             }
             else if (!AccountConcurrentIPLimiter.IsOk(acct, ip))
             {
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Past IP limit threshold", e.State));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Past IP limit threshold", e.State));
                 // tell other accounts on this IP what's going on
                 AccountConcurrentIPLimiter.Notify(e.State.Address);
                 e.RejectReason = ALRReason.InUse;
@@ -696,9 +732,9 @@ namespace Server.Misc
             else if (!loginServer && !grandfathered && !AccountTotalIPLimiter.IsOk(acct, ip, ref count))
             {
 #if false
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Account '{1}' not created, ip already has {2} account{3}.", e.State, un, count, count == 1 ? "" : "s"));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Account '{1}' not created, ip already has {2} account{3}.", e.State, un, count, count == 1 ? "" : "s"));
 #else
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Account '{1}' blackholed, ip already has {2} account{3}.", e.State, un, count, count == 1 ? "" : "s"));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Account '{1}' blackholed, ip already has {2} account{3}.", e.State, un, count, count == 1 ? "" : "s"));
 #endif
                 // tell other accounts on this IP what's going on
                 AccountTotalIPLimiter.Notify(acct, ip, count);
@@ -709,7 +745,7 @@ namespace Server.Misc
             // don't check login server here as it's likely to have more accounts than allowed on any one shard
             else if (!loginServer && !grandfathered && !AccountHardwareLimiter.IsOk(acct))
             {   // full report already issued (IsOk()). See BlockedConnection.log
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Past machine limit threshold", e.State));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Past machine limit threshold", e.State));
 
                 // tell other accounts on this machine what's going on
                 AccountHardwareLimiter.Notify(acct);
@@ -718,22 +754,22 @@ namespace Server.Misc
             // don't check login server here as it needs to allow access to several shards
             else if (!loginServer && AccountConcurrentIPLimiter.IPStillHot(acct, e.State.Address))
             {
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Access denied for '{1}'. IP too hot", e.State, un));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Access denied for '{1}'. IP too hot", e.State, un));
                 e.RejectReason = ALRReason.InUse;
             }
             else if (!acct.HasAccess(e.State))
             {
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Access denied for '{1}'", e.State, un));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Access denied for '{1}'", e.State, un));
                 e.RejectReason = (m_LockdownLevel > AccessLevel.Player ? ALRReason.BadComm : ALRReason.BadPass);
             }
             else if (!acct.CheckPassword(pw))
             {
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Invalid password for '{1}'", e.State, un));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Invalid password for '{1}'", e.State, un));
                 e.RejectReason = ALRReason.BadPass;
             }
             else
             {   // all good. Setup the account, add the account to the Shard, and send new account email if appropriate
-                Utility.ConsoleWriteLine(String.Format("Login: {0}: Valid credentials for '{1}'", e.State, un), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("Login: {0}: Valid credentials for '{1}'", e.State, un), ConsoleColor.Yellow);
                 e.State.Account = acct;
                 e.Accepted = true;
 
@@ -745,7 +781,7 @@ namespace Server.Misc
 
                 if (Core.RuleSets.LoginServerRules())
                 {
-                    Utility.ConsoleWriteLine(String.Format("Login: {0}: LoginServer passing account '{1}' to game-server.", e.State, un), ConsoleColor.Yellow);
+                    Utility.ConsoleWriteLine(string.Format("Login: {0}: LoginServer passing account '{1}' to game-server.", e.State, un), ConsoleColor.Yellow);
                 }
                 else if (newShardAcct)
                 {
@@ -820,6 +856,10 @@ namespace Server.Misc
             // does accounts.xml have an entry for this acct?
             acct = Accounts.GetAccount(un);
 
+            // unfortunately, SQLite database is case-sensitive. We will look for the best match
+            if (acct != null && Core.UseLoginDB)
+                un = GetBestUNMatch(acct);
+
             // if we have a preexisting SHARD account, and this is NOT MO or SP, allow it since we don't have working
             //  shard specific IPExceptions
             grandfathered = GrandfatheredAccount(acct != null);
@@ -838,7 +878,7 @@ namespace Server.Misc
                 {
                     if (!ok)
                     {
-                        Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Bad Comm '{1}'", e.State, un));
+                        Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Bad Comm '{1}'", e.State, un));
                         e.RejectReason = ALRReason.BadComm;
                         return;
                     }
@@ -856,13 +896,13 @@ namespace Server.Misc
 
                     if (!e.Accepted)
                     {
-                        Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Bad Comm '{1}'", e.State, un));
+                        Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Bad Comm '{1}'", e.State, un));
                         e.RejectReason = ALRReason.BadComm;
                     }
                 }
                 else
                 {
-                    Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Invalid username '{1}'", e.State, un));
+                    Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Invalid username '{1}'", e.State, un));
                     e.RejectReason = ALRReason.Invalid;
                 }
             }
@@ -904,7 +944,7 @@ namespace Server.Misc
 
             if (acct == null)
             {
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Failed '{1}': {2}", e.State, un, e.RejectReason));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Failed '{1}': {2}", e.State, un, e.RejectReason));
             }
             #region Obsolete pre-login checks, now checked after login
             // 8/26/2023, Adam: We no longer use the invalid client check at login, but rather later after login
@@ -913,7 +953,7 @@ namespace Server.Misc
             else if (invalidClient)
             {
                 acct.InfractionStatus = Account.AccountInfraction.TorExitNode;
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Access denied for '{1}'. Invalid Client", e.State, un));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Access denied for '{1}'. Invalid Client", e.State, un));
                 //e.Accepted = false;
             }
             #endregion Obsolete pre-login checks, now checked after login
@@ -921,14 +961,14 @@ namespace Server.Misc
             {
                 acct.InfractionStatus = Account.AccountInfraction.concurrentIPLimiter;
                 e.RejectReason = ALRReason.InUse;
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Past IP limit threshold", e.State));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Past IP limit threshold", e.State));
                 // tell other accounts on this IP what's going on
                 AccountConcurrentIPLimiter.Notify(e.State.Address);
             }
             else if (!grandfathered && !accountTotalIPLimiter)
             {
                 acct.InfractionStatus = Account.AccountInfraction.totalIPLimiter;
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Account '{1}' blackholed, ip already has {2} account{3}.", e.State, un, count, count == 1 ? "" : "s"));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Account '{1}' blackholed, ip already has {2} account{3}.", e.State, un, count, count == 1 ? "" : "s"));
                 // tell other accounts on this IP what's going on
                 AccountTotalIPLimiter.Notify(acct, ip, count);
                 e.RejectReason = ALRReason.Blocked;
@@ -936,7 +976,7 @@ namespace Server.Misc
             else if (!grandfathered && !accountHardwareLimiter)
             {
                 acct.InfractionStatus = Account.AccountInfraction.totalHardwareLimiter;
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Past machine limit threshold", e.State));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Past machine limit threshold", e.State));
                 // tell other accounts on this machine what's going on
                 AccountHardwareLimiter.Notify(acct);
                 e.RejectReason = ALRReason.Blocked;
@@ -945,27 +985,27 @@ namespace Server.Misc
             else if (IPStillHot)
             {
                 acct.InfractionStatus = Account.AccountInfraction.IPStillHot;
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Access denied for '{1}'. IP too hot", e.State, un));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Access denied for '{1}'. IP too hot", e.State, un));
                 //e.Accepted = false;
             }
             else if (!hasAccess)
             {
                 acct.InfractionStatus = Account.AccountInfraction.hasAccess;
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Access denied for '{1}'", e.State, un));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Access denied for '{1}'", e.State, un));
                 e.RejectReason = (m_LockdownLevel > AccessLevel.Player ? ALRReason.BadComm : ALRReason.BadPass);
                 e.Accepted = false;
             }
             else if (!checkPassword)
             {
                 acct.InfractionStatus = Account.AccountInfraction.checkPassword;
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Invalid password for '{1}'", e.State, un));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Invalid password for '{1}'", e.State, un));
                 e.RejectReason = ALRReason.BadPass;
                 e.Accepted = false;
             }
             else if (banned)
             {
                 acct.InfractionStatus = Account.AccountInfraction.banned;
-                Server.Diagnostics.LogHelper.LogBlockedConnection(String.Format("Login: {0}: Banned account '{1}'", e.State, un));
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Banned account '{1}'", e.State, un));
                 e.RejectReason = ALRReason.Blocked;
                 e.Accepted = false;
             }
@@ -987,7 +1027,7 @@ namespace Server.Misc
             //  Their failed state will be picked up in PlayerMobile EventSink_Connected()
             if (acct != null && ContinueLogin)
             {
-                Utility.ConsoleWriteLine(String.Format("Login: {0}: Account '{1}' at character list", e.State, un), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("Login: {0}: Account '{1}' at character list", e.State, un), ConsoleColor.Yellow);
                 e.State.Account = acct;
                 acct.LogAccess(e.State);
                 acct.LastLogin = DateTime.UtcNow;
@@ -1104,7 +1144,7 @@ namespace Server.Misc
                 e.Username = clear_text_username;
                 e.Password = clear_text_password;
                 valid_client = true;
-                Utility.ConsoleWriteLine(String.Format("Login: {0}: Account '{1}' using older ClassicUO", e.State, e.Username), ConsoleColor.Red);
+                Utility.ConsoleWriteLine(string.Format("Login: {0}: Account '{1}' using older ClassicUO", e.State, e.Username), ConsoleColor.Red);
             }
 
         }

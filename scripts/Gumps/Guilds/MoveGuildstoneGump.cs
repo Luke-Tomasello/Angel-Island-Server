@@ -44,7 +44,7 @@ namespace Server.Gumps
 
             AddBackground(10, 10, 190, 140, 0x242C);
 
-            AddHtml(30, 30, 150, 75, String.Format("<div align=CENTER>{0}</div>", "Are you sure you want to re-deed this guildstone?"), false, false);
+            AddHtml(30, 30, 150, 75, string.Format("<div align=CENTER>{0}</div>", "Are you sure you want to re-deed this guildstone?"), false, false);
 
             AddButton(40, 105, 0x81A, 0x81B, 0x1, GumpButtonType.Reply, 0); // Okay
             AddButton(110, 105, 0x819, 0x818, 0x2, GumpButtonType.Reply, 0); // Cancel

@@ -42,7 +42,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{1}" : "{0} {1}", Amount, CraftResources.GetName(m_Resource).ToLower());
+                return string.Format(Amount == 1 ? "{1}" : "{0} {1}", Amount, CraftResources.GetName(m_Resource).ToLower());
             }
         }
 

@@ -1085,7 +1085,7 @@ namespace Server.Engines.CrownSterlingSystem
             from.PlaySound(0x5A7);
 
             LogHelper logger = new LogHelper("CrownSterlingPurchases.log", false, true);
-            logger.Log(LogType.Mobile, from, String.Format($"Purchased rare {toGive} (Label={reward.Label}) for {reward.Cost} Sterling."));
+            logger.Log(LogType.Mobile, from, string.Format($"Purchased rare {toGive} (Label={reward.Label}) for {reward.Cost} Sterling."));
             logger.Finish();
 
             return true;

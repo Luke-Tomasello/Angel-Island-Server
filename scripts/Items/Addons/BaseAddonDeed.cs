@@ -584,9 +584,9 @@ namespace Server.Items
             ItemData id = TileData.ItemTable[m_ComponentID & 0x3FFF];
 
             if (m_Facing >= Direction.North && m_Facing < Direction.Mask)
-                this.Name = String.Format("{0} ({1})", id.Name, m_Facing.ToString().ToLower());
+                this.Name = string.Format("{0} ({1})", id.Name, m_Facing.ToString().ToLower());
             else
-                this.Name = String.Format("{0}", id.Name);
+                this.Name = string.Format("{0}", id.Name);
         }
 
         [CommandProperty(AccessLevel.GameMaster)]

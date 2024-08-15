@@ -380,7 +380,7 @@ namespace Server.Engines.Invasion
 
             tier = system.GetTier(m_Kills);
 
-            PublicOverheadMessage(Network.MessageType.Regular, 0x3B2, false, String.Format("Kills: {0}, Tier: {1}", m_Kills, tier));
+            PublicOverheadMessage(Network.MessageType.Regular, 0x3B2, false, string.Format("Kills: {0}, Tier: {1}", m_Kills, tier));
 
             if (DateTime.UtcNow >= m_LastRespawn + m_RespawnDelay)
             {

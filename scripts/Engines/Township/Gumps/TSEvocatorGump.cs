@@ -61,12 +61,12 @@ namespace Server.Township
 
             if (!Core.RuleSets.SiegeRules())
             {
-                AddButton((int)Button.ToggleRecallIn, String.Format("{0} Recall In ({1} gp)", m_Stone.NoRecallInto ? "Enable" : "Disable", TownshipSettings.ChangeTravelCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader));
-                AddButton((int)Button.ToggleRecallOut, String.Format("{0} Recall Out ({1} gp)", m_Stone.NoRecallOut ? "Enable" : "Disable", TownshipSettings.ChangeTravelCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader));
+                AddButton((int)Button.ToggleRecallIn, string.Format("{0} Recall In ({1} gp)", m_Stone.NoRecallInto ? "Enable" : "Disable", TownshipSettings.ChangeTravelCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader));
+                AddButton((int)Button.ToggleRecallOut, string.Format("{0} Recall Out ({1} gp)", m_Stone.NoRecallOut ? "Enable" : "Disable", TownshipSettings.ChangeTravelCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader));
             }
 
-            AddButton((int)Button.ToggleGateIn, String.Format("{0} Gate In ({1} gp)", m_Stone.NoGateInto ? "Enable" : "Disable", TownshipSettings.ChangeTravelCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader));
-            AddButton((int)Button.ToggleGateOut, String.Format("{0} Gate Out ({1} gp)", m_Stone.NoGateOut ? "Enable" : "Disable", TownshipSettings.ChangeTravelCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader));
+            AddButton((int)Button.ToggleGateIn, string.Format("{0} Gate In ({1} gp)", m_Stone.NoGateInto ? "Enable" : "Disable", TownshipSettings.ChangeTravelCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader));
+            AddButton((int)Button.ToggleGateOut, string.Format("{0} Gate Out ({1} gp)", m_Stone.NoGateOut ? "Enable" : "Disable", TownshipSettings.ChangeTravelCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader));
 
             AddLine("Daily fees:");
 
@@ -168,7 +168,7 @@ namespace Server.Township
             m_Stone.LastTravelChange = DateTime.UtcNow;
             m_Stone.GoldHeld -= TownshipSettings.ChangeTravelCharge;
 
-            m_Stone.RecordWithdrawal(TownshipSettings.ChangeTravelCharge, String.Format("{0} changed {1} to {2}", from.Name, Utility.SplitCamelCase(travelRule.ToString()), disabled ? "disabled" : "enabled"));
+            m_Stone.RecordWithdrawal(TownshipSettings.ChangeTravelCharge, string.Format("{0} changed {1} to {2}", from.Name, Utility.SplitCamelCase(travelRule.ToString()), disabled ? "disabled" : "enabled"));
 
             from.SendMessage("You {0} {1}.", disabled ? "disabled" : "enabled", Utility.SplitCamelCase(travelRule.ToString()));
         }

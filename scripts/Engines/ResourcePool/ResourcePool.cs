@@ -373,10 +373,10 @@ namespace Server.Engines.ResourcePool
                         m_ValidFailsafe = bool.Parse(reader.ReadElementString("ValidFailsafe"));
 
                         if (m_Type == null)
-                            throw new Exception(String.Format("ResourcePool Error: Resource type \"{0}\" does not exist.", typeName));
+                            throw new Exception(string.Format("ResourcePool Error: Resource type \"{0}\" does not exist.", typeName));
 
                         if (m_Type.GetInterface("ICommodity", false) == null)
-                            throw new Exception(String.Format("ResourcePool Error: Resource type \"{0}\" does not implement \"ICommodity\".", typeName));
+                            throw new Exception(string.Format("ResourcePool Error: Resource type \"{0}\" does not implement \"ICommodity\".", typeName));
 
                         if (version >= 1)
                         {
@@ -511,7 +511,7 @@ namespace Server.Engines.ResourcePool
                         m_Message = reader.ReadElementString("Message");
 
                         if (m_Type == null)
-                            throw new Exception(String.Format("ResourcePool Error: Equivalent resource type \"{0}\" does not exist.", typeName));
+                            throw new Exception(string.Format("ResourcePool Error: Equivalent resource type \"{0}\" does not exist.", typeName));
 
                         break;
                     }
@@ -635,7 +635,7 @@ namespace Server.Engines.ResourcePool
             if (rd != null)
                 return rd.BunchName;
 
-            return String.Empty;
+            return string.Empty;
         }
 
         public static int GetTotalAmount(Type type)
@@ -719,7 +719,7 @@ namespace Server.Engines.ResourcePool
             string name;
 
             if (cd != null)
-                name = String.Format("Commodity Deed ({0})", rd.Name);
+                name = string.Format("Commodity Deed ({0})", rd.Name);
             else
                 name = rd.Name;
 
@@ -769,7 +769,7 @@ namespace Server.Engines.ResourcePool
                 salePrice *= er.PriceFactor;
                 toPool *= er.AmountFactor;
 
-                if (!String.IsNullOrEmpty(er.Message))
+                if (!string.IsNullOrEmpty(er.Message))
                     seller.SendMessage(er.Message);
             }
 
@@ -1286,7 +1286,7 @@ namespace Server.Engines.ResourcePool
 
             double avgPrice = totalPrice / totalAmount;
 
-            return String.Format("{0} at avg {1:F2} gp each", totalAmount, avgPrice);
+            return string.Format("{0} at avg {1:F2} gp each", totalAmount, avgPrice);
         }
         [CallPriority(1)]   // must come after the BaseVendor StandardPricing database is loaded
         public static void Configure()
@@ -1381,11 +1381,11 @@ namespace Server.Engines.ResourcePool
             int read = 0;
             if (File.Exists(fileName) == false || new FileInfo(fileName).Length == 0)
             {
-                Utility.ConsoleWriteLine(String.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
                 SaveConfig(fileName);
                 if (File.Exists(fileName) == false)
                 {
-                    Core.LoggerShortcuts.BootError(String.Format("Error while reading ResourcePool information from \"{0}\".", fileName));
+                    Core.LoggerShortcuts.BootError(string.Format("Error while reading ResourcePool information from \"{0}\".", fileName));
                     return 0;
                 }
             }
@@ -1451,15 +1451,15 @@ namespace Server.Engines.ResourcePool
                         Type type = Type.GetType(typeName);
 
                         if (redirectType == null)
-                            throw new Exception(String.Format("ResourcePool Error: Resource type \"{0}\" does not exist.", redirectTypeName));
+                            throw new Exception(string.Format("ResourcePool Error: Resource type \"{0}\" does not exist.", redirectTypeName));
 
                         if (type == null)
-                            throw new Exception(String.Format("ResourcePool Error: Equivalent resource type \"{0}\" does not exist.", typeName));
+                            throw new Exception(string.Format("ResourcePool Error: Equivalent resource type \"{0}\" does not exist.", typeName));
 
                         ResourceData rd = GetResource(redirectType);
 
                         if (rd == null)
-                            throw new Exception(String.Format("ResourcePool Error: Type \"{0}\" is not a pooled resource.", redirectTypeName));
+                            throw new Exception(string.Format("ResourcePool Error: Type \"{0}\" is not a pooled resource.", redirectTypeName));
 
                         rd.EquivalentResources.Add(new EquivalentResource(type, amountFactor, priceFactor, message));
 
@@ -1507,11 +1507,11 @@ namespace Server.Engines.ResourcePool
             int read = 0;
             if (File.Exists(fileName) == false || new FileInfo(fileName).Length == 0)
             {
-                Utility.ConsoleWriteLine(String.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
                 SaveConsignments(fileName);
                 if (File.Exists(fileName) == false)
                 {
-                    Core.LoggerShortcuts.BootError(String.Format("Error while reading ResourcePool information from \"{0}\".", fileName));
+                    Core.LoggerShortcuts.BootError(string.Format("Error while reading ResourcePool information from \"{0}\".", fileName));
                     return 0;
                 }
             }
@@ -1575,11 +1575,11 @@ namespace Server.Engines.ResourcePool
             //return;
             if (File.Exists(fileName) == false || new FileInfo(fileName).Length == 0)
             {
-                Utility.ConsoleWriteLine(String.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
                 SaveDebts(fileName);
                 if (File.Exists(fileName) == false)
                 {
-                    Core.LoggerShortcuts.BootError(String.Format("Error while reading ResourcePool information from \"{0}\".", fileName));
+                    Core.LoggerShortcuts.BootError(string.Format("Error while reading ResourcePool information from \"{0}\".", fileName));
                     return 0;
                 }
             }

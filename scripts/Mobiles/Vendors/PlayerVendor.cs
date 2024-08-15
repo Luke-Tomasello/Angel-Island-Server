@@ -728,7 +728,7 @@ namespace Server.Mobiles
                                 if (this.Owner != null)
                                     log.Log(LogType.Mobile, this.Owner, "Vendor owner");
                                 log.Log(LogType.Mobile, this, "Vendor");
-                                log.Log(LogType.Text, String.Format("Charging max fees against a total inventory worth of {0} gold", InventoryWorth));
+                                log.Log(LogType.Text, string.Format("Charging max fees against a total inventory worth of {0} gold", InventoryWorth));
                                 log.Finish();
                             }
                             catch (Exception ex) { LogHelper.LogException(ex); }
@@ -1127,7 +1127,7 @@ namespace Server.Mobiles
                     Multis.StaticHousing.StaticDeed sd = (Multis.StaticHousing.StaticDeed)item;
                     HouseBlueprint blueprint = StaticHouseHelper.GetBlueprint(sd.HouseID);
                     if (blueprint != null)
-                        defaultDescription = String.Concat("deed to a ", blueprint.Description);
+                        defaultDescription = string.Concat("deed to a ", blueprint.Description);
                 }
             }
 
@@ -1468,7 +1468,7 @@ namespace Server.Mobiles
 
                         // and tell them about it
                         if (price > 0)
-                            this.SayTo(from, String.Format("I must charge you {0} gold to restock that item.", (int)(price * Commission)));
+                            this.SayTo(from, string.Format("I must charge you {0} gold to restock that item.", (int)(price * Commission)));
                     }
                 }
                 else
@@ -1848,7 +1848,7 @@ namespace Server.Mobiles
                 if (this.Owner != null)
                     log.Log(LogType.Mobile, this.Owner, "Vendor owner");
                 log.Log(LogType.Mobile, this, "Vendor");
-                log.Log(LogType.Text, String.Format("Tried charging a negative amount of gold: {0}, reason: {1}", pay, reason));
+                log.Log(LogType.Text, string.Format("Tried charging a negative amount of gold: {0}, reason: {1}", pay, reason));
                 log.Finish();
                 return;
             }
@@ -1938,7 +1938,7 @@ namespace Server.Mobiles
             if (this.Owner != null)
                 log.Log(LogType.Mobile, this.Owner, "Vendor owner");
             log.Log(LogType.Mobile, this, "Vendor");
-            log.Log(LogType.Text, String.Format("Unable to pay the vendor charges. BankAccount={0}, HoldGold={1}, PricingModel={2}, ChargePerDay={3}", BankAccount, HoldGold, PricingModel, ChargePerDay));
+            log.Log(LogType.Text, string.Format("Unable to pay the vendor charges. BankAccount={0}, HoldGold={1}, PricingModel={2}, ChargePerDay={3}", BankAccount, HoldGold, PricingModel, ChargePerDay));
             log.Finish();
 
             Destroy(!BaseHouse.NewVendorSystem);

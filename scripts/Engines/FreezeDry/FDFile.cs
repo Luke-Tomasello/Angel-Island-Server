@@ -1075,7 +1075,7 @@ namespace Server.Commands
         {
             if (item == null)
                 return fail_message;
-            return String.Format("0x{0:X} \"{1}\"", item.Serial.Value, item.GetType().Name);
+            return string.Format("0x{0:X} \"{1}\"", item.Serial.Value, item.GetType().Name);
         }
         public static bool FDBackupInProgress = false;
         private static PropertyInfo FindInternalItemProperty(Item item, Item item_to_find, bool null_map = false)
@@ -2477,7 +2477,7 @@ namespace Server.Commands
                         int count = 0;
                         int subItems = 0;
                         LogHelper log = new LogHelper(fn + " LoadCont.log");
-                        log.Log(LogType.Text, String.Format("Reload process initiated by {0}, with {1} as backup data.", e.Mobile, fn));
+                        log.Log(LogType.Text, string.Format("Reload process initiated by {0}, with {1} as backup data.", e.Mobile, fn));
 
                         using (FileStream idxfs = new FileStream(folder + fn + ".idx", FileMode.Open, FileAccess.Read))
                         {
@@ -2492,7 +2492,7 @@ namespace Server.Commands
                                 else
                                 {
                                     ArrayList items = new ArrayList(count);
-                                    log.Log(LogType.Text, String.Format("Attempting to reload {0} items.", count));
+                                    log.Log(LogType.Text, string.Format("Attempting to reload {0} items.", count));
 
                                     Type[] ctortypes = new Type[] { typeof(Serial) };
                                     object[] ctorargs = new object[1];
@@ -2517,7 +2517,7 @@ namespace Server.Commands
                                         if (string.IsNullOrEmpty(type))
                                         {
                                             Console.WriteLine("Warning: Tried to load null type. Serial {0}. Ignoring item.", serial);
-                                            log.Log(String.Format("Warning: Tried to load null type. Serial {0}. Ignoring item.", serial));
+                                            log.Log(string.Format("Warning: Tried to load null type. Serial {0}. Ignoring item.", serial));
                                             System.Diagnostics.Debug.Assert(false);
                                             hardFails++;
                                             goto cleanup;
@@ -2527,7 +2527,7 @@ namespace Server.Commands
                                         if (t == null)
                                         {
                                             Console.WriteLine("Warning: Tried to load nonexistent type {0}. Ignoring item.", type);
-                                            log.Log(String.Format("Warning: Tried to load nonexistent type {0}. Ignoring item.", type));
+                                            log.Log(string.Format("Warning: Tried to load nonexistent type {0}. Ignoring item.", type));
                                             System.Diagnostics.Debug.Assert(false);
                                             hardFails++;
                                             goto cleanup;
@@ -2537,7 +2537,7 @@ namespace Server.Commands
                                         if (ctor == null)
                                         {
                                             Console.WriteLine("Warning: Tried to load type {0} which has no serialization constructor. Ignoring item.", type);
-                                            log.Log(String.Format("Warning: Tried to load type {0} which has no serialization constructor. Ignoring item.", type));
+                                            log.Log(string.Format("Warning: Tried to load type {0} which has no serialization constructor. Ignoring item.", type));
                                             System.Diagnostics.Debug.Assert(false);
                                             hardFails++;
                                             goto cleanup;
@@ -2554,7 +2554,7 @@ namespace Server.Commands
                                             LogHelper.LogException(ex);
                                             Console.WriteLine("An exception occurred while trying to invoke {0}'s serialization constructor.", t.FullName);
                                             Console.WriteLine(ex.ToString());
-                                            log.Log(String.Format("An exception occurred while trying to invoke {0}'s serialization constructor.", t.FullName));
+                                            log.Log(string.Format("An exception occurred while trying to invoke {0}'s serialization constructor.", t.FullName));
                                             log.Log(ex.ToString());
                                             hardFails++;
                                             goto cleanup;
@@ -2574,7 +2574,7 @@ namespace Server.Commands
                                             System.Diagnostics.Debug.Assert(World.FindItem(item.Serial) != null);
 
                                             items.Add(new object[] { item, position, length });
-                                            if (Verbose) log.Log(String.Format("Successfully created item {0}", item));
+                                            if (Verbose) log.Log(string.Format("Successfully created item {0}", item));
                                         }
                                         else
                                         {
@@ -2630,7 +2630,7 @@ namespace Server.Commands
                                                     item.UpdateTotals();
 
                                                 if (bin.Position != (position + length))
-                                                    throw new Exception(String.Format("Bad serialize on {0}", item));
+                                                    throw new Exception(string.Format("Bad serialize on {0}", item));
 
                                                 log.Log(LogType.Item, item, "Successfully loaded.");
                                                 loaded++;
@@ -2641,7 +2641,7 @@ namespace Server.Commands
                                                 Console.WriteLine("Caught exception while deserializing {0}:", item);
                                                 Console.WriteLine(ex.ToString());
                                                 Console.WriteLine("Deleting item.");
-                                                log.Log(String.Format("Caught exception while deserializing {0}:", item));
+                                                log.Log(string.Format("Caught exception while deserializing {0}:", item));
                                                 log.Log(ex.ToString());
                                                 log.Log("Deleting item.");
                                                 item.Delete();
@@ -2659,7 +2659,7 @@ namespace Server.Commands
                         if (Verbose || (count - loaded) > 0)
                             Console.WriteLine("Attempted to load {0} items: {1} loaded, {2} failed.", count, loaded, count - loaded);
                         if ((count - loaded) > 0)
-                            log.Log(String.Format("Attempted to load {0} items: {1} loaded, {2} failed.", count, loaded, count - loaded));
+                            log.Log(string.Format("Attempted to load {0} items: {1} loaded, {2} failed.", count, loaded, count - loaded));
                         if (Verbose || (count - loaded) > 0)
                             e.Mobile.SendMessage("Attempted to load {0} items: {1} loaded, {2} failed.", count, loaded, count - loaded);
                         log.Finish();
@@ -2683,7 +2683,7 @@ namespace Server.Commands
                 if (Verbose || (totalCount - totalLoaded) > 0)
                     Console.WriteLine("Attempted to load {0} items: {1} loaded, {2} failed, with {3} subItems and {4} hard failures.", totalCount, totalLoaded, totalCount - totalLoaded, NumItemsWSubItems, hardFails);
                 //if ((totalCount - totalLoaded) > 0)
-                //    log.Log(String.Format("Attempted to load {0} items: {1} loaded, {2} failed.", totalCount, totalLoaded, totalCount - totalLoaded));
+                //    log.Log(string.Format("Attempted to load {0} items: {1} loaded, {2} failed.", totalCount, totalLoaded, totalCount - totalLoaded));
                 if (Verbose || (totalCount - totalLoaded) > 0)
                     e.Mobile.SendMessage("Attempted to load {0} items: {1} loaded, {2} failed, with {3} subItems and {4} hard failures.", totalCount, totalLoaded, totalCount - totalLoaded, NumItemsWSubItems, hardFails);
             }

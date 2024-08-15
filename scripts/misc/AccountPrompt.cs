@@ -57,9 +57,13 @@ namespace Server.Misc
 
                             Account a = Accounts.AddAccount(username, password);
 
-                            a.AccessLevel = AccessLevel.Administrator;
-
-                            Console.WriteLine("Account created, continuing");
+                            // 8/10/2024: Adam, first account is Owner
+                            //a.AccessLevel = AccessLevel.Administrator;
+                            a.AccessLevelInternal = AccessLevel.Owner;
+                            if (a.AccessLevel == AccessLevel.Owner)
+                                Console.WriteLine("Owner account created, continuing");
+                            else
+                                Console.WriteLine("Administrator account created, continuing");
                         }
                         else
                         {

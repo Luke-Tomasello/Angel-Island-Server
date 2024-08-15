@@ -160,49 +160,49 @@ namespace Server.Items
                 switch (Utility.Random(15))
                 {
                     case 0:
-                        text = String.Format("Good job {0}.", from.Name);
+                        text = string.Format("Good job {0}.", from.Name);
                         break;
                     case 1:
-                        text = String.Format("Thank you for helping to keep our city clean.");
+                        text = string.Format("Thank you for helping to keep our city clean.");
                         break;
                     case 2:
-                        text = String.Format("Thank you {0} for helping to keep our city clean.", from.Name);
+                        text = string.Format("Thank you {0} for helping to keep our city clean.", from.Name);
                         break;
                     case 3:
-                        text = String.Format("Thank you!");
+                        text = string.Format("Thank you!");
                         break;
                     case 4:
-                        text = String.Format("Thank you {0}!", from.Name);
+                        text = string.Format("Thank you {0}!", from.Name);
                         break;
                     case 5:
-                        text = String.Format("Thank you, {0}, would you mind emptying that for me now?", from.Name);
+                        text = string.Format("Thank you, {0}, would you mind emptying that for me now?", from.Name);
                         break;
                     case 6:
-                        text = String.Format("Thank you, would you mind emptying that for me now?");
+                        text = string.Format("Thank you, would you mind emptying that for me now?");
                         break;
                     case 7:
-                        text = String.Format("{0}, What was that you just threw away?", from.Name);
+                        text = string.Format("{0}, What was that you just threw away?", from.Name);
                         break;
                     case 8:
-                        text = String.Format("What was that you just threw away?");
+                        text = string.Format("What was that you just threw away?");
                         break;
                     case 9:
-                        text = String.Format("That's a good place for that.");
+                        text = string.Format("That's a good place for that.");
                         break;
                     case 10:
-                        text = String.Format("That's a good place for that, {0}.", from.Name);
+                        text = string.Format("That's a good place for that, {0}.", from.Name);
                         break;
                     case 11:
-                        text = String.Format("Aw, I wanted that.");
+                        text = string.Format("Aw, I wanted that.");
                         break;
                     case 12:
-                        text = String.Format("Aw, I wanted that, {0}.", from.Name);
+                        text = string.Format("Aw, I wanted that, {0}.", from.Name);
                         break;
                     case 13:
-                        text = String.Format("Thank you for disposing of such a foul item. Many thanks.");
+                        text = string.Format("Thank you for disposing of such a foul item. Many thanks.");
                         break;
                     case 14:
-                        text = String.Format("Thank you for disposing of such a foul item. Many thanks, {0}.", from.Name);
+                        text = string.Format("Thank you for disposing of such a foul item. Many thanks, {0}.", from.Name);
                         break;
                 }
 

@@ -485,7 +485,7 @@ namespace Server.Engines.Breeding
                     (name.StartsWith("a ") && name.Length > 2) ||
                     (name.StartsWith("an ") && name.Length > 3)))
                 {
-                    return String.Format("{0} egg", name);
+                    return string.Format("{0} egg", name);
                 }
             }
 

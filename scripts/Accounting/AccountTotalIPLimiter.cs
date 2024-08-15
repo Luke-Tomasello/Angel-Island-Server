@@ -47,9 +47,9 @@ namespace Server.Misc
                     NetState compState = NetState.Instances[i];
                     if (ourAddress.Equals(compState.Address) && compState.Mobile != null)
 #if false
-                        compState.Mobile.SendMessage(0x35, String.Format("Login: {0}: Account '{1}' not created, ip already has {2} account{3}.", ourAddress, acct.Username, count, count == 1 ? "" : "s"));
+                        compState.Mobile.SendMessage(0x35, string.Format("Login: {0}: Account '{1}' not created, ip already has {2} account{3}.", ourAddress, acct.Username, count, count == 1 ? "" : "s"));
 #else
-                        compState.Mobile.SendMessage(0x35, String.Format("Login: {0}: Account '{1}' blackholed, ip already has {2} account{3}.", ourAddress, acct.Username, count, count == 1 ? "" : "s"));
+                        compState.Mobile.SendMessage(0x35, string.Format("Login: {0}: Account '{1}' blackholed, ip already has {2} account{3}.", ourAddress, acct.Username, count, count == 1 ? "" : "s"));
 #endif
                 }
         }

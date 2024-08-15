@@ -25,7 +25,7 @@
  *      Port to RunUO 2.6
  *	10/21/08, Adam
  *		Remove the following debug line:
- *		string message = String.Format("PooledEnumerable.Instantiate() called after the derived class was: {0}", e.Status.ToString());
+ *		string message = string.Format("PooledEnumerable.Instantiate() called after the derived class was: {0}", e.Status.ToString());
  *	10/9/08, Adam
  *		I don't believe we are suffering a memory leak from the PooledEnumerable Depth warning. My tests show that the memory is freed
  *			when the Dispose is called. We therefore replaced the Exception with a Console notification of the form:
@@ -502,7 +502,7 @@ namespace Server
 
 		public static Map Parse(string value)
 		{
-			if (String.IsNullOrWhiteSpace(value))
+			if (string.IsNullOrWhiteSpace(value))
 			{
 				return null;
 			}

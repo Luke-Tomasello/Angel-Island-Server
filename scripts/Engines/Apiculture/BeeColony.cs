@@ -307,7 +307,7 @@ namespace Server.Engines.Apiculture
         public void HiveMessage(Mobile from, string format, params object[] args)
         {
             if (m_Hive != null)
-                m_Hive.HiveMessage(from, String.Format(format, args));
+                m_Hive.HiveMessage(from, string.Format(format, args));
         }
 
         public void HiveMessage(Mobile from, int number, string args = "")

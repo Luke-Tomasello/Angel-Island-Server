@@ -169,13 +169,14 @@ namespace Server
     {
         public static bool Verbose = true;
 
-        private static string GetDatabasePath()
+        public static string GetDatabasePath(ref bool error)
         {
             string path = Environment.GetEnvironmentVariable("AI.FIREWALLDB");
 
-            if (String.IsNullOrWhiteSpace(path))
+            if (string.IsNullOrWhiteSpace(path))
                 path = @"C:\AIDB\firewalldb.db";
 
+            error = false;
             if (!File.Exists(path))
             {   // initialize database
                 string directory = Path.GetDirectoryName(path);
@@ -183,14 +184,21 @@ namespace Server
                     Directory.CreateDirectory(directory);
                 // this creates a zero-byte file
                 SQLiteConnection.CreateFile(path);
+
+                if (!File.Exists(path))
+                    error = true;
             }
+
+            if (!Core.UseLoginDB)
+                ;// why are we here?
 
             return path;
         }
 
         private static SQLiteConnection Connect()
         {
-            return new SQLiteConnection(String.Format("Data Source={0};Pooling=True;Max Pool Size=100;", GetDatabasePath()));
+            bool error = false;
+            return new SQLiteConnection(string.Format("Data Source={0};Pooling=True;Max Pool Size=100;", GetDatabasePath(ref error)));
         }
 
         private static void EnsureTable()

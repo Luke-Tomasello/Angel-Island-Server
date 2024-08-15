@@ -86,13 +86,13 @@ namespace Server.Misc
         {
             System.Reflection.Assembly m_Assembly = System.Reflection.Assembly.GetEntryAssembly();
             Version ver = m_Assembly.GetName().Version;
-            string version = string.Format("{0}.{1} [Build {2}] [.NET 6, 64 bit]", Utility.BuildMajor(), Utility.BuildMinor(), Utility.BuildBuild());
+            string version = string.Format("{0}.{1} [Build {2}] [.NET 8, 64 bit]", Utility.BuildMajor(), Utility.BuildMinor(), Utility.BuildBuild());
 
             if (TestCenter.Enabled && !Core.UOBETA_CFG)
             {
                 m_Messages = new string[]
                 {	// Test Center
-					String.Format("Welcome to {0} Test Center{1}",
+					string.Format("Welcome to {0} Test Center{1}",
                         Core.Server,
                         Core.UOEV_CFG ? " Event Shard." : "."),
                     string.Format("Angel Island core version {0}, launched March 2004.", version),
@@ -109,10 +109,20 @@ namespace Server.Misc
             }
             else
             {
-                if (TestCenter.Enabled && Core.UOBETA_CFG)
+                if (Core.Tribute_CFG)
+                    m_Messages = new string[]
+                        {	// Player Tribute Shard
+						string.Format("Welcome to the Player Tribute Shard"),
+                        string.Format("Angel Island core version {0}, launched March 2004.", version),
+                        "This shard brings back 5000 of the most recent players from the shards:",
+                        "Angel Island 3.0 (2016), Angel Island 7.0 (2024), and Siege Perilous 7.0 (2017).",
+                        "They're all here in Britain. Enjoy the trip down memory lane.",
+                        "-- Adam Ant"
+                        };
+                else if (TestCenter.Enabled && Core.UOBETA_CFG)
                     m_Messages = new string[]
                     {	// Angel Island
-						String.Format("Welcome to Angel Island {0}{1}", Core.UOBETA_CFG ? "BETA" : "Test Center", Core.UOEV_CFG ? " Event Shard." : "."),
+						string.Format("Welcome to Angel Island {0}{1}", Core.UOBETA_CFG ? "BETA" : "Test Center", Core.UOEV_CFG ? " Event Shard." : "."),
                         string.Format("Angel Island core version {0}, launched March 2004.", version),
                         "You can set your own skill/stats in BETA: 'set [name] [value]'. Example: 'set str 125'",
                         "Please see www.game-master.net for game-play information."
@@ -120,14 +130,14 @@ namespace Server.Misc
                 else if (Core.RuleSets.AngelIslandRules())
                     m_Messages = new string[]
                     {	// Angel Island
-						String.Format("Welcome to Angel Island{0}", Core.UOEV_CFG ? " Event Shard." : "."),
+						string.Format("Welcome to Angel Island{0}", Core.UOEV_CFG ? " Event Shard." : "."),
                         string.Format("Angel Island core version {0}, launched March 2004.", version),
                         "Please see www.game-master.net for game-play information."
                     };
                 else if (Core.RuleSets.SiegeRules())
                     m_Messages = new string[]
                     {	// Siege Perilous
-						String.Format("Welcome to Siege Perilous{0}", Core.UOEV_CFG ? " Event Shard." : "."),
+						string.Format("Welcome to Siege Perilous{0}", Core.UOEV_CFG ? " Event Shard." : "."),
                         Core.ReleasePhase < ReleasePhase.Production ? "Version: " +
                         Utility.GetCustomEnumNames(typeof(ReleasePhase))[(int)Core.ReleasePhase] : "",
                         Core.ReleasePhase < ReleasePhase.Production ? "This Server will be wiped." : "",
@@ -137,7 +147,7 @@ namespace Server.Misc
                 else if (Core.RuleSets.RenaissanceRules())
                     m_Messages = new string[]
                     {	// Renaissance
-						String.Format("Welcome to Renaissance{0}", Core.UOEV_CFG ? " Event Shard." : "."),
+						string.Format("Welcome to Renaissance{0}", Core.UOEV_CFG ? " Event Shard." : "."),
                         Core.ReleasePhase < ReleasePhase.Production ? "Version: " +
                         Utility.GetCustomEnumNames(typeof(ReleasePhase))[(int)Core.ReleasePhase] : "",
                         Core.ReleasePhase < ReleasePhase.Production ? "This Server will be wiped." : "",
@@ -147,7 +157,7 @@ namespace Server.Misc
                 else if (Core.RuleSets.MortalisRules())
                     m_Messages = new string[]
                     {	// Mortalis
-						String.Format("Welcome to Mortalis{0}", Core.UOEV_CFG ? " Event Shard." : "."),
+						string.Format("Welcome to Mortalis{0}", Core.UOEV_CFG ? " Event Shard." : "."),
                         Core.ReleasePhase < ReleasePhase.Production ? "Version: " +
                         Utility.GetCustomEnumNames(typeof(ReleasePhase))[(int)Core.ReleasePhase] : "",
                         Core.ReleasePhase < ReleasePhase.Production ? "This Server will be wiped." : "",
@@ -160,7 +170,7 @@ namespace Server.Misc
                 else if (Core.RuleSets.LoginServerRules())
                     m_Messages = new string[]
                     {	// Login Server
-						String.Format("Welcome to Login Server{0}", Core.UOEV_CFG ? " Event Shard." : "."),
+						string.Format("Welcome to Login Server{0}", Core.UOEV_CFG ? " Event Shard." : "."),
                         string.Format("Angel Island core version {0}, launched March 2004.", version)
                     };
                 else

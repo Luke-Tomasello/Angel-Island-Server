@@ -58,7 +58,7 @@ namespace Server.Township
             AddBackground(0, 0, 270, height, 5054);
             AddBackground(10, 10, 250, height - 20, 3000);
 
-            AddHtml(20, 15, 250, 20, String.Format("Manage {0} {1}", m_NPC.Name, m_NPC.Title), false, false);
+            AddHtml(20, 15, 250, 20, string.Format("Manage {0} {1}", m_NPC.Name, m_NPC.Title), false, false);
 
             AddButtonLabeled(20, 50, 1, "Move");
             AddButtonLabeled(20, 80, 2, "Bring To Home");

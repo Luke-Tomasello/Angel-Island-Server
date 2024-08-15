@@ -127,8 +127,8 @@ namespace Server.Items.Triggers
             if (toGive == null)
                 return;
 
-            LogHelper logger = new LogHelper(String.Format("ItemDispenser.log"), true, true, true);
-            logger.Log(String.Format("Successfully created item {0} for {1}", toGive, from));
+            LogHelper logger = new LogHelper(string.Format("ItemDispenser.log"), true, true, true);
+            logger.Log(string.Format("Successfully created item {0} for {1}", toGive, from));
             logger.Finish();
 
             switch (m_SpawnWhere)

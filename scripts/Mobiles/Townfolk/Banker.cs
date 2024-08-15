@@ -889,7 +889,7 @@ namespace Server.Mobiles
         }
         private static void BankingRecorder(string format, ConsoleColor color, params object[] args)
         {
-            BankingRecorder(String.Format(format, args), color);
+            BankingRecorder(string.Format(format, args), color);
         }
         private static void CallBankRT(BankRT state, string text, int data)
         {

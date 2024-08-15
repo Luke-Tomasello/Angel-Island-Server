@@ -58,10 +58,10 @@ namespace Server.Misc
 
             if (Core.UOTC_CFG && m.AccessLevel == AccessLevel.Player)
             {   // if we're on a test center server, send a detailed message to the player telling what flavor of test center they are on
-                //m.SendMessage(String.Format("Welcome to {0} Test Center{1}", Core.Server, Core.UOEV ? " Event Shard." : "."));
+                //m.SendMessage(string.Format("Welcome to {0} Test Center{1}", Core.Server, Core.UOEV ? " Event Shard." : "."));
                 // 6/25/2021, Adam: Seems reduntant with the WelcomeTimer
                 // revisit this when we have time.
-                //m.SendMessage(String.Format("Welcome to {0}{1}{2}.", Core.Server, Core.UOTC ? " Test Center" : "", Core.UOEV ? " Event Shard" : ""));
+                //m.SendMessage(string.Format("Welcome to {0}{1}{2}.", Core.Server, Core.UOTC ? " Test Center" : "", Core.UOEV ? " Event Shard" : ""));
             }
             else if (Core.RuleSets.SiegeRules() && m.AccessLevel == AccessLevel.Player)
             {   // regular player on siege

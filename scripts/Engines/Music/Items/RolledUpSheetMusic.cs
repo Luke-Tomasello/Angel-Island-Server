@@ -255,7 +255,7 @@ namespace Server.Misc
                 case 0:
                     {
                         if (version <= 3)
-                            writer.Write(String.Empty);     // m_author_obsolete
+                            writer.Write(string.Empty);     // m_author_obsolete
                         writer.Write(m_title);
                         writer.Write(m_composition);
                         break;

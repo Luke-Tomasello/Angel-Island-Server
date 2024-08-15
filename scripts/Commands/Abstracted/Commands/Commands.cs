@@ -159,7 +159,7 @@ namespace Server.Commands
             if (list.Count == 1)
                 AddResponse("There is one matching object.");
             else
-                AddResponse(String.Format("There are {0} matching objects.", list.Count));
+                AddResponse(string.Format("There are {0} matching objects.", list.Count));
         }
     }
 
@@ -214,7 +214,7 @@ namespace Server.Commands
 
                         CommandLogging.WriteLine(from, "{0} {1} requesting to open web browser of {2} to {3}", from.AccessLevel, CommandLogging.Format(from), CommandLogging.Format(mob), url);
                         AddResponse("Awaiting user confirmation...");
-                        mob.SendGump(new WarningGump(1060637, 30720, String.Format("A game master is requesting to open your web browser to the following URL:<br>{0}", url), 0xFFC000, 320, 240, new WarningGumpCallback(OpenBrowser_Callback), new object[] { from, url }));
+                        mob.SendGump(new WarningGump(1060637, 30720, string.Format("A game master is requesting to open your web browser to the following URL:<br>{0}", url), 0xFFC000, 320, 240, new WarningGumpCallback(OpenBrowser_Callback), new object[] { from, url }));
                     }
                 }
                 else
@@ -639,9 +639,9 @@ namespace Server.Commands
                 Type type = obj.GetType();
 
                 if (type.DeclaringType == null)
-                    AddResponse(String.Format("The type of that object is {0}.", type.Name));
+                    AddResponse(string.Format("The type of that object is {0}.", type.Name));
                 else
-                    AddResponse(String.Format("The type of that object is {0}.", type.FullName));
+                    AddResponse(string.Format("The type of that object is {0}.", type.FullName));
             }
         }
     }
@@ -692,7 +692,7 @@ namespace Server.Commands
 
         public override void Execute(CommandEventArgs e, object obj)
         {
-            string result = String.Empty;
+            string result = string.Empty;
             if (e.Length == 1)
             {
                 result = Properties.GetValue(e.Mobile, obj, e.GetString(0));
@@ -747,7 +747,7 @@ namespace Server.Commands
             Commands = new string[] { command };
             ObjectTypes = objects;
             Usage = command;
-            Description = String.Format("Sets the {0} property to {1}.", name, value);
+            Description = string.Format("Sets the {0} property to {1}.", name, value);
         }
 
         public override void Execute(CommandEventArgs e, object obj)
@@ -891,7 +891,7 @@ namespace Server.Commands
         {
             if (list.Count > 1)
             {
-                e.Mobile.SendGump(new WarningGump(1060637, 30720, String.Format("You are about to delete {0} objects. This cannot be undone without a full server revert.<br><br>Continue?", list.Count), 0xFFC000, 420, 280, new WarningGumpCallback(OnConfirmCallback), new object[] { e, list }));
+                e.Mobile.SendGump(new WarningGump(1060637, 30720, string.Format("You are about to delete {0} objects. This cannot be undone without a full server revert.<br><br>Continue?", list.Count), 0xFFC000, 420, 280, new WarningGumpCallback(OnConfirmCallback), new object[] { e, list }));
                 AddResponse("Awaiting confirmation...");
             }
             else
@@ -1152,7 +1152,7 @@ namespace Server.Commands
 
                         targ.Say("I've been {0}!", m_Ban ? "banned" : "kicked");
 
-                        AddResponse(String.Format("They have been {0}.", m_Ban ? "banned" : "kicked"));
+                        AddResponse(string.Format("They have been {0}.", m_Ban ? "banned" : "kicked"));
 
                         targState.Dispose();
 

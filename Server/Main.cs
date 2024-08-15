@@ -19,6 +19,16 @@
  *
  ***************************************************************************/
 
+/* Server\Main.cs
+ * ChangeLog:
+ *  8/15/2024, Adam
+ *      When using the remote database, verify connectivity during server up.
+ *      Issue errors, and inform the user what has happened.
+ *  8/13/2024, Adam
+ *      Add a notion of BuildInfoDir. This directory contains the "build.info" file
+ */
+
+using Server.Accounting;
 using Server.Diagnostics;
 using Server.Items;
 using Server.Misc;
@@ -32,6 +42,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Server
 {
@@ -239,7 +250,7 @@ namespace Server
 
         public static string FindDataFile(string format, params object[] args)
         {
-            return FindDataFile(String.Format(format, args));
+            return FindDataFile(string.Format(format, args));
         }
         #region Expansions
 
@@ -528,6 +539,7 @@ namespace Server
         private static bool m_UOEV_CFG;                     // Event Shard
         private static bool m_USERP_CFG = true;             // Use Resource Pool. Default to 'true'
         private static bool m_SiegeII_CFG;                  // SiegeII developer switch
+        private static bool m_Tribute_CFG;                  // Special player tribute shard
         #endregion server configurations
 
         #region Rule Sets
@@ -706,6 +718,10 @@ namespace Server
             public static bool TestCenterRules()
             {
                 return UOTC_CFG;
+            }
+            public static bool EventShardRules()
+            {
+                return UOEV_CFG;
             }
             public static bool PackUpStructureRules()
             {
@@ -1073,6 +1089,13 @@ namespace Server
                 return m_SiegeII_CFG;
             }
         }
+        public static bool Tribute_CFG
+        {
+            get
+            {   // tribute shard is run under the EV port number
+                return m_Tribute_CFG && m_UOEV_CFG;
+            }
+        }
         public static bool UOBETA_CFG
         {
             get
@@ -1355,6 +1378,8 @@ namespace Server
                     m_UOTC_CFG = true;
                 else if (Insensitive.Equals(args[i], "-uos2"))
                     m_SiegeII_CFG = true;
+                else if (Insensitive.Equals(args[i], "-uopt"))
+                    m_Tribute_CFG = true;
                 else if (Insensitive.Equals(args[i], "-uols"))
                     RuleSets.UOLS_SVR = true;
                 else if (Insensitive.Equals(args[i], "-uois"))
@@ -1489,7 +1514,7 @@ namespace Server
             }
             catch (Exception ex)
             {
-                Core.LoggerShortcuts.BootError(String.Format("Configuration error \"{0}\" is missing or cannot be loaded.", "zlib"));
+                Core.LoggerShortcuts.BootError(string.Format("Configuration error \"{0}\" is missing or cannot be loaded.", "zlib"));
             }
 
             state = zlib_loaded;
@@ -1502,6 +1527,13 @@ namespace Server
                 Utility.ConsoleWriteLine("[Some or all of the required Email environment variables are not set.]", ConsoleColorWarning());
             #endregion Email
 
+            #region BuildInfo 
+            if (BuildInfoCheck() == true)
+                Utility.ConsoleWriteLine($"[Reading build.info from {Utility.GetShortPath(BuildInfoDir, raw: true)}.]", ConsoleColorInformational());
+            else
+                Utility.ConsoleWriteLine($"[Reading build.info from default location {BuildInfoDir}.]", ConsoleColorWarning());
+            #endregion BuildInfo
+
             #region GeoIP
             if (GeoIPCheck() == true)
                 Utility.ConsoleWriteLine("[Geo IP Configured.]", ConsoleColorInformational());
@@ -1511,10 +1543,52 @@ namespace Server
 
             #region Boot Errors
             if (Directory.Exists(Path.Combine(Core.DataDirectory)) == false)
-                Core.LoggerShortcuts.BootError(String.Format("Configuration error \"{0}\" is missing.", Core.DataDirectory));
+                Core.LoggerShortcuts.BootError(string.Format("Configuration error \"{0}\" is missing.", Core.DataDirectory));
 
-            if (File.Exists(Path.Combine(Core.BaseDirectory, "Build.info")) == false)
-                Core.LoggerShortcuts.BootError(String.Format("Configuration error \"{0}\" is missing.", Path.Combine(Core.BaseDirectory, "Build.info")));
+            if (File.Exists(Path.Combine(Core.BuildInfoDir, "Build.info")) == false)
+                Core.LoggerShortcuts.BootError(string.Format("Configuration error \"{0}\" is missing.", Path.Combine(Core.BuildInfoDir, "Build.info")));
+
+            if (m_useLoginDB)
+            {
+                bool adError = false;
+                bool ipeError = false;
+                bool fwError = false;
+                string adPath = AccountsDatabase.GetDatabasePath(ref adError);
+                string ipePath = IPExceptionDatabase.GetDatabasePath(ref ipeError);
+                string fwPath = FirewallDatabase.GetDatabasePath(ref fwError);
+                if (adError || ipeError || fwError)
+                {
+                    if (adError)
+                        Console.WriteLine($"Unable to create {adPath}");
+
+                    if (ipeError)
+                        Console.WriteLine($"Unable to create {ipePath}");
+
+                    if (fwError)
+                        Utility.ConsoleWriteLine($"Unable to create {fwPath}", ConsoleColor.Red);
+
+                    Utility.ConsoleWriteLine($"Use the following environment variables to relocate the database(s)", ConsoleColor.Yellow);
+                    Utility.ConsoleWriteLine("AI.IPEXCEPTIONDB, AI.FIREWALLDB, AI.LOGINDB", ConsoleColor.Yellow);
+
+                    while (true)
+                    {
+                        Utility.ConsoleWriteLine("Insufficient privileges to create one or more databases.", ConsoleColor.Yellow);
+                        Utility.ConsoleWriteLine("Press 'c' to continue without axillary database support, or 'q' to quit.", ConsoleColor.Yellow);
+
+                        string input = Console.ReadLine().ToLower();
+                        if (input.StartsWith("c"))
+                        {
+                            m_useLoginDB = false;
+                            break;
+                        }
+                        else if (input.StartsWith("q"))
+                        {
+                            return;
+                        }
+                    }
+                }
+            }
+
             #endregion Boot Errors
 #if DEBUG
             Utility.ConsoleWriteLine("[Debug Build Enabled]", ConsoleColorInformational());
@@ -1679,6 +1753,22 @@ namespace Server
         {
             object[] aState = (object[])state;
             Utility.ConsoleWriteLine("Timers initialized", ConsoleColor.Green);
+        }
+        public static string BuildInfoDir
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AI.BuildInfoDir")))
+                    return Environment.GetEnvironmentVariable("AI.BuildInfoDir");
+                return "./";
+            }
+        }
+        public static bool BuildInfoCheck()
+        {
+            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AI.BuildInfoDir")))
+                return true;
+            else
+                return false;
         }
         public static bool EmailCheck()
         {
@@ -1984,7 +2074,7 @@ namespace Server
 
         public override void WriteLine(string line, params object[] args)
         {
-            WriteLine(String.Format(line, args));
+            WriteLine(string.Format(line, args));
         }
 
         public override System.Text.Encoding Encoding

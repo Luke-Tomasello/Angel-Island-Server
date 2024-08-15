@@ -372,7 +372,7 @@ namespace Server.Mobiles
 
             stone.GoldHeld -= charge;
 
-            stone.RecordWithdrawal(charge, String.Format("{0} purchased {1} NPC", from.Name, GetNPCName(type)));
+            stone.RecordWithdrawal(charge, string.Format("{0} purchased {1} NPC", from.Name, GetNPCName(type)));
         }
 
         public static void PurchaseDeed(TownshipStone stone, Mobile from, Type type)
@@ -401,7 +401,7 @@ namespace Server.Mobiles
 
             stone.GoldHeld -= charge;
 
-            stone.RecordWithdrawal(charge, String.Format("{0} purchased {1} deed", from.Name, GetNPCName(type)));
+            stone.RecordWithdrawal(charge, string.Format("{0} purchased {1} deed", from.Name, GetNPCName(type)));
 
             from.SendMessage("A {0} deed has been placed in your backpack.", GetNPCName(type));
         }
@@ -2149,7 +2149,7 @@ namespace Server.Mobiles
 
             m_Enemies.Remember(m, REPORT_INTERVAL);
 
-            tsr.TStone.SendMessage(String.Format("{0} {1} reports that an enemy named {2} has been spotted near {3}.", Name, Title, m.Name, m.Location));
+            tsr.TStone.SendMessage(string.Format("{0} {1} reports that an enemy named {2} has been spotted near {3}.", Name, Title, m.Name, m.Location));
         }
 
         #endregion

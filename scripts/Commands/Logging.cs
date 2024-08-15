@@ -69,19 +69,19 @@ namespace Server.Commands
             {
                 string where = Core.Server + ", " + ((pm.Map != null) ? pm.Map.ToString() : "null map");
                 string acct = (pm.Account != null) ? ((Account)pm.Account).Username : "(no account)";
-                string result = String.Format($"{where}[({pm}, acct: '{acct}') {pm.Location}]");
+                string result = string.Format($"{where}[({pm}, acct: '{acct}') {pm.Location}]");
                 return result;
             }
             else if (o is Mobile m)
             {
                 string where = Core.Server + ", " + ((m.Map != null) ? m.Map.ToString() : "null map");
                 string what = m.GetType().Name;
-                string result = String.Format($"{where}[({m}, what: '{what}') {m.Location}]");
+                string result = string.Format($"{where}[({m}, what: '{what}') {m.Location}]");
                 return result;
             }
             else if (o is Item item)
             {
-                return String.Format("0x{0:X} ({1})", item.Serial.Value, item.GetType().Name);
+                return string.Format("0x{0:X} ({1})", item.Serial.Value, item.GetType().Name);
             }
 
             return o;
@@ -98,7 +98,7 @@ namespace Server.Commands
                 if (!Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
 
-                m_Output = new StreamWriter(Path.Combine(directory, String.Format("{0}.log", DateTime.UtcNow.ToLongDateString())), true);
+                m_Output = new StreamWriter(Path.Combine(directory, string.Format("{0}.log", DateTime.UtcNow.ToLongDateString())), true);
                 m_Output.AutoFlush = true;
                 m_Output.WriteLine("##############################");
                 m_Output.WriteLine("Log started on {0}", DateTime.UtcNow);
@@ -121,7 +121,7 @@ namespace Server.Commands
 
         public static void WriteLine(Mobile from, string format, params object[] args)
         {
-            WriteLine(from, String.Format(format, args));
+            WriteLine(from, string.Format(format, args));
         }
         public class LineInfo
         {
@@ -170,7 +170,7 @@ namespace Server.Commands
                     AppendPath(ref path, "Logs");
                     AppendPath(ref path, "Commands");
                     AppendPath(ref path, from.AccessLevel.ToString());
-                    path = Path.Combine(path, String.Format("{0}.log", Utility.ValidFileName(from.ToString())));
+                    path = Path.Combine(path, string.Format("{0}.log", Utility.ValidFileName(from.ToString())));
 
                     using (StreamWriter sw = new StreamWriter(path, true))
                     {

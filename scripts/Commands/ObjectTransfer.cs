@@ -41,7 +41,7 @@ namespace Server.Commands
 
             LogHelper logger = new LogHelper("ObjectTransfer.log");
 
-            logger.Log(LogType.Text, String.Format("Exporting objects to {0}.", filename));
+            logger.Log(LogType.Text, string.Format("Exporting objects to {0}.", filename));
 
             FileStream idxStream = null;
             FileStream binStream = null;
@@ -60,7 +60,7 @@ namespace Server.Commands
 
                     foreach (IEntity ent in ents)
                     {
-                        logger.Log(LogType.Text, String.Format("Writing {0:X6} of type {1}.", ent.Serial, ent.GetType().FullName));
+                        logger.Log(LogType.Text, string.Format("Writing {0:X6} of type {1}.", ent.Serial, ent.GetType().FullName));
 
                         long start = binWriter.Position;
 
@@ -81,11 +81,11 @@ namespace Server.Commands
                     binWriter.Close();
                 }
 
-                message = String.Format("Successfully exported {0} objects to {1}.", ents.Length, filename);
+                message = string.Format("Successfully exported {0} objects to {1}.", ents.Length, filename);
             }
             catch (Exception ex)
             {
-                message = String.Format("An error occurred: {0}", ex.ToString());
+                message = string.Format("An error occurred: {0}", ex.ToString());
             }
             finally
             {
@@ -114,7 +114,7 @@ namespace Server.Commands
 
             LogHelper logger = new LogHelper("ObjectTransfer.log");
 
-            logger.Log(LogType.Text, String.Format("Importing objects from {0}.", filename));
+            logger.Log(LogType.Text, string.Format("Importing objects from {0}.", filename));
 
             ImportResult[] imported = new ImportResult[0];
             int count = 0;
@@ -159,7 +159,7 @@ namespace Server.Commands
                         }
                         else
                         {
-                            logger.Log(LogType.Text, String.Format("Invalid type: {0}.", typeName));
+                            logger.Log(LogType.Text, string.Format("Invalid type: {0}.", typeName));
                             continue;
                         }
 
@@ -167,7 +167,7 @@ namespace Server.Commands
 
                         if (ctor == null)
                         {
-                            logger.Log(LogType.Text, String.Format("Type {0} has no serialization constructor.", typeName));
+                            logger.Log(LogType.Text, string.Format("Type {0} has no serialization constructor.", typeName));
                             continue;
                         }
 
@@ -175,11 +175,11 @@ namespace Server.Commands
 
                         if (ent == null)
                         {
-                            logger.Log(LogType.Text, String.Format("Failed to construct object of type: {0}.", typeName));
+                            logger.Log(LogType.Text, string.Format("Failed to construct object of type: {0}.", typeName));
                             continue;
                         }
 
-                        logger.Log(LogType.Text, String.Format("Constructed {0:X6} of type {1} (old serial: {2:X6}).", serial, typeName, oldSerial));
+                        logger.Log(LogType.Text, string.Format("Constructed {0:X6} of type {1} (old serial: {2:X6}).", serial, typeName, oldSerial));
 
                         if (ent is Mobile)
                             World.AddMobile((Mobile)ent);
@@ -203,7 +203,7 @@ namespace Server.Commands
                         if (ent == null)
                             continue;
 
-                        logger.Log(LogType.Text, String.Format("Deserializing {0:X6}.", ent.Serial));
+                        logger.Log(LogType.Text, string.Format("Deserializing {0:X6}.", ent.Serial));
 
                         binStream.Seek(start, SeekOrigin.Begin);
 
@@ -216,11 +216,11 @@ namespace Server.Commands
                     }
                 }
 
-                message = String.Format("Successfully imported {0} objects from {1}.", count, filename);
+                message = string.Format("Successfully imported {0} objects from {1}.", count, filename);
             }
             catch (Exception ex)
             {
-                message = String.Format("An error occurred: {0}", ex.ToString());
+                message = string.Format("An error occurred: {0}", ex.ToString());
             }
             finally
             {
@@ -269,12 +269,12 @@ namespace Server.Commands
 
         private static string GetIdxFilename(string name)
         {
-            return String.Concat(name, ".idx");
+            return string.Concat(name, ".idx");
         }
 
         private static string GetBinFilename(string name)
         {
-            return String.Concat(name, ".bin");
+            return string.Concat(name, ".bin");
         }
 
         public struct ImportResult

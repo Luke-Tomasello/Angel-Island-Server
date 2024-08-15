@@ -483,7 +483,7 @@ namespace Server.Items
             if (RootParent is Mobile)
             {
                 if (RootParent is PlayerMobile)
-                    ((Mobile)RootParent).SendMessage(TextHue, String.Format("(crystal) {0}", text));
+                    ((Mobile)RootParent).SendMessage(TextHue, string.Format("(crystal) {0}", text));
                 else ((Mobile)RootParent).Say(text); // Pack animal
             }
             else if (Parent == null)

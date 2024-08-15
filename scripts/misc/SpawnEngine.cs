@@ -70,7 +70,7 @@ namespace Server
 
         public static IEntity BuildInternal(string spawnName, ref string reason)
         {
-            if (String.IsNullOrEmpty(spawnName))
+            if (string.IsNullOrEmpty(spawnName))
             {
                 reason = "Invalid spawn name";
                 return null;
@@ -251,7 +251,7 @@ namespace Server
 
         public static Type ParseType(string spawnName)
         {
-            if (String.IsNullOrEmpty(spawnName))
+            if (string.IsNullOrEmpty(spawnName))
                 return null;
 
             int argsIndex = spawnName.IndexOf(' ');

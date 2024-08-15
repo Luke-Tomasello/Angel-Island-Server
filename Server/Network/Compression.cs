@@ -19,10 +19,10 @@
  *
  ***************************************************************************/
 
-/* Scripts/Engines/RemoteAdmin/Network.cs
+/* Server\Network\Compression.cs
  * Changelog:
  * 10/27/22, Adam
- *      the #if'ed out bit does work on RunUP 2.6, I'm guessing it's due
+ *      the #if'ed out bit does work on RunUO 2.6, I'm guessing it's due
  *      to the framework they use (4). On our framework, if this is the issue-
  *      the explicit CallingConvention declaration is required.
  * 12/3/21: RunUO's crap never worked! Notes (1), (2), and (3)
@@ -322,7 +322,7 @@ namespace Server.Network
         internal class SafeNativeMethods
         {
             /*
-             * the #if'ed out bit does work on RunUP 2.6, I'm guessing it's due
+             * the #if'ed out bit does work on RunUO 2.6, I'm guessing it's due
              * to the framework they use (4). On our framework, if this is the issue-
              * the explicit CallingConvention declaration is required. 
              */

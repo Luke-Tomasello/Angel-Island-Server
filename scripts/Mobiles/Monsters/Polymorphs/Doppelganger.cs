@@ -101,8 +101,8 @@ namespace Server.Mobiles
                     m_to.Name = m_from.Name;
                     m_to.Hue = m_from.Hue;
                     m_to.Body = (m_from.Female) ? 401 : 400;    // get the correct body
-                    m_to.Female = m_from.Female;                // get the correct death sound
-                    m_to.Title = m_from.Title;                  // get the correct death sound
+                    m_to.Female = m_from.Female;                // get the correct sex
+                    m_to.Title = m_from.Title;                  // get the title
                 }
                 else
                 {

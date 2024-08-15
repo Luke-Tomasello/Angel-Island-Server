@@ -475,13 +475,15 @@ namespace Server
 
                 //patches += PatchV108(m_PatchID++); // Retirement - boot all staff
 
+                patches += PatchV109(m_PatchID++);
+
                 #endregion NEW PATCHER
 
                 // apply last
                 patches += AlwaysRunLast(m_PatchID++);
 
                 if (patches == 0)
-                    EchoOut(String.Format("No Initialize patching required."), ConsoleColor.Magenta);
+                    EchoOut(string.Format("No Initialize patching required."), ConsoleColor.Magenta);
             }
             #region Finally
             catch (Exception ex)
@@ -497,6 +499,39 @@ namespace Server
             System.Console.WriteLine("Patcher1 completed in {0}", tc.TimeTaken);
             #endregion Finally
         }
+        #region Patchv109
+        private static int PatchV109(int patchid)
+        {
+            int patches = 0;
+            PatchIndex bits = PatchIndex.PatchV109;
+            if (!Patched(bits) && AllShards() && !LoginServer(quiet: true))
+            {
+                int patched = 0;
+                #region Begin Implementation
+
+                #region Despawn in prep for Tribute Shard
+                if (EventShards())
+                {
+                    foreach(Item item in World.Items.Values)
+                        if (item is Spawner spawner)
+                            if (spawner.Running == true)
+                            {   // disable
+                                spawner.ScheduleDespawn = true;
+                                spawner.Running = false;
+                                patched++;
+                            }
+                }
+                #endregion Despawn in prep for Tribute Shard
+
+                #endregion End Implementation
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                PatchComplete(bits, patchid);
+                patches = patched;
+            }
+
+            return patches;
+        }
+        #endregion Patchv109
         #region Patchv108 (Retirement)
         private static int PatchV108(int patchid)
         {
@@ -518,7 +553,7 @@ namespace Server
                 #endregion Remove all Staff Accounts
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -549,7 +584,7 @@ namespace Server
                 #endregion Patch fire pits
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -580,7 +615,7 @@ namespace Server
                 #endregion Initialize pirate naming by resetting the champ engines
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -647,7 +682,7 @@ namespace Server
                 #endregion Remove sterling from animal spawners
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -779,7 +814,7 @@ namespace Server
                 #endregion Spawner Beautifier
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -811,7 +846,7 @@ namespace Server
                 #endregion Unregister all Custom Region Controls that reside on the internal map
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -838,7 +873,7 @@ namespace Server
                 #endregion Force an update of township subsidies
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -879,7 +914,7 @@ namespace Server
                 #endregion Allow non ROT gains for any skills already GM'ed
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -906,7 +941,7 @@ namespace Server
                 #endregion Reset GOT ChampPvMRankings
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -939,7 +974,7 @@ namespace Server
                 #endregion Fixup Motion Controllers
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -998,7 +1033,7 @@ namespace Server
                 #endregion 1 year Siege anniversary  - hued shroud
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -1026,7 +1061,7 @@ namespace Server
                 #endregion Set 'a wounded soldier' to not give rewards
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -3002,7 +3037,7 @@ namespace Server
                 #endregion Re-add missing mobiles from ModeNeruns and ModeMulti spawners
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -4968,7 +5003,7 @@ namespace Server
                 #endregion Re-add missing mobiles from ModeNeruns and ModeMulti spawners
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5041,7 +5076,7 @@ namespace Server
                 #endregion Port all Broadcaster Controllers to new 'Spawner' model
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5069,7 +5104,7 @@ namespace Server
                 #endregion Turn on all beacons
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5096,7 +5131,7 @@ namespace Server
                 #endregion Fix Stable Masters  - Breeders only / No Checks
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5131,7 +5166,7 @@ namespace Server
                 #endregion Delete old invasion beacons
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5172,7 +5207,7 @@ namespace Server
                 #endregion Patch invasion beacons
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5198,7 +5233,7 @@ namespace Server
                 #endregion Find/Fix links
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5248,7 +5283,7 @@ namespace Server
                 #endregion Find/Fix Enchanted Scrolls 
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5370,7 +5405,7 @@ namespace Server
                 #endregion Patch link database
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5397,7 +5432,7 @@ namespace Server
                         if (item is Spawner spawner)
                             if (!SpawnerGump.CheckRegion(spawner, spawner.ObjectNamesRaw, ref bad_object))
                             {
-                                EchoOut(String.Format("Disabling spawner ({0}) spawning illicit object ({1}).", spawner, bad_object), ConsoleColor.Yellow);
+                                EchoOut(string.Format("Disabling spawner ({0}) spawning illicit object ({1}).", spawner, bad_object), ConsoleColor.Yellow);
                                 spawner.ObjectNamesRaw = new ArrayList();
                                 spawner.RemoveObjects();
                                 spawner.Running = false;
@@ -5407,7 +5442,7 @@ namespace Server
                 #endregion Wipe spawner objects that are trying to spawn restricted objects (things from Angel Island Prison for instance)
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5439,7 +5474,7 @@ namespace Server
                 #endregion Set Stable Masters to Breeders only, and no claim tickets
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5480,7 +5515,7 @@ namespace Server
                 #endregion Get rid of all legacy Reserved serials
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5500,7 +5535,7 @@ namespace Server
 
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5555,7 +5590,7 @@ namespace Server
                 #endregion Patch out old IsStabled bit
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5628,7 +5663,7 @@ namespace Server
                 #endregion Patch BaseMount ItemIDs
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5695,7 +5730,7 @@ namespace Server
                 #endregion Update pricing on 'for sale' signs
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5792,14 +5827,14 @@ namespace Server
                                                 }
                                                 else
                                                     ; // error!
-                        EchoOut(String.Format("** {0} deleted pets **".ToUpper(), num_deleted), ConsoleColor.Magenta);
+                        EchoOut(string.Format("** {0} deleted pets **".ToUpper(), num_deleted), ConsoleColor.Magenta);
                     }
                 }
 
                 #endregion Recreate lost pets
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -5908,7 +5943,7 @@ namespace Server
                 #endregion Patch ControlMasterGUID for stabled pets
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6148,7 +6183,7 @@ namespace Server
                 #endregion Issue refunds to players that purchased houses at 10x (houses are now 3x)
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6182,7 +6217,7 @@ namespace Server
                 #endregion Respawn hire fighters so they get their new title
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6215,7 +6250,7 @@ namespace Server
                 #endregion Set all hire fighters clothes and item to Item.BoolTable.DeleteOnLift
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6269,7 +6304,7 @@ namespace Server
                 #endregion Township 
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6322,7 +6357,7 @@ namespace Server
                 #endregion Township 
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6366,7 +6401,7 @@ namespace Server
                 #endregion Set all xmas trees, deeds, and motion controllers to RangeExit -1 (no stop on exit)
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6437,7 +6472,7 @@ namespace Server
                 #endregion Replace xmas trees and deeds with xml versions, and add music to them
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6502,7 +6537,7 @@ namespace Server
                 #endregion Replace xmas trees and deeds with xml versions, and add music to them
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6545,7 +6580,7 @@ namespace Server
                 #endregion Patch template mobile and item reference counts
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6570,7 +6605,7 @@ namespace Server
                 #endregion Respawn world to fix creatures spawning underwater
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6676,7 +6711,7 @@ namespace Server
                 #endregion Restore grandfathered war horses
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6713,7 +6748,7 @@ namespace Server
                 #endregion Wipe Factions and respawn all BaseVendor
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6748,7 +6783,7 @@ namespace Server
                 #endregion Respawn Real Estate Brokers
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6794,7 +6829,7 @@ namespace Server
                 #endregion Start decay on all angry miner camps
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6830,7 +6865,7 @@ namespace Server
                 #endregion Bring Town Criers home
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6872,7 +6907,7 @@ namespace Server
                 #endregion Replace Large BODS with Small
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6929,7 +6964,7 @@ namespace Server
                 #endregion Enable BODs
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -6968,7 +7003,7 @@ namespace Server
                 #endregion Enable Tree of Knowledge and kukui nut spawners
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7002,7 +7037,7 @@ namespace Server
                 #endregion Tag Legacy Magic Loot
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7079,7 +7114,7 @@ namespace Server
                 #endregion Total Respawn (pack enchanted scrolls)
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7113,7 +7148,7 @@ namespace Server
 
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7161,7 +7196,7 @@ namespace Server
                 #endregion Add Lizardman Camps
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7204,7 +7239,7 @@ namespace Server
                 #endregion Disable Tree of Knowledge and kukui nut spawners
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7252,7 +7287,7 @@ namespace Server
                 #endregion Enable Tree of Knowledge and kukui nut spawners
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7305,7 +7340,7 @@ namespace Server
                 #endregion Patch players that missed out of the Murder Reprieve, also log
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7340,7 +7375,7 @@ namespace Server
                 #endregion Enable Lizardman camps
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7447,7 +7482,7 @@ namespace Server
                 #endregion Replace Barrels, Tubs, and Buckets with fillable ones
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7489,7 +7524,7 @@ namespace Server
                 #endregion Remove Adam from Watch List
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7684,7 +7719,7 @@ namespace Server
                 #endregion Update treasure chest spawners that seem too safe
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7736,7 +7771,7 @@ namespace Server
                 #endregion Resolve spinning Township NPCs
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -7884,7 +7919,7 @@ namespace Server
                 #endregion Cleanup & Refresh Camps
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8011,7 +8046,7 @@ namespace Server
                 #endregion Enable Client Enforcement (Warning only)
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8038,7 +8073,7 @@ namespace Server
                 #endregion Cleanup & Refresh Camps
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8114,7 +8149,7 @@ namespace Server
                 #endregion Cleanup & Refresh Camps
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8148,7 +8183,7 @@ namespace Server
                 #endregion Update Moongate Wizard's Spawners
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8188,7 +8223,7 @@ namespace Server
                 #endregion Make System Character to Persist and Own stuff
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8315,7 +8350,7 @@ namespace Server
                 #endregion Respawn Aligned Creatures
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8358,7 +8393,7 @@ namespace Server
                 #endregion Cleanup & Refresh Camps
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8453,7 +8488,7 @@ namespace Server
                 #endregion Plows
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8627,7 +8662,7 @@ namespace Server
                 #endregion Grandfather Herding
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8727,7 +8762,7 @@ namespace Server
                 #endregion Spawn Bog creatures (for plant system)
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8795,7 +8830,7 @@ namespace Server
                 #endregion Increase Spawn Delay for our 'Gold Boxes'
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -8878,7 +8913,7 @@ namespace Server
                 #endregion Respawn all Rares
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -9119,7 +9154,7 @@ namespace Server
                 #endregion Add Rares
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -9238,7 +9273,7 @@ namespace Server
                 #endregion Total Respawn (new decay strategy)
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -9268,7 +9303,7 @@ namespace Server
                 #endregion Enable Sea Gypsies
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -9304,7 +9339,7 @@ namespace Server
                 #endregion New Machine Hash Algo - wipe all existing
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -9351,7 +9386,7 @@ namespace Server
                 #endregion Prison Quest
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -9486,7 +9521,7 @@ namespace Server
                 #endregion
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -9643,7 +9678,7 @@ namespace Server
                 #endregion Moonglow Cemetery light level
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -9750,7 +9785,7 @@ namespace Server
                 #endregion Stone Crafter
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -9876,7 +9911,7 @@ namespace Server
                 #endregion Yoar's Spawner Updates
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -9935,7 +9970,7 @@ namespace Server
                 #endregion
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -10002,7 +10037,7 @@ namespace Server
                 #endregion Port Key 
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -10448,7 +10483,7 @@ namespace Server
                 #endregion PatchRegionFlags
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -10842,7 +10877,7 @@ namespace Server
                 #endregion Delete orphaned keys
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -11076,7 +11111,7 @@ namespace Server
                 #endregion Make Ilshenar EventConfirmationSungate's permanent
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -11222,7 +11257,7 @@ namespace Server
                 #endregion Add Item Blocker at Yew Orc Fort
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -11389,7 +11424,7 @@ namespace Server
                 #endregion Add Trainer Chests to all Banks
 
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -11484,7 +11519,7 @@ namespace Server
                 }
                 #endregion Respawn dungeon chests
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -11559,7 +11594,7 @@ namespace Server
                 }
                 #endregion Britain Farms Patch
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -11669,7 +11704,7 @@ namespace Server
                 }
                 #endregion Revert Hythloth 'directional' teleporters
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -11700,7 +11735,7 @@ namespace Server
                 }
                 #endregion Respawn World
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -11792,7 +11827,7 @@ namespace Server
                 }
                 #endregion Respawn World
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -11933,7 +11968,7 @@ namespace Server
                 }
                 #endregion Respawn World
                 #endregion End Implementation
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -11969,7 +12004,7 @@ namespace Server
                 #endregion Convert unusual chests to dungeon chests (Siege)
                 #endregion End Implementation
 
-                EchoOut(String.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
+                EchoOut(string.Format("{1} patched with {0} objects updated", patched, GetPatchName(bits)), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -12051,7 +12086,7 @@ namespace Server
                 #endregion MountSpeed
                 #endregion End Implementation
 
-                EchoOut(String.Format("BetaReadyV11 patched with {0} objects updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("BetaReadyV11 patched with {0} objects updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -12074,7 +12109,7 @@ namespace Server
                  */
                 #endregion End Implementation
 
-                EchoOut(String.Format("BetaReadyV10 patched with {0} objects updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("BetaReadyV10 patched with {0} objects updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -12162,7 +12197,7 @@ namespace Server
                 #endregion Covetous teleporter
                 #endregion End Implementation
 
-                EchoOut(String.Format("BetaReadyV9 patched with {0} objects updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("BetaReadyV9 patched with {0} objects updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -12264,7 +12299,7 @@ namespace Server
                 #endregion Teleporter maintenance (All Shards)
                 #endregion End Implementation
 
-                EchoOut(String.Format("BetaReadyV8 patched with {0} objects updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("BetaReadyV8 patched with {0} objects updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -12512,7 +12547,7 @@ namespace Server
                 #endregion Patch Mobile Activation
                 #endregion End Implementation
 
-                EchoOut(String.Format("BetaReadyV7 patched with {0} objects updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("BetaReadyV7 patched with {0} objects updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -12643,7 +12678,7 @@ namespace Server
                 #endregion Spawn trainer chests in banks, and all other dungeon chests
                 #endregion End Implementation
 
-                EchoOut(String.Format("BetaReadyV6 patched with {0} objects updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("BetaReadyV6 patched with {0} objects updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -12837,7 +12872,7 @@ namespace Server
 
                 #endregion End Implementation
 
-                EchoOut(String.Format("BetaReadyV5 patched with {0} objects updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("BetaReadyV5 patched with {0} objects updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -13084,7 +13119,7 @@ namespace Server
 
                 #endregion End Implementation
 
-                EchoOut(String.Format("BetaReadyV4 patched with {0} objects updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("BetaReadyV4 patched with {0} objects updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -13151,7 +13186,7 @@ namespace Server
 
                 #endregion End Implementation
 
-                EchoOut(String.Format("BetaReadyV3 patched with {0} objects updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("BetaReadyV3 patched with {0} objects updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -13180,7 +13215,7 @@ namespace Server
                 }
             }
 
-            EchoOut(String.Format("{0} Spawners scheduled. Spawning will complete in {1:0.00} seconds.", patched, nextspawn), ConsoleColor.Magenta);
+            EchoOut(string.Format("{0} Spawners scheduled. Spawning will complete in {1:0.00} seconds.", patched, nextspawn), ConsoleColor.Magenta);
             patches = patched;
             return patches;
         }
@@ -13716,7 +13751,7 @@ namespace Server
 
                 #endregion End Implementation
 
-                EchoOut(String.Format("BetaReadyV2 patched with {0} objects updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("BetaReadyV2 patched with {0} objects updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -13783,7 +13818,7 @@ namespace Server
                 }
                 #endregion Fix Green Acres
                 #endregion End Implementation
-                EchoOut(String.Format("{0} Beta Ready objects updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Beta Ready objects updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -13804,7 +13839,7 @@ namespace Server
 
                 patched = StaticRegionControl.FixControllers();
 
-                EchoOut(String.Format("{0} Region controllers updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Region controllers updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -13822,7 +13857,7 @@ namespace Server
                 EchoOut("PatcherTableTest: running...", ConsoleColor.Yellow);
                 int patched = 333;
 
-                EchoOut(String.Format("{0} Patcher Table test complete", patched), ConsoleColor.Yellow);
+                EchoOut(string.Format("{0} Patcher Table test complete", patched), ConsoleColor.Yellow);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -13892,7 +13927,7 @@ namespace Server
 
                 logger.Finish();
 
-                EchoOut(String.Format("{0} homeless base vendors deleted.", patched), ConsoleColor.Yellow);
+                EchoOut(string.Format("{0} homeless base vendors deleted.", patched), ConsoleColor.Yellow);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -13971,7 +14006,7 @@ namespace Server
                 }
                 patched += 2;
                 #endregion  Add two Patrol Guard spawners to Vesper bank
-                EchoOut(String.Format("{0} Patrol Guards enabled", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Patrol Guards enabled", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -14086,7 +14121,7 @@ namespace Server
                     }
                 }
 
-                EchoOut(String.Format("{0} elements patched", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} elements patched", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -14121,7 +14156,7 @@ namespace Server
                     }
                 }
 
-                EchoOut(String.Format("{0} accounts patched", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} accounts patched", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -14142,10 +14177,10 @@ namespace Server
                 ResetChampsWorker(bits, ref patched);
 
                 // turn on autumn champ
-                EchoOut(String.Format("Turning on Autumn Bob champ"), ConsoleColor.Magenta);
+                EchoOut(string.Format("Turning on Autumn Bob champ"), ConsoleColor.Magenta);
                 ChampHelpers.ToggleChamp(ChampHelpers.Autumn_Bob, true);
 
-                EchoOut(String.Format("{0} champ engines updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} champ engines updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -14164,7 +14199,7 @@ namespace Server
                     {
                         ChampEngine champ = World.FindItem(serial) as ChampEngine;
                         champ.Name = names[index++];
-                        EchoOut(String.Format("Resetting seasonal champ {0}.", champ.Name), ConsoleColor.Magenta);
+                        EchoOut(string.Format("Resetting seasonal champ {0}.", champ.Name), ConsoleColor.Magenta);
                         ChampHelpers.ToggleChamp(serial, false);
                         patched++;
                     }
@@ -14197,7 +14232,7 @@ namespace Server
                     door1.Facing = DoorFacing.SouthCW;
                     door2.Facing = DoorFacing.NorthCCW;
                     patched += 2;
-                    EchoOut(String.Format("Doors fixed. {0} items updated", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("Doors fixed. {0} items updated", patched), ConsoleColor.Magenta);
                     if (StandardShards())
                     {   // wipe tiles from (4595, 3625, 30) - (4599, 3625, 30)
                         List<Item> items = new();
@@ -14209,7 +14244,7 @@ namespace Server
                             patched++;
                         }
                     }
-                    EchoOut(String.Format("Tiles removed. {0} items updated", patched - 2), ConsoleColor.Magenta);
+                    EchoOut(string.Format("Tiles removed. {0} items updated", patched - 2), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
@@ -14281,7 +14316,7 @@ namespace Server
                         ErrorOut(bits, "Did not find teleporter at expected location .", ConsoleColor.Red);
                 }
 
-                EchoOut(String.Format("{0} Dungeon exit teleporters adjusted.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Dungeon exit teleporters adjusted.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
             return patched;
@@ -14351,7 +14386,7 @@ namespace Server
                     }
                 }
 
-                EchoOut(String.Format("{0} Dungeon exit teleporters adjusted.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Dungeon exit teleporters adjusted.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
             return patched;
@@ -14380,7 +14415,7 @@ namespace Server
                         }
                 }
 
-                EchoOut(String.Format("{0} Angel Island Camps Patched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Angel Island Camps Patched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
             return patched;
@@ -14414,7 +14449,7 @@ namespace Server
                     }
                 }
 
-                EchoOut(String.Format("{0} \"Sea Market\" spawners removed.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} \"Sea Market\" spawners removed.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -14541,7 +14576,7 @@ namespace Server
                         item.Delete();
                 }
 
-                EchoOut(String.Format("{0} elements of Moonglow Zoo on all standard shards repatched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} elements of Moonglow Zoo on all standard shards repatched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
             return patched;
@@ -14566,7 +14601,7 @@ namespace Server
                         item.Delete();
                     }
 
-                EchoOut(String.Format("{0} items removed.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} items removed.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -14586,7 +14621,7 @@ namespace Server
                 CoreAI.BaseVendorFee = 20;
                 patched++;
 
-                EchoOut(String.Format("{0} vendor daily fees restored.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} vendor daily fees restored.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -14620,7 +14655,7 @@ namespace Server
                     }
                 }
 
-                EchoOut(String.Format("{0} template vendors patched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} template vendors patched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -14645,7 +14680,7 @@ namespace Server
 
                 LogPatch(bits);
                 EchoOut("One-time patch to retroactively update patch history...", ConsoleColor.Magenta);
-                EchoOut(String.Format("{0} Patch history updated.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Patch history updated.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -14694,7 +14729,7 @@ namespace Server
                 // test center doesn't have all these spawners
                 if (patched == 6 || Core.UOTC_CFG)
                 {
-                    EchoOut(String.Format("{0} spawners enabled.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} spawners enabled.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
@@ -14734,7 +14769,7 @@ namespace Server
                 if (patched > 0)
                 {
 
-                    EchoOut(String.Format("{0} 'blessed' mobiles removed.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} 'blessed' mobiles removed.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
@@ -14799,7 +14834,7 @@ namespace Server
                 if (patched > 0)
                 {
 
-                    EchoOut(String.Format("{0} 'blessed' mobiles converted to 'exhibit'.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} 'blessed' mobiles converted to 'exhibit'.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
@@ -14846,7 +14881,7 @@ namespace Server
                 if (patched > 0)
                 {
 
-                    EchoOut(String.Format("{0} Ransom chests and deco wiped.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} Ransom chests and deco wiped.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
@@ -14887,7 +14922,7 @@ namespace Server
                 if (patched > 0)
                 {
 
-                    EchoOut(String.Format("{0} IOB regions disabled.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} IOB regions disabled.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
@@ -14914,7 +14949,7 @@ namespace Server
                 patched = Delta(before, after).Count;
 
 
-                EchoOut(String.Format("{0} Redundant public moongates deleted.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Redundant public moongates deleted.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -14976,11 +15011,11 @@ namespace Server
                     }
                     Unmute();
 
-                    EchoOut(String.Format("{0} teleporters replaced.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} teleporters replaced.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
-                    ErrorOut(bits, String.Format("Error: unable to locate {0}.", pathName), ConsoleColor.Red);
+                    ErrorOut(bits, string.Format("Error: unable to locate {0}.", pathName), ConsoleColor.Red);
             }
 
             return patched;
@@ -15057,11 +15092,11 @@ namespace Server
                     }
                     Unmute();
 
-                    EchoOut(String.Format("{0} moongates replaced.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} moongates replaced.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
-                    ErrorOut(bits, String.Format("Error: unable to locate {0}.", pathName), ConsoleColor.Red);
+                    ErrorOut(bits, string.Format("Error: unable to locate {0}.", pathName), ConsoleColor.Red);
             }
 
             return patched;
@@ -15085,7 +15120,7 @@ namespace Server
                     }
 
 
-                EchoOut(String.Format("{0} DestinationOverride patched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} DestinationOverride patched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -15103,7 +15138,7 @@ namespace Server
                 patched = UnusualContainerSpawner.WipeContainerCache();
                 Unmute();
 
-                EchoOut(String.Format("{0} unusual container cache cleared.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} unusual container cache cleared.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -15121,7 +15156,7 @@ namespace Server
                 patched = UnusualContainerSpawner.RebuildContainerCache();
                 Unmute();
 
-                EchoOut(String.Format("{0} unusual container cache rebuild.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} unusual container cache rebuild.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -15146,7 +15181,7 @@ namespace Server
                 patched = Delta(before, after).Count;
 
 
-                EchoOut(String.Format("{0} spawners updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} spawners updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -15629,7 +15664,7 @@ namespace Server
                 List<Item> after = After();
                 patched = Delta(before, after).Count;
 
-                EchoOut(String.Format("{0} map tiles updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} map tiles updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -15685,7 +15720,7 @@ namespace Server
                     }
 
 
-                    EchoOut(String.Format("Castle behind Oc'Nivelle removed. {0} items updated", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("Castle behind Oc'Nivelle removed. {0} items updated", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
@@ -15715,7 +15750,7 @@ namespace Server
                     door3.X++; patched++;
                     door4.X++; patched++;
 
-                    EchoOut(String.Format("Doors fixed. {0} items updated", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("Doors fixed. {0} items updated", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
@@ -15754,7 +15789,7 @@ namespace Server
                 DoorGenerator.Generate(rects, new Map[] { Map.Felucca });
 
 
-                EchoOut(String.Format("Premier Gems restored to Britain. {0} items updated", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("Premier Gems restored to Britain. {0} items updated", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -15777,7 +15812,7 @@ namespace Server
                         typeExclude: new Type[] { typeof(Spawner) }, lenientZ: int.MinValue/*0*/);
 
 
-                    EchoOut(String.Format("Removal of the forge and deco behind West Britain ({0} items updated) Bank complete.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("Removal of the forge and deco behind West Britain ({0} items updated) Bank complete.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
@@ -15807,12 +15842,12 @@ namespace Server
 
                 // delete accounts 
                 count = OwnerTools.DeleteAccounts(new CommandEventArgs());
-                EchoOut(String.Format("{0} Accounts deleted.", count), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Accounts deleted.", count), ConsoleColor.Magenta);
                 patched += count;
 
                 // delete contents of all containers
                 count = OwnerTools.EmptyContainers(new CommandEventArgs());
-                EchoOut(String.Format("{0} Items deleted.", count), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Items deleted.", count), ConsoleColor.Magenta);
                 patched += count;
 
                 // ====================
@@ -15939,24 +15974,24 @@ namespace Server
                     if (ResourcePool.Consignments != null)
                     {
                         int rpc = ResourcePool.Consignments.Count;
-                        EchoOut(String.Format("{0} resource pool consignments detected.", rpc), ConsoleColor.Magenta);
+                        EchoOut(string.Format("{0} resource pool consignments detected.", rpc), ConsoleColor.Magenta);
                         ResourcePool.Consignments.Clear();
-                        EchoOut(String.Format("{0} resource pool consignments deleted.", rpc), ConsoleColor.Magenta);
+                        EchoOut(string.Format("{0} resource pool consignments deleted.", rpc), ConsoleColor.Magenta);
                     }
                     else
-                        EchoOut(String.Format("No resource pool consignments to deleted."), ConsoleColor.Magenta);
+                        EchoOut(string.Format("No resource pool consignments to deleted."), ConsoleColor.Magenta);
                 }
 
                 // Done
                 Unmute();
 
-                EchoOut(String.Format("{0} shard initialization steps complete.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} shard initialization steps complete.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
             else if (!Patched(bits) && AngelIsland())
             {   // nothing to do here - AI was set up long ago
                 LogPatch(bits);
-                EchoOut(String.Format("{0} shard initialization steps complete.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} shard initialization steps complete.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16004,12 +16039,12 @@ namespace Server
                     t1.Z = t2.Z = 1;
                     patched += 2;
 
-                    EchoOut(String.Format("{0} vampire champ teleporters fixed.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} vampire champ teleporters fixed.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
                 {
-                    ErrorOut(bits, String.Format("Error: unable to locate one or more of the vampire champ teleporters.", patched), ConsoleColor.Red);
+                    ErrorOut(bits, string.Format("Error: unable to locate one or more of the vampire champ teleporters.", patched), ConsoleColor.Red);
                 }
             }
 
@@ -16079,18 +16114,18 @@ namespace Server
                         item.Delete();
 
 
-                    EchoOut(String.Format("{0} Green Acres teleporter elements fixed.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} Green Acres teleporter elements fixed.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
                 {
                     if (Core.UOTC_CFG)
                     {
-                        EchoOut(String.Format("{0} Green Acres teleporter elements fixed. Nothing to do.", patched), ConsoleColor.Magenta);
+                        EchoOut(string.Format("{0} Green Acres teleporter elements fixed. Nothing to do.", patched), ConsoleColor.Magenta);
                         PatchComplete(bits, patchid);
                     }
                     else
-                        ErrorOut(bits, String.Format("One or more teleporters missing from expected locations."), ConsoleColor.Red);
+                        ErrorOut(bits, string.Format("One or more teleporters missing from expected locations."), ConsoleColor.Red);
                 }
             }
 
@@ -16153,17 +16188,17 @@ namespace Server
                         }
 
 
-                        EchoOut(String.Format("{0} ConPvP teleporter elements fixed.", patched), ConsoleColor.Magenta);
+                        EchoOut(string.Format("{0} ConPvP teleporter elements fixed.", patched), ConsoleColor.Magenta);
                         PatchComplete(bits, patchid);
                     }
                     else
                     {
-                        ErrorOut(bits, String.Format("One or more teleporters missing from expected locations."), ConsoleColor.Red);
+                        ErrorOut(bits, string.Format("One or more teleporters missing from expected locations."), ConsoleColor.Red);
                     }
                 }
                 else
                 {
-                    EchoOut(String.Format("{0} ConPvP teleporter elements fixed. Nothing to do.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} ConPvP teleporter elements fixed. Nothing to do.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
             }
@@ -16223,11 +16258,11 @@ namespace Server
                     }
 
 
-                    EchoOut(String.Format("{0} Angel Island Felucca teleporters removed.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} Angel Island Felucca teleporters removed.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
-                    ErrorOut(bits, String.Format("Error: unable to locate {0}.", pathName), ConsoleColor.Red);
+                    ErrorOut(bits, string.Format("Error: unable to locate {0}.", pathName), ConsoleColor.Red);
             }
 
             return patched;
@@ -16246,7 +16281,7 @@ namespace Server
 
                 if (!Directory.Exists(folder))
                 {
-                    ErrorOut(bits, String.Format("Error: unable to locate {0}.", folder), ConsoleColor.Red);
+                    ErrorOut(bits, string.Format("Error: unable to locate {0}.", folder), ConsoleColor.Red);
                     return 0;
                 }
 
@@ -16283,7 +16318,7 @@ namespace Server
                         {
                             foreach (var toWrite in records)
                             {
-                                string s = String.Format("{0} {1} {2} {3} {4}", toWrite.Item1, toWrite.Item2, toWrite.Item3, toWrite.Item4, toWrite.Item5);
+                                string s = string.Format("{0} {1} {2} {3} {4}", toWrite.Item1, toWrite.Item2, toWrite.Item3, toWrite.Item4, toWrite.Item5);
                                 file.WriteLine(s);
                             }
                         }
@@ -16291,7 +16326,7 @@ namespace Server
                 }
 
 
-                EchoOut(String.Format("{0} teleporter patchLists checked, {1} modifications.", files.Length, patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} teleporter patchLists checked, {1} modifications.", files.Length, patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16316,7 +16351,7 @@ namespace Server
                 // what's the delta?
                 patched = Delta(before, after).Count;
                 Unmute();
-                EchoOut(String.Format("{0} Felucca teleporters removed or updated.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Felucca teleporters removed or updated.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16516,7 +16551,7 @@ namespace Server
                 patched = Delta(before, after).Count;
 
 
-                EchoOut(String.Format("Felucca deco initialized. {0} items updated.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("Felucca deco initialized. {0} items updated.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16542,7 +16577,7 @@ namespace Server
                         }
                 logger.Finish();
 
-                EchoOut(String.Format("{0} Lost Lands access removed.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Lost Lands access removed.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16561,7 +16596,7 @@ namespace Server
                 patched = DeleteAllIllegalTrammelItems(new CommandEventArgs());
 
 
-                EchoOut(String.Format("{0} illegal Trammel items removed.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} illegal Trammel items removed.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16635,7 +16670,7 @@ namespace Server
                 patched = ConsoleCaptureOff(index);
 
 
-                EchoOut(String.Format("{0} Champion Teleporters removed.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Champion Teleporters removed.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16681,7 +16716,7 @@ namespace Server
             Done:
 
 
-                EchoOut(String.Format("{0} New Player Starting Zone patched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} New Player Starting Zone patched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
 
             }
@@ -16723,7 +16758,7 @@ namespace Server
                     }
                 }
 
-                EchoOut(String.Format("{0} region controllers patched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} region controllers patched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16765,7 +16800,7 @@ namespace Server
                 if (complete == true)
                 {
 
-                    EchoOut(String.Format("{0} static regions patched.", patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} static regions patched.", patched), ConsoleColor.Magenta);
                     PatchComplete(bits, patchid);
                 }
                 else
@@ -16783,7 +16818,7 @@ namespace Server
                 LogPatch(bits);
                 EchoOut("Redo of static regions patch V3...", ConsoleColor.Magenta);
                 ClearDynamicPatch(PatchIndex.HasRefreshedStaticRegionsV2);   // clear the previous patch flag
-                EchoOut(String.Format("Ready to apply V2..."), ConsoleColor.Magenta);
+                EchoOut(string.Format("Ready to apply V2..."), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16798,7 +16833,7 @@ namespace Server
                 LogPatch(bits);
                 EchoOut("Redo of static regions patch V2...", ConsoleColor.Magenta);
                 ClearDynamicPatch(PatchIndex.HasRefreshedStaticRegions);   // clear the previous patch flag
-                EchoOut(String.Format("Ready to apply Static Region Patch....", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("Ready to apply Static Region Patch....", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16821,7 +16856,7 @@ namespace Server
                 patched = HasPatchedStaticRegions(patchid);             // redo the patch (converts Region Controllers to Static Region controllers)
                 RestoreRegionRegions(regionRegions);                    // re-register any regions not covered by the above load (treasure map regions, houses, etc.)
                 RestoreMapRegions(mapRegions);                          // probably a noop since, RestoreRegionRegions would have restored map regions
-                EchoOut(String.Format("{0} static regions repatched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} static regions repatched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16912,7 +16947,7 @@ namespace Server
                 }
 
 
-                EchoOut(String.Format("{0} visible spawners hidden.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} visible spawners hidden.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -16992,7 +17027,7 @@ namespace Server
 
                 }
 
-                EchoOut(String.Format("{0} Angel Island's Moonglow Zoo elements patched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Angel Island's Moonglow Zoo elements patched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
             return patched;
@@ -17027,7 +17062,7 @@ namespace Server
                     }
                 }
 
-                EchoOut(String.Format("{0} standard shard's Moonglow Zoo elements patched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} standard shard's Moonglow Zoo elements patched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
 
@@ -17173,7 +17208,7 @@ namespace Server
                 }
 
 
-                EchoOut(String.Format("{0} Moonglow Zoo on all shards patched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Moonglow Zoo on all shards patched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
             return patched;
@@ -17207,7 +17242,7 @@ namespace Server
 
                 patched = Delta(before, after).Count;
 
-                EchoOut(String.Format("{0} birds spawned.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} birds spawned.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
             return patched;
@@ -17326,7 +17361,7 @@ namespace Server
                         }
                 }
 
-                EchoOut(String.Format("{0} 'bowyer' spawners patched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} 'bowyer' spawners patched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
             return patched;
@@ -17363,7 +17398,7 @@ namespace Server
                         }
                 }
 
-                EchoOut(String.Format("{0} Camps Activated.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Camps Activated.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
             return patched;
@@ -17392,7 +17427,7 @@ namespace Server
                         }
                 }
 
-                EchoOut(String.Format("{0} Camps Patched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Camps Patched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
             return patched;
@@ -17449,7 +17484,7 @@ namespace Server
                         }
                     }
                 }
-                EchoOut(String.Format("{0} players checked, {1} patched.", seen, patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} players checked, {1} patched.", seen, patched), ConsoleColor.Magenta);
                 EchoOut("One-time patch of player GUIDs complete.", ConsoleColor.Magenta);
                 patches = patched;
 
@@ -17476,7 +17511,7 @@ namespace Server
                             }
                         }
                     }
-                    EchoOut(String.Format("{0} pets checked, {1} patched.", seen, patched), ConsoleColor.Magenta);
+                    EchoOut(string.Format("{0} pets checked, {1} patched.", seen, patched), ConsoleColor.Magenta);
                     EchoOut("One-time patch of player's pet's GUIDs complete.", ConsoleColor.Magenta);
                     patches += patched;
                 }
@@ -17502,7 +17537,7 @@ namespace Server
                         bh.RefreshAccountCode();
                     }
                 }
-                EchoOut(String.Format("{0} houses patched.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} houses patched.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
 
                 patches = patched;
@@ -17544,7 +17579,7 @@ namespace Server
                         uOSpawnMap: "AISpecial",
                         shardConfig: ShardConfig.AllShards);
                 }
-                EchoOut(String.Format("{0} 'other' spawners categorized.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} 'other' spawners categorized.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
 
                 patches = patched;
@@ -17671,7 +17706,7 @@ namespace Server
                     }
                 }
                 logger.Finish();
-                EchoOut(String.Format("{0} spawners categorized.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} spawners categorized.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
 
                 patches = patched;
@@ -17819,7 +17854,7 @@ namespace Server
                         }
                     }
                 }
-                EchoOut(String.Format("{0} spawners disabled.", patched), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} spawners disabled.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
 
                 patches = patched;
@@ -17846,7 +17881,7 @@ namespace Server
             //  When can we remove this code. After we have sufficient backups, we can remove the check in all DateTime *readers* after 9/15/22
             if (!Patched(bits) && AllShards())
             {
-                EchoOut(String.Format("Patching all DateTime saves during this run session."), ConsoleColor.Magenta);
+                EchoOut(string.Format("Patching all DateTime saves during this run session."), ConsoleColor.Magenta);
                 patches++;
 
                 SetDynamicPatch(bits);
@@ -17964,7 +17999,7 @@ namespace Server
 
             #endregion End Implementation
 
-            EchoOut(String.Format("Run Always: {0} objects updated", patched), ConsoleColor.Magenta);
+            EchoOut(string.Format("Run Always: {0} objects updated", patched), ConsoleColor.Magenta);
             PatchComplete(bits, patchid);
             patches = patched;
             return patches;
@@ -18071,7 +18106,7 @@ namespace Server
 
             #endregion End Implementation
 
-            EchoOut(String.Format("Run Always: {0} objects updated", patched), ConsoleColor.Magenta);
+            EchoOut(string.Format("Run Always: {0} objects updated", patched), ConsoleColor.Magenta);
             PatchComplete(bits, patchid);
             patches = patched;
             return patches;
@@ -18216,7 +18251,7 @@ namespace Server
                                 spawner.Shard = patch.Shard;
                             }
                         }
-                EchoOut(String.Format("{0} spawner patches applied.", patched), ConsoleColor.Yellow);
+                EchoOut(string.Format("{0} spawner patches applied.", patched), ConsoleColor.Yellow);
                 PatchComplete(bits, patchid);
                 patches = patched;
             }
@@ -18343,7 +18378,7 @@ namespace Server
                     }
                 }
                 #endregion Relocating / Deleting objects at Felucca 0,0
-                EchoOut(String.Format("{0} objects handled.", patched), ConsoleColor.Yellow);
+                EchoOut(string.Format("{0} objects handled.", patched), ConsoleColor.Yellow);
                 PatchComplete(bits, patchid);
             }
             return patched;
@@ -18362,7 +18397,7 @@ namespace Server
                 patches += HasTotalRespawn(m_PatchID++);    // must be last patch
 
                 if (patches == 0)
-                    EchoOut(String.Format("No special 'ServerStarted' patching required."), ConsoleColor.Magenta);
+                    EchoOut(string.Format("No special 'ServerStarted' patching required."), ConsoleColor.Magenta);
             }
             catch (Exception ex)
             {
@@ -18402,7 +18437,7 @@ namespace Server
                     }
                 }
 
-                EchoOut(String.Format("{0} Spawners scheduled. Spawning will complete in {1:0.00} seconds.", patched, nextspawn), ConsoleColor.Magenta);
+                EchoOut(string.Format("{0} Spawners scheduled. Spawning will complete in {1:0.00} seconds.", patched, nextspawn), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
 
                 patches = patched;
@@ -18639,6 +18674,7 @@ namespace Server
             return bits == PatchIndex.None ? false : CoreAI.IsDynamicPatchSet(bits);
         }
         private static bool TestCenter(bool quiet = false) { if (!quiet) return Patching(Core.RuleSets.TestCenterRules()); else return Core.RuleSets.TestCenterRules(); }
+        private static bool EventShard(bool quiet = false) { if (!quiet) return Patching(Core.RuleSets.EventShardRules()); else return Core.RuleSets.EventShardRules(); }
         private static bool Siege(bool quiet = false) { if (!quiet) return Patching(Core.RuleSets.SiegeRules()); else return Core.RuleSets.SiegeRules(); }
         private static bool AngelIsland(bool quiet = false) { if (!quiet) return Patching(Core.RuleSets.AngelIslandRules()); else return Core.RuleSets.AngelIslandRules(); }
         private static bool Mortalis(bool quiet = false) { if (!quiet) return Patching(Core.RuleSets.MortalisRules()); else return Core.RuleSets.MortalisRules(); }
@@ -18648,6 +18684,13 @@ namespace Server
         {
             if (Core.RuleSets.TestCenterRules())
                 return TestCenter(quiet);
+            else
+                return false;
+        }
+        private static bool EventShards(bool quiet = false)
+        {
+            if (Core.RuleSets.EventShardRules())
+                return EventShard(quiet);
             else
                 return false;
         }
@@ -18687,9 +18730,9 @@ namespace Server
             //  to cleanup map (0,0) and other common errors
             if (bits != PatchIndex.None)
                 SetDynamicPatch(bits);
-            string l1 = String.Format(string.Format("Patch {0} complete. {1}", patchid,
+            string l1 = string.Format(string.Format("Patch {0} complete. {1}", patchid,
                 timeUnknown ? DateTime.MinValue : AdjustedDateTime.GameTime));
-            string l2 = String.Format("===========================");
+            string l2 = string.Format("===========================");
             EchoOut(l1, ConsoleColor.Green, echo: false);
             EchoOut(l2, ConsoleColor.Green, echo: false);
             using (StreamWriter sw = File.AppendText(m_pathName))

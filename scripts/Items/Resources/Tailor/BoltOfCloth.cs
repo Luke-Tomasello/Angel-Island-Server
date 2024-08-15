@@ -31,7 +31,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} bolt of cloth" : "{0} bolts of cloth", Amount);
+                return string.Format(Amount == 1 ? "{0} bolt of cloth" : "{0} bolts of cloth", Amount);
             }
         }
 

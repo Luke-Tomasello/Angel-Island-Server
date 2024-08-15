@@ -207,7 +207,7 @@ namespace Server.Items
 
         public static string Format(int xLong, int yLat, int xMins, int yMins, bool xEast, bool ySouth)
         {
-            return String.Format("{0}� {1}'{2}, {3}� {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W");
+            return string.Format("{0}� {1}'{2}, {3}� {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W");
         }
         public static string Where(IEntity ent)
         {

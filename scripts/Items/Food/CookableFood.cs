@@ -1017,7 +1017,7 @@ namespace Server.Items
     {
         string ICommodity.Description
         {
-            get { return String.Format(Amount == 1 ? "{0} raw fish steak" : "{0} raw fish steaks", Amount); }
+            get { return string.Format(Amount == 1 ? "{0} raw fish steak" : "{0} raw fish steaks", Amount); }
         }
 
         [Constructable]

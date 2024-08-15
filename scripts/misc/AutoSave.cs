@@ -327,7 +327,7 @@ namespace Server.Misc
 
         private static string FormatDirectory(string root, string name, string timeStamp)
         {
-            return Path.Combine(root, String.Format("{0}", name));
+            return Path.Combine(root, string.Format("{0}", name));
         }
 
         #region Serialization

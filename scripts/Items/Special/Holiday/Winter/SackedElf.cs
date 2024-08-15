@@ -81,7 +81,7 @@ namespace Server.Items
 
                     from.AddToBackpack(reward);
 
-                    if (!String.IsNullOrEmpty(m_RewardMessage))
+                    if (!string.IsNullOrEmpty(m_RewardMessage))
                         from.SendMessage(m_RewardMessage);
 
                     return true;

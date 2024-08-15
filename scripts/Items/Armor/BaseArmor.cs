@@ -1725,7 +1725,7 @@ namespace Server.Items
             string name = this.Name;
 
             if (name == null)
-                name = String.Format("#{0}", LabelNumber);
+                name = string.Format("#{0}", LabelNumber);
 
             return name;
         }
@@ -1959,7 +1959,7 @@ namespace Server.Items
                     if ((article == Article.A || article == Article.An) && prefix.Length == 0)
                         article = info.Article;
 
-                    prefix += String.Concat(info.Name.ToLower(), " ");
+                    prefix += string.Concat(info.Name.ToLower(), " ");
                 }
             }
 

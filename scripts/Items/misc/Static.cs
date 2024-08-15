@@ -71,7 +71,7 @@ namespace Server.Items
                 else
                     articleStr = null;
 
-                return String.Concat(articleStr, prefix, baseName, suffix);
+                return string.Concat(articleStr, prefix, baseName, suffix);
             }
             else
                 return base.OldSchoolName();

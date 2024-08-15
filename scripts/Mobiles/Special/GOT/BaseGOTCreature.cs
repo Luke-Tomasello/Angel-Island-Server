@@ -1027,8 +1027,8 @@ namespace Server.Mobiles
                 if (compState.Mobile is Mobile m)
                     if (this.GetDistanceToSqrt(compState.Mobile) < 100)
                         // say overhead to all near by, those further away will get a nice system message from the "Night King"
-                        //this.SayTo(compState.Mobile, ascii: true, hue: 0, String.Format(text));
-                        this.SendAsciiMessageTo(compState, hue: 0, String.Format(text));
+                        //this.SayTo(compState.Mobile, ascii: true, hue: 0, string.Format(text));
+                        this.SendAsciiMessageTo(compState, hue: 0, string.Format(text));
             }
         }
         public override bool OnBeforeDeath()

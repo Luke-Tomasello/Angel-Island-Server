@@ -89,7 +89,7 @@ namespace Server.Township
 
             AddLine(info);
 
-            AddButton((int)Button.ExtendBounds, String.Format("Extend Township Bounds ({0} gp)", TownshipSettings.ExtendedCharge.ToString("N0")), !m_Stone.Extended && m_Stone.HasAccess(from, TownshipAccess.CoLeader));
+            AddButton((int)Button.ExtendBounds, string.Format("Extend Township Bounds ({0} gp)", TownshipSettings.ExtendedCharge.ToString("N0")), !m_Stone.Extended && m_Stone.HasAccess(from, TownshipAccess.CoLeader));
             AddButton((int)Button.RetractBounds, "Retract Township Bounds (0 gp)", m_Stone.Extended && m_Stone.HasAccess(from, TownshipAccess.CoLeader));
 
             AddLine("Daily fees:");
@@ -190,7 +190,7 @@ namespace Server.Township
             {
                 m_Stone.GoldHeld -= TownshipSettings.ExtendedCharge;
 
-                m_Stone.RecordWithdrawal(TownshipSettings.ExtendedCharge, String.Format("{0} extended the township bounds", from.Name));
+                m_Stone.RecordWithdrawal(TownshipSettings.ExtendedCharge, string.Format("{0} extended the township bounds", from.Name));
             }
 
             from.SendMessage("You {0} your township bounds.", value ? "extended" : "retracted");

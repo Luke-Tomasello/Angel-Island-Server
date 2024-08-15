@@ -6220,7 +6220,7 @@ namespace Server.Mobiles
                         else
                         {
                             // I will teach thee all I know, if paid the amount in full.  The price is:
-                            Say(1019077, AffixType.Append, String.Format(" {0}", pointsToLearn), "");
+                            Say(1019077, AffixType.Append, string.Format(" {0}", pointsToLearn), "");
                             Say(1043108); // For less I shall teach thee less.
 
                             m_Teaching = skill;
@@ -8050,7 +8050,7 @@ namespace Server.Mobiles
             }
             if (SpawnerTempMob)
             {
-                PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("[template]"));
+                PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("[template]"));
             }
 
             base.OnSingleClick(from);

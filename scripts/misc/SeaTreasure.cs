@@ -19,10 +19,10 @@
  *
  ***************************************************************************/
 
-/* Misc/SeaTreasure.cs
+/* Scripts\misc\SeaTreasure.cs
  * CHANGELOG:
  *  1/14/22, Yoar
- *        Moved CalculateDistances to the MathUtility class.
+ *        Moved CalculateDistances to the DistanceMatrix class.
  *  12/21/21, Yoar
  *        Initial version.
  */
@@ -540,7 +540,7 @@ namespace Server.Misc
 
         private static void Log(string format, params object[] args)
         {
-            Console.WriteLine("SeaTreasure [{0}]: {1}", DateTime.UtcNow.ToLongTimeString(), String.Format(format, args));
+            Console.WriteLine("SeaTreasure [{0}]: {1}", DateTime.UtcNow.ToLongTimeString(), string.Format(format, args));
         }
 
         public struct LevelData

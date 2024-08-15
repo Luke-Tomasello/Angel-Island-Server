@@ -641,7 +641,7 @@ namespace Server.Gumps
                     if (m_Vendor.Owner != null)
                         log.Log(LogType.Mobile, m_Vendor.Owner, "Vendor owner");
                     log.Log(LogType.Mobile, this, "Vendor");
-                    log.Log(LogType.Text, String.Format("Termination accepted. BankAccount={0}, HoldGold={1}, RentalGold={2}, RefundAmount={3}", m_Vendor.BankAccount, m_Vendor.HoldGold, m_Vendor.RentalGold, m_RefundAmount));
+                    log.Log(LogType.Text, string.Format("Termination accepted. BankAccount={0}, HoldGold={1}, RentalGold={2}, RefundAmount={3}", m_Vendor.BankAccount, m_Vendor.HoldGold, m_Vendor.RentalGold, m_RefundAmount));
                     log.Finish();
 
                     m_Landlord.SendLocalizedMessage(1060398, m_RefundAmount.ToString()); // ~1_AMOUNT~ gold has been withdrawn from your bank box.

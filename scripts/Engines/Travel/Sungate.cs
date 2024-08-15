@@ -249,14 +249,14 @@ namespace Server.Items
             base.Running = true;
             Visible = true;
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(String.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
         }
         public void EventEnded(object o)
         {
             base.Running = false;
             Visible = false;
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(String.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
         }
         public override void Serialize(GenericWriter writer)
         {

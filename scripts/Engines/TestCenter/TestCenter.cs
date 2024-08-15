@@ -302,7 +302,7 @@ namespace Server.Misc
                     {
                         if (value < 0 || value > skill.Cap)
                         {
-                            from.SendMessage(String.Format("Your pet's skill in {0} is capped at {1:F1}.", skill.Info.Name, skill.Cap));
+                            from.SendMessage(string.Format("Your pet's skill in {0} is capped at {1:F1}.", skill.Info.Name, skill.Cap));
                         }
                         else
                         {
@@ -445,7 +445,7 @@ namespace Server.Misc
 
                     if (split.Length > 2)
                     {
-                        string name = String.Join("", split, 1, split.Length - 2);
+                        string name = string.Join("", split, 1, split.Length - 2);
                         double value;
 
                         if (!double.TryParse(split[split.Length - 1], out value))
@@ -591,7 +591,7 @@ namespace Server.Misc
                 {
                     if (value < 0 || value > skill.Cap)
                     {
-                        from.SendMessage(String.Format("Your skill in {0} is capped at {1:F1}.", skill.Info.Name, skill.Cap));
+                        from.SendMessage(string.Format("Your skill in {0} is capped at {1:F1}.", skill.Info.Name, skill.Cap));
                     }
                     else
                     {
@@ -652,7 +652,7 @@ namespace Server.Misc
             if (region != null && region.GoLocation != Point3D.Zero)
                 return region.GoLocation;
 
-            region = Region.FindByName(String.Concat("the ", name), map);
+            region = Region.FindByName(string.Concat("the ", name), map);
 
             if (region != null && region.GoLocation != Point3D.Zero)
                 return region.GoLocation;

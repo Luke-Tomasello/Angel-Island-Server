@@ -476,7 +476,7 @@ namespace Server.Commands
             }
             catch (Exception e)
             {
-                throw new Exception(String.Format("Bad type: {0}", m_Type), e);
+                throw new Exception(string.Format("Bad type: {0}", m_Type), e);
             }
 
             if (item is BaseAddon)
@@ -1175,7 +1175,7 @@ namespace Server.Commands
                         {
                             // record what is being deleted
                             ChangeLog.Add(temp, new Tuple<Point3D, Map, bool>(temp.Location, maps[j], mode == Decorate.DecoMode.add));
-                            string sx = String.Format("Deleting a {0}: ID {3} at {1} in {2} ({4})", temp, temp.Location, maps[j], temp.ItemID, temp.GetRawOldName());
+                            string sx = string.Format("Deleting a {0}: ID {3} at {1} in {2} ({4})", temp, temp.Location, maps[j], temp.ItemID, temp.GetRawOldName());
                             log.Log(sx);
                             if (m_ListOnly == false)
                                 temp.Delete();
@@ -1228,7 +1228,7 @@ namespace Server.Commands
                             }
                             else
                             {
-                                string sx = String.Format("Adding: {0}: ID {3} at {1} in {2} ({4})", template, loc, maps[j], template.ItemID, template.GetRawOldName());
+                                string sx = string.Format("Adding: {0}: ID {3} at {1} in {2} ({4})", template, loc, maps[j], template.ItemID, template.GetRawOldName());
                                 log.Log(sx);
                                 template.MoveToWorld(loc, maps[j]);
                             }
@@ -1316,10 +1316,10 @@ namespace Server.Commands
                 // no need to throw an exception here since we know certain tokuno and other objects won't be found.
                 // just report the error and continue
                 LogHelper log = new LogHelper("deco_error.txt", false, true);
-                log.Log(String.Format("Type not found for header: '{0}'", line));
+                log.Log(string.Format("Type not found for header: '{0}'", line));
                 log.Finish();
                 return Read(ip);
-                //throw new ArgumentException(String.Format("Type not found for header: '{0}'", line));
+                //throw new ArgumentException(string.Format("Type not found for header: '{0}'", line));
             }
 
             line = line.Substring(indexOf);

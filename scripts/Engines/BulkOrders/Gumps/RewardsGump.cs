@@ -116,7 +116,7 @@ namespace Server.Engines.BulkOrders
                         else
                             bankPoints = BulkOrderSystem.SmallBankPerc * context.Pending.Points / 100.0;
 
-                        AddHtml(40, 90, 270, 70, String.Format("Select <b>OKAY</b> to bank {0:F2} points. Select <b>CANCEL</b> to spend all {1} points on a reward now.", bankPoints, context.Pending.Points), false, false);
+                        AddHtml(40, 90, 270, 70, string.Format("Select <b>OKAY</b> to bank {0:F2} points. Select <b>CANCEL</b> to spend all {1} points on a reward now.", bankPoints, context.Pending.Points), false, false);
 
                         AddButton(40, gumpHeight + 30, 0x837, 0x838, 2, GumpButtonType.Reply, 0);
                         AddLabel(55, gumpHeight + 25, 0, "Banking Options");

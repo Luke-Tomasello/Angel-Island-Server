@@ -58,7 +58,7 @@ namespace Server.Items
             m_container = c;                                        // the storage container
             m_ContainerID = (int)m_container.Serial;                // identifies the prize
             LogHelper Logger = new LogHelper("TentReimbursementDeed.log", false);
-            string temp = String.Format("A Tent Reimbursement Deed ({0}) has been created.", this.Serial);
+            string temp = string.Format("A Tent Reimbursement Deed ({0}) has been created.", this.Serial);
             Logger.Log(LogType.Item, m_container, temp);
             Logger.Finish();
         }
@@ -89,7 +89,7 @@ namespace Server.Items
             {
                 LogHelper Logger = new LogHelper("TentReimbursementDeed.log", false);
                 string temp;
-                temp = String.Format("Orphaned Tent Reimbursement Deed({0}) loaded for nonexistent Backpack(0x{1:X}).", this.Serial, m_ContainerID);
+                temp = string.Format("Orphaned Tent Reimbursement Deed({0}) loaded for nonexistent Backpack(0x{1:X}).", this.Serial, m_ContainerID);
                 Logger.Log(LogType.Text, temp);
                 Logger.Finish();
             }
@@ -126,13 +126,13 @@ namespace Server.Items
                 //m_container.MoveToWorld(from.Location, from.Map);		// move the the map
                 from.AddToBackpack(m_container);
                 //from.SendMessage("Your possessions have been returned.");
-                string temp = String.Format("Mobile({0}) using Deed({1}) has recovered their possessions.", from.Serial, this.Serial);
+                string temp = string.Format("Mobile({0}) using Deed({1}) has recovered their possessions.", from.Serial, this.Serial);
                 Logger.Log(LogType.Item, m_container, temp);
             }
             else
             {
                 from.SendMessage("There was a problem recovering your possessions.");
-                string temp = String.Format("Tent doods missing for Mobile({0}) using Deed({1}) on Backpack(0x{2:X}).", from.Serial, this.Serial, m_ContainerID);
+                string temp = string.Format("Tent doods missing for Mobile({0}) using Deed({1}) on Backpack(0x{2:X}).", from.Serial, this.Serial, m_ContainerID);
                 Logger.Log(LogType.Text, temp);
             }
 

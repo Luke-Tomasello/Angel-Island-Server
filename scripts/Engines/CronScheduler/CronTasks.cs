@@ -2023,7 +2023,7 @@ namespace Server.Engines.CronScheduler
                     if (a.EmailAddress != null && SmtpDirect.CheckEmailAddy(a.EmailAddress, false) == true)
                     {
                         string subject = "Angel Island: Your account will be deleted in about 5 days";
-                        string body = String.Format("\nThis message is to inform you that your account '{0}' will be deleted on {1} if it remains unused.\n\nIf you decide not to return to Angel Island, we would like wish you well and thank you for playing our shard.\n\nBest Regards,\n  The Angel Island Team\n\n", a.ToString(), DateTime.UtcNow + TimeSpan.FromDays(5));
+                        string body = string.Format("\nThis message is to inform you that your account '{0}' will be deleted on {1} if it remains unused.\n\nIf you decide not to return to Angel Island, we would like wish you well and thank you for playing our shard.\n\nBest Regards,\n  The Angel Island Team\n\n", a.ToString(), DateTime.UtcNow + TimeSpan.FromDays(5));
                         Emailer mail = new Emailer();
                         mail.SendEmail(a.EmailAddress, subject, body, false);
                     }
@@ -2516,7 +2516,7 @@ namespace Server.Engines.CronScheduler
                                     ConsoleColor.Green,
                                     mob,
                                     mob.Location,
-                                    mob.Map != null ? String.Format(": Map: {0}", mob.Map) : "",
+                                    mob.Map != null ? string.Format(": Map: {0}", mob.Map) : "",
                                     mob.Location == Utility.Dogtag.Get("Server.Mobiles.GenericBuyInfo+DisplayCache") ?
                                     " DisplayCache item" : "",
                                     (mob.ToDelete == false) ? "requested to delete" : "deleting");
@@ -3156,7 +3156,7 @@ namespace Server.Engines.CronScheduler
                                 ConsoleColor.Green,
                                 i,
                                 i.Location,
-                                i.Parent != null ? String.Format(": Parent: {0}", i.Parent) : "",
+                                i.Parent != null ? string.Format(": Parent: {0}", i.Parent) : "",
                                 i.Location == Utility.Dogtag.Get("Server.Mobiles.GenericBuyInfo+DisplayCache") ?
                                 " DisplayCache item" : "",
                                 (i.ToDelete == false) ? "requested to delete" : "deleting");
@@ -3339,6 +3339,7 @@ namespace Server.Engines.CronScheduler
                         if (
                             bc.CanDelete() ||           // a temporary mobile that has aged out (no other rules apply) 
                                !bc.Controlled           // summons, pets, IOB followers, hire fighters
+                            && !bc.IsStaffOwned         // placed by staff,  no deleting!
                             && !bc.SpawnerTempMob       // spawner template mobs, no deleting
                             && !(bc is BaseVendor)      // house sitters, barkeeps, auctioneers (Idea: exclude if Admin owned or InHouseRegion only. Others could be deleted.)
                             && !bc.IOBFollower          // probably handled by !bc.Controled
@@ -3356,7 +3357,7 @@ namespace Server.Engines.CronScheduler
 
                                 // if the creature has not thought in the last little while, then he is said to be Hibernating
                                 //	 if he is Hibernating, there are no PlayerMobiles in the area. (cool to delete)
-                                if (bc.Hibernating == false && !bc.CanDelete())
+                                if (bc.Hibernating == false)
                                     bSkip = true;
 
                                 if (!bSkip)
@@ -4229,27 +4230,27 @@ namespace Server.Engines.CronScheduler
 
             int totalFighters = toCatalog.Count;
 
-            string archery = String.Format("{0:f2}% archers of which {1:f2}% are pure\n",
+            string archery = string.Format("{0:f2}% archers of which {1:f2}% are pure\n",
                 percentage(totalFighters, Archery),
                 percentage(Archery, PureArchery));
 
-            string fencing = String.Format("{0:f2}% fencers of which {1:f2}% are pure\n",
+            string fencing = string.Format("{0:f2}% fencers of which {1:f2}% are pure\n",
                 percentage(totalFighters, Fencing),
                 percentage(Fencing, PureFencing));
 
-            string macing = String.Format("{0:f2}% macers of which {1:f2}% are pure\n",
+            string macing = string.Format("{0:f2}% macers of which {1:f2}% are pure\n",
                 percentage(totalFighters, Macing),
                 percentage(Macing, PureMacing));
 
-            string magery = String.Format("{0:f2}% mages of which {1:f2}% are pure\n",
+            string magery = string.Format("{0:f2}% mages of which {1:f2}% are pure\n",
                 percentage(totalFighters, Magery),
                 percentage(Magery, PureMagery));
 
-            string swords = String.Format("{0:f2}% swordsmen of which {1:f2}% are pure\n",
+            string swords = string.Format("{0:f2}% swordsmen of which {1:f2}% are pure\n",
                 percentage(totalFighters, Swords),
                 percentage(Swords, PureSwords));
 
-            string body = String.Format(
+            string body = string.Format(
                 "There are {0} players logged in.\n" +
                 archery + fencing + macing +
                 magery + swords,
@@ -4325,10 +4326,10 @@ namespace Server.Engines.CronScheduler
                     DateTime EventStartTimeEastern = EventStartTime + TimeSpan.FromHours(3);
 
                     // Sunday, November 20th
-                    string subject = String.Format(password + er.m_subject,
+                    string subject = string.Format(password + er.m_subject,
                         EventStartTime);                // Sunday, November 20th
 
-                    string body = String.Format(er.m_body,
+                    string body = string.Format(er.m_body,
 
                         // "Angel Island will be hosting another Cross Shard Challenge this {0:D} from {0:t} - {1:t} PM Pacific Time."
                         EventStartTime,                 // Sunday, November 20th / 3:00 PM
@@ -4431,10 +4432,10 @@ namespace Server.Engines.CronScheduler
                                                                             //DateTime ChestOpenTime = KinRansom.ChestOpenTime;		// EventEndTime.AddMinutes(-15.0);	// at 2hrs and 45 min, open the chest
 
                     // Sunday, November 20th
-                    string subject = String.Format(password + er.m_subject,
+                    string subject = string.Format(password + er.m_subject,
                         EventStartTime);                // Sunday, November 20th
 
-                    string body = String.Format(er.m_body,
+                    string body = string.Format(er.m_body,
                         EventStartTime                  // Sunday, November 20th
                         );
 
@@ -4837,7 +4838,7 @@ namespace Server.Engines.CronScheduler
             DateTime now = DateTime.UtcNow;
             DateTime when = new DateTime(now.Year, now.Month, now.Day, 2, 0, 0, 0);
             TimeSpan delta = when - now;
-            string text = String.Format("Maintenance in {0:00.00} minutes and should last for {1} minutes.", delta.TotalMinutes, 8);
+            string text = string.Format("Maintenance in {0:00.00} minutes and should last for {1} minutes.", delta.TotalMinutes, 8);
             World.Broadcast(0x35, true, text);
             System.Console.WriteLine(text);
             System.Console.WriteLine("Done.");
@@ -4855,7 +4856,7 @@ namespace Server.Engines.CronScheduler
             DateTime now = DateTime.UtcNow;
             DateTime when = new DateTime(now.Year, now.Month, now.Day, 4, 0, 0, 0);
             TimeSpan delta = when - now;
-            string text = String.Format("Maintenance in {0:00.00} minutes and should last for {1} minutes.", delta.TotalMinutes, 4);
+            string text = string.Format("Maintenance in {0:00.00} minutes and should last for {1} minutes.", delta.TotalMinutes, 4);
             World.Broadcast(0x35, true, text);
             System.Console.WriteLine(text);
             System.Console.WriteLine("Done.");
@@ -4989,7 +4990,7 @@ namespace Server.Engines.CronScheduler
                     Server.Engines.WealthTracker.IPDomain node = list[ix] as Server.Engines.WealthTracker.IPDomain;
                     Server.Engines.WealthTracker.AccountDomain ad = Server.Engines.WealthTracker.GetFirst(node.accountList) as Server.Engines.WealthTracker.AccountDomain; // just first account
                     Mobile m = Server.Engines.WealthTracker.GetFirst(ad.mobileList) as Mobile;                   // just first mobile
-                    string sx = String.Format("mob:{2}, gold:{0}, loc:{1}", node.gold, node.location, m);
+                    string sx = string.Format("mob:{2}, gold:{0}, loc:{1}", node.gold, node.location, m);
                     Logger1.Log(LogType.Text, sx);
                     Logger2.Log(LogType.Text, sx);
                 }
@@ -5364,7 +5365,7 @@ namespace Server.Engines.CronScheduler
                 // turn on a Champ
                 ChampEngine Champ = World.FindItem(champ) as ChampEngine;
                 if (Champ == null)
-                    new ApplicationException(String.Format("World.FindItem({0:X}) as ChampEngine", champ));
+                    new ApplicationException(string.Format("World.FindItem({0:X}) as ChampEngine", champ));
                 else
                 {   // state will be true for ON and false for OFF
                     // We disable a champ by turning off the restart timer

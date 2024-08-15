@@ -88,7 +88,7 @@ namespace Server.Gumps
 
         public override string Compile()
         {
-            return String.Format("{{ text {0} {1} {2} {3} }}", m_X, m_Y, m_Hue, Parent.Intern(m_Text));
+            return string.Format("{{ text {0} {1} {2} {3} }}", m_X, m_Y, m_Hue, Parent.Intern(m_Text));
         }
 
         private static byte[] m_LayoutName = Gump.StringToBuffer("text");

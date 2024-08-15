@@ -940,7 +940,7 @@ namespace Server.Items.Triggers
 
             public override string ToString()
             {
-                return String.Format("x{0}:{1}|{2}|{3}", m_Repeats, m_Motion, m_PropName, m_PropValue);
+                return string.Format("x{0}:{1}|{2}|{3}", m_Repeats, m_Motion, m_PropName, m_PropValue);
             }
         }
     }

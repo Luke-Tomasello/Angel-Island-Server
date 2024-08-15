@@ -57,7 +57,7 @@ namespace Server.Items
                     else
                     {
                         vendor.PricingModel = PricingModel.Commission;
-                        vendor.SayTo(from, String.Format("I shall now work for a minimum wage plus a {0}% comission.", ((int)(vendor.Commission * 100)).ToString()));
+                        vendor.SayTo(from, string.Format("I shall now work for a minimum wage plus a {0}% comission.", ((int)(vendor.Commission * 100)).ToString()));
                         m_Deed.Delete();
                     }
                 }

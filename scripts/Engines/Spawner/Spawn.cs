@@ -67,7 +67,7 @@ namespace Server.Engines
 
             string filename = args.ArgString;
             string fullFileName = Path.Combine(Core.DataDirectory, "Spawners/Angel Island/Spawns/felucca", filename);
-            string outputName = Path.Combine(Core.DataDirectory, String.Format("{0} spawner patch {1}.cfg", args.ArgString, DateTime.UtcNow.ToString("MM-dd-yyyy")));
+            string outputName = Path.Combine(Core.DataDirectory, string.Format("{0} spawner patch {1}.cfg", args.ArgString, DateTime.UtcNow.ToString("MM-dd-yyyy")));
             UInt32 patchID = (UInt32)Utility.GetStableHashCode(outputName, version: 1);
             if (File.Exists(fullFileName) == false)
             {
@@ -76,7 +76,7 @@ namespace Server.Engines
             }
 
             // empty the "'shard' spawner list patch.cfg"
-            File.WriteAllText(outputName, String.Empty);
+            File.WriteAllText(outputName, string.Empty);
 
             // keep track of overlapping areas
             List<Serial> areaOverlap = new();

@@ -59,7 +59,7 @@ namespace Server.Items
             string suffix = base.GetOldSuffix();
 
             if (m_IsShipwreckedItem)
-                suffix = String.Concat(suffix, " recovered from a shipwreck");
+                suffix = string.Concat(suffix, " recovered from a shipwreck");
 
             return suffix;
         }

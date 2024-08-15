@@ -131,14 +131,14 @@ namespace Server.Items
             MagicEffect e = GetEffect(effect);
 
             if (e == null)
-                return String.Empty;
+                return string.Empty;
 
             string name = e.OldName;
 
             if (name == null && !Server.Text.Cliloc.Lookup.TryGetValue(e.Label, out name))
-                return String.Empty;
+                return string.Empty;
 
-            return String.Format("{0} (charges: {1})", name.ToLower(), charges);
+            return string.Format("{0} (charges: {1})", name.ToLower(), charges);
         }
 
         public static void OnAdded(Mobile m, Item item)

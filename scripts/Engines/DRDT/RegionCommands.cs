@@ -200,9 +200,9 @@ namespace Server.Commands
             string regionName;
 
             if (region.Map != null && region == region.Map.DefaultRegion)
-                regionName = String.Format("({0} default region)", region.Map.Name);
+                regionName = string.Format("({0} default region)", region.Map.Name);
             else if (region.Name == null)
-                regionName = String.Format("(unnamed region)", region.Name);
+                regionName = string.Format("(unnamed region)", region.Name);
             else
                 regionName = region.Name;
 

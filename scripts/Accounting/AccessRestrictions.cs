@@ -50,13 +50,13 @@ namespace Server
 
                 if (Firewall.IsBlocked(ip.ToString()))
                 {
-                    Diagnostics.LogHelper.LogBlockedConnection(String.Format("Client: {0}: Firewall blocked connection attempt.", ip));
+                    Diagnostics.LogHelper.LogBlockedConnection(string.Format("Client: {0}: Firewall blocked connection attempt.", ip));
                     e.AllowConnection = false;
                     return;
                 }
                 /*else if (IPLimiter.SocketBlock && !IPLimiter.Verify(ip))
                 {
-                    Diagnostics.LogHelper.LogBlockedConnection(String.Format("Client: {0}: Past IP limit threshold", ip));
+                    Diagnostics.LogHelper.LogBlockedConnection(string.Format("Client: {0}: Past IP limit threshold", ip));
                     e.AllowConnection = false;
                     return;
                 }*/

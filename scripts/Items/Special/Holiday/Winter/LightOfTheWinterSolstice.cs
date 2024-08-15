@@ -126,7 +126,7 @@ namespace Server.Items
                 m_Year = 2004;
 
             if (m_Dipper != null)
-                m_Dipper = String.Intern(m_Dipper);
+                m_Dipper = string.Intern(m_Dipper);
         }
     }
 }

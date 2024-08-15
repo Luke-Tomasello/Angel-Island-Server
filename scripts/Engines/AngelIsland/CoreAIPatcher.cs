@@ -362,8 +362,8 @@ namespace Server
                 return defaultValue;
 
             string strVal = GetText(node, defaultValue.ToString());
-            if (String.Equals(strVal, "true", StringComparison.OrdinalIgnoreCase)) return true;
-            else if (String.Equals(strVal, "false", StringComparison.OrdinalIgnoreCase)) return false;
+            if (string.Equals(strVal, "true", StringComparison.OrdinalIgnoreCase)) return true;
+            else if (string.Equals(strVal, "false", StringComparison.OrdinalIgnoreCase)) return false;
             else return defaultValue;
         }
 

@@ -114,7 +114,7 @@ namespace Server.Commands
                         {
                             from.SendMessage(kvp.Key);
                             foreach (object o in kvp.Value)
-                                from.SendMessage(String.Format("-- {0} ({1})",
+                                from.SendMessage(string.Format("-- {0} ({1})",
                                     (o as Item).GetType().Name,
                                     (o as Item).GetWorldLocation()));
                             from.SendMessage("{0} objects comprise this event", kvp.Value.Count);
@@ -268,9 +268,9 @@ namespace Server.Commands
                     }
                     from.SendMessage("Event '{0}'", eventName);
                     from.SendMessage("Execution in {0}.",
-                        String.Format("{0} days, {1} hours, {2} minutes, and {3} seconds", ts_countdown.Days, ts_countdown.Hours, ts_countdown.Minutes, ts_countdown.Seconds));
+                        string.Format("{0} days, {1} hours, {2} minutes, and {3} seconds", ts_countdown.Days, ts_countdown.Hours, ts_countdown.Minutes, ts_countdown.Seconds));
                     from.SendMessage("Duration for {0}.",
-                        String.Format("{0} days, {1} hours, {2} minutes, and {3} seconds", ts_duration.Days, ts_duration.Hours, ts_duration.Minutes, ts_duration.Seconds));
+                        string.Format("{0} days, {1} hours, {2} minutes, and {3} seconds", ts_duration.Days, ts_duration.Hours, ts_duration.Minutes, ts_duration.Seconds));
                 }
                 else if (command == "delete")
                 {

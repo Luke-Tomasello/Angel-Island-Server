@@ -144,7 +144,7 @@ namespace Server.Engines.Chat
 
         public static void SendSystemMessage(ChatUser to, string format, params object[] args)
         {
-            to.SendMessage(57, to.Mobile, "0System", String.Format(format, args));
+            to.SendMessage(57, to.Mobile, "0System", string.Format(format, args));
         }
 
         #region Account Tags

@@ -99,7 +99,7 @@ namespace Server.Scripts.Gumps
                         if (text != null)
                         {
                             m_Skill.Base = Convert.ToDouble(text.Text);
-                            Server.Commands.CommandLogging.LogChangeProperty(m_From, m_Target, String.Format("{0}.Base", m_Skill), m_Skill.Base.ToString());
+                            Server.Commands.CommandLogging.LogChangeProperty(m_From, m_Target, string.Format("{0}.Base", m_Skill), m_Skill.Base.ToString());
                         }
                     }
                     else

@@ -239,7 +239,7 @@ namespace Server.Items
                 if (se.Count == 1)
                     PublicOverheadMessage(MessageType.Regular, 0x3B2, 1062719, se.Total.ToString());
                 else
-                    PublicOverheadMessage(MessageType.Regular, 0x3B2, 1042683, String.Format("{0}\t{1}", se.Total, se.Count));
+                    PublicOverheadMessage(MessageType.Regular, 0x3B2, 1042683, string.Format("{0}\t{1}", se.Total, se.Count));
 
                 return;
             }
@@ -296,7 +296,7 @@ namespace Server.Items
             if (se.Count == 1)
                 PublicOverheadMessage(MessageType.Regular, 0x3B2, 1062719, se.Total.ToString());
             else
-                PublicOverheadMessage(MessageType.Regular, 0x3B2, 1042683, String.Format("{0}\t{1}", se.Total, se.Count));
+                PublicOverheadMessage(MessageType.Regular, 0x3B2, 1042683, string.Format("{0}\t{1}", se.Total, se.Count));
         }
 
         public override void Serialize(GenericWriter writer)

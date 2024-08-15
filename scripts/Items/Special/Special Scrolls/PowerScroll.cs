@@ -171,7 +171,7 @@ namespace Server.Items
 
         private string GetNameLocalized()
         {
-            return String.Concat("#", (1044060 + (int)m_Skill).ToString());
+            return string.Concat("#", (1044060 + (int)m_Skill).ToString());
         }
 
         private string GetName()
@@ -345,7 +345,7 @@ namespace Server.Items
                 else if (value == 120.0)
                     AddHtmlLocalized(40, 20, 260, 20, 1049638, 0xFFFFFF, false, false); // Legendary Scroll (120 Skill):
                 else
-                    AddHtml(40, 20, 260, 20, String.Format("<basefont color=#FFFFFF>Power Scroll ({0} Skill):</basefont>", value), false, false);
+                    AddHtml(40, 20, 260, 20, string.Format("<basefont color=#FFFFFF>Power Scroll ({0} Skill):</basefont>", value), false, false);
 
                 AddHtmlLocalized(310, 20, 120, 20, 1044060 + (int)scroll.m_Skill, 0xFFFFFF, false, false);
             }

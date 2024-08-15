@@ -38,7 +38,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} {1} ingot" : "{0} {1} ingots", Amount, CraftResources.GetName(m_Resource).ToLower());
+                return string.Format(Amount == 1 ? "{0} {1} ingot" : "{0} {1} ingots", Amount, CraftResources.GetName(m_Resource).ToLower());
             }
         }
 

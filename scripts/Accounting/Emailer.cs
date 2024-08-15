@@ -152,7 +152,7 @@ namespace Server.Accounting
                     // hmm.. badness
                     if (px == null || px.m_toAddress == null)
                     {
-                        string message = String.Format("Error: in Accounting.Emailer. parameter pack.");
+                        string message = string.Format("Error: in Accounting.Emailer. parameter pack.");
                         throw new ApplicationException(message);
                     }
 
@@ -160,7 +160,7 @@ namespace Server.Accounting
                     //  we allow distribution lists
                     if (SmtpDirect.CheckEmailAddy(px.m_toAddress, true) == false)
                     {
-                        string message = String.Format("Email: Bad address detected '{0}'.", px.m_toAddress);
+                        string message = string.Format("Email: Bad address detected '{0}'.", px.m_toAddress);
                         throw new ApplicationException(message);
                     }
 

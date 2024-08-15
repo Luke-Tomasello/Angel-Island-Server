@@ -108,7 +108,7 @@ namespace Server.Engines.Apiculture
 
         public void HiveMessage(Mobile from, string format, params object[] args)
         {
-            SendMessageTo(from, false, String.Format(format, args));
+            SendMessageTo(from, false, string.Format(format, args));
         }
 
         public void HiveMessage(Mobile from, int number, string args = "")

@@ -38,7 +38,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} piece of leather" : "{0} pieces of leather", Amount);
+                return string.Format(Amount == 1 ? "{0} piece of leather" : "{0} pieces of leather", Amount);
             }
         }
 
@@ -194,7 +194,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} piece of spined leather" : "{0} pieces of spined leather", Amount);
+                return string.Format(Amount == 1 ? "{0} piece of spined leather" : "{0} pieces of spined leather", Amount);
             }
         }
 
@@ -242,7 +242,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} piece of horned leather" : "{0} pieces of horned leather", Amount);
+                return string.Format(Amount == 1 ? "{0} piece of horned leather" : "{0} pieces of horned leather", Amount);
             }
         }
 
@@ -290,7 +290,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} piece of barbed leather" : "{0} pieces of barbed leather", Amount);
+                return string.Format(Amount == 1 ? "{0} piece of barbed leather" : "{0} pieces of barbed leather", Amount);
             }
         }
 

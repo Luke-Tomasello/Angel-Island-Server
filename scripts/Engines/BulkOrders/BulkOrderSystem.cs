@@ -503,7 +503,7 @@ namespace Server.Engines.BulkOrders
                 from.SendGump(new LargeBODAcceptGump(from, (LargeBOD)bod));
 
             LogHelper logger = new LogHelper("BulkOrderOffers.log", false, true);
-            logger.Log(LogType.Mobile, from, String.Format("Was offered {0} ({1}) and must now wait {2}.", bod, FormatBulkOrder(bod), delay));
+            logger.Log(LogType.Mobile, from, string.Format("Was offered {0} ({1}) and must now wait {2}.", bod, FormatBulkOrder(bod), delay));
             logger.Finish();
         }
 
@@ -711,7 +711,7 @@ namespace Server.Engines.BulkOrders
                 BeginClaimReward(from, vendor);
 
                 LogHelper logger = new LogHelper("BulkOrders.log", false, true);
-                logger.Log(LogType.Mobile, from, String.Format("Handed in {0} ({1}) for {2} points.", bod.ToString(), FormatBulkOrder(bod), points));
+                logger.Log(LogType.Mobile, from, string.Format("Handed in {0} ({1}) for {2} points.", bod.ToString(), FormatBulkOrder(bod), points));
                 logger.Finish();
             }
             else
@@ -740,7 +740,7 @@ namespace Server.Engines.BulkOrders
                 DataRecorder.DataRecorder.RecordBODGold(from as Mobile, gold);
 
                 LogHelper logger = new LogHelper("BulkOrderGold.log", false, true);
-                logger.Log(LogType.Mobile, from, String.Format("Handed in {0} ({1}) for {2} gp.", bod.ToString(), FormatBulkOrder(bod), gold));
+                logger.Log(LogType.Mobile, from, string.Format("Handed in {0} ({1}) for {2} gp.", bod.ToString(), FormatBulkOrder(bod), gold));
                 logger.Finish();
             }
 
@@ -891,7 +891,7 @@ namespace Server.Engines.BulkOrders
             from.PlaySound(0x5A7);
 
             LogHelper logger = new LogHelper("BulkOrderRewards.log", false, true);
-            logger.Log(LogType.Mobile, from, String.Format("Claimed reward {0} (Label={1}) for {2} points.", toGive, reward.Label, reward.Points));
+            logger.Log(LogType.Mobile, from, string.Format("Claimed reward {0} (Label={1}) for {2} points.", toGive, reward.Label, reward.Points));
             logger.Finish();
 
             return true;
@@ -936,7 +936,7 @@ namespace Server.Engines.BulkOrders
             vendor.SayTo(from, "You'll find this one much easier to fulfil.");
 
             LogHelper logger = new LogHelper("BulkOrderExchange.log", false, true);
-            logger.Log(LogType.Mobile, from, String.Format("Exchanged LBOD ({0}) for SBOD ({1}).", FormatBulkOrder(lbod), FormatBulkOrder(sbod)));
+            logger.Log(LogType.Mobile, from, string.Format("Exchanged LBOD ({0}) for SBOD ({1}).", FormatBulkOrder(lbod), FormatBulkOrder(sbod)));
             logger.Finish();
         }
 

@@ -142,7 +142,7 @@ namespace Server.Commands
             Type type = ScriptCompiler.FindTypeByName(conditionArgs[index++], true);
 
             if (type == null)
-                throw new Exception(String.Format("No type with that name ({0}) was found.", conditionArgs[0]));
+                throw new Exception(string.Format("No type with that name ({0}) was found.", conditionArgs[0]));
 
             PropertyInfo[] props = type.GetProperties();
 
@@ -266,15 +266,15 @@ namespace Server.Commands
 			}
 
 			if ( m_Property == null )
-				throw new Exception( String.Format( "No property with the name ({0}) was found on type ({1}).", prop, type.Name ) );
+				throw new Exception( string.Format( "No property with the name ({0}) was found on type ({1}).", prop, type.Name ) );
 
 			CPA attr = Properties.GetCPA( m_Property );
 
 			if ( attr == null )
-				throw new Exception( String.Format( "No property with the name ({0}) was found on type ({1}).", prop, type.Name ) );
+				throw new Exception( string.Format( "No property with the name ({0}) was found on type ({1}).", prop, type.Name ) );
 
 			if ( from.AccessLevel < attr.ReadLevel )
-				throw new Exception( String.Format( "Getting this property ({0}) requires at least {1} access level.", prop, Mobile.GetAccessLevelName( attr.ReadLevel ) ) );*/
+				throw new Exception( string.Format( "Getting this property ({0}) requires at least {1} access level.", prop, Mobile.GetAccessLevelName( attr.ReadLevel ) ) );*/
 
             string error = Properties.ConstructFromString(m_PropertyInfoChain[m_PropertyInfoChain.Length - 1].PropertyType, null, arg, ref m_Argument);
 
@@ -324,7 +324,7 @@ namespace Server.Commands
             if (m_Operator != ConditionOperator.Equality && m_Operator != ConditionOperator.Inequality)
             {
                 if (m_Argument != null && !(m_Argument is IComparable))
-                    throw new Exception(String.Format("This property ({0}) is not comparable.", prop));
+                    throw new Exception(string.Format("This property ({0}) is not comparable.", prop));
             }
         }
 
@@ -362,7 +362,7 @@ namespace Server.Commands
                 return 1;
 
             if (!(obj is IComparable))
-                throw new Exception(String.Format("This property ({0}) returned an incomparable object of type {1}.", m_PropertyInfoChain[m_PropertyInfoChain.Length - 1].Name, obj.GetType()));
+                throw new Exception(string.Format("This property ({0}) returned an incomparable object of type {1}.", m_PropertyInfoChain[m_PropertyInfoChain.Length - 1].Name, obj.GetType()));
 
             return ((IComparable)obj).CompareTo(m_Argument);
         }

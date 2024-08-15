@@ -351,13 +351,13 @@ namespace Server.Gumps
                 AddPage(0);
                 AddImage(x, y, 1140);
 
-                AddHtml(x + 63, y + 51, 266, 40, String.Format("<H3>Would you like to report {0} as a murderer?</H3>", killer.Name), false, false);
+                AddHtml(x + 63, y + 51, 266, 40, string.Format("<H3>Would you like to report {0} as a murderer?</H3>", killer.Name), false, false);
 
                 int balance;
 
                 if (killer.LongTermMurders >= 5 && (balance = Banker.GetAccessibleBalance(m_Victim)) > 0)
                 {
-                    AddHtml(x + 63, y + 105, 281, 20, String.Format("<H3>Optional Bounty: ({0} max)</H3>", Math.Min(BountyCap, balance)), false, false);
+                    AddHtml(x + 63, y + 105, 281, 20, string.Format("<H3>Optional Bounty: ({0} max)</H3>", Math.Min(BountyCap, balance)), false, false);
                     AddImage(x + 63, y + 125, 1143);
                     AddTextEntry(x + 74, y + 129, 250, 18, 0, 0, "");
                     AddHtml(x + 63, y + 150, 281, 20, "<H3>amount will be deducted from your bank</H3>", false, false);
@@ -456,7 +456,7 @@ namespace Server.Gumps
 
             TextRelay relay = info.GetTextEntry(0);
 
-            if (relay == null || String.IsNullOrEmpty(relay.Text))
+            if (relay == null || string.IsNullOrEmpty(relay.Text))
                 return true;
 
             try

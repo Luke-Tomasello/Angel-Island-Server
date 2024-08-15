@@ -146,7 +146,7 @@ namespace Server.Items
 
         private void RecalculateName(string playerName)
         {
-            if (String.IsNullOrEmpty(playerName))
+            if (string.IsNullOrEmpty(playerName))
             {
                 Name = null;
             }
@@ -162,7 +162,7 @@ namespace Server.Items
                     case HeadType.Tournament: format = "the head of {0}, taken in a tournament"; break;
                 }
 
-                Name = String.Format(format, playerName);
+                Name = string.Format(format, playerName);
             }
         }
 

@@ -116,8 +116,8 @@ namespace Server.Engines.MyRunUO
 
         public static string CompileConnectionString()
         {
-            //string connectionString = String.Format("DRIVER={0};SERVER={1};DATABASE={2};UID={3};PASSWORD={4};",
-            string connectionString = String.Format("DRIVER={0};SERVER={1};DATABASE={2};USER={3};PASSWORD={4};",
+            //string connectionString = string.Format("DRIVER={0};SERVER={1};DATABASE={2};UID={3};PASSWORD={4};",
+            string connectionString = string.Format("DRIVER={0};SERVER={1};DATABASE={2};USER={3};PASSWORD={4};",
                 DatabaseDriver, DatabaseServer, DatabaseName, DatabaseUserID, DatabasePassword);
 
             return connectionString;

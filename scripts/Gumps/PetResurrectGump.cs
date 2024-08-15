@@ -65,10 +65,10 @@ namespace Server.Gumps
             AddItem(218, 95, 0xCB0);
 
             AddHtmlLocalized(30, 30, 150, 75, 1049665, false, false); // <div align=center>Wilt thou sanctify the resurrection of:</div>
-            AddHtml(30, 70, 150, 25, String.Format("<div align=CENTER>{0}</div>", pet.Name), true, false);
+            AddHtml(30, 70, 150, 25, string.Format("<div align=CENTER>{0}</div>", pet.Name), true, false);
 
             if (bStatLoss)
-                AddHtml(30, 105, 150, 105, String.Format("<div align=CENTER>{0}</div>", SkillLossWarning), true, false);
+                AddHtml(30, 105, 150, 105, string.Format("<div align=CENTER>{0}</div>", SkillLossWarning), true, false);
 
             AddButton(40, bStatLoss ? 215 : 105, 0x81A, 0x81B, 0x1, GumpButtonType.Reply, 0); // Okay
             AddButton(110, bStatLoss ? 215 : 105, 0x819, 0x818, 0x2, GumpButtonType.Reply, 0); // Cancel

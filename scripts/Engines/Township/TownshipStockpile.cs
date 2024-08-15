@@ -440,7 +440,7 @@ namespace Server.Township
             while (m_Log.Count >= 10)
                 m_Log.RemoveAt(0);
 
-            m_Log.Add(String.Format(format, args));
+            m_Log.Add(string.Format(format, args));
         }
 
         public override void Serialize(GenericWriter writer)
@@ -487,7 +487,7 @@ namespace Server.Township
     {
         public override string DefaultName
         {
-            get { return String.Format("a shipment of {0:N0} {1}", m_Quantity, TownshipStockpile.GetLabel(m_Stock)); }
+            get { return string.Format("a shipment of {0:N0} {1}", m_Quantity, TownshipStockpile.GetLabel(m_Stock)); }
         }
 
         private TownshipStockpile.StockFlag m_Stock;

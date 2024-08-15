@@ -63,7 +63,7 @@ namespace Server.Network
 
                 if (!success)
                 {
-                    Utility.ConsoleWriteLine(String.Format("Retrying..."), ConsoleColor.Yellow);
+                    Utility.ConsoleWriteLine(string.Format("Retrying..."), ConsoleColor.Yellow);
                     Thread.Sleep(10000);
                 }
             } while (!success);
@@ -103,7 +103,7 @@ namespace Server.Network
                     ns.Start();
 
                     if (ns.Running)
-                        Utility.ConsoleWriteLine(String.Format("Client: {0}: Connected. [{1} Online]", ns, NetState.Instances.Count), ConsoleColor.Yellow);
+                        Utility.ConsoleWriteLine(string.Format("Client: {0}: Connected. [{1} Online]", ns, NetState.Instances.Count), ConsoleColor.Yellow);
                 }
             }
         }
@@ -164,7 +164,7 @@ namespace Server.Network
 
                 if (seed == 0)
                 {
-                    Utility.ConsoleWriteLine(String.Format("Login: {0}: Invalid client detected, disconnecting", ns), ConsoleColor.Yellow);
+                    Utility.ConsoleWriteLine(string.Format("Login: {0}: Invalid client detected, disconnecting", ns), ConsoleColor.Yellow);
                     ns.Dispose();
                     return false;
                 }
@@ -183,7 +183,7 @@ namespace Server.Network
         {
             if (!ns.SentFirstPacket && packetID != 0xF0 && packetID != 0xF1 && packetID != 0xCF && packetID != 0x80 && packetID != 0x91 && packetID != 0xA4 && packetID != 0xEF)
             {
-                Utility.ConsoleWriteLine(String.Format("Client: {0}: Encrypted client detected, disconnecting", ns), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("Client: {0}: Encrypted client detected, disconnecting", ns), ConsoleColor.Yellow);
                 ns.Dispose();
                 return true;
             }
@@ -250,7 +250,7 @@ namespace Server.Network
                         {
                             if (ns.Mobile == null)
                             {
-                                Utility.ConsoleWriteLine(String.Format("Client: {0}: Sent ingame packet (0x{1:X2}) before having been attached to a mobile", ns, packetID), ConsoleColor.Yellow);
+                                Utility.ConsoleWriteLine(string.Format("Client: {0}: Sent ingame packet (0x{1:X2}) before having been attached to a mobile", ns, packetID), ConsoleColor.Yellow);
                                 ns.Dispose();
                                 break;
                             }

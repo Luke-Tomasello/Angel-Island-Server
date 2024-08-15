@@ -549,7 +549,7 @@ namespace Server.Township
 
             m_Damagers.Remember(damager, 300.0);
 
-            tsr.TStone.SendMessage(String.Format("{0} at {1} is damaging your township's property!", damager.Name, damager.Location));
+            tsr.TStone.SendMessage(string.Format("{0} at {1} is damaging your township's property!", damager.Name, damager.Location));
         }
 
         #endregion

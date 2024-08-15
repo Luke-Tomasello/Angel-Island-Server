@@ -105,7 +105,7 @@ namespace Server.Gumps
 				 * CONTINUE - You chose to try to come back to life now.<br>
 				 * CANCEL - You prefer to remain a ghost for now.
 				 */
-                string text = String.Format("{0}<br>",
+                string text = string.Format("{0}<br>",
                     "It is possible for you to be resurrected here by this healer. Do you wish to try?");
 
                 // no statloss if an inmate or server wars are on

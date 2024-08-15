@@ -381,7 +381,7 @@ namespace Server.Items
 
         private void UpdateName()
         {
-            this.Name = String.Format("crystalline {0}", CraftResources.GetName(m_Resource).ToLower());
+            this.Name = string.Format("crystalline {0}", CraftResources.GetName(m_Resource).ToLower());
         }
 
         private void UpdateHue()

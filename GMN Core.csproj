@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<RootNamespace>GMN_Core</RootNamespace>
+		<BaseOutputPath></BaseOutputPath>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<Nullable>annotations</Nullable>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<WarningsAsErrors>$(WarningsAsErrors);NU1605;CS0108</WarningsAsErrors>
+		<NoWarn>1701;1702;CS0649;CS0642;CS0162;CS0414;CS0168;CS0612;SYSLIB0022;CS0618;CS0219;SYSLIB0021;SYSLIB0014</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<WarningsAsErrors>$(WarningsAsErrors);NU1605;CS0108</WarningsAsErrors>
+		<NoWarn>1701;1702;CS0649;CS0642;CS0162;CS0414;CS0168;CS0612;SYSLIB0022;CS0618;CS0219;SYSLIB0021;SYSLIB0014</NoWarn>
+	</PropertyGroup>
+
+
+	<ItemGroup>
+	  <Compile Remove="BuildInfo\**" />
+	  <EmbeddedResource Remove="BuildInfo\**" />
+	  <None Remove="BuildInfo\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MaxMind.GeoIP2" Version="5.1.0" />
+		<PackageReference Include="NAudio" Version="2.2.1" />
+		<PackageReference Include="Pluralize.NET" Version="1.0.2" />
+		<PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
+		<PackageReference Include="TextCopy" Version="6.1.0" />
+	</ItemGroup>
+
+	<PropertyGroup>
+		<OutputPath>.\</OutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	</PropertyGroup>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	  <Exec Command="BuildInfo.exe" />
+	</Target>
+
+</Project>

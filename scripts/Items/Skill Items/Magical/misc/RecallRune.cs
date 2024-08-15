@@ -295,7 +295,7 @@ namespace Server.Items
                 else if (m_TargetMap == Map.Trammel)
                     list.Add((House != null ? 1062453 : 1060806), RuneFormat, desc); // ~1_val~ (Trammel)[(House)]
                 else
-                    list.Add((House != null ? "{0} ({1})(House)" : "{0} ({1})"), String.Format(RuneFormat, desc), m_TargetMap);
+                    list.Add((House != null ? "{0} ({1})(House)" : "{0} ({1})"), string.Format(RuneFormat, desc), m_TargetMap);
             }
             else
             {
@@ -313,15 +313,15 @@ namespace Server.Items
                     desc = "an unknown location";
 
                 if (m_TargetMap == Map.Malas)
-                    LabelTo(from, (House != null ? 1062454 : 1060804), String.Format(RuneFormat, desc)); // ~1_val~ (Malas)[(House)]
+                    LabelTo(from, (House != null ? 1062454 : 1060804), string.Format(RuneFormat, desc)); // ~1_val~ (Malas)[(House)]
                 else if (m_TargetMap == Map.Felucca)
                     // Adam: While we are one facet, there is no need to display [Felucca]
-                    //LabelTo( from, (House != null ? 1062452 : 1060805), String.Format( RuneFormat, desc ) ); // ~1_val~ (Felucca)[(House)]
-                    LabelTo(from, String.Format(RuneFormat, desc)); // ~1_val~ (Felucca)[(House)]
+                    //LabelTo( from, (House != null ? 1062452 : 1060805), string.Format( RuneFormat, desc ) ); // ~1_val~ (Felucca)[(House)]
+                    LabelTo(from, string.Format(RuneFormat, desc)); // ~1_val~ (Felucca)[(House)]
                 else if (m_TargetMap == Map.Trammel)
-                    LabelTo(from, (House != null ? 1062453 : 1060806), String.Format(RuneFormat, desc)); // ~1_val~ (Trammel)[(House)]
+                    LabelTo(from, (House != null ? 1062453 : 1060806), string.Format(RuneFormat, desc)); // ~1_val~ (Trammel)[(House)]
                 else
-                    LabelTo(from, (House != null ? "{0} ({1})(House)" : "{0} ({1})"), String.Format(RuneFormat, desc), m_TargetMap);
+                    LabelTo(from, (House != null ? "{0} ({1})(House)" : "{0} ({1})"), string.Format(RuneFormat, desc), m_TargetMap);
             }
             else
             {

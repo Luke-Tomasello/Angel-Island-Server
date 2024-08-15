@@ -120,21 +120,21 @@ namespace Server.Spells.Sixth
                     }
 
                     //Strength
-                    string name = String.Format("[Magic] {0} Offset", StatType.Str);
+                    string name = string.Format("[Magic] {0} Offset", StatType.Str);
                     StatMod mod = Caster.GetStatMod(name);
                     if (mod != null /*&& mod.Offset > 0*/)
                     {
                         Caster.RemoveStatMod(name);
                     }
                     //Agility
-                    name = String.Format("[Magic] {0} Offset", StatType.Dex);
+                    name = string.Format("[Magic] {0} Offset", StatType.Dex);
                     mod = Caster.GetStatMod(name);
                     if (mod != null /*&& mod.Offset > 0*/)
                     {
                         Caster.RemoveStatMod(name);
                     }
                     //Cunning
-                    name = String.Format("[Magic] {0} Offset", StatType.Int);
+                    name = string.Format("[Magic] {0} Offset", StatType.Int);
                     mod = Caster.GetStatMod(name);
                     if (mod != null /*&& mod.Offset > 0*/)
                     {

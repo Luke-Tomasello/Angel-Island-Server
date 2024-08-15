@@ -338,7 +338,7 @@ namespace Server.Items.Triggers
 
             public override string ToString()
             {
-                return String.Format("x{0} {1}", m_Weight, m_Link);
+                return string.Format("x{0} {1}", m_Weight, m_Link);
             }
         }
 #endif

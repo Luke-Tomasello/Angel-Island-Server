@@ -54,7 +54,7 @@ namespace Server.Admin
             string outStr;
             if (m_NewLine)
             {
-                outStr = String.Format("[{0}]: {1}", DateTime.UtcNow.ToString(DateFormat), str);
+                outStr = string.Format("[{0}]: {1}", DateTime.UtcNow.ToString(DateFormat), str);
                 m_NewLine = false;
             }
             else
@@ -75,7 +75,7 @@ namespace Server.Admin
             if (m_NewLine)
             {
                 string outStr;
-                outStr = String.Format("[{0}]: {1}", DateTime.UtcNow.ToString(DateFormat), ch);
+                outStr = string.Format("[{0}]: {1}", DateTime.UtcNow.ToString(DateFormat), ch);
 
                 m_ConsoleData.Append(outStr);
 
@@ -100,9 +100,9 @@ namespace Server.Admin
         {
             string outStr;
             if (m_NewLine)
-                outStr = String.Format("[{0}]: {1}{2}", DateTime.UtcNow.ToString(DateFormat), line, Console.Out.NewLine);
+                outStr = string.Format("[{0}]: {1}{2}", DateTime.UtcNow.ToString(DateFormat), line, Console.Out.NewLine);
             else
-                outStr = String.Format("{0}{1}", line, Console.Out.NewLine);
+                outStr = string.Format("{0}{1}", line, Console.Out.NewLine);
 
             m_ConsoleData.Append(outStr);
             if (m_ConsoleData.Length >= 4096)
@@ -123,7 +123,7 @@ namespace Server.Admin
             }
             else if (cmd == 0xFF)
             {
-                string statStr = String.Format(", Name={0}, Age={1}, Clients={2}, Items={3}, Chars={4}, Mem={5}K", Core.Server, (int)(DateTime.UtcNow - Server.Items.Clock.ServerStart).TotalHours, NetState.Instances.Count, World.Items.Count, World.Mobiles.Count, (int)(System.GC.GetTotalMemory(false) / 1024));
+                string statStr = string.Format(", Name={0}, Age={1}, Clients={2}, Items={3}, Chars={4}, Mem={5}K", Core.Server, (int)(DateTime.UtcNow - Server.Items.Clock.ServerStart).TotalHours, NetState.Instances.Count, World.Items.Count, World.Mobiles.Count, (int)(System.GC.GetTotalMemory(false) / 1024));
                 state.Send(new UOGInfo(statStr));
                 state.Dispose();
             }

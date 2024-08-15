@@ -149,7 +149,7 @@ namespace Server.Commands
                     if (itemType == null)
                     {
                         // Invalid
-                        e.Mobile.SendMessage(String.Format("No type with the name '{0}' was found.", typeName));
+                        e.Mobile.SendMessage(string.Format("No type with the name '{0}' was found.", typeName));
                         return;
                     }
                     else

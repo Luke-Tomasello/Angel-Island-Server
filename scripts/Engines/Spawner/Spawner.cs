@@ -1183,7 +1183,7 @@ namespace Server.Mobiles
                     winner.SendLocalizedMessage(1062317); // For your valor in combating the fallen beast, a special reward has been bestowed on you.
 
                     LogHelper logger = new LogHelper("SpawnerArtifacts.log", false, true);
-                    logger.Log(LogType.Item, this, String.Format("{0} received an artifact: {1} ({2}).", winner, artifact, artifact.GetType().Name));
+                    logger.Log(LogType.Item, this, string.Format("{0} received an artifact: {1} ({2}).", winner, artifact, artifact.GetType().Name));
                     logger.Finish();
                 }
             }
@@ -1279,7 +1279,7 @@ namespace Server.Mobiles
                     SetFlag(SpawnerAttribs.ModeNeruns, false);
                     SetFlag(SpawnerAttribs.ModeLegacy, false);
                     SetFlag(SpawnerAttribs.ModeMulti, false);
-                    Utility.ConsoleWriteLine(String.Format("Error: Invalid spawner designation for spawner {0} in {1}", this, Utility.FileInfo()), ConsoleColor.Red);
+                    Utility.ConsoleWriteLine(string.Format("Error: Invalid spawner designation for spawner {0} in {1}", this, Utility.FileInfo()), ConsoleColor.Red);
                 }
 
                 UpdateDisplay();
@@ -2320,7 +2320,7 @@ namespace Server.Mobiles
 
             if (from.AccessLevel == AccessLevel.Player)
             {
-                LabelTo(from, String.Format("[{0}]", "Super Secret"));
+                LabelTo(from, string.Format("[{0}]", "Super Secret"));
                 return;
             }
 
@@ -2340,9 +2340,9 @@ namespace Server.Mobiles
             if (m_Shard.HasFlag(ShardConfig.AllShards))
             {
                 if (labels == 0)
-                    LabelTo(from, String.Format("[{0}]", Utility.SplitOnCase(ShardConfig.AllShards.ToString())));
+                    LabelTo(from, string.Format("[{0}]", Utility.SplitOnCase(ShardConfig.AllShards.ToString())));
                 else
-                    LabelTo(from, String.Format("[{0}]", Utility.SplitOnCase(ShardConfig.AllShards.ToString()) + (Running ? " [on]" : " (Off)")));
+                    LabelTo(from, string.Format("[{0}]", Utility.SplitOnCase(ShardConfig.AllShards.ToString()) + (Running ? " [on]" : " (Off)")));
                 labels++;
             }
             else
@@ -2351,18 +2351,18 @@ namespace Server.Mobiles
                 if (m_Shard.HasFlag(ShardConfig.AngelIsland))
                 {
                     if (labels == 0)
-                        LabelTo(from, String.Format("[{0}]", Utility.SplitOnCase(ShardConfig.AngelIsland.ToString())));
+                        LabelTo(from, string.Format("[{0}]", Utility.SplitOnCase(ShardConfig.AngelIsland.ToString())));
                     else
-                        LabelTo(from, String.Format("[{0}]", Utility.SplitOnCase(ShardConfig.AngelIsland.ToString()) + (Running ? " [on]" : " (Off)")));
+                        LabelTo(from, string.Format("[{0}]", Utility.SplitOnCase(ShardConfig.AngelIsland.ToString()) + (Running ? " [on]" : " (Off)")));
                     labels++;
                 }
                 // other shards
                 if (m_Shard.HasFlag(ShardConfig.Siege) || m_Shard.HasFlag(ShardConfig.Mortalis) || m_Shard.HasFlag(ShardConfig.Renaissance))
                 {
                     if (labels == 0)
-                        LabelTo(from, String.Format("[{0}]", Utility.SplitOnCase(m_Shard.ToString())).Replace(" ", string.Empty));
+                        LabelTo(from, string.Format("[{0}]", Utility.SplitOnCase(m_Shard.ToString())).Replace(" ", string.Empty));
                     else
-                        LabelTo(from, String.Format("[{0}]", Utility.SplitOnCase(m_Shard.ToString())).Replace(" ", string.Empty) + (Running ? " (on)" : " (Off)"));
+                        LabelTo(from, string.Format("[{0}]", Utility.SplitOnCase(m_Shard.ToString())).Replace(" ", string.Empty) + (Running ? " (on)" : " (Off)"));
                 }
             }
 
@@ -3895,7 +3895,7 @@ namespace Server.Mobiles
                 int dropped = Engines.Invasion.GoodiesTimer.DropGoodies(killed.Location, killed.Map, m_GoodiesRadius, m_GoodiesTotalMin, m_GoodiesTotalMax);
 
                 LogHelper logger = new LogHelper("SpawnerGoodies.log", false, true);
-                logger.Log(LogType.Item, this, String.Format("Mobile {0} dropped {1:N0} gold in goodies", killed, dropped));
+                logger.Log(LogType.Item, this, string.Format("Mobile {0} dropped {1:N0} gold in goodies", killed, dropped));
             }
             #endregion
 
@@ -4859,7 +4859,7 @@ namespace Server.Mobiles
             base.Running = true;
             base.Respawn();
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(String.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
         }
         public virtual void EventEnded(object o)
         {
@@ -4870,7 +4870,7 @@ namespace Server.Mobiles
             else
                 ;// debug
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(String.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
         }
         public override void Serialize(GenericWriter writer)
         {

@@ -481,13 +481,13 @@ namespace Server.Misc
         public override string ToString()
         {
             if (m_MinFixed != 0 && m_MaxFixed != 0)
-                return String.Format("x{0:F2} [{1:F1}-{2:F1}] : {3}", m_Scalar, m_MinFixed / 10.0, m_MaxFixed / 10.0, m_Flags);
+                return string.Format("x{0:F2} [{1:F1}-{2:F1}] : {3}", m_Scalar, m_MinFixed / 10.0, m_MaxFixed / 10.0, m_Flags);
             else if (m_MinFixed != 0)
-                return String.Format("x{0:F2} >={1:F1} : {2}", m_Scalar, m_MinFixed / 10.0, m_Flags);
+                return string.Format("x{0:F2} >={1:F1} : {2}", m_Scalar, m_MinFixed / 10.0, m_Flags);
             else if (m_MaxFixed != 0)
-                return String.Format("x{0:F2} <{1:F1} : {2}", m_Scalar, m_MaxFixed / 10.0, m_Flags);
+                return string.Format("x{0:F2} <{1:F1} : {2}", m_Scalar, m_MaxFixed / 10.0, m_Flags);
             else
-                return String.Format("x{0:F2} : {1}", m_Scalar, m_Flags);
+                return string.Format("x{0:F2} : {1}", m_Scalar, m_Flags);
         }
     }
 

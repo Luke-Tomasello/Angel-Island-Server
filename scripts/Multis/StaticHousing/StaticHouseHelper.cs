@@ -224,7 +224,7 @@ namespace Server.Multis.StaticHousing
         {
             TimeSpan ts = DateTime.UtcNow - new DateTime(2007, 1, 1);
 
-            return String.Concat("HID", ((uint)ts.TotalMinutes).ToString("X"));
+            return string.Concat("HID", ((uint)ts.TotalMinutes).ToString("X"));
         }
 
         public static string GetDescription(string houseID)
@@ -384,7 +384,7 @@ namespace Server.Multis.StaticHousing
 
             foreach (HouseBlueprint blueprint in m_DatabaseProd.Table.Values)
             {
-                string description = String.Format("{0} by {1}", blueprint.Description, blueprint.OriginalOwnerName);
+                string description = string.Format("{0} by {1}", blueprint.Description, blueprint.OriginalOwnerName);
 
                 list.Add(new StaticHouseDeedInfo(blueprint.ID, description, blueprint.Price));
             }
@@ -451,11 +451,11 @@ namespace Server.Multis.StaticHousing
 
                 if (blueprint == null)
                 {
-                    g.AddHtml(50, y, 225, 20, String.Format("<BASEFONT COLOR=#FFFFFF>NOT FOUND ({0})</BASEFONT>", m_HouseID), false, false);
+                    g.AddHtml(50, y, 225, 20, string.Format("<BASEFONT COLOR=#FFFFFF>NOT FOUND ({0})</BASEFONT>", m_HouseID), false, false);
                     return;
                 }
 
-                string description = String.Format("<BASEFONT COLOR=#FFFFFF>{0} by {1}</BASEFONT>", blueprint.Description, blueprint.OriginalOwnerName);
+                string description = string.Format("<BASEFONT COLOR=#FFFFFF>{0} by {1}</BASEFONT>", blueprint.Description, blueprint.OriginalOwnerName);
 
                 g.AddHtml(50, y, 225, 20, description, false, false);
                 g.AddLabel(275, y, HousePlacementListGump.LabelHue, "2"); // TODO
@@ -662,7 +662,7 @@ namespace Server.Multis.StaticHousing
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex, String.Format("Error while reading static housing blueprints from \"{0}\".", fileName));
+                        LogHelper.LogException(ex, string.Format("Error while reading static housing blueprints from \"{0}\".", fileName));
                     }
                 }
             }
@@ -710,7 +710,7 @@ namespace Server.Multis.StaticHousing
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex, String.Format("Error while reading static housing blueprints from \"{0}\".", fileName));
+                        LogHelper.LogException(ex, string.Format("Error while reading static housing blueprints from \"{0}\".", fileName));
                     }
                 }
 
@@ -949,7 +949,7 @@ namespace Server.Multis.StaticHousing
                     xmlElem.InnerText = m_Capture.ToString();
                     xmlHouseElem.AppendChild(xmlElem);
 
-                    if (!String.IsNullOrEmpty(m_Description))
+                    if (!string.IsNullOrEmpty(m_Description))
                     {
                         xmlElem = xmlDoc.CreateElement("Description");
                         xmlElem.InnerText = m_Description;
@@ -1022,7 +1022,7 @@ namespace Server.Multis.StaticHousing
                         xmlTileElem.AppendChild(xmlElem);
 
                         xmlElem = xmlDoc.CreateElement("flags");
-                        xmlElem.InnerText = String.Concat("0x", ((int)te.m_flags).ToString("X2"));
+                        xmlElem.InnerText = string.Concat("0x", ((int)te.m_flags).ToString("X2"));
                         xmlTileElem.AppendChild(xmlElem);
 
                         if (te.m_hue != 0)

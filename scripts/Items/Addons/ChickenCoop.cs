@@ -302,7 +302,7 @@ namespace Server.Items
                     BaseCreature pet = list[i];
 
                     AddButton(15, 39 + 20 * i, 10006, 10006, i + 1, GumpButtonType.Reply, 0);
-                    AddHtml(32, 35 + 20 * i, 275, 18, String.Format("<BASEFONT COLOR=#C0C0EE>{0}</BASEFONT>", pet.Name), false, false);
+                    AddHtml(32, 35 + 20 * i, 275, 18, string.Format("<BASEFONT COLOR=#C0C0EE>{0}</BASEFONT>", pet.Name), false, false);
                 }
             }
 

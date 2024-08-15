@@ -304,7 +304,7 @@ namespace Server.Mobiles
                     else
                         ItemName = item.GetType().Name;
 
-                lh.Log(LogType.Text, String.Format("** New Auction started for item {0}**", ItemName));
+                lh.Log(LogType.Text, string.Format("** New Auction started for item {0}**", ItemName));
                 lh.Log(LogType.Item, item);
                 lh.Finish();
             }
@@ -325,18 +325,18 @@ namespace Server.Mobiles
         {
             Item item = GetAuctionItem();
             if (Running == true && item != null)
-                return String.Format("Auction({0}).log", item.Serial.ToString());
+                return string.Format("Auction({0}).log", item.Serial.ToString());
             else
-                return String.Format("Auction.log");
+                return string.Format("Auction.log");
         }
 
         public virtual void OnAuctionFinish()
         {
-            this.Say(String.Format("The auction has finished."));
+            this.Say(string.Format("The auction has finished."));
             PlayerMobile pm = World.FindMobile(m_HighBidMobile) as PlayerMobile;
             if (CheckID() && pm != null)
             {
-                this.Say(String.Format("The winning bid was placed by {0} for {1} gold.", pm.Name, m_HighBid));
+                this.Say(string.Format("The winning bid was placed by {0} for {1} gold.", pm.Name, m_HighBid));
                 this.Say("Congratulations!");
 
                 BankBox box = pm.BankBox;
@@ -345,7 +345,7 @@ namespace Server.Mobiles
                     Item item = GetAuctionItem();
                     if (item != null)
                     {
-                        LogEvent(String.Format("OnAuctionFinish() : winner: {0}, amount: {1} gold.", pm, m_HighBid));
+                        LogEvent(string.Format("OnAuctionFinish() : winner: {0}, amount: {1} gold.", pm, m_HighBid));
                         Backpack.RemoveItem(item);
                         box.AddItem(item);
                         m_GoldDeleted += m_HighBid;
@@ -354,7 +354,7 @@ namespace Server.Mobiles
             }
             else
             {
-                LogEvent(String.Format("OnAuctionFinish() : There were no bidders in this auction."));
+                LogEvent(string.Format("OnAuctionFinish() : There were no bidders in this auction."));
                 this.Say("There were no bidders in this auction.");
             }
 
@@ -385,37 +385,37 @@ namespace Server.Mobiles
         private void psTime()
         {
             if (m_AuctionEnds.TotalHours >= 24)
-                this.Say(String.Format("The auction will end in about {0} day{1} and {2} hour{3}.",
+                this.Say(string.Format("The auction will end in about {0} day{1} and {2} hour{3}.",
                     m_AuctionEnds.Days, m_AuctionEnds.Days == 1 ? "" : "s",
                     m_AuctionEnds.Hours, m_AuctionEnds.Hours == 1 ? "" : "s"));
             else if (m_AuctionEnds.TotalMinutes >= 60)
-                this.Say(String.Format("The auction will end in about {0} hour{1} and {2} minute{3}.",
+                this.Say(string.Format("The auction will end in about {0} hour{1} and {2} minute{3}.",
                     m_AuctionEnds.Hours, m_AuctionEnds.Hours == 1 ? "" : "s",
                     m_AuctionEnds.Minutes, m_AuctionEnds.Minutes == 1 ? "" : "s"));
             else
-                this.Say(String.Format("The auction will end in about {0} minute{1}.",
+                this.Say(string.Format("The auction will end in about {0} minute{1}.",
                     m_AuctionEnds.Minutes, m_AuctionEnds.Minutes == 1 ? "" : "s"));
         }
 
         private void psItem()
         {
-            this.Say(String.Format("The goods are im my backpack, please have a look."));
+            this.Say(string.Format("The goods are im my backpack, please have a look."));
         }
 
         private void psNoAuction()
         {
-            this.Say(String.Format("I am not currently running any auctions."));
+            this.Say(string.Format("I am not currently running any auctions."));
         }
 
         private void psHighBid()
         {
             if (m_HighBid == 0 || World.FindMobile(m_HighBidMobile) == null)
             {
-                this.Say(String.Format("The starting bid is at least {0} gold.", m_StartingBid));
+                this.Say(string.Format("The starting bid is at least {0} gold.", m_StartingBid));
             }
             else
             {
-                this.Say(String.Format("The current high bid is {0} gold by {1}.", m_HighBid, World.FindMobile(m_HighBidMobile).Name));
+                this.Say(string.Format("The current high bid is {0} gold by {1}.", m_HighBid, World.FindMobile(m_HighBidMobile).Name));
             }
         }
 
@@ -470,7 +470,7 @@ namespace Server.Mobiles
                 {
                     //box.AddItem(item);
                     Banker.Deposit(box, m_HighBid);
-                    LogEvent(String.Format("RefundBid() : player: {0}, amount: {1} gold", m, m_HighBid));
+                    LogEvent(string.Format("RefundBid() : player: {0}, amount: {1} gold", m, m_HighBid));
                 }
             }
         }
@@ -534,14 +534,14 @@ namespace Server.Mobiles
             // bid too high
             if (value > (int)Bids.BID_MAX)
             {
-                this.Say(String.Format("You may not bid more than {0} gold.", (int)Bids.BID_MAX));
+                this.Say(string.Format("You may not bid more than {0} gold.", (int)Bids.BID_MAX));
                 return;
             }
 
             // bid too low
             if (value < m_BidIncrement)
             {
-                this.Say(String.Format("You must bid at least {0} gold.", m_BidIncrement));
+                this.Say(string.Format("You must bid at least {0} gold.", m_BidIncrement));
                 return;
             }
 
@@ -550,7 +550,7 @@ namespace Server.Mobiles
             {   // first bid too low
                 if (value < m_StartingBid)
                 {
-                    this.Say(String.Format("You must start the bidding at {0} gold.", m_StartingBid));
+                    this.Say(string.Format("You must start the bidding at {0} gold.", m_StartingBid));
                     return;
                 }
 
@@ -560,8 +560,8 @@ namespace Server.Mobiles
                     m_HighBid = value;
                     m_HighBidMobile = m.Serial;
                     m_HighBidMobileHC = m.Account != null ? m.Account.ToString().GetHashCode() : 0;
-                    LogEvent(String.Format("PlaceBid() : bidder: {0}, amount: {1} gold.", m, m_HighBid));
-                    this.Say(String.Format("Thank you {1} for our starting bid of {0} gold.", m_HighBid, m.Name));
+                    LogEvent(string.Format("PlaceBid() : bidder: {0}, amount: {1} gold.", m, m_HighBid));
+                    this.Say(string.Format("Thank you {1} for our starting bid of {0} gold.", m_HighBid, m.Name));
                     UpdateTimer();
                     return;
                 }
@@ -572,7 +572,7 @@ namespace Server.Mobiles
             // bid too low
             if (value < m_HighBid + m_BidIncrement)
             {
-                this.Say(String.Format("You must bid at least {0} gold.", m_HighBid + m_BidIncrement));
+                this.Say(string.Format("You must bid at least {0} gold.", m_HighBid + m_BidIncrement));
                 return;
             }
 
@@ -583,8 +583,8 @@ namespace Server.Mobiles
                 m_HighBid = value;
                 m_HighBidMobile = m.Serial;
                 m_HighBidMobileHC = m.Account != null ? m.Account.ToString().GetHashCode() : 0;
-                LogEvent(String.Format("PlaceBid() : bidder: {0}, amount: {1} gold.", m, m_HighBid));
-                this.Say(String.Format("Thank you {1} for our new high bid of {0} gold.", m_HighBid, m.Name));
+                LogEvent(string.Format("PlaceBid() : bidder: {0}, amount: {1} gold.", m, m_HighBid));
+                this.Say(string.Format("Thank you {1} for our new high bid of {0} gold.", m_HighBid, m.Name));
                 UpdateTimer();
                 return;
             }
@@ -604,7 +604,7 @@ namespace Server.Mobiles
             if (Running && m_AuctionEnds.TotalMinutes <= 5)
             {
                 m_AuctionEnds += TimeSpan.FromMinutes(5);
-                this.Say(String.Format("I'll extend the bidding by 5 minutes for a total of {0} minutes.", m_AuctionEnds.TotalMinutes));
+                this.Say(string.Format("I'll extend the bidding by 5 minutes for a total of {0} minutes.", m_AuctionEnds.TotalMinutes));
             }
         }
 

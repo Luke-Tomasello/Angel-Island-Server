@@ -130,12 +130,12 @@ namespace Server.RTT
             {
                 Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Administrator,
                 0x482,
-                String.Format("{0}({1}) is taking the RTT ({2}).", m_Mobile.Name, m_Mobile.Serial, strSkill));
+                string.Format("{0}({1}) is taking the RTT ({2}).", m_Mobile.Name, m_Mobile.Serial, strSkill));
             }
 
             // record the fact that the RTT test is being taken
             Server.Diagnostics.LogHelper lh = new Server.Diagnostics.LogHelper("RTT.log", false, true);
-            lh.Log(Server.Diagnostics.LogType.Mobile, m_Mobile, String.Format("({0}) RTT Launched.", strSkill));
+            lh.Log(Server.Diagnostics.LogType.Mobile, m_Mobile, string.Format("({0}) RTT Launched.", strSkill));
             lh.Finish();
 
             //This will call any child-gump's SetupGump and set it up like the child wants.
@@ -182,13 +182,13 @@ namespace Server.RTT
                         {
                             Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor,
                                 0x22,
-                                String.Format("{0}({1}) has quickly passed the RTT ({2} ms) ({3}).", m_Mobile.Name, m_Mobile.Serial, diff.TotalMilliseconds, m_strNotify));
+                                string.Format("{0}({1}) has quickly passed the RTT ({2} ms) ({3}).", m_Mobile.Name, m_Mobile.Serial, diff.TotalMilliseconds, m_strNotify));
                         }
                         else
                         {
                             Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor,
                                 0x482,
-                                String.Format("{0}({1}) has passed the RTT ({2} ms).  ({3})", m_Mobile.Name, m_Mobile.Serial, diff.TotalMilliseconds, m_strNotify));
+                                string.Format("{0}({1}) has passed the RTT ({2} ms).  ({3})", m_Mobile.Name, m_Mobile.Serial, diff.TotalMilliseconds, m_strNotify));
                         }
 
                         // Look for and record suspiciously fast answers
@@ -214,7 +214,7 @@ namespace Server.RTT
                     {
                         Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor,
                         0x482,
-                        String.Format("{0}({1}) has failed the RTT. ({2})", m_Mobile.Name, m_Mobile.Serial, this.m_strNotify));
+                        string.Format("{0}({1}) has failed the RTT. ({2})", m_Mobile.Name, m_Mobile.Serial, this.m_strNotify));
                     }
                 }
             }

@@ -38,7 +38,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} pile of hides" : "{0} piles of hides", Amount);
+                return string.Format(Amount == 1 ? "{0} pile of hides" : "{0} piles of hides", Amount);
             }
         }
 
@@ -203,7 +203,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} pile of spined hides" : "{0} piles of hides", Amount);
+                return string.Format(Amount == 1 ? "{0} pile of spined hides" : "{0} piles of hides", Amount);
             }
         }
 
@@ -260,7 +260,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} pile of horned hides" : "{0} piles of hides", Amount);
+                return string.Format(Amount == 1 ? "{0} pile of horned hides" : "{0} piles of hides", Amount);
             }
         }
 
@@ -317,7 +317,7 @@ namespace Server.Items
         {
             get
             {
-                return String.Format(Amount == 1 ? "{0} pile of barbed hides" : "{0} piles of hides", Amount);
+                return string.Format(Amount == 1 ? "{0} pile of barbed hides" : "{0} piles of hides", Amount);
             }
         }
 

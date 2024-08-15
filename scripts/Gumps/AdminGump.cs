@@ -190,21 +190,21 @@ namespace Server.Gumps
 
         public static string FormatTimeSpan(TimeSpan ts)
         {
-            return String.Format("{0:D2}:{1:D2}:{2:D2}:{3:D2}", ts.Days, ts.Hours % 24, ts.Minutes % 60, ts.Seconds % 60);
+            return string.Format("{0:D2}:{1:D2}:{2:D2}:{3:D2}", ts.Days, ts.Hours % 24, ts.Minutes % 60, ts.Seconds % 60);
         }
 
         public static string FormatByteAmount(long totalBytes)
         {
             if (totalBytes > 1000000000)
-                return String.Format("{0:F1} GB", (double)totalBytes / 1073741824);
+                return string.Format("{0:F1} GB", (double)totalBytes / 1073741824);
 
             if (totalBytes > 1000000)
-                return String.Format("{0:F1} MB", (double)totalBytes / 1048576);
+                return string.Format("{0:F1} MB", (double)totalBytes / 1048576);
 
             if (totalBytes > 1000)
-                return String.Format("{0:F1} KB", (double)totalBytes / 1024);
+                return string.Format("{0:F1} KB", (double)totalBytes / 1024);
 
-            return String.Format("{0} Bytes", totalBytes);
+            return string.Format("{0} Bytes", totalBytes);
         }
 
         public static void Initialize()
@@ -630,7 +630,7 @@ namespace Server.Gumps
                                 y += 20;
 
                                 AddLabel(20, y, LabelHue, "Location:");
-                                AddLabel(200, y, LabelHue, String.Format("{0} [{1}]", m.Location, m.Map));
+                                AddLabel(200, y, LabelHue, string.Format("{0} [{1}]", m.Location, m.Map));
                                 y += 44;
                             }
                             else
@@ -647,7 +647,7 @@ namespace Server.Gumps
                                 y += 20;
 
                                 AddLabel(20, y, LabelHue, "Location:");
-                                AddLabel(200, y, LabelHue, String.Format("{0} [{1}]", m.Location, m.Map));
+                                AddLabel(200, y, LabelHue, string.Format("{0} [{1}]", m.Location, m.Map));
                                 y += 24;
                             }
 
@@ -1019,7 +1019,7 @@ namespace Server.Gumps
 
                                     double perc = remMinutes / totMinutes;
 
-                                    AddLabel(250, 190, LabelHue, String.Format("{0} [{1:F0}%]", FormatTimeSpan(banDuration), perc * 100));
+                                    AddLabel(250, 190, LabelHue, string.Format("{0} [{1:F0}%]", FormatTimeSpan(banDuration), perc * 100));
                                 }
                             }
                             else if (a.Banned)
@@ -1494,7 +1494,7 @@ namespace Server.Gumps
             // we are still seeing thie crash once in a while .. start collecting info;
             catch (Exception ex)
             {
-                EventSink.InvokeLogException(new LogExceptionEventArgs(new ApplicationException(String.Format("pageType:{0},", pageType), ex)));
+                EventSink.InvokeLogException(new LogExceptionEventArgs(new ApplicationException(string.Format("pageType:{0},", pageType), ex)));
             }
         }
 
@@ -1623,7 +1623,7 @@ namespace Server.Gumps
 
                 a.Delete();
 
-                from.SendGump(new AdminGump(from, AdminGumpPage.Accounts, 0, null, String.Format("{0} : The account has been deleted.", a.Username), null));
+                from.SendGump(new AdminGump(from, AdminGumpPage.Accounts, 0, null, string.Format("{0} : The account has been deleted.", a.Username), null));
             }
             else
             {
@@ -1674,14 +1674,14 @@ namespace Server.Gumps
                     }
                 }
 
-                from.SendGump(new NoticeGump(1060637, 30720, String.Format("You have {0} the account{1}.", ban ? "banned" : "deleted", rads.Count == 1 ? "" : "s"), 0xFFC000, 420, 280, new NoticeGumpCallback(ResendGump_Callback), new object[] { list, rads, ban ? page : 0 }));
+                from.SendGump(new NoticeGump(1060637, 30720, string.Format("You have {0} the account{1}.", ban ? "banned" : "deleted", rads.Count == 1 ? "" : "s"), 0xFFC000, 420, 280, new NoticeGumpCallback(ResendGump_Callback), new object[] { list, rads, ban ? page : 0 }));
 
                 if (ban)
                     from.SendGump(new BanDurationGump(list));
             }
             else
             {
-                from.SendGump(new NoticeGump(1060637, 30720, String.Format("You have chosen not to {0} the account{1}.", ban ? "ban" : "delete", rads.Count == 1 ? "" : "s"), 0xFFC000, 420, 280, new NoticeGumpCallback(ResendGump_Callback), new object[] { list, rads, page }));
+                from.SendGump(new NoticeGump(1060637, 30720, string.Format("You have chosen not to {0} the account{1}.", ban ? "ban" : "delete", rads.Count == 1 ? "" : "s"), 0xFFC000, 420, 280, new NoticeGumpCallback(ResendGump_Callback), new object[] { list, rads, page }));
             }
         }
 
@@ -1725,7 +1725,7 @@ namespace Server.Gumps
             {
                 Firewall.Add(toFirewall.ToString());
 
-                notice = String.Format("{0} : Added to firewall.", toFirewall);
+                notice = string.Format("{0} : Added to firewall.", toFirewall);
             }
             else
             {
@@ -1829,7 +1829,7 @@ namespace Server.Gumps
                                     string ip = (ipRelay == null ? null : ipRelay.Text.Trim());
                                     int lm = (lmRelay == null ? 0 : Utility.ToInt32(lmRelay.Text.Trim()));
 
-                                    if (String.IsNullOrEmpty(ip))
+                                    if (string.IsNullOrEmpty(ip))
                                     {
                                         from.SendMessage("Invalid IP entered.");
                                     }
@@ -1853,7 +1853,7 @@ namespace Server.Gumps
 
                                     string ip = (ipRelay == null ? null : ipRelay.Text.Trim());
 
-                                    if (String.IsNullOrEmpty(ip))
+                                    if (string.IsNullOrEmpty(ip))
                                     {
                                         from.SendMessage("Invalid IP entered.");
                                     }
@@ -1876,7 +1876,7 @@ namespace Server.Gumps
 
                                         if (obj != null)
                                         {
-                                            string notice = String.Format("Selected IP address: {0}", obj.ToString());
+                                            string notice = string.Format("Selected IP address: {0}", obj.ToString());
                                             from.SendGump(new AdminGump(from, AdminGumpPage.IPException_IPDetails, 0, null, notice, obj));
                                         }
                                     }
@@ -1963,7 +1963,7 @@ namespace Server.Gumps
                                     else
                                     {
                                         notice = "Your message has been broadcasted.";
-                                        InvokeCommand(String.Format("{0} {1}", index == 210 ? "BC" : "SM", text));
+                                        InvokeCommand(string.Format("{0} {1}", index == 210 ? "BC" : "SM", text));
                                     }
 
                                     break;
@@ -2065,7 +2065,7 @@ namespace Server.Gumps
                                         if (count == 0)
                                             notice = "Nobody without access was found to disconnect.";
                                         else
-                                            notice = String.Format("Number of players disconnected: {0}", count);
+                                            notice = string.Format("Number of players disconnected: {0}", count);
                                     }
                                     else
                                     {
@@ -2124,11 +2124,11 @@ namespace Server.Gumps
 
                                     if (match == null || match.Length == 0)
                                     {
-                                        notice = String.Format("You must enter {0} to search.", forName ? "a name" : "an ip address");
+                                        notice = string.Format("You must enter {0} to search.", forName ? "a name" : "an ip address");
                                     }
                                     else if (forName == false && Utility.IsValidIP(match) == false)
                                     {
-                                        notice = String.Format("Bad IPAddress format.");
+                                        notice = string.Format("Bad IPAddress format.");
                                     }
                                     else
                                     {
@@ -2255,7 +2255,7 @@ namespace Server.Gumps
                                         else
                                         {
                                             dispAccount = Accounts.AddAccount(un, pw);
-                                            notice = String.Format("{0} : Account added.", un);
+                                            notice = string.Format("{0} : Account added.", un);
                                             CommandLogging.WriteLine(from, "{0} {1} adding new account: {2}", from.AccessLevel, CommandLogging.Format(from), un);
                                         }
                                     }
@@ -2344,7 +2344,7 @@ namespace Server.Gumps
                                     a.SetUnspecifiedBan(from);
                                     a.Banned = (index == 10);
                                     CommandLogging.WriteLine(from, "{0} {1} {3} account {2}", from.AccessLevel, CommandLogging.Format(from), a.Username, a.Banned ? "banning" : "unbanning");
-                                    from.SendGump(new AdminGump(from, m_PageType, m_ListPage, m_List, String.Format("The account has been {0}.", a.Banned ? "banned" : "unbanned"), m_State));
+                                    from.SendGump(new AdminGump(from, m_PageType, m_ListPage, m_List, string.Format("The account has been {0}.", a.Banned ? "banned" : "unbanned"), m_State));
 
                                     if (index == 10)
                                         from.SendGump(new BanDurationGump(a));
@@ -2451,7 +2451,7 @@ namespace Server.Gumps
 
                                     if (a.LoginIPs.Length > 0)
                                     {
-                                        from.SendGump(new WarningGump(1060635, 30720, String.Format("You are about to firewall {0} address{1}. Do you wish to continue?", a.LoginIPs.Length, a.LoginIPs.Length != 1 ? "s" : ""), 0xFFC000, 420, 400, new WarningGumpCallback(FirewallShared_Callback), a));
+                                        from.SendGump(new WarningGump(1060635, 30720, string.Format("You are about to firewall {0} address{1}. Do you wish to continue?", a.LoginIPs.Length, a.LoginIPs.Length != 1 ? "s" : ""), 0xFFC000, 420, 400, new WarningGumpCallback(FirewallShared_Callback), a));
                                     }
                                     else
                                     {
@@ -2499,7 +2499,7 @@ namespace Server.Gumps
 
                                             a.IPRestrictions = newList;
 
-                                            notice = String.Format("{0} : Added to restriction list.", ip);
+                                            notice = string.Format("{0} : Added to restriction list.", ip);
                                         }
                                     }
 
@@ -2548,7 +2548,7 @@ namespace Server.Gumps
                                     if (a == null)
                                         break;
 
-                                    from.SendGump(new WarningGump(1060635, 30720, String.Format("<center>Account of {0}</center><br>You are about to <em><basefont color=red>permanently delete</basefont></em> the account. Likewise, all characters on the account will be deleted, including equiped, inventory, and banked items. Any houses tied to the account will be demolished.<br><br>Do you wish to continue?", a.Username), 0xFFC000, 420, 280, new WarningGumpCallback(AccountDelete_Callback), m_State));
+                                    from.SendGump(new WarningGump(1060635, 30720, string.Format("<center>Account of {0}</center><br>You are about to <em><basefont color=red>permanently delete</basefont></em> the account. Likewise, all characters on the account will be deleted, including equiped, inventory, and banked items. Any houses tied to the account will be demolished.<br><br>Do you wish to continue?", a.Username), 0xFFC000, 420, 280, new WarningGumpCallback(AccountDelete_Callback), m_State));
                                     break;
                                 }
                             case 28: // View all shared accounts
@@ -2565,7 +2565,7 @@ namespace Server.Gumps
                                         break;
 
                                     if (rads.Count > 0)
-                                        from.SendGump(new WarningGump(1060635, 30720, String.Format("You are about to ban {0} marked account{1}. Be cautioned, the only way to reverse this is by hand--manually unbanning each account.<br><br>Do you wish to continue?", rads.Count, rads.Count == 1 ? "" : "s"), 0xFFC000, 420, 280, new WarningGumpCallback(Marked_Callback), new object[] { true, list, rads, m_ListPage }));
+                                        from.SendGump(new WarningGump(1060635, 30720, string.Format("You are about to ban {0} marked account{1}. Be cautioned, the only way to reverse this is by hand--manually unbanning each account.<br><br>Do you wish to continue?", rads.Count, rads.Count == 1 ? "" : "s"), 0xFFC000, 420, 280, new WarningGumpCallback(Marked_Callback), new object[] { true, list, rads, m_ListPage }));
                                     else
                                         from.SendGump(new NoticeGump(1060637, 30720, "You have not yet marked any accounts. Place a check mark next to the accounts you wish to ban and then try again.", 0xFFC000, 420, 280, new NoticeGumpCallback(ResendGump_Callback), new object[] { list, rads, m_ListPage }));
 
@@ -2580,7 +2580,7 @@ namespace Server.Gumps
                                         break;
 
                                     if (rads.Count > 0)
-                                        from.SendGump(new WarningGump(1060635, 30720, String.Format("You are about to <em><basefont color=red>permanently delete</basefont></em> {0} marked account{1}. Likewise, all characters on the account{1} will be deleted, including equiped, inventory, and banked items. Any houses tied to the account{1} will be demolished.<br><br>Do you wish to continue?", rads.Count, rads.Count == 1 ? "" : "s"), 0xFFC000, 420, 280, new WarningGumpCallback(Marked_Callback), new object[] { false, list, rads, m_ListPage }));
+                                        from.SendGump(new WarningGump(1060635, 30720, string.Format("You are about to <em><basefont color=red>permanently delete</basefont></em> {0} marked account{1}. Likewise, all characters on the account{1} will be deleted, including equiped, inventory, and banked items. Any houses tied to the account{1} will be demolished.<br><br>Do you wish to continue?", rads.Count, rads.Count == 1 ? "" : "s"), 0xFFC000, 420, 280, new WarningGumpCallback(Marked_Callback), new object[] { false, list, rads, m_ListPage }));
                                     else
                                         from.SendGump(new NoticeGump(1060637, 30720, "You have not yet marked any accounts. Place a check mark next to the accounts you wish to ban and then try again.", 0xFFC000, 420, 280, new NoticeGumpCallback(ResendGump_Callback), new object[] { list, rads, m_ListPage }));
 
@@ -2824,7 +2824,7 @@ namespace Server.Gumps
 
                                     string ip = (ipRelay == null ? null : ipRelay.Text.Trim());
 
-                                    if (String.IsNullOrEmpty(ip))
+                                    if (string.IsNullOrEmpty(ip))
                                     {
                                         from.SendMessage("Invalid IP entered.");
                                     }
@@ -2850,7 +2850,7 @@ namespace Server.Gumps
 
                                     string ip = (ipRelay == null ? null : ipRelay.Text.Trim());
 
-                                    if (String.IsNullOrEmpty(ip))
+                                    if (string.IsNullOrEmpty(ip))
                                     {
                                         from.SendMessage("Invalid IP entered.");
                                     }
@@ -2873,7 +2873,7 @@ namespace Server.Gumps
 
                                         if (obj != null)
                                         {
-                                            string notice = String.Format("Selected IP address: {0}", obj.ToString());
+                                            string notice = string.Format("Selected IP address: {0}", obj.ToString());
                                             from.SendGump(new AdminGump(from, AdminGumpPage.FirewallInfo, 0, null, notice, obj));
                                         }
                                     }
@@ -3062,7 +3062,7 @@ namespace Server.Gumps
 
                             if (m_PageType == AdminGumpPage.AccountDetails_Access_ClientIPs)
                             {
-                                from.SendGump(new WarningGump(1060635, 30720, String.Format("You are about to firewall {0}. All connection attempts from a matching IP will be refused. Are you sure?", m_List[index]), 0xFFC000, 420, 280, new WarningGumpCallback(Firewall_Callback), new object[] { a, m_List[index] }));
+                                from.SendGump(new WarningGump(1060635, 30720, string.Format("You are about to firewall {0}. All connection attempts from a matching IP will be refused. Are you sure?", m_List[index]), 0xFFC000, 420, 280, new WarningGumpCallback(Firewall_Callback), new object[] { a, m_List[index] }));
                             }
                             else if (m_PageType == AdminGumpPage.AccountDetails_Access_Restrictions)
                             {
@@ -3072,7 +3072,7 @@ namespace Server.Gumps
 
                                 a.IPRestrictions = (string[])list.ToArray(typeof(string));
 
-                                from.SendGump(new AdminGump(from, AdminGumpPage.AccountDetails_Access_Restrictions, 0, null, String.Format("{0} : Removed from list.", m_List[index]), a));
+                                from.SendGump(new AdminGump(from, AdminGumpPage.AccountDetails_Access_Restrictions, 0, null, string.Format("{0} : Removed from list.", m_List[index]), a));
                             }
                         }
 
@@ -3123,7 +3123,7 @@ namespace Server.Gumps
 
         private void InvokeCommand(string ip)
         {
-            CommandSystem.Handle(m_From, String.Format("{0}{1}", Server.CommandSystem.CommandPrefix, ip));
+            CommandSystem.Handle(m_From, string.Format("{0}{1}", Server.CommandSystem.CommandPrefix, ip));
         }
 
         private String LockDown(AccessLevel al)

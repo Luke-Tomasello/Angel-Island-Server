@@ -720,7 +720,7 @@ namespace Server
         public void DebugSay(string format, params object[] args)
         {
             if (DebugMode != DebugFlags.None)
-                DebugSay(String.Format(format, args));
+                DebugSay(string.Format(format, args));
         }
 
         public void DebugSay(DebugFlags flags, string text)
@@ -737,7 +737,7 @@ namespace Server
         public void DebugSay(DebugFlags flags, string format, params object[] args)
         {
             if ((m_DebugFlags & flags) != 0)
-                DebugSay(flags, String.Format(format, args));
+                DebugSay(flags, string.Format(format, args));
 
             string text = string.Format("{0}:{1}", this, string.Format(format, args));
             if ((m_DebugFlags & flags) != 0 && (m_DebugFlags & DebugFlags.Echo) != 0)

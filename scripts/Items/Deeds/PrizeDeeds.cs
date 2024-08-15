@@ -59,8 +59,8 @@ namespace Server.Items
                 m_PlaceText = "3rd place";
             }
 
-            m_Signature = String.Format("{2} Home Deco Prize: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, m_PlaceText);
-            Name = String.Format("{2} Home Deco Prize Ticket: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, m_PlaceText);
+            m_Signature = string.Format("{2} Home Deco Prize: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, m_PlaceText);
+            Name = string.Format("{2} Home Deco Prize Ticket: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, m_PlaceText);
         }
 
         public HomeDecoPrize(Serial serial)

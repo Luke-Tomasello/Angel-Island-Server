@@ -398,7 +398,7 @@ namespace Server.Engines
             LogHelper lh = new LogHelper("RareAcquired.log", false, true);
             try
             {   // log the acquired rare
-                lh.Log(LogType.Item, item, String.Format("type: ({0}).", item.GetType().ToString()));
+                lh.Log(LogType.Item, item, string.Format("type: ({0}).", item.GetType().ToString()));
                 lh.Finish();
                 return item;
             }

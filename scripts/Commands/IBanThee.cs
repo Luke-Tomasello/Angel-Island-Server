@@ -108,8 +108,8 @@ namespace Server.PJUM
                         from.SendMessage("Reporting {0} as Banned!", pm.Name);
 
                         string[] lns = new string[2];
-                        lns[0] = String.Format("A bounty has been placed on the head of {0} for disrupting a royal tournament. .", pm.Name);
-                        lns[1] = String.Format("{0} was last seen at {1}.", pm.Name, location);
+                        lns[0] = string.Format("A bounty has been placed on the head of {0} for disrupting a royal tournament. .", pm.Name);
+                        lns[1] = string.Format("{0} was last seen at {1}.", pm.Name, location);
 
 
                         if (PJUM.HasBeenReported(pm))
@@ -125,7 +125,7 @@ namespace Server.PJUM
                             PJUM.AddMacroer(lns, pm, DateTime.UtcNow + TimeSpan.FromHours(2));
 
                             //Add bounty to player
-                            string name = String.Format("Officer {0}", Utility.RandomBool() ? NameList.RandomName("male") : NameList.RandomName("female"));
+                            string name = string.Format("Officer {0}", Utility.RandomBool() ? NameList.RandomName("male") : NameList.RandomName("female"));
 
                             int bountyAmount = 0;
                             Container cont = pm.BankBox;
@@ -160,7 +160,7 @@ namespace Server.PJUM
 
                             //Add comment to account
                             Account acc = pm.Account as Account;
-                            string comment = String.Format("On {0}, {1} caught {2} disturbing event at {3} : removed using the [ibanthee command",
+                            string comment = string.Format("On {0}, {1} caught {2} disturbing event at {3} : removed using the [ibanthee command",
                                 DateTime.UtcNow,
                                 from.Name,
                                 pm.Name,

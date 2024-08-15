@@ -710,31 +710,31 @@ namespace Server.Engines
 
             foreach (string s in PlacesList)
                 if (s.ToLower().Contains(c.ArgString.ToLower()))
-                    c.Mobile.SendMessage(String.Format("'{0}' was found in PlacesList", s));
+                    c.Mobile.SendMessage(string.Format("'{0}' was found in PlacesList", s));
 
             foreach (string s in InventoryList)
                 if (s.ToLower().Contains(c.ArgString.ToLower()))
-                    c.Mobile.SendMessage(String.Format("'{0}' was found in InventoryList", s));
+                    c.Mobile.SendMessage(string.Format("'{0}' was found in InventoryList", s));
 
             foreach (string s in VendorTitleList)
                 if (s.ToLower().Contains(c.ArgString.ToLower()))
-                    c.Mobile.SendMessage(String.Format("'{0}' was found in VendorTitleList", s));
+                    c.Mobile.SendMessage(string.Format("'{0}' was found in VendorTitleList", s));
 
             foreach (string s in TownsList)
                 if (s.ToLower().Contains(c.ArgString.ToLower()))
-                    c.Mobile.SendMessage(String.Format("'{0}' was found in TownsList", s));
+                    c.Mobile.SendMessage(string.Format("'{0}' was found in TownsList", s));
 
             foreach (Dictionary<string, List<Point3D>> kvp in dic3DLists)
                 foreach (string s in kvp.Keys)
                     if (s.ToLower().Contains(c.ArgString.ToLower()))
-                        c.Mobile.SendMessage(String.Format("'{0}' was found in dic3DLists", s));
+                        c.Mobile.SendMessage(string.Format("'{0}' was found in dic3DLists", s));
 
             foreach (Dictionary<string, Point3D> kvp in dicMoongateLists)
                 foreach (string s in kvp.Keys)
                     if (s.ToLower().Contains(c.ArgString.ToLower()))
-                        c.Mobile.SendMessage(String.Format("'{0}' was found in dicMoongateLists", s));
+                        c.Mobile.SendMessage(string.Format("'{0}' was found in dicMoongateLists", s));
 
-            c.Mobile.SendMessage(String.Format("done."));
+            c.Mobile.SendMessage(string.Format("done."));
         }
         #endregion CacheLookup Command
     }

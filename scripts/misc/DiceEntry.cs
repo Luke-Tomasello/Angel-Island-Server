@@ -160,11 +160,11 @@ namespace Server
         public override string ToString()
         {
             if (m_Bonus > 0)
-                return String.Format("{0}d{1}+{2}", m_Count, m_Sides, m_Bonus);
+                return string.Format("{0}d{1}+{2}", m_Count, m_Sides, m_Bonus);
             else if (m_Bonus < 0)
-                return String.Format("{0}d{1}-{2}", m_Count, m_Sides, m_Bonus);
+                return string.Format("{0}d{1}-{2}", m_Count, m_Sides, m_Bonus);
             else
-                return String.Format("{0}d{1}", m_Count, m_Sides);
+                return string.Format("{0}d{1}", m_Count, m_Sides);
         }
     }
 }

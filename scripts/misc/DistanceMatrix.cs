@@ -19,7 +19,7 @@
  *
  ***************************************************************************/
 
-/* Misc\MathUtility.cs
+/* Scripts\misc\DistanceMatrix.cs
  * CHANGELOG:
  *  9/10/22, Yoar
  *      Renamed to DistanceMatrix.

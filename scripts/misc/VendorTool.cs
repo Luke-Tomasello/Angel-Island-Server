@@ -141,8 +141,8 @@ namespace Server.Tools
                     VendorItem vi = values[i] as VendorItem;
                     if (vi == null)
                         continue;
-                    AddHtml(2, 44 + 22 * (i % 20), 200, 16, String.Format("<basefont color=#ffffff>{0}</basefont>", vi.Description), false, false);
-                    AddHtml(203, 44 + 22 * (i % 20), 50, 16, String.Format("<basefont color=#ffffff>{0}</basefont>", (vi.IsForSale ? vi.Price.ToString() : "NFS")), false, false);
+                    AddHtml(2, 44 + 22 * (i % 20), 200, 16, string.Format("<basefont color=#ffffff>{0}</basefont>", vi.Description), false, false);
+                    AddHtml(203, 44 + 22 * (i % 20), 50, 16, string.Format("<basefont color=#ffffff>{0}</basefont>", (vi.IsForSale ? vi.Price.ToString() : "NFS")), false, false);
                     string typename;
                     if (vi.Item == null)
                         typename = "null";
@@ -151,7 +151,7 @@ namespace Server.Tools
                         typename = vi.Item.GetType().ToString();
                         typename = typename.Substring(typename.LastIndexOf(".") + 1);
                     }
-                    AddHtml(254, 44 + 22 * (i % 20), 110, 16, String.Format("<basefont color=#ffffff>{0}</basefont>", typename), false, false);
+                    AddHtml(254, 44 + 22 * (i % 20), 110, 16, string.Format("<basefont color=#ffffff>{0}</basefont>", typename), false, false);
                     AddButton(369, 44 + 22 * (i % 20), 0xFB1, 0xFB3, 4 + 2 * i, GumpButtonType.Reply, 0);
                     AddButton(399, 44 + 22 * (i % 20), 0xFA5, 0xFA7, 5 + 2 * i, GumpButtonType.Reply, 0);
                 }

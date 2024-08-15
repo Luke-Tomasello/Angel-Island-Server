@@ -115,7 +115,7 @@ namespace Server.Engines
 
             if (from.AccessLevel == AccessLevel.Player)
             {
-                LabelTo(from, String.Format("[{0}]", "Super Secret"));
+                LabelTo(from, string.Format("[{0}]", "Super Secret"));
                 return;
             }
             if (EventSink.InvokeOnSingleClick(new OnSingleClickEventArgs(from, this)) == false)
@@ -125,7 +125,7 @@ namespace Server.Engines
                 ns.Send(new UnicodeMessage(this.Serial, this.ItemID, MessageType.Label, 0x3B2, 3, "ENU", "", "Push Back " + this.Name));
                 int labels = 0;
 
-                LabelTo(from, String.Format("[{0}/{1} kills]", m_SpawnerKills, m_SpawnerKillsNeeded));
+                LabelTo(from, string.Format("[{0}/{1} kills]", m_SpawnerKills, m_SpawnerKillsNeeded));
 
                 if (labels < 2)
                     if (Running)
@@ -140,14 +140,14 @@ namespace Server.Engines
             this.SpawnerDeactivated = false;
             base.Respawn();
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(String.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
         }
         public override void EventEnded(object o)
         {
             this.SpawnerDeactivated = true;
             base.RemoveObjects();
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(String.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
+                Utility.ConsoleWriteLine(string.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
         }
         #endregion Event Spawner Overrides
         public PushBackSpawner(Serial serial)

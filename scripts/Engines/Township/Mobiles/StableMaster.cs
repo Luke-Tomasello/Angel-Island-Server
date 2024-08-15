@@ -547,7 +547,7 @@ namespace Server.Mobiles
 
             if (m_Pet != null)
             {
-                LabelTo(from, String.Format("a claim check for {0}", m_Pet.Name));
+                LabelTo(from, string.Format("a claim check for {0}", m_Pet.Name));
                 SayWhen(from);
             }
             else

@@ -197,9 +197,9 @@ namespace Server.Factions.NewGumps.FactionMenu
                         if (town.Silver == 0)
                             silver = "0";
                         else if (town.Silver % 1000000 == 0)
-                            silver = String.Format("{0:N0}M", town.Silver / 1000000);
+                            silver = string.Format("{0:N0}M", town.Silver / 1000000);
                         else if (town.Silver % 1000 == 0)
-                            silver = String.Format("{0:N0}K", town.Silver / 1000);
+                            silver = string.Format("{0:N0}K", town.Silver / 1000);
                         else
                             silver = town.Silver.ToString("N0");
 
@@ -209,7 +209,7 @@ namespace Server.Factions.NewGumps.FactionMenu
                     }
                 case 4:
                     {
-                        AddHtmlText(x, y, width, height, String.Format("{0:+#;-#;0}%", town.Tax), false, false);
+                        AddHtmlText(x, y, width, height, string.Format("{0:+#;-#;0}%", town.Tax), false, false);
 
                         break;
                     }

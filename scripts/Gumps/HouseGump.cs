@@ -387,13 +387,13 @@ namespace Server.Gumps
 
             int vstep = 175 - 20;
             AddHtml(20, vstep += 20, 275, 20, "Number of locked down items:", false, false); // Number of locked down items:
-            AddHtml(fieldStartF, vstep, 64, 20, String.Format("{0}/{1}", m_House.SumLockDownSecureCount.ToString(), m_House.MaxLockDowns.ToString()), false, false);
+            AddHtml(fieldStartF, vstep, 64, 20, string.Format("{0}/{1}", m_House.SumLockDownSecureCount.ToString(), m_House.MaxLockDowns.ToString()), false, false);
 
             //AddHtmlLocalized(20, vstep += 20, 275, 20, 1011238, false, false); // Maximum locked down items:
             //AddHtml(320, vstep, 50, 20, m_House.MaxLockDowns.ToString(), false, false);
 
             AddHtml(20, vstep += 20, 275, 20, "Number of secure containers:", false, false); // Number of secure containers:
-            AddHtml(fieldStartF, vstep, 64, 20, String.Format("{0}/{1}", m_House.SecureCount.ToString(), m_House.MaxSecures.ToString()), false, false);
+            AddHtml(fieldStartF, vstep, 64, 20, string.Format("{0}/{1}", m_House.SecureCount.ToString(), m_House.MaxSecures.ToString()), false, false);
 
             //AddHtmlLocalized(20, vstep += 20, 275, 20, 1011240, false, false); // Maximum number of secure containers:
             //AddHtml(320, vstep, 50, 20, m_House.MaxSecures.ToString(), false, false);
@@ -401,7 +401,7 @@ namespace Server.Gumps
             if (BaseHouse.LockboxSystem)
             {
                 AddHtml(20, vstep += 20, 275, 20, "Number of lockboxes:", false, false);
-                AddHtml(fieldStartF, vstep, 64, 20, String.Format("{0}/{1}", m_House.LockBoxCount.ToString(), m_House.MaxLockboxes.ToString()), false, false);
+                AddHtml(fieldStartF, vstep, 64, 20, string.Format("{0}/{1}", m_House.LockBoxCount.ToString(), m_House.MaxLockboxes.ToString()), false, false);
 
                 if (BaseHouse.TaxCreditSystem)
                 {

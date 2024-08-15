@@ -294,13 +294,13 @@ namespace Server.Commands
                 {
                     from.SendMessage("Sending {0} email announcement(s).", Reminders);
 
-                    string subject = String.Format(e.GetString(1));
+                    string subject = string.Format(e.GetString(1));
                     string body = null;
 
                     try
                     {
                         // create reader & open file
-                        TextReader tr = new StreamReader(String.Format("Msgs/{0}", e.GetString(2)));
+                        TextReader tr = new StreamReader(string.Format("Msgs/{0}", e.GetString(2)));
 
                         // read it
                         body = tr.ReadToEnd();

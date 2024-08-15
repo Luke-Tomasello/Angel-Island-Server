@@ -89,12 +89,12 @@ namespace Server.Items
                 Mobile m = new Mobile();
                 m.AccessLevel = AccessLevel.Administrator;
 
-                from.SendMessage(String.Format("Executing command '{0}'.", command.Substring(1)));
+                from.SendMessage(string.Format("Executing command '{0}'.", command.Substring(1)));
 
                 if (CommandSystem.Handle(m, from, command) == false)
-                    from.SendMessage(String.Format("The command '{0}' failed to execute.", command));
+                    from.SendMessage(string.Format("The command '{0}' failed to execute.", command));
                 else
-                    from.SendMessage(String.Format("'{0}' - ok.", command.Substring(1)));
+                    from.SendMessage(string.Format("'{0}' - ok.", command.Substring(1)));
 
                 m.Delete();
             }

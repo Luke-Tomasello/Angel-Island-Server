@@ -266,7 +266,7 @@ namespace Server.Items
                         m_Cauldron.Ingredients |= flag;
                         item.Consume();
 
-                        from.LocalOverheadMessage(MessageType.Regular, 0x3B2, false, String.Format("You add one {0} to the cauldron.", info.Name));
+                        from.LocalOverheadMessage(MessageType.Regular, 0x3B2, false, string.Format("You add one {0} to the cauldron.", info.Name));
                         Effects.PlaySound(m_Cauldron.GetWorldLocation(), m_Cauldron.Map, 0x42);
 
                         if (m_Cauldron.CountIngredients() < 2)
@@ -608,12 +608,12 @@ namespace Server.Items
 
             public override void BeginEffect(Mobile m)
             {
-                m.AddStatMod(new StatMod(m_Stat, String.Format("NecroCauldron [{0}]", m_Stat.ToString()), m_Value, TimeSpan.Zero));
+                m.AddStatMod(new StatMod(m_Stat, string.Format("NecroCauldron [{0}]", m_Stat.ToString()), m_Value, TimeSpan.Zero));
             }
 
             public override void EndEffect(Mobile m)
             {
-                m.RemoveStatMod(String.Format("NecroCauldron [{0}]", m_Stat.ToString()));
+                m.RemoveStatMod(string.Format("NecroCauldron [{0}]", m_Stat.ToString()));
             }
         }
 

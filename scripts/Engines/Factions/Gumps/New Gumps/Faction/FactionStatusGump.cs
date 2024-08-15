@@ -50,7 +50,7 @@ namespace Server.Factions.NewGumps.FactionMenu
 
             AddStatistic(65, 80, 130, "<i>Faction</i>", FormatFaction(m_Faction));
             AddStatistic(65, 114, 130, "<i>Led By</i>", FormatName(m_Faction.Commander));
-            AddStatistic(65, 148, 130, "<i>Tithe Rate</i>", String.Concat(m_Faction.Tithe, '%'));
+            AddStatistic(65, 148, 130, "<i>Tithe Rate</i>", string.Concat(m_Faction.Tithe, '%'));
 
             AddSeparator(65, 196, 518);
 

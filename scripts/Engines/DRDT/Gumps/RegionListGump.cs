@@ -130,7 +130,7 @@ namespace Server.Gumps
             AddBackground(0, 0, 600, 20 + (Lines + 2) * 25, 9270);
             AddAlphaRegion(0, 0, 600, 20 + (Lines + 2) * 25);
 
-            AddHtml(10, 10, 580, 20, String.Format("<BASEFONT COLOR=#FFFFFF><CENTER>{0}</CENTER></BASEFONT>", title), false, false);
+            AddHtml(10, 10, 580, 20, string.Format("<BASEFONT COLOR=#FFFFFF><CENTER>{0}</CENTER></BASEFONT>", title), false, false);
 
             AddHtml(10, 10, 50, 20, "<BASEFONT COLOR=#FFFFFF>Region</BASEFONT>", false, false);
             AddHtml(60, 10, 50, 20, "<BASEFONT COLOR=#FFFFFF>Control</BASEFONT>", false, false);
@@ -138,7 +138,7 @@ namespace Server.Gumps
 
             AddPage(page);
 
-            string html = String.Format("<BASEFONT COLOR=#FFFFFF><CENTER>Showing {0}-{1} of {2}, Page {3} of {4}</CENTER></BASEFONT>",
+            string html = string.Format("<BASEFONT COLOR=#FFFFFF><CENTER>Showing {0}-{1} of {2}, Page {3} of {4}</CENTER></BASEFONT>",
                 1,
                 Math.Min(m_List.Count, Lines),
                 m_List.Count,
@@ -163,7 +163,7 @@ namespace Server.Gumps
 
                     page = nextPage;
 
-                    html = String.Format("<BASEFONT COLOR=#FFFFFF><CENTER>Showing {0}-{1} of {2}, Page {3} of {4}</CENTER></BASEFONT>",
+                    html = string.Format("<BASEFONT COLOR=#FFFFFF><CENTER>Showing {0}-{1} of {2}, Page {3} of {4}</CENTER></BASEFONT>",
                         i + 1,
                         Math.Min(m_List.Count, i + Lines),
                         m_List.Count,
@@ -179,7 +179,7 @@ namespace Server.Gumps
                 AddButton(10, y, 4005, 4007, buttonOffset + 0, GumpButtonType.Reply, 0);
                 AddButton(60, y, 4005, 4007, buttonOffset + 1, GumpButtonType.Reply, 0);
                 AddButton(110, y, 4011, 4013, buttonOffset + 2, GumpButtonType.Reply, 0);
-                AddHtml(160, y, 430, 20, String.Format("<BASEFONT COLOR=#FFFFFF>{0} ({1})</BASEFONT>", sr.Name, sr.Map), false, false);
+                AddHtml(160, y, 430, 20, string.Format("<BASEFONT COLOR=#FFFFFF>{0} ({1})</BASEFONT>", sr.Name, sr.Map), false, false);
             }
         }
 

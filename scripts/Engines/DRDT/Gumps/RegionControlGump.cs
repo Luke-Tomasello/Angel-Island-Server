@@ -62,7 +62,7 @@ namespace Server.Gumps
             AddBackground(0, 0, 590, 300, 9270);
             AddAlphaRegion(0, 0, 590, 300);
 
-            AddHtml(30, 20, 530, 20, String.Format("<BASEFONT COLOR=#FFFFFF><CENTER>Region Control of {0}</CENTER></BASEFONT>", m_Region.Name), false, false);
+            AddHtml(30, 20, 530, 20, string.Format("<BASEFONT COLOR=#FFFFFF><CENTER>Region Control of {0}</CENTER></BASEFONT>", m_Region.Name), false, false);
 
             AddButton(35, 55, 5569, 5570, (int)Buttons.EditSpells, GumpButtonType.Reply, 0);
             AddLabel(120, 75, 1152, "Edit Restricted Spells");

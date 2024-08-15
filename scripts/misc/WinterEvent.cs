@@ -462,7 +462,7 @@ namespace Server.Misc
 
                 string directoryName = Path.GetDirectoryName(FilePath);
 
-                if (!String.IsNullOrEmpty(directoryName) && !Directory.Exists(directoryName))
+                if (!string.IsNullOrEmpty(directoryName) && !Directory.Exists(directoryName))
                     Directory.CreateDirectory(directoryName);
 
                 XmlTextWriter writer = new XmlTextWriter(FilePath, Encoding.Default);
@@ -575,12 +575,12 @@ namespace Server.Misc
 
         private static string FormatFacet(Map facet)
         {
-            return (facet == null ? String.Empty : facet.ToString());
+            return (facet == null ? string.Empty : facet.ToString());
         }
 
         private static Map ParseFacet(string value)
         {
-            return (String.IsNullOrEmpty(value) ? null : Map.Parse(value));
+            return (string.IsNullOrEmpty(value) ? null : Map.Parse(value));
         }
 
         #endregion

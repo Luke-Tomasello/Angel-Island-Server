@@ -52,7 +52,7 @@ namespace Server.Factions.NewGumps.Misc
 
             AddSeparator(20, 40, 310);
 
-            AddStatistic(20, 50, 150, "<i>Tithe Rate</i>", String.Concat(m_Faction.Tithe, "%"));
+            AddStatistic(20, 50, 150, "<i>Tithe Rate</i>", string.Concat(m_Faction.Tithe, "%"));
             AddStatistic(20, 80, 150, "<i>Silver Available</i>", m_Faction.Silver.ToString("N0"));
 
             AddSeparator(20, 112, 310);

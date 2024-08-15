@@ -69,7 +69,7 @@ namespace Server
         public const int TestCenterPort = 3594;
         public const int SiegePerilousPort = 3595;
         public const int MortalisPort = 3596;
-        public const int RenaissancePort = 3597;
+        public const int RenaissancePort = 3597;        // AI 3.0 (2017)
         public const int EventShardPort = 3598;
         public const int LoginServerPortBase = 2593;
 #endif

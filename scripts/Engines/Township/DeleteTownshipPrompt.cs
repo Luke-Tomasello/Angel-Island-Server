@@ -61,7 +61,7 @@ namespace Server.Township
             }
 
             LogHelper Logger = new LogHelper("township.log", false, true);
-            Logger.Log(LogType.Item, m_Stone, String.Format("TownshipStone {0} of [{1}] has been deleted by {2}. Daily fees: {3} Funds: {4}.",
+            Logger.Log(LogType.Item, m_Stone, string.Format("TownshipStone {0} of [{1}] has been deleted by {2}. Daily fees: {3} Funds: {4}.",
                 m_Stone, m_Stone.GuildAbbreviation, from, m_Stone.TotalFeePerDay, m_Stone.GoldHeld));
             Logger.Finish();
 
@@ -114,7 +114,7 @@ namespace Server.Township
             }
 
             LogHelper Logger = new LogHelper("township.log", false, true);
-            Logger.Log(LogType.Item, m_Stone, String.Format("TownshipStone {0} of [{1}] has been packed up by {2}. Daily fees: {3} Funds: {4}.",
+            Logger.Log(LogType.Item, m_Stone, string.Format("TownshipStone {0} of [{1}] has been packed up by {2}. Daily fees: {3} Funds: {4}.",
                 m_Stone, m_Stone.GuildAbbreviation, from, m_Stone.TotalFeePerDay, m_Stone.GoldHeld));
             Logger.Finish();
 

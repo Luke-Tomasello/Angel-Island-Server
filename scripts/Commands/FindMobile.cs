@@ -169,7 +169,7 @@ namespace Server.Commands
                     PlayerMobile pm = m as PlayerMobile;
                     if (pm != null)
                         if (pm.Name.ToLower() == sName.ToLower())
-                            Logger.Log(LogType.Mobile, m, String.Format("Online: {0}", ((bool)(pm.NetState != null)).ToString()));
+                            Logger.Log(LogType.Mobile, m, string.Format("Online: {0}", ((bool)(pm.NetState != null)).ToString()));
                 }
 
                 Logger.Finish();

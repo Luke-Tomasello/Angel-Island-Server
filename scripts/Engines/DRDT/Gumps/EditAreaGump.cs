@@ -66,9 +66,9 @@ namespace Server.Gumps
             AddAlphaRegion(0, 0, 590, 300);
 
             if (m_Inns)
-                AddHtml(30, 20, 530, 20, String.Format("<BASEFONT COLOR=#FFFFFF><CENTER>Edit Inns of {0}</CENTER></BASEFONT>", m_Region.Name), false, false);
+                AddHtml(30, 20, 530, 20, string.Format("<BASEFONT COLOR=#FFFFFF><CENTER>Edit Inns of {0}</CENTER></BASEFONT>", m_Region.Name), false, false);
             else
-                AddHtml(30, 20, 530, 20, String.Format("<BASEFONT COLOR=#FFFFFF><CENTER>Edit Area of {0}</CENTER></BASEFONT>", m_Region.Name), false, false);
+                AddHtml(30, 20, 530, 20, string.Format("<BASEFONT COLOR=#FFFFFF><CENTER>Edit Area of {0}</CENTER></BASEFONT>", m_Region.Name), false, false);
 
             AddButton(50, 60, 4005, 4007, 1, GumpButtonType.Reply, 0);
             AddLabel(85, 60, 1152, "Add (Target)");

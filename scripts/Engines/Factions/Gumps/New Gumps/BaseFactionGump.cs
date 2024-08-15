@@ -145,7 +145,7 @@ namespace Server.Factions.NewGumps
 
         protected static string FormatGuild(Mobile m)
         {
-            return ((m == null || m.Guild == null ? null : String.Concat('(', m.Guild.Abbreviation, ')')));
+            return ((m == null || m.Guild == null ? null : string.Concat('(', m.Guild.Abbreviation, ')')));
         }
 
         protected static string FormatRole(PlayerState pl)
@@ -154,10 +154,10 @@ namespace Server.Factions.NewGumps
                 return "Commander";
 
             if (pl.Sheriff != null)
-                return String.Concat("Sheriff of ", pl.Sheriff.Definition.FriendlyName);
+                return string.Concat("Sheriff of ", pl.Sheriff.Definition.FriendlyName);
 
             if (pl.Finance != null)
-                return String.Concat("Finance MIN of ", pl.Finance.Definition.FriendlyName);
+                return string.Concat("Finance MIN of ", pl.Finance.Definition.FriendlyName);
 
             int titleIndex = (int)pl.MerchantTitle - 1;
 

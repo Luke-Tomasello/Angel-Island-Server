@@ -180,12 +180,12 @@ namespace Server.SkillHandlers
 #if false
             if (def.Number > 0)
                 target.PrivateOverheadMessage(MessageType.Regular, 0x3B2, def.Number, m.NetState);
-            else if (!String.IsNullOrEmpty(def.String))
+            else if (!string.IsNullOrEmpty(def.String))
                 target.PrivateOverheadMessage(MessageType.Regular, 0x3B2, false, def.String, m.NetState);
 #else
             if (def.Number > 0)
                 m.SendLocalizedMessage(def.Number);
-            else if (!String.IsNullOrEmpty(def.String))
+            else if (!string.IsNullOrEmpty(def.String))
                 m.SendMessage(def.String);
 #endif
         }
@@ -481,7 +481,7 @@ namespace Server.SkillHandlers
             if (skill.Base == 0)
                 return "<div align=right>---</div>";
 
-            return String.Format("<div align=right>{0:F1}</div>", skill.Base);
+            return string.Format("<div align=right>{0:F1}</div>", skill.Base);
         }
 
         private static string FormatAttributes(int cur, int max)
@@ -489,7 +489,7 @@ namespace Server.SkillHandlers
             if (max == 0)
                 return "<div align=right>---</div>";
 
-            return String.Format("<div align=right>{0}/{1}</div>", cur, max);
+            return string.Format("<div align=right>{0}/{1}</div>", cur, max);
         }
 
         private static string FormatStat(int val)
@@ -497,7 +497,7 @@ namespace Server.SkillHandlers
             if (val == 0)
                 return "<div align=right>---</div>";
 
-            return String.Format("<div align=right>{0}</div>", val);
+            return string.Format("<div align=right>{0}</div>", val);
         }
 
         private static string FormatElement(int val)
@@ -505,7 +505,7 @@ namespace Server.SkillHandlers
             if (val <= 0)
                 return "<div align=right>---</div>";
 
-            return String.Format("<div align=right>{0}%</div>", val);
+            return string.Format("<div align=right>{0}%</div>", val);
         }
 
         private const int LabelColor = 0x24E5;
@@ -561,7 +561,7 @@ namespace Server.SkillHandlers
             AddImage(118, 277, 2081);
             AddImage(118, 347, 2083);
 
-            AddHtml(147, 108, 210, 18, String.Format("<center><i>{0}</i></center>", c.Name), false, false);
+            AddHtml(147, 108, 210, 18, string.Format("<center><i>{0}</i></center>", c.Name), false, false);
 
             AddButton(240, 77, 2093, 2093, 2, GumpButtonType.Reply, 0);
 
@@ -716,7 +716,7 @@ namespace Server.SkillHandlers
                         {
                             AddImage(128, 296, 2086);
                             AddHtml(147, 294, 160, 18, "<basefont color=#003142>Growth Stage</basefont>", false, false);
-                            AddHtml(153, 312, 160, 18, String.Format("<basefont color=#4A3929>{0:G3}</basefont>", c.Maturity.ToString()), false, false);
+                            AddHtml(153, 312, 160, 18, string.Format("<basefont color=#4A3929>{0:G3}</basefont>", c.Maturity.ToString()), false, false);
                         }
 
                         break;
@@ -774,8 +774,8 @@ namespace Server.SkillHandlers
                                     break;
 
                                 GeneAttribute attr = (GeneAttribute)Attribute.GetCustomAttribute(genes[pg * 9 + i], typeof(GeneAttribute), true);
-                                AddHtml(153, 168 + 18 * i, 120, 18, String.Format("<basefont color=#4A3929>{0}</basefont>", attr.Name), false, false);
-                                AddHtml(240, 168 + 18 * i, 115, 18, String.Format("<div align=right>{0:G3}</div>", c.DescribeGene(genes[pg * 9 + i], attr)), false, false);
+                                AddHtml(153, 168 + 18 * i, 120, 18, string.Format("<basefont color=#4A3929>{0}</basefont>", attr.Name), false, false);
+                                AddHtml(240, 168 + 18 * i, 115, 18, string.Format("<div align=right>{0:G3}</div>", c.DescribeGene(genes[pg * 9 + i], attr)), false, false);
                             }
                         }
                         break;

@@ -82,7 +82,7 @@ namespace Server.Factions.NewGumps.TownMenu
                     y = 50;
 
                 AddRadio(left ? 20 : 180, y, 208, 209, town.Tax == tax, i + 1);
-                AddLabel(left ? 55 : 215, y, tax < 0 ? 0x26 : 0x12A, String.Concat(tax.ToString("+0;-#"), '%'));
+                AddLabel(left ? 55 : 215, y, tax < 0 ? 0x26 : 0x12A, string.Concat(tax.ToString("+0;-#"), '%'));
 
                 y += 30;
             }

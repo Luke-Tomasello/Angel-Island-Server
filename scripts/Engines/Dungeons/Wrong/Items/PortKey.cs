@@ -57,15 +57,15 @@ namespace Server.Items
                 return;
 
 
-            LabelTo(from, String.Format("{0}", DefaultName));
+            LabelTo(from, string.Format("{0}", DefaultName));
             if (Corrupted())
             {
-                LabelTo(from, String.Format("({0})", "corrupted"));
+                LabelTo(from, string.Format("({0})", "corrupted"));
                 from.SendAsciiMessage("The ancient vase crumbles in your hands.");
                 Timer.DelayCall(TimeSpan.FromSeconds(1), new TimerStateCallback(DeleteTick), new object[] { from });
             }
             else
-                LabelTo(from, String.Format("({0})", "active"));
+                LabelTo(from, string.Format("({0})", "active"));
             return;
         }
         public bool Corrupted()

@@ -154,7 +154,7 @@ namespace Server.Engines.Craft
                     minSkill = 0;
 
                 AddHtmlLocalized(170, 132 + (i * 20), 200, 18, 1044060 + (int)skill.SkillToMake, LabelColor, false, false);
-                AddLabel(430, 132 + (i * 20), LabelHue, String.Format("{0:F1}", minSkill));
+                AddLabel(430, 132 + (i * 20), LabelHue, string.Format("{0:F1}", minSkill));
             }
 
             CraftSubResCol res = (m_CraftItem.UseSubRes2 ? m_CraftSystem.CraftSubRes2 : m_CraftSystem.CraftSubRes);
@@ -181,12 +181,12 @@ namespace Server.Engines.Craft
                 excepChance = 1.0;
 
             AddHtmlLocalized(170, 80, 250, 18, 1044057, LabelColor, false, false); // Success Chance:
-            AddLabel(430, 80, LabelHue, String.Format("{0:F1}%", chance * 100));
+            AddLabel(430, 80, LabelHue, string.Format("{0:F1}%", chance * 100));
 
             if (m_ShowExceptionalChance)
             {
                 AddHtmlLocalized(170, 100, 250, 18, 1044058, 32767, false, false); // Exceptional Chance:
-                AddLabel(430, 100, LabelHue, String.Format("{0:F1}%", excepChance * 100));
+                AddLabel(430, 100, LabelHue, string.Format("{0:F1}%", excepChance * 100));
             }
 
             EnchantedScroll enchantedScroll = EnchantedScroll.Find(m_From, m_CraftItem.ItemType);
@@ -196,7 +196,7 @@ namespace Server.Engines.Craft
                 double imbueChance = enchantedScroll.GetImbueChance(m_From, m_CraftSystem.MainSkill);
 
                 AddHtml(170, 60, 250, 18, "<BASEFONT COLOR=#FFFFFF>Imbue Chance:</BASEFONT>", false, false);
-                AddLabel(430, 60, LabelHue, String.Format("{0:F1}%", imbueChance * 100));
+                AddLabel(430, 60, LabelHue, string.Format("{0:F1}%", imbueChance * 100));
             }
             else
             {
@@ -207,7 +207,7 @@ namespace Server.Engines.Craft
                     double imbueChance = ecs.GetImbueChance(m_CraftItem.ItemType);
 
                     AddHtml(170, 60, 250, 18, "<BASEFONT COLOR=#FFFFFF>Imbue Chance:</BASEFONT>", false, false);
-                    AddLabel(430, 60, LabelHue, String.Format("{0:F1}%", imbueChance * 100));
+                    AddLabel(430, 60, LabelHue, string.Format("{0:F1}%", imbueChance * 100));
                 }
             }
         }

@@ -242,10 +242,10 @@ namespace Server.Gumps
             if (m != null)
             {
                 AddHtml(14, 36 + (line * 20), 200, 20, Color("Mobile:", LabelColor32), false, false);
-                AddHtml(70, 36 + (line++ * 20), 200, 20, Color(String.Format("{0} (0x{1:X})", m.Name, m.Serial.Value), LabelColor32), false, false);
+                AddHtml(70, 36 + (line++ * 20), 200, 20, Color(string.Format("{0} (0x{1:X})", m.Name, m.Serial.Value), LabelColor32), false, false);
 
                 AddHtml(14, 36 + (line * 20), 200, 20, Color("Location:", LabelColor32), false, false);
-                AddHtml(70, 36 + (line++ * 20), 200, 20, Color(String.Format("{0} [{1}]", m.Location, m.Map), LabelColor32), false, false);
+                AddHtml(70, 36 + (line++ * 20), 200, 20, Color(string.Format("{0} [{1}]", m.Location, m.Map), LabelColor32), false, false);
 
                 AddButton(13, 157, 0xFAB, 0xFAD, 1, GumpButtonType.Reply, 0);
                 AddHtml(48, 158, 200, 20, Color("Send Message", LabelColor32), false, false);
@@ -310,21 +310,21 @@ namespace Server.Gumps
 
 			int line = 0;
 
-			AddLabel( 12, 38 + (line++ * 22), 0, String.Format( "Address: {0}", state ) );
-			AddLabel( 12, 38 + (line++ * 22), 0, String.Format( "Version: {0}; Flags: 0x{1:X}", state.Version == null ? "(null)" : state.Version.ToString(), state.Flags ) );
+			AddLabel( 12, 38 + (line++ * 22), 0, string.Format( "Address: {0}", state ) );
+			AddLabel( 12, 38 + (line++ * 22), 0, string.Format( "Version: {0}; Flags: 0x{1:X}", state.Version == null ? "(null)" : state.Version.ToString(), state.Flags ) );
 
 			Account a = state.Account as Account;
 			Mobile m = state.Mobile;
 
 			if ( from.AccessLevel >= AccessLevel.GameMaster && a != null )
 			{
-				AddLabel( 12, 38 + (line++ * 22), 0, String.Format( "Account: {0}", a.Username ) );
+				AddLabel( 12, 38 + (line++ * 22), 0, string.Format( "Account: {0}", a.Username ) );
 			}
 
 			if ( m != null )
 			{
-				AddLabel( 12, 38 + (line++ * 22), 0, String.Format( "Mobile: {0} (0x{1:X})", m.Name, m.Serial.Value ) );
-				AddLabel( 12, 38 + (line++ * 22), 0, String.Format( "Location: {0} [{1}]", m.Location, m.Map ) );
+				AddLabel( 12, 38 + (line++ * 22), 0, string.Format( "Mobile: {0} (0x{1:X})", m.Name, m.Serial.Value ) );
+				AddLabel( 12, 38 + (line++ * 22), 0, string.Format( "Location: {0} [{1}]", m.Location, m.Map ) );
 
 				AddButton( 12, 38 + (line * 22), 0xFAB, 0xFAD, 1, GumpButtonType.Reply, 0 );
 				AddImageTiled( 47, 38 + (line * 22), 234, 22, 0xA40 );

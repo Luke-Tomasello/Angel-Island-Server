@@ -314,12 +314,12 @@ namespace Server.Mobiles
                         case MsgState.InitialMsg:
                             {
                                 string[] lines = new string[2];
-                                lines[0] = String.Format(
+                                lines[0] = string.Format(
                                     "The treasure hunter {0} was last seen somewhere {1} and is said to be in need of assistance.",
                                     Name,
                                     RelativeLocation());
 
-                                lines[1] = String.Format(
+                                lines[1] = string.Format(
                                     "{0} was last seen near {1}" + " " +
                                     "Please see that {2} receives whatever help {3} needs.",
                                     Name,
@@ -339,27 +339,27 @@ namespace Server.Mobiles
                                 switch (Utility.Random(2))
                                 {
                                     case 0:
-                                        lines[0] = String.Format(
+                                        lines[0] = string.Format(
                                             "The treasure hunter {0} is under attack by {1}!" + " " +
                                             "Quickly now, {2} needs your help!",
                                             Name,
                                             (Villain(mob) == null) ? "Someone" : Villain(mob).Name,
                                             Female == true ? "she" : "he");
 
-                                        lines[1] = String.Format(
+                                        lines[1] = string.Format(
                                             "{0} was last seen near {1}",
                                             Name,
                                             DescribeLocation(this));
                                         break;
 
                                     case 1:
-                                        lines[0] = String.Format(
+                                        lines[0] = string.Format(
                                             "Quickly, there is no time to waste!" + " " +
                                             "Britain's own treasure hunter {0} is under attack by {1}!",
                                             Name,
                                             (Villain(mob) == null) ? "Someone" : Villain(mob).Name);
 
-                                        lines[1] = String.Format(
+                                        lines[1] = string.Format(
                                             "{0} was last seen somewhere near {1}",
                                             Name,
                                             DescribeLocation(this));
@@ -378,11 +378,11 @@ namespace Server.Mobiles
                                 switch (Utility.Random(2))
                                 {
                                     case 0:
-                                        lines[0] = String.Format("Great sadness befalls us. The treasure hunter {0} has been killed.", Name);
+                                        lines[0] = string.Format("Great sadness befalls us. The treasure hunter {0} has been killed.", Name);
                                         break;
 
                                     case 1:
-                                        lines[0] = String.Format("Alas, the fair treasure hunter {0} has been killed. We shall avenge those responsible!", Name);
+                                        lines[0] = string.Format("Alas, the fair treasure hunter {0} has been killed. We shall avenge those responsible!", Name);
                                         break;
                                 }
 

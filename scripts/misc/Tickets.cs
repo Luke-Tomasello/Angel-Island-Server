@@ -129,11 +129,11 @@ namespace Server.Items
                 if (m_Flags == iFlags.None)
                     text = Name;
                 else if (m_Flags == iFlags.Named)
-                    text = String.Format("A ticket to {0}, not yet scheduled.", Name);
+                    text = string.Format("A ticket to {0}, not yet scheduled.", Name);
                 else if (Expired)
-                    text = String.Format("A ticket to {0}, expired.", Name);
+                    text = string.Format("A ticket to {0}, expired.", Name);
                 else
-                    text = String.Format("A ticket to {0}", Name);
+                    text = string.Format("A ticket to {0}", Name);
 
                 LabelTo(from, text);
 

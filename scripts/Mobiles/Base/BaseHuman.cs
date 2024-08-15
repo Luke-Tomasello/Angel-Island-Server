@@ -214,7 +214,7 @@ namespace Server.Mobiles
         public virtual bool CreateDialog(Mobile with, string StoryFile, bool isPrivate)
         {
             // Data/toyshop.z5
-            string filename = String.Format("{0}.z5", StoryFile);
+            string filename = string.Format("{0}.z5", StoryFile);
             if (!System.IO.File.Exists(Path.Combine(Core.DataDirectory, filename)))
             {
                 Console.WriteLine("Error: {0} does not exist", Path.Combine(Core.DataDirectory, filename));

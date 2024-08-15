@@ -570,7 +570,7 @@ namespace Server.Items
             if (File.Exists(filename) == false)
             {   // for an established shards, this error is worthwhile, however very uncommon.
                 //  But for fresh shards (no world files,) we don't want to scare the shard owner.
-                //Core.LoggerShortcuts.BootError(String.Format("Error reading \"{0}\", using default values:", filename));
+                //Core.LoggerShortcuts.BootError(string.Format("Error reading \"{0}\", using default values:", filename));
                 return;
             }
             Console.Write("Unusual Containers Loading... ");

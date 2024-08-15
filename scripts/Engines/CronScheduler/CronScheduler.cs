@@ -443,7 +443,7 @@ namespace Server.Engines.CronScheduler
 
                     if (Pattern.IsMatch(cee.Name))
                     {
-                        list.Add(String.Format("Deleted: '{0}', Cron: '{1}', Task: {2}\r\n",
+                        list.Add(string.Format("Deleted: '{0}', Cron: '{1}', Task: {2}\r\n",
                             cee.Name,
                             cee.Cronjob.Specification,
                             cee.Handler.Target == null ? cee.Name : cee.Handler.Target.ToString()));
@@ -484,7 +484,7 @@ namespace Server.Engines.CronScheduler
 
                     if (Pattern.IsMatch(cee.Name))
                     {
-                        list.Add(String.Format("Job: '{0}', Cron: '{1}', Task: {2}\r\n",
+                        list.Add(string.Format("Job: '{0}', Cron: '{1}', Task: {2}\r\n",
                             cee.Name,
                             cee.Cronjob.Specification,
                             cee.Handler.Target == null ? cee.Name : cee.Handler.Target.ToString()));

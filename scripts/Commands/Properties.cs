@@ -223,13 +223,13 @@ namespace Server.Commands
 
                         if (attr == null)
                         {
-                            failReason = String.Format("Property '{0}' not found.", propertyName);
+                            failReason = string.Format("Property '{0}' not found.", propertyName);
                             return null;
                         }
 
                         if ((from == null ? AccessLevel.GameMaster : from.AccessLevel) < (reading ? attr.ReadLevel : attr.WriteLevel))
                         {
-                            failReason = String.Format("You must be at least {0} to {1} the property '{2}'.",
+                            failReason = string.Format("You must be at least {0} to {1} the property '{2}'.",
                                 Mobile.GetAccessLevelName((reading ? attr.ReadLevel : attr.WriteLevel)), reading ? "get" : "set", propertyName);
 
                             return null;
@@ -237,19 +237,19 @@ namespace Server.Commands
 
                         if ((from == null ? AccessLevel.GameMaster : from.AccessLevel) < (reading ? attr.ReadLevel : attr.WriteLevel))
                         {
-                            failReason = String.Format("You must be at least {0} to {1} the property '{2}'.",
+                            failReason = string.Format("You must be at least {0} to {1} the property '{2}'.",
                                 Mobile.GetAccessLevelName(attr.ReadLevel), reading ? "get" : "set", propertyName);
 
                             return null;
                         }
                         if (reading && !p.CanRead)
                         {
-                            failReason = String.Format("Property '{0}' is write only.", propertyName);
+                            failReason = string.Format("Property '{0}' is write only.", propertyName);
                             return null;
                         }
                         else if (!reading && !p.CanWrite)
                         {
-                            failReason = String.Format("Property '{0}' is read only.", propertyName);
+                            failReason = string.Format("Property '{0}' is read only.", propertyName);
                             return null;
                         }
 
@@ -261,7 +261,7 @@ namespace Server.Commands
 
                 if (info[i] == null)
                 {
-                    failReason = String.Format("Property '{0}' not found.", propertyName);
+                    failReason = string.Format("Property '{0}' not found.", propertyName);
                     return null;
                 }
             }
@@ -299,12 +299,12 @@ namespace Server.Commands
                     {
                         if (reading && !p.CanRead)
                         {
-                            failReason = String.Format("Property '{0}' is write only.", propertyName);
+                            failReason = string.Format("Property '{0}' is write only.", propertyName);
                             return null;
                         }
                         else if (!reading && !p.CanWrite)
                         {
-                            failReason = String.Format("Property '{0}' is read only.", propertyName);
+                            failReason = string.Format("Property '{0}' is read only.", propertyName);
                             return null;
                         }
 
@@ -316,7 +316,7 @@ namespace Server.Commands
 
                 if (info[i] == null)
                 {
-                    failReason = String.Format("Property '{0}' not found.", propertyName);
+                    failReason = string.Format("Property '{0}' not found.", propertyName);
                     return null;
                 }
             }
@@ -358,7 +358,7 @@ namespace Server.Commands
 
                 if (obj == null)
                 {
-                    failReason = String.Format("Property '{0}' is null.", chain[i]);
+                    failReason = string.Format("Property '{0}' is null.", chain[i]);
                     return null;
                 }
             }
@@ -439,13 +439,13 @@ namespace Server.Commands
                             return "Property not found.";
 
                         if (from.AccessLevel < attr.ReadLevel)
-                            return String.Format("Getting this property requires at least {0} access level.", Mobile.GetAccessLevelName(attr.ReadLevel));
+                            return string.Format("Getting this property requires at least {0} access level.", Mobile.GetAccessLevelName(attr.ReadLevel));
 
                         if (!p.CanRead)
                             return "Property is write only.";
 
                         if (from.AccessLevel < attr.WriteLevel)
-                            return String.Format("Setting this property requires at least {0} access level.", Mobile.GetAccessLevelName(attr.WriteLevel));
+                            return string.Format("Setting this property requires at least {0} access level.", Mobile.GetAccessLevelName(attr.WriteLevel));
 
                         if (!p.CanWrite)
                             return "Property is read only.";
@@ -496,15 +496,15 @@ namespace Server.Commands
             else if (value is AccessLevel)
                 return value.ToString();
             else if (IsNumeric(type))
-                toString = String.Format("{0} (0x{0:X})", value);
+                toString = string.Format("{0} (0x{0:X})", value);
             else if (IsChar(type))
-                toString = String.Format("'{0}' ({1} [0x{1:X}])", value, (int)value);
+                toString = string.Format("'{0}' ({1} [0x{1:X}])", value, (int)value);
             else if (IsString(type))
-                toString = String.Format("\"{0}\"", value);
+                toString = string.Format("\"{0}\"", value);
             else
                 toString = value.ToString();
 
-            return String.Format("{0} = {1}", p.Name, toString);
+            return string.Format("{0} = {1}", p.Name, toString);
         }
         //Pix: stupid fucking code, I want JUST the value!
         private static string InternalGetOnlyValue(object o, PropertyInfo p)
@@ -517,15 +517,15 @@ namespace Server.Commands
             if (value == null)
                 toString = PropNull;
             //else if (IsNumeric(type))
-            //    toString = String.Format("{0} (0x{0:X})", value);
+            //    toString = string.Format("{0} (0x{0:X})", value);
             //else if (IsChar(type))
-            //    toString = String.Format("'{0}' ({1} [0x{1:X}])", value, (int)value);
+            //    toString = string.Format("'{0}' ({1} [0x{1:X}])", value, (int)value);
             //else if (IsString(type))
-            //    toString = String.Format("\"{0}\"", value);
+            //    toString = string.Format("\"{0}\"", value);
             else
                 toString = value.ToString();
 
-            //return String.Format("{0} = {1}", p.Name, toString);
+            //return string.Format("{0} = {1}", p.Name, toString);
             return toString;
         }
 

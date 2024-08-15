@@ -72,15 +72,15 @@ namespace Server.Commands
                     Item item = World.FindItem(serial);
                     Mobile mob = World.FindMobile(serial);
                     if (item != null)
-                        Logger.Log(LogType.Item, item, String.Format("Managed by Spawner {0}", dict[serial]));
+                        Logger.Log(LogType.Item, item, string.Format("Managed by Spawner {0}", dict[serial]));
                     if (mob != null)
-                        Logger.Log(LogType.Mobile, mob, String.Format("Managed by Spawner {0}", dict[serial]));
+                        Logger.Log(LogType.Mobile, mob, string.Format("Managed by Spawner {0}", dict[serial]));
                     if (dict[serial] == Serial.MinusOne)
                         orphans++;
                 }
 
-                e.Mobile.SendMessage(String.Format("{0} template objects found with {1} orphans.", dict.Count, orphans));
-                e.Mobile.SendMessage(String.Format("Please see {0} for a list of template/spawner pairs. ", logname));
+                e.Mobile.SendMessage(string.Format("{0} template objects found with {1} orphans.", dict.Count, orphans));
+                e.Mobile.SendMessage(string.Format("Please see {0} for a list of template/spawner pairs. ", logname));
 
                 Logger.Finish();
             }
@@ -110,8 +110,8 @@ namespace Server.Commands
                         orphans++;
                 }
 
-                e.Mobile.SendMessage(String.Format("{0} template objects found with {1} orphans.", dict.Count, orphans));
-                e.Mobile.SendMessage(String.Format("Please see {0} for a list cleared templates. ", logname));
+                e.Mobile.SendMessage(string.Format("{0} template objects found with {1} orphans.", dict.Count, orphans));
+                e.Mobile.SendMessage(string.Format("Please see {0} for a list cleared templates. ", logname));
 
                 Logger.Finish();
             }
@@ -138,8 +138,8 @@ namespace Server.Commands
                         orphans++;
                 }
 
-                e.Mobile.SendMessage(String.Format("{0} template objects found with {1} orphans.", dict.Count, orphans));
-                e.Mobile.SendMessage(String.Format("Please see {0} for a list cleared templates. ", logname));
+                e.Mobile.SendMessage(string.Format("{0} template objects found with {1} orphans.", dict.Count, orphans));
+                e.Mobile.SendMessage(string.Format("Please see {0} for a list cleared templates. ", logname));
 
                 Logger.Finish();
             }

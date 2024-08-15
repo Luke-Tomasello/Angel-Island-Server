@@ -84,7 +84,7 @@ namespace Server
             if (callback == null)
                 return "null";
 
-            return String.Format("{0}.{1}", callback.Method.DeclaringType.FullName, callback.Method.Name);
+            return string.Format("{0}.{1}", callback.Method.DeclaringType.FullName, callback.Method.Name);
         }
 
         public static void DumpInfo(TextWriter tw)
@@ -657,7 +657,7 @@ namespace Server
 
             public override string ToString()
             {
-                return String.Format("DelayCallTimer[{0}]", FormatDelegate(m_Callback));
+                return string.Format("DelayCallTimer[{0}]", FormatDelegate(m_Callback));
             }
         }
 
@@ -686,7 +686,7 @@ namespace Server
 
             public override string ToString()
             {
-                return String.Format("DelayStateCall[{0}]", FormatDelegate(m_Callback));
+                return string.Format("DelayStateCall[{0}]", FormatDelegate(m_Callback));
             }
         }
 
@@ -716,7 +716,7 @@ namespace Server
 
             public override string ToString()
             {
-                return String.Format("DelayStateCall[{0}]", FormatDelegate(m_Callback));
+                return string.Format("DelayStateCall[{0}]", FormatDelegate(m_Callback));
             }
         }
         #endregion

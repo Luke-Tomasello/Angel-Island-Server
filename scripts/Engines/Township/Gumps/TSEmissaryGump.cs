@@ -50,9 +50,9 @@ namespace Server.Township
 
             AddLine("Current Law Level: {0}", Items.TownshipStone.FormatLawLevel(m_Stone.LawLevel));
 
-            AddButton((int)Button.SetStandard, String.Format("Change to Standard ({0} gp)", TownshipSettings.LawNormCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.NONE);
-            AddButton((int)Button.SetLawless, String.Format("Change to Lawless ({0} gp)", TownshipSettings.LawlessCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.LAWLESS);
-            AddButton((int)Button.SetAuthority, String.Format("Change to Grant of Authority ({0} gp)", TownshipSettings.LawAuthCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.AUTHORITY);
+            AddButton((int)Button.SetStandard, string.Format("Change to Standard ({0} gp)", TownshipSettings.LawNormCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.NONE);
+            AddButton((int)Button.SetLawless, string.Format("Change to Lawless ({0} gp)", TownshipSettings.LawlessCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.LAWLESS);
+            AddButton((int)Button.SetAuthority, string.Format("Change to Grant of Authority ({0} gp)", TownshipSettings.LawAuthCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.AUTHORITY);
 
             AddLine("Daily fees based on current activity level:");
 
@@ -137,7 +137,7 @@ namespace Server.Township
             m_Stone.LastLawChange = DateTime.UtcNow;
             m_Stone.GoldHeld -= charge;
 
-            m_Stone.RecordWithdrawal(charge, String.Format("{0} changed law level to {1}", from.Name, Items.TownshipStone.FormatLawLevel(lawLevel)));
+            m_Stone.RecordWithdrawal(charge, string.Format("{0} changed law level to {1}", from.Name, Items.TownshipStone.FormatLawLevel(lawLevel)));
 
             from.SendMessage("You changed your township's law level to {0}.", Items.TownshipStone.FormatLawLevel(lawLevel));
         }

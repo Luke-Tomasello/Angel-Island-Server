@@ -19,7 +19,7 @@
  *
  ***************************************************************************/
 
-/* Scripts\Engines\CrownCoinSystem\Mobiles\CrownCoinVendor.cs
+/* Scripts\Mobiles\Townfolk\BaseTownsFolk.cs
  * CHANGELOG:
  * 6/24/2024. Adam
  *   First time check in

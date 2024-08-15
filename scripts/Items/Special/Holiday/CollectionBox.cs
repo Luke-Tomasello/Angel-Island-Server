@@ -168,7 +168,7 @@ namespace Server.Items
             {
                 bool okay = false;
 
-                if (!String.IsNullOrEmpty(value))
+                if (!string.IsNullOrEmpty(value))
                 {
                     try
                     {
@@ -401,7 +401,7 @@ namespace Server.Items
             }
         }
 
-        public override bool HandlesOnMovement { get { return !String.IsNullOrEmpty(m_ShoutMessage); } }
+        public override bool HandlesOnMovement { get { return !string.IsNullOrEmpty(m_ShoutMessage); } }
 
         public override void OnMovement(Mobile m, Point3D oldLocation)
         {
@@ -417,7 +417,7 @@ namespace Server.Items
 
         private void CheckShout(IEntity ent, Mobile m, Point3D oldLocation)
         {
-            if (String.IsNullOrEmpty(m_ShoutMessage) || m.Hidden || !m.Alive)
+            if (string.IsNullOrEmpty(m_ShoutMessage) || m.Hidden || !m.Alive)
                 return;
 
             Point3D loc = ((ent is Item) ? ((Item)ent).GetWorldLocation() : ent.Location);
@@ -435,7 +435,7 @@ namespace Server.Items
 
         private void DisplayScore(IEntity ent, Mobile from)
         {
-            SayTo(ent, from, String.Format("Your score: {0}", FormatValue(this[from])));
+            SayTo(ent, from, string.Format("Your score: {0}", FormatValue(this[from])));
         }
 
         public string FormatValue(double value)
@@ -443,7 +443,7 @@ namespace Server.Items
             if (m_Decimals == 0)
                 return value.ToString("N0");
 
-            string format = String.Concat('F', m_Decimals.ToString());
+            string format = string.Concat('F', m_Decimals.ToString());
 
             return value.ToString(format);
         }
@@ -499,7 +499,7 @@ namespace Server.Items
 
                 AddBackground(0, 0, 416, 310, 5170);
 
-                AddHtml(0, 3, 416, 30, String.Format("<center>{0}</center>", m_Box.Name), false, false);
+                AddHtml(0, 3, 416, 30, string.Format("<center>{0}</center>", m_Box.Name), false, false);
 
                 if (from.AccessLevel >= AccessLevel.GameMaster)
                 {
@@ -547,7 +547,7 @@ namespace Server.Items
                     if (m_Page < pages - 1)
                         AddButton(370, 286, 2437, 2437, 2, GumpButtonType.Reply, 0); // Down
 
-                    AddHtml(0, 286, 416, 30, String.Format("<center>Page {0} / {1}<center>", m_Page + 1, pages), false, false);
+                    AddHtml(0, 286, 416, 30, string.Format("<center>Page {0} / {1}<center>", m_Page + 1, pages), false, false);
                 }
             }
 
@@ -621,7 +621,7 @@ namespace Server.Items
                 string name = Server.Misc.Titles.FormatShort(m);
 
                 if (m.Guild != null)
-                    return String.Format("{0} [{1}]", name, m.Guild.Abbreviation);
+                    return string.Format("{0} [{1}]", name, m.Guild.Abbreviation);
                 else
                     return name;
             }
@@ -705,7 +705,7 @@ namespace Server.Items
 
                 AddBackground(10, 10, 190, 140, 0x242C);
 
-                AddHtml(25, 30, 160, 70, String.Format("<center>Are you sure you wish to (re)run the lottery? (to draw: {0})</center>", m_Box.LotteryDraws), false, false);
+                AddHtml(25, 30, 160, 70, string.Format("<center>Are you sure you wish to (re)run the lottery? (to draw: {0})</center>", m_Box.LotteryDraws), false, false);
 
                 AddButton(40, 105, 0x81A, 0x81B, 0x1, GumpButtonType.Reply, 0); // Okay
                 AddButton(110, 105, 0x819, 0x818, 0x2, GumpButtonType.Reply, 0); // Cancel
@@ -767,7 +767,7 @@ namespace Server.Items
             for (int i = 0; i < m_Winners.Count; i++)
                 names[i] = m_Winners[i].Name;
 
-            from.SendMessage("And the winners are: {0}!", String.Join(", ", names));
+            from.SendMessage("And the winners are: {0}!", string.Join(", ", names));
 
             UpdateGump(from);
         }
@@ -913,7 +913,7 @@ namespace Server.Items
 
             public override string ToString()
             {
-                return String.Format("{0} x{1}%", m_ConditionStr, m_Scalar);
+                return string.Format("{0} x{1}%", m_ConditionStr, m_Scalar);
             }
         }
 

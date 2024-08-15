@@ -125,7 +125,7 @@ namespace Server.Items
     {
         string ICommodity.Description
         {
-            get { return String.Format(Amount == 1 ? "{0} board" : "{0} boards", Amount); }
+            get { return string.Format(Amount == 1 ? "{0} board" : "{0} boards", Amount); }
         }
 
         [Constructable]
@@ -170,7 +170,7 @@ namespace Server.Items
     {
         string ICommodity.Description
         {
-            get { return String.Format(Amount == 1 ? "{0} heartwood board" : "{0} heartwood boards", Amount); }
+            get { return string.Format(Amount == 1 ? "{0} heartwood board" : "{0} heartwood boards", Amount); }
         }
 
         [Constructable]
@@ -192,7 +192,7 @@ namespace Server.Items
 
         public override void OnSingleClick(Mobile from)
         {
-            LabelTo(from, Amount == 1 ? "a heartwood board" : String.Format("{0} heartwood boards", Amount));
+            LabelTo(from, Amount == 1 ? "a heartwood board" : string.Format("{0} heartwood boards", Amount));
         }
 
         public override Item Dupe(int amount)
@@ -220,7 +220,7 @@ namespace Server.Items
     {
         string ICommodity.Description
         {
-            get { return String.Format(Amount == 1 ? "{0} bloodwood board" : "{0} bloodwood boards", Amount); }
+            get { return string.Format(Amount == 1 ? "{0} bloodwood board" : "{0} bloodwood boards", Amount); }
         }
 
         [Constructable]
@@ -242,7 +242,7 @@ namespace Server.Items
 
         public override void OnSingleClick(Mobile from)
         {
-            LabelTo(from, Amount == 1 ? "a bloodwood board" : String.Format("{0} bloodwood boards", Amount));
+            LabelTo(from, Amount == 1 ? "a bloodwood board" : string.Format("{0} bloodwood boards", Amount));
         }
 
         public override Item Dupe(int amount)
@@ -270,7 +270,7 @@ namespace Server.Items
     {
         string ICommodity.Description
         {
-            get { return String.Format(Amount == 1 ? "{0} frostwood board" : "{0} frostwood boards", Amount); }
+            get { return string.Format(Amount == 1 ? "{0} frostwood board" : "{0} frostwood boards", Amount); }
         }
 
         [Constructable]
@@ -292,7 +292,7 @@ namespace Server.Items
 
         public override void OnSingleClick(Mobile from)
         {
-            LabelTo(from, Amount == 1 ? "a frostwood board" : String.Format("{0} frostwood boards", Amount));
+            LabelTo(from, Amount == 1 ? "a frostwood board" : string.Format("{0} frostwood boards", Amount));
         }
 
         public override Item Dupe(int amount)
@@ -320,7 +320,7 @@ namespace Server.Items
     {
         string ICommodity.Description
         {
-            get { return String.Format(Amount == 1 ? "{0} oak board" : "{0} oak boards", Amount); }
+            get { return string.Format(Amount == 1 ? "{0} oak board" : "{0} oak boards", Amount); }
         }
 
         [Constructable]
@@ -342,7 +342,7 @@ namespace Server.Items
 
         public override void OnSingleClick(Mobile from)
         {
-            LabelTo(from, Amount == 1 ? "an oak board" : String.Format("{0} oak boards", Amount));
+            LabelTo(from, Amount == 1 ? "an oak board" : string.Format("{0} oak boards", Amount));
         }
 
         public override Item Dupe(int amount)
@@ -370,7 +370,7 @@ namespace Server.Items
     {
         string ICommodity.Description
         {
-            get { return String.Format(Amount == 1 ? "{0} ash board" : "{0} ash boards", Amount); }
+            get { return string.Format(Amount == 1 ? "{0} ash board" : "{0} ash boards", Amount); }
         }
 
         [Constructable]
@@ -392,7 +392,7 @@ namespace Server.Items
 
         public override void OnSingleClick(Mobile from)
         {
-            LabelTo(from, Amount == 1 ? "an ash board" : String.Format("{0} ash boards", Amount));
+            LabelTo(from, Amount == 1 ? "an ash board" : string.Format("{0} ash boards", Amount));
         }
 
         public override Item Dupe(int amount)
@@ -420,7 +420,7 @@ namespace Server.Items
     {
         string ICommodity.Description
         {
-            get { return String.Format(Amount == 1 ? "{0} yew board" : "{0} yew boards", Amount); }
+            get { return string.Format(Amount == 1 ? "{0} yew board" : "{0} yew boards", Amount); }
         }
 
         [Constructable]
@@ -442,7 +442,7 @@ namespace Server.Items
 
         public override void OnSingleClick(Mobile from)
         {
-            LabelTo(from, Amount == 1 ? "a yew board" : String.Format("{0} yew boards", Amount));
+            LabelTo(from, Amount == 1 ? "a yew board" : string.Format("{0} yew boards", Amount));
         }
 
         public override Item Dupe(int amount)

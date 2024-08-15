@@ -191,14 +191,14 @@ namespace Server.Mobiles
                         case MsgState.InitialMsg:
                             {
                                 string[] lines = new string[2];
-                                lines[0] = String.Format(
+                                lines[0] = string.Format(
                                     "The {3} bandit {0} was last seen near {1}. {2} is not to be trusted.",
                                     Name,
                                     DescribeLocation(this),
                                     Female == true ? "She" : "He",
                                     RandomAdjective());
 
-                                lines[1] = String.Format(
+                                lines[1] = string.Format(
                                     "Do what you will with {0}, but just see that {1} does not enter our fair city.",
                                     Female == true ? "her" : "him",
                                     Female == true ? "she" : "he");
@@ -215,13 +215,13 @@ namespace Server.Mobiles
                                 switch (Utility.Random(2))
                                 {
                                     case 0:
-                                        lines[0] = String.Format(
+                                        lines[0] = string.Format(
                                             "Hurrah! {1} has stepped in to beat down that {2} bandit {0}.",
                                             Name,
                                             (Hero(mob) == null) ? "Someone" : Hero(mob).Name,
                                             RandomAdjective());
 
-                                        lines[1] = String.Format(
+                                        lines[1] = string.Format(
                                             "{0} may need some asistance. {2} was last seen near {1}",
                                             (Hero(mob) == null) ? "Someone" : Hero(mob).Name,
                                             DescribeLocation(this),
@@ -232,13 +232,13 @@ namespace Server.Mobiles
                                         break;
 
                                     case 1:
-                                        lines[0] = String.Format(
+                                        lines[0] = string.Format(
                                             "The brave {0} is battling that {2} bandit {1}.",
                                             (Hero(mob) == null) ? "Someone" : Hero(mob).Name,
                                             Name,
                                             RandomAdjective());
 
-                                        lines[1] = String.Format(
+                                        lines[1] = string.Format(
                                             "Hurry now, and give your aid to {0}." + " " +
                                             "We have heard they are still fighting near {1}.",
                                             (Hero(mob) == null) ? "Someone" : Hero(mob).Name,
@@ -258,11 +258,11 @@ namespace Server.Mobiles
                                 switch (Utility.Random(2))
                                 {
                                     case 0:
-                                        lines[0] = String.Format("Huzzah! that {0} bandit {1} has been defeated!", RandomAdjective(), Name);
+                                        lines[0] = string.Format("Huzzah! that {0} bandit {1} has been defeated!", RandomAdjective(), Name);
                                         break;
 
                                     case 1:
-                                        lines[0] = String.Format("The {0} bandit {1} has been killed! Rejoice!", RandomAdjective(), Name);
+                                        lines[0] = string.Format("The {0} bandit {1} has been killed! Rejoice!", RandomAdjective(), Name);
                                         break;
                                 }
 

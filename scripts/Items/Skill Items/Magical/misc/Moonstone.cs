@@ -128,7 +128,7 @@ namespace Server.Items
                 if ((desc = m_Description) == null || (desc = desc.Trim()).Length == 0)
                     desc = "an unknown location";
 
-                list.Add(String.Format(MoonstoneFormat, desc));
+                list.Add(string.Format(MoonstoneFormat, desc));
             }
             else
             {
@@ -145,7 +145,7 @@ namespace Server.Items
                 if ((desc = m_Description) == null || (desc = desc.Trim()).Length == 0)
                     desc = "an unknown location";
 
-                LabelTo(from, String.Format(MoonstoneFormat, desc));
+                LabelTo(from, string.Format(MoonstoneFormat, desc));
             }
             else
             {

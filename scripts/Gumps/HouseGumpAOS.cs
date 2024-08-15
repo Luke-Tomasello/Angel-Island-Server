@@ -154,7 +154,7 @@ namespace Server.Gumps
                 if (button != -1)
                     AddButton(10, 150 + (offset * 20), 4005, 4007, GetButtonID(button, i), GumpButtonType.Reply, 0);
 
-                AddLabel(button > 0 ? 45 : 10, 150 + (offset * 20), LabelHue, accountOf && m.Player && m.Account != null ? String.Format("* Account of {0}", name) : String.Format("* {0}", name));
+                AddLabel(button > 0 ? 45 : 10, 150 + (offset * 20), LabelHue, accountOf && m.Player && m.Account != null ? string.Format("* Account of {0}", name) : string.Format("* {0}", name));
                 ++index;
             }
         }

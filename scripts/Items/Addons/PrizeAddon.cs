@@ -109,7 +109,7 @@ namespace Server.Items
 
         public override void GetComponentProperties(AddonComponent c, ObjectPropertyList list)
         {
-            if (!String.IsNullOrEmpty(m_Label))
+            if (!string.IsNullOrEmpty(m_Label))
                 list.Add(m_Label);
 
             int rank = Rank;
@@ -120,7 +120,7 @@ namespace Server.Items
 
         public override void OnComponentSingleClick(AddonComponent c, Mobile from)
         {
-            if (!String.IsNullOrEmpty(m_Label))
+            if (!string.IsNullOrEmpty(m_Label))
                 c.LabelTo(from, m_Label);
 
             int rank = Rank;
@@ -333,7 +333,7 @@ namespace Server.Items
         {
             base.GetProperties(list);
 
-            if (!String.IsNullOrEmpty(m_Label))
+            if (!string.IsNullOrEmpty(m_Label))
                 list.Add(m_Label);
 
             int rank = Rank;
@@ -346,7 +346,7 @@ namespace Server.Items
         {
             base.OnSingleClick(from);
 
-            if (!String.IsNullOrEmpty(m_Label))
+            if (!string.IsNullOrEmpty(m_Label))
                 LabelTo(from, m_Label);
 
 #if false
@@ -370,7 +370,7 @@ namespace Server.Items
 
                 if (cur < min || cur > max)
                 {
-                    if (!String.IsNullOrEmpty(m_SeasonMessage))
+                    if (!string.IsNullOrEmpty(m_SeasonMessage))
                         from.SendMessage(m_SeasonMessage);
 
                     return false;

@@ -68,7 +68,7 @@ namespace Server.Items
                     TimeSpan ts = TimeSpan.FromMinutes(2);
                     Timer.DelayCall(ts, new TimerStateCallback(KM_Reset), new object[] { bc, bc.PreferredFocus, 0 });
                     m.DebugSay(DebugFlags.Kiting, "I will head home in {0} minutes",
-                        String.Format("{0:.##}", ts.TotalMinutes));
+                        string.Format("{0:.##}", ts.TotalMinutes));
                 }
         }
         private void KM_OnDoTeleport(Mobile m)

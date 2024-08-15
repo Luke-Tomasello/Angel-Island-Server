@@ -97,9 +97,9 @@ namespace Server.Multis
             try
             {
                 if (m_Item != null && !m_Item.Deleted && m_Item is PlantItem plant)
-                    LabelTo(from, String.Format("{0} {1} for [{2}] (deed)", plant.PlantHue, Utility.SplitCamelCase(plant.PlantType.ToString()), house.Sign.Name));
+                    LabelTo(from, string.Format("{0} {1} for [{2}] (deed)", plant.PlantHue, Utility.SplitCamelCase(plant.PlantType.ToString()), house.Sign.Name));
                 else
-                    LabelTo(from, String.Format("{0} for [{1}] (deed)",
+                    LabelTo(from, string.Format("{0} for [{1}] (deed)",
                         (m_Item != null && !m_Item.Deleted) ? m_Item.SafeName :
                             "Missing item",
                         (house != null && house.Sign != null && house.Sign.Name != null) ? house.Sign.Name :
@@ -359,7 +359,7 @@ namespace Server.Multis
         {
             try
             {
-                LabelTo(from, String.Format("{0} for [{1}]",
+                LabelTo(from, string.Format("{0} for [{1}]",
                     (m_Mobile != null && !m_Mobile.Deleted) ? m_Mobile.SafeName :
                         "Missing mobile",
                     (house != null && house.Owner != null && house.Owner.Name != null) ? house.Owner.Name :
@@ -514,11 +514,11 @@ namespace Server.Multis
         public override void OnSingleClick(Mobile from)
         {
             if (m_House != null && m_House.Owner != null)
-                LabelTo(from, String.Format("a restoration deed for {0} [{1}]", m_House.SafeName, m_House.Owner.Name));
+                LabelTo(from, string.Format("a restoration deed for {0} [{1}]", m_House.SafeName, m_House.Owner.Name));
             else if (BaseHouse.GetOwnership(from) == from)
-                LabelTo(from, String.Format("a restoration deed for {0} [{1}]", BaseHouse.GetOwnership(from).SafeName, BaseHouse.GetOwnership(from).Name));
+                LabelTo(from, string.Format("a restoration deed for {0} [{1}]", BaseHouse.GetOwnership(from).SafeName, BaseHouse.GetOwnership(from).Name));
             else
-                LabelTo(from, String.Format("a house restoration deed"));
+                LabelTo(from, string.Format("a house restoration deed"));
         }
 
         public override void OnDoubleClick(Mobile from)

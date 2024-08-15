@@ -146,10 +146,10 @@ namespace Server
                         },
                     new PMList(1012001, 1012013, Map.Felucca, new PMEntry[] // public moongates
                         {
-                            new PMEntry(new Point3D(3746, 2505, 47), "Ocllo", String.Empty),
+                            new PMEntry(new Point3D(3746, 2505, 47), "Ocllo", string.Empty),
                             new PMEntry(new Point3D(3563, 2139, 34), 1012010, 1005396), // Magincia
                             new PMEntry(new Point3D(4467, 1283,  5), 1012003, 1005389), // Moonglow
-                            new PMEntry(new Point3D(3569, 1228,  0), "Nujel'm", String.Empty),
+                            new PMEntry(new Point3D(3569, 1228,  0), "Nujel'm", string.Empty),
                         }),
                     new Point3D[] // unstuck locations
                         {
@@ -531,7 +531,7 @@ namespace Server
 
                 xmlDoc.AppendChild(root);
 
-                xmlDoc.Save(Path.Combine(DataDirectory, String.Concat(zone.ID, ".xml")));
+                xmlDoc.Save(Path.Combine(DataDirectory, string.Concat(zone.ID, ".xml")));
             }
             catch (Exception ex)
             {
@@ -548,7 +548,7 @@ namespace Server
 
             try
             {
-                string fileName = Path.Combine(DataDirectory, String.Concat(zoneID, ".xml"));
+                string fileName = Path.Combine(DataDirectory, string.Concat(zoneID, ".xml"));
 
                 if (System.IO.File.Exists(fileName))
                 {
@@ -1344,7 +1344,7 @@ namespace Server
 
             public override string ToString()
             {
-                return String.Concat(Start.ToString(), '+', Offset.ToPoint2D().ToString());
+                return string.Concat(Start.ToString(), '+', Offset.ToPoint2D().ToString());
             }
         }
 

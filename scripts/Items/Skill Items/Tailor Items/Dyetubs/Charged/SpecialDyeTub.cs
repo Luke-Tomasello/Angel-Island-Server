@@ -332,7 +332,7 @@ namespace Server.Items
             ColorInfo clr = GetColor(hue);
 
             if (clr.Label != null)
-                return String.Format("{0} shade of {1}", GetPrefix(hue), clr.Label);
+                return string.Format("{0} shade of {1}", GetPrefix(hue), clr.Label);
 
             return null;
         }
@@ -342,7 +342,7 @@ namespace Server.Items
         {
             string name = FormatDescription(hue);
 
-            if (String.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(name))
                 from.SendMessage("This tub has not yet been used to make any dye.");
             else
                 from.SendMessage("You examine the tub and note it is {0}.", name);

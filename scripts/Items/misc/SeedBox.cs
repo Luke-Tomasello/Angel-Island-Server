@@ -108,7 +108,7 @@ namespace Server.Items
         {
             base.OnSingleClick(from);
 
-            LabelTo(from, 1060662, String.Format("Seeds\t{0}", SeedCount())); // ~1_val~: ~2_val~
+            LabelTo(from, 1060662, string.Format("Seeds\t{0}", SeedCount())); // ~1_val~: ~2_val~
         }
 
         public override void GetProperties(ObjectPropertyList list)

@@ -4005,14 +4005,14 @@ namespace Server.Mobiles
 
                 if (!m_Mobile.CanBeControlledBy(to))
                 {
-                    string args = String.Format("{0}\t{1}\t ", to.Name, from.Name);
+                    string args = string.Format("{0}\t{1}\t ", to.Name, from.Name);
 
                     from.SendLocalizedMessage(1043248, args); // The pet refuses to be transferred because it will not obey ~1_NAME~.~3_BLANK~
                     to.SendLocalizedMessage(1043249, args); // The pet will not accept you as a master because it does not trust you.~3_BLANK~
                 }
                 else if (!m_Mobile.CanBeControlledBy(from))
                 {
-                    string args = String.Format("{0}\t{1}\t ", to.Name, from.Name);
+                    string args = string.Format("{0}\t{1}\t ", to.Name, from.Name);
 
                     from.SendLocalizedMessage(1043250, args); // The pet refuses to be transferred because it will not obey you sufficiently.~3_BLANK~
                     to.SendLocalizedMessage(1043251, args); // The pet will not accept you as a master because it does not trust ~2_NAME~.~3_BLANK~
@@ -4343,7 +4343,7 @@ namespace Server.Mobiles
 
                 if (accepted && !m_Creature.CanBeControlledBy(to))
                 {
-                    string args = String.Format("{0}\t{1}\t ", to.Name, from.Name);
+                    string args = string.Format("{0}\t{1}\t ", to.Name, from.Name);
 
                     from.SendLocalizedMessage(1043248, args); // The pet refuses to be transferred because it will not obey ~1_NAME~.~3_BLANK~
                     to.SendLocalizedMessage(1043249, args); // The pet will not accept you as a master because it does not trust you.~3_BLANK~
@@ -4351,7 +4351,7 @@ namespace Server.Mobiles
                 }
                 else if (accepted && !m_Creature.CanBeControlledBy(from))
                 {
-                    string args = String.Format("{0}\t{1}\t ", to.Name, from.Name);
+                    string args = string.Format("{0}\t{1}\t ", to.Name, from.Name);
 
                     from.SendLocalizedMessage(1043250, args); // The pet refuses to be transferred because it will not obey you sufficiently.~3_BLANK~
                     to.SendLocalizedMessage(1043251, args); // The pet will not accept you as a master because it does not trust ~2_NAME~.~3_BLANK~
@@ -4396,7 +4396,7 @@ namespace Server.Mobiles
 
                         m_Creature.PlaySound(m_Creature.GetIdleSound());
 
-                        string args = String.Format("{0}\t{1}\t{2}", from.Name, m_Creature.Name, to.Name);
+                        string args = string.Format("{0}\t{1}\t{2}", from.Name, m_Creature.Name, to.Name);
 
                         from.SendLocalizedMessage(1043253, args); // You have transferred your pet to ~3_GETTER~.
                         to.SendLocalizedMessage(1043252, args); // ~1_NAME~ has transferred the allegiance of ~2_PET_NAME~ to you.
@@ -4583,12 +4583,12 @@ namespace Server.Mobiles
                 AddItem(218, 85, 0xCB0);
 
                 AddHtml(30, 30, 150, 75, "<div align=CENTER>Wilt thou sanctify the release of:</div>", false, false); // <div align=center>Wilt thou sanctify the resurrection of:</div>
-                AddHtml(30, 70, 150, 25, String.Format("<div align=CENTER>{0}</div>", pet.Name), true, false);
+                AddHtml(30, 70, 150, 25, string.Format("<div align=CENTER>{0}</div>", pet.Name), true, false);
 
                 if (bStatLoss)
                 {
                     string statlossmessage = "By releasing your bonded companion, the spirit link between master and follower will be shattered. Alas, the companion's life will be lost in the process.";
-                    AddHtml(30, 105, 195, 135, String.Format("<div align=CENTER>{0}</div>", statlossmessage), true, false);
+                    AddHtml(30, 105, 195, 135, string.Format("<div align=CENTER>{0}</div>", statlossmessage), true, false);
                 }
 
                 AddButton(40, bStatLoss ? 245 : 105, 0x81A, 0x81B, 1, GumpButtonType.Reply, 0); // Okay
@@ -4674,7 +4674,7 @@ namespace Server.Mobiles
             {
                 using (StreamWriter op = new StreamWriter("nan_transform.txt", true))
                 {
-                    op.WriteLine(String.Format("NaN in TransformMoveDelay: {0}, {1}, {2}, {3}", DateTime.UtcNow, this.GetType().ToString(), m_Mobile == null ? "null" : m_Mobile.GetType().ToString(), m_Mobile.HitsMax));
+                    op.WriteLine(string.Format("NaN in TransformMoveDelay: {0}, {1}, {2}, {3}", DateTime.UtcNow, this.GetType().ToString(), m_Mobile == null ? "null" : m_Mobile.GetType().ToString(), m_Mobile.HitsMax));
                 }
 
                 return 1.0;

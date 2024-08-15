@@ -143,10 +143,10 @@ namespace Server.Items
 
                 tc.End();
 
-                //from.SendMessage(String.Format("Stone placement check took {0}", tc.TimeTaken));
+                //from.SendMessage(string.Format("Stone placement check took {0}", tc.TimeTaken));
 
                 LogHelper logger = new LogHelper("TownshipPlacementTime.log", false);
-                logger.Log(LogType.Mobile, from, String.Format("Stone placement check at {0} ({1}) took {2}", loc, map, tc.TimeTaken));
+                logger.Log(LogType.Mobile, from, string.Format("Stone placement check at {0} ({1}) took {2}", loc, map, tc.TimeTaken));
                 logger.Finish();
 
                 if (result != PlacementResult.Success)
@@ -177,10 +177,10 @@ namespace Server.Items
 
                     tc.End();
 
-                    //from.SendMessage(String.Format("Stone placement took {0}", tc.TimeTaken));
+                    //from.SendMessage(string.Format("Stone placement took {0}", tc.TimeTaken));
 
                     logger = new LogHelper("TownshipPlacementTime.log", false);
-                    logger.Log(LogType.Mobile, from, String.Format("Stone placement ACTUAL at {0} ({1}) took {2}", loc, map, tc.TimeTaken));
+                    logger.Log(LogType.Mobile, from, string.Format("Stone placement ACTUAL at {0} ({1}) took {2}", loc, map, tc.TimeTaken));
                     logger.Finish();
                 }
             }
@@ -404,7 +404,7 @@ namespace Server.Items
 
                 AddBackground(10, 10, 190, 140, 0x242C);
 
-                AddHtml(30, 30, 150, 75, String.Format("<div align=CENTER>{0}</div>", "The township can be placed here.  Continue?"), false, false);
+                AddHtml(30, 30, 150, 75, string.Format("<div align=CENTER>{0}</div>", "The township can be placed here.  Continue?"), false, false);
 
                 AddButton(40, 105, 0x81A, 0x81B, 0x1, GumpButtonType.Reply, 0); // Okay
                 AddButton(110, 105, 0x819, 0x818, 0x2, GumpButtonType.Reply, 0); // Cancel

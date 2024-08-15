@@ -1832,7 +1832,7 @@ namespace Server
 
         public void LabelTo(Mobile to, string format, params object[] args)
         {
-            LabelTo(to, String.Format(format, args));
+            LabelTo(to, string.Format(format, args));
         }
 
         public void LabelToAffix(Mobile to, int number, AffixType type, string affix)
@@ -1862,7 +1862,7 @@ namespace Server
 
         public void LabelToHued(Mobile to, string text, int hue, params object[] args)
         {
-            LabelToHued(to, String.Format(text, args), hue);
+            LabelToHued(to, string.Format(text, args), hue);
         }
 
         public virtual void LabelLootTypeTo(Mobile to)
@@ -2566,7 +2566,7 @@ namespace Server
                     }
 
                     //					if ( m_Items == null )
-                    //						throw new Exception( String.Format( "Items array is null--are you calling the serialization constructor? Type={0}", GetType() ) );
+                    //						throw new Exception( string.Format( "Items array is null--are you calling the serialization constructor? Type={0}", GetType() ) );
 
                     if (m_Items != null)
                     {
@@ -5862,7 +5862,7 @@ namespace Server
             }
             public override string ToString()
             {
-                return String.Format("({0}, {1}, {2} {3})", m_X, m_Y, m_Z, Map.Maps[m_M]);
+                return string.Format("({0}, {1}, {2} {3})", m_X, m_Y, m_Z, Map.Maps[m_M]);
             }
             public static implicit operator Point3D(WorldLocation d) => new Point3D(d.X, d.Y, d.Z);
             public static explicit operator WorldLocation(Point3D b) => new WorldLocation(b.X, b.Y, b.Z, Map.Felucca);   // default to felucca.
@@ -6304,7 +6304,7 @@ namespace Server
                             if (m_Amount <= 1)
                                 ns.Send(new MessageLocalized(m_Serial, m_ItemID, MessageType.Label, 0x3B2, 3, LabelNumber, "", ""));
                             else
-                                ns.Send(new MessageLocalizedAffix(m_Serial, m_ItemID, MessageType.Label, 0x3B2, 3, LabelNumber, "", AffixType.Append, String.Format(" : {0}", m_Amount), ""));
+                                ns.Send(new MessageLocalizedAffix(m_Serial, m_ItemID, MessageType.Label, 0x3B2, 3, LabelNumber, "", AffixType.Append, string.Format(" : {0}", m_Amount), ""));
                         }
                         else
                         {
@@ -6349,7 +6349,7 @@ namespace Server
             else
                 articleStr = null;
 
-            return String.Concat(articleStr, prefix, baseName, suffix);
+            return string.Concat(articleStr, prefix, baseName, suffix);
         }
 
         /// <summary>
@@ -6436,7 +6436,7 @@ namespace Server
                 article = Article.A;
 
                 if (str.Length == 2)
-                    return String.Empty;
+                    return string.Empty;
 
                 return str.Substring(2);
             }
@@ -6446,7 +6446,7 @@ namespace Server
                 article = Article.An;
 
                 if (str.Length == 3)
-                    return String.Empty;
+                    return string.Empty;
 
                 return str.Substring(3);
             }
@@ -6456,7 +6456,7 @@ namespace Server
                 article = Article.The;
 
                 if (str.Length == 4)
-                    return String.Empty;
+                    return string.Empty;
 
                 return str.Substring(4);
             }
@@ -6757,7 +6757,7 @@ namespace Server
         }
         public override string ToString()
         {
-            return String.Format("0x{0:X} \"{1}\"", m_Serial.Value, GetType().Name);
+            return string.Format("0x{0:X} \"{1}\"", m_Serial.Value, GetType().Name);
         }
 
         internal int m_TypeRef;
@@ -6812,9 +6812,6 @@ namespace Server
         /// </summary>
         public Serial ReassignSerial(Serial s)
         {
-#if false
-            CheckRehydrate();
-#endif
             SendRemovePacket();
             World.RemoveItem(this);
             m_Serial = s;

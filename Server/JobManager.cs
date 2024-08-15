@@ -165,7 +165,7 @@ namespace Server
 		{
 			SyncRoot = new object();
 			m_Thread = Thread.CurrentThread;
-			m_Thread.Name = String.Format("JobWorker {0}", m_NextID++);
+			m_Thread.Name = string.Format("JobWorker {0}", m_NextID++);
 			m_Job = null;
 			m_Status = ThreadStatus.Running;
 			m_Signal = new AutoResetEvent(false);

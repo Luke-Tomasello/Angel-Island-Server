@@ -66,7 +66,7 @@ namespace Server.Items
 
         private static string GetFileName(string folder, string id)
         {
-            return Path.Combine(folder, String.Format("{0}.xml", id));
+            return Path.Combine(folder, string.Format("{0}.xml", id));
         }
 
         private static readonly Dictionary<string, AddonData> m_Cache = new Dictionary<string, AddonData>();
@@ -597,7 +597,7 @@ namespace Server.Items
             try
             {
                 writer.WriteStartElement("Component");
-                writer.WriteAttributeString("Flags", String.Format("0x{0}", ((byte)flags).ToString("X2")));
+                writer.WriteAttributeString("Flags", string.Format("0x{0}", ((byte)flags).ToString("X2")));
 
                 writer.WriteElementString("ItemID", m_ItemID.ToString());
                 writer.WriteElementString("X", m_X.ToString());

@@ -91,7 +91,7 @@ namespace Server.Multis.StaticHousing
                     if (blueprint != null)
                     {
                         this.MultiID = StaticHouseHelper.GetFoundationID(blueprint.Width, blueprint.Height);
-                        this.Name = String.Concat("deed to a ", blueprint.Description);
+                        this.Name = string.Concat("deed to a ", blueprint.Description);
                     }
                     else
                     {
@@ -185,7 +185,7 @@ namespace Server.Multis.StaticHousing
                     if (m_Blueprint != null)
                     {
                         this.MultiID = StaticHouseHelper.GetFoundationID(m_Blueprint.Width, m_Blueprint.Height);
-                        this.Name = String.Concat("deed to a ", m_Blueprint.Description);
+                        this.Name = string.Concat("deed to a ", m_Blueprint.Description);
                     }
                     else
                     {

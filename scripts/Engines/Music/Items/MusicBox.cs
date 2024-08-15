@@ -311,8 +311,8 @@ namespace Server.Items
                                         }
                                         // update the users library
                                         from.SendMessage("You acquired {0} for {1} gold.", rsm, 0);
-                                        //m_musicBox.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("'{0}', added to your library.", rsm));
-                                        m_musicBox.Say(String.Format("'{0}', added to your library.", rsm), hue: 54);
+                                        //m_musicBox.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("'{0}', added to your library.", rsm));
+                                        m_musicBox.Say(string.Format("'{0}', added to your library.", rsm), hue: 54);
                                         GlobalMusicRepository[rsm].Purchasers.Add(new PurchaserInfo(from, GlobalMusicRepository[rsm].Price));
                                         m_musicBox.m_playContext.RefreshPlayQueue();
                                         // and delete the copy 'added'
@@ -1100,34 +1100,34 @@ namespace Server.Items
                                 {
                                     if (!globalBest.Key.Napster || (globalBest.Key.Napster && HasNapsterAccess(e.Mobile, globalBest.Key)))
                                     {
-                                        //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("{0} by {1}.", globalBest.Key, globalBest.Key.Author));
-                                        Say(String.Format("{0} by {1}.", globalBest.Key, globalBest.Key.Author), hue: 54);
+                                        //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("{0} by {1}.", globalBest.Key, globalBest.Key.Author));
+                                        Say(string.Format("{0} by {1}.", globalBest.Key, globalBest.Key.Author), hue: 54);
                                         PlayMusic(e.Mobile, m_playContext.NowPlaying(globalBest.Key));
                                     }
                                     else if (globalBest.Key.Napster)
                                     {
-                                        SendMessage(e.Mobile, String.Format("'{0}' is a Napster track. You will need to get a copy directly from {1}.", globalBest.Key, globalBest.Key.Owner.Name));
-                                        //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("Here is a sample of {0} by {1}.", globalBest.Key, globalBest.Key.Author));
-                                        Say(String.Format("Here is a sample of {0} by {1}.", globalBest.Key, globalBest.Key.Author), hue: 54);
+                                        SendMessage(e.Mobile, string.Format("'{0}' is a Napster track. You will need to get a copy directly from {1}.", globalBest.Key, globalBest.Key.Owner.Name));
+                                        //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("Here is a sample of {0} by {1}.", globalBest.Key, globalBest.Key.Author));
+                                        Say(string.Format("Here is a sample of {0} by {1}.", globalBest.Key, globalBest.Key.Author), hue: 54);
                                         PlayMusic(e.Mobile, m_playContext.NowPlaying(globalBest.Key));
                                         Timer.DelayCall(TimeSpan.FromSeconds(10), new TimerStateCallback(EndSample), new object[] { this, e.Mobile });
                                     }
                                 }
                                 else
                                 {
-                                    //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("Here is a sample of {0} by {1}.", globalBest.Key, globalBest.Key.Author));
-                                    Say(String.Format("Here is a sample of {0} by {1}.", globalBest.Key, globalBest.Key.Author), hue: 54);
+                                    //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("Here is a sample of {0} by {1}.", globalBest.Key, globalBest.Key.Author));
+                                    Say(string.Format("Here is a sample of {0} by {1}.", globalBest.Key, globalBest.Key.Author), hue: 54);
                                     PlayMusic(e.Mobile, m_playContext.NowPlaying(globalBest.Key));
                                     Timer.DelayCall(TimeSpan.FromSeconds(10), new TimerStateCallback(EndSample), new object[] { this, e.Mobile });
                                 }
                             }
                             else
-                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("'{0}' is still pending approval", globalBest.Key));
-                                Say(String.Format("'{0}' is still pending approval", globalBest.Key), hue: 54);
+                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("'{0}' is still pending approval", globalBest.Key));
+                                Say(string.Format("'{0}' is still pending approval", globalBest.Key), hue: 54);
                         }
                         else
-                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("I couldn't find '{0}' in your music library", SongName(tokens)));
-                            Say(String.Format("I couldn't find '{0}' in your music library", SongName(tokens)), hue: 54);
+                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("I couldn't find '{0}' in your music library", SongName(tokens)));
+                            Say(string.Format("I couldn't find '{0}' in your music library", SongName(tokens)), hue: 54);
 
                         break;
                     }
@@ -1152,11 +1152,11 @@ namespace Server.Items
                 case TextCommands.What: /*who*/
                     {
                         if (IsThisDevicePlaying())
-                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("This is {0} by {1}.", m_playContext.NowPlaying(), m_playContext.NowPlaying().Author));
-                            Say(String.Format("This is {0} by {1}.", m_playContext.NowPlaying(), m_playContext.NowPlaying().Author), hue: 54);
+                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("This is {0} by {1}.", m_playContext.NowPlaying(), m_playContext.NowPlaying().Author));
+                            Say(string.Format("This is {0} by {1}.", m_playContext.NowPlaying(), m_playContext.NowPlaying().Author), hue: 54);
                         else if (m_playContext.PeekPrev() != null)
-                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("That was {0} by {1}.", m_playContext.PeekPrev(), m_playContext.PeekPrev().Author));
-                            Say(String.Format("That was {0} by {1}.", m_playContext.PeekPrev(), m_playContext.PeekPrev().Author), hue: 54);
+                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("That was {0} by {1}.", m_playContext.PeekPrev(), m_playContext.PeekPrev().Author));
+                            Say(string.Format("That was {0} by {1}.", m_playContext.PeekPrev(), m_playContext.PeekPrev().Author), hue: 54);
                         else
                             //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, "Hmm, I don't know that.");
                             Say("Hmm, I don't know that.", hue: 54);
@@ -1284,16 +1284,16 @@ namespace Server.Items
                             KeyValuePair<RolledUpSheetMusic, MusicInfo> globalBest = (KeyValuePair<RolledUpSheetMusic, MusicInfo>)info;
                             if (!Approved(globalBest.Key))
                             {
-                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("Sorry, '{0}' is currently unavailable.", globalBest.Key));
-                                Say(String.Format("Sorry, '{0}' is currently unavailable.", globalBest.Key), hue: 54);
+                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("Sorry, '{0}' is currently unavailable.", globalBest.Key));
+                                Say(string.Format("Sorry, '{0}' is currently unavailable.", globalBest.Key), hue: 54);
                                 break;
                             }
                             if (globalBest.Key.Price == 0)
                             {
                                 if (!m_playContext.Playlist.Contains(globalBest.Key))
                                 {
-                                    //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("Added {0} by {1} to your library.", globalBest.Key, globalBest.Key.Author));
-                                    Say(String.Format("Added {0} by {1} to your library.", globalBest.Key, globalBest.Key.Author), hue: 54);
+                                    //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("Added {0} by {1} to your library.", globalBest.Key, globalBest.Key.Author));
+                                    Say(string.Format("Added {0} by {1} to your library.", globalBest.Key, globalBest.Key.Author), hue: 54);
                                     if (m_playContext.IgnoreList.Contains(globalBest.Key))
                                     {
                                         m_playContext.IgnoreList.Remove(globalBest.Key);
@@ -1301,27 +1301,27 @@ namespace Server.Items
                                     }
                                 }
                                 else
-                                    //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("Your library already contains {0} by {1}.", globalBest.Key, globalBest.Key.Author));
-                                    Say(String.Format("Your library already contains {0} by {1}.", globalBest.Key, globalBest.Key.Author), hue: 54);
+                                    //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("Your library already contains {0} by {1}.", globalBest.Key, globalBest.Key.Author));
+                                    Say(string.Format("Your library already contains {0} by {1}.", globalBest.Key, globalBest.Key.Author), hue: 54);
                             }
                             else
                             {
                                 if (!m_playContext.Playlist.Contains(globalBest.Key))
                                 {
                                     //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true,
-                                    //String.Format("{0} by {1} is a premium track. You will need to buy it.", globalBest.Key, globalBest.Key.Author));
-                                    Say(String.Format("{0} by {1} is a premium track. You will need to buy it.", globalBest.Key, globalBest.Key.Author), hue: 54);
+                                    //string.Format("{0} by {1} is a premium track. You will need to buy it.", globalBest.Key, globalBest.Key.Author));
+                                    Say(string.Format("{0} by {1} is a premium track. You will need to buy it.", globalBest.Key, globalBest.Key.Author), hue: 54);
                                     if (m_playContext.IgnoreList.Contains(globalBest.Key))
                                         m_playContext.IgnoreList.Remove(globalBest.Key);
                                 }
                                 else
-                                    //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("Your library already contains {0} by {1}.", globalBest.Key, globalBest.Key.Author));
-                                    Say(String.Format("Your library already contains {0} by {1}.", globalBest.Key, globalBest.Key.Author), hue: 54);
+                                    //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("Your library already contains {0} by {1}.", globalBest.Key, globalBest.Key.Author));
+                                    Say(string.Format("Your library already contains {0} by {1}.", globalBest.Key, globalBest.Key.Author), hue: 54);
                             }
                         }
                         else
-                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)));
-                            Say(String.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
+                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)));
+                            Say(string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
                         break;
                     }
                 case TextCommands.Remove:
@@ -1343,26 +1343,26 @@ namespace Server.Items
                                 if (!m_playContext.IgnoreList.Contains(rsm))
                                 {
                                     //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true,
-                                    //String.Format("Okay, I'll remove {0} from your library.", rsm));
-                                    Say(String.Format("Okay, I'll remove {0} from your library.", rsm), hue: 54);
+                                    //string.Format("Okay, I'll remove {0} from your library.", rsm));
+                                    Say(string.Format("Okay, I'll remove {0} from your library.", rsm), hue: 54);
                                     m_playContext.IgnoreList.Add(rsm);
                                     m_playContext.ResetPlayQueue();
                                 }
                                 else
                                     //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true,
-                                    //String.Format("Hmm, you've already removed {0} from your library.", rsm));
-                                    Say(String.Format("Hmm, you've already removed {0} from your library.", rsm), hue: 54);
+                                    //string.Format("Hmm, you've already removed {0} from your library.", rsm));
+                                    Say(string.Format("Hmm, you've already removed {0} from your library.", rsm), hue: 54);
                             }
                             else
                                 //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true,
-                                //String.Format("I could not find {0} in your library.", rsm));
-                                Say(String.Format("I could not find {0} in your library.", rsm), hue: 54);
+                                //string.Format("I could not find {0} in your library.", rsm));
+                                Say(string.Format("I could not find {0} in your library.", rsm), hue: 54);
                         }
                         else
                         {
                             //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true,
-                            //String.Format("I could not find {0} in your library.", SongName(tokens)));
-                            Say(String.Format("I could not find {0} in your library.", SongName(tokens)), hue: 54);
+                            //string.Format("I could not find {0} in your library.", SongName(tokens)));
+                            Say(string.Format("I could not find {0} in your library.", SongName(tokens)), hue: 54);
                         }
 
                         break;
@@ -1371,8 +1371,8 @@ namespace Server.Items
                     {
                         int added = m_playContext.RefreshPlayQueue();
                         //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true,
-                        //      String.Format("{1} {0} tracks to your library.", Math.Abs(added), added > 0 ? "Added" : "Removed"));
-                        Say(String.Format("{1} {0} tracks to your library.", Math.Abs(added), added > 0 ? "Added" : "Removed"), hue: 54);
+                        //      string.Format("{1} {0} tracks to your library.", Math.Abs(added), added > 0 ? "Added" : "Removed"));
+                        Say(string.Format("{1} {0} tracks to your library.", Math.Abs(added), added > 0 ? "Added" : "Removed"), hue: 54);
                         break;
                     }
                 case TextCommands.Buy:
@@ -1395,8 +1395,8 @@ namespace Server.Items
                         object info = null;
                         if (!FindSong(tokens, out info))
                         {
-                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)));
-                            Say(String.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
+                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)));
+                            Say(string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
                             break;
                         }
 
@@ -1404,15 +1404,15 @@ namespace Server.Items
 
                         if (!Approved(rsm))
                         {
-                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("Sorry, '{0}' is currently unavailable.", rsm));
-                            Say(String.Format("Sorry, '{0}' is currently unavailable.", rsm), hue: 54);
+                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("Sorry, '{0}' is currently unavailable.", rsm));
+                            Say(string.Format("Sorry, '{0}' is currently unavailable.", rsm), hue: 54);
                             break;
                         }
 
                         if (rsm.Napster == true)
                         {   // you cannot buy Napster tracks, you must get the rolled-up sheet music from the composer
-                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("'{0}' is a Napster track. You will need to get a copy directly from {1}.", rsm, rsm.Owner.Name));
-                            Say(String.Format("'{0}' is a Napster track. You will need to get a copy directly from {1}.", rsm, rsm.Owner.Name), hue: 54);
+                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("'{0}' is a Napster track. You will need to get a copy directly from {1}.", rsm, rsm.Owner.Name));
+                            Say(string.Format("'{0}' is a Napster track. You will need to get a copy directly from {1}.", rsm, rsm.Owner.Name), hue: 54);
                             break;
                         }
 
@@ -1424,15 +1424,15 @@ namespace Server.Items
                         {
                             if (m_playContext.Playlist.Contains(rsm))
                             {
-                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("'{0}', is already in your playlist.", rsm));
-                                Say(String.Format("'{0}', is already in your playlist.", rsm), hue: 54);
+                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("'{0}', is already in your playlist.", rsm));
+                                Say(string.Format("'{0}', is already in your playlist.", rsm), hue: 54);
                                 break;
                             }
                             else
                             {
                                 m_playContext.RefreshPlayQueue();
-                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("'{0}', added to your playlist.", rsm));
-                                Say(String.Format("'{0}', added to your playlist.", rsm), hue: 54);
+                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("'{0}', added to your playlist.", rsm));
+                                Say(string.Format("'{0}', added to your playlist.", rsm), hue: 54);
                                 break;
                             }
                         }
@@ -1444,7 +1444,7 @@ namespace Server.Items
                         else
                         {
                             e.Mobile.Prompt = new BuyMusicBoxPrompt(e.Mobile, rsm, this, price);
-                            SendMessage(e.Mobile, String.Format("The cost to buy '{0}' is {1} gold. Are you sure you wish to buy this track?", rsm, price));
+                            SendMessage(e.Mobile, string.Format("The cost to buy '{0}' is {1} gold. Are you sure you wish to buy this track?", rsm, price));
                         }
 
                         break;
@@ -1452,8 +1452,8 @@ namespace Server.Items
                 case TextCommands.Shuffle:
                     {
                         //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true,
-                        //          String.Format("Okay, I'll shuffle your library."));
-                        Say(String.Format("Okay, I'll shuffle your library."), hue: 54);
+                        //          string.Format("Okay, I'll shuffle your library."));
+                        Say(string.Format("Okay, I'll shuffle your library."), hue: 54);
                         //if (IsPlaying()) StopPlaying(true);
                         m_playContext.Shuffle();
                         break;
@@ -1585,10 +1585,10 @@ namespace Server.Items
                         }
                         RolledUpSheetMusic rsm = UnpublishedNeedsReview[0];
                         if (rsm.Owner == null)
-                            SendMessage(e.Mobile, 33, String.Format("Warning: {0} by {1} has no Owner.", rsm.Title, rsm.Author));
+                            SendMessage(e.Mobile, 33, string.Format("Warning: {0} by {1} has no Owner.", rsm.Title, rsm.Author));
 
-                        //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("{0} by {1}.", rsm.Title, rsm.Author));
-                        Say(String.Format("{0} by {1}.", rsm.Title, rsm.Author), hue: 54);
+                        //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("{0} by {1}.", rsm.Title, rsm.Author));
+                        Say(string.Format("{0} by {1}.", rsm.Title, rsm.Author), hue: 54);
                         PlayMusic(e.Mobile, m_playContext.NowPlaying(UnpublishedNeedsReview[0]));
                         m_playContext.SeekEnd();    // ensures we don't start playing our playlist
                         SendMessage(e.Mobile, "Please type Approve, Deny or Delete:");
@@ -1624,8 +1624,8 @@ namespace Server.Items
                             object info = null;
                             if (!FindSong(tokens, out info))
                             {
-                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)));
-                                Say(String.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
+                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)));
+                                Say(string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
                             }
                             else
                             {
@@ -1668,8 +1668,8 @@ namespace Server.Items
                             object info = null;
                             if (!FindSong(tokens, out info))
                             {
-                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)));
-                                Say(String.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
+                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)));
+                                Say(string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
                                 break;
                             }
                             else
@@ -1705,15 +1705,15 @@ namespace Server.Items
                             if (item != null && item is RolledUpSheetMusic rsm)
                                 list.Add(rsm);
                             else
-                                SendMessage(e.Mobile, String.Format("{0} is not the serial of any RolledUpSheetMusic.", tokens[2]));
+                                SendMessage(e.Mobile, string.Format("{0} is not the serial of any RolledUpSheetMusic.", tokens[2]));
                         }
                         else
                         {
                             object info = null;
                             if (!FindSong(tokens, out info))
                             {
-                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)));
-                                Say(String.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
+                                //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)));
+                                Say(string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
                                 break;
                             }
                             RolledUpSheetMusic rsm = ParseInfo(info);
@@ -1770,8 +1770,8 @@ namespace Server.Items
                         }
 
                         if (count == 0)
-                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("I couldn't find '{0}' in the music library", SongName(tokens)));
-                            Say(String.Format("I couldn't find '{0}' in the music library", SongName(tokens)), hue: 54);
+                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("I couldn't find '{0}' in the music library", SongName(tokens)));
+                            Say(string.Format("I couldn't find '{0}' in the music library", SongName(tokens)), hue: 54);
                         break;
                     }
                 case TextCommands.Dupe:
@@ -1809,8 +1809,8 @@ namespace Server.Items
                         }
 
                         if (count == 0)
-                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("I couldn't find '{0}' in the music library", SongName(tokens)));
-                            Say(String.Format("I couldn't find '{0}' in the music library", SongName(tokens)), hue: 54);
+                            //this.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("I couldn't find '{0}' in the music library", SongName(tokens)));
+                            Say(string.Format("I couldn't find '{0}' in the music library", SongName(tokens)), hue: 54);
                         break;
                     }
                     #endregion Staff only commands
@@ -1865,7 +1865,7 @@ namespace Server.Items
                     kvp.Key.Napster && !HasNapsterAccess(from, kvp.Key)
                     ? 33 : 54;
 
-                string text = String.Format("{0} by {1}{2}{3}{4}{5}{6}{7}",
+                string text = string.Format("{0} by {1}{2}{3}{4}{5}{6}{7}",
                         kvp.Key,                                                            // 0
                         kvp.Key.Author,                                                     // 1
                         m_playContext.IgnoreList.Contains(kvp.Key) ? " (ignored)" : "",     // 2
@@ -2310,8 +2310,8 @@ namespace Server.Items
                         {
                             // update the users library
                             from.SendMessage("You purchased {0} for {1} gold.", m_rsm, m_price);
-                            //m_musicBox.PublicOverheadMessage(Network.MessageType.Regular, 54, true, String.Format("'{0}', added to your library.", m_rsm));
-                            m_musicBox.Say(String.Format("'{0}', added to your library.", m_rsm), hue: 54);
+                            //m_musicBox.PublicOverheadMessage(Network.MessageType.Regular, 54, true, string.Format("'{0}', added to your library.", m_rsm));
+                            m_musicBox.Say(string.Format("'{0}', added to your library.", m_rsm), hue: 54);
                             GlobalMusicRepository[m_rsm].Purchasers.Add(new PurchaserInfo(from, GlobalMusicRepository[m_rsm].Price));
                             m_musicBox.m_playContext.RefreshPlayQueue();
 
@@ -3030,7 +3030,7 @@ namespace Server.Items
         }
         private static void ReviewNotify()
         {
-            Commands.CommandHandlers.BroadcastMessage(AccessLevel.Administrator, 54, String.Format("[{0}] {1}", "Music System", "New music, review required."));
+            Commands.CommandHandlers.BroadcastMessage(AccessLevel.Administrator, 54, string.Format("[{0}] {1}", "Music System", "New music, review required."));
         }
 
         #endregion PlayerNotify

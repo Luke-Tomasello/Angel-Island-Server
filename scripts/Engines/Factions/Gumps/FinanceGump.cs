@@ -92,9 +92,9 @@ namespace Server.Factions
                 AddRadio(x, y, 208, 209, (town.Tax == ofs), i + 1);
 
                 if (ofs < 0)
-                    AddLabel(x + 35, y, 0x26, String.Concat("- ", -ofs, "%"));
+                    AddLabel(x + 35, y, 0x26, string.Concat("- ", -ofs, "%"));
                 else
-                    AddLabel(x + 35, y, 0x12A, String.Concat("+ ", ofs, "%"));
+                    AddLabel(x + 35, y, 0x12A, string.Concat("+ ", ofs, "%"));
             }
 
             AddRadio(20, 270, 208, 209, (town.Tax == 0), 0);
@@ -308,7 +308,7 @@ namespace Server.Factions
                     vendor.Home = vendor.Location;
 
                     LogHelper logger = new LogHelper("factionvendor.log", false, true);
-                    logger.Log(LogType.Mobile, from, String.Format("Placed {0} ({1}).", vendor, vendor.Title));
+                    logger.Log(LogType.Mobile, from, string.Format("Placed {0} ({1}).", vendor, vendor.Title));
                     logger.Finish();
                 }
             }

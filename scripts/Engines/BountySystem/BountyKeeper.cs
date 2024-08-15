@@ -474,8 +474,8 @@ namespace Server.BountySystem
         //				string[] lns = new string[2];
         //				if (le.Mobile != null)
         //				{	//  for unlawful resource gathering?
-        //					lns[0] = String.Format("{0} is an enemy of the kingdom.", le.Mobile.Name);
-        //					lns[1] = String.Format("{0} was last seen at {1}.", le.Mobile.Name, le.Mobile.Location);
+        //					lns[0] = string.Format("{0} is an enemy of the kingdom.", le.Mobile.Name);
+        //					lns[1] = string.Format("{0} was last seen at {1}.", le.Mobile.Name, le.Mobile.Location);
         //					Engines.ListEntry nle = new Engines.ListEntry(lns, le.Mobile, le.DateTime, le.Type);
         //					Engines.TCCS.AddEntry(nle);		// add the updated message
         //				}

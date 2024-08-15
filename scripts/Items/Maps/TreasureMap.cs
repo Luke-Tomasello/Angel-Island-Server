@@ -139,7 +139,7 @@ namespace Server.Commands
 
             // get the land tile at our location and recore it in the BadSpawnTiles.log
             LandTile landTile = Server.Items.TreasureMap.BadTile(e.Mobile.Location);
-            Console.WriteLine(String.Format("0x{0:X}", landTile.ID));
+            Console.WriteLine(string.Format("0x{0:X}", landTile.ID));
             LogHelper TileLogger = new LogHelper("BadTiles.log", false);
             TileLogger.Log(LogType.Text, string.Format("0x{0:X},", landTile.ID));
             TileLogger.Finish();
@@ -308,12 +308,12 @@ namespace Server.Items
             string AIFileName = Path.Combine(Core.DataDirectory, "Angel Island Treasure.cfg");
             if (File.Exists(Path.Combine(Core.BaseDirectory, OSIFileName)) == false)
             {
-                Core.LoggerShortcuts.BootError(String.Format("\nError while reading Treasure map data from \"{0}\".", OSIFileName));
+                Core.LoggerShortcuts.BootError(string.Format("\nError while reading Treasure map data from \"{0}\".", OSIFileName));
                 return 0;
             }
             else if (File.Exists(Path.Combine(Core.BaseDirectory, AIFileName)) == false)
             {
-                Core.LoggerShortcuts.BootError(String.Format("Error while reading Treasure map data from \"{0}\".", AIFileName));
+                Core.LoggerShortcuts.BootError(string.Format("Error while reading Treasure map data from \"{0}\".", AIFileName));
                 // we'll continue and generate one (with this warning)
             }
 
@@ -380,7 +380,7 @@ namespace Server.Items
                 {
                     try
                     {
-                        ip.WriteLine(String.Format("{0} {1}", px.X, px.Y));
+                        ip.WriteLine(string.Format("{0} {1}", px.X, px.Y));
                     }
                     catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
                 }
@@ -1128,7 +1128,7 @@ namespace Server.Items
             if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.TreasureMapUsageReport))
                 Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Administrator,
                 0x482,
-                String.Format("At location: {0}, {1} ", m.Location, text));
+                string.Format("At location: {0}, {1} ", m.Location, text));
         }
 
         public override int LabelNumber { get { return (m_Decoder != null ? 1041516 + m_Level : 1041510 + m_Level); } }
@@ -1146,24 +1146,24 @@ namespace Server.Items
         // public override void OnSingleClick( Mobile from )
         //{
         //if ( m_Completed )
-        //from.Send( new MessageLocalizedAffix( Serial, ItemID, MessageType.Label, 0x3B2, 3, 1048030, "", AffixType.Append, String.Format( " completed by {0}", m_Decoder == null ? "someone" : m_Decoder.Name ), "" ) );
+        //from.Send( new MessageLocalizedAffix( Serial, ItemID, MessageType.Label, 0x3B2, 3, 1048030, "", AffixType.Append, string.Format( " completed by {0}", m_Decoder == null ? "someone" : m_Decoder.Name ), "" ) );
         //else if ( m_Decoder != null )
         //LabelTo( from, 1041516 + m_Level );
         //else
-        //LabelTo( from, 1041522, String.Format( "#{0}\t \t#{1}", 1041510 + m_Level, m_Map == Map.Felucca ? 1041502 : 1041503 ) );
+        //LabelTo( from, 1041522, string.Format( "#{0}\t \t#{1}", 1041510 + m_Level, m_Map == Map.Felucca ? 1041502 : 1041503 ) );
         //}
         //to this
         public override void OnSingleClick(Mobile from)
         {
             if (m_Completed)
-                from.Send(new MessageLocalizedAffix(Serial, ItemID, MessageType.Label, 0x3B2, 3, 1048030, "", AffixType.Append, String.Format(" completed by {0}", m_Decoder == null ? "someone" : m_Decoder.Name), ""));
+                from.Send(new MessageLocalizedAffix(Serial, ItemID, MessageType.Label, 0x3B2, 3, 1048030, "", AffixType.Append, string.Format(" completed by {0}", m_Decoder == null ? "someone" : m_Decoder.Name), ""));
             else if (m_Decoder != null)
             {   // non tattered
                 // "an adeptly drawn treasure map";
                 if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || Core.RuleSets.RenaissanceRules() || (Core.RuleSets.SiegeRules() && PublishInfo.Publish >= 13))
                     LabelTo(from, 1041516 + m_Level);
                 else
-                    LabelTo(from, String.Format("a treasure map"));
+                    LabelTo(from, string.Format("a treasure map"));
             }
             else
             {   // tattered
@@ -1175,7 +1175,7 @@ namespace Server.Items
                 }
                 else
                 {
-                    LabelTo(from, String.Format("a tattered treasure map", m_Level));
+                    LabelTo(from, string.Format("a tattered treasure map", m_Level));
                 }
             }
         }
@@ -1320,16 +1320,16 @@ namespace Server.Items
         {
             if (Completed)
             {
-                string decoder = String.Format("{0}", Decoder == null ? "someone" : Decoder.Name);
+                string decoder = string.Format("{0}", Decoder == null ? "someone" : Decoder.Name);
                 if (!string.IsNullOrEmpty(m_CompletedMsg))
                     //from.Send(new MessageLocalizedAffix(Serial, ItemID, MessageType.Label, 0x3B2, 3, 1048030, "", AffixType.Append, m_CompletedMsg.Replace("{decoder}", decoder), ""));
                     LabelTo(from, m_CompletedMsg.Replace("{decoder}", decoder));
                 else
-                    from.Send(new MessageLocalizedAffix(Serial, ItemID, MessageType.Label, 0x3B2, 3, 1048030, "", AffixType.Append, String.Format(" completed by {0}", Decoder == null ? "someone" : Decoder.Name), ""));
+                    from.Send(new MessageLocalizedAffix(Serial, ItemID, MessageType.Label, 0x3B2, 3, 1048030, "", AffixType.Append, string.Format(" completed by {0}", Decoder == null ? "someone" : Decoder.Name), ""));
             }
             else if (Decoder != null)
             {
-                string decoder = String.Format("{0}", Decoder == null ? "someone" : Decoder.Name);
+                string decoder = string.Format("{0}", Decoder == null ? "someone" : Decoder.Name);
                 if (!string.IsNullOrEmpty(m_DecodedMsg))
                     LabelTo(from, m_DecodedMsg.Replace("{decoder}", decoder));
                 else

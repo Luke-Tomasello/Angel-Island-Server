@@ -183,7 +183,7 @@ namespace Server.Commands
                 else
                     from.SendMessage(0x22, "That is not a house sign or tent backpack");
 
-                from.SendMessage(String.Format("{0} items visited, {1} items found.", visited, found));
+                from.SendMessage(string.Format("{0} items visited, {1} items found.", visited, found));
             }
         }
         #endregion
@@ -195,7 +195,7 @@ namespace Server.Commands
         {
             System.Reflection.Assembly m_Assembly = System.Reflection.Assembly.GetEntryAssembly();
             Version ver = m_Assembly.GetName().Version;
-            string version = string.Format("{0}.{1} [Build {2}] [.NET 6, 64 bit]", Utility.BuildMajor(), Utility.BuildMinor(), Utility.BuildBuild());
+            string version = string.Format("{0}.{1} [Build {2}] [.NET 8, 64 bit]", Utility.BuildMajor(), Utility.BuildMinor(), Utility.BuildBuild());
             string text = string.Format("Angel Island core version {0}, launched March 2004.", version);
             args.Mobile.SendMessage(0x35, text);
         }
@@ -425,9 +425,9 @@ namespace Server.Commands
                                 if (e.Mobile.Region != null && !string.IsNullOrEmpty(e.Mobile.Region.Name))
                                     region = e.Mobile.Region.Name;
                                 if (pm.JumpList[pm.JumpIndex] is Item item && item.RootParent == null)
-                                    e.Mobile.SendMessage(String.Format("there. ({0}/{1}) ({2}/{3}) : {4}", pm.JumpIndex, pm.JumpList.Count, region, pm.Map, item));
+                                    e.Mobile.SendMessage(string.Format("there. ({0}/{1}) ({2}/{3}) : {4}", pm.JumpIndex, pm.JumpList.Count, region, pm.Map, item));
                                 else
-                                    e.Mobile.SendMessage(String.Format("there. ({0}/{1}) ({2}/{3}) : {4}", pm.JumpIndex, pm.JumpList.Count, region, pm.Map, ObjectAtLocation(e.Mobile, e.Mobile.Map, e.Mobile.Location)));
+                                    e.Mobile.SendMessage(string.Format("there. ({0}/{1}) ({2}/{3}) : {4}", pm.JumpIndex, pm.JumpList.Count, region, pm.Map, ObjectAtLocation(e.Mobile, e.Mobile.Map, e.Mobile.Location)));
                                 pm.JumpIndex++;
                             }
                         }
@@ -446,7 +446,7 @@ namespace Server.Commands
                                 e.Mobile.Map = ix.Map;
                                 if (e.Mobile.Region != null && !string.IsNullOrEmpty(e.Mobile.Region.Name))
                                     region = e.Mobile.Region.Name;
-                                e.Mobile.SendMessage(String.Format("there. ({0}/{1}) ({2}/{3}) : {4}", pm.JumpIndex, pm.JumpList.Count, region, pm.Map, ObjectAtLocation(e.Mobile, e.Mobile.Map, e.Mobile.Location)));
+                                e.Mobile.SendMessage(string.Format("there. ({0}/{1}) ({2}/{3}) : {4}", pm.JumpIndex, pm.JumpList.Count, region, pm.Map, ObjectAtLocation(e.Mobile, e.Mobile.Map, e.Mobile.Location)));
                                 pm.JumpIndex++;
                             }
                         }
@@ -462,7 +462,7 @@ namespace Server.Commands
                             e.Mobile.Map = temp == Map.Internal ? e.Mobile.Map : temp;
 
                             if (e.Mobile.Region != null && !string.IsNullOrEmpty(e.Mobile.Region.Name)) region = e.Mobile.Region.Name;
-                            e.Mobile.SendMessage(String.Format("there. ({0}/{1}) ({2}/{3}) : {4}", pm.JumpIndex, pm.JumpList.Count, region, pm.Map, ObjectAtLocation(e.Mobile, e.Mobile.Map, e.Mobile.Location)));
+                            e.Mobile.SendMessage(string.Format("there. ({0}/{1}) ({2}/{3}) : {4}", pm.JumpIndex, pm.JumpList.Count, region, pm.Map, ObjectAtLocation(e.Mobile, e.Mobile.Map, e.Mobile.Location)));
                             pm.JumpIndex++;
                         }
                         else if (pm.JumpList[pm.JumpIndex] is Point2D || pm.JumpList[pm.JumpIndex] is Point3D)
@@ -484,7 +484,7 @@ namespace Server.Commands
                             e.Mobile.Location = ix;
                             if (e.Mobile.Region != null && !string.IsNullOrEmpty(e.Mobile.Region.Name))
                                 region = e.Mobile.Region.Name;
-                            e.Mobile.SendMessage(String.Format("there. ({0}/{1}) ({2}/{3}) : {4}", pm.JumpIndex, pm.JumpList.Count, region, pm.Map, ObjectAtLocation(e.Mobile, e.Mobile.Map, e.Mobile.Location)));
+                            e.Mobile.SendMessage(string.Format("there. ({0}/{1}) ({2}/{3}) : {4}", pm.JumpIndex, pm.JumpList.Count, region, pm.Map, ObjectAtLocation(e.Mobile, e.Mobile.Map, e.Mobile.Location)));
                             pm.JumpIndex++;
                         }
                         else pm.JumpIndex++;
@@ -696,8 +696,8 @@ namespace Server.Commands
                         }
                     }
 
-                    e.Mobile.SendMessage(String.Format("{0} total clients, {1} with hardware info", clients, hardwareInfo));
-                    e.Mobile.SendMessage(String.Format("{0} with null hardware info, {1} with bad hardware info", nullHardwareInfo, badHardwareInfo));
+                    e.Mobile.SendMessage(string.Format("{0} total clients, {1} with hardware info", clients, hardwareInfo));
+                    e.Mobile.SendMessage(string.Format("{0} with null hardware info, {1} with bad hardware info", nullHardwareInfo, badHardwareInfo));
                 }
 
                 if (e.ArgString.Contains("-mc"))
@@ -776,7 +776,7 @@ namespace Server.Commands
                     if (clients == 0)
                         e.Mobile.SendMessage("There are no shared IP addresses");
                     else
-                        e.Mobile.SendMessage(String.Format("There {2} {0} client{3} sharing {1} IP address{4}",
+                        e.Mobile.SendMessage(string.Format("There {2} {0} client{3} sharing {1} IP address{4}",
                             clients, ipaddresses,
                             clients == 1 ? "is" : "are",
                             clients == 1 ? "" : "s",
@@ -786,7 +786,7 @@ namespace Server.Commands
 
                 if (e.ArgString.Contains("-ui"))
                 {
-                    e.Mobile.SendMessage(String.Format("There {1} {0} unique IP address{2}",
+                    e.Mobile.SendMessage(string.Format("There {1} {0} unique IP address{2}",
                         ClientMon.list.Count,
                         ClientMon.list.Count == 1 ? "is" : "are",
                         ClientMon.list.Count == 1 ? "" : "es"
@@ -870,7 +870,7 @@ namespace Server.Commands
                 if (highOnly == true && alarm != alert.HIGH)
                     return;
 
-                from.SendMessage(String.Format("{0}, {1}, Alarm({2})", pm1Name, pm2Name, alarm.ToString()));
+                from.SendMessage(string.Format("{0}, {1}, Alarm({2})", pm1Name, pm2Name, alarm.ToString()));
             }
             catch (Exception ex)
             {
@@ -1024,7 +1024,7 @@ namespace Server.Commands
                         if (acct[i].AccessLevel > AccessLevel.Player)
                         {
                             if (count == 0)
-                                e.Mobile.SendMessage(String.Format("Account:{0}", acct.ToString()));
+                                e.Mobile.SendMessage(string.Format("Account:{0}", acct.ToString()));
 
                             if (acct[i].AccessLevel > high)
                                 high = acct[i].AccessLevel;
@@ -1052,9 +1052,9 @@ namespace Server.Commands
             }
 
             if (e.Arguments.Length == 1 && e.Arguments[0] == "-p")
-                e.Mobile.SendMessage(String.Format("{0} characters processed.", found));
+                e.Mobile.SendMessage(string.Format("{0} characters processed.", found));
             else
-                e.Mobile.SendMessage(String.Format("{0} characters found.", found));
+                e.Mobile.SendMessage(string.Format("{0} characters found.", found));
         }
 
         [Usage("CPI")]
@@ -1127,7 +1127,7 @@ namespace Server.Commands
                 }
 
                 if (players > 0)
-                    s1 = String.Format("Of {0} GM dexxers, {1}% are equipping Power or higher.", (int)players, (int)((players_magic / players) * 100));
+                    s1 = string.Format("Of {0} GM dexxers, {1}% are equipping Power or higher.", (int)players, (int)((players_magic / players) * 100));
 
                 //////////////////////////////////////////////
                 // Calculate the average cost of > force weapons
@@ -1160,7 +1160,7 @@ namespace Server.Commands
                 }
 
                 if (total_magic > 0)
-                    s2 = String.Format("Of {0} high end magic weapons, {1} is the average vendor cost.", total_magic, total_value / total_magic);
+                    s2 = string.Format("Of {0} high end magic weapons, {1} is the average vendor cost.", total_magic, total_value / total_magic);
 
             }
             catch (Exception err)
@@ -1206,7 +1206,7 @@ namespace Server.Commands
                     if (item.ItemID == ItemID)
                     {
                         found++;
-                        AddResponse(String.Format("Found Item {0} at {1}", item.ItemID, item.Location));
+                        AddResponse(string.Format("Found Item {0} at {1}", item.ItemID, item.Location));
                     }
                 }
                 catch (Exception exe)
@@ -1215,7 +1215,7 @@ namespace Server.Commands
                     e.Mobile.SendMessage(exe.Message);
                 }
 
-                AddResponse(String.Format("{0} items visited, {1} items found.", visited, found));
+                AddResponse(string.Format("{0} items visited, {1} items found.", visited, found));
             }
         }
 
@@ -1287,7 +1287,7 @@ namespace Server.Commands
                                         location.Y + house.Components.List[i].m_OffsetY,
                                         location.Z + house.Components.List[i].m_OffsetZ
                                         );
-                                    from.SendMessage(String.Format("Item found at {0}", itemloc));
+                                    from.SendMessage(string.Format("Item found at {0}", itemloc));
                                     found++;
                                 }
                                 visited++;
@@ -1300,7 +1300,7 @@ namespace Server.Commands
                 else
                     from.SendMessage(0x22, "That is not a house sign");
 
-                from.SendMessage(String.Format("{0} items visited, {1} items found.", visited, found));
+                from.SendMessage(string.Format("{0} items visited, {1} items found.", visited, found));
 
             }
         }
@@ -1361,7 +1361,7 @@ namespace Server.Commands
                                     house.Components.List[i].m_OffsetY,
                                     house.Components.List[i].m_OffsetZ
                                     );
-                                from.SendMessage(String.Format("Item {0} Location {1}", (item.ItemID & 0x3FFF), itemloc));
+                                from.SendMessage(string.Format("Item {0} Location {1}", (item.ItemID & 0x3FFF), itemloc));
                                 //found++;
                                 break;
                             }
@@ -1374,7 +1374,7 @@ namespace Server.Commands
                 else
                     from.SendMessage(0x22, "That is not a house tile");
 
-                //from.SendMessage(String.Format("{0} items visited, {1} items found.", visited, found));
+                //from.SendMessage(string.Format("{0} items visited, {1} items found.", visited, found));
                 from.SendMessage("done.");
 
             }

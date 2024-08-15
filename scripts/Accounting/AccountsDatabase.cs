@@ -74,13 +74,14 @@ namespace Server.Accounting
     {
         public static bool Verbose = true;
 
-        private static string GetDatabasePath()
+        public static string GetDatabasePath(ref bool error)
         {
             string path = Environment.GetEnvironmentVariable("AI.LOGINDB");
 
-            if (String.IsNullOrWhiteSpace(path))
+            if (string.IsNullOrWhiteSpace(path))
                 path = @"C:\AIDB\accounts.db";
 
+            error = false;
             if (!File.Exists(path))
             {   // initialize database
                 string directory = Path.GetDirectoryName(path); 
@@ -88,14 +89,21 @@ namespace Server.Accounting
                     Directory.CreateDirectory(directory);
                 // this creates a zero-byte file
                 SQLiteConnection.CreateFile(path);
+
+                if (!File.Exists(path))
+                    error = true;
             }
+
+            if (!Core.UseLoginDB)
+                ;// why are we here?
 
             return path;
         }
 
         private static SQLiteConnection Connect()
         {
-            return new SQLiteConnection(String.Format("Data Source={0};Pooling=True;Max Pool Size=100;", GetDatabasePath()));
+            bool error = false;
+            return new SQLiteConnection(string.Format("Data Source={0};Pooling=True;Max Pool Size=100;", GetDatabasePath(ref error)));
         }
 
         private static void EnsureTable()
@@ -157,7 +165,7 @@ namespace Server.Accounting
 
         private static void AppendColumn(string columnName, string dataType)
         {
-            string cmdText = String.Format("ALTER TABLE Account ADD COLUMN {0} {1};", columnName, dataType);
+            string cmdText = string.Format("ALTER TABLE Account ADD COLUMN {0} {1};", columnName, dataType);
 
             using (SQLiteConnection conn = Connect())
             using (SQLiteCommand cmd = new SQLiteCommand(cmdText, conn))

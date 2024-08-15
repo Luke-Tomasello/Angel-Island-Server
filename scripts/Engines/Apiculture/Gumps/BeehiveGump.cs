@@ -208,7 +208,7 @@ namespace Server.Engines.Apiculture
             switch (result)
             {
                 default:
-                    return String.Empty;
+                    return string.Empty;
                 case HiveGrowthResult.PopulationDown:
                     return "-";
                 case HiveGrowthResult.PopulationUp:
@@ -227,7 +227,7 @@ namespace Server.Engines.Apiculture
             switch (stage)
             {
                 default:
-                    return String.Empty;
+                    return string.Empty;
                 case HiveStage.Colonizing:
                 case HiveStage.Stage2:
                     return "Colonizing";
@@ -235,7 +235,7 @@ namespace Server.Engines.Apiculture
                 case HiveStage.Stage4:
                     return "Brooding";
                 case HiveStage.Producing:
-                    return String.Format("Colony : {0}K", 10 * population);
+                    return string.Format("Colony : {0}K", 10 * population);
             }
         }
 
@@ -277,7 +277,7 @@ namespace Server.Engines.Apiculture
             switch (status)
             {
                 default:
-                    return String.Empty;
+                    return string.Empty;
                 case HiveResourceStatus.VeryLow:
                 case HiveResourceStatus.Low:
                     return "-";

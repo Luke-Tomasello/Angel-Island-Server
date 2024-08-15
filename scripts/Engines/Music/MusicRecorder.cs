@@ -49,11 +49,11 @@ namespace Server.Engines
                 SystemMusicPlayer.ConfigurePlayer(m);            // if no configuration, use defaults
 
             // initialize our recorded music with default header info. this will get updated should the user change anything during the recording
-            Music.Add(new KeyValuePair<string, double>(String.Format("# Instrument: {0}", SystemMusicPlayer.MusicConfig[m].Instrument.ToString()), 0));
-            Music.Add(new KeyValuePair<string, double>(String.Format("# Prefetch: {0}", SystemMusicPlayer.MusicConfig[m].Prefetch.ToString()), 0));
-            Music.Add(new KeyValuePair<string, double>(String.Format("# NewTimer: {0}", SystemMusicPlayer.MusicConfig[m].NewTimer.ToString()), 0));
-            Music.Add(new KeyValuePair<string, double>(String.Format("# Tempo: {0}", SystemMusicPlayer.MusicConfig[m].Tempo.ToString()), 0));
-            Music.Add(new KeyValuePair<string, double>(String.Format("# ConcertMode: {0}", SystemMusicPlayer.MusicConfig[m].ConcertMode.ToString()), 0));
+            Music.Add(new KeyValuePair<string, double>(string.Format("# Instrument: {0}", SystemMusicPlayer.MusicConfig[m].Instrument.ToString()), 0));
+            Music.Add(new KeyValuePair<string, double>(string.Format("# Prefetch: {0}", SystemMusicPlayer.MusicConfig[m].Prefetch.ToString()), 0));
+            Music.Add(new KeyValuePair<string, double>(string.Format("# NewTimer: {0}", SystemMusicPlayer.MusicConfig[m].NewTimer.ToString()), 0));
+            Music.Add(new KeyValuePair<string, double>(string.Format("# Tempo: {0}", SystemMusicPlayer.MusicConfig[m].Tempo.ToString()), 0));
+            Music.Add(new KeyValuePair<string, double>(string.Format("# ConcertMode: {0}", SystemMusicPlayer.MusicConfig[m].ConcertMode.ToString()), 0));
             // add Author
             // add Song
 
@@ -160,15 +160,15 @@ namespace Server.Engines
                     if (index != -1)
                     {
                         if (kvp.Key.ToLower().StartsWith("# Instrument:".ToLower()))
-                            MusicRecorderBuffer[m].Music[index] = new KeyValuePair<string, double>(String.Format("# Instrument: {0}", SystemMusicPlayer.MusicConfig[m].Instrument.ToString()), 0);
+                            MusicRecorderBuffer[m].Music[index] = new KeyValuePair<string, double>(string.Format("# Instrument: {0}", SystemMusicPlayer.MusicConfig[m].Instrument.ToString()), 0);
                         if (kvp.Key.ToLower().StartsWith("# Prefetch:".ToLower()))
-                            MusicRecorderBuffer[m].Music[index] = new KeyValuePair<string, double>(String.Format("# Prefetch: {0}", SystemMusicPlayer.MusicConfig[m].Prefetch.ToString()), 0);
+                            MusicRecorderBuffer[m].Music[index] = new KeyValuePair<string, double>(string.Format("# Prefetch: {0}", SystemMusicPlayer.MusicConfig[m].Prefetch.ToString()), 0);
                         if (kvp.Key.ToLower().StartsWith("# NewTimer:".ToLower()))
-                            MusicRecorderBuffer[m].Music[index] = new KeyValuePair<string, double>(String.Format("# NewTimer: {0}", SystemMusicPlayer.MusicConfig[m].NewTimer.ToString()), 0);
+                            MusicRecorderBuffer[m].Music[index] = new KeyValuePair<string, double>(string.Format("# NewTimer: {0}", SystemMusicPlayer.MusicConfig[m].NewTimer.ToString()), 0);
                         if (kvp.Key.ToLower().StartsWith("# Tempo:".ToLower()))
-                            MusicRecorderBuffer[m].Music[index] = new KeyValuePair<string, double>(String.Format("# Tempo: {0}", SystemMusicPlayer.MusicConfig[m].Tempo.ToString()), 0);
+                            MusicRecorderBuffer[m].Music[index] = new KeyValuePair<string, double>(string.Format("# Tempo: {0}", SystemMusicPlayer.MusicConfig[m].Tempo.ToString()), 0);
                         if (kvp.Key.ToLower().StartsWith("# ConcertMode:".ToLower()))
-                            MusicRecorderBuffer[m].Music[index] = new KeyValuePair<string, double>(String.Format("# ConcertMode: {0}", SystemMusicPlayer.MusicConfig[m].ConcertMode.ToString()), 0);
+                            MusicRecorderBuffer[m].Music[index] = new KeyValuePair<string, double>(string.Format("# ConcertMode: {0}", SystemMusicPlayer.MusicConfig[m].ConcertMode.ToString()), 0);
                         // add Author
                         // add Song
                     }

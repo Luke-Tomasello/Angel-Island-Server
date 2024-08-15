@@ -50,7 +50,7 @@ namespace Server.Items
 
         [Constructable]
         public AccountBook()
-            : base(0xFF1, String.Empty, String.Empty, 0, false)
+            : base(0xFF1, string.Empty, string.Empty, 0, false)
         {
             Name = "an accounting book";
         }

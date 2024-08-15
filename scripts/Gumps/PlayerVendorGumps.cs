@@ -95,7 +95,7 @@ namespace Server.Gumps
                 AddHtmlLocalized(125, 45, 250, 24, 1019072, false, false); // an item without a description
 
             AddHtmlLocalized(125, 70 + offset, 250, 24, 1019071, false, false); // for the amount of:
-            AddLabel(125, 95, 0, String.Format("{0:n0}", m_VI.Price));
+            AddLabel(125, 95, 0, string.Format("{0:n0}", m_VI.Price));
 
             AddButton(250, 130, 4005, 4007, 1, GumpButtonType.Reply, 0);
             AddHtmlLocalized(282, 130, 100, 24, 1011012, false, false); // CANCEL
@@ -240,7 +240,7 @@ namespace Server.Gumps
             if (vend.PricingModel == PricingModel.Commission)
             {
                 AddHtml(40, 144, 260, 20, "My per item commission is:", false, false);
-                AddLabel(300, 144, 0, String.Format("{0}%", ((int)(vend.Commission * 100)).ToString()));
+                AddLabel(300, 144, 0, string.Format("{0}%", ((int)(vend.Commission * 100)).ToString()));
             }
 
             double days = (m_Vendor.HoldGold + m_Vendor.BankAccount) / ((double)perDay);

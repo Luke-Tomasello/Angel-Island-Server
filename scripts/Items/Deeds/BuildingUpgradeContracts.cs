@@ -177,7 +177,7 @@ namespace Server.Items
                         }
 
                         Logger = new LogHelper("StorageUpgrade.log", false);
-                        Logger.Log(LogType.Item, house, String.Format("Upgraded with: {0}", m_Deed.ToString()));
+                        Logger.Log(LogType.Item, house, string.Format("Upgraded with: {0}", m_Deed.ToString()));
 
                         if (addLockDowns > 0)
                             house.BonusLockDowns += addLockDowns;
@@ -189,7 +189,7 @@ namespace Server.Items
                             house.BonusLockboxes += addLockboxes;
 
                         house.UpgradeCosts += m_Deed.Price;
-                        from.SendMessage(String.Format("Upgrade complete with: {0} lockdowns, {1} secures, and {2} lockboxes.", house.MaxLockDowns, house.MaxSecures, house.MaxLockboxes));
+                        from.SendMessage(string.Format("Upgrade complete with: {0} lockdowns, {1} secures, and {2} lockboxes.", house.MaxLockDowns, house.MaxSecures, house.MaxLockboxes));
                         m_Deed.Delete();
                     }
                 }

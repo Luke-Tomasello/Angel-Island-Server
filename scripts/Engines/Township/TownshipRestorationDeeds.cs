@@ -82,9 +82,9 @@ namespace Server.Items
                 if (m_Stone != null && m_Stone.Guild != null)
                 {
                     if (m_Item is Server.Engines.Plants.StaticPlantItem plant)
-                        LabelTo(from, String.Format("{0} {1} for [{2}] (deed)", plant.PlantHue, plant.PlantType, m_Stone.Guild.Abbreviation));
+                        LabelTo(from, string.Format("{0} {1} for [{2}] (deed)", plant.PlantHue, plant.PlantType, m_Stone.Guild.Abbreviation));
                     else
-                        LabelTo(from, String.Format("{0} for [{1}] (deed)", m_Item.SafeName, m_Stone.Guild.Abbreviation));
+                        LabelTo(from, string.Format("{0} for [{1}] (deed)", m_Item.SafeName, m_Stone.Guild.Abbreviation));
                 }
             }
             catch
@@ -259,7 +259,7 @@ namespace Server.Items
         public override void OnSingleClick(Mobile from)
         {
             if (m_Stone != null && m_Stone.Guild != null)
-                LabelTo(from, String.Format("{0} for [{1}]", m_Mobile.SafeName, m_Stone.Guild.Abbreviation));
+                LabelTo(from, string.Format("{0} for [{1}]", m_Mobile.SafeName, m_Stone.Guild.Abbreviation));
             else
                 ;   // error
         }
@@ -409,7 +409,7 @@ namespace Server.Items
         public override void OnSingleClick(Mobile from)
         {
             if (m_TownStone != null && m_TownStone.Guild != null)
-                LabelTo(from, String.Format("a restoration deed for {0} [{1}]", m_TownStone.SafeName, m_TownStone.Guild.Abbreviation));
+                LabelTo(from, string.Format("a restoration deed for {0} [{1}]", m_TownStone.SafeName, m_TownStone.Guild.Abbreviation));
             else
                 ;   // error
         }

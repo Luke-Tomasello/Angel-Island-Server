@@ -222,7 +222,7 @@ namespace Server.Items
                 else if (value == 250)
                     AddHtmlLocalized(40, 20, 260, 20, 1049462, 0xFFFFFF, false, false); // Ultimate Scroll (+25 Maximum Stats):
                 else
-                    AddHtml(40, 20, 260, 20, String.Format("<basefont color=#FFFFFF>Power Scroll ({0}{1} Maximum Stats):</basefont>", (value - 225) >= 0 ? "+" : "", value - 225), false, false);
+                    AddHtml(40, 20, 260, 20, string.Format("<basefont color=#FFFFFF>Power Scroll ({0}{1} Maximum Stats):</basefont>", (value - 225) >= 0 ? "+" : "", value - 225), false, false);
 
                 AddHtmlLocalized(310, 20, 120, 20, 1038019, 0xFFFFFF, false, false); // Power
             }
