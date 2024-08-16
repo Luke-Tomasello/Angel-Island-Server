@@ -45,3 +45,7 @@ https://www.youtube.com/@UltimaOnlineFreeShard
 # Getting Started Videos
 https://youtu.be/0kauX-W5BLI <br/>
 https://youtu.be/8zNv5ryd6_U
+
+# Discord
+
+https://discord.gg/GXcR2DsSnb
