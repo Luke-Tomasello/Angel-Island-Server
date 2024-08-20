@@ -110,8 +110,9 @@ namespace Server
             /*  adam: This is the startup patcher.
              *  You'll usually put onetime patching logic here.
              */
-
-            ConsoleOutEcho = Path.Combine(Core.DataDirectory, "Patches", "ConsoleHistory.log");
+            string pathName = Path.Combine(Core.DataDirectory, "Patches", "ConsoleHistory.log");
+            EnsurePath(pathName);
+            ConsoleOutEcho = pathName;
             Utility.TimeCheck tc = new Utility.TimeCheck();
             tc.Start();
 
@@ -480,7 +481,7 @@ namespace Server
                 #endregion NEW PATCHER
 
                 // apply last
-                patches += AlwaysRunLast(m_PatchID++);
+                //patches += AlwaysRunLast(m_PatchID++);
 
                 if (patches == 0)
                     EchoOut(string.Format("No Initialize patching required."), ConsoleColor.Magenta);
@@ -11996,10 +11997,16 @@ namespace Server
                 #region Convert unusual chests to dungeon chests (Siege)
                 if (SiegeStyleShards())
                 {
-                    Mute();
-                    patched += UnusualContainerSpawner.WipeContainerCache();
-                    patched += UnusualContainerSpawner.RebuildContainerCache();
-                    Unmute();
+                    try
+                    {
+                        Mute();
+                        patched += UnusualContainerSpawner.WipeContainerCache();
+                        patched += UnusualContainerSpawner.RebuildContainerCache();
+                    }
+                    finally
+                    {
+                        Unmute();
+                    }
                 }
                 #endregion Convert unusual chests to dungeon chests (Siege)
                 #endregion End Implementation
@@ -14964,58 +14971,66 @@ namespace Server
                 LogPatch(bits);
                 EchoOut("One-time patch to replace all event teleporters with EventTeleporters.", ConsoleColor.Magenta);
                 Mute();
-                // get the list of moongates
-                string pathName = Path.Combine(Core.DataDirectory, "Patches", "EventTeleporters.cfg");
-                if (File.Exists(pathName))
+                try
                 {
-
-                    List<Tuple<int, int, int, int, Map>> records = new();
-                    foreach (string line in File.ReadAllLines(pathName))
+                    // get the list of moongates
+                    string pathName = Path.Combine(Core.DataDirectory, "Patches", "EventTeleporters.cfg");
+                    EnsurePath(pathName);
+                    if (File.Exists(pathName))
                     {
-                        string[] toks = line.Split(' ');
-                        records.Add(new Tuple<int, int, int, int, Map>(int.Parse(toks[0]), int.Parse(toks[1]), int.Parse(toks[2]), int.Parse(toks[3]), Map.Parse(toks[4])));
-                    }
 
-                    int count = 0;
-                    foreach (var record in records)
-                    {
-                        Item item = World.FindItem(record.Item1);
-                        if (item == null || item.Deleted)
-                            count++;
-                        else if (item is Teleporter && item.Location == new Point3D(record.Item2, record.Item3, record.Item4))
+                        List<Tuple<int, int, int, int, Map>> records = new();
+                        foreach (string line in File.ReadAllLines(pathName))
                         {
-                            if (item.GetType() == typeof(Teleporter))
-                            {
-                                Teleporter teleporter;
-                                teleporter = (Teleporter)item;
-                                EventTeleporter etp = new EventTeleporter();
-                                CopyProperties(etp, teleporter);
-                                etp.Running = false;
-                                etp.Visible = false;
-                            }
-                            else if (item.GetType() == typeof(KeywordTeleporter))
-                            {
-                                KeywordTeleporter teleporter;
-                                teleporter = (KeywordTeleporter)item;
-                                EventKeywordTeleporter etp = new EventKeywordTeleporter();
-                                CopyProperties(etp, teleporter);
-                                etp.Running = false;
-                                etp.Visible = false;
-                            }
-                            else
-                                ErrorOut(bits, "Logic Error: Unknown teleporter type {0}.", ConsoleColor.Red, item);
-
-                            item.Delete();
-                            patched++;
+                            string[] toks = line.Split(' ');
+                            records.Add(new Tuple<int, int, int, int, Map>(int.Parse(toks[0]), int.Parse(toks[1]), int.Parse(toks[2]), int.Parse(toks[3]), Map.Parse(toks[4])));
                         }
-                    }
-                    Unmute();
 
-                    EchoOut(string.Format("{0} teleporters replaced.", patched), ConsoleColor.Magenta);
-                    PatchComplete(bits, patchid);
+                        int count = 0;
+                        foreach (var record in records)
+                        {
+                            Item item = World.FindItem(record.Item1);
+                            if (item == null || item.Deleted)
+                                count++;
+                            else if (item is Teleporter && item.Location == new Point3D(record.Item2, record.Item3, record.Item4))
+                            {
+                                if (item.GetType() == typeof(Teleporter))
+                                {
+                                    Teleporter teleporter;
+                                    teleporter = (Teleporter)item;
+                                    EventTeleporter etp = new EventTeleporter();
+                                    CopyProperties(etp, teleporter);
+                                    etp.Running = false;
+                                    etp.Visible = false;
+                                }
+                                else if (item.GetType() == typeof(KeywordTeleporter))
+                                {
+                                    KeywordTeleporter teleporter;
+                                    teleporter = (KeywordTeleporter)item;
+                                    EventKeywordTeleporter etp = new EventKeywordTeleporter();
+                                    CopyProperties(etp, teleporter);
+                                    etp.Running = false;
+                                    etp.Visible = false;
+                                }
+                                else
+                                    ErrorOut(bits, "Logic Error: Unknown teleporter type {0}.", ConsoleColor.Red, item);
+
+                                item.Delete();
+                                patched++;
+                            }
+                        }
+                        Unmute();
+
+                        EchoOut(string.Format("{0} teleporters replaced.", patched), ConsoleColor.Magenta);
+                        PatchComplete(bits, patchid);
+                    }
+                    else
+                        ErrorOut(bits, string.Format("Error: unable to locate {0}.", pathName), ConsoleColor.Red);
                 }
-                else
-                    ErrorOut(bits, string.Format("Error: unable to locate {0}.", pathName), ConsoleColor.Red);
+                finally
+                {
+                    Unmute();
+                }
             }
 
             return patched;
@@ -15029,74 +15044,79 @@ namespace Server
                 LogPatch(bits);
                 EchoOut("One-time patch to replace all moongates with sungates.", ConsoleColor.Magenta);
                 Mute();
-                // get the list of moongates
-                string pathName = Path.Combine(Core.DataDirectory, "Patches", "Angel Island Moongate.cfg");
-                if (File.Exists(pathName))
+                try
                 {
-
-                    List<Tuple<int, int, int, int, Map>> records = new();
-                    foreach (string line in File.ReadAllLines(pathName))
+                    // get the list of moongates
+                    string pathName = Path.Combine(Core.DataDirectory, "Patches", "Angel Island Moongate.cfg");
+                    EnsurePath(pathName);
+                    if (File.Exists(pathName))
                     {
-                        string[] toks = line.Split(' ');
-                        records.Add(new Tuple<int, int, int, int, Map>(int.Parse(toks[0]), int.Parse(toks[1]), int.Parse(toks[2]), int.Parse(toks[3]), Map.Parse(toks[4])));
-                    }
 
-                    int count = 0;
-                    foreach (var record in records)
-                    {
-                        Item item = World.FindItem(record.Item1);
-                        if (item == null || item.Deleted)
-                            count++;
-                        else if (item is Moongate && item.Location == new Point3D(record.Item2, record.Item3, record.Item4))
+                        List<Tuple<int, int, int, int, Map>> records = new();
+                        foreach (string line in File.ReadAllLines(pathName))
                         {
-                            if (item.Serial == 0x400040A1)
-                            {   // special New Player Starting area
-                                Moongate moongate;
-                                moongate = (Moongate)item;
-                                Sungate sungate = new Sungate();
-                                CopyProperties(sungate, moongate);
-                            }
-                            else if (item.GetType() == typeof(ConfirmationMoongate))
-                            {
-                                ConfirmationMoongate moongate;
-                                moongate = (ConfirmationMoongate)item;
-                                EventConfirmationSungate sungate = new EventConfirmationSungate();
-                                CopyProperties(sungate, moongate);
-                                sungate.Running = false;
-                                sungate.Visible = false;
-                            }
-                            else if (item.GetType() == typeof(JailExitGate))
-                            {
-                                JailExitGate moongate;
-                                moongate = (JailExitGate)item;
-                                JailExitSungate sungate = new JailExitSungate();
-                                CopyProperties(sungate, moongate);
-                                sungate.Running = false;
-                                sungate.Visible = false;
-                            }
-                            else if (item.GetType() == typeof(Moongate))
-                            {
-                                Moongate moongate;
-                                moongate = (Moongate)item;
-                                EventSungate sungate = new EventSungate();
-                                CopyProperties(sungate, moongate);
-                                sungate.Running = false;
-                                sungate.Visible = false;
-                            }
-                            else
-                                ErrorOut(bits, "Logic Error: Unknown moongate type {0}.", ConsoleColor.Red, item);
-
-                            item.Delete();
-                            patched++;
+                            string[] toks = line.Split(' ');
+                            records.Add(new Tuple<int, int, int, int, Map>(int.Parse(toks[0]), int.Parse(toks[1]), int.Parse(toks[2]), int.Parse(toks[3]), Map.Parse(toks[4])));
                         }
-                    }
-                    Unmute();
 
-                    EchoOut(string.Format("{0} moongates replaced.", patched), ConsoleColor.Magenta);
-                    PatchComplete(bits, patchid);
+                        int count = 0;
+                        foreach (var record in records)
+                        {
+                            Item item = World.FindItem(record.Item1);
+                            if (item == null || item.Deleted)
+                                count++;
+                            else if (item is Moongate && item.Location == new Point3D(record.Item2, record.Item3, record.Item4))
+                            {
+                                if (item.Serial == 0x400040A1)
+                                {   // special New Player Starting area
+                                    Moongate moongate;
+                                    moongate = (Moongate)item;
+                                    Sungate sungate = new Sungate();
+                                    CopyProperties(sungate, moongate);
+                                }
+                                else if (item.GetType() == typeof(ConfirmationMoongate))
+                                {
+                                    ConfirmationMoongate moongate;
+                                    moongate = (ConfirmationMoongate)item;
+                                    EventConfirmationSungate sungate = new EventConfirmationSungate();
+                                    CopyProperties(sungate, moongate);
+                                    sungate.Running = false;
+                                    sungate.Visible = false;
+                                }
+                                else if (item.GetType() == typeof(JailExitGate))
+                                {
+                                    JailExitGate moongate;
+                                    moongate = (JailExitGate)item;
+                                    JailExitSungate sungate = new JailExitSungate();
+                                    CopyProperties(sungate, moongate);
+                                    sungate.Running = false;
+                                    sungate.Visible = false;
+                                }
+                                else if (item.GetType() == typeof(Moongate))
+                                {
+                                    Moongate moongate;
+                                    moongate = (Moongate)item;
+                                    EventSungate sungate = new EventSungate();
+                                    CopyProperties(sungate, moongate);
+                                    sungate.Running = false;
+                                    sungate.Visible = false;
+                                }
+                                else
+                                    ErrorOut(bits, "Logic Error: Unknown moongate type {0}.", ConsoleColor.Red, item);
+
+                                item.Delete();
+                                patched++;
+                            }
+                        }
+                        Unmute();
+
+                        EchoOut(string.Format("{0} moongates replaced.", patched), ConsoleColor.Magenta);
+                        PatchComplete(bits, patchid);
+                    }
+                    else
+                        ErrorOut(bits, string.Format("Error: unable to locate {0}.", pathName), ConsoleColor.Red);
                 }
-                else
-                    ErrorOut(bits, string.Format("Error: unable to locate {0}.", pathName), ConsoleColor.Red);
+                finally { Unmute(); }
             }
 
             return patched;
@@ -15135,8 +15155,14 @@ namespace Server
                 LogPatch(bits);
                 EchoOut("One-time patch to wipe the unusual container cache.", ConsoleColor.Magenta);
                 Mute();
-                patched = UnusualContainerSpawner.WipeContainerCache();
-                Unmute();
+                try
+                {
+                    patched = UnusualContainerSpawner.WipeContainerCache();
+                }
+                finally
+                {
+                    Unmute();
+                }
 
                 EchoOut(string.Format("{0} unusual container cache cleared.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
@@ -15153,8 +15179,14 @@ namespace Server
                 LogPatch(bits);
                 EchoOut("One-time patch to rebuild the unusual container cache.", ConsoleColor.Magenta);
                 Mute();
-                patched = UnusualContainerSpawner.RebuildContainerCache();
-                Unmute();
+                try
+                {
+                    patched = UnusualContainerSpawner.RebuildContainerCache();
+                }
+                finally
+                {
+                    Unmute();
+                }
 
                 EchoOut(string.Format("{0} unusual container cache rebuild.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
@@ -15174,8 +15206,14 @@ namespace Server
 
                 var before = Before();
                 Mute();
-                SpawnerManager.ClassicRespawn();
-                Unmute();
+                try
+                {
+                    SpawnerManager.ClassicRespawn();
+                }
+                finally
+                {
+                    Unmute();
+                }
                 var after = After();
 
                 patched = Delta(before, after).Count;
@@ -15581,13 +15619,20 @@ namespace Server
                     // add the tele back to Vesper Inn from the tunnel
                     {
                         Mute();
-                        EventTeleporter etp = new();
-                        etp.Map = Map.Felucca;
-                        etp.Location = new Point3D(5658, 423, 8);
-                        etp.PointDest = new Point3D(2782, 981, 0);
-                        etp.MapDest = Map.Felucca;
-                        Unmute();
-                        patched++;
+                        try
+                        {
+                            EventTeleporter etp = new();
+                            etp.Map = Map.Felucca;
+                            etp.Location = new Point3D(5658, 423, 8);
+                            etp.PointDest = new Point3D(2782, 981, 0);
+                            etp.MapDest = Map.Felucca;
+                            patched++;
+                        }
+                        finally
+                        {
+                            Unmute();
+                        }
+                        
                     }
 
                     // add the 'hole' that drops you to the arena
@@ -15597,13 +15642,19 @@ namespace Server
                         patched++;
                         // and now the teleporter
                         Mute();
-                        EventTeleporter etp = new();
-                        etp.Map = Map.Felucca;
-                        etp.Location = new Point3D(5660, 422, -2);
-                        etp.PointDest = new Point3D(1674, 966, 78);
-                        etp.MapDest = Map.Ilshenar;
-                        Unmute();
-                        patched++;
+                        try
+                        {
+                            EventTeleporter etp = new();
+                            etp.Map = Map.Felucca;
+                            etp.Location = new Point3D(5660, 422, -2);
+                            etp.PointDest = new Point3D(1674, 966, 78);
+                            etp.MapDest = Map.Ilshenar;
+                            patched++;
+                        }
+                        finally
+                        {
+                            Unmute();
+                        }
                     }
                     // update the sign info
                     {
@@ -15833,158 +15884,162 @@ namespace Server
                 LogPatch(bits);
                 EchoOut("One-time patch to initialize a new shard...", ConsoleColor.Magenta);
                 Mute();
-                // ====================
+                try
+                {
+                    // ====================
 #if false
                 // first rehydrate world
                 RehydrateWorld.RehydrateWorld_OnCommand(new CommandEventArgs());
 #endif
-                int count = 0;
+                    int count = 0;
 
-                // delete accounts 
-                count = OwnerTools.DeleteAccounts(new CommandEventArgs());
-                EchoOut(string.Format("{0} Accounts deleted.", count), ConsoleColor.Magenta);
-                patched += count;
+                    // delete accounts 
+                    count = OwnerTools.DeleteAccounts(new CommandEventArgs());
+                    EchoOut(string.Format("{0} Accounts deleted.", count), ConsoleColor.Magenta);
+                    patched += count;
 
-                // delete contents of all containers
-                count = OwnerTools.EmptyContainers(new CommandEventArgs());
-                EchoOut(string.Format("{0} Items deleted.", count), ConsoleColor.Magenta);
-                patched += count;
+                    // delete contents of all containers
+                    count = OwnerTools.EmptyContainers(new CommandEventArgs());
+                    EchoOut(string.Format("{0} Items deleted.", count), ConsoleColor.Magenta);
+                    patched += count;
 
-                // ====================
-                // configure item management for standard shards
-                {
-                    ItemManagementConsole imc = new ItemManagementConsole();
-                    imc.Cooperatives = true; imc.Cooperatives = false; patched++;
-                    imc.MagicCraftSystem = true; imc.MagicCraftSystem = false; patched++;
-                    imc.MagicGearDropChance = 50; patched++;
-                    imc.MagicGearDropDowngrade = 0; patched++;
-                    imc.MagicGearThrottleEnabled = false; patched++;
-                    imc.SlayerInstrumentDropRate = 0.05; patched++;
-                    imc.SlayerWeaponDropRate = 0.05; patched++;
-                    imc.ZoraSystem = true; imc.ZoraSystem = false; patched++;
-                    imc.Delete();
-                }
-
-                // Bulk Orders
-                {
-                    if (Core.RuleSets.BulkOrderSystemRules())
-                    {   // turn on
-                        BulkOrderSystem.EnabledFlags = BulkOrderFlags.Smith; // tailor hasn't been tested (?)
-                        CoreAI.SetDynamicFeature(CoreAI.FeatureBits.BulkOrdersEnabled);
-                    }
-                    else
-                    {   // turn off
-                        BulkOrderSystem.EnabledFlags = BulkOrderFlags.None;
-                        CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.BulkOrdersEnabled);
-                    }
-                }
-
-                // skill Gain
-                {
-                    if (SiegeStyleShards(quiet: true))
+                    // ====================
+                    // configure item management for standard shards
                     {
-                        // Skill on Siege will be Return Over Time (ROT)
-                        SkillGainSystem.GainWaits = true; patched++;
+                        ItemManagementConsole imc = new ItemManagementConsole();
+                        imc.Cooperatives = true; imc.Cooperatives = false; patched++;
+                        imc.MagicCraftSystem = true; imc.MagicCraftSystem = false; patched++;
+                        imc.MagicGearDropChance = 50; patched++;
+                        imc.MagicGearDropDowngrade = 0; patched++;
+                        imc.MagicGearThrottleEnabled = false; patched++;
+                        imc.SlayerInstrumentDropRate = 0.05; patched++;
+                        imc.SlayerWeaponDropRate = 0.05; patched++;
+                        imc.ZoraSystem = true; imc.ZoraSystem = false; patched++;
+                        imc.Delete();
                     }
-                    else
-                    {
-                        // other shards skills are difficulty based.
-                        SkillGainSystem.GainWaits = false; patched++;
-                    }
-                }
 
-                // configure the server for all shards
-                {
-                    CoreManagementConsole cmc = new CoreManagementConsole();
-                    if (Siege(quiet: true))
-                    { CoreAI.MaxAccountsPerIP = 1; patched++; }
-                    else
-                    { CoreAI.MaxAccountsPerIP = 3; patched++; }
-                    CoreAI.MaxConcurrentAddresses = 1; patched++;
-                    cmc.NewPlayerGuild = true; patched++;
-                    // For Mortalis, we may want to have the exit from the NPSZ randomized.
-                    cmc.NewPlayerStartingArea = true; patched++;
-                    cmc.Delete();
-                }
-
-                // remove all guilds
-                {
-                    List<Guild> glist = new();
-                    foreach (Guild g in BaseGuild.List.Values)
-                        glist.Add(g);
-
-                    foreach (Guild g in glist)
+                    // Bulk Orders
                     {
-                        patched++;
-                        g.Disband();
-                    }
-                    foreach (Item item in World.Items.Values)
-                    {
-                        if (item is Guildstone guildstone && !guildstone.Deleted)
-                        {
-                            patched++;
-                            guildstone.Delete();
+                        if (Core.RuleSets.BulkOrderSystemRules())
+                        {   // turn on
+                            BulkOrderSystem.EnabledFlags = BulkOrderFlags.Smith; // tailor hasn't been tested (?)
+                            CoreAI.SetDynamicFeature(CoreAI.FeatureBits.BulkOrdersEnabled);
+                        }
+                        else
+                        {   // turn off
+                            BulkOrderSystem.EnabledFlags = BulkOrderFlags.None;
+                            CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.BulkOrdersEnabled);
                         }
                     }
-                }
 
-                // Reprice all the static houses by simply lifting the item and placing it back in the vendor's backpack.
-                // (The vendor already 1. has auto pricing of deeds, and 2. already takes into account Siege Pricing Rules.
-                {
-                    foreach (Mobile playerVendor in World.Mobiles.Values)
+                    // skill Gain
                     {
-                        if (playerVendor is PlayerVendor && playerVendor.Backpack != null)
+                        if (SiegeStyleShards(quiet: true))
                         {
-                            if (playerVendor.IsStaffOwned && playerVendor.Backpack.Items != null)
+                            // Skill on Siege will be Return Over Time (ROT)
+                            SkillGainSystem.GainWaits = true; patched++;
+                        }
+                        else
+                        {
+                            // other shards skills are difficulty based.
+                            SkillGainSystem.GainWaits = false; patched++;
+                        }
+                    }
+
+                    // configure the server for all shards
+                    {
+                        CoreManagementConsole cmc = new CoreManagementConsole();
+                        if (Siege(quiet: true))
+                        { CoreAI.MaxAccountsPerIP = 1; patched++; }
+                        else
+                        { CoreAI.MaxAccountsPerIP = 3; patched++; }
+                        CoreAI.MaxConcurrentAddresses = 1; patched++;
+                        cmc.NewPlayerGuild = true; patched++;
+                        // For Mortalis, we may want to have the exit from the NPSZ randomized.
+                        cmc.NewPlayerStartingArea = true; patched++;
+                        cmc.Delete();
+                    }
+
+                    // remove all guilds
+                    {
+                        List<Guild> glist = new();
+                        foreach (Guild g in BaseGuild.List.Values)
+                            glist.Add(g);
+
+                        foreach (Guild g in glist)
+                        {
+                            patched++;
+                            g.Disband();
+                        }
+                        foreach (Item item in World.Items.Values)
+                        {
+                            if (item is Guildstone guildstone && !guildstone.Deleted)
                             {
-                                List<Item> list = new();
-                                List<Item> itemList = new(playerVendor.Backpack.Items);
-                                foreach (Item item in itemList)
+                                patched++;
+                                guildstone.Delete();
+                            }
+                        }
+                    }
+
+                    // Reprice all the static houses by simply lifting the item and placing it back in the vendor's backpack.
+                    // (The vendor already 1. has auto pricing of deeds, and 2. already takes into account Siege Pricing Rules.
+                    {
+                        foreach (Mobile playerVendor in World.Mobiles.Values)
+                        {
+                            if (playerVendor is PlayerVendor && playerVendor.Backpack != null)
+                            {
+                                if (playerVendor.IsStaffOwned && playerVendor.Backpack.Items != null)
                                 {
-                                    if (item is HouseDeed hd)
+                                    List<Item> list = new();
+                                    List<Item> itemList = new(playerVendor.Backpack.Items);
+                                    foreach (Item item in itemList)
                                     {
-                                        list.Add(hd);
-                                        playerVendor.Backpack.RemoveItem(hd);
+                                        if (item is HouseDeed hd)
+                                        {
+                                            list.Add(hd);
+                                            playerVendor.Backpack.RemoveItem(hd);
+                                        }
                                     }
-                                }
-                                foreach (Item item in list)
-                                {
-                                    playerVendor.Backpack.AddItem(item);
-                                    patched++;
+                                    foreach (Item item in list)
+                                    {
+                                        playerVendor.Backpack.AddItem(item);
+                                        patched++;
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                // Initialize the ResourcePool
+                    // Initialize the ResourcePool
+                    {
+                        string saves = Path.Combine(Core.BaseDirectory, "Saves");
+                        string resourcePool = Path.Combine(Core.BaseDirectory, "Saves", "ResourcePool");
+                        string transactionHistories = Path.Combine(Core.BaseDirectory, "Saves", "TransactionHistories");
+                        if (Directory.Exists(resourcePool))
+                        {
+                            DirectoryInfo di = new DirectoryInfo(resourcePool);
+                            RecursiveDelete(di);
+                        }
+                        if (!Directory.Exists(resourcePool))
+                            Directory.CreateDirectory(resourcePool);
+                        if (!Directory.Exists(transactionHistories))
+                            Directory.CreateDirectory(transactionHistories);
+                        if (ResourcePool.Consignments != null)
+                        {
+                            int rpc = ResourcePool.Consignments.Count;
+                            EchoOut(string.Format("{0} resource pool consignments detected.", rpc), ConsoleColor.Magenta);
+                            ResourcePool.Consignments.Clear();
+                            EchoOut(string.Format("{0} resource pool consignments deleted.", rpc), ConsoleColor.Magenta);
+                        }
+                        else
+                            EchoOut(string.Format("No resource pool consignments to deleted."), ConsoleColor.Magenta);
+                    }
+                }
+                finally
                 {
-                    string saves = Path.Combine(Core.BaseDirectory, "Saves");
-                    string resourcePool = Path.Combine(Core.BaseDirectory, "Saves", "ResourcePool");
-                    string transactionHistories = Path.Combine(Core.BaseDirectory, "Saves", "TransactionHistories");
-                    if (Directory.Exists(resourcePool))
-                    {
-                        DirectoryInfo di = new DirectoryInfo(resourcePool);
-                        RecursiveDelete(di);
-                    }
-                    if (!Directory.Exists(resourcePool))
-                        Directory.CreateDirectory(resourcePool);
-                    if (!Directory.Exists(transactionHistories))
-                        Directory.CreateDirectory(transactionHistories);
-                    if (ResourcePool.Consignments != null)
-                    {
-                        int rpc = ResourcePool.Consignments.Count;
-                        EchoOut(string.Format("{0} resource pool consignments detected.", rpc), ConsoleColor.Magenta);
-                        ResourcePool.Consignments.Clear();
-                        EchoOut(string.Format("{0} resource pool consignments deleted.", rpc), ConsoleColor.Magenta);
-                    }
-                    else
-                        EchoOut(string.Format("No resource pool consignments to deleted."), ConsoleColor.Magenta);
+                    // Done
+                    Unmute();
                 }
-
-                // Done
-                Unmute();
-
                 EchoOut(string.Format("{0} shard initialization steps complete.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
@@ -16232,6 +16287,7 @@ namespace Server
 
                 // get a list of legal items
                 string pathName = Path.Combine(Core.DataDirectory, "Patches", "ExcludeTeleporterAI.cfg");
+                EnsurePath(pathName);
                 if (File.Exists(pathName))
                 {
 
@@ -16342,15 +16398,21 @@ namespace Server
                 EchoOut("One-time patch to remove some Felucca teleporters and surrounding deco.", ConsoleColor.Magenta);
                 EchoOut("This patch will run about 5 minutes...", ConsoleColor.Yellow);
                 Mute();
-                List<Item> before = Before(Map.Felucca);
+                try
+                {
+                    List<Item> before = Before(Map.Felucca);
 
-                HasPatchedFeluccaTeleportersWorker();
+                    HasPatchedFeluccaTeleportersWorker();
 
-                List<Item> after = After(Map.Felucca);
+                    List<Item> after = After(Map.Felucca);
 
-                // what's the delta?
-                patched = Delta(before, after).Count;
-                Unmute();
+                    // what's the delta?
+                    patched = Delta(before, after).Count;
+                }
+                finally
+                {
+                    Unmute();
+                }
                 EchoOut(string.Format("{0} Felucca teleporters removed or updated.", patched), ConsoleColor.Magenta);
                 PatchComplete(bits, patchid);
             }
@@ -16362,6 +16424,7 @@ namespace Server
             Map map = null;
             string toDeleteFile = "Angel Island teleporters.cfg";
             string toDeletepathName = Path.Combine(Core.DataDirectory, "Patches", toDeleteFile);
+            EnsurePath(toDeletepathName);
             List<Item> toDeleteList = new();
             foreach (string line in File.ReadAllLines(toDeletepathName))
             {
@@ -16380,6 +16443,7 @@ namespace Server
             // PreserveTeleporterIS.cfg
             string preserveFile = "PreserveTeleporterIS.cfg";
             string preservepathName = Path.Combine(Core.DataDirectory, "Patches", preserveFile);
+            EnsurePath(preservepathName);
             List<Item> preserveLlist = new();
             if (File.Exists(preservepathName))
             {
@@ -16399,6 +16463,7 @@ namespace Server
             // EventTeleporters.cfg
             string eventFile = "EventTeleporters.cfg";
             string eventpathName = Path.Combine(Core.DataDirectory, "Patches", eventFile);
+            EnsurePath(eventpathName);
             if (File.Exists(eventpathName))
             {
                 foreach (String line in File.ReadAllLines(eventpathName))
@@ -16607,6 +16672,7 @@ namespace Server
             int deleted = 0;
             // first, read the list of items to exclude from the trammel search
             string pathName = Path.Combine(Core.DataDirectory, "Patches", "LegalTrammelItems.cfg");
+            EnsurePath(pathName);
             if (File.Exists(pathName))
             {
                 List<Tuple<int, int, int, int, Map>> records = new();
@@ -18234,8 +18300,10 @@ namespace Server
                 EchoOut("Run Always: Applying spawner patches...", ConsoleColor.Yellow);
                 int patched = 0;
                 List<SpawnerPatch> list = CompilePatches();                   // compile the patch table
+                string pathName = Path.Combine(Core.DataDirectory, "Patches", "definitive spawner list patch.cfg");
+                EnsurePath(pathName);
                 if (list.Count > 0)
-                    if (System.IO.File.Exists(Path.Combine(Core.DataDirectory, "Patches", "definitive spawner list patch.cfg")))
+                    if (System.IO.File.Exists(pathName))
                         foreach (Item item in World.Items.Values)
                         {
                             if (item is not Spawner spawner) continue;
@@ -18275,23 +18343,26 @@ namespace Server
         private static List<SpawnerPatch> CompilePatches()
         {
             List<SpawnerPatch> list = new();
-            // ("{0}:{1}:{2}:{3}", spawner.Serial, spawner._CoreSpawn, spawner._UOSpawnMap, spawner._Shard)
-            foreach (string line in System.IO.File.ReadLines(Path.Combine(Core.DataDirectory, "Patches", "definitive spawner list patch.cfg")))
-            {
-                if (string.IsNullOrEmpty(line)) continue;
-
-                string[] tokens = line.Split(new char[] { ':' });
-                UInt32 serial = 0;
-                bool core = false;
-                string uospawnmap = string.Empty;
-                UInt32 shardConfig = 0;
-                if (UInt32.TryParse(tokens[0], System.Globalization.NumberStyles.Integer, null, out serial))
+            string pathName = Path.Combine(Core.DataDirectory, "Patches", "definitive spawner list patch.cfg");
+            EnsurePath(pathName);
+            if (File.Exists(pathName))
+                // ("{0}:{1}:{2}:{3}", spawner.Serial, spawner._CoreSpawn, spawner._UOSpawnMap, spawner._Shard)
+                foreach (string line in System.IO.File.ReadLines(Path.Combine(Core.DataDirectory, "Patches", "definitive spawner list patch.cfg")))
                 {
-                    if (bool.TryParse(tokens[1].ToLower(), out core))
-                        if (UInt32.TryParse(tokens[3], System.Globalization.NumberStyles.Integer, null, out shardConfig))
-                            list.Add(new SpawnerPatch((Serial)(int)serial, core, tokens[2], (ShardConfig)shardConfig));
+                    if (string.IsNullOrEmpty(line)) continue;
+
+                    string[] tokens = line.Split(new char[] { ':' });
+                    UInt32 serial = 0;
+                    bool core = false;
+                    string uospawnmap = string.Empty;
+                    UInt32 shardConfig = 0;
+                    if (UInt32.TryParse(tokens[0], System.Globalization.NumberStyles.Integer, null, out serial))
+                    {
+                        if (bool.TryParse(tokens[1].ToLower(), out core))
+                            if (UInt32.TryParse(tokens[3], System.Globalization.NumberStyles.Integer, null, out shardConfig))
+                                list.Add(new SpawnerPatch((Serial)(int)serial, core, tokens[2], (ShardConfig)shardConfig));
+                    }
                 }
-            }
 
             return list;
         }

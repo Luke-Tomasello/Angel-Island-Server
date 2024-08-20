@@ -291,6 +291,9 @@ namespace Server.Mobiles
         }
         public object GetDisplayObject()
         {
+            if (DisplayCache.Cache == null)
+                return null;
+
             DisplayCache.Cache.Defrag();
 
             if (m_DisplayObject != null && !IsDeleted(m_DisplayObject))

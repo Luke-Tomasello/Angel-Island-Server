@@ -6601,9 +6601,19 @@ namespace Server
             Console.Out.Flush();
             PushColor(color);
             Console.WriteLine(text);
-            if (m_ConsoleOutEcho != null) File.AppendAllLines(m_ConsoleOutEcho, new string[] { text });
+            if (m_ConsoleOutEcho != null)
+            {
+                EnsurePath(m_ConsoleOutEcho);
+                File.AppendAllLines(m_ConsoleOutEcho, new string[] { text }, Encoding.UTF8);
+            }
             PopColor();
             Console.Out.Flush();
+        }
+        public static void EnsurePath(string path)
+        {
+            string path_part = Path.GetDirectoryName(path);
+            if (!Directory.Exists(path_part))
+                Directory.CreateDirectory(path_part);
         }
         public static void ConsoleWriteLine(string format, ConsoleColor color, params object[] args)
         {
@@ -6614,7 +6624,11 @@ namespace Server
             Console.Error.Flush();
             PushColor(color);
             Console.Error.WriteLine(text);
-            if (m_ConsoleOutEcho != null) File.AppendAllLines(m_ConsoleOutEcho, new string[] { text });
+            if (m_ConsoleOutEcho != null)
+            {
+                EnsurePath(m_ConsoleOutEcho);
+                File.AppendAllLines(m_ConsoleOutEcho, new string[] { text });
+            }
             PopColor();
             Console.Error.Flush();
         }

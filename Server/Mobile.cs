@@ -7607,7 +7607,7 @@ namespace Server
         }
         public void SayTo(Mobile to, bool ascii, int hue, string text)
         {
-            PrivateOverheadMessage(MessageType.Regular, Hue, ascii, text, to.NetState);
+            PrivateOverheadMessage(MessageType.Regular, hue, ascii, text, to.NetState);
         }
         public void SayTo(Mobile to, string text)
         {

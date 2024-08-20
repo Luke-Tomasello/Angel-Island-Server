@@ -21,6 +21,8 @@
 
 /* Scripts/Mobiles/Townfolk/Storyteller.cs
  * ChangeLog
+ *  8/20/2024, Adam
+ *      Reenable text triggers so as to enable ZMachine
  *  1/7/22, Disable text triggers so as to disable ZMachine
  *      Seems the ZMachine no longer works since we went to 64bit. I suspect the code generation is off
  *      There are a couple of options. Compile the old version as 32bit, or find an updated version for 64bit.
@@ -45,6 +47,7 @@ namespace Server.Mobiles
             InitBody();
             InitOutfit();
             Title = "the storyteller";
+            SpeechHue = Utility.RandomSpeechHue();
         }
 
         public Storyteller(Serial serial)
@@ -53,7 +56,7 @@ namespace Server.Mobiles
         }
 
         protected override void InitTriggers()
-        {/*
+        {
             // register the keywords that trigger a conversation
             ConversationTriggers.Add("toyshop", "toyshop");                     // okay sample (for beginners)
             ConversationTriggers.Add("zork1", "zork1");                         // Converted to version 5
@@ -62,7 +65,6 @@ namespace Server.Mobiles
             ConversationTriggers.Add("dungeon", "zdungeon_r13");                // zdungeon_r13.z5 (original mainfram version of zork)
             ConversationTriggers.Add("the undiscovered underground", "ztuu");   // okay classic
             ConversationTriggers.Add("adventure", "advent");                    // okay classic
-            */
         }
 
         public override void InitBody()

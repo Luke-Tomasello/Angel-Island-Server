@@ -153,12 +153,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_093DB4CB97404259B1A17D223F2E1854"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_09D4E5647AFA46919577E02B6F3ED8BC"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -250,12 +244,6 @@
         "Entry"
         {
         "MsmKey" = "8:_1141504E4234410B93B7D46BB76A67AD"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_1243C005DE954A91AFF3A249A5DEC8DE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -604,12 +592,6 @@
         "Entry"
         {
         "MsmKey" = "8:_27853B53CCED45A8B3403E413D76592F"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_27F34112441C471E9348F0526DAF0D99"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1078,12 +1060,6 @@
         "Entry"
         {
         "MsmKey" = "8:_4D511B145287404BBEEFA76F103C0921"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_4D585206B16C480CA733980DE46A8577"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2757,12 +2733,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_CB2A7AF1C09545C6A6A4921AA80BB893"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_CB8A8903EF0D44F682E04C9BAF90FBBC"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -3075,12 +3045,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_E225479B2EA34FBE9D8A12F81BE555B9"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_E24D8C5511994C0785CB143783EA5B0B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -3177,12 +3141,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_E8DED99DC0714A0B840557097D678E49"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_E93B96CC9F164F859DFDFC484581617C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -3250,12 +3208,6 @@
         "Entry"
         {
         "MsmKey" = "8:_ED0ED959C00A42828B40EE1CB042B625"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_ED585D416BE54E9EA3D4D0FA4E127EE4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -3394,12 +3346,6 @@
         "Entry"
         {
         "MsmKey" = "8:_F8D7455EBE624F0982C85C1ED4B5CC02"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_F9018B82134747E8A63348CD795F4A81"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -4070,26 +4016,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_093DB4CB97404259B1A17D223F2E1854"
-            {
-            "SourcePath" = "8:data\\PATCHES\\definitive spawner list patch.cfg"
-            "TargetName" = "8:definitive spawner list patch.cfg"
-            "Tag" = "8:"
-            "Folder" = "8:_4AA17606C3D9429487E6A6FE28F2A954"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_09D4E5647AFA46919577E02B6F3ED8BC"
             {
             "SourcePath" = "8:data\\XmlAddon\\block2 Backup (47193779).xml"
@@ -4396,26 +4322,6 @@
             "TargetName" = "8:RockCaveBlock.xml"
             "Tag" = "8:"
             "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1243C005DE954A91AFF3A249A5DEC8DE"
-            {
-            "SourcePath" = "8:data\\PATCHES\\Angel Island teleporters.cfg"
-            "TargetName" = "8:Angel Island teleporters.cfg"
-            "Tag" = "8:"
-            "Folder" = "8:_4AA17606C3D9429487E6A6FE28F2A954"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -5576,26 +5482,6 @@
             "TargetName" = "8:walls.txt"
             "Tag" = "8:"
             "Folder" = "8:_6334085FB0584C06BCC0503BB2FBBA93"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_27F34112441C471E9348F0526DAF0D99"
-            {
-            "SourcePath" = "8:data\\PATCHES\\definitive spawner list patch.txt"
-            "TargetName" = "8:definitive spawner list patch.txt"
-            "Tag" = "8:"
-            "Folder" = "8:_4AA17606C3D9429487E6A6FE28F2A954"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -7156,26 +7042,6 @@
             "TargetName" = "8:spawner add list.cfg"
             "Tag" = "8:"
             "Folder" = "8:_F8914129C0644681B981F1E6DAA116EA"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4D585206B16C480CA733980DE46A8577"
-            {
-            "SourcePath" = "8:data\\PATCHES\\EventTeleporters.cfg"
-            "TargetName" = "8:EventTeleporters.cfg"
-            "Tag" = "8:"
-            "Folder" = "8:_4AA17606C3D9429487E6A6FE28F2A954"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -12710,26 +12576,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CB2A7AF1C09545C6A6A4921AA80BB893"
-            {
-            "SourcePath" = "8:data\\PATCHES\\ExcludeTeleporterAI.cfg"
-            "TargetName" = "8:ExcludeTeleporterAI.cfg"
-            "Tag" = "8:"
-            "Folder" = "8:_4AA17606C3D9429487E6A6FE28F2A954"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CB8A8903EF0D44F682E04C9BAF90FBBC"
             {
             "SourcePath" = "8:data\\XmlAddon\\pineforest7.xml"
@@ -13770,26 +13616,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E225479B2EA34FBE9D8A12F81BE555B9"
-            {
-            "SourcePath" = "8:data\\PATCHES\\LegalTrammelTeleporters.cfg"
-            "TargetName" = "8:LegalTrammelTeleporters.cfg"
-            "Tag" = "8:"
-            "Folder" = "8:_4AA17606C3D9429487E6A6FE28F2A954"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E24D8C5511994C0785CB143783EA5B0B"
             {
             "SourcePath" = "8:data\\XmlTrees\\baretree26.xml"
@@ -14110,26 +13936,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E8DED99DC0714A0B840557097D678E49"
-            {
-            "SourcePath" = "8:data\\PATCHES\\LegalTrammelItems.cfg"
-            "TargetName" = "8:LegalTrammelItems.cfg"
-            "Tag" = "8:"
-            "Folder" = "8:_4AA17606C3D9429487E6A6FE28F2A954"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E93B96CC9F164F859DFDFC484581617C"
             {
             "SourcePath" = "8:data\\XmlAddon\\rowboatwreck.xml"
@@ -14356,26 +14162,6 @@
             "TargetName" = "8:bananatree.xml"
             "Tag" = "8:"
             "Folder" = "8:_C71E8EA026144119B43EA988FDB4AA8F"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ED585D416BE54E9EA3D4D0FA4E127EE4"
-            {
-            "SourcePath" = "8:data\\PATCHES\\PreserveTeleporterIS.cfg"
-            "TargetName" = "8:PreserveTeleporterIS.cfg"
-            "Tag" = "8:"
-            "Folder" = "8:_4AA17606C3D9429487E6A6FE28F2A954"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -14836,26 +14622,6 @@
             "TargetName" = "8:rockcairn.xml"
             "Tag" = "8:"
             "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F9018B82134747E8A63348CD795F4A81"
-            {
-            "SourcePath" = "8:data\\PATCHES\\Angel Island Moongate.cfg"
-            "TargetName" = "8:Angel Island Moongate.cfg"
-            "Tag" = "8:"
-            "Folder" = "8:_4AA17606C3D9429487E6A6FE28F2A954"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -15762,7 +15528,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Angel Island 6.0"
         "ProductCode" = "8:{93EC2D5B-AFA8-4716-937B-DE2DD35136DB}"
-        "PackageCode" = "8:{CABF634D-ACF7-446A-9D74-256E02059354}"
+        "PackageCode" = "8:{6C86EE7F-BB0C-46B3-AF58-0A7B50551101}"
         "UpgradeCode" = "8:{4BFF5564-1D4C-45D0-A376-9B392EB8AA7E}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -16281,6 +16047,35 @@
         }
         "ProjectOutput"
         {
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5CEA4C6C8A83473192C3360E38827149"
+            {
+            "SourcePath" = "8:"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_4A50A18D637C4BD3912730FAD24F66D5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:PublishItems"
+            "OutputProjectGuid" = "8:{42371D96-9F71-4DAB-A242-82DD07F72E67}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                "ExcludeFilter" = "8:*.xml"
+                }
+            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5CFEC59BA82747A78C838A0BE480C6D9"
             {
             "SourcePath" = "8:obj\\Release\\apphost.exe"

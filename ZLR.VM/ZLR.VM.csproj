@@ -1,0 +1,49 @@
+﻿<!--EXTERNAL_PROPERTIES: TargetFramework-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>0.9.0-pre-03</Version>
+    <Authors>Tara McGrew</Authors>
+    <Company />
+    <Product>ZLR</Product>
+    <PackageProjectUrl>https://foss.heptapod.net/zilf/zlr</PackageProjectUrl>
+    <RepositoryUrl>https://foss.heptapod.net/zilf/zlr</RepositoryUrl>
+    <RepositoryType>mercurial</RepositoryType>
+    <PackageLicenseExpression>LGPL-2.1-only</PackageLicenseExpression>
+    <Copyright>Copyright 2007-2023 Tara McGrew</Copyright>
+    <PackageTags>zlr z-machine zmachine z-code zcode infocom jit interpreter</PackageTags>
+    <PackageIconUrl>
+    </PackageIconUrl>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <Description>A Z-Machine interpreter.</Description>
+    <CodeAnalysisRuleSet>..\ZLR.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\ZLR.VM.xml</DocumentationFile>
+    <PackageIcon>zlr-logo.png</PackageIcon>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2020.1.0">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Nito.AsyncEx" Version="5.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\zlr-logo.png">
+      <Pack>True</Pack>
+      <PackagePath>
+      </PackagePath>
+    </None>
+  </ItemGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <DefineConstants>HAVE_SPAN</DefineConstants>
+  </PropertyGroup>
+
+<PropertyGroup>
+	<OutputPath>..\</OutputPath>
+	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	<PlatformTarget>AnyCPU</PlatformTarget>
+</PropertyGroup>
+</Project>

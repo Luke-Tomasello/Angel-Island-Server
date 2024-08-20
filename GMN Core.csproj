@@ -24,16 +24,22 @@
 
 	<ItemGroup>
 	  <Compile Remove="BuildInfo\**" />
+	  <Compile Remove="ZLR.VM\**" />
 	  <EmbeddedResource Remove="BuildInfo\**" />
+	  <EmbeddedResource Remove="ZLR.VM\**" />
 	  <None Remove="BuildInfo\**" />
+	  <None Remove="ZLR.VM\**" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="MaxMind.GeoIP2" Version="5.1.0" />
-		<PackageReference Include="NAudio" Version="2.2.1" />
 		<PackageReference Include="Pluralize.NET" Version="1.0.2" />
 		<PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
 		<PackageReference Include="TextCopy" Version="6.1.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="ZLR.VM\ZLR.VM.csproj" />
 	</ItemGroup>
 
 	<PropertyGroup>
