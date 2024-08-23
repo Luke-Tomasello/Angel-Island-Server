@@ -122,7 +122,7 @@ namespace Server.Engines
                     uint zid = CreateZoneID(small);
                     if (ZoneInfo.ContainsKey(zid))
                     {
-                        Utility.ConsoleWriteLine("{0} already added this rectangle: {1}", ConsoleColor.Red, SubDistrictToDistrictName(kvp.Value), small);
+                        Utility.Monitor.WriteLine("{0} already added this rectangle: {1}", ConsoleColor.Red, SubDistrictToDistrictName(kvp.Value), small);
                         continue;
                     }
                     ZoneInfo.Add(zid, new CZoneInfo(++serial));
@@ -185,7 +185,7 @@ namespace Server.Engines
                             // now for the SubDistricts
                             if (SubDistrictMap.ContainsKey(rect))
                             {
-                                Utility.ConsoleWriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
+                                Utility.Monitor.WriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
                             }
                             else
                             {
@@ -324,17 +324,17 @@ namespace Server.Engines
                             int vcount, acount, ocount, zcount;
                             total_count += (vcount = DoVendorGuardians(zone, vendors, out webs, Map.Felucca /*district.Map*/));
                             total_webs += webs;
-                            Utility.ConsoleWriteLine("Spawned {0} vendor guardians in {2} webs for zone {1}", ConsoleColor.Green, vcount, zone, webs);
+                            Utility.Monitor.WriteLine("Spawned {0} vendor guardians in {2} webs for zone {1}", ConsoleColor.Green, vcount, zone, webs);
                             total_count += (acount = DoAnimalGuardians(zone, animals, out webs, Map.Felucca /*district.Map*/));
                             total_webs += webs;
-                            Utility.ConsoleWriteLine("Spawned {0} animal guardians in {2} webs for zone {1}", ConsoleColor.Green, acount, zone, webs);
+                            Utility.Monitor.WriteLine("Spawned {0} animal guardians in {2} webs for zone {1}", ConsoleColor.Green, acount, zone, webs);
                             total_count += (ocount = DoOtherGuardians(zone, others, out webs, Map.Felucca /*district.Map*/));
                             total_webs += webs;
-                            Utility.ConsoleWriteLine("Spawned {0} other guardians in {2} webs for zone {1}", ConsoleColor.Green, ocount, zone, webs);
+                            Utility.Monitor.WriteLine("Spawned {0} other guardians in {2} webs for zone {1}", ConsoleColor.Green, ocount, zone, webs);
 
                             total_count += (zcount = DoZonalGuardians(zone, out webs, Map.Felucca /*district.Map*/));
                             total_webs += webs;
-                            Utility.ConsoleWriteLine("Spawned {0} zonal guardians in {2} webs for zone {1}", ConsoleColor.Green, zcount, zone, webs);
+                            Utility.Monitor.WriteLine("Spawned {0} zonal guardians in {2} webs for zone {1}", ConsoleColor.Green, zcount, zone, webs);
                         }
                         var tmp = FindDistrict(kvp.Value);
                         var name = string.Empty;
@@ -344,7 +344,7 @@ namespace Server.Engines
                             name = tmp.GetValueOrDefault().Key.ToString();
                             location = FormatList(tmp.GetValueOrDefault().Value);
                         }
-                        Utility.ConsoleWriteLine("{0} total guardians, total webs {1}, in {2} zones, in district(s): {3} {4}", ConsoleColor.Blue,
+                        Utility.Monitor.WriteLine("{0} total guardians, total webs {1}, in {2} zones, in district(s): {3} {4}", ConsoleColor.Blue,
                             total_count,
                             total_webs,
                             kvp.Value.Count,
@@ -448,7 +448,7 @@ namespace Server.Engines
                     }
                 }
 
-            Utility.ConsoleWriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
+            Utility.Monitor.WriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
             return null;
         }
         private static string FindDistrict(Point3D pointoFind)
@@ -593,7 +593,7 @@ namespace Server.Engines
             if (zpl.AnyValid() == false)
             {
                 foreach (Spawner spawner in spawners)
-                    Utility.ConsoleWriteLine("No spawnable locations at {0}", ConsoleColor.Red, spawner.Location);
+                    Utility.Monitor.WriteLine("No spawnable locations at {0}", ConsoleColor.Red, spawner.Location);
                 return 0;
             }
 
@@ -791,7 +791,7 @@ namespace Server.Engines
                 GOT_IT:
             if (string.IsNullOrEmpty(districtName))
             {
-                Utility.ConsoleWriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
+                Utility.Monitor.WriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
                 return;
             }
             else
@@ -867,7 +867,7 @@ namespace Server.Engines
                             return true;
                     }
                     else
-                        Utility.ConsoleWriteLine("Unsupported error: {0}", ConsoleColor.Red, Utility.FileInfo());
+                        Utility.Monitor.WriteLine("Unsupported error: {0}", ConsoleColor.Red, Utility.FileInfo());
 
             return false;
         }
@@ -906,7 +906,7 @@ namespace Server.Engines
 
                 foreach (KeyValuePair<Point2D, bool> pair in m_lookup)
                     if (pair.Key == Point2D.Zero)
-                        Utility.ConsoleWriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
+                        Utility.Monitor.WriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
 
                 // if we were not past seeds, or seeds that cannot be spawned, allocate one
                 if (AnyValid() == false)
@@ -941,7 +941,7 @@ namespace Server.Engines
                 }
                 else
                 {
-                    Utility.ConsoleWriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
+                    Utility.Monitor.WriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
                     return Point2D.Zero;
                 }
             }
@@ -1166,7 +1166,7 @@ namespace Server.Engines
                                                 mobiles.Add(pm);
                                 }
                                 else
-                                    Utility.ConsoleWriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
+                                    Utility.Monitor.WriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
                         // process messages
                         foreach (var tmp in SubDistrictMap)
                             foreach (Rectangle2D rect in tmp.Value)
@@ -1201,7 +1201,7 @@ namespace Server.Engines
                                                 }
                                     }
                                     else
-                                        Utility.ConsoleWriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
+                                        Utility.Monitor.WriteLine("Logic error: {0}", ConsoleColor.Red, Utility.FileInfo());
                     }
                 }
             }
@@ -1215,7 +1215,7 @@ namespace Server.Engines
             string districtName = FindDistrict(px);
             if (districtName == null) return false;
             if (DistrictWebs.ContainsKey(districtName) == false)
-                Utility.ConsoleWriteLine("Logic error: Cannot find District Name '{1}' in DistrictWebs: {0}", ConsoleColor.Red, Utility.FileInfo(), districtName);
+                Utility.Monitor.WriteLine("Logic error: Cannot find District Name '{1}' in DistrictWebs: {0}", ConsoleColor.Red, Utility.FileInfo(), districtName);
             else
                 foreach (PushBackSpawner pbs in DistrictWebs[districtName])
                     if (pbs.WebActive == true)
@@ -1228,7 +1228,7 @@ namespace Server.Engines
             string districtName = FindDistrict(px);
             if (districtName == null) return;
             if (DistrictWebs.ContainsKey(districtName) == false)
-                Utility.ConsoleWriteLine("Logic error: Cannot find District Name '{1}' in DistrictWebs: {0}", ConsoleColor.Red, Utility.FileInfo(), districtName);
+                Utility.Monitor.WriteLine("Logic error: Cannot find District Name '{1}' in DistrictWebs: {0}", ConsoleColor.Red, Utility.FileInfo(), districtName);
             else
                 foreach (PushBackSpawner pbs in DistrictWebs[districtName])
                     if (pbs.SpawnerDeactivated == false)
@@ -1315,9 +1315,7 @@ namespace Server.Engines
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading DistrictManager.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading DistrictManager.bin, using default values:", ConsoleColor.Red);
             }
         }
         public static void Save(WorldSaveEventArgs e)

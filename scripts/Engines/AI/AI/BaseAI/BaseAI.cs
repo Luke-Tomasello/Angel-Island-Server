@@ -2617,7 +2617,7 @@ namespace Server.Mobiles
                 // this mobile's AI has crashed. We can no longer trust him
                 if (m_Mobile != null && m_Mobile.Deleted == false)
                     //m_Mobile.Delete();
-                    Utility.ConsoleWriteLine(string.Format("The AI for mobile {0} crashed at {1}. See exception log.", m_Mobile, m_Mobile.Location), ConsoleColor.Red);
+                    Utility.Monitor.WriteLine(string.Format("The AI for mobile {0} crashed at {1}. See exception log.", m_Mobile, m_Mobile.Location), ConsoleColor.Red);
                 return false;
             }
         }

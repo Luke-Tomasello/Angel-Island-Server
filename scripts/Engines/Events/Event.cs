@@ -460,7 +460,7 @@ namespace Server.Engines
         }
         private void DebugOut(string text, ConsoleColor color)
         {
-            Utility.ConsoleWriteLine(text, color);
+            Utility.Monitor.WriteLine(text, color);
             if (m_item != null) m_item.SendSystemMessage(text, AccessLevel.GameMaster, m_sayHue);
         }
         public override string ToString()

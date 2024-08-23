@@ -96,13 +96,13 @@ namespace Server.Engines
             // first, remove all spawners with this patch id
             if (spawnerCache.Count > 0)
             {
-                Utility.ConsoleWriteLine("Located {0} spawners with this patch id. Removing...", ConsoleColor.Magenta, spawnerCache.Count);
+                Utility.Monitor.WriteLine("Located {0} spawners with this patch id. Removing...", ConsoleColor.Magenta, spawnerCache.Count);
                 foreach (Spawner spawner in spawnerCache)
                     spawner.Delete();
-                Utility.ConsoleWriteLine("{0} spawners deleted.", ConsoleColor.Magenta, spawnerCache.Count);
+                Utility.Monitor.WriteLine("{0} spawners deleted.", ConsoleColor.Magenta, spawnerCache.Count);
             }
 
-            Utility.ConsoleWriteLine("Spawning from {0}...", ConsoleColor.Magenta, args.ArgString);
+            Utility.Monitor.WriteLine("Spawning from {0}...", ConsoleColor.Magenta, args.ArgString);
 
             // run
             ProcessFile(args.Mobile, fullFileName, patchID, outputName);
@@ -120,7 +120,7 @@ namespace Server.Engines
                 }
             }
 
-            Utility.ConsoleWriteLine("Spawn from {0} complete.", ConsoleColor.Magenta, filename);
+            Utility.Monitor.WriteLine("Spawn from {0} complete.", ConsoleColor.Magenta, filename);
 
             // cleanup
             (args.Mobile as PlayerMobile).JumpList.AddRange(recorder);
@@ -166,7 +166,7 @@ namespace Server.Engines
 
                 // let the developer know we're still working
                 from.SendMessage(string.Format("Finished processing {0} areas in file {1}", areas.Count, Path.GetFileName(filename)));
-                Utility.ConsoleWriteLine(string.Format("Finished processing {0} areas in file {1}", areas.Count, Path.GetFileName(filename)), ConsoleColor.Green);
+                Utility.Monitor.WriteLine(string.Format("Finished processing {0} areas in file {1}", areas.Count, Path.GetFileName(filename)), ConsoleColor.Green);
             }
             catch (Exception ex)
             {

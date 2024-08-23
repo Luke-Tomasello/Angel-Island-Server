@@ -731,7 +731,7 @@ namespace Server
             text = string.Format("{0}:{1}", this, text);
             if ((m_DebugFlags & flags) != 0 && (m_DebugFlags & DebugFlags.Echo) != 0)
                 if (CheckString(ConsoleDebugMemory, text))
-                    Utility.ConsoleWriteLine(text, ConsoleColor.Green);
+                    Utility.Monitor.WriteLine(text, ConsoleColor.Green);
         }
 
         public void DebugSay(DebugFlags flags, string format, params object[] args)
@@ -742,7 +742,7 @@ namespace Server
             string text = string.Format("{0}:{1}", this, string.Format(format, args));
             if ((m_DebugFlags & flags) != 0 && (m_DebugFlags & DebugFlags.Echo) != 0)
                 if (CheckString(ConsoleDebugMemory, text))
-                    Utility.ConsoleWriteLine(text, ConsoleColor.Green);
+                    Utility.Monitor.WriteLine(text, ConsoleColor.Green);
         }
 
         #endregion Anti-spam AI Output

@@ -214,11 +214,11 @@ namespace Server.Diagnostics
                 LogHelper Logger = new LogHelper("BlockedConnection.log", false);
                 Logger.Log(LogType.Text, text);
                 Logger.Finish();
-                Utility.ConsoleWriteLine(text, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(text, ConsoleColor.Red);
             }
             catch
             {
-                Utility.ConsoleWriteLine(text, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(text, ConsoleColor.Red);
             }
         }
         public static void LogLogicError(string text)
@@ -228,11 +228,11 @@ namespace Server.Diagnostics
                 LogHelper Logger = new LogHelper("LogicError.log", false);
                 Logger.Log(LogType.Text, text);
                 Logger.Finish();
-                Utility.ConsoleWriteLine(text, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(text, ConsoleColor.Red);
             }
             catch
             {
-                Utility.ConsoleWriteLine(text, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(text, ConsoleColor.Red);
             }
         }
         private static int m_LogExceptionCount = 0;
@@ -248,7 +248,7 @@ namespace Server.Diagnostics
                 string text = string.Format("{0}\r\n{1}", ex.Message, ex.StackTrace);
                 Logger.Log(LogType.Text, text);
                 Logger.Finish();
-                Utility.ConsoleWriteLine(text, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(text, ConsoleColor.Red);
             }
             catch
             {

@@ -611,11 +611,11 @@ namespace Server.Engines.CronScheduler
                     anyWork = m_PriorityQueue.Count + m_TaskQueue.Count + m_IdleQueue.Count > 0;
 
                     if (CronTaskTimer.Triggered == true)
-                        Utility.ConsoleWriteLine("Cron Slice: WorkTimer Timed out", ConsoleColor.Red);
+                        Utility.Monitor.WriteLine("Cron Slice: WorkTimer Timed out", ConsoleColor.Red);
                     else if (anyWork)
-                        Utility.ConsoleWriteLine("Cron Slice: More Work to do", ConsoleColor.DarkCyan);
+                        Utility.Monitor.WriteLine("Cron Slice: More Work to do", ConsoleColor.DarkCyan);
                     else
-                        Utility.ConsoleWriteLine("Cron Slice: No more Work to do", ConsoleColor.Yellow);
+                        Utility.Monitor.WriteLine("Cron Slice: No more Work to do", ConsoleColor.Yellow);
 
                 } while (anyWork && CronTaskTimer.Triggered == false);
                 CronTaskTimer.Stop();
@@ -643,7 +643,7 @@ namespace Server.Engines.CronScheduler
                     // okay, run the scheduled task.
                     Utility.TimeCheck tc = new Utility.TimeCheck();
                     //Console.Write("{0}: ", cee.Name);
-                    Utility.ConsoleWrite(string.Format($"{cee.Name}: "), ConsoleColor.Green/*Utility.RandomConsoleColor(Utility.GetStableHashCode(cee.Name))*/);
+                    Utility.Monitor.Write(string.Format($"{cee.Name}: "), ConsoleColor.Green/*Utility.RandomConsoleColor(Utility.GetStableHashCode(cee.Name))*/);
                     tc.Start();                 // track the total time for [lag forensics
                     cee.Handler();              // execute the next task in the queue
                     tc.End();

@@ -381,7 +381,7 @@ namespace Server.Items
 
             if (!e.Handled)
             {
-                Utility.ConsoleWriteLine(e.Speech, ConsoleColor.Cyan);
+                Utility.Monitor.WriteLine(e.Speech, ConsoleColor.Cyan);
 
                 if (e.HasKeyword(0x23)) // I wish to lock this down
                 {

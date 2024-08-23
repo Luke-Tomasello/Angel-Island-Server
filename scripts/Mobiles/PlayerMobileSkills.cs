@@ -244,8 +244,8 @@ namespace Server.Mobiles
 
             if (m_RoTSkillRolloverCredits[index] != 0)
             {
-                Utility.DebugOut(string.Format("Last Gain           :{0}", SkillGainEpoch + TimeSpan.FromMinutes(m_LastRoTSkillGainTime[index])), ConsoleColor.Red);
-                Utility.DebugOut(string.Format("Last Gain + Credits :{0}", SkillGainEpoch + TimeSpan.FromMinutes(m_LastRoTSkillGainTime[index] - m_RoTSkillRolloverCredits[index])), ConsoleColor.Red);
+                Utility.Monitor.DebugOut(string.Format("Last Gain           :{0}", SkillGainEpoch + TimeSpan.FromMinutes(m_LastRoTSkillGainTime[index])), ConsoleColor.Red);
+                Utility.Monitor.DebugOut(string.Format("Last Gain + Credits :{0}", SkillGainEpoch + TimeSpan.FromMinutes(m_LastRoTSkillGainTime[index] - m_RoTSkillRolloverCredits[index])), ConsoleColor.Red);
             }
 
             // rather than storing 49 DateTime structs (392 bytes) for each player,
@@ -376,7 +376,7 @@ namespace Server.Mobiles
                 if (this.GetDailyRoTSkillGainRaw(skill) != 0.0)
                 {   // Ceiling here to give them max credit. Note, with this 'round up', they can gain a full 59 seconds early.
                     double credit = Math.Ceiling((this.GetNextSkillGainWait(skill) - this.GetNextSkillGainRaw(skill)).TotalMinutes);
-                    Utility.DebugOut(string.Format("Applying Credit     :{0}", (byte)credit), ConsoleColor.DarkRed);
+                    Utility.Monitor.DebugOut(string.Format("Applying Credit     :{0}", (byte)credit), ConsoleColor.DarkRed);
                     m_RoTSkillRolloverCredits[(int)skill] = (byte)credit;
                     LogRoT(RoTLogType.CreditsIssued, this.Skills[skill], new object[] { (byte)credit });
                 }

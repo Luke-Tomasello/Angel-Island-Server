@@ -85,7 +85,7 @@ namespace Server
                 LogHelper logger = new LogHelper(Boot, false, true);
                 logger.Log(text);
                 logger.Finish();
-                Utility.ConsoleWriteLine(text, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(text, ConsoleColor.Red);
             }
         }
         #endregion Error Log Shortcuts
@@ -1421,12 +1421,12 @@ namespace Server
             if (RuleSets.UOREN_SVR == true) server_count++;
             if (server_count == 0)
             {
-                Utility.ConsoleWriteLine("Core: No server specified, defaulting to Angel Island", ConsoleColorInformational());
+                Utility.Monitor.WriteLine("Core: No server specified, defaulting to Angel Island", ConsoleColorInformational());
                 RuleSets.UOAI_SVR = true;
             }
             if (server_count > 1)
             {
-                Utility.ConsoleWriteLine("Core: Too many servers specified.", ConsoleColorWarning());
+                Utility.Monitor.WriteLine("Core: Too many servers specified.", ConsoleColorWarning());
                 return;
             }
             #endregion
@@ -1492,20 +1492,20 @@ namespace Server
             #endregion Server Name
 
 
-            Utility.ConsoleWriteLine("{0}{5} - [www.game-master.net] Version {1}.{2}.{3}, Build {4}",
+            Utility.Monitor.WriteLine("{0}{5} - [www.game-master.net] Version {1}.{2}.{3}, Build {4}",
                 Utility.BuildColor(Utility.BuildRevision()), m_Server, Utility.BuildMajor(), Utility.BuildMinor(),
                 Utility.BuildRevision(), Utility.BuildBuild(),
                 Core.ReleasePhase < ReleasePhase.Production ? string.Format(" ({0})",
                 Utility.GetCustomEnumNames(typeof(ReleasePhase))[(int)m_releasePhase]) : "");
 
-            Utility.ConsoleWriteLine("[Siege II is {0}.]", ConsoleColorEnabled(Core.SiegeII_CFG), TextEnabled(Core.SiegeII_CFG));
-            Utility.ConsoleWriteLine("[UO Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(DataPath.GetUOPath("Ultima Online")));
-            Utility.ConsoleWriteLine("[Current Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(Directory.GetCurrentDirectory()));
-            Utility.ConsoleWriteLine("[Base Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(BaseDirectory));
-            Utility.ConsoleWriteLine("[Data Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(DataDirectory));
-            Utility.ConsoleWriteLine("[Shared Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(SharedDirectory));
-            Utility.ConsoleWriteLine("[Game Time Zone: {0}]", ConsoleColorInformational(), AdjustedDateTime.GameTimezone);
-            Utility.ConsoleWriteLine("[Server Time Zone: {0}]", ConsoleColorInformational(), AdjustedDateTime.ServerTimezone);
+            Utility.Monitor.WriteLine("[Siege II is {0}.]", ConsoleColorEnabled(Core.SiegeII_CFG), TextEnabled(Core.SiegeII_CFG));
+            Utility.Monitor.WriteLine("[UO Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(DataPath.GetUOPath("Ultima Online")));
+            Utility.Monitor.WriteLine("[Current Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(Directory.GetCurrentDirectory()));
+            Utility.Monitor.WriteLine("[Base Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(BaseDirectory));
+            Utility.Monitor.WriteLine("[Data Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(DataDirectory));
+            Utility.Monitor.WriteLine("[Shared Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(SharedDirectory));
+            Utility.Monitor.WriteLine("[Game Time Zone: {0}]", ConsoleColorInformational(), AdjustedDateTime.GameTimezone);
+            Utility.Monitor.WriteLine("[Server Time Zone: {0}]", ConsoleColorInformational(), AdjustedDateTime.ServerTimezone);
             #region ZLib
             bool zlib_loaded = false;
             try
@@ -1518,27 +1518,27 @@ namespace Server
             }
 
             state = zlib_loaded;
-            Utility.ConsoleWriteLine("[ZLib version {0} ({1}) loaded.]", ConsoleColorInformational(), Compression.Compressor.Version, Compression.Compressor.GetType().Name);
+            Utility.Monitor.WriteLine("[ZLib version {0} ({1}) loaded.]", ConsoleColorInformational(), Compression.Compressor.Version, Compression.Compressor.GetType().Name);
             #endregion ZLib
             #region Email
             if (EmailCheck() == true)
-                Utility.ConsoleWriteLine("[All of the required Email environment variables are set.]", ConsoleColorInformational());
+                Utility.Monitor.WriteLine("[All of the required Email environment variables are set.]", ConsoleColorInformational());
             else
-                Utility.ConsoleWriteLine("[Some or all of the required Email environment variables are not set.]", ConsoleColorWarning());
+                Utility.Monitor.WriteLine("[Some or all of the required Email environment variables are not set.]", ConsoleColorWarning());
             #endregion Email
 
             #region BuildInfo 
             if (BuildInfoCheck() == true)
-                Utility.ConsoleWriteLine($"[Reading build.info from {Utility.GetShortPath(BuildInfoDir, raw: true)}.]", ConsoleColorInformational());
+                Utility.Monitor.WriteLine($"[Reading build.info from {Utility.GetShortPath(BuildInfoDir, raw: true)}.]", ConsoleColorInformational());
             else
-                Utility.ConsoleWriteLine($"[Reading build.info from default location {BuildInfoDir}.]", ConsoleColorWarning());
+                Utility.Monitor.WriteLine($"[Reading build.info from default location {BuildInfoDir}.]", ConsoleColorWarning());
             #endregion BuildInfo
 
             #region GeoIP
             if (GeoIPCheck() == true)
-                Utility.ConsoleWriteLine("[Geo IP Configured.]", ConsoleColorInformational());
+                Utility.Monitor.WriteLine("[Geo IP Configured.]", ConsoleColorInformational());
             else
-                Utility.ConsoleWriteLine("[Geo IP is not configured. See AccountHandler.cs for setup instructions.]", ConsoleColorWarning());
+                Utility.Monitor.WriteLine("[Geo IP is not configured. See AccountHandler.cs for setup instructions.]", ConsoleColorWarning());
             #endregion GeoIP
 
             #region Boot Errors
@@ -1565,15 +1565,15 @@ namespace Server
                         Console.WriteLine($"Unable to create {ipePath}");
 
                     if (fwError)
-                        Utility.ConsoleWriteLine($"Unable to create {fwPath}", ConsoleColor.Red);
+                        Utility.Monitor.WriteLine($"Unable to create {fwPath}", ConsoleColor.Red);
 
-                    Utility.ConsoleWriteLine($"Use the following environment variables to relocate the database(s)", ConsoleColor.Yellow);
-                    Utility.ConsoleWriteLine("AI.IPEXCEPTIONDB, AI.FIREWALLDB, AI.LOGINDB", ConsoleColor.Yellow);
+                    Utility.Monitor.WriteLine($"Use the following environment variables to relocate the database(s)", ConsoleColor.Yellow);
+                    Utility.Monitor.WriteLine("AI.IPEXCEPTIONDB, AI.FIREWALLDB, AI.LOGINDB", ConsoleColor.Yellow);
 
                     while (true)
                     {
-                        Utility.ConsoleWriteLine("Insufficient privileges to create one or more databases.", ConsoleColor.Yellow);
-                        Utility.ConsoleWriteLine("Press 'c' to continue without axillary database support, or 'q' to quit.", ConsoleColor.Yellow);
+                        Utility.Monitor.WriteLine("Insufficient privileges to create one or more databases.", ConsoleColor.Yellow);
+                        Utility.Monitor.WriteLine("Press 'c' to continue without axillary database support, or 'q' to quit.", ConsoleColor.Yellow);
 
                         string input = Console.ReadLine().ToLower();
                         if (input.StartsWith("c"))
@@ -1591,9 +1591,9 @@ namespace Server
 
             #endregion Boot Errors
 #if DEBUG
-            Utility.ConsoleWriteLine("[Debug Build Enabled]", ConsoleColorInformational());
+            Utility.Monitor.WriteLine("[Debug Build Enabled]", ConsoleColorInformational());
 #else
-            Utility.ConsoleWriteLine("[Release Build Enabled]", ConsoleColorInformational());
+            Utility.Monitor.WriteLine("[Release Build Enabled]", ConsoleColorInformational());
 #endif
 
 #if DEBUG
@@ -1601,34 +1601,34 @@ namespace Server
             AutoSave.SavesEnabled = false;
 #endif
             state = AutoSave.SavesEnabled;
-            Utility.ConsoleWriteLine("[Saves are {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[Saves are {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = m_useLoginDB;
-            Utility.ConsoleWriteLine("[Using login database {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
-            Utility.ConsoleWriteLine("[Shard configuration is {0}.]", ConsoleColorInformational(), m_Server);
+            Utility.Monitor.WriteLine("[Using login database {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[Shard configuration is {0}.]", ConsoleColorInformational(), m_Server);
             state = RuleSets.ResourcePoolRules();
-            Utility.ConsoleWriteLine("[Resource Pool is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[Resource Pool is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = Core.UOTC_CFG;
-            Utility.ConsoleWriteLine("[Test Center functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[Test Center functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = Core.RuleSets.LoginServerRules();
-            Utility.ConsoleWriteLine("[Login Server functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[Login Server functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = Core.UOBETA_CFG;
-            Utility.ConsoleWriteLine("[Beta functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[Beta functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = World.FreezeDryEnabled;
-            Utility.ConsoleWriteLine("[Freeze dry system is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[Freeze dry system is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = Core.UOEV_CFG;
-            Utility.ConsoleWriteLine("[Event Shard functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
-            Utility.ConsoleWriteLine("[Publish {0} enabled ({1}).]", ConsoleColorInformational(), PublishInfo.Publish, PublishInfo.PublishDate);
+            Utility.Monitor.WriteLine("[Event Shard functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[Publish {0} enabled ({1}).]", ConsoleColorInformational(), PublishInfo.Publish, PublishInfo.PublishDate);
             state = Core.Building;
-            Utility.ConsoleWriteLine("[World building is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[World building is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
 
             // Disabling developer mode for now (for custom house building)
             // state = Core.Developer;
             //Utility.ConsoleOut("[Developer mode is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
 
             state = Core.Factions;
-            Utility.ConsoleWriteLine("[Factions are {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[Factions are {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = Core.T2A;
-            Utility.ConsoleWriteLine("[T2A is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[T2A is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
 
             if (Arguments.Length > 0)
                 Console.WriteLine("Core: Running with arguments: {0}", Arguments);
@@ -1752,7 +1752,7 @@ namespace Server
         private static void Tick(object state)
         {
             object[] aState = (object[])state;
-            Utility.ConsoleWriteLine("Timers initialized", ConsoleColor.Green);
+            Utility.Monitor.WriteLine("Timers initialized", ConsoleColor.Green);
         }
         public static string BuildInfoDir
         {

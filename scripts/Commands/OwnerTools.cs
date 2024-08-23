@@ -1541,12 +1541,12 @@ namespace Server.Commands
         {
             if (Core.UseLoginDB)
             {
-                Utility.ConsoleWriteLine("Seeding Login Database from server {0}.", ConsoleColor.Green, Core.Server);
+                Utility.Monitor.WriteLine("Seeding Login Database from server {0}.", ConsoleColor.Green, Core.Server);
                 Server.Accounting.AccountsDatabase.SeedAccounts();
             }
             else
             {
-                Utility.ConsoleWriteLine("Not using the Login Database.", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Not using the Login Database.", ConsoleColor.Red);
             }
         }
         public static bool IsOwnerIP(System.Net.IPAddress ip)
@@ -1672,14 +1672,14 @@ namespace Server.Commands
                     return e2.Value.CompareTo(e1.Value);
                 });
 
-                Utility.ConsoleWriteLine("There are {0} items on the internal map.", ConsoleColor.Red, sortedIntItems.Count);
-                Utility.ConsoleWriteLine("There are {0} items on the felucca map.", ConsoleColor.Red, sortedFelItems.Count);
-                Utility.ConsoleWriteLine("There are {0} items on other maps.", ConsoleColor.Red, oddMapCount);
+                Utility.Monitor.WriteLine("There are {0} items on the internal map.", ConsoleColor.Red, sortedIntItems.Count);
+                Utility.Monitor.WriteLine("There are {0} items on the felucca map.", ConsoleColor.Red, sortedFelItems.Count);
+                Utility.Monitor.WriteLine("There are {0} items on other maps.", ConsoleColor.Red, oddMapCount);
 
                 if (sortedIntItems.Count > 0)
-                    Utility.ConsoleWriteLine("Biggest offender on the internal map is ItemID {0} with a count of {1}.", ConsoleColor.Red, sortedIntItems[0].Key, sortedIntItems[0].Value);
+                    Utility.Monitor.WriteLine("Biggest offender on the internal map is ItemID {0} with a count of {1}.", ConsoleColor.Red, sortedIntItems[0].Key, sortedIntItems[0].Value);
                 if (sortedFelItems.Count > 0)
-                    Utility.ConsoleWriteLine("Biggest offender on the felucca map is ItemID {0} with a count of {1}.", ConsoleColor.Red, sortedFelItems[0].Key, sortedFelItems[0].Value);
+                    Utility.Monitor.WriteLine("Biggest offender on the felucca map is ItemID {0} with a count of {1}.", ConsoleColor.Red, sortedFelItems[0].Key, sortedFelItems[0].Value);
 
                 /////////////
                 // the code that follows is intended for analysis in the debugger
@@ -2734,9 +2734,7 @@ namespace Server.Commands
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading Saves/BackpackRecovery.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading Saves/BackpackRecovery.bin, using default values:", ConsoleColor.Red);
             }
         }
         #endregion Serialization

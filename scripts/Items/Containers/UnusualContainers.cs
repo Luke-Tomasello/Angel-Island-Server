@@ -207,11 +207,9 @@ namespace Server.Items
             }
             if (m_oldContainer == null || m_oldContainer.Deleted == true)
             {
-                Utility.PushColor(ConsoleColor.Red);
                 // Adam, 6/15/2022: Not to worry if we are doing a shard wipe
                 if (!Core.RuleSets.LoginServerRules())
-                    Console.WriteLine("Error: OldCrate unexpectedly deleted.");
-                Utility.PopColor();
+                    Utility.Monitor.WriteLine("Error: OldCrate unexpectedly deleted.", ConsoleColor.Red);
             }
             base.OnDelete();
         }
@@ -399,9 +397,7 @@ namespace Server.Items
                         m_oldContainer = (BaseContainer)reader.ReadItem();
                         if (m_oldContainer == null || m_oldContainer.Deleted == true)
                         {
-                            Utility.PushColor(ConsoleColor.Red);
-                            Console.WriteLine("Error: reading null or deleted OldCrate .");
-                            Utility.PopColor();
+                            Utility.Monitor.WriteLine("Error: reading null or deleted OldCrate .", ConsoleColor.Red);
                         }
                         goto case 0;
                     }

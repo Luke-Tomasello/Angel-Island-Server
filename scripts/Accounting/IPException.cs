@@ -96,7 +96,7 @@ namespace Server.Accounting
             int limit = _GetLimit(ip);
             if (limit != 0)
             {
-                Utility.ConsoleWriteLine(string.Format("IPException of {0} found for {1} ... Ignoring", limit, ip), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("IPException of {0} found for {1} ... Ignoring", limit, ip), ConsoleColor.Red);
                 return 0;
             }
 

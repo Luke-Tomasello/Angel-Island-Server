@@ -262,9 +262,7 @@ namespace Server.Engines.CronScheduler
                 // the LoginServer has no items, has no mobiles, has no tasks (yet)
                 // We simply wipe the LoginServer of everything every 24 hours
                 // We do it here since we have no ability to log in, and the 'shard' is likely a clone of some game-server
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Shard wipe in progress. This may take several minutes...");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Shard wipe in progress. This may take several minutes...", ConsoleColor.Red);
                 new CWipeShard().WipeShard();                                       // ASAP
                 Cron.Register(new CWipeShard().WipeShard, "* 3 * * *");             // 3 AM
 #if false
@@ -389,7 +387,7 @@ namespace Server.Engines.CronScheduler
                     // Plant Growth - daily (12:00 AM)
                     if (Plants.PlantSystem.Enabled)
                     {
-                        Utility.ConsoleWriteLine("Plant System Enabled.", ConsoleColor.Green);
+                        Utility.Monitor.WriteLine("Plant System Enabled.", ConsoleColor.Green);
                         Cron.Register(new CPlantGrowth().PlantGrowth, "0 0 * * *");                 // every night at exactly midnight
                     }
                 }
@@ -627,7 +625,7 @@ namespace Server.Engines.CronScheduler
                             if (!AccountHardwareLimiter.IsOk(current))
                             {
                                 pm.Say("I've been kicked!");
-                                Utility.ConsoleWriteLine("{0} kicked, ExceedsMachineInfoLimit", ConsoleColor.Red, pm.Name);
+                                Utility.Monitor.WriteLine("{0} kicked, ExceedsMachineInfoLimit", ConsoleColor.Red, pm.Name);
                                 LogHelper logger = new LogHelper("ExceedsMachineInfoLimit.log", false, true);
                                 logger.Log(LogType.Mobile, pm, "kicked, ExceedsMachineInfoLimit");
                                 logger.Finish();
@@ -748,9 +746,7 @@ namespace Server.Engines.CronScheduler
                     try { Directory.Delete(dir.FullName, true); defragged++; }
                     catch (Exception ex)
                     {
-                        Utility.PushColor(ConsoleColor.Red);
-                        Console.WriteLine(ex.Message.Trim());
-                        Utility.PopColor();
+                        Utility.Monitor.WriteLine(ex.Message.Trim(), ConsoleColor.Red);
                     }
                 }
             }
@@ -2512,7 +2508,7 @@ namespace Server.Engines.CronScheduler
                                     }
                                 }
 #if DEBUG
-                                Utility.ConsoleWriteLine("Debug: IntMapMobileCleanup {4}{3} :{0} at {1}{2}",
+                                Utility.Monitor.WriteLine("Debug: IntMapMobileCleanup {4}{3} :{0} at {1}{2}",
                                     ConsoleColor.Green,
                                     mob,
                                     mob.Location,
@@ -3150,9 +3146,9 @@ namespace Server.Engines.CronScheduler
 
 #if DEBUG
                             if (i.GetType().Name.ToLower().Contains("Persistence") || i.GetType().Name.ToLower().Contains("Persistance"))
-                                Utility.ConsoleWriteLine("Persistence item {0} not marked as IPersistence", ConsoleColor.Red, i);
+                                Utility.Monitor.WriteLine("Persistence item {0} not marked as IPersistence", ConsoleColor.Red, i);
 
-                            Utility.ConsoleWriteLine("Debug: IntMapItemCleanup {4}{3} :{0} at {1}{2}",
+                            Utility.Monitor.WriteLine("Debug: IntMapItemCleanup {4}{3} :{0} at {1}{2}",
                                 ConsoleColor.Green,
                                 i,
                                 i.Location,
@@ -5244,12 +5240,12 @@ namespace Server.Engines.CronScheduler
                         ChampEngine champ = World.FindItem(serial) as ChampEngine;
                         Console.WriteLine("{0} seasonal champ found.", champ.Name);
                         if (champ.RestartTimer == true)
-                            Utility.ConsoleWriteLine("{0} seasonal champ is running.", ConsoleColor.Green, champ.Name);
+                            Utility.Monitor.WriteLine("{0} seasonal champ is running.", ConsoleColor.Green, champ.Name);
                         else
-                            Utility.ConsoleWriteLine("{0} seasonal champ is not running.", ConsoleColor.Yellow, champ.Name);
+                            Utility.Monitor.WriteLine("{0} seasonal champ is not running.", ConsoleColor.Yellow, champ.Name);
                     }
                     else
-                        Utility.ConsoleWriteLine("Error: seasonal champ {0} not found", ConsoleColor.Red, serial);
+                        Utility.Monitor.WriteLine("Error: seasonal champ {0} not found", ConsoleColor.Red, serial);
                 }
 
             }
@@ -5296,9 +5292,7 @@ namespace Server.Engines.CronScheduler
                     }
                     else
                     {
-                        Utility.PushColor(ConsoleColor.Red);
-                        Console.WriteLine("{0} seasonal not found", serial);
-                        Utility.PopColor();
+                        Utility.Monitor.WriteLine("{0} seasonal not found", ConsoleColor.Red, serial);
                     }
                 }
 

@@ -874,7 +874,7 @@ namespace Server.Mobiles
         private static void BankingRecorder(string text, ConsoleColor color)
         {
             Console.Out.Flush();
-            Utility.ConsoleWriteLine(text, color);
+            Utility.Monitor.WriteLine(text, color);
             lock (mutex)
             {   // regression test log
                 if (Logger != null)

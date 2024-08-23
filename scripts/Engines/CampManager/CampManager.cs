@@ -91,10 +91,10 @@ namespace Server.Engines
             tc.Start();
 
             #region General Locations
-            Utility.ConsoleWriteLine("CampManager: Generating camp locations, this will take a while...", ConsoleColor.Yellow);
+            Utility.Monitor.WriteLine("CampManager: Generating camp locations, this will take a while...", ConsoleColor.Yellow);
             if (TreasureMap.Locations == null || TreasureMap.Locations.Length == 0)
             {   // TreasureMap Locations should already have been loaded
-                Utility.ConsoleWriteLine("CampManager: No treasure map locations", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("CampManager: No treasure map locations", ConsoleColor.Red);
                 return;
             }
 
@@ -129,7 +129,7 @@ namespace Server.Engines
             #endregion Mineable Locations
 
             tc.End();
-            Utility.ConsoleWriteLine("CampManager: Generated {0}/{1} camp/mineable locations in {2}", ConsoleColor.Yellow, Database.Count, m_mineable.Count, tc.TimeTaken);
+            Utility.Monitor.WriteLine("CampManager: Generated {0}/{1} camp/mineable locations in {2}", ConsoleColor.Yellow, Database.Count, m_mineable.Count, tc.TimeTaken);
         }
         public static bool CheckLocation(ref Point3D p3d, Map map, int retries = 17)
         {
@@ -225,9 +225,7 @@ namespace Server.Engines
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading Data/CampManager.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading Data/CampManager.bin, using default values:", ConsoleColor.Red);
             }
         }
         public static void Save(/*WorldSaveEventArgs e*/)

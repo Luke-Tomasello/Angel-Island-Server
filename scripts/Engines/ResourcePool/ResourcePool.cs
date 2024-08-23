@@ -1381,7 +1381,7 @@ namespace Server.Engines.ResourcePool
             int read = 0;
             if (File.Exists(fileName) == false || new FileInfo(fileName).Length == 0)
             {
-                Utility.ConsoleWriteLine(string.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
                 SaveConfig(fileName);
                 if (File.Exists(fileName) == false)
                 {
@@ -1507,7 +1507,7 @@ namespace Server.Engines.ResourcePool
             int read = 0;
             if (File.Exists(fileName) == false || new FileInfo(fileName).Length == 0)
             {
-                Utility.ConsoleWriteLine(string.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
                 SaveConsignments(fileName);
                 if (File.Exists(fileName) == false)
                 {
@@ -1575,7 +1575,7 @@ namespace Server.Engines.ResourcePool
             //return;
             if (File.Exists(fileName) == false || new FileInfo(fileName).Length == 0)
             {
-                Utility.ConsoleWriteLine(string.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("ResourcePool Initializing: \"{0}\".", Path.GetFileName(fileName)), ConsoleColor.Yellow);
                 SaveDebts(fileName);
                 if (File.Exists(fileName) == false)
                 {

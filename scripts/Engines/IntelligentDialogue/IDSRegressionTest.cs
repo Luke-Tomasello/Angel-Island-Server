@@ -108,7 +108,7 @@ namespace Server.Engines
                                 m_logger.Log(Environment.NewLine);
                             }
                             //Console.WriteLine();
-                            Utility.ConsoleWriteLine("", ConsoleColor.White);
+                            Utility.Monitor.WriteLine("", ConsoleColor.White);
                         }
                         else if (text[0] == '#')
                         {   // just output the comment
@@ -117,7 +117,7 @@ namespace Server.Engines
                                 m_logger.Log(text);
                             }
                             //Console.WriteLine(text);
-                            Utility.ConsoleWriteLine(text, ConsoleColor.White);
+                            Utility.Monitor.WriteLine(text, ConsoleColor.White);
                         }
                         else
                         {   // ok! We've got a command string
@@ -135,7 +135,7 @@ namespace Server.Engines
                                 m_logger.Log(text);
                             }
                             //Console.WriteLine(text);
-                            Utility.ConsoleWriteLine(text, ConsoleColor.White);
+                            Utility.Monitor.WriteLine(text, ConsoleColor.White);
                             break;
                         }
                     }

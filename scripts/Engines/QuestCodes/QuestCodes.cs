@@ -184,9 +184,7 @@ namespace Server.Engines.QuestCodes
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading Saves/QuestCodes.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading Saves/QuestCodes.bin, using default values:", ConsoleColor.Red);
             }
         }
         public static void Save(WorldSaveEventArgs e)

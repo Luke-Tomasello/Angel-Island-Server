@@ -151,7 +151,7 @@ namespace Server.Engines.RecycleBin
                                     if (cont != null)
                                     {
                                         string logdata = string.Format("Emptying recycle bin: {0} for container: {1}", cont.Serial, s);
-                                        Utility.ConsoleWriteLine(logdata, ConsoleColor.Yellow);
+                                        Utility.Monitor.WriteLine(logdata, ConsoleColor.Yellow);
                                         LogHelper logger = new LogHelper("RecycleBin.log", false);
                                         logger.Log(LogType.Text, logdata);
                                         logger.Finish();
@@ -160,7 +160,7 @@ namespace Server.Engines.RecycleBin
                                     else
                                     {
                                         string logdata = string.Format("Null bin entry: for container: {1}", s);
-                                        Utility.ConsoleWriteLine(logdata, ConsoleColor.Red);
+                                        Utility.Monitor.WriteLine(logdata, ConsoleColor.Red);
                                         LogHelper logger = new LogHelper("RecycleBin.log", false);
                                         logger.Log(LogType.Text, logdata);
                                         logger.Finish();
@@ -184,9 +184,7 @@ namespace Server.Engines.RecycleBin
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading Saves/RecycleBin.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading Saves/RecycleBin.bin, using default values:", ConsoleColor.Red);
             }
         }
         public static void Save(WorldSaveEventArgs e)

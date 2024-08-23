@@ -14003,7 +14003,7 @@ namespace Server
             if (contextObj != null && contextObj[0] is BaseCreature bc)
                 if (bc.BlockDamage == true && !bc.TrainingMobile)
                 {
-                    Utility.DebugOut(string.Format($"Cannot gain skill from {contextObj[0]}"), ConsoleColor.DarkRed);
+                    Utility.Monitor.DebugOut(string.Format($"Cannot gain skill from {contextObj[0]}"), ConsoleColor.DarkRed);
                     return false;
                 }
 

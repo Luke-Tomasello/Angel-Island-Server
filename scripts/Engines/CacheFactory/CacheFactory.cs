@@ -116,7 +116,7 @@ namespace Server.Engines
             }
             catch (Exception ex)
             {
-                Utility.ConsoleWriteLine(ex.Message, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(ex.Message, ConsoleColor.Red);
                 Diagnostics.LogHelper.LogException(ex);
             }
             finally
@@ -179,7 +179,7 @@ namespace Server.Engines
                     if (binfo.Type == null)
                     {   // check and make sure you are not adding something as a pooled resource without pooled resource being enabled.
                         //  this will cause an 'empty' entry in the list 'info'
-                        Utility.ConsoleWriteLine(string.Format("binfo.Type == null: {0}. ", Utility.FileInfo()), ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(string.Format("binfo.Type == null: {0}. ", Utility.FileInfo()), ConsoleColor.Red);
                         continue;
                     }
 

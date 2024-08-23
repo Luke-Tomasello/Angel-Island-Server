@@ -162,9 +162,9 @@ namespace Server.Accounting
             if (exemptAccounts.Contains(userName, StringComparer.OrdinalIgnoreCase))
             {
                 if (ClientException.AddClientException(ns.Address.ToString(), ref status))
-                    Utility.ConsoleWriteLine(status, ConsoleColor.Green);
+                    Utility.Monitor.WriteLine(status, ConsoleColor.Green);
                 else
-                    Utility.ConsoleWriteLine(status, ConsoleColor.Yellow);
+                    Utility.Monitor.WriteLine(status, ConsoleColor.Yellow);
             }
 
             return true;

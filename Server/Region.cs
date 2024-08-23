@@ -1254,13 +1254,13 @@ namespace Server
             foreach (Region r in Regions)
                 if (ReferenceEquals(r, region))
                 {
-                    Utility.ConsoleWriteLine("Warning: Duplicate region being added {0}", ConsoleColor.Red, region);
+                    Utility.Monitor.WriteLine("Warning: Duplicate region being added {0}", ConsoleColor.Red, region);
                     //return;
                 }
 
             if (m_Regions.ContainsKey(region.UId))
             {
-                Utility.ConsoleWriteLine("Error: Ignoring region with duplicate UId being added {0}", ConsoleColor.Red, region);
+                Utility.Monitor.WriteLine("Error: Ignoring region with duplicate UId being added {0}", ConsoleColor.Red, region);
                 return;
             }
 

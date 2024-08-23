@@ -235,9 +235,9 @@ namespace Server.Misc
                         }
 
                         // DUMP1
-                        Utility.ConsoleWriteLine(string.Format("all matching users"), ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(string.Format("all matching users"), ConsoleColor.Red);
                         foreach (Account ax in list)
-                            Utility.ConsoleWriteLine(string.Format("{0} hash {1}", ax, ax.HardwareHashRaw), ConsoleColor.Red);
+                            Utility.Monitor.WriteLine(string.Format("{0} hash {1}", ax, ax.HardwareHashRaw), ConsoleColor.Red);
 
                         // trim it to the first N accounts (N = MaxAccountsPerMachine)
                         // Accounts after MaxAccountsPerMachine were likely created without machine info,
@@ -245,9 +245,9 @@ namespace Server.Misc
                         list = list.Skip(0).Take(CoreAI.MaxAccountsPerMachine).ToList();
 
                         // DUMP2
-                        Utility.ConsoleWriteLine(string.Format("{0} Authorized users", CoreAI.MaxAccountsPerMachine), ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(string.Format("{0} Authorized users", CoreAI.MaxAccountsPerMachine), ConsoleColor.Red);
                         foreach (Account ax in list)
-                            Utility.ConsoleWriteLine(string.Format("{0} hash {1}", ax, ax.HardwareHashRaw), ConsoleColor.Red);
+                            Utility.Monitor.WriteLine(string.Format("{0} hash {1}", ax, ax.HardwareHashRaw), ConsoleColor.Red);
 
                         from.SendMessage("Authorized dumped to console.");
                     }

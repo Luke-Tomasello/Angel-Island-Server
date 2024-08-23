@@ -508,7 +508,7 @@ namespace Server.Network
 
         public void WriteConsole(string text)
         {
-            Utility.ConsoleWriteLine(string.Format("Client: {0}: {1}", this, text), ConsoleColor.Yellow);
+            Utility.Monitor.WriteLine(string.Format("Client: {0}: {1}", this, text), ConsoleColor.Yellow);
         }
 
         public void WriteConsole(string format, params object[] args)

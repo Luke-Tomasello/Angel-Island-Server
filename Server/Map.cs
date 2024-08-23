@@ -1683,7 +1683,7 @@ namespace Server
             {
                 if (m_Regions.ContainsKey(regName))
                 {
-                    Utility.ConsoleWriteLine("Warning: Duplicate region name '{0}' for map '{1}' ({2})", ConsoleColor.Red, regName, this.Name, GetGo(reg, this));
+                    Utility.Monitor.WriteLine("Warning: Duplicate region name '{0}' for map '{1}' ({2})", ConsoleColor.Red, regName, this.Name, GetGo(reg, this));
                 }
                 else
                 {

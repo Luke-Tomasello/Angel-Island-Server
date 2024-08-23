@@ -489,7 +489,7 @@ namespace Server.Misc
 
                     if (bDelete)
                     {
-                        Utility.ConsoleWriteLine(string.Format("Client: {0}: Deleting character {1} (name:{3}) (0x{2:X})", state, index, m.Serial.Value, m.Name), ConsoleColor.Yellow);
+                        Utility.Monitor.WriteLine(string.Format("Client: {0}: Deleting character {1} (name:{3}) (0x{2:X})", state, index, m.Serial.Value, m.Name), ConsoleColor.Yellow);
                         m.Delete();
                     }
 
@@ -565,9 +565,9 @@ namespace Server.Misc
                 else
                 {
                     if (ip != null)
-                        Utility.ConsoleWriteLine("Login: {0}: Unable to sync local account '{1}' to database", ConsoleColor.Red, ip, acct.Username);
+                        Utility.Monitor.WriteLine("Login: {0}: Unable to sync local account '{1}' to database", ConsoleColor.Red, ip, acct.Username);
                     else
-                        Utility.ConsoleWriteLine("Login: Unable to sync local account '{0}' to database", ConsoleColor.Red, acct.Username);
+                        Utility.Monitor.WriteLine("Login: Unable to sync local account '{0}' to database", ConsoleColor.Red, acct.Username);
                 }
 
                 // sanity check for corrupt or missing, or outdated database.
@@ -576,10 +576,10 @@ namespace Server.Misc
                     if (acct.HardwareHashRaw != 0)              // we have a local shard HardwareHash for this account
                         if (dbAccount.Value.HardwareHash == 0)  // but our database is unaware of this hash
                         {
-                            Utility.ConsoleWriteLine(string.Format("Error: corrupt, missing, or outdated database."), ConsoleColor.Red);
-                            Utility.ConsoleWriteLine(string.Format("we have a local shard HardwareHash for account {0}", acct), ConsoleColor.Red);
-                            Utility.ConsoleWriteLine(string.Format("but our database is unaware of this hash"), ConsoleColor.Red);
-                            Utility.ConsoleWriteLine(string.Format("The database will need to be rebuilt from the local accounts.xml"), ConsoleColor.Red);
+                            Utility.Monitor.WriteLine(string.Format("Error: corrupt, missing, or outdated database."), ConsoleColor.Red);
+                            Utility.Monitor.WriteLine(string.Format("we have a local shard HardwareHash for account {0}", acct), ConsoleColor.Red);
+                            Utility.Monitor.WriteLine(string.Format("but our database is unaware of this hash"), ConsoleColor.Red);
+                            Utility.Monitor.WriteLine(string.Format("The database will need to be rebuilt from the local accounts.xml"), ConsoleColor.Red);
                             // Seeding won't work, we will need a new reverse seeding mechanism: accounts.xml ==> database
                         }
                 }
@@ -592,7 +592,7 @@ namespace Server.Misc
                 foreach (IPAddress loginIP in a.LoginIPs)
                 {
                     if (IPAddress.Equals(loginIP, ip))
-                        Utility.ConsoleWriteLine(string.Format(
+                        Utility.Monitor.WriteLine(string.Format(
                             "{0}: {1} ({2})", Core.RuleSets.LoginServerRules() ? "LoginServer" : Core.Server,
                             a.Username,
                             a.AccessLevel > AccessLevel.Player ? "staff" : "player"
@@ -607,14 +607,14 @@ namespace Server.Misc
             if (Core.RuleSets.SiegeRules() || Core.RuleSets.MortalisRules())
             {
                 if (grandfathered)
-                    Utility.ConsoleWriteLine(string.Format("no grandfathering on Siege or Mortalis"), ConsoleColor.Red);
+                    Utility.Monitor.WriteLine(string.Format("no grandfathering on Siege or Mortalis"), ConsoleColor.Red);
                 return false;
             }
 
             // since we can't use IPExceptions, and until we resolve this, we will grandfather in all existing accounts
             //  since they were probably previously allowed via IP exception or Admin created.
             if (grandfathered)
-                Utility.ConsoleWriteLine(string.Format("Grandfathered Account detected"), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Grandfathered Account detected"), ConsoleColor.Red);
 
             return grandfathered;
         }
@@ -769,7 +769,7 @@ namespace Server.Misc
             }
             else
             {   // all good. Setup the account, add the account to the Shard, and send new account email if appropriate
-                Utility.ConsoleWriteLine(string.Format("Login: {0}: Valid credentials for '{1}'", e.State, un), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("Login: {0}: Valid credentials for '{1}'", e.State, un), ConsoleColor.Yellow);
                 e.State.Account = acct;
                 e.Accepted = true;
 
@@ -781,7 +781,7 @@ namespace Server.Misc
 
                 if (Core.RuleSets.LoginServerRules())
                 {
-                    Utility.ConsoleWriteLine(string.Format("Login: {0}: LoginServer passing account '{1}' to game-server.", e.State, un), ConsoleColor.Yellow);
+                    Utility.Monitor.WriteLine(string.Format("Login: {0}: LoginServer passing account '{1}' to game-server.", e.State, un), ConsoleColor.Yellow);
                 }
                 else if (newShardAcct)
                 {
@@ -1027,7 +1027,7 @@ namespace Server.Misc
             //  Their failed state will be picked up in PlayerMobile EventSink_Connected()
             if (acct != null && ContinueLogin)
             {
-                Utility.ConsoleWriteLine(string.Format("Login: {0}: Account '{1}' at character list", e.State, un), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("Login: {0}: Account '{1}' at character list", e.State, un), ConsoleColor.Yellow);
                 e.State.Account = acct;
                 acct.LogAccess(e.State);
                 acct.LastLogin = DateTime.UtcNow;
@@ -1144,7 +1144,7 @@ namespace Server.Misc
                 e.Username = clear_text_username;
                 e.Password = clear_text_password;
                 valid_client = true;
-                Utility.ConsoleWriteLine(string.Format("Login: {0}: Account '{1}' using older ClassicUO", e.State, e.Username), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Login: {0}: Account '{1}' using older ClassicUO", e.State, e.Username), ConsoleColor.Red);
             }
 
         }

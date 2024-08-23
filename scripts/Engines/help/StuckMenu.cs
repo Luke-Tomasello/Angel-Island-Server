@@ -571,7 +571,7 @@ namespace Server.Menus.Questions
 
         public static bool DoHelpStuck(Mobile from)
         {
-            Utility.ConsoleWriteLine(string.Format("Player {0} is unstucking...", from), ConsoleColor.Magenta);
+            Utility.Monitor.WriteLine(string.Format("Player {0} is unstucking...", from), ConsoleColor.Magenta);
 
             if (Utility.BadZ(from) && !Utility.CheatingZ(from))
             {
@@ -583,13 +583,13 @@ namespace Server.Menus.Questions
 
             if (!AllowUnstuck(from))
             {
-                Utility.ConsoleWriteLine("We do not allow them to unstuck.", ConsoleColor.Magenta);
+                Utility.Monitor.WriteLine("We do not allow them to unstuck.", ConsoleColor.Magenta);
                 return true;
             }
 
             if (TryUnblock(from, false))
             {
-                Utility.ConsoleWriteLine("We unblocked them.", ConsoleColor.Magenta);
+                Utility.Monitor.WriteLine("We unblocked them.", ConsoleColor.Magenta);
 
                 if (!m_Testing)
                     from.UsedStuckMenu();
@@ -603,7 +603,7 @@ namespace Server.Menus.Questions
 
             if (exitOptions.Count != 0)
             {
-                Utility.ConsoleWriteLine("Not hopeless, describing options.", ConsoleColor.Magenta);
+                Utility.Monitor.WriteLine("Not hopeless, describing options.", ConsoleColor.Magenta);
 
                 foreach (object o in exitOptions)
                     DescribeExitOption(from, o);
@@ -615,12 +615,12 @@ namespace Server.Menus.Questions
             // we're probably in a quest zone
             if (from.Map != Map.Felucca)
             {
-                Utility.ConsoleWriteLine("Probably a quest area. Too bad.", ConsoleColor.Magenta);
+                Utility.Monitor.WriteLine("Probably a quest area. Too bad.", ConsoleColor.Magenta);
                 from.SendMessage("You appear to be in a quest area. Sorry, there is no help stuck available here.");
                 return true;
             }
 
-            Utility.ConsoleWriteLine("Giving up, getting them some help.", ConsoleColor.Magenta);
+            Utility.Monitor.WriteLine("Giving up, getting them some help.", ConsoleColor.Magenta);
 
             int staffOnline = 0;
 

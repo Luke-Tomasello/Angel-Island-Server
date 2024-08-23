@@ -1412,9 +1412,7 @@ namespace Server.Commands
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading {0}", shard);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading {0}", ConsoleColor.Red, shard);
             }
 
             return PlayerDescriptions;
@@ -1512,7 +1510,7 @@ namespace Server.Commands
             if (e.Mobile.AccessLevel < AccessLevel.Owner)
             {
                 e.Mobile.SendMessage("Not authorized.");
-                ConsoleWriteLine("RemoveAllStaff: Not authorized.", ConsoleColor.Red);
+                Monitor.WriteLine("RemoveAllStaff: Not authorized.", ConsoleColor.Red);
                 return;
             }
             int removed = 0;
@@ -1525,7 +1523,7 @@ namespace Server.Commands
                     // report
                     string text = string.Format($"Removing {CommandLogging.Format(pm)}");
                     e.Mobile.SendMessage(text);
-                    ConsoleWriteLine(text, ConsoleColor.Red);
+                    Monitor.WriteLine(text, ConsoleColor.Red);
 
                     Accounting.Account acct = pm.Account as Accounting.Account;
                     if (acct != null)
@@ -1536,7 +1534,7 @@ namespace Server.Commands
                 }
 
             e.Mobile.SendMessage($"{removed} staff members removed.");
-            ConsoleWriteLine($"{removed} staff members removed.", ConsoleColor.Red);
+            Monitor.WriteLine($"{removed} staff members removed.", ConsoleColor.Red);
         }
         #endregion Remove All Staff
         #region Prep World For Distribution
@@ -1706,7 +1704,7 @@ namespace Server.Commands
         private static void CatalogItemSpawnids(CommandEventArgs e)
         {
             int count = 0;
-            Utility.ConsoleWriteLine("Compiling spawner database. Slow...", ConsoleColor.Yellow);
+            Utility.Monitor.WriteLine("Compiling spawner database. Slow...", ConsoleColor.Yellow);
             e.Mobile.SendMessage("Compiling spawner database. Slow...");
 
             List<int> list = new();
@@ -1763,7 +1761,7 @@ namespace Server.Commands
                 logger.Log(string.Format($"0x{id:X}, "));
             logger.Finish();
 
-            Utility.ConsoleWriteLine($"Spawner database complete with {count} entries", ConsoleColor.Yellow);
+            Utility.Monitor.WriteLine($"Spawner database complete with {count} entries", ConsoleColor.Yellow);
             e.Mobile.SendMessage($"Spawner database complete with {count} entries");
         }
         #endregion Record the graphic IDs of items that spawners spawn
@@ -3276,7 +3274,7 @@ namespace Server.Commands
         #region Stack Overflow Testing
         private static void StackOverflowTest(CommandEventArgs e)
         {
-            ConsoleWriteLine("Begin Stack Overflow Exception Test", ConsoleColor.Red);
+            Monitor.WriteLine("Begin Stack Overflow Exception Test", ConsoleColor.Red);
             //try
             {
                 CrashItBaby(1234);
@@ -3286,7 +3284,7 @@ namespace Server.Commands
                 //ConsoleOut("Stack Overflow Exception Caught {0}", ConsoleColor.Red, soe.Message);
             }
 
-            ConsoleWriteLine("End Stack Overflow Exception Test", ConsoleColor.Red);
+            Monitor.WriteLine("End Stack Overflow Exception Test", ConsoleColor.Red);
         }
         private static Int64 CrashItBaby(Int64 foo)
         {
@@ -8244,9 +8242,9 @@ namespace Server.Commands
                     }
 
                     if (sellPrice <= 0 || buyPrice <= 0)
-                        Utility.ConsoleWriteLine("(sellPrice <= 0 || buyPrice <= 0)", ConsoleColor.Red);
+                        Utility.Monitor.WriteLine("(sellPrice <= 0 || buyPrice <= 0)", ConsoleColor.Red);
                     if (buyPrice <= sellPrice)
-                        Utility.ConsoleWriteLine("(buyPrice <= sellPrice)", ConsoleColor.Red);
+                        Utility.Monitor.WriteLine("(buyPrice <= sellPrice)", ConsoleColor.Red);
 
                     continue;
                 }
@@ -8294,7 +8292,7 @@ namespace Server.Commands
                                                     bv.Name != null ? bv.Name : "no name",
                                                     bv.Title != null ? bv.Title : "no title",
                                                     bii.Type.Name);
-                                                Utility.ConsoleWriteLine(output, ConsoleColor.Red);
+                                                Utility.Monitor.WriteLine(output, ConsoleColor.Red);
                                                 LogAberrations(output);
                                                 conformityFailures++;
                                             }
@@ -8307,7 +8305,7 @@ namespace Server.Commands
                                                     bv.Name != null ? bv.Name : "no name",
                                                     bv.Title != null ? bv.Title : "no title",
                                                     bii.Type.Name);
-                                                Utility.ConsoleWriteLine(output, ConsoleColor.Red);
+                                                Utility.Monitor.WriteLine(output, ConsoleColor.Red);
                                                 LogAberrations(output);
                                                 conformityFailures++;
                                             }
@@ -8327,7 +8325,7 @@ namespace Server.Commands
                                                     bv.Name != null ? bv.Name : "no name",
                                                     bv.Title != null ? bv.Title : "no title",
                                                     type.Name);
-                                                Utility.ConsoleWriteLine(output, ConsoleColor.Red);
+                                                Utility.Monitor.WriteLine(output, ConsoleColor.Red);
                                                 LogAberrations(output);
                                                 conformityFailures++;
                                             }
@@ -8340,7 +8338,7 @@ namespace Server.Commands
                                                     bv.Name != null ? bv.Name : "no name",
                                                     bv.Title != null ? bv.Title : "no title",
                                                     type.Name);
-                                                Utility.ConsoleWriteLine(output, ConsoleColor.Red);
+                                                Utility.Monitor.WriteLine(output, ConsoleColor.Red);
                                                 LogAberrations(output);
                                                 conformityFailures++;
                                             }
@@ -8348,7 +8346,7 @@ namespace Server.Commands
                         }
                 }
             }
-            Utility.ConsoleWriteLine("LoadSBInfo total failures {0}", ConsoleColor.Red, conformityFailures);
+            Utility.Monitor.WriteLine("LoadSBInfo total failures {0}", ConsoleColor.Red, conformityFailures);
         }
         private static void LogAberrations(string text)
         {
@@ -10045,7 +10043,7 @@ namespace Server.Commands
                     logger.Finish();
                 }
                 else
-                    Utility.ConsoleWriteLine("Logic Error: We should only be seeing BaseAddon.", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Logic Error: We should only be seeing BaseAddon.", ConsoleColor.Red);
                 // only delete if we are in list only mode
                 //kvp.Key.Delete();
             }
@@ -10060,7 +10058,7 @@ namespace Server.Commands
                     logger.Finish();
                 }
                 else
-                    Utility.ConsoleWriteLine("Logic Error: We should only be seeing BaseAddon.", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Logic Error: We should only be seeing BaseAddon.", ConsoleColor.Red);
                 // only delete if we are in list only mode
                 //kvp.Key.Delete();
             }
@@ -10083,7 +10081,7 @@ namespace Server.Commands
                     logger.Finish();
                 }
                 else
-                    Utility.ConsoleWriteLine("Logic Error: We should only be seeing spawners.", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Logic Error: We should only be seeing spawners.", ConsoleColor.Red);
 
                 kvp.Key.Delete();
             }
@@ -10098,7 +10096,7 @@ namespace Server.Commands
                     logger.Finish();
                 }
                 else
-                    Utility.ConsoleWriteLine("Logic Error: We should only be seeing spawners.", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Logic Error: We should only be seeing spawners.", ConsoleColor.Red);
 
                 kvp.Key.Delete();
             }
@@ -10111,7 +10109,7 @@ namespace Server.Commands
             foreach (KeyValuePair<Item, Tuple<Point3D, Map, bool>> kvp in tmp)
             {
                 if (kvp.Key is Spawner)
-                    Utility.ConsoleWriteLine("Logic Error: We should not be seeing spawners.", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Logic Error: We should not be seeing spawners.", ConsoleColor.Red);
                 else
                     ;
 
@@ -10122,7 +10120,7 @@ namespace Server.Commands
             foreach (KeyValuePair<Item, Tuple<Point3D, Map, bool>> kvp in tmp)
             {
                 if (kvp.Key is Spawner)
-                    Utility.ConsoleWriteLine("Logic Error: We should not be seeing spawners.", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Logic Error: We should not be seeing spawners.", ConsoleColor.Red);
                 else
                     ;
 
@@ -10144,7 +10142,7 @@ namespace Server.Commands
                     Teleporter teleporter = World.FindItem(int.Parse(tokens[0])) as Teleporter;
                     if (teleporter == null)
                     {
-                        Utility.ConsoleWriteLine("Logic Error: Preserved teleporter missing.", ConsoleColor.Red);
+                        Utility.Monitor.WriteLine("Logic Error: Preserved teleporter missing.", ConsoleColor.Red);
                     }
                     else
                         if (!toKeep.Contains(teleporter))

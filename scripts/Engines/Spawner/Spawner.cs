@@ -1279,7 +1279,7 @@ namespace Server.Mobiles
                     SetFlag(SpawnerAttribs.ModeNeruns, false);
                     SetFlag(SpawnerAttribs.ModeLegacy, false);
                     SetFlag(SpawnerAttribs.ModeMulti, false);
-                    Utility.ConsoleWriteLine(string.Format("Error: Invalid spawner designation for spawner {0} in {1}", this, Utility.FileInfo()), ConsoleColor.Red);
+                    Utility.Monitor.WriteLine(string.Format("Error: Invalid spawner designation for spawner {0} in {1}", this, Utility.FileInfo()), ConsoleColor.Red);
                 }
 
                 UpdateDisplay();
@@ -2462,7 +2462,7 @@ namespace Server.Mobiles
                     // If we are spawning a multi like a camp, that's okay too
                     if (!this.Exhibit && !SpawningMulti())
                     {
-                        Utility.ConsoleWriteLine(string.Format("Spawner {0} located at {1} in a house. Relocating...", this, this.Location), ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(string.Format("Spawner {0} located at {1} in a house. Relocating...", this, this.Location), ConsoleColor.Red);
 
                         Point3D new_location = this.Location;
                         if (house.BanLocation != Point3D.Zero)
@@ -2711,10 +2711,10 @@ namespace Server.Mobiles
                 {
                     if (ix >= GetSlotTableSize())
                     {   // error, out of bounds
-                        Utility.ConsoleWriteLine(string.Format("Warning: Count index out of bounds: {0}", this), ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(string.Format("Warning: Count index out of bounds: {0}", this), ConsoleColor.Red);
                         // patch it: This is probably dure to an error in original construction of the spawner.
                         //  Since we have an entry in the name table, we wil default it to a count of one.
-                        Utility.ConsoleWriteLine(string.Format("Warning: Patching: {0}", ix), ConsoleColor.Green);
+                        Utility.Monitor.WriteLine(string.Format("Warning: Patching: {0}", ix), ConsoleColor.Green);
                         SetSlotCount(index: ix, value: 1);
                         LogHelper logger = new LogHelper("Nerun Spawner Patch.log", false, true, true);
                         logger.Log(LogType.Item, this, string.Format("Missing 'count' for spawner item: '{0}' at index: {1}", m_ObjectNames[ix], ix));
@@ -2799,7 +2799,7 @@ namespace Server.Mobiles
 
                 if (type == null)
                 {
-                    Utility.ConsoleWriteLine("{0} is not a valid type name.", ConsoleColor.Red, token);
+                    Utility.Monitor.WriteLine("{0} is not a valid type name.", ConsoleColor.Red, token);
                     tokens[ix] = string.Empty;
                 }
                 else
@@ -3054,7 +3054,7 @@ namespace Server.Mobiles
                                     bool templateMobileBroken = m_TemplateMobile.Deleted == true;
                                     if (templateMobileBroken)
                                     {   // something is wing-wang. Our template has been deleted
-                                        Utility.ConsoleWriteLine("Error: Our Mobile template has been deleted.", ConsoleColor.Red, m_TemplateMobile);
+                                        Utility.Monitor.WriteLine("Error: Our Mobile template has been deleted.", ConsoleColor.Red, m_TemplateMobile);
                                         LogHelper logger = new LogHelper("spawner.CreateRaw.log", false);
                                         logger.Log(LogType.Text, "Our Mobile template has been deleted. Sound the alarm!");
                                         logger.Log(LogType.Mobile, m_TemplateMobile);
@@ -4675,9 +4675,7 @@ namespace Server.Mobiles
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading Spawner.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading Spawner.bin, using default values:", ConsoleColor.Red);
             }
         }
         public static void Save(WorldSaveEventArgs e)
@@ -4859,7 +4857,7 @@ namespace Server.Mobiles
             base.Running = true;
             base.Respawn();
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(string.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
         }
         public virtual void EventEnded(object o)
         {
@@ -4870,7 +4868,7 @@ namespace Server.Mobiles
             else
                 ;// debug
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(string.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
         }
         public override void Serialize(GenericWriter writer)
         {

@@ -409,7 +409,7 @@ namespace Server.Commands
             {   // This should never execute
                 //  it's a patch for a bug in an early version of [play that didn't move
                 //  instruments to IntMapstorage and instruments were getting deleted
-                Utility.ConsoleWriteLine("Resetting player context object.", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Resetting player context object.", ConsoleColor.Red);
                 MusicConfig[m].Finish();
                 MusicConfig.Remove(m);
                 MusicConfig.Add(m, new MusicContext(true));
@@ -538,7 +538,7 @@ namespace Server.Commands
                         if (!bSilent)
                             m.SendMessage("Guild points are now {0}.", (m as PlayerMobile).NpcGuildPoints);
                         Console.Clear();
-                        Utility.ConsoleWriteLine(string.Format("Start test at {0}", DateTime.UtcNow), ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(string.Format("Start test at {0}", DateTime.UtcNow), ConsoleColor.Red);
                     }
                     else
                         return true;
@@ -1065,7 +1065,7 @@ namespace Server.Commands
                 musicString = musicString.Replace("%" + macros[ix] + "%", modified_macro);
             }
             m.SendMessage(musicString);
-            Utility.ConsoleWriteLine("macro: {0}", ConsoleColor.Cyan, musicString);
+            Utility.Monitor.WriteLine("macro: {0}", ConsoleColor.Cyan, musicString);
             return musicString;
         }
         private static string[] NoteLookup = new string[]
@@ -1141,9 +1141,9 @@ namespace Server.Commands
             // lets see who's using the music system
             if (Utility.Random(10) == 0)
                 if (IsCommandLine)
-                    Utility.DebugOut(string.Format("{0} composing music.", m), ConsoleColor.Cyan);
+                    Utility.Monitor.DebugOut(string.Format("{0} composing music.", m), ConsoleColor.Cyan);
                 else
-                    Utility.DebugOut(string.Format("{0} is listening to music.", m), ConsoleColor.Cyan);
+                    Utility.Monitor.DebugOut(string.Format("{0} is listening to music.", m), ConsoleColor.Cyan);
 
             // Allows dynamic control through the CoreManagementConsole.
             if (m.AccessLevel < CoreAI.PlayAccessLevel)
@@ -1398,13 +1398,13 @@ namespace Server.Commands
                 if (delta >= .1 || display == 120)
                     m.SendMessage("Your skill in CoreMusicPlayer Composition increased. It is now {0:N1}", display);
             // else, don't show sub .1 gains
-            Utility.DebugOut(string.Format("{1}: skill is now {0}", display, m), ConsoleColor.Cyan);
+            Utility.Monitor.DebugOut(string.Format("{1}: skill is now {0}", display, m), ConsoleColor.Cyan);
             if (real >= 1200)
             {
-                Utility.DebugOut(string.Format("{1}: skill is now {0}", display, m), ConsoleColor.Red);
+                Utility.Monitor.DebugOut(string.Format("{1}: skill is now {0}", display, m), ConsoleColor.Red);
                 if (MusicConfig[m].SkillTesting)
                 {
-                    Utility.DebugOut(string.Format("End test at {0}", DateTime.UtcNow), ConsoleColor.Red);
+                    Utility.Monitor.DebugOut(string.Format("End test at {0}", DateTime.UtcNow), ConsoleColor.Red);
                     MusicConfig[m].SkillTesting = false;
                 }
             }
@@ -1558,7 +1558,7 @@ namespace Server.Commands
                             return;
                         }
                         else
-                            Utility.ConsoleWriteLine("Error: Unknown object type {0}", ConsoleColor.Red, (string)obj);
+                            Utility.Monitor.WriteLine("Error: Unknown object type {0}", ConsoleColor.Red, (string)obj);
                     }
                     catch (Exception ex)
                     {
@@ -1692,7 +1692,7 @@ namespace Server.Commands
                         delay = TimeSpan.FromMilliseconds(pause);
                     }
                     else
-                        Utility.ConsoleWriteLine("Error: Unknown object type {0}", ConsoleColor.Red, (string)obj);
+                        Utility.Monitor.WriteLine("Error: Unknown object type {0}", ConsoleColor.Red, (string)obj);
                 }
                 catch (Exception ex)
                 {
@@ -1778,7 +1778,7 @@ namespace Server.Commands
             }
             catch
             {
-                Utility.ConsoleWriteLine("Error reading Saves/MusicContexts.bin, using default values...", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Error reading Saves/MusicContexts.bin, using default values...", ConsoleColor.Red);
             }
             finally
             {
@@ -1813,7 +1813,7 @@ namespace Server.Commands
             }
             catch (Exception ex)
             {
-                Utility.ConsoleWriteLine("Error writing Saves/MusicContexts.bin", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Error writing Saves/MusicContexts.bin", ConsoleColor.Red);
                 Console.WriteLine(ex.ToString());
             }
             finally

@@ -1631,13 +1631,13 @@ namespace Server.Items
         {
             base.Running = true;
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(string.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
         }
         public virtual void EventEnded(object o)
         {
             base.Running = false;
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(string.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
         }
         public override void Serialize(GenericWriter writer)
         {
@@ -2025,13 +2025,13 @@ namespace Server.Items
         {
             base.Running = true;
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(string.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
         }
         public override void EventEnded(object o)
         {
             base.Running = false;
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(string.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
         }
         public override void Serialize(GenericWriter writer)
         {

@@ -1059,14 +1059,14 @@ namespace Server
             setSimpleDouble(ref SpellFsDmgDelay, "SpellFsDmgDelay");
             setSimpleDouble(ref SpellLightningDmgDelay, "SpellLightningDmgDelay");
 
-            Utility.ConsoleWriteLine("[MaxAccountsPerIP {0}.]", Core.ConsoleColorInformational(), CoreAI.MaxAccountsPerIP);
-            Utility.ConsoleWriteLine("[MaxAccountsPerMachine {0}.]", Core.ConsoleColorInformational(), CoreAI.MaxAccountsPerMachine);
+            Utility.Monitor.WriteLine("[MaxAccountsPerIP {0}.]", Core.ConsoleColorInformational(), CoreAI.MaxAccountsPerIP);
+            Utility.Monitor.WriteLine("[MaxAccountsPerMachine {0}.]", Core.ConsoleColorInformational(), CoreAI.MaxAccountsPerMachine);
             // in IPLimiter; MaxAddresses controls how many of the same IP address can be concurrently logged in. Maybe > MaxAccountsPerIP
-            Utility.ConsoleWriteLine("[MaxConcurrentAddresses {0}.]", Core.ConsoleColorInformational(), CoreAI.MaxConcurrentAddresses);
-            Utility.ConsoleWriteLine("[Force GMN CUO {0}.]", Core.ConsoleColorInformational(), CoreAI.ForceGMNCUO);
-            Utility.ConsoleWriteLine("[Warn GMN CUO {0}.]", Core.ConsoleColorInformational(), CoreAI.WarnBadGMNCUO);
-            Utility.ConsoleWriteLine("[Force GMN Razor {0}.]", Core.ConsoleColorInformational(), CoreAI.ForceGMNRZR);
-            Utility.ConsoleWriteLine("[Warn GMN Razor {0}.]", Core.ConsoleColorInformational(), CoreAI.WarnBadGMNRZR);
+            Utility.Monitor.WriteLine("[MaxConcurrentAddresses {0}.]", Core.ConsoleColorInformational(), CoreAI.MaxConcurrentAddresses);
+            Utility.Monitor.WriteLine("[Force GMN CUO {0}.]", Core.ConsoleColorInformational(), CoreAI.ForceGMNCUO);
+            Utility.Monitor.WriteLine("[Warn GMN CUO {0}.]", Core.ConsoleColorInformational(), CoreAI.WarnBadGMNCUO);
+            Utility.Monitor.WriteLine("[Force GMN Razor {0}.]", Core.ConsoleColorInformational(), CoreAI.ForceGMNRZR);
+            Utility.Monitor.WriteLine("[Warn GMN Razor {0}.]", Core.ConsoleColorInformational(), CoreAI.WarnBadGMNRZR);
         }
 
         public static int GetValue(XmlElement node, int defaultValue)

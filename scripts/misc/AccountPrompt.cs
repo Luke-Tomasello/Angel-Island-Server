@@ -73,9 +73,9 @@ namespace Server.Misc
                 }
                 catch (Exception ex)
                 {
-                    Utility.ConsoleWriteLine(ex.Message, ConsoleColor.Red);
-                    Utility.ConsoleWriteLine("Error initializing accounts - maybe not able to create Saves/Account/account.xml or path in function Accounts.LoadAccountDB().", ConsoleColor.Red);
-                    Utility.ConsoleWriteLine("Check for previous errors!", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine(ex.Message, ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Error initializing accounts - maybe not able to create Saves/Account/account.xml or path in function Accounts.LoadAccountDB().", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Check for previous errors!", ConsoleColor.Red);
                 }
             }
         }

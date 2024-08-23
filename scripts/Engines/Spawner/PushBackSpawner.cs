@@ -140,14 +140,14 @@ namespace Server.Engines
             this.SpawnerDeactivated = false;
             base.Respawn();
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(string.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("{0} got 'Event started' event.", this), ConsoleColor.Yellow);
         }
         public override void EventEnded(object o)
         {
             this.SpawnerDeactivated = true;
             base.RemoveObjects();
             if (Core.Debug && false)
-                Utility.ConsoleWriteLine(string.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format("{0} got 'Event ended' event.", this), ConsoleColor.Yellow);
         }
         #endregion Event Spawner Overrides
         public PushBackSpawner(Serial serial)
@@ -199,12 +199,12 @@ namespace Server.Engines
             if (WebTotalKills >= WebKillsNeeded)
             {
                 WebRunning = false;
-                Utility.ConsoleWriteLine("Web of hate conquered!", ConsoleColor.Green);
+                Utility.Monitor.WriteLine("Web of hate conquered!", ConsoleColor.Green);
             }
             else if (SpawnerKills >= SpawnerKillsNeeded && !SpawnerLevelFail)
             {   // level has been completed, kill the LevelRestartTimer
                 SpawnerDeactivated = true;
-                Utility.ConsoleWriteLine("LevelRestartTimer: stopped for {0}.", ConsoleColor.Green, this.Serial);
+                Utility.Monitor.WriteLine("LevelRestartTimer: stopped for {0}.", ConsoleColor.Green, this.Serial);
                 ReceiveMessage(this, WebMessage.LevelCleared);
             }
             else if (SpawnerLevelFail)
@@ -212,12 +212,12 @@ namespace Server.Engines
                 SpawnerLevelFail = false;
                 SpawnerDeactivated = false;
                 SpawnerKills = 0;
-                Utility.ConsoleWriteLine("Failed to clear level in alloted time: {0}.", ConsoleColor.Green, this.Serial);
+                Utility.Monitor.WriteLine("Failed to clear level in alloted time: {0}.", ConsoleColor.Green, this.Serial);
             }
             else if (!IsTimerRunning(m_SpawnerLevelTimeout))
             {
                 m_SpawnerLevelTimeout = Timer.DelayCall(m_SpawnerLevelRestartDelay, new TimerStateCallback(LevelRestartTimerCallBack), this);
-                Utility.ConsoleWriteLine("LevelRestartTimer: started for {0}.", ConsoleColor.Green, this.Serial);
+                Utility.Monitor.WriteLine("LevelRestartTimer: started for {0}.", ConsoleColor.Green, this.Serial);
             }
             // let PBSDistrictManager know what's going on
             EventSink.InvokeSpawnedMobileKilled(new SpawnedMobileKilled(killed, this));
@@ -238,7 +238,7 @@ namespace Server.Engines
                 if (pbs != this)
                     pbs.ReceiveMessage(this, msg);
                 else
-                    Utility.ConsoleWriteLine("Logic Error: The list of siblings should not include self.", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Logic Error: The list of siblings should not include self.", ConsoleColor.Red);
         }
         public void ReceiveMessage(PushBackSpawner pbs, WebMessage msg)
         {
@@ -246,19 +246,19 @@ namespace Server.Engines
             {
                 case WebMessage.LevelCleared:
                     {
-                        Utility.ConsoleWriteLine("ReceiveMessage: LevelCleared for {0}.", ConsoleColor.Blue, pbs.Serial);
+                        Utility.Monitor.WriteLine("ReceiveMessage: LevelCleared for {0}.", ConsoleColor.Blue, pbs.Serial);
                         break;
                     }
                 case WebMessage.LevelRestart:
                     {   // players were unable to clear the level on one of the PushBackSpawners in the web
-                        Utility.ConsoleWriteLine("ReceiveMessage: LevelRestart for {0}.", ConsoleColor.Blue, pbs.Serial);
+                        Utility.Monitor.WriteLine("ReceiveMessage: LevelRestart for {0}.", ConsoleColor.Blue, pbs.Serial);
                         if (IsTimerRunning(m_SpawnerLevelTimeout))
                         {   // players failed to complete one PushBackSpawner in the web, therefore if they were working this spawner,
                             //  we will resume running.
                             m_SpawnerLevelTimeout.Stop();
                             m_SpawnerLevelTimeout.Flush();  // remove any queued ticks
                             Running = true;
-                            Utility.ConsoleWriteLine("ReceiveMessage: LevelRestart: Resuming spawn for: {0}.", ConsoleColor.Green, this.Serial);
+                            Utility.Monitor.WriteLine("ReceiveMessage: LevelRestart: Resuming spawn for: {0}.", ConsoleColor.Green, this.Serial);
                         }
                         break;
                     }
@@ -273,7 +273,7 @@ namespace Server.Engines
         {   // level has not been completed, resume spawning
             PushBackSpawner pbs = state as PushBackSpawner;
             pbs.SpawnerLevelFail = true;
-            Utility.ConsoleWriteLine("LevelRestartTimer: executed for {0}.", ConsoleColor.Green, pbs.Serial);
+            Utility.Monitor.WriteLine("LevelRestartTimer: executed for {0}.", ConsoleColor.Green, pbs.Serial);
             pbs.SendMessage(WebMessage.LevelRestart);
         }
         private bool IsTimerRunning(Timer t)
@@ -564,9 +564,7 @@ namespace Server.Engines
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading PushBackWeb.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading PushBackWeb.bin, using default values:", ConsoleColor.Red);
             }
         }
         public new static void Save(WorldSaveEventArgs e)

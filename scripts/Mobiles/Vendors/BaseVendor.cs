@@ -2235,7 +2235,7 @@ namespace Server.Mobiles
                         else
                             return (int)(kvp.Value * siege_factor);
 
-            Utility.ConsoleWriteLine("Could not find buy price for type {0}", ConsoleColor.Red, type == null ? "(null)" : type.FullName);
+            Utility.Monitor.WriteLine("Could not find buy price for type {0}", ConsoleColor.Red, type == null ? "(null)" : type.FullName);
             // failsafe pricing
             return PlayerPaysFailsafe;
         }
@@ -2247,7 +2247,7 @@ namespace Server.Mobiles
                     if (kvp.Key == StandardPricingType.Sell)
                         return kvp.Value;
 
-            Utility.ConsoleWriteLine("Could not find sell price for type {0}", ConsoleColor.Red, type == null ? "(null)" : type.FullName);
+            Utility.Monitor.WriteLine("Could not find sell price for type {0}", ConsoleColor.Red, type == null ? "(null)" : type.FullName);
             // failsafe pricing
             return VendorPaysFailsafe;
         }
@@ -2310,9 +2310,7 @@ namespace Server.Mobiles
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading Standard Pricing Database, using default values.");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading Standard Pricing Database, using default values.", ConsoleColor.Red);
             }
         }
         #endregion Standard Pricing Database

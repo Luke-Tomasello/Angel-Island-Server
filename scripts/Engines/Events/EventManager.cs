@@ -201,7 +201,7 @@ namespace Server.Commands
                                         ts_countdown = sungate.Countdown;
                                     }
                                     else
-                                        Utility.ConsoleWriteLine(string.Format("Logic Error: Unexpected event object {0}. ", o), ConsoleColor.Red);
+                                        Utility.Monitor.WriteLine(string.Format("Logic Error: Unexpected event object {0}. ", o), ConsoleColor.Red);
                             }
 
                         if (found == false)
@@ -264,7 +264,7 @@ namespace Server.Commands
                                         ts_duration = sungate.Duration;
                                     }
                                     else
-                                        Utility.ConsoleWriteLine(string.Format("Logic Error: Unexpected event object {0}. ", o), ConsoleColor.Red);
+                                        Utility.Monitor.WriteLine(string.Format("Logic Error: Unexpected event object {0}. ", o), ConsoleColor.Red);
                     }
                     from.SendMessage("Event '{0}'", eventName);
                     from.SendMessage("Execution in {0}.",
@@ -417,9 +417,7 @@ namespace Server.Commands
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading EventManager.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading EventManager.bin, using default values:", ConsoleColor.Red);
             }
         }
         public static void Save(WorldSaveEventArgs e)

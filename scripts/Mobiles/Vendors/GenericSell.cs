@@ -93,9 +93,7 @@ namespace Server.Mobiles
         {
             if (!Core.RuleSets.ResourcePoolRules())
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("ResourcePool Error: {0} is not a pooled resource.", (type != null) ? type.FullName : "(null)");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("ResourcePool Error: {0} is not a pooled resource.", ConsoleColor.Red, (type != null) ? type.FullName : "(null)");
             }
 
             if (ResourcePool.IsPooledResource(type, true))
@@ -107,9 +105,7 @@ namespace Server.Mobiles
             }
             else
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("ResourcePool Error: {0} is not a pooled resource.", (type != null) ? type.FullName : "(null)");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("ResourcePool Error: {0} is not a pooled resource.", ConsoleColor.Red, (type != null) ? type.FullName : "(null)");
             }
         }
 

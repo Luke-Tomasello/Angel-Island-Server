@@ -692,7 +692,7 @@ namespace Server.Guilds
                 string text = string.Format("The Guild \"{0}\" [{1}] ({2}) was disbanded.", name, abbreviation, sx.ToString());
                 Logger.Log(LogType.Text, text);
                 Logger.Finish();
-                Utility.ConsoleWriteLine(text, ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(text, ConsoleColor.Yellow);
             }
 
             m_Leader = null;
@@ -851,11 +851,11 @@ namespace Server.Guilds
                     if (m_Leader == null || m_Leader.Deleted)
                     {
                         if (World.GetAdminAcct() != null)
-                            Utility.ConsoleWriteLine("GuildFealty set to {1} for shard guild [{0}]", ConsoleColor.Red, this.Abbreviation.ToString(), World.GetAdminAcct());
+                            Utility.Monitor.WriteLine("GuildFealty set to {1} for shard guild [{0}]", ConsoleColor.Red, this.Abbreviation.ToString(), World.GetAdminAcct());
 
                         m_Leader = World.GetAdminAcct();        // set the leader to shard owner should the shard guild leader be gone
                     }
-                    Utility.ConsoleWriteLine("GuildFealty votes ignored for shard guild [{0}]", ConsoleColor.Yellow, this.Abbreviation.ToString());
+                    Utility.Monitor.WriteLine("GuildFealty votes ignored for shard guild [{0}]", ConsoleColor.Yellow, this.Abbreviation.ToString());
 
                     // now update member titles if 1) they've been in this guild longer than two weeks, and 2) their title hasn't changed
                     for (int i = 0; m_Members != null && i < m_Members.Count; ++i)
@@ -951,7 +951,7 @@ namespace Server.Guilds
                 if (m_Leader != winner && winner != null)
                 {
                     GuildMessage(1018015, winner.Name); // Guild Message: Guildmaster changed to:
-                    Utility.ConsoleWriteLine("Guildmaster for {0} changed to {1}", ConsoleColor.Yellow, this.Name, winner);
+                    Utility.Monitor.WriteLine("Guildmaster for {0} changed to {1}", ConsoleColor.Yellow, this.Name, winner);
                 }
 
                 m_Leader = winner;

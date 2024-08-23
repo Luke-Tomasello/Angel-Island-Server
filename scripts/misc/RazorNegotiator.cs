@@ -266,18 +266,18 @@ namespace Server.Misc
 
                     m_Table.Remove(seed);
 
-                    Utility.ConsoleWriteLine(string.Format("Valid Razor detected for: {0}: Account '{1}'",
+                    Utility.Monitor.WriteLine(string.Format("Valid Razor detected for: {0}: Account '{1}'",
                         state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Yellow);
                 }
                 else
                 {
-                    Utility.ConsoleWriteLine(string.Format("Previous invalid Razor detected for: {0}: Account '{1}'",
+                    Utility.Monitor.WriteLine(string.Format("Previous invalid Razor detected for: {0}: Account '{1}'",
                         state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Red);
                 }
             }
             else
             {
-                Utility.ConsoleWriteLine(string.Format("Invalid Razor detected for: {0}: Account '{1}'",
+                Utility.Monitor.WriteLine(string.Format("Invalid Razor detected for: {0}: Account '{1}'",
                         state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Red);
                 // if they failed the test, remove the seed from the table, but don't stop the timer
                 //  this prevents someone from just blasting all three valid responses and getting a win
@@ -334,7 +334,7 @@ namespace Server.Misc
             {
                 if (!RazorFeatureControl.KickOnFailure)
                 {
-                    Utility.ConsoleWriteLine(string.Format("Player '{0}' failed to negotiate Razor features.", m), ConsoleColor.Red);
+                    Utility.Monitor.WriteLine(string.Format("Player '{0}' failed to negotiate Razor features.", m), ConsoleColor.Red);
                 }
                 else if (m.NetState != null && m.NetState.Running)
                 {
@@ -362,7 +362,7 @@ namespace Server.Misc
             if (!CoreAI.ForceGMNCUO || hasException)
             {
                 string text = string.Format("Player '{0}' failed the Razor 'Code' test{1}.", m, hasException ? ", but has a client exception" : "");
-                Utility.ConsoleWriteLine(text, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(text, ConsoleColor.Red);
                 LogHelper logger = new LogHelper("Failed Code Tests.log", overwrite: false, sline: true, quiet: true);
                 if (!logger.Contains(text))
                     logger.Log(text);

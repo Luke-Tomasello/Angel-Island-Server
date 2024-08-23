@@ -849,7 +849,7 @@ namespace Server.Commands
                 if (RollbackSerials == null)
                     return;
                 else
-                    Utility.ConsoleWriteLine("DumpArray_Callback: saving at {0:X}", ConsoleColor.DarkCyan, RollbackSerials[0]);
+                    Utility.Monitor.WriteLine("DumpArray_Callback: saving at {0:X}", ConsoleColor.DarkCyan, RollbackSerials[0]);
                 #endregion Dump a rollback database of the serials we will use
 
                 #region  FDReassign old item serial to new item serial (reserved serial)
@@ -1747,9 +1747,7 @@ namespace Server.Commands
             }
             catch (Exception ex)
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading {0}", lookup);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading {0}", ConsoleColor.Red, lookup);
                 LogHelper.LogException(ex);
                 reason = ex.Message;
                 error = true;
@@ -1951,9 +1949,7 @@ namespace Server.Commands
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading {0}", mobileDefinition);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading {0}", ConsoleColor.Red, mobileDefinition);
             }
 
             return keyValuePairs;
@@ -2103,9 +2099,7 @@ namespace Server.Commands
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading {0}", rollback);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading {0}", ConsoleColor.Red, rollback);
             }
 
             return list;
@@ -2182,9 +2176,7 @@ namespace Server.Commands
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading {0}", format);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading {0}", ConsoleColor.Red, format);
             }
 
             if (list.Count > 0)
@@ -2305,9 +2297,7 @@ namespace Server.Commands
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading {0}", addons);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading {0}", ConsoleColor.Red, addons);
             }
 
             if (AddonDatabase.Count > 0)
@@ -2414,7 +2404,7 @@ namespace Server.Commands
             {   // make sure we can allocate the same serials as reserved by the sender/source shard
                 RollbackSerials.RemoveAt(0);    // obsolete
                 LocalSerialHeap.Verify(RollbackSerials, ref reason);
-                Utility.ConsoleWriteLine("FDLoadObjArray: loading at {0:X}", ConsoleColor.DarkCyan, RollbackSerials[0]);
+                Utility.Monitor.WriteLine("FDLoadObjArray: loading at {0:X}", ConsoleColor.DarkCyan, RollbackSerials[0]);
                 foreach (int serial in RollbackSerials)
                     LinkPatches.Add(serial, serial);
             }

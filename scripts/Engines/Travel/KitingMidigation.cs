@@ -215,15 +215,15 @@ namespace Server.Items
             if (m_PlayerMemory.Recall(m) == false)
             {   // we haven't seen this player yet
                 m_PlayerMemory.Remember(m, new PlayerContext(1), TimeSpan.FromSeconds(MemoryTime).TotalSeconds);   // remember him for this long
-                Utility.DebugOut("KM({1}): We don't remember {0}. Remembering...", RandomConsoleColor(this.Serial), m.Name, this.Serial.Value);
+                Utility.Monitor.DebugOut("KM({1}): We don't remember {0}. Remembering...", RandomConsoleColor(this.Serial), m.Name, this.Serial.Value);
             }
             else
             {   // refresh our recollection and increment count
                 Memory.ObjectMemory om = m_PlayerMemory.Recall(m as object);
                 PlayerContext pc = om.Context as PlayerContext;
                 m_PlayerMemory.Refresh(m, new PlayerContext(pc.Visits + 1));
-                Utility.DebugOut("KM({1}): I remember {0}.", RandomConsoleColor(this.Serial), m.Name, this.Serial);
-                Utility.DebugOut("KM({1}): {0} has visited {2} time(s).", RandomConsoleColor(this.Serial), m.Name, this.Serial, pc.Visits + 1);
+                Utility.Monitor.DebugOut("KM({1}): I remember {0}.", RandomConsoleColor(this.Serial), m.Name, this.Serial);
+                Utility.Monitor.DebugOut("KM({1}): {0} has visited {2} time(s).", RandomConsoleColor(this.Serial), m.Name, this.Serial, pc.Visits + 1);
             }
         }
         public void KM_NotifyRemember(Mobile m)

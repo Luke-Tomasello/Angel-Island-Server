@@ -197,9 +197,9 @@ namespace Server
                     m_Next = m_From.Location;
                     m_NextSectorPoint += s.Count;
 
-                    //Utility.DebugOut("Advancing from {0} Index:{1}", ConsoleColor.Green, m_Next, m_Index);
+                    //Utility.Monitor.DebugOut("Advancing from {0} Index:{1}", ConsoleColor.Green, m_Next, m_Index);
                     Advance(ref m_Next, m_Index);
-                    //Utility.DebugOut("Advancing to {0} Index:{1}", ConsoleColor.Magenta, m_Next, m_Index);
+                    //Utility.Monitor.DebugOut("Advancing to {0} Index:{1}", ConsoleColor.Magenta, m_Next, m_Index);
                     break;
                 }
             }
@@ -292,9 +292,9 @@ namespace Server
                 if (m_From.Z == m_Next.Z)
                 {
                     ++m_Index;
-                    //Utility.DebugOut("Advancing from {0} Index:{1}", ConsoleColor.Green, m_Next, m_Index);
+                    //Utility.Monitor.DebugOut("Advancing from {0} Index:{1}", ConsoleColor.Green, m_Next, m_Index);
                     Advance(ref m_Next, m_Index);
-                    //Utility.DebugOut("Advancing to {0} Index:{1}", ConsoleColor.Magenta, m_Next, m_Index);
+                    //Utility.Monitor.DebugOut("Advancing to {0} Index:{1}", ConsoleColor.Magenta, m_Next, m_Index);
                 }
                 else
                 {

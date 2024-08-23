@@ -3036,7 +3036,7 @@ namespace Server
         public static void RandomBytes(byte[] buffer)
         {
             //RandomImpl.NextBytes(buffer);
-            ConsoleWriteLine("RandomBytes(byte[] buffer) not implemented", ConsoleColor.Red);
+            Monitor.WriteLine("RandomBytes(byte[] buffer) not implemented", ConsoleColor.Red);
         }
         public static int GetObjectZ(object o)
         {
@@ -3668,7 +3668,7 @@ namespace Server
             {
                 if (obj is Mobile mob)
                 {
-                    ErrorOut(string.Format("Warning: Unsure what the 'ID' of a mobile should be. Using BodyValue {0}.", mob.BodyValue), ConsoleColor.Red);
+                    Monitor.ErrorOut(string.Format("Warning: Unsure what the 'ID' of a mobile should be. Using BodyValue {0}.", mob.BodyValue), ConsoleColor.Red);
                     foreach (int type in exclude)
                         if (mob.BodyValue == type)
                             return true;
@@ -3814,7 +3814,7 @@ namespace Server
         {
             List<Item> list = FindItemAt(px, map, type, lenientZ);
             if (list.Count > 1 && warnMulti)
-                Utility.ConsoleWriteLine(string.Format("Logic Error: Found more than one {0} where expected {1}. ", type.Name, px), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Logic Error: Found more than one {0} where expected {1}. ", type.Name, px), ConsoleColor.Red);
             if (list.Count > 0)
                 return list[0];
             return null;
@@ -3836,7 +3836,7 @@ namespace Server
         {
             List<Item> list = FindItemAt(px, map, ItemID, lenientZ);
             if (list.Count > 1 && warnMulti)
-                Utility.ConsoleWriteLine(string.Format("Logic Error: Found more than one {0:X} where expected {1}. ", ItemID, px), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Logic Error: Found more than one {0:X} where expected {1}. ", ItemID, px), ConsoleColor.Red);
             if (list.Count > 0)
                 return list[0];
             return null;
@@ -4593,7 +4593,7 @@ namespace Server
             }
             catch
             {
-                Utility.ConsoleWriteLine(string.Format("Logic Error: {0}. ", Utility.FileInfo()), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Logic Error: {0}. ", Utility.FileInfo()), ConsoleColor.Red);
                 return null;
             }
         }
@@ -4623,7 +4623,7 @@ namespace Server
                     }
                     catch
                     {
-                        Utility.ConsoleWriteLine(string.Format("Logic Error: {0}. ", Utility.FileInfo()), ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(string.Format("Logic Error: {0}. ", Utility.FileInfo()), ConsoleColor.Red);
                         return null;
                     }
                 }
@@ -5383,9 +5383,9 @@ namespace Server
                                 if (!PropsToIgnore.Contains(props[i].Name))
                                     if (!Same(PropertyOverwrite[props[i].Name], o))
                                     {
-                                        Utility.ConsoleWriteLine(string.Format("Copying properties of {0} is unreliable.", src), ConsoleColor.DarkRed);
-                                        Utility.ConsoleWriteLine(string.Format("Offending property {0}.", props[i].Name), ConsoleColor.DarkRed);
-                                        Utility.ConsoleWriteLine(string.Format("You will need a special case handler in CopyProperties.", src), ConsoleColor.DarkRed);
+                                        Utility.Monitor.WriteLine(string.Format("Copying properties of {0} is unreliable.", src), ConsoleColor.DarkRed);
+                                        Utility.Monitor.WriteLine(string.Format("Offending property {0}.", props[i].Name), ConsoleColor.DarkRed);
+                                        Utility.Monitor.WriteLine(string.Format("You will need a special case handler in CopyProperties.", src), ConsoleColor.DarkRed);
                                         ;// debug
                                     }
                                     else
@@ -6571,71 +6571,78 @@ namespace Server
                 }
             }
         }
-
-        public static void DebugOut(string text, ConsoleColor color = ConsoleColor.White)
+        #region Monitor
+        public static class Monitor
         {
-#if DEBUG
-            ConsoleWriteLine(text, color);
-#endif
-        }
-        private static string m_ConsoleOutEcho = null;
-        public static string ConsoleOutEcho
-        {
-            get { return m_ConsoleOutEcho; }
-            set { m_ConsoleOutEcho = value; }
-        }
-        public static void DebugOut(string format, ConsoleColor color = ConsoleColor.White, params object[] args)
-        {
-            DebugOut(string.Format(format, args), color);
-        }
-        public static void ConsoleWrite(string text, ConsoleColor color)
-        {
-            Console.Out.Flush();
-            PushColor(color);
-            Console.Write(text);
-            PopColor();
-            Console.Out.Flush();
-        }
-        public static void ConsoleWriteLine(string text, ConsoleColor color)
-        {
-            Console.Out.Flush();
-            PushColor(color);
-            Console.WriteLine(text);
-            if (m_ConsoleOutEcho != null)
+            public static void Write(string text, ConsoleColor color)
             {
-                EnsurePath(m_ConsoleOutEcho);
-                File.AppendAllLines(m_ConsoleOutEcho, new string[] { text }, Encoding.UTF8);
+                System.Console.Out.Flush();
+                PushColor(color);
+                System.Console.Write(text);
+                PopColor();
+                System.Console.Out.Flush();
             }
-            PopColor();
-            Console.Out.Flush();
+            public static void WriteLine(string format, ConsoleColor color, params object[] args)
+            {
+                Monitor.WriteLine(string.Format(format, args), color);
+            }
+            public static void WriteLine(string text, ConsoleColor color)
+            {
+                System.Console.Out.Flush();
+                PushColor(color);
+                System.Console.WriteLine(text);
+                if (m_ConsoleOutEcho != null)
+                {
+                    EnsurePath(m_ConsoleOutEcho);
+                    File.AppendAllLines(m_ConsoleOutEcho, new string[] { text }, Encoding.UTF8);
+                }
+                PopColor();
+                System.Console.Out.Flush();
+            }
+
+            public static void DebugOut(string text, ConsoleColor color = ConsoleColor.White)
+            {
+#if DEBUG
+            Monitor.WriteLine(text, color);
+#endif
+            }
+            private static string m_ConsoleOutEcho = null;
+            public static string ConsoleOutEcho
+            {
+                get { return m_ConsoleOutEcho; }
+                set { m_ConsoleOutEcho = value; }
+            }
+            public static void DebugOut(string format, ConsoleColor color = ConsoleColor.White, params object[] args)
+            {
+                DebugOut(string.Format(format, args), color);
+            }
+            public static void ErrorOut(string text, ConsoleColor color)
+            {
+                Console.Error.Flush();
+                PushColor(color);
+                Console.Error.WriteLine(text);
+                if (m_ConsoleOutEcho != null)
+                {
+                    EnsurePath(m_ConsoleOutEcho);
+                    File.AppendAllLines(m_ConsoleOutEcho, new string[] { text });
+                }
+                PopColor();
+                Console.Error.Flush();
+            }
+            public static void ErrorOut(string format, ConsoleColor color, params object[] args)
+            {
+                ErrorOut(string.Format(format, args), color);
+            }
         }
+        #endregion Monitor
+
         public static void EnsurePath(string path)
         {
             string path_part = Path.GetDirectoryName(path);
             if (!Directory.Exists(path_part))
                 Directory.CreateDirectory(path_part);
         }
-        public static void ConsoleWriteLine(string format, ConsoleColor color, params object[] args)
-        {
-            ConsoleWriteLine(string.Format(format, args), color);
-        }
-        public static void ErrorOut(string text, ConsoleColor color)
-        {
-            Console.Error.Flush();
-            PushColor(color);
-            Console.Error.WriteLine(text);
-            if (m_ConsoleOutEcho != null)
-            {
-                EnsurePath(m_ConsoleOutEcho);
-                File.AppendAllLines(m_ConsoleOutEcho, new string[] { text });
-            }
-            PopColor();
-            Console.Error.Flush();
-        }
-        public static void ErrorOut(string format, ConsoleColor color, params object[] args)
-        {
-            ErrorOut(string.Format(format, args), color);
-        }
+        
         public static string FileInfo([System.Runtime.CompilerServices.CallerFilePath] string filePath = "", [System.Runtime.CompilerServices.CallerLineNumber] int lineNumber = 0)
         {
             return string.Format("in {0} at line number {1}", GetShortPath(filePath), lineNumber);
@@ -8173,7 +8180,7 @@ namespace Server
             }
             catch
             {
-                Utility.ConsoleWriteLine("Error reading UtilityData.bin, using default values:", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Error reading UtilityData.bin, using default values:", ConsoleColor.Red);
             }
         }
         public static void SaveUtilityData(WorldSaveEventArgs e)
@@ -8198,7 +8205,7 @@ namespace Server
             }
             catch (Exception ex)
             {
-                Utility.ConsoleWriteLine("Error writing UtilityData.bin: {0}", ConsoleColor.Red, ex.ToString());
+                Utility.Monitor.WriteLine("Error writing UtilityData.bin: {0}", ConsoleColor.Red, ex.ToString());
             }
         }
         #endregion Serialization

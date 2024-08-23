@@ -103,7 +103,7 @@ namespace Server.Accounting
             {
                 if (ServerList.IsPrivateNetwork(userIPInfo.Ip))
                 {   // client.City() will throw the exception, but better to explicitly handle it here.
-                    Utility.ConsoleWriteLine("Ignoring IPInfo for private network {0}", ConsoleColor.Yellow, userIPInfo.Ip);
+                    Utility.Monitor.WriteLine("Ignoring IPInfo for private network {0}", ConsoleColor.Yellow, userIPInfo.Ip);
                     continue;
                 }
 
@@ -137,7 +137,7 @@ namespace Server.Accounting
                     }
                     catch (Exception ex)
                     {   // Sample Error: "The IP address '127.0.0.1' is a reserved IP address (private, multicast, etc.)."
-                        Utility.ConsoleWriteLine(ex.Message, ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(ex.Message, ConsoleColor.Red);
                         // don't retry this address
                         continue;
                     }

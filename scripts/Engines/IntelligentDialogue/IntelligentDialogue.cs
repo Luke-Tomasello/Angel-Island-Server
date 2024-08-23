@@ -476,7 +476,7 @@ namespace Server.Engines
                     {
                         // the user entered a 'purfied' string, likes 'docks', and it was remembered in the main loop
                         //  but has not as yet had text associated with it.
-                        Utility.ConsoleWriteLine("Cache2: Loading replies for: '{0}'.", ConsoleColor.Green, text);
+                        Utility.Monitor.WriteLine("Cache2: Loading replies for: '{0}'.", ConsoleColor.Green, text);
                     }
                 }
                 else
@@ -736,7 +736,7 @@ namespace Server.Engines
             m_runningBackground = background;
 
             Utility.TimeCheck tc = new Utility.TimeCheck();
-            Utility.ConsoleWriteLine("DoGenericLocate... ", ConsoleColor.Yellow);
+            Utility.Monitor.WriteLine("DoGenericLocate... ", ConsoleColor.Yellow);
             tc.Start();
 
             try
@@ -770,7 +770,7 @@ namespace Server.Engines
                                 IDSRegressionTest.Logger.Log("=> " + sx);
                         }
                     }
-                    Utility.ConsoleWriteLine("Cache1: We remembered '{0}', eliminating undo processing.", ConsoleColor.Cyan, rememberPrompt);
+                    Utility.Monitor.WriteLine("Cache1: We remembered '{0}', eliminating undo processing.", ConsoleColor.Cyan, rememberPrompt);
                     goto exit;
                 }
                 else
@@ -849,7 +849,7 @@ namespace Server.Engines
                                         IDSRegressionTest.Logger.Log("=> " + sx);
                                 }
                             }
-                            Utility.ConsoleWriteLine("Cache2: We remembered '{0}', eliminating undo processing.", ConsoleColor.Green, text);
+                            Utility.Monitor.WriteLine("Cache2: We remembered '{0}', eliminating undo processing.", ConsoleColor.Green, text);
                             goto exit;
                         }
                     case LocateType.Unknown:
@@ -870,14 +870,14 @@ namespace Server.Engines
             }
             catch (Exception ex)
             {
-                Utility.ConsoleWriteLine(ex.Message, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(ex.Message, ConsoleColor.Red);
                 Diagnostics.LogHelper.LogException(ex);
             }
 
         exit:
 
             tc.End();
-            Utility.ConsoleWriteLine("DoGenericLocate finished in {0} seconds (background thread).", ConsoleColor.Yellow, tc.TimeTaken);
+            Utility.Monitor.WriteLine("DoGenericLocate finished in {0} seconds (background thread).", ConsoleColor.Yellow, tc.TimeTaken);
         }
         public static void DoMobileLocate(Mobile m, SpeechEventArgs e, string format)
         {
@@ -962,7 +962,7 @@ namespace Server.Engines
             }
             catch (Exception ex)
             {
-                Utility.ConsoleWriteLine(ex.Message, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(ex.Message, ConsoleColor.Red);
                 Diagnostics.LogHelper.LogException(ex);
             }
         }
@@ -1014,7 +1014,7 @@ namespace Server.Engines
             }
             catch (Exception ex)
             {
-                Utility.ConsoleWriteLine(ex.Message, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(ex.Message, ConsoleColor.Red);
                 Diagnostics.LogHelper.LogException(ex);
             }
         }
@@ -1982,9 +1982,7 @@ namespace Server.Engines
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading IntelligentDialogue.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading IntelligentDialogue.bin, using default values:", ConsoleColor.Red);
             }
         }
         public static void Save(WorldSaveEventArgs e)

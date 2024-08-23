@@ -248,9 +248,7 @@ namespace Server.Mobiles
                         AngryMiner me = GetRandomAngryMiner(target, mRegion.Dictionary[target]);
                         if (me == null)
                         {
-                            Utility.PushColor(ConsoleColor.Red);
-                            Console.WriteLine("Cannot find an angry miner to handle this.");
-                            Utility.PopColor();
+                            Utility.Monitor.WriteLine("Cannot find an angry miner to handle this.", ConsoleColor.Red);
                             return;
                         }
 
@@ -351,15 +349,11 @@ namespace Server.Mobiles
                             {
                                 if (me.iMessage != InstanceMessage.RegularMessage)
                                 {
-                                    Utility.PushColor(ConsoleColor.Red);
-                                    Console.WriteLine("{0}: Clearing {1} attribute.", me.Name, me.iMessage.ToString());
-                                    Utility.PopColor();
+                                    Utility.Monitor.WriteLine("{0}: Clearing {1} attribute.", ConsoleColor.Red, me.Name, me.iMessage.ToString());
                                 }
                                 else
                                 {
-                                    Utility.PushColor(ConsoleColor.Red);
-                                    Console.WriteLine("{0}, Warning: attribute {1} already cleared.", me.Name, me.iMessage.ToString());
-                                    Utility.PopColor();
+                                    Utility.Monitor.WriteLine("{0}, Warning: attribute {1} already cleared.", ConsoleColor.Red, me.Name, me.iMessage.ToString());
                                 }
                                 // clear our handling of this message for the team
                                 me.iMessage = InstanceMessage.RegularMessage;
@@ -375,9 +369,7 @@ namespace Server.Mobiles
                                 Mobile author = mx.State.Me;
                                 if (author == null)
                                 {
-                                    Utility.PushColor(ConsoleColor.Red);
-                                    Console.WriteLine("{0}: Bad format in {1}.", me.Name, context.ToString());
-                                    Utility.PopColor();
+                                    Utility.Monitor.WriteLine("{0}: Bad format in {1}.", ConsoleColor.Red, me.Name, context.ToString());
                                     continue;
                                 }
 
@@ -415,9 +407,7 @@ namespace Server.Mobiles
                                     format_string = mx.State.Text;
                                 else
                                 {
-                                    Utility.PushColor(ConsoleColor.Red);
-                                    Console.WriteLine("{0}: Bad format in Yelp.", me.Name);
-                                    Utility.PopColor();
+                                    Utility.Monitor.WriteLine("{0}: Bad format in Yelp.", ConsoleColor.Red, me.Name);
                                 }
                                 me.Say(format_string);
                             }
@@ -472,9 +462,7 @@ namespace Server.Mobiles
                                 Mobile author = mx.State.Me;
                                 if (author == null)
                                 {
-                                    Utility.PushColor(ConsoleColor.Red);
-                                    Console.WriteLine("{0}: Bad format in {1}.", me.Name, context.ToString());
-                                    Utility.PopColor();
+                                    Utility.Monitor.WriteLine("{0}: Bad format in {1}.", ConsoleColor.Red, me.Name, context.ToString());
                                     continue;
                                 }
                                 switch (mRegion.tracking_ndx++)
@@ -882,9 +870,7 @@ namespace Server.Mobiles
             }
             else
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("{0}: This CombatantKilled has not been handled yet.", Name);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("{0}: This CombatantKilled has not been handled yet.", ConsoleColor.Red, Name);
             }
 
             // okay, we're handling this
@@ -1032,9 +1018,7 @@ namespace Server.Mobiles
                     }
                     else
                     {
-                        Utility.PushColor(ConsoleColor.Red);
-                        Console.WriteLine("{0}: This NewCompadreInfo has not been handled yet.", Name);
-                        Utility.PopColor();
+                        Utility.Monitor.WriteLine("{0}: This NewCompadreInfo has not been handled yet.", ConsoleColor.Red, Name);
                     }
                     // we're handling this message
                     iMessage = InstanceMessage.NewCompadreInfo;
@@ -1082,9 +1066,7 @@ namespace Server.Mobiles
                     Home = m_originalHome;
                     if (GetDistanceToSqrt(Home) > RangeHome)
                     {
-                        Utility.PushColor(ConsoleColor.Red);
-                        Console.WriteLine("{0}: Giving up, going home. ({1})", Name, Home);
-                        Utility.PopColor();
+                        Utility.Monitor.WriteLine("{0}: Giving up, going home. ({1})", ConsoleColor.Red, Name, Home);
                     }
                 }
             }
@@ -1174,18 +1156,14 @@ namespace Server.Mobiles
                     count++;
                     if (count > 1)
                     {
-                        Utility.PushColor(ConsoleColor.Red);
-                        Console.WriteLine("{0}: More than one angry miner contains flag {1}.", this.Name, filter.ToString());
-                        Utility.PopColor();
+                        Utility.Monitor.WriteLine("{0}: More than one angry miner contains flag {1}.", ConsoleColor.Red, this.Name, filter.ToString());
                     }
                 }
             }
 
             if (count > 0)
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("{0}: Clearing {1} attribute.", this.Name, filter.ToString());
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("{0}: Clearing {1} attribute.", ConsoleColor.Red, this.Name, filter.ToString());
             }
 
             return count > 0;
@@ -1280,9 +1258,7 @@ namespace Server.Mobiles
             }
             else
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("{0}: This tracking has not been handled yet.", Name);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("{0}: This tracking has not been handled yet.", ConsoleColor.Red, Name);
             }
 
             // we're handling this message

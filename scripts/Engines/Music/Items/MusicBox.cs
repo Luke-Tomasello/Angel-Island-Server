@@ -488,7 +488,7 @@ namespace Server.Items
             changed = m_globalRepositoryHash != GetGlobalRepositoryHash();  // log the change
             m_globalRepositoryHash = GetGlobalRepositoryHash();             // sync
             if (changed)
-                Utility.ConsoleWriteLine("Global CoreMusicPlayer Repository changed.", ConsoleColor.Cyan);
+                Utility.Monitor.WriteLine("Global CoreMusicPlayer Repository changed.", ConsoleColor.Cyan);
             return changed;
         }
         public class PlayContext
@@ -1931,7 +1931,7 @@ namespace Server.Items
             }
             else
             {
-                Utility.ConsoleWriteLine("Error: invalid skill points in CoreMusicPlayer Box.", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Error: invalid skill points in CoreMusicPlayer Box.", ConsoleColor.Red);
                 return;
             }
 
@@ -2347,7 +2347,7 @@ namespace Server.Items
                             }
                             else
                             {   // else error, song not in database
-                                Utility.ConsoleWriteLine("MusicBox error: song not in database", ConsoleColor.Red);
+                                Utility.Monitor.WriteLine("MusicBox error: song not in database", ConsoleColor.Red);
                             }
                         }
                         else
@@ -2871,7 +2871,7 @@ namespace Server.Items
             }
             catch
             {
-                Utility.ConsoleWriteLine("Error reading Saves/Music.bin, using default values...", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Error reading Saves/Music.bin, using default values...", ConsoleColor.Red);
             }
             finally
             {
@@ -2910,7 +2910,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                Utility.ConsoleWriteLine("Error writing Saves/Music.bin", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Error writing Saves/Music.bin", ConsoleColor.Red);
                 Console.WriteLine(ex.ToString());
             }
             finally

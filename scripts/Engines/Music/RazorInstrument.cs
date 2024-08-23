@@ -189,7 +189,7 @@ namespace Server.Items
                 }
             else
             {
-                Utility.ConsoleWriteLine("GetInstrumentType() returning default Harp", ConsoleColor.Cyan);
+                Utility.Monitor.WriteLine("GetInstrumentType() returning default Harp", ConsoleColor.Cyan);
                 return Server.Misc.InstrumentType.Harp;
             }
         }
@@ -586,22 +586,22 @@ namespace Server.Items
             if (instrument.ToLower() == "harp")
             {
                 Instrument.SuccessSound = (int)RazorInstrument.InstrumentSoundType.Harp;
-                Utility.ConsoleWriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.Harp.ToString());
+                Utility.Monitor.WriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.Harp.ToString());
             }
             else if (instrument.ToLower() == "lapharp")
             {
                 Instrument.SuccessSound = (int)RazorInstrument.InstrumentSoundType.LapHarp;
-                Utility.ConsoleWriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.LapHarp.ToString());
+                Utility.Monitor.WriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.LapHarp.ToString());
             }
             else if (instrument.ToLower() == "lute")
             {
                 Instrument.SuccessSound = (int)RazorInstrument.InstrumentSoundType.Lute;
-                Utility.ConsoleWriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.Lute.ToString());
+                Utility.Monitor.WriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.Lute.ToString());
             }
             else
             {
                 Instrument.SuccessSound = (int)RazorInstrument.InstrumentSoundType.Harp;
-                Utility.ConsoleWriteLine("instrument {0} unknown", ConsoleColor.Yellow, instrument);
+                Utility.Monitor.WriteLine("instrument {0} unknown", ConsoleColor.Yellow, instrument);
             }
         }
         private void DoProcessPlay(Mobile m, string line)

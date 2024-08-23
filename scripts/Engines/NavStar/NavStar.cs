@@ -222,9 +222,7 @@ namespace Server.Engines
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading Saves/NavStarContexts.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading Saves/NavStarContexts.bin, using default values:", ConsoleColor.Red);
             }
 
             Defrag();

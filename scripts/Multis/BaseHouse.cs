@@ -2109,7 +2109,7 @@ namespace Server.Multis
                     bh = World.FindItem(acct.House) as Multis.BaseHouse;
                 if (bh != null)
                 {
-                    Utility.ConsoleWriteLine("Found Houses Inheritance for {0}", ConsoleColor.Green, owner);
+                    Utility.Monitor.WriteLine("Found Houses Inheritance for {0}", ConsoleColor.Green, owner);
                     list.Add(bh);
                 }
             }
@@ -2735,7 +2735,7 @@ namespace Server.Multis
                 return true;
             }
             else
-                Utility.ConsoleWriteLine("Error: Stash: Bad object: {0}", ConsoleColor.Red, thing);
+                Utility.Monitor.WriteLine("Error: Stash: Bad object: {0}", ConsoleColor.Red, thing);
 
             return false;
         }
@@ -5244,15 +5244,15 @@ namespace Server.Multis
 
             bool check1 = CalcAccountCode(m) == AccountCode;
             if (check1)
-                Utility.ConsoleWriteLine("CheckInheritance: CalcAccountCode check passed", ConsoleColor.Green);
+                Utility.Monitor.WriteLine("CheckInheritance: CalcAccountCode check passed", ConsoleColor.Green);
             else
-                Utility.ConsoleWriteLine("CheckInheritance: CalcAccountCode check failed", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("CheckInheritance: CalcAccountCode check failed", ConsoleColor.Red);
 
             bool check2 = CheckAccountInheritance(m);
             if (check2)
-                Utility.ConsoleWriteLine("CheckInheritance: CheckAccountInheritance check passed", ConsoleColor.Green);
+                Utility.Monitor.WriteLine("CheckInheritance: CheckAccountInheritance check passed", ConsoleColor.Green);
             else
-                Utility.ConsoleWriteLine("CheckInheritance: CheckAccountInheritance check failed", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("CheckInheritance: CheckAccountInheritance check failed", ConsoleColor.Red);
 
             return check1 && check2;
         }

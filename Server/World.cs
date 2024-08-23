@@ -1379,7 +1379,7 @@ namespace Server
             Mobile admin = FindMobile(Admin);
             if (admin == null)
             {
-                Utility.ConsoleWriteLine("Warning: No admin account specified in World.GetAdminAcct(). Creating...", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Warning: No admin account specified in World.GetAdminAcct(). Creating...", ConsoleColor.Red);
                 admin = CreateSystemAccount();
                 CoreAI.AdminAccount = admin != null ? admin.Serial : Serial.MinusOne;
             }
@@ -1391,7 +1391,7 @@ namespace Server
             Mobile admin = FindMobile(System);
             if (admin == null)
             {
-                Utility.ConsoleWriteLine("Warning: No system account specified in World.GetSystemAcct(). Creating...", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Warning: No system account specified in World.GetSystemAcct(). Creating...", ConsoleColor.Red);
                 admin = CreateSystemAccount();
                 if (admin != null)
                     admin.AccessLevelInternal = AccessLevel.System;
@@ -1444,7 +1444,7 @@ namespace Server
                 // Here we make sure the object really is the same object we already have.
                 if (mobile != existingMobile)
                 {
-                    Utility.ConsoleWriteLine($"Duplicate mobiles are not allowed: {mobile.Serial}.", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine($"Duplicate mobiles are not allowed: {mobile.Serial}.", ConsoleColor.Red);
                 }
 
                 return existingMobile;
@@ -1459,7 +1459,7 @@ namespace Server
                 // Here we make sure the object really is the same object we already have.
                 if (item != existingItem)
                 {
-                    Utility.ConsoleWriteLine($"Duplicate items are not allowed: {item.Serial}.", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine($"Duplicate items are not allowed: {item.Serial}.", ConsoleColor.Red);
                 }
 
                 return existingItem;

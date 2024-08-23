@@ -100,7 +100,7 @@ namespace Server
         {
             if (Core.Patching == false)
             {
-                Utility.ConsoleWriteLine("Patching disabled with the -nopatch startup switch", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Patching disabled with the -nopatch startup switch", ConsoleColor.Red);
                 return;
             }
 
@@ -112,7 +112,7 @@ namespace Server
              */
             string pathName = Path.Combine(Core.DataDirectory, "Patches", "ConsoleHistory.log");
             EnsurePath(pathName);
-            ConsoleOutEcho = pathName;
+            Utility.Monitor.ConsoleOutEcho = pathName;
             Utility.TimeCheck tc = new Utility.TimeCheck();
             tc.Start();
 
@@ -493,7 +493,7 @@ namespace Server
             }
             finally
             {
-                ConsoleOutEcho = null;
+                Utility.Monitor.ConsoleOutEcho = null;
             }
 
             tc.End();
@@ -18456,7 +18456,7 @@ namespace Server
         }
         public static void EventSink_ServerStarted()
         {
-            ConsoleOutEcho = Path.Combine(Core.LogsDirectory, "ConsoleHistory.log");
+            Utility.Monitor.ConsoleOutEcho = Path.Combine(Core.LogsDirectory, "ConsoleHistory.log");
             Utility.TimeCheck tc = new Utility.TimeCheck();
             tc.Start();
 
@@ -18476,7 +18476,7 @@ namespace Server
             }
             finally
             {
-                ConsoleOutEcho = null;
+                Utility.Monitor.ConsoleOutEcho = null;
             }
 
             tc.End();
@@ -18839,7 +18839,7 @@ namespace Server
         }
         private static void EchoOut(string text, ConsoleColor color, bool echo = true)
         {
-            ConsoleWriteLine(text, color);
+            Monitor.WriteLine(text, color);
             if (echo)
                 using (StreamWriter sw = File.AppendText(m_pathName))
                 {
@@ -18848,7 +18848,7 @@ namespace Server
         }
         private static void ErrorOut(PatchIndex bits, string text, ConsoleColor color, object o = null)
         {
-            Utility.ErrorOut(text, color, o);
+            Utility.Monitor.ErrorOut(text, color, o);
             using (StreamWriter sw = File.AppendText(m_pathName))
             {
                 sw.WriteLine(string.Format("{0}: {1} {2}", Enum.GetName(typeof(PatchIndex), bits),

@@ -93,9 +93,7 @@ namespace Server.Engines.BetaRewardSystem
                 string[] files = Directory.GetFiles("Saves", "BetaRewards*.bin");
                 if (files.Length == 0)
                 {
-                    Utility.PushColor(ConsoleColor.Red);
-                    Console.WriteLine("Error reading BetaRewards*.bin, using default values:");
-                    Utility.PopColor();
+                    Utility.Monitor.WriteLine("Error reading BetaRewards*.bin, using default values:", ConsoleColor.Red);
                     return;
                 }
                 // we merge the BetaRewards*.bin from both Test Center and Siege
@@ -130,9 +128,7 @@ namespace Server.Engines.BetaRewardSystem
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading BetaRewards*.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading BetaRewards*.bin, using default values:", ConsoleColor.Red);
             }
         }
         public static void Save(WorldSaveEventArgs e)

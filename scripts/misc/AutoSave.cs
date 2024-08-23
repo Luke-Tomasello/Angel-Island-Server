@@ -358,10 +358,8 @@ namespace Server.Misc
             }
             catch (Exception ex)
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading Saves/BackupFileManager.bin, using default values:");
-                Console.WriteLine(ex.Message);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading Saves/BackupFileManager.bin, using default values:", ConsoleColor.Red);
+                Utility.Monitor.WriteLine(ex.Message, ConsoleColor.Red);
             }
         }
         public static void Save(WorldSaveEventArgs e)
@@ -388,10 +386,8 @@ namespace Server.Misc
             }
             catch (Exception ex)
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error writing Saves/BackupFileManager.bin");
-                Console.WriteLine(ex.Message);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error writing Saves/BackupFileManager.bin", ConsoleColor.Red);
+                Utility.Monitor.WriteLine(ex.Message, ConsoleColor.Red);
             }
         }
         #endregion Serialization

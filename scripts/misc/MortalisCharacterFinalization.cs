@@ -158,7 +158,7 @@ namespace Server.Misc
                             tmpItem.Amount = oItem.Amount;
                         else if (tmpItem.Amount > oItem.Amount)
                         {
-                            Utility.ConsoleWriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), args.Account as Account), ConsoleColor.Red);
+                            Utility.Monitor.WriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), args.Account as Account), ConsoleColor.Red);
                             tmpItem.Amount = oItem.Amount; // cap it
                         }
 
@@ -212,7 +212,7 @@ namespace Server.Misc
                     // first we will create the container
                     o = null;
                     try { o = Activator.CreateInstance(cont.GetType()); }
-                    catch { Utility.ConsoleWriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), args.Account as Account), ConsoleColor.Red); }
+                    catch { Utility.Monitor.WriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), args.Account as Account), ConsoleColor.Red); }
 
                     // whacky but true: if we were just creating a BagOfReagents, it's already full!
                     //  we need to delete those contents (free), and refill it with the stuff from our stash. (already in our backpack)
@@ -296,7 +296,7 @@ namespace Server.Misc
                 if (m.Backpack.Items.Contains(item))
                     m.Backpack.RemoveItem(item);
                 else
-                    Utility.ConsoleWriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), m.Account as Account), ConsoleColor.Red);
+                    Utility.Monitor.WriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), m.Account as Account), ConsoleColor.Red);
             }
         }
         private static void DebugFoundItem(Item item)
@@ -306,19 +306,19 @@ namespace Server.Misc
             if (item.RootParent is Corpse)
             {
                 acct = (item.RootParent as Corpse).Owner.Account as Account;
-                Utility.ConsoleWriteLine(string.Format("Found {0} in a house:{3} on {1} at {2} acct:{4}", item, item.RootParent as Corpse, GetLocation(item.RootParent), InAHouse(item.RootParent) ? true : false, acct), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Found {0} in a house:{3} on {1} at {2} acct:{4}", item, item.RootParent as Corpse, GetLocation(item.RootParent), InAHouse(item.RootParent) ? true : false, acct), ConsoleColor.Red);
             }
             else if (item.RootParent is Item)
-                Utility.ConsoleWriteLine(string.Format("Found {0} in a house:{2} at {1} acct:{3}", item, GetLocation(item.RootParent), InAHouse(item.RootParent) ? true : false, acct), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Found {0} in a house:{2} at {1} acct:{3}", item, GetLocation(item.RootParent), InAHouse(item.RootParent) ? true : false, acct), ConsoleColor.Red);
             else if (item.RootParent is Mobile)
             {
                 acct = (item.RootParent as Mobile).Account as Account;
-                Utility.ConsoleWriteLine(string.Format("Found {0} in a bankbox in a house:{2} at {1} acct:{3}", item, GetLocation(item.RootParent), InAHouse(item.RootParent) ? true : false, acct), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Found {0} in a bankbox in a house:{2} at {1} acct:{3}", item, GetLocation(item.RootParent), InAHouse(item.RootParent) ? true : false, acct), ConsoleColor.Red);
             }
             else if (item.RootParent == null)
-                Utility.ConsoleWriteLine(string.Format("Found {0} in a house:{2} at {1} acct:(null)", item, GetLocation(item), InAHouse(item) ? true : false), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Found {0} in a house:{2} at {1} acct:(null)", item, GetLocation(item), InAHouse(item) ? true : false), ConsoleColor.Red);
             else
-                Utility.ConsoleWriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
 #endif
         }
         private static bool InAHouse(object o)
@@ -329,7 +329,7 @@ namespace Server.Misc
             if (o is Mobile)
                 return Multis.BaseHouse.FindHouseAt(o as Mobile) != null;
             else
-                Utility.ConsoleWriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
 
             return false;
         }
@@ -492,7 +492,7 @@ namespace Server.Misc
                     if (!stashedItemsList.Contains(item))               // sanity - make sure we're not double dipping
                         stashedItemsList.Add(item);
                     else
-                        Utility.ConsoleWriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
                 }
             #endregion bankbox
 
@@ -538,7 +538,7 @@ namespace Server.Misc
                                 if (!stashedItemsList.Contains(item))               // sanity - make sure we're not double dipping
                                     stashedItemsList.Add(item);
                                 else
-                                    Utility.ConsoleWriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
+                                    Utility.Monitor.WriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
                             }
                     }
                 }
@@ -574,7 +574,7 @@ namespace Server.Misc
                                     if (!stashedItemsList.Contains(item))               // sanity - make sure we're not double dipping
                                         stashedItemsList.Add(item);
                                     else
-                                        Utility.ConsoleWriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
+                                        Utility.Monitor.WriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
                                 }
                             }
                         }
@@ -596,7 +596,7 @@ namespace Server.Misc
                             if (!stashedItemsList.Contains(item))               // sanity - make sure we're not double dipping
                                 stashedItemsList.Add(item);
                             else
-                                Utility.ConsoleWriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
+                                Utility.Monitor.WriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
                         }
 
                 // EQUIPPED ITEMS
@@ -606,7 +606,7 @@ namespace Server.Misc
                     if (!stashedItemsList.Contains(item))               // sanity - make sure we're not double dipping
                         stashedItemsList.Add(item);
                     else
-                        Utility.ConsoleWriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
             }
             #endregion shared accounts
 
@@ -635,7 +635,7 @@ namespace Server.Misc
                                             if (!stashedItemsList.Contains(item))               // sanity - make sure we're not double dipping
                                                 stashedItemsList.Add(item);
                                             else
-                                                Utility.ConsoleWriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
+                                                Utility.Monitor.WriteLine(string.Format("Logic Error: {0} acct:{1}. ", Utility.FileInfo(), acct), ConsoleColor.Red);
                     }
                 }
 

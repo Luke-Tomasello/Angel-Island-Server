@@ -93,9 +93,9 @@ namespace Server.Mobiles
                     {
 #if DEBUG
                         if (!m_Mobile.InLOS(m))
-                            Utility.DebugOut("{0} cannot see {1}", ConsoleColor.Green, m_Mobile, m.Name);
+                            Utility.Monitor.DebugOut("{0} cannot see {1}", ConsoleColor.Green, m_Mobile, m.Name);
                         else
-                            Utility.DebugOut("{0} can see {1}", ConsoleColor.Red, m_Mobile, m.Name);
+                            Utility.Monitor.DebugOut("{0} can see {1}", ConsoleColor.Red, m_Mobile, m.Name);
 #endif
                         // see if this is our goal, often it's LOS
                         if (m_Mobile.IAIQuerySuccess(m))
@@ -108,7 +108,7 @@ namespace Server.Mobiles
                         }
                         else if (kvp.Value < kvp.Key.Directions.Length)
                         {
-                            Utility.DebugOut("{0} has {1} more directions to follow", ConsoleColor.Green, m_Mobile, kvp.Key.Directions.Length - kvp.Value);
+                            Utility.Monitor.DebugOut("{0} has {1} more directions to follow", ConsoleColor.Green, m_Mobile, kvp.Key.Directions.Length - kvp.Value);
                             if (m_Mobile.CheckMovement(kvp.Key.Directions[kvp.Value]))
                             {
                                 dir = Success(m, kvp);
@@ -120,11 +120,11 @@ namespace Server.Mobiles
                             {
                                 if (DoorAt(point3D).Open == false)
                                 {
-                                    Utility.DebugOut("{0} opening the door", ConsoleColor.Red, m_Mobile);
+                                    Utility.Monitor.DebugOut("{0} opening the door", ConsoleColor.Red, m_Mobile);
                                     DoorAt(point3D).Use(m_Mobile);
                                 }
                                 else
-                                    Utility.DebugOut("{0}: door already open", ConsoleColor.Red, m_Mobile);
+                                    Utility.Monitor.DebugOut("{0}: door already open", ConsoleColor.Red, m_Mobile);
                                 // let's see if we can step through doorway
                                 if (m_Mobile.CheckMovement(kvp.Key.Directions[kvp.Value]))
                                 {
@@ -133,27 +133,27 @@ namespace Server.Mobiles
                                 }
                                 else
                                 {   // give up, unable to move to door location after opening
-                                    Utility.DebugOut("{0} unable to move to door location after opening", ConsoleColor.Green, m_Mobile);
+                                    Utility.Monitor.DebugOut("{0} unable to move to door location after opening", ConsoleColor.Green, m_Mobile);
                                     GiveUp(m);
                                 }
                             }
                             else
                             {   // give up, spot no longer valid
-                                Utility.DebugOut("{0} give up, spot no longer valid", ConsoleColor.Green, m_Mobile);
+                                Utility.Monitor.DebugOut("{0} give up, spot no longer valid", ConsoleColor.Green, m_Mobile);
                                 GiveUp(m);
                             }
                         }
                         else
                         {
                             // ran out of locations to move to
-                            Utility.DebugOut("{0} ran out of locations to move to", ConsoleColor.Red, m_Mobile);
+                            Utility.Monitor.DebugOut("{0} ran out of locations to move to", ConsoleColor.Red, m_Mobile);
                             GiveUp(m);
                         }
                     }
                     else
                     {
                         // he's dead, or hidden, or moved .. forget him.
-                        Utility.DebugOut("{0} he's dead, or hidden, or moved .. forget him", ConsoleColor.Green, m_Mobile);
+                        Utility.Monitor.DebugOut("{0} he's dead, or hidden, or moved .. forget him", ConsoleColor.Green, m_Mobile);
                         GiveUp(m);
                     }
                 }
@@ -210,7 +210,7 @@ namespace Server.Mobiles
             if (bounce)
             {
                 m_Mobile.TargetLocation = RandomBounce();
-                Utility.DebugOut("{0} bouncing to location {1}", ConsoleColor.Magenta, m_Mobile, m_Mobile.TargetLocation);
+                Utility.Monitor.DebugOut("{0} bouncing to location {1}", ConsoleColor.Magenta, m_Mobile, m_Mobile.TargetLocation);
             }
         }
         private BaseDoor DoorAt(Point3D px)
@@ -235,12 +235,12 @@ namespace Server.Mobiles
             if (baseDoor.Locked == true)
             {
 #if DEBUG
-                Utility.DebugOut("{0} door is locked", ConsoleColor.Magenta, m_Mobile);
+                Utility.Monitor.DebugOut("{0} door is locked", ConsoleColor.Magenta, m_Mobile);
 #endif
                 return false;
             }
 #if DEBUG
-            Utility.DebugOut("{0} chance at door", ConsoleColor.Magenta, m_Mobile);
+            Utility.Monitor.DebugOut("{0} chance at door", ConsoleColor.Magenta, m_Mobile);
 #endif
             return Utility.Random(5) == 0;
         }

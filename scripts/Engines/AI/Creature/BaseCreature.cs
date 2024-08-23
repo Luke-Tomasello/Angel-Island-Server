@@ -4288,7 +4288,7 @@ namespace Server.Mobiles
 
                         if (activeSpeed != m_dActiveSpeed || passiveSpeed != m_dPassiveSpeed)
                         {
-                            Utility.ConsoleWriteLine(string.Format("Non standard creature speed detected for {0}. Patching...", this.ToString()), ConsoleColor.DarkRed);
+                            Utility.Monitor.WriteLine(string.Format("Non standard creature speed detected for {0}. Patching...", this.ToString()), ConsoleColor.DarkRed);
                             m_dActiveSpeed = activeSpeed;
                             m_dPassiveSpeed = passiveSpeed;
                             m_dCurrentSpeed = m_dCurrentSpeed == m_dActiveSpeed ? m_dActiveSpeed : m_dPassiveSpeed;
@@ -9833,7 +9833,7 @@ namespace Server.Mobiles
                         AIObject.InvestigativeMemoryWipe();
                     }
 
-                    Utility.ConsoleWriteLine(string.Format("Mobile {0} moved", this), ConsoleColor.Red);
+                    Utility.Monitor.WriteLine(string.Format("Mobile {0} moved", this), ConsoleColor.Red);
                 }
             return;
         }

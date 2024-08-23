@@ -200,7 +200,7 @@ namespace Server.Multis
             if (m_DecayTimer == null && CampCorrupted())
             {
                 m_DecayTimer = Timer.DelayCall(DecayDelay, new TimerCallback(Delete));
-                Utility.DebugOut("Starting delete timer", ConsoleColor.DarkRed);
+                Utility.Monitor.DebugOut("Starting delete timer", ConsoleColor.DarkRed);
             }
             else if (m_DecayTimer == null)
                 // one minute heart beat
@@ -234,7 +234,7 @@ namespace Server.Multis
                     SetBool(CampBools.Corrupted, true);
 
                 if (GetBool(CampBools.Corrupted))
-                    Utility.DebugOut("corrupted", ConsoleColor.DarkRed);
+                    Utility.Monitor.DebugOut("corrupted", ConsoleColor.DarkRed);
             }
 
             return GetBool(CampBools.Corrupted);
@@ -321,7 +321,7 @@ namespace Server.Multis
         }
         public override void OnAfterDelete()
         {
-            Utility.DebugOut("OnAfterDelete", ConsoleColor.DarkRed);
+            Utility.Monitor.DebugOut("OnAfterDelete", ConsoleColor.DarkRed);
             base.OnAfterDelete();
 
             for (int i = 0; i < m_Items.Count; ++i)
@@ -330,16 +330,16 @@ namespace Server.Multis
                 if (item != null && item.Deleted == false)
                 {   // it's movable
                     if (item.Movable == true)
-                        Utility.DebugOut("Ignoring stolen item {0}", ConsoleColor.DarkRed, item);
+                        Utility.Monitor.DebugOut("Ignoring stolen item {0}", ConsoleColor.DarkRed, item);
                     else
                     {
-                        Utility.DebugOut("Deleting {0}", ConsoleColor.DarkRed, item);
+                        Utility.Monitor.DebugOut("Deleting {0}", ConsoleColor.DarkRed, item);
                         item.Delete();
                     }
                 }
                 else
                 {
-                    Utility.DebugOut("No item to delete", ConsoleColor.DarkRed);
+                    Utility.Monitor.DebugOut("No item to delete", ConsoleColor.DarkRed);
                 }
             }
 
@@ -350,16 +350,16 @@ namespace Server.Multis
                 {
                     if (m is BaseEscortable be && be.GetEscorterWithSideEffects() != null)
                     {
-                        Utility.DebugOut("Ignoring Escortable {0}", ConsoleColor.DarkRed, m);
+                        Utility.Monitor.DebugOut("Ignoring Escortable {0}", ConsoleColor.DarkRed, m);
                         continue;
                     }
 
-                    Utility.DebugOut("Deleting {0}", ConsoleColor.DarkRed, m);
+                    Utility.Monitor.DebugOut("Deleting {0}", ConsoleColor.DarkRed, m);
                     m.Delete();
                 }
                 else
                 {
-                    Utility.DebugOut("No mobile to delete", ConsoleColor.DarkRed);
+                    Utility.Monitor.DebugOut("No mobile to delete", ConsoleColor.DarkRed);
                 }
             }
 
@@ -367,7 +367,7 @@ namespace Server.Multis
             m_Mobiles.Clear();
             m_TotalComponents = 0;
 
-            Utility.DebugOut("Component cleanup complete", ConsoleColor.DarkRed);
+            Utility.Monitor.DebugOut("Component cleanup complete", ConsoleColor.DarkRed);
         }
         public BaseCamp(Serial serial)
             : base(serial)

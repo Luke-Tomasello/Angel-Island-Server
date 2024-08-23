@@ -164,7 +164,7 @@ namespace Server.Mobiles
             // it's okay to not have an "aggression specification" as something like attack Aggressors is totally fine.
             //  We filter for trammel here since our New Player Starting Area has some specially abstracted mobs that don't fit this model.
             if (acqType == 0 && m_Mobile.Map != Map.Trammel && false)
-                Utility.ConsoleWriteLine(string.Format("Mobile({0}) {1}", m_Mobile, "has no acquire type."), ConsoleColor.Red);
+                Utility.Monitor.WriteLine(string.Format("Mobile({0}) {1}", m_Mobile, "has no acquire type."), ConsoleColor.Red);
             #endregion DEBUG
 
             try

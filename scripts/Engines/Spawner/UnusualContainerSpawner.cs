@@ -132,9 +132,7 @@ namespace Server.Items
                     count++;
                 else if (bc != null && bc.Deleted == true)
                 {
-                    Utility.PushColor(ConsoleColor.Red);
-                    Console.WriteLine("Error: Container Cache item unexpectedly deleted.");
-                    Utility.PopColor();
+                    Utility.Monitor.WriteLine("Error: Container Cache item unexpectedly deleted.", ConsoleColor.Red);
                 }
             return count;
         }
@@ -185,7 +183,7 @@ namespace Server.Items
                 if (item.Deleted == true)
                 {
                     // we should reload?
-                    Utility.ConsoleWriteLine("Warning: Unusual Container cache no longer valid.", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Warning: Unusual Container cache no longer valid.", ConsoleColor.Red);
                 }
 
             // mix up our list of all candidate containers
@@ -274,9 +272,7 @@ namespace Server.Items
 
             if (bc.Map == Map.Internal || IsUnusualContainer(bc))
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error: MakeUnusual() got {0}.", bc);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error: MakeUnusual() got {0}.", ConsoleColor.Red, bc);
             }
 
             // remove all items from this container
@@ -326,9 +322,7 @@ namespace Server.Items
             }
             else
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error: Unsupported container type {0}.", bc);
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error: Unsupported container type {0}.", ConsoleColor.Red, bc);
             }
 
             return null;
@@ -399,9 +393,7 @@ namespace Server.Items
 
             if (UnusualCache.Count != CountInternalMap(ContainerCache))
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Warning: UnusualCache.Count != CountInternalMap(ContainerCache).");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Warning: UnusualCache.Count != CountInternalMap(ContainerCache).", ConsoleColor.Red);
             }
 #if DEBUG
             // Loading dungeon chest locations...done (689 locations loaded with 126 on the internal map.)
@@ -485,10 +477,10 @@ namespace Server.Items
                         buc.Delete();
                     }
                     if (ContainerCache.Contains(buc))
-                        Utility.ConsoleWriteLine("Logic error: {0} still remains in the UnusualCache.", ConsoleColor.Red, buc);
+                        Utility.Monitor.WriteLine("Logic error: {0} still remains in the UnusualCache.", ConsoleColor.Red, buc);
                 }
                 else
-                    Utility.ConsoleWriteLine("Logic error: {0} is not an unusual container.", ConsoleColor.Red, bc);
+                    Utility.Monitor.WriteLine("Logic error: {0} is not an unusual container.", ConsoleColor.Red, bc);
             }
 
             // remove our notion of dungeon chests. We will rebuild this in RebuildContainerCache, or on server up.
@@ -505,7 +497,7 @@ namespace Server.Items
                 Console.WriteLine("done ({0} locations loaded with {1} on the internal map.)", ContainerCache.Count, CountInternalMap(ContainerCache));
             }
             else
-                Utility.ConsoleWriteLine("Logic error: ContainerCache still contains {0} containers.", ConsoleColor.Red, ContainerCache.Count);
+                Utility.Monitor.WriteLine("Logic error: ContainerCache still contains {0} containers.", ConsoleColor.Red, ContainerCache.Count);
 
             TotalRespawn();
 
@@ -600,7 +592,7 @@ namespace Server.Items
             }
             catch
             {
-                Utility.ConsoleWriteLine("\nError reading \"{0}\", using default values:", ConsoleColor.Red, filename);
+                Utility.Monitor.WriteLine("\nError reading \"{0}\", using default values:", ConsoleColor.Red, filename);
             }
 
             Console.WriteLine("{0} Unusual Containers Loaded.", UnusualCache.Count);

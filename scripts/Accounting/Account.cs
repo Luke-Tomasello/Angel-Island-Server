@@ -913,7 +913,7 @@ namespace Server.Accounting
                     SetRawCredentials(dbAccount.Value.CryptPassword, dbAccount.Value.PlainPassword, dbAccount.Value.ResetPassword);
             }
             else
-                Utility.ConsoleWriteLine("Error: SyncCredentials should not be called here.", ConsoleColor.DarkRed); // debug break
+                Utility.Monitor.WriteLine("Error: SyncCredentials should not be called here.", ConsoleColor.DarkRed); // debug break
         }
 
         /// <summary>

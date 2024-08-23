@@ -273,7 +273,7 @@ namespace Server.Misc
 
                     World.Broadcast(0x22, true, text);
                 }
-                Utility.ConsoleWriteLine(text, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(text, ConsoleColor.Red);
 
 
                 if (Maintenance.Countdown == 0)

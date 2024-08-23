@@ -376,9 +376,9 @@ namespace Server.Items
 
                 #region Debug Verifier
 #if false
-                Utility.DebugOut(string.Format("Dropping:{0} piles totaling:{1} Match:{2}", table.Length, amount, table.Sum() == amount), ConsoleColor.Green);
+                Utility.Monitor.DebugOut(string.Format("Dropping:{0} piles totaling:{1} Match:{2}", table.Length, amount, table.Sum() == amount), ConsoleColor.Green);
                 if (table.Sum() != amount)
-                    Utility.DebugOut(string.Format("Table:{0} != amount:{1}", table.Length, amount), ConsoleColor.Red);
+                    Utility.Monitor.DebugOut(string.Format("Table:{0} != amount:{1}", table.Length, amount), ConsoleColor.Red);
 #endif
                 #endregion Debug Verifier
 

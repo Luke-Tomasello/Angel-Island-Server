@@ -148,12 +148,12 @@ namespace Server.Commands
             if (m_Output == null)
             {   // when rotating logs, there is a gap between when the stream is closed and reopened. We therefore buffer 'offline text' for later output
                 //  This is passive as it's not flushed until the next WriteLine comes in
-                Utility.ConsoleWriteLine(string.Format($"Logger offline, queuing: {text}"), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format($"Logger offline, queuing: {text}"), ConsoleColor.Yellow);
                 return;
             }
 
             if (LineBuffer.Count > 1)
-                Utility.ConsoleWriteLine(string.Format($"Logger back online. Dequeuing {LineBuffer.Count} lines"), ConsoleColor.Yellow);
+                Utility.Monitor.WriteLine(string.Format($"Logger back online. Dequeuing {LineBuffer.Count} lines"), ConsoleColor.Yellow);
 
             while (LineBuffer.Count > 0)
             {

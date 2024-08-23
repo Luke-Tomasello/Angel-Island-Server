@@ -169,9 +169,7 @@ namespace Server.Items
                 int bcount = Commands.FindSpawner.LogBrokenTemplateSpawners();
                 if (bcount > 0)
                 {
-                    Utility.PushColor(ConsoleColor.Red);
-                    Console.WriteLine("Warning: {0} Broken Template Spawners detected. Please see: {1}", bcount, "FindBrokenTemplateSpawners.log");
-                    Utility.PopColor();
+                    Utility.Monitor.WriteLine("Warning: {0} Broken Template Spawners detected. Please see: {1}", ConsoleColor.Red, bcount, "FindBrokenTemplateSpawners.log");
                 }
                 // now see if there are any spawners that are trying to spawn something that doesn't exist
                 LogHelper logger = new LogHelper("badspawn.log", false);
@@ -195,9 +193,7 @@ namespace Server.Items
 
                 if (kcount > 0)
                 {
-                    Utility.PushColor(ConsoleColor.Red);
-                    Console.WriteLine("Warning: {0} Bad Spawners detected. Please see: {1}", kcount, "badspawn.log");
-                    Utility.PopColor();
+                    Utility.Monitor.WriteLine("Warning: {0} Bad Spawners detected. Please see: {1}", ConsoleColor.Red, kcount, "badspawn.log");
                 }
 
             }
@@ -297,7 +293,7 @@ namespace Server.Items
                         return p2d;
                 }
 
-            Utility.ConsoleWriteLine(string.Format("Running out of valid treasure map locations: {0}. ", Utility.FileInfo()), ConsoleColor.Red);
+            Utility.Monitor.WriteLine(string.Format("Running out of valid treasure map locations: {0}. ", Utility.FileInfo()), ConsoleColor.Red);
 
             return Point2D.Zero;
         }
@@ -1451,9 +1447,7 @@ namespace Server.Items
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine($"Error reading {pathname}, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine($"Error reading {pathname}, using default values:", ConsoleColor.Red);
             }
 
             return list;

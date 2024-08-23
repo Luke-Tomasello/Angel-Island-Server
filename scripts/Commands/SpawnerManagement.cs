@@ -169,7 +169,7 @@ namespace Server.Commands
             }
             catch
             {
-                Utility.ConsoleWriteLine("Error saving a spawner entry!", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Error saving a spawner entry!", ConsoleColor.Red);
             }
         }
         public static int LoadSpawners(List<Spawner> spawners, string filename, ref List<string> reasons)
@@ -199,15 +199,15 @@ namespace Server.Commands
                     }
                     catch
                     {
-                        Utility.ConsoleWriteLine("Warning: A Spawner entry load failed", ConsoleColor.Red);
+                        Utility.Monitor.WriteLine("Warning: A Spawner entry load failed", ConsoleColor.Red);
                     }
                 }
             }
             catch (Exception ex)
             {
                 LogHelper.LogException(ex);
-                Utility.ConsoleWriteLine("Exception caught loading spawners.xml", ConsoleColor.Red);
-                Utility.ConsoleWriteLine(ex.StackTrace, ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Exception caught loading spawners.xml", ConsoleColor.Red);
+                Utility.Monitor.WriteLine(ex.StackTrace, ConsoleColor.Red);
             }
 
             return spawners.Count;
@@ -321,8 +321,8 @@ namespace Server.Commands
                     catch (Exception e)
                     {
                         LogHelper.LogException(e);
-                        Utility.ConsoleWriteLine("Exception caught loading spawners.xml", ConsoleColor.Red);
-                        Utility.ConsoleWriteLine(e.StackTrace, ConsoleColor.Red);
+                        Utility.Monitor.WriteLine("Exception caught loading spawners.xml", ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(e.StackTrace, ConsoleColor.Red);
                     }
                 }
 
@@ -331,8 +331,8 @@ namespace Server.Commands
             catch (Exception e)
             {
                 LogHelper.LogException(e);
-                Utility.ConsoleWriteLine("Exception caught loading spawners.xml", ConsoleColor.Red);
-                Utility.ConsoleWriteLine(e.StackTrace, ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Exception caught loading spawners.xml", ConsoleColor.Red);
+                Utility.Monitor.WriteLine(e.StackTrace, ConsoleColor.Red);
             }
 
             return null;

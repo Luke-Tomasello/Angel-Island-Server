@@ -1356,9 +1356,9 @@ namespace Server.Mobiles
             Direction[] directions = null;
             Point3D[] points = TeleportTable;   // try to use cached version
             if (points != null)
-                Utility.DebugOut("Using teleport cache", ConsoleColor.Cyan);
+                Utility.Monitor.DebugOut("Using teleport cache", ConsoleColor.Cyan);
             else
-                Utility.DebugOut("No teleport cache available", ConsoleColor.Red);
+                Utility.Monitor.DebugOut("No teleport cache available", ConsoleColor.Red);
 
             Mobile focus = LogicalTarget();
             Point3D goal = focus != null ? focus.Location : Point3D.Zero;
@@ -1381,7 +1381,7 @@ namespace Server.Mobiles
                     if (Spawnable(lt.X, lt.Y, lt.Z) && !SpellHelper.CheckMulti((Point3D)best, map))
                     {
                         targ.Invoke(m_Mobile, new LandTarget((Point3D)best, map));
-                        Utility.DebugOut("Got a teleport location", ConsoleColor.Cyan);
+                        Utility.Monitor.DebugOut("Got a teleport location", ConsoleColor.Cyan);
                         return true;
                     }
                 }

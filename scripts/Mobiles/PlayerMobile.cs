@@ -1107,9 +1107,9 @@ namespace Server.Mobiles
                 if (Core.RuleSets.SiegeStyleRules())
                 {
                     if (value != null)
-                        Utility.ConsoleWriteLine("Setting:{0} as Siege Blessed", ConsoleColor.Red, value);
+                        Utility.Monitor.WriteLine("Setting:{0} as Siege Blessed", ConsoleColor.Red, value);
                     else
-                        Utility.ConsoleWriteLine("Unsetting:{0} as Siege Blessed", ConsoleColor.Red, m_siegeBlessedItem);
+                        Utility.Monitor.WriteLine("Unsetting:{0} as Siege Blessed", ConsoleColor.Red, m_siegeBlessedItem);
 
                     m_siegeBlessedItem = value;
                 }
@@ -2943,7 +2943,7 @@ namespace Server.Mobiles
             {
                 if (ServerList.IsPrivateNetwork(ns.Address))
                 {
-                    Utility.ConsoleWriteLine("Ignoring IPInfo for private network {0}", ConsoleColor.Yellow, ns.Address);
+                    Utility.Monitor.WriteLine("Ignoring IPInfo for private network {0}", ConsoleColor.Yellow, ns.Address);
                     return;
                 }
                 List<string> reason = null;
@@ -2968,12 +2968,12 @@ namespace Server.Mobiles
                     if (reason != null && reason.Count > 0)
                     {
                         foreach (var line in reason)
-                            Utility.ConsoleWriteLine("{0}: {1}", ConsoleColor.Yellow, ns.Address, line);
+                            Utility.Monitor.WriteLine("{0}: {1}", ConsoleColor.Yellow, ns.Address, line);
                         //Timer.DelayCall(TimeSpan.FromSeconds(2.0), new TimerStateCallback(SeedIpInfo), new object[] { pm, acct });
                     }
                     else
                     {
-                        Utility.ConsoleWriteLine("IpInfo database unavailable for:{0}: Account '{1}'.", ConsoleColor.Yellow, ns.Address, acct.Username);
+                        Utility.Monitor.WriteLine("IpInfo database unavailable for:{0}: Account '{1}'.", ConsoleColor.Yellow, ns.Address, acct.Username);
                         //Utility.ConsoleOut("IpInfo database unavailable for:{0}: Account '{1}'. Retrying...", ConsoleColor.Yellow, ns.Address, acct.Username);
                         //Timer.DelayCall(TimeSpan.FromSeconds(2.0), new TimerStateCallback(SeedIpInfo), new object[] { pm, acct });
                     }
@@ -3045,7 +3045,7 @@ namespace Server.Mobiles
                     else if ((acct.IPFlagsSession & ~Accounting.Account.IPFlags.IsLegitimateProxy) != 0)
                     {
                         Accounting.Account.IPFlags temp = acct.IPFlagsSession & ~Accounting.Account.IPFlags.IsLegitimateProxy;
-                        Utility.ConsoleWriteLine("{0}: Account '{1}'. logging in from ({2})", ConsoleColor.Red, ns.Address, acct.Username, temp.ToString());
+                        Utility.Monitor.WriteLine("{0}: Account '{1}'. logging in from ({2})", ConsoleColor.Red, ns.Address, acct.Username, temp.ToString());
 
                         #region FYI
                         /* FYI
@@ -3194,7 +3194,7 @@ namespace Server.Mobiles
                         //  their other accounts
                         pm.SendMessage("Your IP Address is still too hot. Try logging again in two minutes.");
                         pm.Say("I've been kicked!");
-                        Utility.ConsoleWriteLine("{0} kicked, IPStillHot", ConsoleColor.Red, pm.Name);
+                        Utility.Monitor.WriteLine("{0} kicked, IPStillHot", ConsoleColor.Red, pm.Name);
                         LogHelper logger = new LogHelper("IPStillHot.log", false, true);
                         logger.Log(LogType.Mobile, pm, "kicked, IPStillHot");
                         logger.Finish();
@@ -5667,7 +5667,7 @@ namespace Server.Mobiles
                     }
                     else
                     {
-                        Utility.ConsoleWriteLine("Error: Unknown type in jumplist for {0}", ConsoleColor.Red, this);
+                        Utility.Monitor.WriteLine("Error: Unknown type in jumplist for {0}", ConsoleColor.Red, this);
                         writer.Write(0);    // unknown type
                     }
                 }
@@ -5985,7 +5985,7 @@ namespace Server.Mobiles
                                     case 5: m_JumpList.Add(new WorldLocation(reader.ReadPoint3D(), reader.ReadByte())); break;
                                     default:
                                         {
-                                            Utility.ConsoleWriteLine("Error: Unknown type in jumplist for {0}", ConsoleColor.Red, this);
+                                            Utility.Monitor.WriteLine("Error: Unknown type in jumplist for {0}", ConsoleColor.Red, this);
                                             reader.ReadInt();
                                             break;
                                         }
@@ -6955,7 +6955,7 @@ namespace Server.Mobiles
                 if (CoreAI.JailFastwalkers && !pm.PrisonInmate && CheckTrap(ts, pm))
                 {
                     //HackerTrap(pm, Accounting.Account.AccountInfraction.fastwalk);
-                    Utility.ConsoleWriteLine("Jail", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Jail", ConsoleColor.Red);
                     //pm.DebugOut("Jailed");
                     //Console.WriteLine("Jailed");
                 }
@@ -6975,7 +6975,7 @@ namespace Server.Mobiles
                 {   // only count if they heading in the same direction
                     if (((Direction)ox.Context) == pm.Direction && pm.FastwalkInfractionCount++ >= CoreAI.FastwalkInfractionThreshold)
                     {
-                        Utility.ConsoleWriteLine("Triggered", ConsoleColor.Red);
+                        Utility.Monitor.WriteLine("Triggered", ConsoleColor.Red);
                         //Console.WriteLine("Triggered");
                         pm.FastwalkInfractionCount = 0;
                         return true;
@@ -6989,7 +6989,7 @@ namespace Server.Mobiles
                 }
                 else
                 {   // remember them for this long
-                    Utility.ConsoleWriteLine("Remembering", ConsoleColor.Red);
+                    Utility.Monitor.WriteLine("Remembering", ConsoleColor.Red);
                     //Console.WriteLine("Remembering");
                     TrapMemory.Remember(pm, pm.Direction, CoreAI.FastwalkTrapMemory);
                     pm.FastwalkInfractionCount = 0;

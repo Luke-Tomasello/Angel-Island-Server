@@ -101,11 +101,11 @@ namespace Server.Engines
 
             if (spawnerCache.Count == 0)
             {
-                Utility.ConsoleWriteLine("Nothing to do.", ConsoleColor.Magenta);
+                Utility.Monitor.WriteLine("Nothing to do.", ConsoleColor.Magenta);
                 return;
             }
 
-            Utility.ConsoleWriteLine("Converting all core spawn to Nerun's Distro spawn...", ConsoleColor.Magenta);
+            Utility.Monitor.WriteLine("Converting all core spawn to Nerun's Distro spawn...", ConsoleColor.Magenta);
 
             // All spawners designated as 'AllShards' in the server-up Patching, will now be prepared for
             //  merging with the new spawners from Nerun's Distro
@@ -128,7 +128,7 @@ namespace Server.Engines
                 stackedSpawnerConsole.MoveToWorld(new Point3D(spawner.X, spawner.Y, spawner.Z + 1), spawner.Map);
             }
 
-            Utility.ConsoleWriteLine("Conversion to Nerun's Distro spawn complete.", ConsoleColor.Magenta);
+            Utility.Monitor.WriteLine("Conversion to Nerun's Distro spawn complete.", ConsoleColor.Magenta);
             CoreAI.SetDynamicPatch(CoreAI.PatchIndex.HasPatchedInClasicRespawn); // patch complete
 
             // cleanup
@@ -165,7 +165,7 @@ namespace Server.Engines
 
             if (spawnerCache.Count == 0)
             {
-                Utility.ConsoleWriteLine("Nothing to do. There are either no spawners, or all have been updated already.", ConsoleColor.Magenta);
+                Utility.Monitor.WriteLine("Nothing to do. There are either no spawners, or all have been updated already.", ConsoleColor.Magenta);
                 return;
             }
 
@@ -209,7 +209,7 @@ namespace Server.Engines
                 // let the developer know we're still working
                 if (from != null)
                     from.SendMessage(string.Format("Finished processing {0} areas in file {1}", areas.Count, Path.GetFileName(filename)));
-                Utility.ConsoleWriteLine(string.Format("Finished processing {0} areas in file {1}", areas.Count, Path.GetFileName(filename)), ConsoleColor.Green);
+                Utility.Monitor.WriteLine(string.Format("Finished processing {0} areas in file {1}", areas.Count, Path.GetFileName(filename)), ConsoleColor.Green);
             }
             catch (Exception ex)
             {
@@ -558,7 +558,7 @@ namespace Server.Engines
                 // some regions (for now, only Angel Island Prison) do not want Nerun's spawn. 
                 if (ExcludedRegion(new Point3D(recordList[ix].X, recordList[ix].Y, recordList[ix].Z)))
                 {
-                    Utility.ConsoleWriteLine("Note: blocking creation of spawn at: {0}", ConsoleColor.Yellow, new Point3D(recordList[ix].X, recordList[ix].Y, recordList[ix].Z));
+                    Utility.Monitor.WriteLine("Note: blocking creation of spawn at: {0}", ConsoleColor.Yellow, new Point3D(recordList[ix].X, recordList[ix].Y, recordList[ix].Z));
                     spawner.Delete();
                     continue;
                 }
@@ -574,7 +574,7 @@ namespace Server.Engines
                 SpawnersPlaced.Add(spawner);
 
                 if (AnyUnusedOverrides(areaOverrides))
-                    Utility.ConsoleWriteLine(string.Format("Logic Error: unused override {0}", GetUnusedOverrides(areaOverrides)), ConsoleColor.Red);
+                    Utility.Monitor.WriteLine(string.Format("Logic Error: unused override {0}", GetUnusedOverrides(areaOverrides)), ConsoleColor.Red);
             }
         }
         private static string GetUnusedOverrides(string[] overrides)

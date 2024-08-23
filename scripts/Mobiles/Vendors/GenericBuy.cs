@@ -198,7 +198,7 @@ namespace Server.Mobiles
                 defrag += m_Mobiles.RemoveAll(m => m == null || m.Deleted);
                 defrag += m_Items.RemoveAll(i => i == null || i.Deleted);
                 if (defrag > 0)
-                    Utility.ConsoleWriteLine("Info: {0} Display cache objects being deleted.", ConsoleColor.Yellow, defrag);
+                    Utility.Monitor.WriteLine("Info: {0} Display cache objects being deleted.", ConsoleColor.Yellow, defrag);
             }
             public override void Serialize(GenericWriter writer)
             {
@@ -218,8 +218,8 @@ namespace Server.Mobiles
 
                 if (Core.Debug)
                 {   // these numbers should remain relative consistent and should only increase after initial world load if a new vendor is added that has items not already in the lists.
-                    Utility.ConsoleWriteLine("DisplayCache now contains {0} mobiles.", ConsoleColor.Yellow, m_Mobiles.Count);
-                    Utility.ConsoleWriteLine("DisplayCache now contains {0} items.", ConsoleColor.Yellow, m_Items.Count);
+                    Utility.Monitor.WriteLine("DisplayCache now contains {0} mobiles.", ConsoleColor.Yellow, m_Mobiles.Count);
+                    Utility.Monitor.WriteLine("DisplayCache now contains {0} items.", ConsoleColor.Yellow, m_Items.Count);
                 }
             }
             public override void Deserialize(GenericReader reader)
@@ -514,9 +514,7 @@ namespace Server.Mobiles
         {
             if (!Core.RuleSets.ResourcePoolRules())
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("ResourcePool Error: {0} is not a pooled resource.", (type != null) ? type.FullName : "(null)");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("ResourcePool Error: {0} is not a pooled resource.", ConsoleColor.Red, (type != null) ? type.FullName : "(null)");
             }
 
             if (ResourcePool.IsPooledResource(type))
@@ -535,9 +533,7 @@ namespace Server.Mobiles
             }
             else
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("ResourcePool Error: {0} is not a pooled resource.", (type != null) ? type.FullName : "(null)");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("ResourcePool Error: {0} is not a pooled resource.", ConsoleColor.Red, (type != null) ? type.FullName : "(null)");
             }
         }
         //get a new instance of an object (we just bought it)

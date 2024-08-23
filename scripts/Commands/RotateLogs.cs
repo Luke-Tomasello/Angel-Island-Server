@@ -144,7 +144,7 @@ namespace Server.Commands
                         catch (Exception ex)
                         {
                             LogHelper.LogException(ex);
-                            Utility.ConsoleWriteLine(string.Format("Failed to archive to {0}", FormatDirectory(root, ToName, "")), ConsoleColor.Red);
+                            Utility.Monitor.WriteLine(string.Format("Failed to archive to {0}", FormatDirectory(root, ToName, "")), ConsoleColor.Red);
                             Console.WriteLine(ex.ToString());
                             compress_ok = false;
                             goto done;
@@ -153,7 +153,7 @@ namespace Server.Commands
                         Timer.DelayCall(TimeSpan.FromSeconds(7.0), new TimerStateCallback(DeleteTick), new object[] { null, null });
                     }
                     else
-                        Utility.ConsoleWriteLine(string.Format("Archive {0} already exists", ToName), ConsoleColor.Yellow);
+                        Utility.Monitor.WriteLine(string.Format("Archive {0} already exists", ToName), ConsoleColor.Yellow);
                 }
 
             done:;
@@ -165,7 +165,7 @@ namespace Server.Commands
             finally
             {
                 tc.End();
-                Utility.ConsoleWriteLine(string.Format("Archive of command logs {0} in {1}.",
+                Utility.Monitor.WriteLine(string.Format("Archive of command logs {0} in {1}.",
                         compress_ok ? "completed" : "failed", tc.TimeTaken), compress_ok ? ConsoleColor.White : ConsoleColor.Yellow);
             }
         }
@@ -188,13 +188,13 @@ namespace Server.Commands
                         try { DeleteDirectory(root, ref count); }
                         catch (Exception ex)
                         {
-                            Utility.ConsoleWriteLine(string.Format("Failed to completely remove to {0} (non critical)", root), ConsoleColor.Yellow);
+                            Utility.Monitor.WriteLine(string.Format("Failed to completely remove to {0} (non critical)", root), ConsoleColor.Yellow);
                             remove_ok = false;
                             goto done;
                         }
                     }
                     else
-                        Utility.ConsoleWriteLine(string.Format("Archive {0} doesn't exist. Unsafe to delete", ToName), ConsoleColor.Yellow);
+                        Utility.Monitor.WriteLine(string.Format("Archive {0} doesn't exist. Unsafe to delete", ToName), ConsoleColor.Yellow);
                 }
 
             done:
@@ -208,10 +208,10 @@ namespace Server.Commands
             finally
             {
                 tc.End();
-                Utility.ConsoleWriteLine(string.Format("Removal of logs directory {0} in {1}.\n{2} files/folders actually removed.",
+                Utility.Monitor.WriteLine(string.Format("Removal of logs directory {0} in {1}.\n{2} files/folders actually removed.",
                         remove_ok ? "completed" : "failed", tc.TimeTaken, count), remove_ok ? ConsoleColor.White : ConsoleColor.Yellow);
                 if (remove_ok == false)
-                    Utility.ConsoleWriteLine(string.Format("A failure here is acceptable since backup, explorer, anti-virus etc. can all have files/folders open."), ConsoleColor.Yellow);
+                    Utility.Monitor.WriteLine(string.Format("A failure here is acceptable since backup, explorer, anti-virus etc. can all have files/folders open."), ConsoleColor.Yellow);
             }
         }
         public static void DeleteDirectory(string target_dir, ref int count)

@@ -133,7 +133,7 @@ namespace Server.Engines.Plants
                 return m_Table[index];
             else
             {
-                Utility.ConsoleWriteLine("PlantTypeInfo: Table index out of side table bounds.", System.ConsoleColor.Red);
+                Utility.Monitor.WriteLine("PlantTypeInfo: Table index out of side table bounds.", System.ConsoleColor.Red);
                 return m_Table[0];
             }
         }

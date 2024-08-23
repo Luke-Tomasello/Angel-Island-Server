@@ -63,7 +63,6 @@
  * AI.EMAIL.SHARDOWNER = (example: luke.tomasello@gmail.com)
  */
 
-//using System.Collections.Generic;   // Emailer
 using Server.Accounting;            // Emailer
 using Server.Diagnostics;
 using System;

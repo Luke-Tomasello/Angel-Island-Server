@@ -129,7 +129,7 @@ namespace Server.Engines
                 try { Map.Parse(facetName); }
                 catch
                 {
-                    Utility.ConsoleWriteLine("\nIgnoring facet {0}", ConsoleColor.Yellow, facetName);
+                    Utility.Monitor.WriteLine("\nIgnoring facet {0}", ConsoleColor.Yellow, facetName);
                     continue;
                 }
                 Map map = Map.Parse(facetName);

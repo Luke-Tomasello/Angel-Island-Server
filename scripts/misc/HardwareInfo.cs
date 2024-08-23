@@ -257,7 +257,7 @@ namespace Server
             if (!CoreAI.ForceGMNCUO || hasException)
             {
                 string text = string.Format("Player '{0}' failed the CUO 'Code' test{1}.", m, hasException ? ", but has a client exception" : "");
-                Utility.ConsoleWriteLine(text, ConsoleColor.Red);
+                Utility.Monitor.WriteLine(text, ConsoleColor.Red);
                 LogHelper logger = new LogHelper("Failed Code Tests.log", overwrite: false, sline: true, quiet: true);
                 if (!logger.Contains(text))
                     logger.Log(text);
@@ -433,7 +433,7 @@ namespace Server
             {
                 acct.HardwareInfo = info;
                 acct.HardwareHash = info.GetHashCode();     // serialized - used again when no hardwareinfo is sent
-                Utility.ConsoleWriteLine(string.Format("Hardware info acquired for account {0}", acct.ToString()), ConsoleColor.DarkGreen);
+                Utility.Monitor.WriteLine(string.Format("Hardware info acquired for account {0}", acct.ToString()), ConsoleColor.DarkGreen);
                 Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(CheckDisconnect), new object[] { acct });
             }
             else
@@ -484,18 +484,18 @@ namespace Server
 
                     m_Table.Remove(seed);
 
-                    Utility.ConsoleWriteLine(string.Format("Valid Client detected for: {0}: Account '{1}'",
+                    Utility.Monitor.WriteLine(string.Format("Valid Client detected for: {0}: Account '{1}'",
                         state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Yellow);
                 }
                 else
                 {
-                    Utility.ConsoleWriteLine(string.Format("Previous invalid Client detected for: {0}: Account '{1}'",
+                    Utility.Monitor.WriteLine(string.Format("Previous invalid Client detected for: {0}: Account '{1}'",
                         state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Red);
                 }
             }
             else
             {
-                Utility.ConsoleWriteLine(string.Format("Invalid Client detected for: {0}: Account '{1}'",
+                Utility.Monitor.WriteLine(string.Format("Invalid Client detected for: {0}: Account '{1}'",
                         state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Red);
                 // if they failed the test, remove the seed from the table, but don't stop the timer
                 //  this prevents someone from just blasting all three valid responses and getting a win

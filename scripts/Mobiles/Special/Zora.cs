@@ -1445,9 +1445,7 @@ namespace Server.Mobiles
 
             if (!m_valid)
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("This copy of Zora may not access the Zora database ({0}:{1}).", this.Map.ToString(), this.Location.ToString());
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("This copy of Zora may not access the Zora database ({0}:{1}).", ConsoleColor.Red, this.Map.ToString(), this.Location.ToString());
                 return;
             }
             m_databaseLoaded = true;
@@ -1530,18 +1528,14 @@ namespace Server.Mobiles
             }
             catch
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("Error reading Zora.bin, using default values:");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("Error reading Zora.bin, using default values:", ConsoleColor.Red);
             }
         }
         public void ZoraDatabaseSerialize()
         {
             if (!m_valid)
             {
-                Utility.PushColor(ConsoleColor.Red);
-                Console.WriteLine("This copy of Zora may not access the Zora database.");
-                Utility.PopColor();
+                Utility.Monitor.WriteLine("This copy of Zora may not access the Zora database.", ConsoleColor.Red);
                 return;
             }
             Console.WriteLine("Zora Database Saving...");

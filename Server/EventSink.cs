@@ -1978,7 +1978,7 @@ namespace Server
                     catch (Exception ex)
                     {
                         // Log an exception
-                        Utility.ConsoleWriteLine(ex.Message, ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(ex.Message, ConsoleColor.Red);
                         EventSink.InvokeLogException(new LogExceptionEventArgs(ex));
                     }
                 }
@@ -1997,7 +1997,7 @@ namespace Server
                     catch (Exception ex)
                     {
                         // Log an exception
-                        Utility.ConsoleWriteLine(ex.Message, ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(ex.Message, ConsoleColor.Red);
                         EventSink.InvokeLogException(new LogExceptionEventArgs(ex));
                     }
                 }
@@ -2198,7 +2198,7 @@ namespace Server
                     catch (Exception ex)
                     {
                         //Do nothing to avoid recursion
-                        Utility.ConsoleWriteLine(ex.Message, ConsoleColor.Red);
+                        Utility.Monitor.WriteLine(ex.Message, ConsoleColor.Red);
                     }
                 }
             }

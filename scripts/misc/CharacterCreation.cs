@@ -772,7 +772,7 @@ namespace Server.Misc
 
             if (newChar == null)
             {
-                Utility.ConsoleWriteLine("Login: {0}: Character creation failed, account full", ConsoleColor.Yellow, args.State);
+                Utility.Monitor.WriteLine("Login: {0}: Character creation failed, account full", ConsoleColor.Yellow, args.State);
                 return;
             }
 
@@ -783,7 +783,7 @@ namespace Server.Misc
             // create a special role for Login Server administrator
             bool LoginAdmin = Core.RuleSets.LoginServerRules() && args.State != null && args.State.Address != null && Server.Commands.OwnerTools.IsOwnerIP(args.State.Address);
             if (LoginAdmin == true)
-                Utility.ConsoleWriteLine("Administrative account ({0}) logging into Login Server", ConsoleColor.Red, args.State.Address);
+                Utility.Monitor.WriteLine("Administrative account ({0}) logging into Login Server", ConsoleColor.Red, args.State.Address);
 
             newChar.Player = true;
             
@@ -893,9 +893,9 @@ namespace Server.Misc
 
             #endregion
 
-            Utility.ConsoleWriteLine(string.Format("Login: {0}: New character being created (account={1})", args.State, ((Account)args.Account).Username), ConsoleColor.Yellow);
-            Utility.ConsoleWriteLine(string.Format(" - Character: {0} (serial={1})", newChar.Name, newChar.Serial), ConsoleColor.Yellow);
-            Utility.ConsoleWriteLine(string.Format(" - Started: {0} {1} {2}", spawnTag, spawnLoc, spawnMap), ConsoleColor.Yellow);
+            Utility.Monitor.WriteLine(string.Format("Login: {0}: New character being created (account={1})", args.State, ((Account)args.Account).Username), ConsoleColor.Yellow);
+            Utility.Monitor.WriteLine(string.Format(" - Character: {0} (serial={1})", newChar.Name, newChar.Serial), ConsoleColor.Yellow);
+            Utility.Monitor.WriteLine(string.Format(" - Started: {0} {1} {2}", spawnTag, spawnLoc, spawnMap), ConsoleColor.Yellow);
 
             new WelcomeTimer(newChar).Start();
         }
