@@ -6024,50 +6024,50 @@ namespace Server
         public static string GetShortPath(string path, bool raw = false)
         {
             if (raw == false)
-            { 
-            string short_path = "";
-            try
             {
-                if (string.IsNullOrEmpty(path))
-                    return short_path;
-
-                string root = Path.Combine(Core.DataDirectory, "..");   // directory above Data is the root
-                string temp = Path.GetFullPath(root);                   // this gives us an absolute path without all the '..\..\' stuff
-                string[] split = temp.Split(new char[] { '\\', '/' });  // split the path into components
-                root = split[split.Length - 1];                         // here is our true root folder
-
-                split = path.Split(new char[] { '\\', '/' });           // now split up what was passed in
-                Stack<string> stack = new Stack<string>(split);         // store these components in a stack (reverse order)
-                Stack<string> out_stack = new Stack<string>();          // correctly ordered output stack
-                while (stack.Count > 0)                                 // collect the components for our short path
+                string short_path = "";
+                try
                 {
-                    out_stack.Push(stack.Pop());
-                    if (out_stack.Peek() == root)
-                        break;
+                    if (string.IsNullOrEmpty(path))
+                        return short_path;
+
+                    string root = Path.Combine(Core.DataDirectory, "..");   // directory above Data is the root
+                    string temp = Path.GetFullPath(root);                   // this gives us an absolute path without all the '..\..\' stuff
+                    string[] split = temp.Split(new char[] { '\\', '/' });  // split the path into components
+                    root = split[split.Length - 1];                         // here is our true root folder
+
+                    split = path.Split(new char[] { '\\', '/' });           // now split up what was passed in
+                    Stack<string> stack = new Stack<string>(split);         // store these components in a stack (reverse order)
+                    Stack<string> out_stack = new Stack<string>();          // correctly ordered output stack
+                    while (stack.Count > 0)                                 // collect the components for our short path
+                    {
+                        out_stack.Push(stack.Pop());
+                        if (out_stack.Peek() == root)
+                            break;
+                    }
+
+                    // now reassemble the short path
+                    while (out_stack.Count > 0)
+                        short_path = Path.Combine(short_path, out_stack.Pop());
+                }
+                catch (Exception ex)
+                {
+                    Diagnostics.LogHelper.LogException(ex);
                 }
 
-                // now reassemble the short path
-                while (out_stack.Count > 0)
-                    short_path = Path.Combine(short_path, out_stack.Pop());
-            }
-            catch (Exception ex)
-            {
-                Diagnostics.LogHelper.LogException(ex);
-            }
-
-            return "...\\" + short_path;
+                return "...\\" + short_path;
             }
             else
             {   // example: C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island.
                 // to: C:\Users\luket\...\Src\Angel Island.
                 // reduce >= 9 components to 6.
-                List<string> components = new(path.Split(new char[] {'\\', '/'}, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                List<string> components = new(path.Split(new char[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
                 if (components.Count < 9)
                     return path;
 
-                List<string> left = components.Take<string>(9/2).ToList();
-                List<string> right = components.Skip(9/2).Take<string>(9).ToList();
-                for(int ix=0; ix < 100; ix++)
+                List<string> left = components.Take<string>(components.Count / 2).ToList();
+                List<string> right = components.Skip(components.Count / 2).Take<string>(components.Count).ToList();
+                for (int ix = 0; ix < 100; ix++)
                 {
                     if (left.Count + right.Count >= 6)
                         left.RemoveAt(left.Count - 1);

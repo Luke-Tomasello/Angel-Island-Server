@@ -1,0 +1,879 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ZLR.VM</name>
+    </assembly>
+    <members>
+        <member name="M:ZLR.VM.Debugging.IDebugger.CallAsync(System.Int16,System.Int16[])">
+            <summary>
+            Calls a routine within the Z-machine, returning its result unless it's interrupted.
+            </summary>
+            <param name="packedAddress">The packed address of the routine to call.</param>
+            <param name="args">The arguments to pass to the routine.</param>
+            <returns>The value returned by the routine, or <see langword="null"/> if the
+            call was interrupted by a debugger break.</returns>
+        </member>
+        <member name="M:ZLR.VM.ZMachine.EncodeText(System.Byte[],System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Encodes a section of text, optionally truncating or padding the output to a fixed size.
+            </summary>
+            <param name="start">The index within <paramref name="input"/> where the
+            plain text starts.</param>
+            <param name="length">The length of the plain text.</param>
+            <param name="numZchars">The number of 5-bit characters that the output should be
+            truncated or padded to, which must be a multiple of 3; or 0 to allow variable size
+            output (padded up to a multiple of 2 bytes, if necessary).</param>
+            <returns>The encoded text.</returns>
+        </member>
+        <member name="P:ZLR.VM.ZMachine.WritingCommandsToFile">
+            <summary>
+            Gets or sets a value indicating whether the player's inputs are to be
+            written to a command file.
+            </summary>
+            <remarks>
+            <para>This property enables or disables output stream 4.</para>
+            <para>When this property is set to true, <see cref="M:ZLR.VM.IAsyncZMachineIO.OpenCommandFileAsync(System.Boolean,System.Threading.CancellationToken)"/>
+            will be called to get a stream for the command file. The property will be
+            reset to false after the game finishes running.</para>
+            </remarks>
+        </member>
+        <member name="P:ZLR.VM.ZMachine.ReadingCommandsFromFile">
+            <summary>
+            Gets or sets a value indicating whether the player's inputs are to be
+            read from a command file.
+            </summary>
+            <remarks>
+            <para>This property switches between input stream 1 (true) and input stream 0
+            (false).</para>
+            <para>When this property is set to true, <see cref="M:ZLR.VM.IAsyncZMachineIO.OpenCommandFileAsync(System.Boolean,System.Threading.CancellationToken)"/>
+            will be called to get a stream for the command file. The property will be
+            reset to false after the game finishes running.</para>
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.ZMachine.StoreResult(System.Byte,System.Int16)">
+            <summary>
+            Implements the store semantics used for most store instructions.
+            </summary>
+            <param name="dest">The destination variable index, or 0 to store to the stack.</param>
+            <param name="result">The value to store.</param>
+            <remarks>
+            Unlike <see cref="M:ZLR.VM.ZMachine.StoreVariableImpl(System.Byte,System.Int16)"/>, this will push a new value onto the stack
+            instead of replacing the existing value.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.ZMachine.StoreVariableImpl(System.Byte,System.Int16)">
+            <summary>
+            Implements the store semantics used by @store and @pull.
+            </summary>
+            <param name="dest">The destination variable index, or 0 to store to the stack.</param>
+            <param name="result">The value to store.</param>
+            <remarks>
+            Unlike <see cref="M:ZLR.VM.ZMachine.StoreResult(System.Byte,System.Int16)"/>, this will replace the top value on the stack
+            instead of pushing a new value.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.ZMachine.#ctor(System.IO.Stream,ZLR.VM.IAsyncZMachineIO)">
+            <summary>
+            Initializes a new instance of the ZLR engine from a given stream.
+            The stream must remain open while the engine is in use.
+            </summary>
+            <param name="gameStream">A stream containing either a plain Z-code
+            file or a Blorb file which in turn contains a Z-code resource.</param>
+            <param name="io"></param>
+        </member>
+        <member name="M:ZLR.VM.ZMachine.JitLoopAsync">
+            <summary>
+            Compiles and executes code, starting from the current <see cref="F:ZLR.VM.ZMachine.pc"/> and continuing
+            until <see cref="F:ZLR.VM.ZMachine.running"/> becomes false or the current call frame is exited.
+            </summary>
+        </member>
+        <member name="M:ZLR.VM.ZMachine.CompileZCode">
+            <summary>
+            Compiles code at the current <see cref="F:ZLR.VM.ZMachine.pc"/> into a <see cref="T:ZLR.VM.ZMachine.ZCodeDelegate"/>.
+            </summary>
+            <returns>The compilation result.</returns>
+        </member>
+        <member name="M:ZLR.VM.ZMachine.MemoryTraps.Add(System.Int32,System.Int32,ZLR.VM.ZMachine.MemoryTrapHandler)">
+            <summary>
+            Adds a new trap for the specified memory region. Does nothing
+            if a region with the same starting address is already trapped.
+            </summary>
+            <param name="trapStart">The starting address of the region.</param>
+            <param name="trapLength">The length of the region.</param>
+            <param name="trapHandler">The delegate to call when the memory
+            is written.</param>
+        </member>
+        <member name="M:ZLR.VM.ZMachine.MemoryTraps.Remove(System.Int32)">
+            <summary>
+            Removes a memory trap. Does nothing if no trap is set with the
+            given starting address.
+            </summary>
+            <param name="trapStart">The starting address of the trap to
+            remove.</param>
+        </member>
+        <member name="M:ZLR.VM.ZMachine.MemoryTraps.Handle(System.Int32,System.Int32)">
+            <summary>
+            Calls the appropriate handlers when a region of memory has been
+            written.
+            </summary>
+            <param name="changeStart">The starting address of the region
+            that was written.</param>
+            <param name="changeLength">The length of the region that
+            was written.</param>
+        </member>
+        <member name="T:ZLR.VM.LruCache`2">
+            <summary>
+            Implements a cache which discards the least recently used items.
+            </summary>
+            <typeparam name="TKey">The type of keys in the cache.</typeparam>
+            <typeparam name="TValue">The type of values being cached.</typeparam>
+        </member>
+        <member name="M:ZLR.VM.LruCache`2.#ctor(System.Int32)">
+            <summary>
+            Initializes a new instance.
+            </summary>
+            <param name="cacheSize">The maximum total size that the cache can
+            reach before it starts discarding items.</param>
+        </member>
+        <member name="M:ZLR.VM.LruCache`2.Add(`0,`1,System.Int32)">
+            <summary>
+            Stores a value into the cache.
+            </summary>
+            <param name="key">The cache key or address.</param>
+            <param name="value">The value to store.</param>
+            <param name="size">The amount of cache space this value occupied by this value.</param>
+        </member>
+        <member name="M:ZLR.VM.LruCache`2.Clear">
+            <summary>
+            Empties the cache.
+            </summary>
+        </member>
+        <member name="M:ZLR.VM.LruCache`2.TryGetValue(`0,`1@)">
+            <summary>
+            Attempts to read a value from the cache.
+            </summary>
+            <param name="key">The cache key or address to search for.</param>
+            <param name="value">Set to the cached value, if it was found.</param>
+            <returns><b>true</b> if the value was found in the cache.</returns>
+        </member>
+        <member name="M:ZLR.VM.LruCache`2.ContainsKey(`0)">
+            <summary>
+            Checks whether the cache contains a key.
+            </summary>
+            <param name="key">The key to search for.</param>
+            <returns><b>true</b> if the key is present in the cache.</returns>
+        </member>
+        <member name="P:ZLR.VM.Opcode.IsBranch">
+            <summary>
+            Gets a value indicating whether the opcode is a conditional branch,
+            not including rtrue/rfalse or unconditional jumps.
+            </summary>
+        </member>
+        <member name="P:ZLR.VM.Opcode.IsUnconditionalJump">
+            <summary>
+            Gets a value indicating whether the opcode is a branch that will always be taken.
+            </summary>
+        </member>
+        <member name="P:ZLR.VM.Opcode.IsTerminator">
+            <summary>
+            Gets a value indicating whether the opcode is a fragment terminator:
+            the following instruction must not be compiled together with it.
+            </summary>
+            <remarks>
+            Usually, this means the opcode changes PC at run time by taking a
+            calculated branch, entering or leaving a routine, etc.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.Opcode.EnterFunction(System.Reflection.Emit.ILGenerator,System.Boolean)">
+            <summary>
+            Generates code to enter a function.
+            </summary>
+            <param name="il">The IL generator.</param>
+            <param name="store">If true, a storage location will be read from the current PC (and PC
+            will be advanced); otherwise, the function result will be discarded.</param>
+        </member>
+        <member name="T:ZLR.VM.UnicodeCaps">
+            <summary>
+            Indicates whether a given character can be printed and/or received as input.
+            </summary>
+            <seealso cref="M:ZLR.VM.IZMachineIO.CheckUnicode(System.Char)"/>
+        </member>
+        <member name="F:ZLR.VM.UnicodeCaps.CanPrint">
+            <summary>
+            Indicates that the character can be printed.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.UnicodeCaps.CanInput">
+            <summary>
+            Indicates that the character can be received as input.
+            </summary>
+        </member>
+        <member name="T:ZLR.VM.TextStyle">
+            <summary>
+            Indicates the text style being selected in <see cref="M:ZLR.VM.IZMachineIO.SetTextStyle(ZLR.VM.TextStyle)"/>.
+            </summary>
+            <remarks>
+            Despite the power-of-two enum values, these styles are not bit flags, and the
+            interface module is not expected to support setting multiple styles in a single call.
+            </remarks>
+        </member>
+        <member name="F:ZLR.VM.TextStyle.Roman">
+            <summary>
+            Turns off all special text styles.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.TextStyle.Reverse">
+            <summary>
+            Reverses foreground and background colors.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.TextStyle.Bold">
+            <summary>
+            Boldface text.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.TextStyle.Italic">
+            <summary>
+            Italic text.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.TextStyle.FixedPitch">
+            <summary>
+            Fixed pitch text.
+            </summary>
+        </member>
+        <member name="T:ZLR.VM.SoundAction">
+            <summary>
+            Indicates the action being requested by <see cref="M:ZLR.VM.IZMachineIO.PlaySoundSample(System.UInt16,ZLR.VM.SoundAction,System.Byte,System.Byte,ZLR.VM.SoundFinishedCallback)"/>.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.SoundAction.Prepare">
+            <summary>
+            Cache the sound in anticipation of playing it soon.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.SoundAction.Start">
+            <summary>
+            Start playing the sound in the background.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.SoundAction.Stop">
+            <summary>
+            Stop the sound if it's currently playing.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.SoundAction.FinishWith">
+            <summary>
+            Evict the sound from the cache because it won't be needed again soon.
+            </summary>
+        </member>
+        <member name="T:ZLR.VM.ReadOutcome">
+            <summary>
+            Indicates the reason why an input method returned.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.ReadOutcome.Cancelled">
+            <summary>
+            Input was cancelled by the timer callback.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.ReadOutcome.KeyPressed">
+            <summary>
+            Input was terminated by a keypress.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.ReadOutcome.DebuggerBreak">
+            <summary>
+            The user asked to break into the debugger.
+            </summary>
+        </member>
+        <member name="T:ZLR.VM.ReadLineResult">
+            <summary>
+            Indicates the outcome of a call to <see cref="M:ZLR.VM.IAsyncZMachineIO.ReadLineAsync(System.String,System.Byte[],System.Boolean,System.Threading.CancellationToken)"/>.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.ReadLineResult.Cancelled">
+            <summary>
+            Input was cancelled by the timer callback.
+            </summary>
+        </member>
+        <member name="F:ZLR.VM.ReadLineResult.DebuggerBreak">
+            <summary>
+            The user asked to break into the debugger.
+            </summary>
+        </member>
+        <member name="M:ZLR.VM.ReadLineResult.LineEntered(System.String,System.Byte)">
+            <summary>
+            The user entered text and pressed a terminating key. 
+            </summary>
+            <param name="text">The entered text.</param>
+            <param name="terminator">The ZSCII code of the terminating key.</param>
+            <returns>A structure describing the result of the read.</returns>
+        </member>
+        <member name="T:ZLR.VM.IZMachineIO">
+            <summary>
+            Provides an interface for Z-machine I/O features: reading and writing text;
+            opening streams for saved games and transcripts; playing sounds; moving the cursor
+            and splitting windows; changing the text style; and indicating the capabilities of
+            the I/O system.
+            </summary>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.ReadLine(System.String,System.Int32,ZLR.VM.TimedInputCallback,System.Byte[],System.Boolean)">
+            <summary>
+            Reads a line of input from the player.
+            </summary>
+            <param name="initial">The initial string which has been supplied for the player's
+            input, or an empty string if no initial input has been supplied.</param>
+            <param name="time">The callback interval for timed input, in tenths of a second.
+            If this is nonzero, <paramref name="callback"/> should be called every <paramref name="time"/>/10
+            seconds.</param>
+            <param name="callback">The callback function for timed input, which should be called
+            every so often according to <paramref name="time"/>. The function can return true to cancel
+            input immediately.</param>
+            <param name="terminatingKeys">An array of ZSCII values of function keys which should
+            terminate input immediately if pressed. The special value 255 means "any function key" and will
+            appear alone.</param>
+            <param name="allowDebuggerBreak"><b>true</b> if the function may break into the debugger by
+            returning <see cref="F:ZLR.VM.ReadLineResult.DebuggerBreak"/>.</param>
+            <returns>A <see cref="T:ZLR.VM.ReadLineResult"/> indicating how the line input request ended.</returns>
+            <remarks>
+            <para>If a non-empty string is supplied as <paramref name="initial"/>, the string will have
+            already been printed by the game. The interface should avoid printing it again, but should
+            still allow the player to edit it as if he had typed it himself. (If this cannot be achieved,
+            it is recommended to err on the side of letting the player edit the text.)</para>
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.ReadKey(System.Int32,ZLR.VM.TimedInputCallback,ZLR.VM.CharTranslator)">
+            <summary>
+            Reads a single key of input from the player, without echoing it.
+            </summary>
+            <param name="time">The callback interval for timed input, in tenths of a second.
+            If this is nonzero, <paramref name="callback"/> should be called every <paramref name="time"/>/10
+            seconds.</param>
+            <param name="callback">The callback function for timed input, which should be called
+            every so often according to <paramref name="time"/>. The function can return true to cancel
+            input immediately.</param>
+            <param name="translator">A helper callback which translates printable characters into their
+            ZSCII values, according to the currently selected translation table.</param>
+            <returns>The ZSCII value of the key that was pressed, or 0 if input was cancelled by the
+            timer callback.</returns>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.PutCommand(System.String)">
+            <summary>
+            Displays a command that has been read from the command file.
+            </summary>
+            <param name="command">The command read from the file. If the command was terminated
+            by pressing the enter key, this string will end with a newline.</param>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.PutChar(System.Char)">
+            <summary>
+            Writes a character to the screen, using the currently selected text style, cursor, and
+            window settings.
+            </summary>
+            <param name="ch">The character to write.</param>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.PutString(System.String)">
+            <summary>
+            Writes a string to the screen, using the currently selected text style, cursor, and
+            window settings.
+            </summary>
+            <param name="str">The string to write.</param>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.PutTextRectangle(System.String[])">
+            <summary>
+            Writes a series of lines to the screen, spreading down and to the right from the
+            current cursor position, and leaving the cursor at the end of the last line.
+            </summary>
+            <param name="lines">The lines to write.</param>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.Buffering">
+            <summary>
+            Gets or sets a value indicating whether text in the lower (main) window is
+            buffered for word wrapping.
+            </summary>
+            <remarks>
+            This value should be true initially when the game starts.
+            The upper window is always buffered.
+            </remarks>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.Transcripting">
+            <summary>
+            Gets or sets a value indicating whether a transcript file is being written.
+            </summary>
+            <remarks>
+            The interface module is responsible for prompting the player for a file name, if necessary.
+            However, if the player has already selected a transcript file during the current game,
+            the same file should be reused instead of prompting for another name, so games can
+            turn transcripting off and on in rapid succession.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.PutTranscriptChar(System.Char)">
+            <summary>
+            Writes a single character to the transcript file.
+            </summary>
+            <param name="ch">The character to write.</param>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.PutTranscriptString(System.String)">
+            <summary>
+            Writes a string to the transcript file.
+            </summary>
+            <param name="str">The string to write.</param>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.OpenSaveFile(System.Int32)">
+            <summary>
+            Opens a stream to write the saved game file.
+            </summary>
+            <param name="size">The size of the game state that will be written, in bytes.</param>
+            <returns>A writable <see cref="T:System.IO.Stream"/> for the save file, which the
+            VM will close after it's done saving; or <see langword="null"/> if the user chose not to select a
+            file or the file couldn't be opened.</returns>
+            <remarks>
+            The interface module is responsible for prompting the player for a file name, if necessary.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.OpenRestoreFile">
+            <summary>
+            Opens a stream to read a previously saved game file.
+            </summary>
+            <returns>A readable <see cref="T:System.IO.Stream"/> for the save file, which the
+            VM will close after it's done loading; or <see langword="null"/> if the user chose not to select a
+            file or the file couldn't be opened.</returns>
+            <remarks>
+            The interface module is responsible for prompting the player for a file name, if necessary.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.OpenAuxiliaryFile(System.String,System.Int32,System.Boolean)">
+            <summary>
+            Opens a stream to read or write auxiliary game data.
+            </summary>
+            <param name="name">A suggested name for the auxiliary file.</param>
+            <param name="size">The size, in bytes, of the array that will be read from or
+            written to the auxiliary file.</param>
+            <param name="writing">True if the stream will be used to save auxiliary data;
+            false if it will be used to read previously saved data.</param>
+            <returns>A <see cref="T:System.IO.Stream"/> for the auxiliary file, which must be
+            readable or writable depending on the value of <paramref name="writing"/>, and
+            which the VM will close after it's done using; or <see langword="null"/> if the user chose not to
+            select a file or the file couldn't be opened.</returns>
+            <remarks>
+            The interface module is responsible for prompting the player for a file name, if necessary.
+            The interface module may choose to use the suggested name as-is, or prompt the user
+            for a name and use the suggested name as a default. The suggested name should at least
+            be visible to the user, since a game may use several auxiliary files.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.OpenCommandFile(System.Boolean)">
+            <summary>
+            Opens a stream to read or write the player's input to a file.
+            </summary>
+            <param name="writing">True if the stream will be used to record the player's
+            input; false if it will be used to replay previously recorded input.</param>
+            <returns>A <see cref="T:System.IO.Stream"/> for the command file, which must be
+            readable or writable depending on the value of <paramref name="writing"/>, and
+            which the VM will close after it's done using; or <see langword="null"/> if the user chose not to
+            select a file or the file couldn't be opened.</returns>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.SetTextStyle(ZLR.VM.TextStyle)">
+            <summary>
+            Changes the current text style.
+            </summary>
+            <param name="style">The style being requested.</param>
+            <remarks>
+            The interface module may optionally allow styles to be combined; for example, requesting
+            italic when the bold style is already selected may result in bold italic text, or it may
+            simply result in italic. In any case, selecting <see cref="F:ZLR.VM.TextStyle.Roman"/> must return
+            to plain text.
+            </remarks>
+            <seealso cref="P:ZLR.VM.IZMachineIO.BoldAvailable"/>
+            <seealso cref="P:ZLR.VM.IZMachineIO.ItalicAvailable"/>
+            <seealso cref="P:ZLR.VM.IZMachineIO.FixedPitchAvailable"/>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.SplitWindow(System.Int16)">
+            <summary>
+            Changes the size of the upper window.
+            </summary>
+            <param name="lines">The new height of the upper window, in lines, or 0 to
+            turn off the upper window.</param>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.SelectWindow(System.Int16)">
+            <summary>
+            Selects the upper or lower window.
+            </summary>
+            <param name="num">0 to select the lower window, or 1 for the upper window.</param>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.EraseWindow(System.Int16)">
+            <summary>
+            Erases one or both windows.
+            </summary>
+            <param name="num">0 to erase the lower window, 1 to erase the upper window,
+            -1 to erase the whole screen and turn off the upper window, or -2 to erase
+            the whole screen but keep the windows split as they are.</param>
+            <remarks>
+            After erasing a window, the cursor should be returned to its upper left corner.
+            After erasing the entire screen (-1 or -2), the lower window should be selected
+            and the cursor returned to its upper left corner.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.EraseLine">
+            <summary>
+            Erases everything to the right of the cursor position on the current line,
+            leaving the cursor where it is.
+            </summary>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.MoveCursor(System.Int16,System.Int16)">
+            <summary>
+            Moves the cursor, if the upper window is selected.
+            </summary>
+            <param name="x">The X coordinate of the new cursor position, counting from 1.</param>
+            <param name="y">The Y coordinate of the new cursor position, counting from 1.</param>
+            <remarks>
+            The coordinate system is "screen units", the same system used by <see cref="P:ZLR.VM.IZMachineIO.FontHeight"/>,
+            <see cref="P:ZLR.VM.IZMachineIO.FontWidth"/>, <see cref="P:ZLR.VM.IZMachineIO.HeightUnits"/>, and <see cref="P:ZLR.VM.IZMachineIO.WidthUnits"/>.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.GetCursorPos(System.Int16@,System.Int16@)">
+            <summary>
+            Retrieves the current cursor position, relative to the top of the currently selected
+            window.
+            </summary>
+            <param name="x">Set to the cursor X coordinate, counting from 1.</param>
+            <param name="y">Set to the cursor Y coordinate, counting from 1.</param>
+            <remarks>
+            The coordinate system is "screen units", the same system used by <see cref="P:ZLR.VM.IZMachineIO.FontHeight"/>,
+            <see cref="P:ZLR.VM.IZMachineIO.FontWidth"/>, <see cref="P:ZLR.VM.IZMachineIO.HeightUnits"/>, and <see cref="P:ZLR.VM.IZMachineIO.WidthUnits"/>.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.SetColors(System.Int16,System.Int16)">
+            <summary>
+            Sets the current output colors.
+            </summary>
+            <param name="fg">The new foreground color.</param>
+            <param name="bg">The new background color.</param>
+            <remarks>
+            The regular color values are: 2 (black), 3 (red), 4 (green), 5 (yellow), 6 (blue),
+            7 (magenta), 8 (cyan), 9 (white), 10 (light grey), 11 (medium grey), or 12 (dark grey).
+            There are also two special color values: 0 means "no change" and 1 means "return to
+            the default".
+            </remarks>
+            <seealso cref="P:ZLR.VM.IZMachineIO.ColorsAvailable"/>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.SetFont(System.Int16)">
+            <summary>
+            Sets the current output font.
+            </summary>
+            <param name="num">The new font number, or 0 to return to the previous font.</param>
+            <returns>The previous font number, or 0 if the requested font is not available
+            (and thus the font has not been changed).</returns>
+            <remarks>
+            The standard font numbers are 1 (normal font), 2 ("picture font"), 3 (character
+            graphics font), and 4 (Courier-style fixed pitch font). However, font 2 is not
+            expected to be supported; its definition is lost to history.
+            </remarks>
+            <seealso cref="P:ZLR.VM.IZMachineIO.GraphicsFontAvailable"/>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.DrawCustomStatusLine(System.String,System.Int16,System.Int16,System.Boolean)">
+            <summary>
+            Allows the I/O module to substitute its own status line handling for V1-3 games.
+            </summary>
+            <param name="location">The name of the player's location.</param>
+            <param name="hoursOrScore">Time games: the current hour (0-23). Score games: the
+            player's score.</param>
+            <param name="minsOrTurns">Time games: the current minute (0-59). Score games: the
+            number of turns elapsed.</param>
+            <param name="useTime"><b>true</b> if this is a time game, or <b>false</b> if
+            this is a score game.</param>
+            <returns><b>true</b> to indicate that the status line request has been handled,
+            or <b>false</b> to allow ZLR's default status line handler to print it.</returns>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.PlaySoundSample(System.UInt16,ZLR.VM.SoundAction,System.Byte,System.Byte,ZLR.VM.SoundFinishedCallback)">
+            <summary>
+            Plays, stops, or controls the cache status of a sound sample.
+            </summary>
+            <param name="number">The number of the sound.</param>
+            <param name="action">The action being requested of the sound.</param>
+            <param name="volume">The volume at which to play the sound, from 1 (quiet) to 8
+            (loud). Values higher than 8 should be treated the same as 8, i.e., loudest.</param>
+            <param name="repeats">The number of times the sound should be played, or 255
+            to repeat the sound forever.</param>
+            <param name="callback">A function to call after the sound is finished playing or
+            repeating. This should not be called if the sound is explicitly stopped.</param>
+            <remarks>
+            Sampled sounds are played in the background: this method must not wait for
+            the sound to finish before returning.
+            </remarks>
+            <seealso cref="P:ZLR.VM.IZMachineIO.SoundSamplesAvailable"/>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.PlayBeep(System.Boolean)">
+            <summary>
+            Plays a beep sound.
+            </summary>
+            <param name="highPitch">True to play a high pitched beep, or false for a
+            low pitched beep.</param>
+            <remarks>
+            Beep sounds are synchronous, so this method may wait for the beep to finish
+            before returning.
+            </remarks>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.ForceFixedPitch">
+            <summary>
+            Gets or sets a value indicating whether all text will be displayed
+            in a fixed pitch font.
+            </summary>
+            <remarks>
+            This only affects the lower window, because the upper window is always fixed pitch.
+            </remarks>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.VariablePitchAvailable">
+            <summary>
+            Gets a value indicating whether text is displayed in a variable pitch font by default.
+            </summary>
+            <remarks>
+            This only affects the lower window, because the upper window is always fixed pitch.
+            </remarks>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.ScrollFromBottom">
+            <summary>
+            Gets or sets a value indicating whether the lower window should scroll from the bottom.
+            </summary>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.BoldAvailable">
+            <summary>
+            Gets a value indicating whether the bold text style is available.
+            </summary>
+            <seealso cref="M:ZLR.VM.IZMachineIO.SetTextStyle(ZLR.VM.TextStyle)"/>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.ItalicAvailable">
+            <summary>
+            Gets a value indicating whether the italic text style is available.
+            </summary>
+            <seealso cref="M:ZLR.VM.IZMachineIO.SetTextStyle(ZLR.VM.TextStyle)"/>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.FixedPitchAvailable">
+            <summary>
+            Gets a value indicating whether the fixed pitch text style is available.
+            </summary>
+            <seealso cref="M:ZLR.VM.IZMachineIO.SetTextStyle(ZLR.VM.TextStyle)"/>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.GraphicsFontAvailable">
+            <summary>
+            Gets a value indicating whether the character graphics font is available.
+            </summary>
+            <seealso cref="M:ZLR.VM.IZMachineIO.SetFont(System.Int16)"/>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.TimedInputAvailable">
+            <summary>
+            Gets a value indicating whether timed input is available, i.e., whether
+            the callback parameter to <see cref="M:ZLR.VM.IZMachineIO.ReadLine(System.String,System.Int32,ZLR.VM.TimedInputCallback,System.Byte[],System.Boolean)"/> and <see cref="M:ZLR.VM.IZMachineIO.ReadKey(System.Int32,ZLR.VM.TimedInputCallback,ZLR.VM.CharTranslator)"/>
+            will actually be called periodically.
+            </summary>
+            <seealso cref="M:ZLR.VM.IZMachineIO.ReadLine(System.String,System.Int32,ZLR.VM.TimedInputCallback,System.Byte[],System.Boolean)"/>
+            <seealso cref="M:ZLR.VM.IZMachineIO.ReadKey(System.Int32,ZLR.VM.TimedInputCallback,ZLR.VM.CharTranslator)"/>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.SoundSamplesAvailable">
+            <summary>
+            Gets a value indicating whether sampled sound is available, i.e., whether
+            <see cref="M:ZLR.VM.IZMachineIO.PlaySoundSample(System.UInt16,ZLR.VM.SoundAction,System.Byte,System.Byte,ZLR.VM.SoundFinishedCallback)"/> will actually have an effect.
+            </summary>
+            <seealso cref="M:ZLR.VM.IZMachineIO.PlaySoundSample(System.UInt16,ZLR.VM.SoundAction,System.Byte,System.Byte,ZLR.VM.SoundFinishedCallback)"/>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.WidthChars">
+            <summary>
+            Gets the width of the screen in characters.
+            </summary>
+            <remarks>
+            The standard "character" here is the digit "0" in the fixed pitch font.
+            </remarks>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.WidthUnits">
+            <summary>
+            Gets the width of the screen in screen units.
+            </summary>
+            <remarks>
+            For simplicity, it is recommended to fix the font size at 1 by 1 so that
+            characters and screen units are the same.
+            </remarks>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.HeightChars">
+            <summary>
+            Gets the height of the screen in characters.
+            </summary>
+            <remarks>
+            The standard "character" here is the digit "0" in the fixed pitch font.
+            </remarks>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.HeightUnits">
+            <summary>
+            Gets the height of the screen in screen units.
+            </summary>
+            <remarks>
+            For simplicity, it is recommended to fix the font size at 1 by 1 so that
+            characters and screen units are the same.
+            </remarks>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.FontHeight">
+            <summary>
+            Gets the height of a character in screen units.
+            </summary>
+            <remarks>
+            The standard "character" here is the digit "0" in the fixed pitch font.
+            For simplicity, it is recommended to fix the font size at 1 by 1 so that
+            characters and screen units are the same.
+            </remarks>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.FontWidth">
+            <summary>
+            Gets the width of a character in screen units.
+            </summary>
+            <remarks>
+            The standard "character" here is the digit "0" in the fixed pitch font.
+            For simplicity, it is recommended to fix the font size at 1 by 1 so that
+            characters and screen units are the same.
+            </remarks>
+        </member>
+        <member name="E:ZLR.VM.IZMachineIO.SizeChanged">
+            <summary>
+            Raised when the screen size has changed.
+            </summary>
+            <remarks>
+            The VM will respond by reading the new size values and writing them into
+            the game header.
+            </remarks>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.ColorsAvailable">
+            <summary>
+            Gets a value indicating whether color text is available, i.e., whether
+            <see cref="M:ZLR.VM.IZMachineIO.SetColors(System.Int16,System.Int16)"/> will actually have an effect.
+            </summary>
+            <seealso cref="M:ZLR.VM.IZMachineIO.SetColors(System.Int16,System.Int16)"/>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.DefaultForeground">
+            <summary>
+            Gets the default foreground color.
+            </summary>
+        </member>
+        <member name="P:ZLR.VM.IZMachineIO.DefaultBackground">
+            <summary>
+            Gets the default background color.
+            </summary>
+        </member>
+        <member name="M:ZLR.VM.IZMachineIO.CheckUnicode(System.Char)">
+            <summary>
+            Determines whether a given character can be printed to the screen
+            or received as input.
+            </summary>
+            <param name="ch">The character to test.</param>
+            <returns>A <see cref="T:ZLR.VM.UnicodeCaps"/> value indicating whether the
+            character can be printed or received.</returns>
+        </member>
+        <member name="M:ZLR.VM.IAsyncZMachineIO.ReadLineAsync(System.String,System.Byte[],System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Reads a line of input from the player asynchronously.
+            </summary>
+            <param name="initial">The initial string which has been supplied for the player's
+            input, or an empty string if no initial input has been supplied.</param>
+            <param name="terminatingKeys">An array of ZSCII values of function keys which should
+            terminate input immediately if pressed. The special value 255 means "any function key" and will
+            appear alone.</param>
+            <param name="allowDebuggerBreak"><b>true</b> if the function may break into the debugger by
+            returning <see cref="F:ZLR.VM.ReadLineResult.DebuggerBreak"/>.</param>
+            <param name="cancellationToken">A cancellation token.</param>
+            <returns>A <see cref="T:ZLR.VM.ReadLineResult"/> indicating how the line input request ended.</returns>
+            <remarks>
+            <para>If a non-empty string is supplied as <paramref name="initial"/>, the string will have
+            already been printed by the game. The interface should avoid printing it again, but should
+            still allow the player to edit it as if he had typed it himself. (If this cannot be achieved,
+            it is recommended to err on the side of letting the player edit the text.)</para>
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IAsyncZMachineIO.ReadKeyAsync(ZLR.VM.CharTranslator,System.Threading.CancellationToken)">
+            <summary>
+            Reads a single key of input from the player asynchronously, without echoing it.
+            </summary>
+            <param name="translator">A helper callback which translates printable characters into their
+            ZSCII values, according to the currently selected translation table.</param>
+            <param name="cancellationToken">A cancellation token.</param>
+            <returns>The ZSCII value of the key that was pressed, or 0 if input was cancelled by the
+            timer callback.</returns>
+        </member>
+        <member name="M:ZLR.VM.IAsyncZMachineIO.OpenSaveFileAsync(System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Opens a stream to write the saved game file.
+            </summary>
+            <param name="size">The size of the game state that will be written, in bytes.</param>
+            <returns>A writable <see cref="T:System.IO.Stream"/> for the save file, which the
+            VM will close after it's done saving; or <see langword="null"/> if the user chose not to select a
+            file or the file couldn't be opened.</returns>
+            <param name="cancellationToken">A cancellation token.</param>
+            <remarks>
+            The interface module is responsible for prompting the player for a file name, if necessary.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IAsyncZMachineIO.OpenRestoreFileAsync(System.Threading.CancellationToken)">
+            <summary>
+            Opens a stream to read a previously saved game file.
+            </summary>
+            <returns>A readable <see cref="T:System.IO.Stream"/> for the save file, which the
+            VM will close after it's done loading; or <see langword="null"/> if the user chose not to select a
+            file or the file couldn't be opened.</returns>
+            <param name="cancellationToken">A cancellation token.</param>
+            <remarks>
+            The interface module is responsible for prompting the player for a file name, if necessary.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IAsyncZMachineIO.OpenAuxiliaryFileAsync(System.String,System.Int32,System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Opens a stream to read or write auxiliary game data.
+            </summary>
+            <param name="name">A suggested name for the auxiliary file.</param>
+            <param name="size">The size, in bytes, of the array that will be read from or
+            written to the auxiliary file.</param>
+            <param name="writing">True if the stream will be used to save auxiliary data;
+            false if it will be used to read previously saved data.</param>
+            <returns>A <see cref="T:System.IO.Stream"/> for the auxiliary file, which must be
+            readable or writable depending on the value of <paramref name="writing"/>, and
+            which the VM will close after it's done using; or <see langword="null"/> if the user chose not to
+            select a file or the file couldn't be opened.</returns>
+            <param name="cancellationToken">A cancellation token.</param>
+            <remarks>
+            The interface module is responsible for prompting the player for a file name, if necessary.
+            The interface module may choose to use the suggested name as-is, or prompt the user
+            for a name and use the suggested name as a default. The suggested name should at least
+            be visible to the user, since a game may use several auxiliary files.
+            </remarks>
+        </member>
+        <member name="M:ZLR.VM.IAsyncZMachineIO.OpenCommandFileAsync(System.Boolean,System.Threading.CancellationToken)">
+            <summary>
+            Opens a stream to read or write the player's input to a file.
+            </summary>
+            <param name="writing">True if the stream will be used to record the player's
+            input; false if it will be used to replay previously recorded input.</param>
+            <param name="cancellationToken">A cancellation token.</param>
+            <returns>A <see cref="T:System.IO.Stream"/> for the command file, which must be
+            readable or writable depending on the value of <paramref name="writing"/>, and
+            which the VM will close after it's done using; or <see langword="null"/> if the user chose not to
+            select a file or the file couldn't be opened.</returns>
+        </member>
+        <member name="M:ZLR.IFF.Blorb.#ctor(System.IO.Stream)">
+            <summary>
+            Initializes a new Blorb reader from a stream. The stream must be kept open
+            while the Blorb reader is in use.
+            </summary>
+            <param name="fromStream">The stream to read.</param>
+        </member>
+        <member name="M:ZLR.IFF.Blorb.GetStoryType">
+            <summary>
+            Determines the type of the story file contained in this Blorb.
+            </summary>
+            <returns>A four-character string identifying the story file type,
+            or null if no story resource is present.</returns>
+        </member>
+        <member name="M:ZLR.IFF.Blorb.GetStoryStream">
+            <summary>
+            Obtains a stream for the story file data in this Blorb.
+            </summary>
+            <exception cref="T:System.InvalidOperationException">No story resource is present.</exception>
+            <returns>A stream containing the story file data, or null if no
+            story resource is present.</returns>
+        </member>
+    </members>
+</doc>

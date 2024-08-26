@@ -115,7 +115,7 @@ namespace Server.Misc
 						string.Format("Welcome to the Player Tribute Shard"),
                         string.Format("Angel Island core version {0}, launched March 2004.", version),
                         "This shard brings back 5000 of the most recent players from the shards:",
-                        "Angel Island 3.0 (2016), Angel Island 7.0 (2024), and Siege Perilous 7.0 (2017).",
+                        "Angel Island 3.0 (2016), Angel Island 7.0 (2024), and Siege Perilous 7.0 (2024).",
                         "They're all here in Britain. Enjoy the trip down memory lane.",
                         "-- Adam Ant"
                         };

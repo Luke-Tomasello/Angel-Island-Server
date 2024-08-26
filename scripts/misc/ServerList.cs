@@ -140,10 +140,10 @@ namespace Server.Misc
 #else
                 // name can only be this long:
                 //          "---------------"
-                e.AddServer("Angel Island", new IPEndPoint(localAddress, SocketOptions.AngelIslandPort));
+                e.AddServer("AI 3.0 (2016)", new IPEndPoint(localAddress, SocketOptions.RenaissancePort));
+                e.AddServer("AI 6.0 (2024)", new IPEndPoint(localAddress, SocketOptions.AngelIslandPort));
                 e.AddServer("Siege Perilous", new IPEndPoint(localAddress, SocketOptions.SiegePerilousPort));
                 //if (ns != null && ns.Address != null && Server.Commands.OwnerTools.IsOwnerIP(ns.Address))
-                e.AddServer("AI 3.0 (2017)", new IPEndPoint(localAddress, SocketOptions.RenaissancePort));
                 //if (ns != null && ns.Address != null && Server.Commands.OwnerTools.IsOwnerIP(ns.Address))
                 //e.AddServer("Mortalis", new IPEndPoint(localAddress, SocketOptions.MortalisPort));
                 e.AddServer("SP Test Center", new IPEndPoint(localAddress, SocketOptions.TestCenterPort));

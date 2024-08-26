@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\luket\\Documents\\Software\\Development\\Product\\Src\\Angel Island\\GMN Core 6.0\\BuildInfo\\BuildInfo.csproj",
+      "projectUniqueName": "C:\\Users\\luket\\Documents\\Software\\Development\\Product\\Src\\Angel Island\\GitHub Staging\\GMN Core 6.0\\BuildInfo\\BuildInfo.csproj",
       "projectName": "BuildInfo",
-      "projectPath": "C:\\Users\\luket\\Documents\\Software\\Development\\Product\\Src\\Angel Island\\GMN Core 6.0\\BuildInfo\\BuildInfo.csproj",
+      "projectPath": "C:\\Users\\luket\\Documents\\Software\\Development\\Product\\Src\\Angel Island\\GitHub Staging\\GMN Core 6.0\\BuildInfo\\BuildInfo.csproj",
       "packagesPath": "C:\\Users\\luket\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\luket\\Documents\\Software\\Development\\Product\\Src\\Angel Island\\GMN Core 6.0\\BuildInfo\\obj\\",
+      "outputPath": "C:\\Users\\luket\\Documents\\Software\\Development\\Product\\Src\\Angel Island\\GitHub Staging\\GMN Core 6.0\\BuildInfo\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\luket\\AppData\\Roaming\\NuGet\\NuGet.Config",

@@ -65,11 +65,11 @@ namespace Server
         public const int EventShardPort = 2598;
         public const int LoginServerPortBase = 3593;
 #else
-        public const int AngelIslandPort = 3593;
+        public const int AngelIslandPort = 3593;        // AI 6.0 (2024)
         public const int TestCenterPort = 3594;
         public const int SiegePerilousPort = 3595;
         public const int MortalisPort = 3596;
-        public const int RenaissancePort = 3597;        // AI 3.0 (2017)
+        public const int RenaissancePort = 3597;        // AI 3.0 (2016)
         public const int EventShardPort = 3598;
         public const int LoginServerPortBase = 2593;
 #endif
