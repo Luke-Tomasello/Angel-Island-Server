@@ -531,6 +531,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_24A985A87BCE42B69FF70B78A5027D6C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_252ECD7240504B3CBC5B8FBD10699BC0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -748,12 +754,6 @@
         "Entry"
         {
         "MsmKey" = "8:_3343C4FE16284839B547520470A732EF"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_33B4DDC7AA30483DAF078720353984C0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1264,12 +1264,6 @@
         "Entry"
         {
         "MsmKey" = "8:_5DBFCC84810F48799D152D5C01C9FCA4"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_5E10D755DA144075BE4B7B378862A892"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -3244,6 +3238,12 @@
         "Entry"
         {
         "MsmKey" = "8:_F0C640B30BE649338221AA918999B738"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_F0E0462681DA4362B7DDD124562C3921"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -5276,6 +5276,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_24A985A87BCE42B69FF70B78A5027D6C"
+            {
+            "SourcePath" = "8:..\\Core 6.info"
+            "TargetName" = "8:Core 6.info"
+            "Tag" = "8:"
+            "Folder" = "8:_4A50A18D637C4BD3912730FAD24F66D5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_252ECD7240504B3CBC5B8FBD10699BC0"
             {
             "SourcePath" = "8:data\\Decoration\\Ilshenar\\enslavedgargs.cfg"
@@ -6002,26 +6022,6 @@
             "TargetName" = "8:gate_large.xml"
             "Tag" = "8:"
             "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_33B4DDC7AA30483DAF078720353984C0"
-            {
-            "SourcePath" = "8:..\\build.info"
-            "TargetName" = "8:build.info"
-            "Tag" = "8:"
-            "Folder" = "8:_4A50A18D637C4BD3912730FAD24F66D5"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -14296,6 +14296,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F0E0462681DA4362B7DDD124562C3921"
+            {
+            "SourcePath" = "8:Ports.json"
+            "TargetName" = "8:Ports.json"
+            "Tag" = "8:"
+            "Folder" = "8:_4A50A18D637C4BD3912730FAD24F66D5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F0F7CC6243F54D388E8FCAE5F6ECF942"
             {
             "SourcePath" = "8:data\\Spawners\\Mortalis\\Nightmare.xml"
@@ -15536,12 +15556,12 @@
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
         "ProductVersion" = "8:1.0.0"
-        "Manufacturer" = "8:luke.tomasello@outlook.com"
+        "Manufacturer" = "8:luke.tomasello@gmail.com"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
         "Title" = "8:ShardSetup For Angel Island 6.0"
         "Subject" = "8:"
-        "ARPCONTACT" = "8:luke.tomasello@outlook.com"
+        "ARPCONTACT" = "8:luke.tomasello@gmail.com"
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:Angel Island 6.0 Setup"
         "ARPURLINFOABOUT" = "8:"
@@ -16078,7 +16098,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5CFEC59BA82747A78C838A0BE480C6D9"
             {
-            "SourcePath" = "8:obj\\Release\\apphost.exe"
+            "SourcePath" = "8:obj\\Debug\\apphost.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_4A50A18D637C4BD3912730FAD24F66D5"
@@ -16099,34 +16119,6 @@
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:PublishItems"
             "OutputProjectGuid" = "8:{30E89113-6F6A-4B85-9E7B-F75185B7DD5A}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5E10D755DA144075BE4B7B378862A892"
-            {
-            "SourcePath" = "8:BuildInfo\\obj\\Release\\apphost.exe"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_4A50A18D637C4BD3912730FAD24F66D5"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:PublishItems"
-            "OutputProjectGuid" = "8:{39E25B8A-1388-44BB-A2FA-4D331C990A15}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {

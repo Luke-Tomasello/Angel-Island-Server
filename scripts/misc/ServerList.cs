@@ -128,29 +128,16 @@ namespace Server.Misc
                     }
                 }
 
-#if CORE_UOBETA
                 // name can only be this long:
-                //          "---------------"
-                e.AddServer("Angel Island", new IPEndPoint(localAddress, SocketOptions.AngelIslandPort));
-                //e.AddServer("Siege Perilous", new IPEndPoint(localAddress, SocketOptions.SiegePort));
-                //e.AddServer("Mortalis", new IPEndPoint(localAddress, SocketOptions.MortalisPort));				// RIP - For now!
-                //e.AddServer("AI Resurrection", new IPEndPoint(localAddress, SocketOptions.AIResurrectionPort));
-                //e.AddServer("AI Test Center", new IPEndPoint(localAddress, SocketOptions.TestCenterPort));
-                //e.AddServer("SP Test Center", new IPEndPoint(localAddress, SocketOptions.EventShardPort));
-#else
-                // name can only be this long:
-                //          "---------------"
-                e.AddServer("AI 3.0 (2016)", new IPEndPoint(localAddress, SocketOptions.RenaissancePort));
-                e.AddServer("AI 6.0 (2024)", new IPEndPoint(localAddress, SocketOptions.AngelIslandPort));
-                e.AddServer("Siege Perilous", new IPEndPoint(localAddress, SocketOptions.SiegePerilousPort));
-                //if (ns != null && ns.Address != null && Server.Commands.OwnerTools.IsOwnerIP(ns.Address))
-                //if (ns != null && ns.Address != null && Server.Commands.OwnerTools.IsOwnerIP(ns.Address))
-                //e.AddServer("Mortalis", new IPEndPoint(localAddress, SocketOptions.MortalisPort));
-                e.AddServer("SP Test Center", new IPEndPoint(localAddress, SocketOptions.TestCenterPort));
+                //          "Angel Island (2016)"
+                //          "-------------------"
+                e.AddServer("Angel Island 2016", new IPEndPoint(localAddress, SocketOptions.RenaissancePort));
+                e.AddServer("AI Test Center 2016", new IPEndPoint(localAddress, SocketOptions.TestCenterPort));
                 e.AddServer("Player Tribute", new IPEndPoint(localAddress, SocketOptions.EventShardPort));
+                e.AddServer("AI (2024)", new IPEndPoint(localAddress, SocketOptions.AngelIslandPort));
+                e.AddServer("SP (2024)", new IPEndPoint(localAddress, SocketOptions.SiegePerilousPort));
                 if (ns != null && ns.Address != null && Server.Commands.OwnerTools.IsOwnerIP(ns.Address))
                     e.AddServer("Administrative", new IPEndPoint(localAddress, SocketOptions.LoginServerPortBase));
-#endif
             }
             catch
             {

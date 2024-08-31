@@ -1,0 +1,14 @@
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo\obj\Release\BuildInfo.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo\obj\Release\BuildInfo.AssemblyInfoInputs.cache
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo\obj\Release\BuildInfo.AssemblyInfo.cs
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo\obj\Release\BuildInfo.csproj.CoreCompileInputs.cache
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo.exe
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo\obj\Release\BuildInfo.dll
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo\obj\Release\refint\BuildInfo.dll
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo\obj\Release\BuildInfo.pdb
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo.deps.json
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo\obj\Release\BuildInfo.genruntimeconfig.cache
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo.runtimeconfig.json
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo.dll
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo\obj\Release\ref\BuildInfo.dll
+C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\BuildInfo.pdb

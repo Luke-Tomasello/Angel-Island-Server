@@ -22,7 +22,7 @@
 /* Server/Utility.cs
  * ChangeLog:
  *  8/13/2024, Adam
- *      Add a notion of BuildInfoDir. This directory contains the "build.info" file
+ *      Add a notion of BuildInfoDir. This directory contains the "Core 6.info" file
  *  2/8/2024, Adam
  *      CAUTION: CopyProperties
  *      CopyProperties does not work for all items.
@@ -6101,6 +6101,7 @@ namespace Server
 
             return Math.Sqrt((xDelta * xDelta) + (yDelta * yDelta));
         }
+        #region AI Version Info
         public static ConsoleColor BuildColor(int bulidNumber)
         {   // gives us a random color for *this* build.
             //  Allows a quick visual to ensure all servers are running the same build
@@ -6113,13 +6114,12 @@ namespace Server
             if (selected == ConsoleColor.Black) selected = ConsoleColor.White;
             return selected;
         }
-        #region AI Version Info
         public static int BuildBuild()
         {
             try
             {
                 // open our version info file
-                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "build.info");
+                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "Core 6.info");
                 StreamReader sr = new StreamReader(buildInfoFile);
                 //the first line of text will be the version
                 string line = sr.ReadLine();
@@ -6140,7 +6140,7 @@ namespace Server
         {
             try
             {
-                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "build.info");
+                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "Core 6.info");
                 // open our version info file
                 StreamReader sr = new StreamReader(buildInfoFile);
                 //the first line of text will be the build
@@ -6164,7 +6164,7 @@ namespace Server
         {
             try
             {
-                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "build.info");
+                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "Core 6.info");
                 // open our version info file
                 StreamReader sr = new StreamReader(buildInfoFile);
                 //the first line of text will be the build
@@ -6190,7 +6190,7 @@ namespace Server
         {
             try
             {
-                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "build.info");
+                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "Core 6.info");
                 // open our version info file
                 StreamReader sr = new StreamReader(buildInfoFile);
                 //the first line of text will be the build

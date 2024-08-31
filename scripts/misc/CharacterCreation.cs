@@ -781,7 +781,8 @@ namespace Server.Misc
             m_Mobile = newChar;
 
             // create a special role for Login Server administrator
-            bool LoginAdmin = Core.RuleSets.LoginServerRules() && args.State != null && args.State.Address != null && Server.Commands.OwnerTools.IsOwnerIP(args.State.Address);
+            bool LoginAdmin = Core.RuleSets.LoginServerRules() && args.State != null && args.State.Address != null && 
+                Server.Commands.OwnerTools.IsOwnerIP(args.State.Address);
             if (LoginAdmin == true)
                 Utility.Monitor.WriteLine("Administrative account ({0}) logging into Login Server", ConsoleColor.Red, args.State.Address);
 

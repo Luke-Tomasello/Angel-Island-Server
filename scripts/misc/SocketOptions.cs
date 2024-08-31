@@ -38,11 +38,13 @@
  *		Merged in 1.0RC0 code.
  */
 
-
 using Server.Network;
+using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
-
+using Newtonsoft;
+using Newtonsoft.Json;
 namespace Server
 {
     public class SocketOptions
@@ -51,28 +53,69 @@ namespace Server
         private const int CoalesceBufferSize = 512; // MSS that the core will use when buffering packets
         private const int PooledSockets = 32; // The number of sockets to initially pool. Ideal value is expected client count. 
 
-#if old_config
-#if BETA_PORTS
-		public const int AngelIslandPort = 2583;
-		public const int TestCenterPort = 2585;
-#else
-        public const int AngelIslandPort = 2593;
-        public const int TestCenterPort = 2595;
-#endif
-        public const int SiegePort = 2594;
-        public const int MortalisPort = 2596;
-        public const int AIResurrectionPort = 2597;
-        public const int EventShardPort = 2598;
-        public const int LoginServerPortBase = 3593;
-#else
-        public const int AngelIslandPort = 3593;        // AI 6.0 (2024)
-        public const int TestCenterPort = 3594;
-        public const int SiegePerilousPort = 3595;
-        public const int MortalisPort = 3596;
-        public const int RenaissancePort = 3597;        // AI 3.0 (2016)
-        public const int EventShardPort = 3598;
-        public const int LoginServerPortBase = 2593;
-#endif
+        public static int AngelIslandPort
+        {
+            get
+            {
+                string json = File.ReadAllText("Ports.json");
+                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                return portsTable["AngelIslandPort"];
+            }
+        }
+        public static int TestCenterPort
+        {
+            get
+            {
+                string json = File.ReadAllText("Ports.json");
+                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                return portsTable["TestCenterPort"];
+            }
+        }
+        public static int SiegePerilousPort
+        {
+            get
+            {
+                string json = File.ReadAllText("Ports.json");
+                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                return portsTable["SiegePerilousPort"];
+            }
+        }
+        public static int MortalisPort
+        {
+            get
+            {
+                string json = File.ReadAllText("Ports.json");
+                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                return portsTable["MortalisPort"];
+            }
+        }
+        public static int RenaissancePort
+        {
+            get
+            {
+                string json = File.ReadAllText("Ports.json");
+                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                return portsTable["RenaissancePort"];
+            }
+        }
+        public static int EventShardPort
+        {
+            get
+            {
+                string json = File.ReadAllText("Ports.json");
+                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                return portsTable["EventShardPort"];
+            }
+        }
+        public static int LoginServerPortBase
+        {
+            get
+            {
+                string json = File.ReadAllText("Ports.json");
+                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                return portsTable["LoginServerPortBase"];
+            }
+        }
 
         private static IPEndPoint[] m_ListenerEndPoints;
         //        = new IPEndPoint[] {

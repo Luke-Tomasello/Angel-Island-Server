@@ -1,5 +1,5 @@
-# Angel-Island Version 7
-64bit, .NET 6 Ultima Online free Server for Angel-Island and Siege Perilous
+# Angel-Island Core 6
+64bit, .NET 8 Ultima Online free Server for Angel-Island and Siege Perilous
 
 # Launch Parameters
 -uosp       // launch as Siege Perilous<br/>
@@ -10,9 +10,9 @@
 -uotc       // launch as test center. May be combiled with -uosp or -uoai<br/>
 
 # Examples:
-"Angel Island 6.0.exe" -uosp -usedb -nopatch         // launch Siege Perilous<br/>
-"Angel Island 6.0.exe" -uoai -usedb -nopatch         // launch Angel Island<br/>
-"Angel Island 6.0.exe" -uosp -uotc -usedb -nopatch   // launch Siege Perilous Test Center<br/>
+"GMN Core 3.0.exe" -uosp -usedb -nopatch         // launch Siege Perilous<br/>
+"GMN Core 3.0.exe" -uoai -usedb -nopatch         // launch Angel Island<br/>
+"GMN Core 3.0.exe" -uosp -uotc -usedb -nopatch   // launch Siege Perilous Test Center<br/>
 
 # Basic Setup:
 If you are using the Login Server (recommended) the standard connection port: 2593 is used.<br/>

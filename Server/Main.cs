@@ -25,7 +25,7 @@
  *      When using the remote database, verify connectivity during server up.
  *      Issue errors, and inform the user what has happened.
  *  8/13/2024, Adam
- *      Add a notion of BuildInfoDir. This directory contains the "build.info" file
+ *      Add a notion of BuildInfoDir. This directory contains the "Core 6.info" file
  */
 
 using Server.Accounting;
@@ -1460,6 +1460,7 @@ namespace Server
 
             Version ver = m_Assembly.GetName().Version;
             bool state = false;
+
             #region Server Name
 
             if (Core.RuleSets.SiegeRules())
@@ -1498,14 +1499,16 @@ namespace Server
                 Core.ReleasePhase < ReleasePhase.Production ? string.Format(" ({0})",
                 Utility.GetCustomEnumNames(typeof(ReleasePhase))[(int)m_releasePhase]) : "");
 
-            Utility.Monitor.WriteLine("[Siege II is {0}.]", ConsoleColorEnabled(Core.SiegeII_CFG), TextEnabled(Core.SiegeII_CFG));
+            if (RuleSets.UOSP_SVR)
+                Utility.Monitor.WriteLine("[Siege II is {0}.]", ConsoleColorEnabled(Core.SiegeII_CFG), TextEnabled(Core.SiegeII_CFG));
             Utility.Monitor.WriteLine("[UO Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(DataPath.GetUOPath("Ultima Online")));
             Utility.Monitor.WriteLine("[Current Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(Directory.GetCurrentDirectory()));
             Utility.Monitor.WriteLine("[Base Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(BaseDirectory));
             Utility.Monitor.WriteLine("[Data Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(DataDirectory));
-            Utility.Monitor.WriteLine("[Shared Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(SharedDirectory));
+            //Utility.Monitor.WriteLine("[Shared Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(SharedDirectory));
             Utility.Monitor.WriteLine("[Game Time Zone: {0}]", ConsoleColorInformational(), AdjustedDateTime.GameTimezone);
             Utility.Monitor.WriteLine("[Server Time Zone: {0}]", ConsoleColorInformational(), AdjustedDateTime.ServerTimezone);
+
             #region ZLib
             bool zlib_loaded = false;
             try
@@ -1520,12 +1523,26 @@ namespace Server
             state = zlib_loaded;
             Utility.Monitor.WriteLine("[ZLib version {0} ({1}) loaded.]", ConsoleColorInformational(), Compression.Compressor.Version, Compression.Compressor.GetType().Name);
             #endregion ZLib
+
             #region Email
             if (EmailCheck() == true)
                 Utility.Monitor.WriteLine("[All of the required Email environment variables are set.]", ConsoleColorInformational());
             else
                 Utility.Monitor.WriteLine("[Some or all of the required Email environment variables are not set.]", ConsoleColorWarning());
             #endregion Email
+
+            #region Ports
+            if (PortsCheck() == false)
+            {
+                Utility.Monitor.WriteLine("[Ports not configured. Using defaults.]", ConsoleColorWarning());
+                if (DefaultPorts() == false)
+                {
+                    Utility.Monitor.WriteLine("Unable to find Ports.json. Press return to exit.", ConsoleColorWarning());
+                    Console.ReadKey();
+                    return;
+                }
+            }
+            #endregion Ports
 
             #region BuildInfo 
             if (BuildInfoCheck() == true)
@@ -1545,9 +1562,10 @@ namespace Server
             if (Directory.Exists(Path.Combine(Core.DataDirectory)) == false)
                 Core.LoggerShortcuts.BootError(string.Format("Configuration error \"{0}\" is missing.", Core.DataDirectory));
 
-            if (File.Exists(Path.Combine(Core.BuildInfoDir, "Build.info")) == false)
-                Core.LoggerShortcuts.BootError(string.Format("Configuration error \"{0}\" is missing.", Path.Combine(Core.BuildInfoDir, "Build.info")));
+            if (File.Exists(Path.Combine(Core.BuildInfoDir, "Core 6.info")) == false)
+                Core.LoggerShortcuts.BootError(string.Format("Configuration error \"{0}\" is missing.", Path.Combine(Core.BuildInfoDir, "Core 6.info")));
 
+            #region Check Login DB
             if (m_useLoginDB)
             {
                 bool adError = false;
@@ -1588,6 +1606,7 @@ namespace Server
                     }
                 }
             }
+            #endregion Check Login DB
 
             #endregion Boot Errors
 #if DEBUG
@@ -1769,6 +1788,39 @@ namespace Server
                 return true;
             else
                 return false;
+        }
+        public static bool DefaultPorts()
+        {
+            if (!File.Exists("Data/Ports.json"))
+                return false;
+            try
+            {
+                File.Copy("Data/Ports.json", "./Ports.json");
+            }
+            catch 
+            { 
+                return false;
+            }
+            return true;
+        }
+        public static bool PortsCheck()
+        {
+            try
+            {
+                int port;
+                port = SocketOptions.AngelIslandPort;
+                port = SocketOptions.TestCenterPort;
+                port = SocketOptions.SiegePerilousPort;
+                port = SocketOptions.MortalisPort;
+                port = SocketOptions.RenaissancePort;
+                port = SocketOptions.EventShardPort;
+                port = SocketOptions.LoginServerPortBase;
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
         }
         public static bool EmailCheck()
         {

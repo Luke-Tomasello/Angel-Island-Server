@@ -21,8 +21,10 @@
 
 /* BuildInfo\Program.cs
  * ChangeLog
+ *  8/30/2024, Adam
+ *      Reverting major version to 6. This reflects our actual Core version.
  *  8/13/2024, Adam
- *      Add a notion of BuildInfoDir. This directory contains the "build.info" file
+ *      Add a notion of BuildInfoDir. This directory contains the "Core 6.info" file
  *  7/28/2024, Adam
  *      Bump the major version to 7. This will be our new GitHub version
  *  12/26/21, Adam 
@@ -60,12 +62,12 @@ namespace BuildInfo
         static int Main(string[] args)
         {
             // major version number
-            const int major = 7;    // if you change this, update Version History above
+            const int major = 6;    // if you change this, update Version History above
             // minor version number
             const int minor = 1;    // if you change this, update Version History above
 
             Console.WriteLine("BuildInfo: Generating Build Information...");
-            string buildInfoFile = Path.Combine(BuildInfoDir, "build.info");
+            string buildInfoFile = Path.Combine(BuildInfoDir, "Core 6.info");
             bool okay = false;
             int buildNo = GetBuild();
             try
@@ -106,7 +108,7 @@ namespace BuildInfo
         }
         public static int GetBuild()
         {
-            string buildInfoFile = Path.Combine(BuildInfoDir, "build.info");
+            string buildInfoFile = Path.Combine(BuildInfoDir, "Core 6.info");
             try
             {
                 // open our version info file

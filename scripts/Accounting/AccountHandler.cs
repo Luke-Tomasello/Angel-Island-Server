@@ -42,6 +42,8 @@
 
 /* Scripts/Accounting/AccountHandler.cs
  * ChangeLog:
+ *  8/26/2024, Adam
+ *      Console color Yellow for all client login/out etc. actions.
  *  8/15/2024, Adam (GetBestUNMatch)
  *      unfortunately, SQLite database is case-sensitive.
  *      Example: Create the "Adam Ant" account. Next login is with "adam ant". SQLite won't recognize "adam ant"
@@ -455,7 +457,7 @@ namespace Server.Misc
 
                                 if (newOwner == null) //sanity check, should never happen
                                 {
-                                    System.Console.WriteLine("Sanity check failed: newOwner == null!");
+                                    Utility.Monitor.WriteLine("Sanity check failed: newOwner == null!", ConsoleColor.Red);
                                     bDelete = false;
                                     state.Send(new DeleteResult(DeleteResultType.BadRequest));
                                 }
@@ -801,7 +803,7 @@ namespace Server.Misc
                     }
                     catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
 
-                    Console.WriteLine("Login: {0}: Creating new account '{1}'", e.State, un);
+                    Utility.Monitor.WriteLine(string.Format("Login: {0}: Creating new account '{1}'"), ConsoleColor.DarkYellow, e.State, un);
                 }
             }
 
@@ -1056,7 +1058,7 @@ namespace Server.Misc
                     }
                     catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
 
-                    Console.WriteLine("Login: {0}: Creating new account '{1}'", e.State, un);
+                    Utility.Monitor.WriteLine(string.Format("Login: {0}: Creating new account '{1}'", e.State, un), ConsoleColor.Yellow);
                 }
             }
 
