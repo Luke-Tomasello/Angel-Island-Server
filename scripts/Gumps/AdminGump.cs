@@ -260,19 +260,13 @@ namespace Server.Gumps
 
         public static string FormatAccessLevel(AccessLevel level)
         {
-            switch (level)
+            string name = Enum.GetName(typeof(AccessLevel), level);
+            if (name != null)
             {
-                case AccessLevel.Player: return "Player";
-                case AccessLevel.Reporter: return "Reporter";
-                case AccessLevel.FightBroker: return "Fight Broker";
-                case AccessLevel.Counselor: return "Counselor";
-                case AccessLevel.GameMaster: return "Game Master";
-                case AccessLevel.Seer: return "Seer";
-                case AccessLevel.Administrator: return "Administrator";
-                case AccessLevel.Owner: return "Owner";
-                case AccessLevel.System: return "System";
-                default: return "Unknown";
+                return Utility.SplitCamelCase(name);
             }
+
+            return "Unknown";
         }
 
         public AdminGump(Mobile from, AdminGumpPage pageType, int listPage, ArrayList list, string notice, object state)

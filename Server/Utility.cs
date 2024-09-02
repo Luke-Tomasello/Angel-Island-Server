@@ -219,6 +219,15 @@ namespace Server
 {
     public class Utility
     {
+        public static bool StartsWithVowel(string text)
+        {
+            String vowels = "aeiou";
+            if (vowels.IndexOf(text.ToLower().Substring(0, 1)) != -1)
+            {
+                return true; // Start char is vowel
+            }
+            return false;
+        }
         #region Z management
         public static bool BadZ(Mobile from)
         {   // am I maybe stuck in the floor?

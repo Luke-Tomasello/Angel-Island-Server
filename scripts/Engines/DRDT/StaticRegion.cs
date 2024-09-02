@@ -2118,7 +2118,7 @@ namespace Server.Regions
 
             try
             {
-                value = XmlConvert.ToDateTime(s, XmlDateTimeSerializationMode.Local);
+                value = XmlConvert.ToDateTime(s, XmlDateTimeSerializationMode.Utc);
             }
             catch
             {

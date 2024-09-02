@@ -1,0 +1,165 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island-Server\\GMN Core.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island-Server\\GMN Core.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island-Server\\GMN Core.csproj",
+        "projectName": "GMN Core",
+        "projectPath": "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island-Server\\GMN Core.csproj",
+        "packagesPath": "C:\\Users\\luket\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island-Server\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\luket\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island-Server\\ZLR.VM\\ZLR.VM.csproj": {
+                "projectPath": "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island-Server\\ZLR.VM\\ZLR.VM.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "MaxMind.GeoIP2": {
+              "target": "Package",
+              "version": "[5.1.0, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            },
+            "Pluralize.NET": {
+              "target": "Package",
+              "version": "[1.0.2, )"
+            },
+            "System.Data.SQLite.Core": {
+              "target": "Package",
+              "version": "[1.0.115.5, )"
+            },
+            "TextCopy": {
+              "target": "Package",
+              "version": "[6.1.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island-Server\\ZLR.VM\\ZLR.VM.csproj": {
+      "version": "0.9.0-pre-03",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island-Server\\ZLR.VM\\ZLR.VM.csproj",
+        "projectName": "ZLR.VM",
+        "projectPath": "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island-Server\\ZLR.VM\\ZLR.VM.csproj",
+        "packagesPath": "C:\\Users\\luket\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\luket\\Documents\\GitHub\\Angel-Island-Server\\ZLR.VM\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\luket\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "JetBrains.Annotations": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2020.1.0, )"
+            },
+            "Nito.AsyncEx": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

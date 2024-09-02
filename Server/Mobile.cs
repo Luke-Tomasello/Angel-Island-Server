@@ -431,9 +431,7 @@ namespace Server
         Attributes = 0x0000001C
     }
 
-    // Add new Access Levels and prepare old ones for conversion.
-    // Adam: when you update this, you MUST also update the names table GetAccessLevelName() && FormatAccessLevel()
-    public enum AccessLevel
+    public enum AccessLevel : byte
     {
         Player = 100,
         Reporter = 115,
@@ -443,7 +441,7 @@ namespace Server
         Seer = 175,
         Administrator = 205,
         Owner = 220,
-        System = 300
+        System = 255
     }
 
     public enum VisibleDamageType
@@ -6658,6 +6656,10 @@ namespace Server
                         m_Karma = reader.ReadInt();
                         m_AccessLevel = (AccessLevel)reader.ReadByte();
 
+                        // When System was defined as 300 ((byte)300 == 44)
+                        if (version <= 42 && m_AccessLevel == (AccessLevel)44) 
+                            m_AccessLevel = AccessLevel.System;
+
                         // Convert old bonus caps to 'no cap'
                         if (version < 31)
                             m_STRBonusCap = 0;
@@ -7149,19 +7151,18 @@ namespace Server
 
         public static string GetAccessLevelName(AccessLevel level)
         {
-            switch (level)
+            string name = Enum.GetName(typeof(AccessLevel), level);
+            if (name != null)
             {
-                case AccessLevel.Player: return "a player";
-                case AccessLevel.Reporter: return "a reporter";
-                case AccessLevel.FightBroker: return "a fight broker";
-                case AccessLevel.Counselor: return "a counselor";
-                case AccessLevel.GameMaster: return "a game master";
-                case AccessLevel.Seer: return "a seer";
-                case AccessLevel.Administrator: return "an administrator";
-                case AccessLevel.Owner: return "an owner";
-                case AccessLevel.System: return "the system";
-                default: return "an invalid access level";
+                string article = string.Empty;
+                if (Utility.StartsWithVowel(name))
+                    article = "an";
+                else
+                    article = "a";
+
+                return article + " " + Utility.SplitCamelCase(name);
             }
+            return "an invalid access level";
         }
 
         public virtual bool CanPaperdollBeOpenedBy(Mobile from)

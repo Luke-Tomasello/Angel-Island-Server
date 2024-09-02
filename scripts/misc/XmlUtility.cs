@@ -53,7 +53,7 @@ namespace Server
         {
             try
             {
-                return XmlConvert.ToDateTime(dateTimeString, XmlDateTimeSerializationMode.Local);
+                return XmlConvert.ToDateTime(dateTimeString, XmlDateTimeSerializationMode.Utc);
             }
             catch
             {

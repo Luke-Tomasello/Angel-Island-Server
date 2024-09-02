@@ -1,0 +1,19 @@
+Log start : 9/2/2024 11:35:25 AM
+Importing stables from pets.ai.export.
+An error occurred: System.IO.FileNotFoundException: Could not find file 'C:\Users\luket\Documents\GitHub\Angel-Island-Server\pets.ai.export.stb'.
+File name: 'C:\Users\luket\Documents\GitHub\Angel-Island-Server\pets.ai.export.stb'
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access)
+   at Server.Commands.StableTransfer.StableImport_OnCommand(CommandEventArgs e) in C:\Users\luket\Documents\GitHub\Angel-Island-Server\scripts\Commands\StableTransfer.cs:line 145
+An error occurred: System.IO.FileNotFoundException: Could not find file 'C:\Users\luket\Documents\GitHub\Angel-Island-Server\pets.ai.export.idx'.
+File name: 'C:\Users\luket\Documents\GitHub\Angel-Island-Server\pets.ai.export.idx'
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.Strategies.FileStreamHelpers.ChooseStrategyCore(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access)
+   at Server.Commands.ObjectTransfer.Import(String filename, String& message) in C:\Users\luket\Documents\GitHub\Angel-Island-Server\scripts\Commands\ObjectTransfer.cs:line 131
+Completed in 0.1690201 seconds, 3 entries logged

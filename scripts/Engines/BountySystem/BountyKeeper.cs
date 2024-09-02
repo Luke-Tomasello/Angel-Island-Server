@@ -596,7 +596,7 @@ namespace Server.BountySystem
                 if (CoreAI.IsDynamicPatchSet(CoreAI.PatchIndex.HasPatchedTime) == false)
                     return XmlConvert.ToDateTime(dateTimeString);
                 else
-                    return XmlConvert.ToDateTime(dateTimeString, XmlDateTimeSerializationMode.Local);
+                    return XmlConvert.ToDateTime(dateTimeString, XmlDateTimeSerializationMode.Utc);
             }
             catch
             {

@@ -1,0 +1,807 @@
+﻿Patching all shards.
+Run Always: Deleting all DeleteOnRestart items...
+Patching all shards.
+Run Always: Initializing 'craftables' table...
+Patching all shards.
+Run Always: 12 objects updated
+Patch 0 complete. 9/1/2024 5:27:16 PM
+===========================
+One-time patch to retroactively update patch history...
+0 Patch history updated.
+Patch 1 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching all shards.
+Redo of static regions patch V3...
+Ready to apply V2...
+Patch 2 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching all shards.
+Redo of static regions patch V2...
+Ready to apply Static Region Patch....
+Patch 3 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching all shards.
+Redo of static regions patch V1...
+Warning: Duplicate region name 'New Region' for map 'Felucca' ((5656, 420, 25))
+Warning: Duplicate region name 'New Region' for map 'Felucca' ((4013, 593, 0))
+Patching all shards.
+One-time patch of static regions...
+0 static regions patched.
+Patch 4 complete. 9/1/2024 5:27:16 PM
+===========================
+0 static regions repatched.
+Patch 4 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching all shards.
+One-time patch of region controllers graphic ID...
+0 region controllers patched.
+Patch 5 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching all shards.
+One-time patch to perform some general cleanup...
+0 elements patched
+Patch 6 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching all shards.
+One-time patch of player GUIDs. Setting...
+0 players checked, 0 patched.
+One-time patch of player GUIDs complete.
+Patching all shards.
+One-time patch of player's pets GUIDs. Setting...
+0 pets checked, 0 patched.
+One-time patch of player's pet's GUIDs complete.
+Patch 12 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching all shards.
+One-time patch of housing account codes. Patching...
+0 houses patched.
+Patch 13 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching all shards.
+One-time patch for spawner categorization. Patching...
+0 spawners categorized.
+Patch 14 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching Angel Island.
+One-time patch of Camp system. Activating...
+0 Camps Activated.
+Patch 15 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching all shards.
+One-time patch of Camp respawn. Patching...
+0 Camps Patched.
+Patch 17 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching all shards.
+One-time patch of New Player Starting Zone...
+0 New Player Starting Zone patched.
+Patch 18 complete. 9/1/2024 5:27:16 PM
+===========================
+Patching Angel Island.
+One-time patch to remove some Angel Island Felucca teleporters...
+Error: unable to locate C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\Data\Patches\ExcludeTeleporterAI.cfg.
+Patching all shards.
+One-time patch to remove Champion Teleporters...
+0 Champion Teleporters removed.
+Patch 26 complete. 9/1/2024 5:27:17 PM
+===========================
+Patching all shards.
+One-time patch to remove illegal Trammel items...
+Warning: No system account specified in World.GetSystemAcct(). Creating...
+0 illegal Trammel items removed.
+Patch 27 complete. 9/1/2024 5:27:17 PM
+===========================
+Patching all shards.
+One-time patch to fix ConPvP teleporters...
+One or more teleporters missing from expected locations.
+Patching all shards.
+One-time patch to fix vampire champ teleporters...
+Error: unable to locate one or more of the vampire champ teleporters.
+Patching all shards.
+One-time patch to fix Green Acres teleporters...
+One or more teleporters missing from expected locations.
+Patching all shards.
+One-time patch to fix broken doors at 1133 2237 40...
+Did not find door(s) at expected location.
+Patching Angel Island.
+One-time patch of bird spawn. spawning...
+0 birds spawned.
+Patch 35 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching Angel Island.
+One-time patch of Angel Island's Moonglow Zoo running...
+13 Angel Island's Moonglow Zoo elements patched.
+Patch 36 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch of Moonglow Zoo on all shards running...
+0 Moonglow Zoo on all shards patched.
+Patch 38 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch to set DestinationOverride to true for all teleporters.
+0 DestinationOverride patched.
+Patch 40 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch to replace all moongates with sungates.
+Error: unable to locate C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\Data\Patches\Angel Island Moongate.cfg.
+Patching all shards.
+One-time patch to remove Lost Lands access...
+0 Lost Lands access removed.
+Patch 42 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch to replace all event teleporters with EventTeleporters.
+Error: unable to locate C:\Users\luket\Documents\Software\Development\Product\Src\Angel Island\GitHub Staging\GMN Core 6.0\Data\Patches\EventTeleporters.cfg.
+Patching Angel Island.
+0 shard initialization steps complete.
+Patch 44 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch to fix up map elements...
+Warning: Did not find slab where expected (5735, 975, 3). 
+Patching all shards.
+	Fix floating moongate in Brit's Castle, and remove one from Oc'Nivelle...
+Logic Error: Found too many sungates at (1322, 1622, 71). 
+Logic Error: Found too many sungates at (815, 1052, 21). 
+Patching all shards.
+	fix the teleporters that lead from Vesper Inn to/from brit (and chicken arena)...
+Logic Error: Did not find teleporter where expected (5686, 385, 2). 
+Logic Error: Did not find teleporter where expected (5686, 386, 2). 
+Logic Error: Did not find teleporter where expected (5686, 387, 2). 
+Logic Error: Did not find teleporter where expected (2776, 895, -23). 
+	replace the 'alchemical symbol' with a 'hole' on the lighthouse roof (escape).
+Logic Error: Did not find 'alchemical symbol' at (5672, 2406, 79). 
+Patching all shards.
+	patch staff made sparkles into the spawner...
+Patching all shards.
+	wipe the area in the tunnel of all staff added deco (chicken arena tunnel)...
+Logic Error: Did not find teleporter where expected. 
+Patching all shards.
+One-time patch to cleanup redundant public moongates.
+0 Redundant public moongates deleted.
+Patch 46 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch to convert 'blessed' mobiles to 'Exhibit' (Invulnerable+)...
+Did not find 'blessed' mobiles as expected.
+Patching all shards.
+One-time patch to remove blessed creatures...
+Did not find 'blessed' mobiles as expected.
+Patching all shards.
+One-time patch to enable special spawners...
+Did not find the one or more spawners as expected.
+Patching Angel Island.
+One-time patch of 'bowyer' spawners. Patching...
+0 'bowyer' spawners patched.
+Patch 50 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch to set template BaseVendor to invulnerable...
+0 template vendors patched.
+Patch 51 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch to turn on vendor daily fees...
+1 vendor daily fees restored.
+Patch 52 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch for 'other' spawner categorization. Patching...
+0 'other' spawners categorized.
+Patch 53 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch to remove T2A spawner from 'chicken fight' tunnel...
+0 items removed.
+Patch 54 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching Angel Island.
+One-time patch for custom respawn rates for Angel Island "Camps". Patching...
+0 Angel Island Camps Patched.
+Patch 57 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch to adjust dungeon exit teleporters. Patching...
+Did not find teleporter at (5457, 1864, 0).
+Did not find teleporter at (5242, 1007, 0).
+Did not find teleporter at (5243, 1007, 0).
+Did not find teleporter at (5244, 1007, 0).
+Did not find teleporter at expected location .
+0 Dungeon exit teleporters adjusted.
+Patch 58 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch to fix broken doors at Fire Temple and 1680 2986 20...
+Did not find door(s) at expected location.
+Patching all shards.
+One-time patch to fix ill-configured champ spawns...
+0x00000000 seasonal not found
+0x00000000 seasonal not found
+0x00000000 seasonal not found
+0x00000000 seasonal not found
+Turning on Autumn Bob champ
+0 champ engines updated
+Patch 61 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+One-time patch to add each account's current hardware hash to new hash list...
+0 accounts patched
+Patch 62 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+PatcherTableTest: running...
+333 Patcher Table test complete
+Patch 65 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+Update region controllers V1 running...
+0 Region controllers updated
+Patch 66 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+Beta Ready V1 running...
+Patching all shards.
+0 Beta Ready objects updated
+Patch 67 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+Patching all shards.
+Disabling T2A teleporters...
+Patching all shards.
+Disable teles to bugged cave (Trinsic)...
+Allow pets through dungeon teleporters...
+BetaReadyV2 patched with 0 objects updated
+Patch 68 complete. 9/1/2024 5:27:19 PM
+===========================
+Patching all shards.
+Patching Angel Island.
+AngelIsland Patch Check Okay.
+Patching all shards.
+Scheduling world Respawn...
+199 Spawners scheduled. Spawning will complete in 0.50 seconds.
+BetaReadyV3 patched with 199 objects updated
+Patch 69 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+BetaReadyV4 patched with 19 objects updated
+Patch 70 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+BetaReadyV5 patched with 0 objects updated
+Patch 71 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+BetaReadyV6 patched with 0 objects updated
+Patch 72 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Scheduling world Respawn...
+201 Spawners scheduled. Spawning will complete in 0.50 seconds.
+BetaReadyV7 patched with 0 objects updated
+Patch 73 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching Angel Island.
+BetaReadyV8 patched with 0 objects updated
+Patch 74 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+BetaReadyV9 patched with 0 objects updated
+Patch 75 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+BetaReadyV10 patched with 0 objects updated
+Patch 76 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+BetaReadyV11 patched with 0 objects updated
+Patch 77 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+BetaReadyV12 patched with 0 objects updated
+Patch 78 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Scheduling world Respawn...
+201 Spawners scheduled. Spawning will complete in 0.50 seconds.
+BetaReadyV13 patched with 0 objects updated
+Patch 79 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Warning: No admin account specified in World.GetAdminAcct(). Creating...
+Patching all shards.
+Patching all shards.
+Scheduling world Respawn...
+202 Spawners scheduled. Spawning will complete in 0.50 seconds.
+BetaReadyV14 patched with 204 objects updated
+Patch 80 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+BetaReadyV15 patched with 0 objects updated
+Patch 81 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+BetaReadyV16 patched with 3 objects updated
+Patch 82 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+BetaReadyV17 patched with 0 objects updated
+Patch 83 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+BetaReadyV18 patched with 0 objects updated
+Patch 84 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+BetaReadyV19 patched with 0 objects updated
+Patch 85 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+BetaReadyV20 patched with 1 objects updated
+Patch 86 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+BetaReadyV21 patched with 0 objects updated
+Patch 87 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV22 patched with 68 objects updated
+Patch 88 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV23 patched with 108 objects updated
+Patch 89 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+PatchV24 patched with 0 objects updated
+Patch 90 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV25 patched with 0 objects updated
+Patch 91 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV26 patched with 2 objects updated
+Patch 92 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+PatchV27 patched with 0 objects updated
+Patch 93 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV28 patched with 0 objects updated
+Patch 94 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV29 patched with 0 objects updated
+Patch 95 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+PatchV30 patched with 2 objects updated
+Patch 96 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Updating Global Account Database...
+Updating of Global Account Database complete
+PatchV31 patched with 0 objects updated
+Patch 97 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+PatchV32 patched with 0 objects updated
+Patch 98 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Scheduling world Respawn...
+203 Spawners scheduled. Spawning will complete in 0.50 seconds.
+PatchV33 patched with 203 objects updated
+Patch 99 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV34 patched with 13 objects updated
+Patch 100 complete. 9/1/2024 5:27:20 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV35 patched with 9 objects updated
+Patch 101 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV36 patched with 0 objects updated
+Patch 102 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV37 patched with 0 objects updated
+Patch 103 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV38 patched with 12 objects updated
+Patch 104 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV39 patched with 3 objects updated
+Patch 105 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV40 patched with 0 objects updated
+Patch 106 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV41 patched with 1 objects updated
+Patch 107 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV42 patched with 1 objects updated
+Patch 108 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+PatchV43 patched with 0 objects updated
+Patch 109 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV44 patched with 0 objects updated
+Patch 110 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV45 patched with 0 objects updated
+Patch 111 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV46 patched with 17 objects updated
+Patch 112 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV47 patched with 4 objects updated
+Patch 113 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV48 patched with 0 objects updated
+Patch 114 complete. 9/1/2024 5:27:21 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV49 patched with 69 objects updated
+Patch 115 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV50 patched with 0 objects updated
+Patch 116 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV51 patched with 0 objects updated
+Patch 117 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV52 patched with 0 objects updated
+Patch 118 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV53 patched with 0 objects updated
+Patch 119 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV54 patched with 0 objects updated
+Patch 120 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV55 patched with 0 objects updated
+Patch 121 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV56 patched with 0 objects updated
+Patch 122 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV57 patched with 0 objects updated
+Patch 123 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV58 patched with 0 objects updated
+Patch 124 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV59 patched with 0 objects updated
+Patch 125 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV61 patched with 14 objects updated
+Patch 127 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV62 patched with 0 objects updated
+Patch 128 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV63 patched with 0 objects updated
+Patch 129 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV64 patched with 0 objects updated
+Patch 130 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV65 patched with 0 objects updated
+Patch 131 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV66 patched with 0 objects updated
+Patch 132 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV67 patched with 0 objects updated
+Patch 133 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+Scheduling world Respawn...
+214 Spawners scheduled. Spawning will complete in 0.50 seconds.
+PatchV68 patched with 214 objects updated
+Patch 134 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV69 patched with 0 objects updated
+Patch 135 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV70 patched with 0 objects updated
+Patch 136 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV71 patched with 0 objects updated
+Patch 137 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV72 patched with 0 objects updated
+Patch 138 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV73 patched with 1 objects updated
+Patch 139 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+PatchV74 patched with 1 objects updated
+Patch 140 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV75 patched with 0 objects updated
+Patch 141 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV76 patched with 0 objects updated
+Patch 142 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV77 patched with 0 objects updated
+Patch 143 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV78 patched with 0 objects updated
+Patch 144 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching Angel Island.
+Patching Angel Island.
+** 0 DELETED PETS **
+PatchV79 patched with 0 objects updated
+Patch 145 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV80 patched with 0 objects updated
+Patch 146 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV81 patched with 0 objects updated
+Patch 147 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV82 patched with 0 objects updated
+Patch 148 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV83 patched with 0 objects updated
+Patch 149 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV84 patched with 0 objects updated
+Patch 150 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV85 patched with 0 objects updated
+Patch 151 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV86 patched with 0 objects updated
+Patch 152 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV87 patched with 0 objects updated
+Patch 153 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV88 patched with 0 objects updated
+Patch 154 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+None patched with 0 objects updated
+Patch 0 complete. 9/1/2024 5:27:22 PM
+===========================
+PatchV89 patched with 0 objects updated
+Patch 155 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV90 patched with 0 objects updated
+Patch 156 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV91 patched with 0 objects updated
+Patch 157 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+Patching all shards.
+Patching all shards.
+None patched with 0 objects updated
+Patch 0 complete. 9/1/2024 5:27:22 PM
+===========================
+PatchV92 patched with 0 objects updated
+Patch 158 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV93 patched with 0 objects updated
+Patch 159 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV94 patched with 0 objects updated
+Patch 160 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV95 patched with 0 objects updated
+Patch 161 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV96 patched with 0 objects updated
+Patch 162 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+PatchV97 patched with 0 objects updated
+Patch 163 complete. 9/1/2024 5:27:22 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV98 patched with 0 objects updated
+Patch 164 complete. 9/1/2024 5:27:23 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV99 patched with 0 objects updated
+Patch 165 complete. 9/1/2024 5:27:23 PM
+===========================
+Patching all shards.
+PatchV100 patched with 0 objects updated
+Patch 166 complete. 9/1/2024 5:27:23 PM
+===========================
+Patching all shards.
+PatchV101 patched with 0 objects updated
+Patch 167 complete. 9/1/2024 5:27:23 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV102 patched with 0 objects updated
+Patch 168 complete. 9/1/2024 5:27:23 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV103 patched with 0 objects updated
+Patch 169 complete. 9/1/2024 5:27:23 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV104 patched with 629 objects updated
+Patch 170 complete. 9/1/2024 5:27:23 PM
+===========================
+Patching all shards.
+PatchV105 patched with 0 objects updated
+Patch 171 complete. 9/1/2024 5:27:23 PM
+===========================
+Patching all shards.
+PatchV106 patched with 0 objects updated
+Patch 172 complete. 9/1/2024 5:27:23 PM
+===========================
+Patching all shards.
+Patching all shards.
+PatchV107 patched with 0 objects updated
+Patch 173 complete. 9/1/2024 5:27:23 PM
+===========================
+Patching all shards.
+PatchV109 patched with 0 objects updated
+Patch 174 complete. 9/1/2024 5:27:23 PM
+===========================
