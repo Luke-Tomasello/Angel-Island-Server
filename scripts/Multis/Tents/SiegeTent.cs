@@ -21,6 +21,9 @@
 
 /* Scripts/Multis/Tent/SiegeTent.cs
  * ChangeLog:
+ *  9/3/2024, Adam
+ *      Issue the following warning when a tent is placed:
+ *      "Warning: Party members will be able to access your tent backpack."
  *	08/14/06, weaver
  *		Modified component construction to pass BaseHouse reference to the backpack.
  *	05/22/06, weaver
@@ -33,6 +36,7 @@
 
 using Server.Items;
 using Server.Multis.Deeds;
+using System;
 
 namespace Server.Multis
 {
@@ -107,7 +111,7 @@ namespace Server.Multis
             m_TentBed.MoveToWorld(new Point3D(this.X, this.Y + 1, this.Z), this.Map);
             m_TentBed.Movable = false;
 
-            // Create secute tent pack within the tent
+            // Create secure tent pack within the tent
             m_TentPack = new TentBackpack(this);
             m_TentPack.MoveToWorld(new Point3D(this.X - 1, this.Y - 1, this.Z), this.Map);
             SecureInfo info = new SecureInfo((Container)m_TentPack, SecureLevel.Anyone);
@@ -115,6 +119,19 @@ namespace Server.Multis
             this.Secures.Add(info);
             m_TentPack.Movable = false;
             m_TentPack.Hue = m_RoofHue;
+
+            if (this.Owner != null)
+                Timer.DelayCall(TimeSpan.FromSeconds(1.5), new TimerStateCallback(WarnTick), new object[] { this.Owner, null });
+        }
+        private void WarnTick(object state)
+        {
+            object[] aState = (object[])state;
+
+            if (aState[0] != null && aState[0] is Mobile)
+            {
+                Mobile from = (Mobile)aState[0];
+                from.SendMessage(0x22, "Warning: Party members will be able to access your tent backpack.");
+            }
         }
 
         public override void MoveToWorld(Point3D location, Map map, Mobile responsible = null)
