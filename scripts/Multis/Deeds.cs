@@ -259,7 +259,7 @@ namespace Server.Multis.Deeds
                         {
                             object o = toMove[i];
 
-                            if (o is Tent && Core.RuleSets.TentAnnexation())
+                            if (o is Tent)
                                 (o as Tent).Annex(house);
                             else if (o is Mobile)
                                 ((Mobile)o).Location = house.BanLocation;

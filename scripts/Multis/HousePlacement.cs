@@ -282,58 +282,48 @@ namespace Server.Multis
                             return RegionCheck; // Broke rule #6
                     }
 
-                    // not sure what this does
-                    if (TentComponents != null && TentComponents.Count > 0)
-                    {   // if we are placing a house and there is a tent there at that we do not own, fail
-                        foreach (BaseHouse bx in TentComponents)
+                    // if we are placing a house, the area better either be clear or a tent
+                    if (RegionCheck != HousePlacementResult.Valid && RegionCheck != HousePlacementResult.TentRegion)
+                        return RegionCheck; // Broke rule #7
+
+                    // save the list of all the addon components from the tent as we will want to exclude them from further tests
+                    if (Core.RuleSets.TentAnnexation())
+                        if (RegionCheck == HousePlacementResult.TentRegion && region != null)
                         {
-                            if (bx != null && bx.Owner != from)
-                                return RegionCheck; // Broke rule #7
-                        }
-                    }
-                    else
-                    {   // if we are placing a house, the area better either be clear or a tent
-                        if (RegionCheck != HousePlacementResult.Valid && RegionCheck != HousePlacementResult.TentRegion)
-                            return RegionCheck; // Broke rule #7
-
-                        // save the list of all the addon components from the tent as we will want to exclude them from further tests
-                        if (Core.RuleSets.TentAnnexation())
-                            if (RegionCheck == HousePlacementResult.TentRegion && region != null)
+                            BaseHouse house = (region as HouseRegion).House;
+                            if (house is Tent == true)
                             {
-                                BaseHouse house = (region as HouseRegion).House;
-                                if (house is Tent == true)
+                                // we will move this house after house is placed
+                                if (toMove.Contains(house) == false)
+                                    toMove.Add(house);
+
+                                if (TentComponents.Contains(house) == false)
+                                    TentComponents.Add(house);
+
+                                if (TentComponents.Contains((house as Tent).TentPack) == false)
+                                    TentComponents.Add((house as Tent).TentPack);
+
+                                if (TentComponents.Contains((house as Tent).TentBed) == false)
+                                    TentComponents.Add((house as Tent).TentBed);
+
+                                if (house.Addons != null)
                                 {
-                                    // we will move this house after house is placed
-                                    if (toMove.Contains(house) == false)
-                                        toMove.Add(house);
-
-                                    if (TentComponents.Contains(house) == false)
-                                        TentComponents.Add(house);
-
-                                    if (TentComponents.Contains((house as Tent).TentPack) == false)
-                                        TentComponents.Add((house as Tent).TentPack);
-
-                                    if (TentComponents.Contains((house as Tent).TentBed) == false)
-                                        TentComponents.Add((house as Tent).TentBed);
-
-                                    if (house.Addons != null)
+                                    for (int ix = 0; ix < house.Addons.Count; ix++)
                                     {
-                                        for (int ix = 0; ix < house.Addons.Count; ix++)
+                                        if (house.Addons[ix] != null)
                                         {
-                                            if (house.Addons[ix] != null)
+                                            Server.Items.BaseAddon ba = house.Addons[ix] as Server.Items.BaseAddon;
+                                            for (int jx = 0; jx < ba.Components.Count; jx++)
                                             {
-                                                Server.Items.BaseAddon ba = house.Addons[ix] as Server.Items.BaseAddon;
-                                                for (int jx = 0; jx < ba.Components.Count; jx++)
-                                                {
-                                                    if (TentComponents.Contains(ba.Components[jx]) == false)
-                                                        TentComponents.Add(ba.Components[jx]);
-                                                }
+                                                if (TentComponents.Contains(ba.Components[jx]) == false)
+                                                    TentComponents.Add(ba.Components[jx]);
                                             }
                                         }
                                     }
                                 }
                             }
-                    }
+                        }
+
                     // otherwise, all is a go!
                     #endregion REGION_CHECK
 
@@ -375,6 +365,7 @@ namespace Server.Multis
                         if (item.X == tileX && item.Y == tileY)
                         {
                             if (SpecialItemExclusion(item) == false)
+                                // Adam: ignore these tent components
                                 if (TentComponents.Contains(item) == false)
                                     items.Add(item);
                         }

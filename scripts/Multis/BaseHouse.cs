@@ -5777,10 +5777,10 @@ namespace Server.Multis
 
     public enum SecureLevel
     {
-        Owner,
-        CoOwners,
-        Friends,
-        Anyone
+        Owner,      // Only the player who secured the item and the owner of the house has access to open/use the item.
+        CoOwners,   // Only the Co-Owners and the owner of the house has access to open/use the item.
+        Friends,    // Friends, Co-Owners, and the owner of the house has access to open/use the item.
+        Anyone      // For a Public House, anyone can open/use the item. For a Private House, anyone who has access can open/use the item.
     }
 
     public class SecureInfo : ISecurable

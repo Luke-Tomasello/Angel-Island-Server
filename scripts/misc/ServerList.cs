@@ -134,8 +134,8 @@ namespace Server.Misc
                 e.AddServer("Angel Island 2016", new IPEndPoint(localAddress, SocketOptions.RenaissancePort));
                 e.AddServer("AI Test Center 2016", new IPEndPoint(localAddress, SocketOptions.TestCenterPort));
                 e.AddServer("Player Tribute", new IPEndPoint(localAddress, SocketOptions.EventShardPort));
-                e.AddServer("AI (2024)", new IPEndPoint(localAddress, SocketOptions.AngelIslandPort));
-                e.AddServer("SP (2024)", new IPEndPoint(localAddress, SocketOptions.SiegePerilousPort));
+                e.AddServer("AI - Retired", new IPEndPoint(localAddress, SocketOptions.AngelIslandPort));
+                e.AddServer("SP - Retired", new IPEndPoint(localAddress, SocketOptions.SiegePerilousPort));
                 if (ns != null && ns.Address != null && Server.Commands.OwnerTools.IsOwnerIP(ns.Address))
                     e.AddServer("Administrative", new IPEndPoint(localAddress, SocketOptions.LoginServerPortBase));
             }
