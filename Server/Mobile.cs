@@ -5947,7 +5947,7 @@ namespace Server
         public virtual void OnDamage(int amount, Mobile from, bool willKill, object source_weapon)
         {   // tell the mobile that damaged us, how they did.
             //	this is implemented for debugging low-damage complaints.
-            //	See implemention in PlayerMobile
+            //	See implementation in PlayerMobile
             if (from != null)
                 from.OnGaveDamage(amount, this, willKill, source_weapon);
             /*(else) Timer tick damage, from like poison doesn't have a 'from' mobile */

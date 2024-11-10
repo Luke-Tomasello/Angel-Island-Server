@@ -19,6 +19,12 @@
  *
  ***************************************************************************/
 
+/* Server\Item.cs
+ * ChangeLog:
+ *  9/20/2024, Adam (OnSingleClick/GetMissingName)
+ *      Hack. The ItemData does not have a legitimate name. So we do the best we can with the type name
+ */
+
 using Server.Diagnostics;
 using Server.Items;
 using Server.Items.Triggers;
@@ -6332,7 +6338,7 @@ namespace Server
         {
             Article article;
             string baseName = GetBaseOldName(out article);
-
+            baseName = GetMissingName(baseName, ref article).ToLower();
             string prefix = GetOldPrefix(ref article);
             string suffix = GetOldSuffix();
 
@@ -6377,7 +6383,22 @@ namespace Server
 
             return GetBaseOldName(out article);
         }
+        // 9/20/2024, Adam: Hack. The ItemData does not have a legitimate name. So we do the best we can with the type name
+        public string GetMissingName(string baseName, ref Article article)
+        {
+            if (baseName == "MissingName")
+            {
+                string itemName = this.GetType().Name;
+                itemName = Utility.SplitCamelCase(itemName);
+                if (Utility.StartsWithVowel(itemName))
+                    article = Article.An;
+                else
+                    article = Article.A;
 
+                baseName = itemName;
+            }
+            return baseName;
+        }
         /// <summary>
         /// Old name without any prefixes/suffixes.
         /// </summary>

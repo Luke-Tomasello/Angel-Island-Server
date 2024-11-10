@@ -7404,7 +7404,6 @@ namespace Server.Commands
             e.Mobile.SendMessage("Target player to construct...");
             e.Mobile.Target = new BuildAdamTarget(); // Call our target
         }
-
         public class BuildAdamTarget : Target
         {
             public BuildAdamTarget()
@@ -7510,7 +7509,6 @@ namespace Server.Commands
             e.Mobile.SendMessage("Target player to construct...");
             e.Mobile.Target = new BuildWarriorTarget(); // Call our target
         }
-
         public class BuildWarriorTarget : Target
         {
             public BuildWarriorTarget()

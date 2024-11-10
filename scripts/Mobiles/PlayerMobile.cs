@@ -4076,7 +4076,7 @@ namespace Server.Mobiles
         //	this is implemented for debugging low-damage complaints.
         //	See implemention in Mobile
         public override void OnGaveDamage(int amount, Mobile to, bool willKill, object source_weapon)
-        {   // we delivered this much damage on our last strke or spell
+        {   // we delivered this much damage on our last strike or spell
             DamageTracker(amount, to, source_weapon);
         }
 
@@ -5155,8 +5155,11 @@ namespace Server.Mobiles
 
             m_Reported = DateTime.UtcNow;
             m_ReportLogger = new LogHelper(GetReportLogName(m_Reported.ToString("MM-dd-yyyy HH-mm-ss")));
-            m_ReportLogger.Log(LogType.Text, string.Format("{0} (acct {1}, SN {2}, IP {3}) reported by {4} (acct {5}, SN {6}) at {7}, at {8}.\r\n\r\n",
-                this.Name, ((Account)this.Account).Username, this.Serial, ((this.NetState != null) ? this.NetState.ToString() : ""), from.Name, ((Account)from.Account).Username, from.Serial, DateTime.UtcNow, from.Location));
+            m_ReportLogger.Log(LogType.Text, 
+                string.Format("{0} (acct {1}, SN {2}, IP {3}) reported by {4} (acct {5}, SN {6}) at {7}, at {8}.\r\n\r\n",
+                    this.Name, ((Account)this.Account).Username, this.Serial, ((this.NetState != null) ? this.NetState.ToString() : ""), 
+                    from.Name, ((Account)from.Account).Username, from.Serial, string.Format("{0} (Game Time)", AdjustedDateTime.GameTime.ToString()), 
+                        from.Location));
             //Console.WriteLine("{0} (acct {1}, SN {2}, IP {3}) reported by {4} (acct {5}, SN {6}) at {7}, at {8}.\r\n\r\n",
             //    this.Name, ((Account)this.Account).Username, this.Serial, this.NetState.ToString(), from.Name, ((Account)from.Account).Username, from.Serial, DateTime.UtcNow, from.Location);
 
@@ -5168,9 +5171,13 @@ namespace Server.Mobiles
 
         private string GetReportLogName(string datestring)
         {
-            string filename = string.Format("{0} {1}.log", datestring, this.Name);
+            string path = "Logs/Abusive Language";
+            if (!Directory.Exists(path))
+                Directory.CreateDirectory(path);
 
-            char[] illegalcharacters = { '\\', '/', ':', '*', '?', '\"', '<', '>', '|' };
+            string filename = Path.Combine(path, String.Format("{0} {1}.log", datestring, this.Name));
+
+            char[] illegalcharacters = { ':', '*', '?', '\"', '<', '>', '|' };
 
             if (filename.IndexOfAny(illegalcharacters) != -1)
             {

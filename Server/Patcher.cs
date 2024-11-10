@@ -21,6 +21,8 @@
 
 /* Server\Patcher.cs
  * CHANGELOG:
+ *  9/20/2024, Adam
+ *      Patch Tower doors: second floor doors were locking player inside the room and not out
  *  12/3/22, Adam (HasResetChamps)
  *      reset all seasonal champs and correct logic error that was keeping them running.
  *  12/2/22, Adam (HasFixedDoorsV2)

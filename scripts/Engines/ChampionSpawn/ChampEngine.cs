@@ -650,7 +650,8 @@ namespace Server.Engines.ChampionSpawn
 
         }
 
-        [CommandProperty(AccessLevel.Seer)]
+        
+
         public string NavDestination
         {
             get { return m_NavDest; }

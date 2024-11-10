@@ -1387,7 +1387,7 @@ namespace Server.Items
             // If you are wearing a robe (OuterTorso) it will take damage After damage to something like a a shirt.
             //  It would seem that clothes worn on the outside (the robe in this case,) should take damage first.
 
-            // we sill save this value and report the delta to the attacker for damage adsorbed tracking.
+            // we will save this value and report the delta to the attacker for damage adsorbed tracking.
             int old_damage = damage;
 
             if (Core.RuleSets.AOSRules())
