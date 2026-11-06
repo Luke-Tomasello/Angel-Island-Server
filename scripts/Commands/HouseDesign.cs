@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,7 +48,7 @@ namespace Server.Commands
 
         private static void DesignHouse_OnTarget(Mobile from, object targeted)
         {
-            HouseSign sign = targeted as HouseSign;
+            HouseSign? sign = targeted as HouseSign;
 
             if (sign == null)
                 from.SendMessage("That is not a house sign.");
@@ -64,7 +64,7 @@ namespace Server.Commands
         [Description("Commit the house that you are currently designing. Skips design legality checks.")]
         private static void DesignCommit_OnCommand(CommandEventArgs e)
         {
-            HouseFoundation foundation = BaseHouse.FindHouseAt(e.Mobile) as HouseFoundation;
+            HouseFoundation? foundation = BaseHouse.FindHouseAt(e.Mobile) as HouseFoundation;
 
             if (foundation == null || foundation.Customizer != e.Mobile)
                 e.Mobile.SendMessage("You are not customizing any house.");

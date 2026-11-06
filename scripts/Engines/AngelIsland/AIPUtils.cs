@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,7 +48,7 @@ namespace Server
             if (m != null && m.Backpack != null)
                 try
                 {
-                    List<Item> items = new()
+                    List<Item?> items = new()
                     {
                         m.FindItemOnLayer(Layer.Shoes),
                         m.FindItemOnLayer(Layer.Pants),
@@ -72,7 +72,7 @@ namespace Server
                         //m.FindItemOnLayer(Layer.Hair),
                         //m.FindItemOnLayer(Layer.FacialHair),
                     };
-                    foreach (Item item in items)
+                    foreach (Item? item in items)
                     {
                         if (item != null && item is not DeathRobe)
                         {
@@ -108,7 +108,7 @@ namespace Server
 
             // put whatever you are holding in you backpack
             // (the 'drag' kind of holding)
-            Item held = m.Holding;
+            Item held = m.Dragging;
             if (held != null)
             {
                 held.ClearBounce();
@@ -117,11 +117,11 @@ namespace Server
                     m.Backpack.DropItem(held);
                 }
             }
-            m.Holding = null;
+            m.Dragging = null;
 
             // put whatever you are holding in your backpack
             // (actually in your hand kind of holding)
-            Item weapon = m.Weapon as Item;
+            Item? weapon = m.Weapon as Item;
             if (weapon != null && weapon.Parent == m && !(weapon is Fists))
                 backpack.DropItem(weapon);
         }
@@ -140,7 +140,7 @@ namespace Server
             {
                 for (int ix = 0; ix < stuff.Count; ix++)
                 {
-                    Item item = stuff[ix] as Item;
+                    Item? item = stuff[ix] as Item;
                     // process items as follows
                     //	delete everything but stinger and spellbook. Sorry, rares collected gone now too :(
 

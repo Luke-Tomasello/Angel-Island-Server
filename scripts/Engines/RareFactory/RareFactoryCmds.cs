@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -245,7 +245,7 @@ namespace Server.Commands
             {
                 try
                 {
-                    Item item = obj as Item;
+                    Item? item = obj as Item;
 
                     if (!RareFactory.InUse)
                     {
@@ -265,7 +265,7 @@ namespace Server.Commands
                                         {
                                             if (item != null)
                                             {
-                                                LogHelper Logger = null;
+                                                LogHelper? Logger = null;
                                                 try
                                                 {
                                                     DODInstance di = RareFactory.AddRare(match, item);    // rarity is defined by the group
@@ -338,12 +338,12 @@ namespace Server.Commands
             DODGroup FindGroup(string group, int iRarity)
             {
                 // first find the group
-                DODGroup match = null;
+                DODGroup? match = null;
                 try
                 {
                     for (int ix = 0; ix < RareFactory.DODGroup.Count; ix++)
                     {
-                        DODGroup dg = RareFactory.DODGroup[ix] as DODGroup;
+                        DODGroup? dg = RareFactory.DODGroup[ix] as DODGroup;
                         if (dg.Name.ToLower() == group.ToLower() && dg.Rarity == (short)iRarity)
                         {
                             match = dg;

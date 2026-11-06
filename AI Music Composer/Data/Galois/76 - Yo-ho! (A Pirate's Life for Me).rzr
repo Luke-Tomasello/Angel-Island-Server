@@ -1,0 +1,110 @@
+# Song: Yo-ho! (A Pirate's Life for Me)
+# Author: Galois
+# Price: 2000
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: False
+say '[play .1 -f f a .44 -f a c .44 -as as dh .44 -f a c .27 g as .13' 
+say '[play -cl f a .27 f a .13 -cl cl g .27 cl g .13 -f -a f .42 -f .29 -ah .14' 
+say 'Yo-ho, yo-ho,' 
+wait 1600
+say 'A pirate's life for me!' 
+say '[play -d d a .12 e -ah .13 f a .13 -d -ah .13 g a .13 f -ah .13' 
+say '[play -a e a .12 -ah .14 a .14 -a -ah .3 a .14' 
+say '[play -d dh .13 -e .14 -f a .14 -d -a f .12 -g -fh .13 -f g .13' 
+say '[play -a e a .44 -a .29 a .14' 
+wait 1700
+say 'We pillage, we plunder, we rifle and loot,' 
+wait 1800
+say 'Drink up, me hearties yo-ho!' 
+say '[play -g as .12 -a -ash .13 -as as .13 -e g .12 -f -gh .13 -g g .13' 
+say '[play -f a .12 -g -ah .13 -a a .13 -d -f f .12 -g .14 -f f .13' 
+say '[play -g g .3 -gh .14 -g g .13 a .14 b .14 -cl c .3 g .14 -cl cl .43' 
+wait 1800
+say 'We kidnap and ravage and don't give a hoot,' 
+wait 1900
+say 'Drink up, me hearties yo-ho!' 
+say '[play -f f a .44 -f a c .44 -as as dh .44 -f a c .27 g as .13' 
+say '[play -cl f a .27 f a .13 -cl cl g .27 cl g .13 -f -a f .42 -f .29 -ah .14' 
+wait 1900
+say 'Yo-ho, yo-ho,' 
+wait 1600
+say 'A pirate's life for me!' 
+say '[play -d f a .27 a .14 -a f -ah .12 a .14 -ah .14' 
+say '[play -a csl a .27 -ah .14 -a e a .29 -ah .14' 
+say '[play -d a dh .27 -ah .14 -a -fh .13 f .14 g .14' 
+say '[play -a csl a .44 -a e .3 -ah .14' 
+wait 1700
+say 'We extort, pilfer, we filch and sack,' 
+wait 1800
+say 'Drink up, me hearties yo-ho!' 
+say '[play -g d as .12 -ash .14 as .14 cl e -gh .12 g .14 -gh .14' 
+say '[play -f cl a .12 -ah .14 a .14 -d -a f .3 -fh .14' 
+say '[play -g -b g .3 g .14 -g d -gh .12 a .14 b .14' 
+say '[play -cl as e c .29 gh .04 ah .04 bh .04 -cl ch .44' 
+wait 1900
+say 'Maraud and embezzle and even hi-jack,' 
+wait 1900
+say 'Drink up, me hearties yo-ho!' 
+say '[play -f f a .44 -f a c .44 -as as dh .44 -f a c .27 g as .13' 
+say '[play -cl f a .27 f a .13 -cl cl g .27 cl g .13 -f -a f .42 -f .29 -f -ah .1' 
+wait 2000
+say 'Yo-ho, yo-ho,' 
+wait 1600
+say 'A pirate's life for me!' 
+say '[play -gs .02 -d -a a .12 -ah .14 -a a .13 -d -a -ah .12 -g .14 -f -ah .13' 
+say '[play -e a .13 -ah .11 gsh .02 a ah .13 -a -ah .3 -e -ah .13' 
+say '[play -d -f dh .12 -e .14 -f a .13 -d cl -fh .12 -as f .13 -a g .13' 
+say '[play -e a .27 gsh .02 ah .14 -a a .3 -ah .14' 
+wait 1700
+say 'We kindle and char, inflame and ignite,' 
+wait 1800
+say 'Drink up, me hearties yo-ho!' 
+say '[play -g as .12 -a -ash .13 -as as .13 -e g .12 -f -gh .13 -g g .13' 
+say '[play -f a .12 -g -ah .13 -a a .13 -d -f f .12 -g .14 -f f .13' 
+say '[play -g g .3 -gh .14 -g g .13 a .14 b .14' 
+say '[play -cl -c c .12 -as .14 -g .14 -cl -e .13 cl .14 -c -ah .13' 
+wait 1800
+say 'We burn up the city, we're really a fright,' 
+wait 1900
+say 'Drink up, me hearties yo-ho!' 
+say '[play -d f a .13 -ah .29 d f -ah .13 a .29' 
+say '[play -a csl a .12 -ah .14 a .14 -a e -ah .29 -ah .14' 
+say '[play -d a dh .27 -ah .14 -a -fh .13 f .14 g .14' 
+say '[play -a csl a .44 -a e .3 -ah .14' 
+wait 1800
+say 'We're rascals, scoundrels, villains and knaves,' 
+wait 1900
+say 'Drink up, me hearties yo-ho!' 
+say '[play -g d as .12 -ash .14 as .14 cl e -gh .12 g .3' 
+say '[play -f cl a .12 -ah .14 a .14 -d -a f .3 -fh .14' 
+say '[play -g -b g .3 g .14 -g d -gh .12 a .14 b .14' 
+say '[play -cl as e c .29 gh .04 ah .04 bh .04 -cl ch .44' 
+wait 1800
+say 'We're devils and black sheep, really bad eggs,' 
+wait 1900
+say 'Drink up, me hearties yo-ho!' 
+say '[play -f f a .44 -f a c .44 -as as dh .44 -f a c .27 g as .13' 
+say '[play -cl f a .27 f a .13 -cl cl g .27 cl g .13 -f -a f .42 -f .29 -f -ah .1' 
+wait 2000
+say 'Yo-ho, yo-ho,' 
+wait 1600
+say 'A pirate's life for me!' 
+say '[play -gs .02 -d -a a .12 -ah .14 -a a .13 -d -a -ah .12 -g a .13 -f -ah .13' 
+say '[play -e a .13 -ah .11 gsh .02 a ah .13 -a -ah .3 -e -ah .13' 
+say '[play -d -f dh .12 -e .14 -f a .13 -d cl -fh .12 -as f .13 -a g .13' 
+say '[play -e a .27 gsh .02 ah .14 -a a .44' 
+wait 1700
+say 'We're beggars and blighters and ne'er-do-well cads,' 
+wait 1900
+say 'Drink up, me hearties yo-ho!' 
+say '[play -g as .12 -a -ash .13 -as as .13 -e g .12 -f -gh .13 -g g .13' 
+say '[play -f a .12 -g -ah .13 -a a .13 -d -f f .12 -g .14 -f f .13' 
+say '[play -g g .3 -gh .14 -g g .13 a .14 b .14' 
+say '[play -cl e g c .43 .45' 
+wait 1800
+say 'Aye, but we're loved by our mommies and dads,' 
+wait 1900
+say 'Drink up, me hearties yo-ho!' 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -98,7 +98,7 @@ namespace Server.Engines.Alignment
 
                         for (int i = 0; i < stateCount; i++)
                         {
-                            Alignment alignment = Alignment.ReadReference(reader);
+                            Alignment? alignment = Alignment.ReadReference(reader);
                             alignment.State.Deserialize(reader);
                         }
 
@@ -106,7 +106,7 @@ namespace Server.Engines.Alignment
 
                         for (int i = 0; i < playerCount; i++)
                         {
-                            Mobile m = reader.ReadMobile();
+                            Mobile? m = reader.ReadMobile();
 
                             AlignmentPlayer player = new AlignmentPlayer(m);
                             player.Deserialize(reader);

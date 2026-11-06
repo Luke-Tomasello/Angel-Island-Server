@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,7 +30,7 @@ namespace Server.Engines.Quests.Haven
         public override bool IsActiveVendor { get { return true; } }
         public override bool DisallowAllMoves { get { return false; } }
         public override bool ClickTitle { get { return true; } }
-        public override bool CanTeach { get { return Core.RuleSets.StandardShardRules() ? false : true; } }
+        public override bool CanTeach { get { return Core.RuleSets.CanTeach(); } }
 
         [Constructable]
         public Dryad()
@@ -85,7 +85,7 @@ namespace Server.Engines.Quests.Haven
 
         public override bool CanTalkTo(PlayerMobile to)
         {
-            UzeraanTurmoilQuest qs = to.Quest as UzeraanTurmoilQuest;
+            UzeraanTurmoilQuest? qs = to.Quest as UzeraanTurmoilQuest;
 
             return (qs != null && qs.FindObjective(typeof(FindDryadObjective)) != null);
         }
@@ -103,7 +103,7 @@ namespace Server.Engines.Quests.Haven
                 }
                 else
                 {
-                    QuestObjective obj = qs.FindObjective(typeof(FindDryadObjective));
+                    QuestObjective? obj = qs.FindObjective(typeof(FindDryadObjective));
 
                     if (obj != null && !obj.Completed)
                     {
@@ -132,11 +132,11 @@ namespace Server.Engines.Quests.Haven
 
         public override bool OnDragDrop(Mobile from, Item dropped)
         {
-            PlayerMobile player = from as PlayerMobile;
+            PlayerMobile? player = from as PlayerMobile;
 
             if (player != null)
             {
-                UzeraanTurmoilQuest qs = player.Quest as UzeraanTurmoilQuest;
+                UzeraanTurmoilQuest? qs = player.Quest as UzeraanTurmoilQuest;
 
                 if (qs != null && dropped is Apple && UzeraanTurmoilQuest.HasLostFertileDirt(from))
                 {
@@ -207,13 +207,13 @@ namespace Server.Engines.Quests.Haven
         {
             public InternalSellInfo()
             {
-                Add(typeof(Bandage), BaseVendor.PlayerPays(typeof(Bandage)));
-                Add(typeof(Garlic), BaseVendor.PlayerPays(typeof(Garlic)));
-                Add(typeof(Ginseng), BaseVendor.PlayerPays(typeof(Ginseng)));
-                Add(typeof(Bloodmoss), BaseVendor.PlayerPays(typeof(Bloodmoss)));
-                Add(typeof(Nightshade), BaseVendor.PlayerPays(typeof(Nightshade)));
-                Add(typeof(SpidersSilk), BaseVendor.PlayerPays(typeof(SpidersSilk)));
-                Add(typeof(MandrakeRoot), BaseVendor.PlayerPays(typeof(MandrakeRoot)));
+                Add(typeof(Bandage), BaseVendor.VendorPays(typeof(Bandage)));
+                Add(typeof(Garlic), BaseVendor.VendorPays(typeof(Garlic)));
+                Add(typeof(Ginseng), BaseVendor.VendorPays(typeof(Ginseng)));
+                Add(typeof(Bloodmoss), BaseVendor.VendorPays(typeof(Bloodmoss)));
+                Add(typeof(Nightshade), BaseVendor.VendorPays(typeof(Nightshade)));
+                Add(typeof(SpidersSilk), BaseVendor.VendorPays(typeof(SpidersSilk)));
+                Add(typeof(MandrakeRoot), BaseVendor.VendorPays(typeof(MandrakeRoot)));
             }
         }
     }

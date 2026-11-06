@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -133,9 +133,6 @@ namespace Server.Factions
                     {
                         Mobile m = members[i].Mobile;
                         f.RemoveMember(m);
-#if false
-                        Ethics.Ethic.Leave(m);
-#endif
                         result.KickCount++;
                     }
                 }
@@ -157,25 +154,6 @@ namespace Server.Factions
                     }
                 }
 
-#if false
-                if ((item.SavedFlags & 0x100) != 0)
-                {
-                    if (item.Hue == Ethics.Ethic.Hero.Definition.PrimaryHue)
-                        item.Hue = 0;
-
-                    item.SavedFlags &= ~0x100;
-                    result.DetachCount++;
-                }
-
-                if ((item.SavedFlags & 0x200) != 0)
-                {
-                    if (item.Hue == Ethics.Ethic.Evil.Definition.PrimaryHue)
-                        item.Hue = 0;
-
-                    item.SavedFlags &= ~0x200;
-                    result.DetachCount++;
-                }
-#endif
 
                 if (item is BaseMonolith || item is BaseFactionTrap || item is BaseFactionTrapDeed || item is FactionStone || item is JoinStone || item is TownStone)
                 {

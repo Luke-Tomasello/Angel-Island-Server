@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts/Engines/ChampionSpawn/Modes/ChampSummon.cs
  *	ChangeLog:
+ *	10/27/2026, Adam
+ *		SpawnTypes enum removed: summons and their sacrifice table name the champion definition (ChampNames); the summon
+ *		sets DefinitionName instead of SpawnType.
   *	07/23/08, weaver
  *		Added Free() before return in IPooledEnumerable loop.
  *	07/23/08, weaver
@@ -47,7 +50,7 @@ namespace Server.Engines.ChampionSpawn
     {
         // members
         private DateTime m_LastSpeech;                      // Determines when the summon alter can next shout stuff
-        private SummonTimer m_SummonTimer;              //Controls effects and summon procedure
+        private SummonTimer? m_SummonTimer;              //Controls effects and summon procedure
         private bool m_Summoning;                                   // prevents multiple summon attempts		
         private Item m_Speaker;                                     // who speaks.. altar or champ
 
@@ -215,23 +218,23 @@ namespace Server.Engines.ChampionSpawn
                 {
                     if (s == "i offer this sacrifice in your name barracoon")
                     {
-                        SummonStart(ChampLevelData.SpawnTypes.VerminHorde);
+                        SummonStart(ChampNames.VerminHorde);
                     }
                     else if (s == "i offer this sacrifice in your name mephitis")
                     {
-                        SummonStart(ChampLevelData.SpawnTypes.Arachnid);
+                        SummonStart(ChampNames.Arachnid);
                     }
                     else if (s == "i offer this sacrifice in your name neira")
                     {
-                        SummonStart(ChampLevelData.SpawnTypes.UnholyTerror);
+                        SummonStart(ChampNames.UnholyTerror);
                     }
                     else if (s == "i offer this sacrifice in your name rikktor")
                     {
-                        SummonStart(ChampLevelData.SpawnTypes.ColdBlood);
+                        SummonStart(ChampNames.ColdBlood);
                     }
                     else if (s == "i offer this sacrifice in your name semidar")
                     {
-                        SummonStart(ChampLevelData.SpawnTypes.Abyss);
+                        SummonStart(ChampNames.Abyss);
                     }
                 }
             }
@@ -239,10 +242,10 @@ namespace Server.Engines.ChampionSpawn
 
         //Plasma :  This code is called from OnSpeech() and is repsonsible for
         //finding a viable sacirifce and if so to start the summoning
-        protected void SummonStart(ChampLevelData.SpawnTypes ChampType)
+        protected void SummonStart(string ChampType)
         {
             //now check the floor for the appropriate sacrifice
-            SummonReq Req = null;
+            SummonReq? Req = null;
             ArrayList Reqs = new ArrayList();
 
             //Check through requirements array and add all for this type of spawn
@@ -285,11 +288,11 @@ namespace Server.Engines.ChampionSpawn
         {
             int cycle = 0;                                          //What's going on at the moment
             Item Sacrifice;                                         //Sarcrifice item
-            ChampLevelData.SpawnTypes ChampType;        //Spawn type
+            string ChampType;                           //Spawn type (definition name)
             ChampSummon Champ;                      //Spawn
             private bool bGraphics;
 
-            public SummonTimer(Item sacrifice, ChampLevelData.SpawnTypes cst, ChampSummon cs, bool gfx)
+            public SummonTimer(Item sacrifice, string cst, ChampSummon cs, bool gfx)
                 : base(TimeSpan.FromSeconds(3))
             {
                 Sacrifice = sacrifice; ChampType = cst; Champ = cs; bGraphics = gfx;
@@ -369,7 +372,7 @@ namespace Server.Engines.ChampionSpawn
                             //Clear the existing spawn out
 
                             Champ.m_Summoning = false;
-                            Champ.SpawnType = ChampType;
+                            Champ.DefinitionName = ChampType;
                             break;
                         }
                 }
@@ -383,10 +386,10 @@ namespace Server.Engines.ChampionSpawn
         {
             public Type ItemType;               // item type to sacrifice
             public int Amount;                  // amount of the item
-            public ChampLevelData.SpawnTypes ChampType; // spawn type this relates to
+            public string ChampType;                   // definition name this relates to
 
             //public SummonReq(){}			
-            public SummonReq(Type item, int amnt, ChampLevelData.SpawnTypes cst)
+            public SummonReq(Type item, int amnt, string cst)
             {
                 //Assign properties
                 ItemType = item;
@@ -398,22 +401,22 @@ namespace Server.Engines.ChampionSpawn
         //Plasma : summoning requirements data array
         private static SummonReq[] m_SummonReqs = new SummonReq[]
         {
-            new SummonReq( typeof(CheeseWedge),    1,       ChampLevelData.SpawnTypes.VerminHorde),
-            new SummonReq( typeof(CheeseWheel),     1,      ChampLevelData.SpawnTypes.VerminHorde),
-            new SummonReq( typeof(SpidersSilk),         1000 ,  ChampLevelData.SpawnTypes.Arachnid),
-            new SummonReq( typeof(Bone),                    100,        ChampLevelData.SpawnTypes.UnholyTerror),
-            new SummonReq( typeof(BloodVial),               100,        ChampLevelData.SpawnTypes.Abyss),
+            new SummonReq( typeof(CheeseWedge),    1,       ChampNames.VerminHorde),
+            new SummonReq( typeof(CheeseWheel),     1,      ChampNames.VerminHorde),
+            new SummonReq( typeof(SpidersSilk),         1000 ,  ChampNames.Arachnid),
+            new SummonReq( typeof(Bone),                    100,        ChampNames.UnholyTerror),
+            new SummonReq( typeof(BloodVial),               100,        ChampNames.Abyss),
 
 			//Rikktor accepts any type of gem, but they are not derrived from a base so each must be added
-			new SummonReq( typeof(Amber),                  500,        ChampLevelData.SpawnTypes.ColdBlood),
-            new SummonReq( typeof(Amethyst),            500,        ChampLevelData.SpawnTypes.ColdBlood),
-            new SummonReq( typeof(Citrine),                 500,        ChampLevelData.SpawnTypes.ColdBlood),
-            new SummonReq( typeof(Diamond),             500,        ChampLevelData.SpawnTypes.ColdBlood),
-            new SummonReq( typeof(Emerald),             500,        ChampLevelData.SpawnTypes.ColdBlood),
-            new SummonReq( typeof(Ruby),                    500,        ChampLevelData.SpawnTypes.ColdBlood),
-            new SummonReq( typeof(Sapphire),                500,        ChampLevelData.SpawnTypes.ColdBlood),
-            new SummonReq( typeof(StarSapphire),        500,        ChampLevelData.SpawnTypes.ColdBlood),
-            new SummonReq( typeof(Tourmaline),          500,        ChampLevelData.SpawnTypes.ColdBlood)
+			new SummonReq( typeof(Amber),                  500,        ChampNames.ColdBlood),
+            new SummonReq( typeof(Amethyst),            500,        ChampNames.ColdBlood),
+            new SummonReq( typeof(Citrine),                 500,        ChampNames.ColdBlood),
+            new SummonReq( typeof(Diamond),             500,        ChampNames.ColdBlood),
+            new SummonReq( typeof(Emerald),             500,        ChampNames.ColdBlood),
+            new SummonReq( typeof(Ruby),                    500,        ChampNames.ColdBlood),
+            new SummonReq( typeof(Sapphire),                500,        ChampNames.ColdBlood),
+            new SummonReq( typeof(StarSapphire),        500,        ChampNames.ColdBlood),
+            new SummonReq( typeof(Tourmaline),          500,        ChampNames.ColdBlood)
         };
 
 

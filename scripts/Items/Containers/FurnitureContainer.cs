@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -713,7 +713,7 @@ namespace Server.Items
             if (c.Parent != null)
             {   // in the players backpack or some other container
                 //  just cleanup auto-close timers and resume normal container operation.
-                Timer tm = (Timer)m_Table[c];
+                Timer? tm = (Timer?)m_Table[c];
 
                 if (tm != null)
                 {
@@ -757,7 +757,7 @@ namespace Server.Items
             if (c.Parent != null)
             {   // in the players backpack or some other container
                 //  just cleanup auto-close timers and resume normal container operation.
-                Timer tm = (Timer)m_Table[c];
+                Timer? tm = (Timer?)m_Table[c];
 
                 if (tm != null)
                 {
@@ -767,7 +767,7 @@ namespace Server.Items
                 return;
             }
 
-            Timer t = (Timer)m_Table[c];
+            Timer? t = (Timer?)m_Table[c];
 
             if (t != null)
             {

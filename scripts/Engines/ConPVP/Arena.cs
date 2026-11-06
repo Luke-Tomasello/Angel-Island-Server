@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -286,9 +286,9 @@ namespace Server.Engines.ConPVP
         [CommandProperty(AccessLevel.GameMaster)]
         public Rectangle2D Bounds { get { return m_Bounds; } set { m_Bounds = value; } }
 
-        private SafeZone m_Region;
+        private SafeZone? m_Region;
 
-        public SafeZone Region { get { return m_Region; } }
+        public SafeZone? Region { get { return m_Region; } }
 
         public int Spectators
         {
@@ -646,7 +646,7 @@ namespace Server.Engines.ConPVP
 
                 foreach (Mobile mob in facet.GetMobilesInBounds(m_Bounds))
                 {
-                    BaseCreature pet = mob as BaseCreature;
+                    BaseCreature? pet = mob as BaseCreature;
 
                     if (pet != null && pet.Controlled && pet.ControlMaster != null)
                     {
@@ -703,7 +703,7 @@ namespace Server.Engines.ConPVP
 
         public static List<Arena> Arenas { get { return m_Arenas; } }
 
-        public static Arena FindArena(List<Mobile> players)
+        public static Arena? FindArena(List<Mobile> players)
         {
             Preferences prefs = Preferences.Instance;
 
@@ -725,7 +725,7 @@ namespace Server.Engines.ConPVP
 
                     if (controller != null && !controller.Deleted && controller.Arena != null && controller.IsPrivate && controller.Map == first.Map && first.InRange(controller, 24))
                     {
-                        Multis.BaseHouse house = Multis.BaseHouse.FindHouseAt(controller);
+                        Multis.BaseHouse? house = Multis.BaseHouse.FindHouseAt(controller);
                         bool allNear = true;
 
                         for (int j = 0; j < players.Count; ++j)
@@ -825,7 +825,7 @@ namespace Server.Engines.ConPVP
             }
         }
 
-        public static Arena FindArena()
+        public static Arena? FindArena()
         {
             if (m_Arenas.Count == 0)
                 return null;
@@ -843,9 +843,9 @@ namespace Server.Engines.ConPVP
             return m_Arenas[offset];
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
-            Arena c = (Arena)obj;
+            Arena? c = (Arena?)obj;
 
             string a = m_Name;
             string b = c.m_Name;

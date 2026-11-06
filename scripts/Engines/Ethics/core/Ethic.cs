@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,7 +48,7 @@ namespace Server.Ethics
 
         public static bool AutoJoin { get { return Core.NewEthics; } }
 
-        public static Ethic Find(Item item)
+        public static Ethic? Find(Item item)
         {
             if ((item.SavedFlags & 0x100) != 0)
             {
@@ -77,7 +77,7 @@ namespace Server.Ethics
 
         public static bool CheckTrade(Mobile from, Mobile to, Mobile newOwner, Item item)
         {
-            Ethic itemEthic = Find(item);
+            Ethic? itemEthic = Find(item);
 
             if (itemEthic == null)
                 itemEthic = EthicBless.GetBlessedFor(item);
@@ -95,7 +95,7 @@ namespace Server.Ethics
 
         public static bool CheckEquip(Mobile from, Item item)
         {
-            Ethic itemEthic = Find(item);
+            Ethic? itemEthic = Find(item);
 
             if (itemEthic == null)
                 itemEthic = EthicBless.GetBlessedFor(item);
@@ -170,7 +170,7 @@ namespace Server.Ethics
 
         private static void RemoveEthic_OnTarget(Mobile from, object obj)
         {
-            PlayerMobile pm = obj as PlayerMobile;
+            PlayerMobile? pm = obj as PlayerMobile;
 
             if (pm == null)
                 from.SendMessage("That is not a player.");
@@ -198,7 +198,7 @@ namespace Server.Ethics
 
         private static void MakeHero_OnTarget(Mobile from, object obj)
         {
-            PlayerMobile pm = obj as PlayerMobile;
+            PlayerMobile? pm = obj as PlayerMobile;
 
             if (pm == null)
                 from.SendMessage("That is not a player.");
@@ -224,7 +224,7 @@ namespace Server.Ethics
 
         private static void MakeEvil_OnTarget(Mobile from, object obj)
         {
-            PlayerMobile pm = obj as PlayerMobile;
+            PlayerMobile? pm = obj as PlayerMobile;
 
             if (pm == null)
                 from.SendMessage("That is not a player.");
@@ -466,7 +466,7 @@ namespace Server.Ethics
             {
                 // player points
 
-                Ethics.Player killerEPL = Server.Ethics.Player.Find(killer, true);
+                Ethics.Player? killerEPL = Server.Ethics.Player.Find(killer, true);
                 Ethics.Player victimEPL = Server.Ethics.Player.Find(victim);
 
                 // evil kill an innocent 
@@ -576,7 +576,7 @@ namespace Server.Ethics
                     {   // no murder counts
                         if (killer is PlayerMobile && (killer as PlayerMobile).NpcGuild != NpcGuild.ThievesGuild)
                         {   // not in the Thieves' Guild
-                            PlayerMobile pm = (killer as PlayerMobile);
+                            PlayerMobile? pm = (killer as PlayerMobile);
                             // check to make sure we have not killed thie evil before
                             bool goodKill = true;
                             foreach (PlayerMobile.EthicKillsLog ekl in pm.EthicKillsLogList)
@@ -647,7 +647,7 @@ namespace Server.Ethics
 
         public static void ApplySkillLoss(Mobile mob)
         {
-            SkillLossContext context = (SkillLossContext)m_SkillLoss[mob];
+            SkillLossContext? context = (SkillLossContext?)m_SkillLoss[mob];
 
             if (context != null)
                 return;
@@ -692,7 +692,7 @@ namespace Server.Ethics
 
         public static bool ClearSkillLoss(Mobile mob)
         {
-            SkillLossContext context = (SkillLossContext)m_SkillLoss[mob];
+            SkillLossContext? context = (SkillLossContext?)m_SkillLoss[mob];
 
             if (context == null)
             {
@@ -738,7 +738,7 @@ namespace Server.Ethics
             return Find(mob, inherit, false);
         }
 
-        public static Ethic Find(Mobile mob, bool inherit, bool allegiance)
+        public static Ethic? Find(Mobile mob, bool inherit, bool allegiance)
         {
             Player pl = Player.Find(mob);
 

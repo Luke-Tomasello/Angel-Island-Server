@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -65,9 +65,9 @@ namespace Server.Gumps
         private Mobile m_From;
 
         private AIAdminGumpPage m_PageType;
-        private ArrayList m_List;
+        private ArrayList? m_List;
         private int m_ListPage;
-        private object m_State;
+        private object? m_State;
 
         private const int LabelColor = 0x7FFF;
         private const int SelectedColor = 0x421F;
@@ -206,7 +206,7 @@ namespace Server.Gumps
         //			return "Unknown";
         //		}
 
-        public AIAdminGump(Mobile from, AIAdminGumpPage pageType, int listPage, ArrayList list, string notice, object state)
+        public AIAdminGump(Mobile from, AIAdminGumpPage pageType, int listPage, ArrayList? list, string? notice, object? state)
             : base(50, 40)
         {
             from.CloseGump(typeof(AIAdminGump));
@@ -654,10 +654,10 @@ namespace Server.Gumps
 
 
         //SMD: my utility functions
-        int GetResultValueInt(TextRelay relay, int defaultValue)
+        int GetResultValueInt(TextRelay? relay, int defaultValue)
         {
             int iReturn = defaultValue;
-            string text = (relay == null ? null : relay.Text.Trim());
+            string? text = (relay == null ? null : relay.Text.Trim());
             if (text != null)
             {
                 if (text.Length > 0)

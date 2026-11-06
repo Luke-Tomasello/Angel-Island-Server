@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -73,7 +73,7 @@ namespace Server.Factions
                 Sheriff = null;
                 Finance = null;
 
-                TownMonolith monolith = m_Town.Monolith;
+                TownMonolith? monolith = m_Town.Monolith;
 
                 if (monolith != null)
                     monolith.Faction = value;
@@ -112,7 +112,7 @@ namespace Server.Factions
             {
                 if (m_Sheriff != null)
                 {
-                    PlayerState pl = PlayerState.Find(m_Sheriff);
+                    PlayerState? pl = PlayerState.Find(m_Sheriff);
 
                     if (pl != null)
                         pl.Sheriff = null;
@@ -122,7 +122,7 @@ namespace Server.Factions
 
                 if (m_Sheriff != null)
                 {
-                    PlayerState pl = PlayerState.Find(m_Sheriff);
+                    PlayerState? pl = PlayerState.Find(m_Sheriff);
 
                     if (pl != null)
                         pl.Sheriff = m_Town;
@@ -138,7 +138,7 @@ namespace Server.Factions
             {
                 if (m_Finance != null)
                 {
-                    PlayerState pl = PlayerState.Find(m_Finance);
+                    PlayerState? pl = PlayerState.Find(m_Finance);
 
                     if (pl != null)
                         pl.Finance = null;
@@ -148,7 +148,7 @@ namespace Server.Factions
 
                 if (m_Finance != null)
                 {
-                    PlayerState pl = PlayerState.Find(m_Finance);
+                    PlayerState? pl = PlayerState.Find(m_Finance);
 
                     if (pl != null)
                         pl.Finance = m_Town;

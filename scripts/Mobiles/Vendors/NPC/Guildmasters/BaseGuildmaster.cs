@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -59,11 +59,6 @@ namespace Server.Mobiles
             return true;
         }
 
-        public virtual void SayGuildTo(Mobile m)
-        {
-            SayTo(m, 1008055 + (int)NpcGuild);
-        }
-
         public virtual void SayWelcomeTo(Mobile m)
         {
             SayTo(m, 1008054); // Welcome to the guild! Thou shalt find that fellow members shall grant thee lower prices in shops.
@@ -105,7 +100,7 @@ namespace Server.Mobiles
                         SayTo(from, 501046); // Thou must resign from thy other guild first.
                     // Although you must still be in the Thieves Guild to steal from players, you will not be removed from the guild for collecting a murder count, nor are there any skill or time requirements to meet before joining.
                     // https://www.uoguide.com/Siege_Perilous
-                    else if (!Core.RuleSets.SiegeStyleRules() && (pm.GameTime < JoinGameAge || (pm.Created + JoinAge) > DateTime.UtcNow))
+                    else if (!Core.RuleSets.SiegeRules() && (pm.GameTime < JoinGameAge || (pm.Created + JoinAge) > DateTime.UtcNow))
                         SayTo(from, 501048); // You are too young to join my guild...
                     else if (CheckCustomReqs(pm))
                         SayPriceTo(from);
@@ -166,7 +161,10 @@ namespace Server.Mobiles
 
             return base.OnGoldGiven(from, dropped);
         }
-
+        public override bool OnVoucherGiven(Mobile from, Item dropped)
+        {
+            return base.OnVoucherGiven(from, dropped);
+        }
         public BaseGuildmaster(string title)
             : base(title)
         {

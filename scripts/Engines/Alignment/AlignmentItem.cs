@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -37,7 +37,7 @@ namespace Server.Engines.Alignment
     {
         public static bool CanEquip(Mobile mob, Item item, bool message)
         {
-            IAlignmentItem alignmentItem = item as IAlignmentItem;
+            IAlignmentItem? alignmentItem = item as IAlignmentItem;
 
             if (alignmentItem == null)
                 return true;

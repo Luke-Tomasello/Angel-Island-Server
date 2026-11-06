@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "GMN Core": {
-      "commandName": "Project",
-      "commandLineArgs": "-uoai -nopatch"
-    }
-  }
-}

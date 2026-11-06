@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -99,7 +99,7 @@ namespace Server.Gumps
             return false;
         }
 
-        public TextRelay GetTextEntry(int entryID)
+        public TextRelay? GetTextEntry(int entryID)
         {
             for (int i = 0; i < m_TextEntries.Length; ++i)
             {

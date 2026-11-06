@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,7 +52,7 @@ namespace Server.Items.Triggers
 
     public static class TriggerSystem
     {
-        public static bool CheckTrigger(Mobile from, Item item)
+        public static bool CheckTrigger(Mobile from, Item? item)
         {
             if (CanTrigger(from, item))
             {
@@ -65,7 +65,7 @@ namespace Server.Items.Triggers
 
         private static readonly HashSet<RecurseEntry> m_RecurseProtected = new HashSet<RecurseEntry>();
 
-        public static bool CanTrigger(Mobile from, Item item)
+        public static bool CanTrigger(Mobile from, Item? item)
         {
             if (item == null || item.Deleted)
                 return false;
@@ -126,7 +126,7 @@ namespace Server.Items.Triggers
         {
             bool result = CheckEventInternal(item);
             if (!result && (item is ITrigger) && (Core.Debug || Core.RuleSets.TestCenterRules()))
-                item.SendSystemMessage(string.Format("(Trigger was blocked because of EventSchedule for event {0})", (item as ITrigger).Event));
+                item.SendMessageNearby(string.Format("(Trigger was blocked because of EventSchedule for event {0})", (item as ITrigger).Event));
 
             return result && !FDFile.FDBackupInProgress;
         }
@@ -142,7 +142,7 @@ namespace Server.Items.Triggers
             // if there is no event scheduled, okay to continue;
             return true;
         }
-        public static void OnTrigger(Mobile from, Item item)
+        public static void OnTrigger(Mobile from, Item? item)
         {
             if (item == null || item.Deleted)
                 return;
@@ -252,7 +252,7 @@ namespace Server.Items.Triggers
             {
                 ITrigger trigger = (ITrigger)state;
 
-                Item item = targeted as Item;
+                Item? item = targeted as Item;
 
                 if (item == null)
                 {
@@ -283,7 +283,7 @@ namespace Server.Items.Triggers
                 m_Item = item;
             }
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 return (obj is TextEntry && this.Equals((RecurseEntry)obj));
             }

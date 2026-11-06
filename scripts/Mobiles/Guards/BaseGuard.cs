@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -78,8 +78,8 @@
  *		Guards now accept heads for the collection of bounties.
  */
 
-using Server.BountySystem;
 using Server.Diagnostics;
+using Server.Engines;
 using Server.Items;
 using System;
 using System.Collections.Generic;
@@ -96,6 +96,23 @@ namespace Server.Mobiles
         public override bool IgnoreCombatantAccessibility { get { return true; } }
         // Adam; and why the f' can't guards break crates laid on the ground?
         public override bool CanDestroyObstacles { get { return true; } }
+
+        public override void MoveToWorld(Point3D newLocation, Map map)
+        {
+            //#if DEBUG
+            //            if (map == Map.Felucca && !Utility.World.LostLandsWrap.Contains(newLocation))
+            //            {
+            //                Region rx = Region.Find(newLocation, map);
+            //                if (rx != null && !string.IsNullOrEmpty(rx.Name))
+            //                {
+            //                    if (rx.Name != "Custom Housing Area" && rx.Name != "Memorial of the fallen")
+            //                        ;
+            //                }
+            //            }
+            //#endif
+            base.MoveToWorld(newLocation, map);
+        }
+
         public override bool CheckIdle()
         {
             return base.CheckIdle();
@@ -116,7 +133,7 @@ namespace Server.Mobiles
             if (target == null || target.Deleted)
                 return;
 
-            IPooledEnumerable eable = null;
+            IPooledEnumerable? eable = null;
             //Pix: 7/10/04 - putting this safety try-catch in after shard crash
             //Adam: 7/8/08 - converting IPooledEnumerable so we can free it. (We caught an exception here)
             List<PlayerMobile> loggerList = new List<PlayerMobile>();
@@ -261,7 +278,7 @@ namespace Server.Mobiles
                 SetSkill(SkillName.Magery, 115, 120.0);
             }
         }
-        public BaseGuard(Mobile target)
+        public BaseGuard(Mobile? target)
             : base(AIType.AI_Guard, FightMode.Aggressor, 20, 10, 0.5, 0.25)
         {
             if (target != null)
@@ -289,11 +306,6 @@ namespace Server.Mobiles
             UsesPotions = true;
             CanRun = true;
             CanReveal = true; // magic and smart
-
-            Container pack = new Backpack();
-            pack.Movable = false;
-            pack.DropItem(new Gold(10, 25));
-            AddItem(pack);
 
             InitOutfit();
             InitSkills();
@@ -324,32 +336,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
+                PackGold(10, 25);
+            }
+            else
+            {   // Custom
                 // 1% chance to drop hally since we really want players farming vampires for slayers
                 if (Utility.RandomChance(1))
                 {
-                    Item hally = this.FindItemOnLayer(Layer.TwoHanded);
+                    Item? hally = this.FindItemOnLayer(Layer.TwoHanded);
                     if (hally != null)
                         hally.Movable = true;
-                }
-            }
-            else
-            {
-                if (Core.RuleSets.SiegeStyleRules())
-                {
-                    if (Spawning)
-                    {   // no loot
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    // no loot
                 }
             }
         }
@@ -440,6 +438,34 @@ namespace Server.Mobiles
             }
 
             base.OnThink();
+        }
+        public virtual void CeaseHostilities(Mobile? target = null)
+        {
+            if (target == null)
+            {
+                Combatant = null;
+                Focus = null;
+
+                if (Warmode)
+                    Warmode = false;
+
+                DamageEntries?.Clear();
+                Aggressors?.Clear();
+
+                return;
+            }
+
+            if (Combatant == target)
+                Combatant = null;
+
+            if (Focus == target)
+                Focus = null;
+
+            DamageEntries?.RemoveAll(de => de.Damager == target);
+            Aggressors?.RemoveAll(ai => ai.Attacker == target);
+
+            if (Combatant == null && Focus == null && Warmode)
+                Warmode = false;
         }
         private bool m_movementChatter = true;
         public virtual bool MovementChatter { get { return m_movementChatter; } set { m_movementChatter = value; } }

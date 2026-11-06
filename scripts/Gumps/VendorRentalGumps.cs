@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -51,7 +51,7 @@ namespace Server.Gumps
         }
 
         protected BaseVendorRentalGump(GumpType type, VendorRentalDuration duration, int price, int renewalPrice,
-            Mobile landlord, Mobile renter, bool landlordRenew, bool renterRenew, bool renew)
+            Mobile? landlord, Mobile? renter, bool landlordRenew, bool renterRenew, bool renew)
             : base(100, 100)
         {
             if (type == GumpType.Offer)
@@ -364,7 +364,7 @@ namespace Server.Gumps
                 if (!m_Contract.IsUsableBy(from, true, false, true, true))
                     return;
 
-                Mobile mob = targeted as Mobile;
+                Mobile? mob = targeted as Mobile;
 
                 if (mob == null || !mob.Player || !mob.Alive || mob == from)
                 {
@@ -421,7 +421,7 @@ namespace Server.Gumps
                 return;
             }
 
-            BaseHouse house = BaseHouse.FindHouseAt(m_Contract);
+            BaseHouse? house = BaseHouse.FindHouseAt(m_Contract);
             if (house == null)
                 return;
 

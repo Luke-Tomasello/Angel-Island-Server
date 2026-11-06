@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -72,11 +72,11 @@ namespace Server.Factions
 
         public static void BeginLeave(Mobile from)
         {
-            Guild guild = from.Guild as Guild;
+            Guild? guild = from.Guild as Guild;
 
             if (guild == null)
             {
-                PlayerState pl = PlayerState.Find(from);
+                PlayerState? pl = PlayerState.Find(from);
 
                 if (pl != null)
                 {
@@ -98,8 +98,8 @@ namespace Server.Factions
 
                 for (int i = 0; i < guild.Members.Count; ++i)
                 {
-                    Mobile mob = (Mobile)guild.Members[i];
-                    PlayerState pl = PlayerState.Find(mob);
+                    Mobile? mob = (Mobile?)guild.Members[i];
+                    PlayerState? pl = PlayerState.Find(mob);
 
                     if (pl != null)
                     {

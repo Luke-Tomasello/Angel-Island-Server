@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,7 +62,7 @@ namespace Server.Spells.Sixth
                 Reagent.Nightshade
             );
 
-        public EnergyBoltSpell(Mobile caster, Item scroll)
+        public EnergyBoltSpell(Mobile caster, Item? scroll)
             : base(caster, scroll, m_Info)
         {
         }
@@ -115,7 +115,7 @@ namespace Server.Spells.Sixth
 
                 // Deal the damage
                 //Pixie: 7/4/04: added caster to this so corpse wouldn't stay blue to this caster
-                SpellHelper.Damage(TimeSpan.FromSeconds(0.65), m, Caster, damage, 0, 0, 0, 0, 100); // originally "this"
+                SpellHelper.Damage(TimeSpan.FromSeconds(0.65), m, Caster, damage, new DamageContext { Source = this }); // originally "this"
             }
 
             FinishSequence();

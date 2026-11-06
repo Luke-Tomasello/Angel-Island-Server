@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -224,14 +224,6 @@ namespace Server.Items
             get { return 1.0; }
         }
 
-        // auto reset traps will call this to store the current settings for restoration later
-        public void RememberTrap()
-        {
-            // remember the last trap power for auto-reset functionality
-            m_OldTrapPower = m_TrapPower;
-            m_OldTrapType = m_TrapType;
-        }
-
         // okay, reset the trap based on stored settings.
         public void ResetTrap()
         {   // don't turn on the enabled flag since disarm trap only changes power and type :\
@@ -266,13 +258,6 @@ namespace Server.Items
             }
         }
 
-        /*[CommandProperty(AccessLevel.GameMaster)]
-		public bool TinkerMadeTrap
-		{
-			get { return m_TinkerMade; }
-			set { m_TinkerMade = value; }
-		}*/
-
         private bool CanDetonate(Mobile from)
         {
             object rootParent = RootParent;
@@ -302,20 +287,74 @@ namespace Server.Items
         public virtual bool AutoResetTrap
         {
             /* 5/21/23, Yoar
-             * 
+             *
+             * Historical context:
+             *
              * Old-style tinker traps auto-reset:
              * "If I trap a chest, it will explode and kill most anybody who opens it. It will
              * remain this way until the key is used on it."
              * https://uo.stratics.com/content/guides/tinkertraps/trapessay.shtml
-             * 
-             * Treasure maps do not:
+             *
+             * Treasure map chests do NOT auto-reset:
              * "Be aware that you do NOT need Remove Trap or Detect Hidden to get at any of these
              * chest's contents. Pick them, move at least 7 tiles away, cast telekinesis, and hit
-             * your last target macro (you have one right?). Boom or Hiss, the trap goes off, and
-             * you get your loot."
+             * your last target macro. Boom or Hiss, the trap goes off, and you get your loot."
              * http://web.archive.org/web/20010302164041/http://www.uopowergamers.com:80/skills/lockpicking.html
+             *
+             * 12/19/2025, Adam
+             *
+             * Mortalis clarification and intent:
+             *
+             * Over time, trap behavior drifted into being governed indirectly by era flags
+             * (e.g. EraAI), which caused multiple container types with very different gameplay
+             * purposes to inherit identical auto-reset behavior.
+             *
+             * This resulted in dungeon chests, treasure map chests, and some fillable containers
+             * behaving like modern tinker traps: infinite auto-reset until Remove Trap succeeds.
+             * While era-adjacent, this proved excessively punishing in Mortalis, where Remove Trap
+             * is intentionally difficult to raise and failure often results in death.
+             *
+             * To restore clarity and intentionality, auto-reset behavior is now determined
+             * explicitly by TrapKind rather than era side-effects:
+             *
+             *  - Player-crafted storage (tinker traps) retain persistent traps for security.
+             *  - Fillable containers continue to auto-reset to preserve long-term world danger.
+             *  - Mortalis dungeon and treasure map chests are single-pop traps: survive the blast
+             *    and the player may proceed.
+             *
+             * This preserves historical mechanics where appropriate while ensuring dungeon and
+             * treasure content remains challenging without becoming discouraging or abandoned.
              */
-            get { return (Core.OldStyleTinkerTrap && IsTinkerTrapped); }
+            get
+            {
+                switch (GetTrapKind())
+                {
+                    // Player-crafted storage
+                    case TrapKind.OldStyleTinkerTrap:
+                        // Historical behavior: trap persists until key is used
+                        return true;
+
+                    case TrapKind.NewStyleTinkerTrap:
+                        // Modern behavior: must disarm before opening
+                        return true;
+
+                    // World loot containers (Mortalis-specific design)
+                    case TrapKind.MortalisDungeonChest:
+                    case TrapKind.MortalisTreasureMapChest:
+                        // Mortalis design choice:
+                        // One pop; if you survive it, you may proceed
+                        return false;
+
+                    // Fillable containers
+                    case TrapKind.FillableContainer:
+                        // Persistent world hazards; traps remain meaningful over time
+                        return true;
+
+                    default:
+                        // Fallback to era rules only if container intent is unknown
+                        return SkillHandlers.RemoveTrap.EraAI;
+                }
+            }
         }
 
         public bool IsTinkerTrapped
@@ -325,7 +364,58 @@ namespace Server.Items
              */
             get { return (PlayerCrafted && m_TrapType != TrapType.None && m_TrapType != TrapType.MagicTrap); }
         }
+        public enum TrapKind
+        {
+            None,
 
+            // World / systemic containers
+            FillableContainer,
+            DungeonChest,
+            TreasureMapChest,
+
+            // Mortalis-specific policy overrides (explicitly not era-accurate)
+            MortalisDungeonChest,
+            MortalisTreasureMapChest,
+
+            // Player-crafted (tinker) traps
+            OldStyleTinkerTrap,
+            NewStyleTinkerTrap,
+
+            // AIU style traps could be added here if needed
+        }
+        public virtual TrapKind GetTrapKind()
+        {
+            // Player-crafted => tinker trap model
+            if (IsTinkerTrapped)
+                return Core.OldStyleTinkerTrap ? TrapKind.OldStyleTinkerTrap : TrapKind.NewStyleTinkerTrap;
+
+            // World loot containers
+            if (this is FillableContainer)
+                return TrapKind.FillableContainer;
+
+            // Dungeon chests
+            if (this is DungeonTreasureChest)
+                return Core.RuleSets.MortalisStyleRules()
+                    ? TrapKind.MortalisDungeonChest
+                    : TrapKind.DungeonChest;
+
+            // Treasure map chests
+            if (this is TreasureMapChest)
+                return Core.RuleSets.MortalisStyleRules()
+                    ? TrapKind.MortalisTreasureMapChest
+                    : TrapKind.TreasureMapChest;
+
+            if (IsSpawnedChest())
+                return Core.RuleSets.MortalisStyleRules()
+                    ? TrapKind.MortalisDungeonChest
+                    : TrapKind.DungeonChest;
+
+            return TrapKind.None;
+        }
+        private bool IsSpawnedChest()
+        {
+            return this.Spawner != null;
+        }
         public bool ExecuteTrap(Mobile from)
         {
             return ExecuteTrap(from, AutoResetTrap);
@@ -369,7 +459,7 @@ namespace Server.Items
                                 //from.Aggressors.Add(AggressorInfo.Create(m_Trapper, from, true));
                                 AssignAggressorAndRegister(from, m_Trapper, bAutoReset);
 
-                                AOS.Damage(from, damage, 0, 100, 0, 0, 0, this);
+                                AOS.Damage(from, damage, new DamageContext { Source = this });
 
                                 // Your skin blisters from the heat!
                                 from.LocalOverheadMessage(Network.MessageType.Regular, 0x2A, 503000);
@@ -390,7 +480,7 @@ namespace Server.Items
                                 if (damage <= 0)
                                     damage = 1;
 
-                                from.Damage(damage, this);
+                                from.Damage(damage, new DamageContext { Source = this });
                             }
 
                             Effects.PlaySound(loc, Map, 0x307);
@@ -401,10 +491,15 @@ namespace Server.Items
                             Effects.SendLocationEffect(new Point3D(loc.X, loc.Y - 1, loc.Z), Map, 0x36BD, 15);
                             Effects.SendLocationEffect(new Point3D(loc.X, loc.Y + 1, loc.Z), Map, 0x36BD, 15);
 
-                            Effects.SendLocationEffect(new Point3D(loc.X + 1, loc.Y + 1, loc.Z + 11), Map, 0x36BD, 15);
+                            // Magic trapped pouches are one-shot: trigger once, then allow access.
+                            // Do not honor auto-reset policy for MagicTrap.
+                            m_TrapType = TrapType.None;
+                            m_TrapPower = 0;
+                            m_TrapLevel = 0;
 
                             break;
                         }
+
                     case TrapType.DartTrap:
                         {
                             SendMessageTo(from, 502999, 0x3B2); // You set off a trap!
@@ -435,7 +530,7 @@ namespace Server.Items
                                 //from.Aggressors.Add(AggressorInfo.Create(m_Trapper, from, true));
                                 AssignAggressorAndRegister(from, m_Trapper, bAutoReset);
 
-                                AOS.Damage(from, damage, 100, 0, 0, 0, 0, this);
+                                AOS.Damage(from, damage, new DamageContext { Source = this });
 
                                 // A dart imbeds itself in your flesh!
                                 from.LocalOverheadMessage(Network.MessageType.Regular, 0x62, 502998);
@@ -451,7 +546,7 @@ namespace Server.Items
 
                             if (from.InRange(loc, 3))
                             {
-                                Poison poison;
+                                Poison? poison;
 
                                 //if (m_Trapper != null && !m_Trapper.Deleted)
                                 //from.Aggressors.Add(AggressorInfo.Create(m_Trapper, from, true));
@@ -463,7 +558,7 @@ namespace Server.Items
                                 }
                                 else
                                 {
-                                    AOS.Damage(from, m_TrapPower, 0, 0, 0, 100, 0, this);
+                                    AOS.Damage(from, m_TrapPower, new DamageContext { Source = this });
                                     poison = Poison.Greater;
                                 }
 
@@ -544,10 +639,10 @@ namespace Server.Items
         }
         public class AutoResetTrapRegistryInfo
         {
-            public Mobile Attacker;
-            public Mobile Defender;
+            public Mobile? Attacker;
+            public Mobile? Defender;
             public bool ReportMurderOpportunity;
-            public AutoResetTrapRegistryInfo(Mobile attacker, Mobile defender, bool opportunity = true)
+            public AutoResetTrapRegistryInfo(Mobile? attacker, Mobile? defender, bool opportunity = true)
             {
                 Attacker = attacker;
                 Defender = defender;
@@ -580,7 +675,7 @@ namespace Server.Items
                 return;
             }
 
-            if (Core.RuleSets.SiegeStyleRules() && this.TrapEnabled)
+            if (Core.RuleSets.SiegeRules() && this.TrapEnabled)
                 // Telekinesis will not work on trapped or locked chests
                 // https://www.uoguide.com/Siege_Perilous
                 return;

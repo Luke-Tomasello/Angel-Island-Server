@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -23,34 +23,43 @@
  * CHANGELOG:
  *  1/10/23, Yoar
  *      Initial commit.
+ *  3/18/26, Luke
+ *      Refactored to inherit from BaseConsole.
  */
 
-using Server.Items;
+using Server.Ethics;
 
-namespace Server.Ethics
+namespace Server.Engines.Consoles
 {
-    [FlipableAttribute(0x1f14, 0x1f15, 0x1f16, 0x1f17)]
-    public class EthicConsole : Item
+    public class EthicConsole : BaseConsole
     {
+        [CommandProperty(AccessLevel.Administrator)]
+        public bool Enabled
+        {
+            get => CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.EthicsEnabled);
+            set
+            {
+                if (value)
+                    CoreAI.SetDynamicFeature(CoreAI.FeatureBits.EthicsEnabled);
+                else
+                    CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.EthicsEnabled);
+            }
+        }
+
+        [CommandProperty(AccessLevel.Administrator)]
+        public bool EnabledResult => Core.Ethics;   // takes publish/date into consideration
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public int MaxLifeForce
         {
-            get { return EthicConfig.MaxLifeForce; }
-            set { EthicConfig.MaxLifeForce = value; }
+            get => EthicConfig.MaxLifeForce;
+            set => EthicConfig.MaxLifeForce = value;
         }
 
         [Constructable]
         public EthicConsole()
-            : base(0x1F14)
+            : base("Ethic Settings Console")
         {
-            Hue = 0x482;
-            Name = "Ethic Settings Console";
-        }
-
-        public override void OnDoubleClick(Mobile from)
-        {
-            if (from.AccessLevel > AccessLevel.Player)
-                from.SendGump(new Gumps.PropertiesGump(from, this));
         }
 
         public EthicConsole(Serial serial)
@@ -58,18 +67,21 @@ namespace Server.Ethics
         {
         }
 
+        public override void OnDoubleClick(Mobile from)
+        {
+            if (from.AccessLevel > AccessLevel.Player)
+                from.SendGump(new Gumps.PropertiesGump(from, this));
+        }
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-
-            writer.WriteEncodedInt(0); // version
+            writer.Write((int)0); // version
         }
 
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
-
-            reader.ReadEncodedInt();
+            int version = reader.ReadInt();
         }
     }
 }

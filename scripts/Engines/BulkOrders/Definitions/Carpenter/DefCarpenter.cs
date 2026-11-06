@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,6 +19,16 @@
  *
  ***************************************************************************/
 
+/* Scripts\Engines\BulkOrders\Definitions\Carpenter\DefCarpenter.cs
+ * CHANGELOG:
+ *  21-Jan-26, Yoar:
+ *      Removed special gold calculation for carpentry. All BOD systems now
+ *      use the same reward gold formula.
+ *  1/20/23, Yoar
+ *      Vendors value carpentry craftables much lower than smithing/tailoring craftables (or armor/weapons)
+ *      Let's use the craft-value formula for carpentry BODs
+ */
+
 using Server.Engines.Craft;
 using Server.Items;
 using Server.Mobiles;
@@ -28,7 +38,7 @@ namespace Server.Engines.BulkOrders
 {
     public class DefCarpenter : BulkOrderSystem
     {
-        private static BulkOrderSystem m_System;
+        private static BulkOrderSystem? m_System;
 
         public static BulkOrderSystem System
         {
@@ -43,7 +53,7 @@ namespace Server.Engines.BulkOrders
 
         public override BulkOrderType BulkOrderType { get { return BulkOrderType.Carpenter; } }
         public override CraftSystem CraftSystem { get { return DefCarpentry.CraftSystem; } }
-
+        public override double GoldScalar { get { return 1; } }
         public DefCarpenter()
             : base()
         {
@@ -68,7 +78,7 @@ namespace Server.Engines.BulkOrders
 
         public override bool UsesMaterial(Type type)
         {
-            return (type != typeof(Arrow) && type != typeof(Bolt));
+            return (BaseLog.NewWoodTypes && type != typeof(Arrow) && type != typeof(Bolt));
         }
 
         private static readonly SmallBulkEntry[][] m_BulkEntries = new SmallBulkEntry[][]
@@ -224,24 +234,6 @@ namespace Server.Engines.BulkOrders
             }
 
             return points; // max 800
-        }
-
-        public override int ComputeGold(BaseBOD bod, int points)
-        {
-            /* 1/20/23, Yoar
-             * Vendors value carpentry craftables much lower than smithing/tailoring craftables (or armor/weapons)
-             * Let's use the craft-value formula vor carpentry BODs
-             */
-
-            bool temp = RewardGoldByCraftValue;
-
-            RewardGoldByCraftValue = true;
-
-            int gold = base.ComputeGold(bod, points);
-
-            RewardGoldByCraftValue = temp;
-
-            return gold;
         }
     }
 }

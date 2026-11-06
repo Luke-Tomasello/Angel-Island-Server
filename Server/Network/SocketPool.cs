@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,7 +48,7 @@ namespace Server.Network
             }
         }
 
-        private static Queue<Socket> m_FreeSockets;
+        private static Queue<Socket>? m_FreeSockets;
 
         public static void Create()
         {
@@ -72,22 +72,6 @@ namespace Server.Network
                 m_FreeSockets.Dequeue().Close();
 
             m_FreeSockets = null;
-        }
-
-        public static Socket AcquireSocket()
-        {
-            lock (m_FreeSockets)
-            {
-                if (m_FreeSockets.Count > 0)
-                    return m_FreeSockets.Dequeue();
-
-                ++m_Misses;
-
-                for (int i = 0; i < m_InitialCapacity; ++i)
-                    m_FreeSockets.Enqueue(new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp));
-
-                return m_FreeSockets.Dequeue();
-            }
         }
 
         public static void ReleaseSocket(Socket s)

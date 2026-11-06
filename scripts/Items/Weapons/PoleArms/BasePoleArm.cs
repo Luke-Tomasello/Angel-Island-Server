@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -133,22 +133,6 @@ namespace Server.Items
         public override void OnHit(Mobile attacker, Mobile defender)
         {
             base.OnHit(attacker, defender);
-#if false
-            // see BaseWeapon
-            if (false && DoPub5Move(attacker, defender) && Engines.ConPVP.DuelContext.AllowSpecialAbility(attacker, "Concussion Blow", false))
-            {
-                StatMod mod = defender.GetStatMod("Concussion");
-
-                if (mod == null)
-                {
-                    defender.SendMessage("You receive a concussion blow!");
-                    defender.AddStatMod(new StatMod(StatType.Int, "Concussion", -(defender.RawInt / 2), TimeSpan.FromSeconds(30.0)));
-
-                    attacker.SendMessage("You deliver a concussion blow!");
-                    attacker.PlaySound(0x11C);
-                }
-            }
-#endif
         }
     }
 }

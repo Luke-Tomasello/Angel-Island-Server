@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -38,7 +38,6 @@
  */
 
 using Server.Targeting;
-using System;
 
 namespace Server.Spells.Second
 {
@@ -53,7 +52,7 @@ namespace Server.Spells.Second
                 Reagent.Ginseng
             );
 
-        public CureSpell(Mobile caster, Item scroll)
+        public CureSpell(Mobile caster, Item? scroll)
             : base(caster, scroll, m_Info)
         {
         }
@@ -85,55 +84,28 @@ namespace Server.Spells.Second
             else if (CheckBSequence(m))
             {
                 SpellHelper.Turn(Caster, m);
-                //chance to cure poison is ((caster's magery/poison level) - 20%)
 
-                if (m.Poison != null)
+                // --- Cure attempt (OSI formula) ---
+                Poison p = m.Poison;
+
+                if (p != null)
                 {
-                    double chance = 100;
-                    try //I threw this try-catch block in here because Poison is whacky... there'll be a tiny 
-                    {   //race condition if multiple people are casting cure on the same target... 
-                        chance = ((Caster.Skills[SkillName.Magery].Value / (m.Poison.Level + 1)) - 20) * 7.5;
-                        //this gives 0 chance for a mage to cure lethal
-                        // 37.5% chance at GM to cure deadly ( needs > 80 for a chance )
-                        // 100% chance at GM to cure greater ( needs > 60 for a chance )
-                        // 100% chance at GM to cure regular ( needs > 40 for a chance )
-                        // 100% chance at GM to cure lesser ( needs > 20 for a chance )
+                    // OSI formula (commonly documented):
+                    // % Chance to cure = (Magery * 0.75) + (110 - (Poison level * 33))
+                    // Poison level here is conventionally 1..5, so map Poison.Level (0..4) -> 1..5.
+                    double magery = Caster.Skills[SkillName.Magery].Value;
+                    int poisonLevel = p.Level + 1;
 
-                        if (Caster.AccessLevel > AccessLevel.Player)
-                        {
-                            Caster.SendMessage("Chance to cure is " + chance + "%");
-                        }
-                    }
-                    catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                    //new cure rate code
-                    /*
-                    Poison p = m.Poison;
-                    if( p != null )
-                    {
-                        int chance = 100;
-                        try
-                        {
-                            chance = 10000 
-                                         + (int)(Caster.Skills[SkillName.Magery].Value * 75) 
-                                         - ((p.Level + 1) * 1750);
-                            chance /= 100;
-                            if( p.Level == 3 ) //DP tweak
-                            {
-                                chance -= 15; //@GM Magery, chance will be 90%
-                            }
-                            if( p.Level > 3 ) //lethal poison further penalty
-                            {
-                                chance -= 50; //@GM Magery, chance will be 37%
-                            }
+                    double chance = (magery * 0.75) + (110 - (poisonLevel * 33));
 
-                            if( Caster.AccessLevel > AccessLevel.Player )
-                            {
-                                Caster.SendMessage("Chance to cure is " + chance + "%");
-                            }
-                        }
-                        catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                        */
-                    if (!m.Incurable && Utility.Random(0, 100) <= chance)
+                    // clamp to [0,100]
+                    if (chance < 0.0) chance = 0.0;
+                    else if (chance > 100.0) chance = 100.0;
+
+                    if (Caster.AccessLevel > AccessLevel.Player)
+                        Caster.SendMessage("Chance to cure is {0:0.##}%", chance);
+
+                    if (!m.Incurable && Utility.RandomDouble() < (chance / 100.0))
                     {
                         if (m.CurePoison(Caster))
                         {
@@ -141,6 +113,11 @@ namespace Server.Spells.Second
                                 Caster.SendLocalizedMessage(1010058); // You have cured the target of all poisons!
 
                             m.SendLocalizedMessage(1010059); // You have been cured of all poisons.
+                        }
+                        else
+                        {
+                            // defensive: if any shard rules override CheckCure later
+                            Caster.SendLocalizedMessage(1010060); // You have failed to cure your target!
                         }
                     }
                     else

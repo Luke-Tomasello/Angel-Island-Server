@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,7 +62,7 @@ namespace Server.Factions.NewGumps
 
                 foreach (T value in m_State.Source)
                 {
-                    string filterTarget = GetFilterTarget(value);
+                    string? filterTarget = GetFilterTarget(value);
 
                     if (filterTarget == null || Insensitive.Contains(filterTarget, m_State.Filter))
                         m_State.List.Add(value);
@@ -171,7 +171,7 @@ namespace Server.Factions.NewGumps
             }
         }
 
-        protected virtual string GetFilterTarget(T value)
+        protected virtual string? GetFilterTarget(T value)
         {
             return null;
         }
@@ -276,7 +276,7 @@ namespace Server.Factions.NewGumps
                 get { return m_Comparer; }
             }
 
-            public FieldInfo(int width, TextDefinition name, IComparer<T> comparer)
+            public FieldInfo(int width, TextDefinition? name, IComparer<T> comparer)
             {
                 m_Width = width;
                 m_Name = name;

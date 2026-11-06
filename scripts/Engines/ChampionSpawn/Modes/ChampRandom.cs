@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,8 @@
 
 /* Scripts/Engines/ChampionSpawn/Modes/ChampRandom.cs
  *	ChangeLog:
+ *	10/27/2026, Adam
+ *		SpawnTypes enum removed: PickChamp() sets DefinitionName (ChampNames) instead of SpawnType.
  *	10/28/2006, plasma
  *		Initial creation
  * 
@@ -54,27 +56,27 @@ namespace Server.Engines.ChampionSpawn
             {
                 case 0:
                     {
-                        SpawnType = ChampLevelData.SpawnTypes.Abyss;
+                        DefinitionName = ChampNames.Abyss;
                         break;
                     }
                 case 1:
                     {
-                        SpawnType = ChampLevelData.SpawnTypes.Arachnid;
+                        DefinitionName = ChampNames.Arachnid;
                         break;
                     }
                 case 2:
                     {
-                        SpawnType = ChampLevelData.SpawnTypes.ColdBlood;
+                        DefinitionName = ChampNames.ColdBlood;
                         break;
                     }
                 case 3:
                     {
-                        SpawnType = ChampLevelData.SpawnTypes.UnholyTerror;
+                        DefinitionName = ChampNames.UnholyTerror;
                         break;
                     }
                 case 4:
                     {
-                        SpawnType = ChampLevelData.SpawnTypes.VerminHorde;
+                        DefinitionName = ChampNames.VerminHorde;
                         break;
                     }
             }

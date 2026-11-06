@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -110,7 +110,7 @@ namespace Server.Multis.StaticHousing
         /// If enabled, we can place house foundations using the house placement tool.
         /// But, if this is not an AOS server, we can only build house foundations in the green acres.
         /// </summary>
-        public static bool HouseFoundationsEnabled { get { return Core.UOTC_CFG || Core.RuleSets.AOSRules(); } }
+        public static bool HouseFoundationsEnabled { get { return Core.GMNTC_CFG || Core.RuleSets.AOSRules(); } }
 
         public static void Configure()
         {
@@ -142,7 +142,7 @@ namespace Server.Multis.StaticHousing
         {
             m_DatabaseProd.ReloadAll();
 
-            if (Core.UOTC_CFG)
+            if (Core.GMNTC_CFG)
                 m_DatabaseTest.ReloadAll();
 
             GenerateHouseDeedInfo();
@@ -158,19 +158,19 @@ namespace Server.Multis.StaticHousing
             Both = 0x3,
         }
 
-        public static HouseBlueprint GetBlueprint(string houseID)
+        public static HouseBlueprint GetBlueprint(string? houseID)
         {
             return GetBlueprint(houseID, LookupFlags.Both);
         }
 
-        public static HouseBlueprint GetBlueprint(string houseID, LookupFlags flags)
+        public static HouseBlueprint GetBlueprint(string? houseID, LookupFlags flags)
         {
-            HouseBlueprint blueprint = null;
+            HouseBlueprint? blueprint = null;
 
             // let's exhaust all of our caches before we read any file
             if (flags.HasFlag(LookupFlags.Cache))
             {
-                if (blueprint == null && Core.UOTC_CFG)
+                if (blueprint == null && Core.GMNTC_CFG)
                     blueprint = m_DatabaseTest.Get(houseID, LookupFlags.Cache);
 
                 if (blueprint == null)
@@ -179,7 +179,7 @@ namespace Server.Multis.StaticHousing
 
             if (flags.HasFlag(LookupFlags.File))
             {
-                if (blueprint == null && Core.UOTC_CFG)
+                if (blueprint == null && Core.GMNTC_CFG)
                     blueprint = m_DatabaseTest.Get(houseID, LookupFlags.File);
 
                 if (blueprint == null)
@@ -201,7 +201,7 @@ namespace Server.Multis.StaticHousing
             // let's exhaust all of our caches before we read any file
             if (flags.HasFlag(LookupFlags.Cache))
             {
-                if (!exists && Core.UOTC_CFG)
+                if (!exists && Core.GMNTC_CFG)
                     exists = m_DatabaseTest.Contains(houseID, LookupFlags.Cache);
 
                 if (!exists)
@@ -210,7 +210,7 @@ namespace Server.Multis.StaticHousing
 
             if (flags.HasFlag(LookupFlags.File))
             {
-                if (!exists && Core.UOTC_CFG)
+                if (!exists && Core.GMNTC_CFG)
                     exists = m_DatabaseTest.Contains(houseID, LookupFlags.File);
 
                 if (!exists)
@@ -416,7 +416,7 @@ namespace Server.Multis.StaticHousing
         {
             m_PlacementEntriesProd = GeneratePlacementEntries(m_DatabaseProd);
 
-            if (Core.UOTC_CFG)
+            if (Core.GMNTC_CFG)
                 m_PlacementEntriesTest = GeneratePlacementEntries(m_DatabaseTest);
         }
 
@@ -482,7 +482,7 @@ namespace Server.Multis.StaticHousing
                 return new DesignedPreviewHouse(GetFoundationID(m_HouseID), mcl);
             }
 
-            public BaseHouse ConstructHouse(Mobile from)
+            public BaseHouse? ConstructHouse(Mobile from)
             {
                 HouseBlueprint blueprint = GetBlueprint(m_HouseID);
 
@@ -570,19 +570,19 @@ namespace Server.Multis.StaticHousing
                 m_Table = new Dictionary<string, HouseBlueprint>();
             }
 
-            public HouseBlueprint Get(string houseID)
+            public HouseBlueprint? Get(string houseID)
             {
                 return Get(houseID, LookupFlags.Both);
             }
 
-            public HouseBlueprint Get(string houseID, LookupFlags flags)
+            public HouseBlueprint? Get(string? houseID, LookupFlags flags)
             {
                 if (houseID == null)
                     return null;
 
                 if (flags.HasFlag(LookupFlags.Cache))
                 {
-                    HouseBlueprint blueprint;
+                    HouseBlueprint? blueprint;
 
                     if (m_Table.TryGetValue(houseID, out blueprint))
                         return blueprint;
@@ -590,7 +590,7 @@ namespace Server.Multis.StaticHousing
 
                 if (flags.HasFlag(LookupFlags.File))
                 {
-                    XmlElement xmlHouseElem = Load(houseID);
+                    XmlElement? xmlHouseElem = Load(houseID);
 
                     if (xmlHouseElem != null)
                         return m_Table[houseID] = new HouseBlueprint(xmlHouseElem);
@@ -667,7 +667,7 @@ namespace Server.Multis.StaticHousing
                 }
             }
 
-            public XmlElement Load(string houseID)
+            public XmlElement? Load(string houseID)
             {
                 List<string> fileNames = new List<string>();
 
@@ -734,10 +734,10 @@ namespace Server.Multis.StaticHousing
             public readonly short m_zOffset;
             public readonly ushort m_id;
             public readonly ushort m_hue;
-            public readonly string m_name;
+            public readonly string? m_name;
             public readonly TileType m_flags;
 
-            public TileEntry(short xOffset, short yOffset, short zOffset, ushort id, ushort hue, string name, TileType flags)
+            public TileEntry(short xOffset, short yOffset, short zOffset, ushort id, ushort hue, string? name, TileType flags)
             {
                 m_xOffset = xOffset;
                 m_yOffset = yOffset;
@@ -1221,7 +1221,7 @@ namespace Server.Multis.StaticHousing
                                         short zOffset = ToInt16(xmlTile["z"].InnerText);
                                         ushort id = ToUInt16(xmlTile["id"].InnerText);
                                         ushort hue = 0;
-                                        string name = null;
+                                        string? name = null;
 
                                         if (xmlTile["hue"] != null)
                                             hue = ToUInt16(xmlTile["hue"].InnerText);

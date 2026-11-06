@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,45 @@
 
 /* Scripts/Engines/BulkOrders/BulkOrderSystem.cs
  * CHANGELOG:
+ * 1/23/2026, Adam
+ * Gold Economy Integrity Policy
+ * -----------------------------
+ * - Removed all magic-number pricing fallbacks (no fabricated values like 2 or 1).
+ * - Single pricing authority: DB-backed BaseVendor.VendorPays(...).
+ *
+ * - Raw resources:
+ *   - Added Bone (and similar) to ensure all BOD materials have pricing.
+ *   - Must resolve via m_ResourceValues (DB pricing).
+ *   - DEBUG: hard exception if missing.
+ *   - RELEASE: value = 0.
+ *
+ * - Craft valuation:
+ *   - Recursive craft-graph expansion to raw resources.
+ *   - Intermediate components resolved via recipes (not constants).
+ *   - Memoized + recursion-guarded.
+ *   - Missing craft systems/recipes are structural errors.
+ *
+ * - Vendor valuation:
+ *   - No fabricated fallbacks.
+ *   - Unpriced items are economically unaccountable.
+ *   - GoldVendorHalf marked [Obsolete].
+ *
+ * - Gold computation:
+ *   - No forced minimum payout.
+ *   - DEBUG: value <= 0 throws.
+ *   - RELEASE: negative values clamp to 0.
+ *
+ * - BOD integrity:
+ *   - BOD generation constrained to craftable + price-resolvable items.
+ *   - Pricing sanity enforced before reward computation.
+ *   - Non-craftable / unresolvable items excluded from BOD configs.
+ *
+ * Principle:
+ *   If the economy cannot justify a value, it does not invent one.
+ * -------------------------------  
+ *  21-Jan-26, Yoar
+ *      - Reduced the monetary values of raw materials in the reward gold calculation.
+ *      - Added values for cloth, feathers.
  *  10/4/2023, Adam
  *      Serialize LargeEnabled
  *  11/15/21, Yoar
@@ -73,6 +112,7 @@ using Server.Commands;
 using Server.ContextMenus;
 using Server.Diagnostics;
 using Server.Engines.Craft;
+using Server.Engines.DataRecorder;
 using Server.Gumps;
 using Server.Items;
 using Server.Misc;
@@ -80,6 +120,7 @@ using Server.Mobiles;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -87,6 +128,26 @@ using System.Xml;
 
 namespace Server.Engines.BulkOrders
 {
+    public enum GoldRewardModel
+    {
+        /// <summary>
+        /// Model 1: GoldCraftValue (craft-cost model)
+        /// Intent: Estimate how "expensive to craft" the requested item is, based on its crafting recipe and an expected success rate.
+        /// </summary>
+        GoldCraftValue,
+        /// <summary>
+        /// Model 2: GoldVendorHalf (finished-item vendor model)
+        /// Intent: Approximate OSI-style behavior: pay about half of what an NPC would pay for the finished item, with bonuses for exceptional/material requirements.
+        /// [OBSOLETE MODEL NOTICE]
+        /// GoldVendorHalf is deprecated.
+        /// It depends on NPC vendor pricing coverage, which is incomplete on OSI-derived datasets.
+        /// Missing vendor prices are treated as non-valued items (0 gp).
+        /// This model is retained for legacy compatibility only.
+        /// Prefer GoldCraftValue.
+        /// </summary>
+        [Obsolete("GoldVendorHalf is deprecated. NPC vendor pricing coverage is incomplete. Use GoldCraftValue instead.", false)]
+        GoldVendorHalf
+    }
     public enum BulkOrderType : sbyte
     {
         Invalid = -1,
@@ -139,7 +200,8 @@ namespace Server.Engines.BulkOrders
         public static bool OfferOnTurnIn = true; // do we get an instant offer when we turn in a completed BOD? (SE)
         public static bool LargeEnabled = true;  // do we support LBODs?
         public static bool ExchangeLargeBODs = true; // can we exchange an empty LBOD for a SBOD?
-        public static double GoldScalar = 1.0; // in case gold rewards are enabled, scale gold by this much
+        public static GoldRewardModel GoldRewardModel = GoldRewardModel.GoldCraftValue; // base the reward gold on craft value of the items?
+        public static double GlobalGoldScalar = 1.0; // in case gold rewards are enabled, scale gold by this much
         public static int SmallBankPerc = 4; // what percentage of points can we bank for small BODs?
         public static int LargeBankPerc = 20; // what percentage of points can we bank for large BODs?
         public static bool AccountWideDelays = false; // are BOD delays account-wide?
@@ -162,12 +224,12 @@ namespace Server.Engines.BulkOrders
                 {
                     if (type.IsSubclassOf(typeof(BulkOrderSystem)))
                     {
-                        PropertyInfo prop = type.GetProperty("System", BindingFlags.Static | BindingFlags.Public);
+                        PropertyInfo? prop = type.GetProperty("System", BindingFlags.Static | BindingFlags.Public);
 
                         if (prop == null)
                             continue;
 
-                        MethodInfo accessor = prop.GetGetMethod();
+                        MethodInfo? accessor = prop.GetGetMethod();
 
                         if (accessor == null)
                             continue;
@@ -179,9 +241,10 @@ namespace Server.Engines.BulkOrders
 
             #endregion
 
-            InitResourceValues();
+            //InitResourceValues();
         }
 
+        [CallPriority(10)]   // must come after Standard Pricing Database
         public static void Configure()
         {
             EventSink.WorldSave += new WorldSaveEventHandler(EventSink_WorldSave);
@@ -193,6 +256,9 @@ namespace Server.Engines.BulkOrders
             TargetCommands.Register(new ViewContextCommand());
             TargetCommands.Register(new FillBODCommand());
             TargetCommands.Register(new CraftValueCommand());
+#if DEBUG
+            Server.CommandSystem.Register("TestBODCommand", AccessLevel.Administrator, new CommandEventHandler(TestBODCommand.TestBODCommand_OnCommand));
+#endif
         }
 
         private static void EventSink_WorldSave(WorldSaveEventArgs e)
@@ -235,7 +301,7 @@ namespace Server.Engines.BulkOrders
                     return;
                 }
 
-                BulkOrderSystem system = GetSystem(type);
+                BulkOrderSystem? system = GetSystem(type);
 
                 if (system == null)
                 {
@@ -243,7 +309,7 @@ namespace Server.Engines.BulkOrders
                     return;
                 }
 
-                BulkOrderContext context = system.GetContext((Mobile)obj, false);
+                BulkOrderContext? context = system.GetContext((Mobile)obj, false);
 
                 if (context == null)
                 {
@@ -303,7 +369,7 @@ namespace Server.Engines.BulkOrders
 
             public override void Execute(CommandEventArgs e, object obj)
             {
-                Item item = obj as Item;
+                Item? item = obj as Item;
 
                 if (item == null)
                 {
@@ -343,10 +409,367 @@ namespace Server.Engines.BulkOrders
                     LogFailure("That is not a craftable item.");
             }
         }
+#if DEBUG
+        private class TestBODCommand
+        {
+            private struct Sig : IEquatable<Sig>
+            {
+                public BulkOrderType SystemType;
+                public Type ItemType;
+                public BulkMaterialType Material;
+                public bool Exceptional;
+                public int AmountMax;
 
+                public bool Equals(Sig other)
+                {
+                    return SystemType == other.SystemType
+                        && ItemType == other.ItemType
+                        && Material == other.Material
+                        && Exceptional == other.Exceptional
+                        && AmountMax == other.AmountMax;
+                }
+
+                public override bool Equals(object? obj)
+                {
+                    return (obj is Sig) && Equals((Sig)obj);
+                }
+
+                public override int GetHashCode()
+                {
+                    unchecked
+                    {
+                        int h = 17;
+                        h = h * 31 + (int)SystemType;
+                        h = h * 31 + (ItemType != null ? ItemType.GetHashCode() : 0);
+                        h = h * 31 + (int)Material;
+                        h = h * 31 + (Exceptional ? 1 : 0);
+                        h = h * 31 + AmountMax;
+                        return h;
+                    }
+                }
+            }
+
+            private class Row
+            {
+                public Sig Sig;
+
+                public int GoldCraftValue;        // model (pre-scalars)
+                public int GoldCraftValueFinal;   // final (post-scalars)
+
+                public int GoldVendorHalf;        // model (pre-scalars)
+                public int GoldVendorHalfFinal;   // final (post-scalars)
+
+                public double SystemGoldScalar;   // per-system scalar used for final
+            }
+
+            public static void TestBODCommand_OnCommand(CommandEventArgs e)
+            {
+                //if (!s_BODPricingSanityRan)
+                {
+                    s_BODPricingSanityRan = true;
+                    RunBODPricingSanity(e.Mobile);
+                }
+
+                const string LogFile = "TestBODGoldModels(proposed).log";
+
+                GoldRewardModel oldGoldRewardModel = GoldRewardModel;
+                int oldRewardGoldRandomization = RewardGoldRandomization;
+
+                int totalFound = 0;
+                int uniqueKept = 0;
+                int dupesSkipped = 0;
+
+                // Group rows by system type for reporting.
+                Dictionary<BulkOrderType, List<Row>> grouped = new Dictionary<BulkOrderType, List<Row>>();
+
+                // Used to dedupe signatures per system.
+                HashSet<Sig> seen = new HashSet<Sig>();
+
+                try
+                {
+                    // Deterministic comparison: eliminate randomization for this run.
+                    RewardGoldRandomization = 0;
+
+                    // Force craft-value model for this run.
+                    GoldRewardModel = GoldRewardModel.GoldCraftValue;
+
+                    // Overwrite log
+                    try
+                    {
+                        if (File.Exists(LogFile))
+                            File.Delete(LogFile);
+                    }
+                    catch
+                    {
+                        // If we cannot delete, we will still attempt to overwrite via Create below.
+                    }
+
+                    using (StreamWriter sw = new StreamWriter(LogFile, false))
+                    {
+                        sw.WriteLine("=== TestBOD Gold Model Dump (GoldCraftValue only) ===");
+                        sw.WriteLine("Timestamp(UTC): {0}", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
+                        sw.WriteLine("ScanScope: World (all SmallBOD items)");
+                        sw.WriteLine("RewardGoldRandomization forced to 0 for this run.");
+                        sw.WriteLine("GoldRewardModel forced to GoldCraftValue for this run.");
+                        sw.WriteLine("GlobalGoldScalar={0}", GlobalGoldScalar);
+                        sw.WriteLine("NOTE: Gold is FINAL (post GlobalGoldScalar * SystemGoldScalar).");
+                        sw.WriteLine();
+
+                        foreach (Item item in World.Items.Values)
+                        {
+                            SmallBOD? sbod = item as SmallBOD;
+                            if (sbod == null)
+                                continue;
+
+                            if (sbod.Deleted)
+                                continue;
+
+                            totalFound++;
+
+                            BulkOrderSystem system = sbod.System;
+                            if (system == null)
+                                continue;
+
+                            Sig sig = new Sig();
+                            sig.SystemType = system.BulkOrderType;
+                            sig.ItemType = sbod.Type;
+                            sig.Material = sbod.Material;
+                            sig.Exceptional = sbod.RequireExceptional;
+                            sig.AmountMax = sbod.AmountMax;
+
+                            if (seen.Contains(sig))
+                            {
+                                dupesSkipped++;
+                                continue;
+                            }
+
+                            seen.Add(sig);
+                            uniqueKept++;
+
+                            // Per-system scalar (virtual override), default 1.0, DefCarpenter override 1.5, etc.
+                            double systemGoldScalar = system.GoldScalar;
+
+                            int modelGold = system.ComputeGold(sbod, 0);
+                            int finalGold = Math.Max(1, (int)Math.Round(modelGold * GlobalGoldScalar * systemGoldScalar));
+
+                            Row row = new Row();
+                            row.Sig = sig;
+
+                            // Reuse existing fields to avoid introducing new Row members.
+                            row.GoldCraftValue = modelGold;
+                            row.GoldCraftValueFinal = finalGold;
+
+                            row.SystemGoldScalar = systemGoldScalar;
+
+                            List<Row>? list;
+                            if (!grouped.TryGetValue(sig.SystemType, out list))
+                                grouped[sig.SystemType] = list = new List<Row>();
+
+                            list.Add(row);
+                        }
+
+                        // Write grouped output
+                        BulkOrderType[] allTypes = (BulkOrderType[])Enum.GetValues(typeof(BulkOrderType));
+                        for (int i = 0; i < allTypes.Length; i++)
+                        {
+                            BulkOrderType t = allTypes[i];
+                            List<Row>? list;
+                            if (!grouped.TryGetValue(t, out list) || list == null || list.Count == 0)
+                                continue;
+
+                            sw.WriteLine("[{0}]", t.ToString());
+                            sw.WriteLine();
+
+                            for (int j = 0; j < list.Count; j++)
+                            {
+                                Row r = list[j];
+
+                                sw.WriteLine("[SmallBOD]");
+                                sw.WriteLine("ItemType={0}", (r.Sig.ItemType != null ? r.Sig.ItemType.Name : "null"));
+                                sw.WriteLine("Material={0}", r.Sig.Material);
+                                sw.WriteLine("Exceptional={0}", r.Sig.Exceptional);
+                                sw.WriteLine("AmountMax={0}", r.Sig.AmountMax);
+                                sw.WriteLine("SystemGoldScalar={0}", r.SystemGoldScalar);
+
+                                // Only report final gold; keep model gold available for debugging if needed.
+                                sw.WriteLine("Gold={0}", r.GoldCraftValueFinal);
+
+                                sw.WriteLine();
+                            }
+
+                            sw.WriteLine("------------------------------------------------------------");
+                            sw.WriteLine();
+                        }
+
+                        sw.WriteLine("Totals:");
+                        sw.WriteLine("SmallBODs Found: {0}", totalFound);
+                        sw.WriteLine("Unique Signatures: {0}", uniqueKept);
+                        sw.WriteLine("Duplicates Skipped: {0}", dupesSkipped);
+                        sw.WriteLine();
+                        sw.WriteLine("NOTE: LargeBODs were not included in this run.");
+                        sw.WriteLine("NOTE: GoldRewardModel restored after run.");
+                        sw.WriteLine("NOTE: RewardGoldRandomization restored after run.");
+                    }
+
+                    e.Mobile.SendMessage("TestBOD complete. Wrote {0} (Found={1}, Unique={2}, Dupes={3}).",
+                        LogFile, totalFound, uniqueKept, dupesSkipped);
+                }
+                catch (Exception ex)
+                {
+                    e.Mobile.SendMessage("TestBOD failed: {0}", ex.Message);
+
+                    try { LogHelper.LogException(ex); }
+                    catch { }
+                }
+                finally
+                {
+                    // Always restore globals.
+                    GoldRewardModel = oldGoldRewardModel;
+                    RewardGoldRandomization = oldRewardGoldRandomization;
+                }
+            }
+        }
+
+        private static bool s_BODPricingSanityRan;
+
+        private static void RunBODPricingSanity(Mobile m)
+        {
+            int total = 0;
+
+            List<PricingSanityFailure> failures = new List<PricingSanityFailure>();
+
+            foreach (BulkOrderSystem system in BulkOrderSystem.Systems)
+            {
+                if (system == null)
+                    continue;
+
+                CraftSystem craftSystem = system.CraftSystem;
+
+                ValidateEntries(system, craftSystem, system.GetSmallEntries(), ref total, failures);
+                ValidateEntries(system, craftSystem, system.GetLargeEntries(), ref total, failures);
+            }
+
+            // Summary
+            int failed = failures.Count;
+
+            if (m != null)
+                m.SendMessage("BOD Pricing Sanity: Checked={0}, Failed={1}.", total, failed);
+
+            Utility.Monitor.WriteLine(
+                "BOD Pricing Sanity: Checked={0}, Failed={1}.",
+                failed > 0 ? ConsoleColor.Red : ConsoleColor.Green,
+                total,
+                failed);
+
+            if (failed > 0)
+            {
+                // Per-system counts (helps you size the blast radius quickly)
+                Dictionary<string, int> bySystem = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+                for (int i = 0; i < failures.Count; i++)
+                {
+                    PricingSanityFailure f = failures[i];
+
+                    if (bySystem.TryGetValue(f.SystemName, out int count))
+                        bySystem[f.SystemName] = count + 1;
+                    else
+                        bySystem[f.SystemName] = 1;
+                }
+
+                Utility.Monitor.WriteLine("Failures by system:", ConsoleColor.Red);
+
+                foreach (KeyValuePair<string, int> kvp in bySystem)
+                    Utility.Monitor.WriteLine("  {0}: {1}", ConsoleColor.Red, kvp.Key, kvp.Value);
+
+                Utility.Monitor.WriteLine("Failure details:", ConsoleColor.Red);
+
+                for (int i = 0; i < failures.Count; i++)
+                {
+                    PricingSanityFailure f = failures[i];
+
+                    Utility.Monitor.WriteLine(
+                        "  {0} :: {1} :: {2}",
+                        ConsoleColor.Red,
+                        f.SystemName,
+                        f.TypeName,
+                        f.Error);
+                }
+
+#if DEBUG
+                throw new InvalidOperationException(
+                    "BOD Pricing Sanity: One or more BOD entry types could not be valued. See console output for details.");
+#endif
+            }
+        }
+
+        private static void ValidateEntries(BulkOrderSystem system, CraftSystem craftSystem, SmallBulkEntry[][] entries, ref int total, List<PricingSanityFailure> failures)
+        {
+            if (entries == null || entries.Length == 0)
+                return;
+
+            string? systemName = (system == null) ? "(null)" : system.GetType().FullName;
+
+            for (int i = 0; i < entries.Length; i++)
+            {
+                SmallBulkEntry[] group = entries[i];
+
+                if (group == null || group.Length == 0)
+                    continue;
+
+                for (int j = 0; j < group.Length; j++)
+                {
+                    SmallBulkEntry e = group[j];
+
+                    if (e == null || e.Type == null)
+                        continue;
+
+                    total++;
+
+                    try
+                    {
+                        int value = EstimateCraftValue(craftSystem, e.Type, CraftResource.None, false);
+
+                        if (value <= 0)
+                        {
+                            failures.Add(
+                                new PricingSanityFailure(
+                                    systemName,
+                                    e.Type.FullName,
+                                    "Computed craft value <= 0"));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Record the real underlying message (not just the wrapper)
+                        string msg = ex.GetType().Name + ": " + ex.Message;
+
+                        failures.Add(
+                            new PricingSanityFailure(
+                                systemName,
+                                e.Type.FullName,
+                                msg));
+                    }
+                }
+            }
+        }
+
+        private struct PricingSanityFailure
+        {
+            public string SystemName;
+            public string? TypeName;
+            public string Error;
+
+            public PricingSanityFailure(string systemName, string? typeName, string error)
+            {
+                SystemName = systemName;
+                TypeName = typeName;
+                Error = error;
+            }
+        }
+#endif
         #endregion
 
-        public static BulkOrderSystem GetSystem(BulkOrderType type)
+        public static BulkOrderSystem? GetSystem(BulkOrderType type)
         {
             foreach (BulkOrderSystem system in m_Systems)
             {
@@ -412,6 +835,8 @@ namespace Server.Engines.BulkOrders
             return false;
         }
 
+        public virtual double GoldScalar { get { return 1.0; } }
+
         public virtual int GetMaterialMessage(bool isItem)
         {
             if (isItem)
@@ -419,7 +844,12 @@ namespace Server.Engines.BulkOrders
             else
                 return 1157311; // Both orders must use the same resource type.
         }
-
+        /// <summary>
+        /// Returns the small bulk entries for this bulk order system, typically loaded from configuration.
+        /// However, this currently assumes all entries are craftable.
+        /// In the future, consider validating entries against the associated craft system to ensure only craftable items are included.
+        /// This would prevent non-craftable items from entering the BOD system and ensure alignment with the crafting economy.
+        /// </summary>
         public abstract SmallBulkEntry[][] GetSmallEntries();
         public abstract SmallBulkEntry[][] GetLargeEntries();
         public abstract BulkMaterial[] GetMaterials();
@@ -430,7 +860,7 @@ namespace Server.Engines.BulkOrders
 
         public DateTime GetNextBOD(Mobile from)
         {
-            BulkOrderContext context = GetContext(from, false);
+            BulkOrderContext? context = GetContext(from, false);
 
             DateTime next = (context == null ? DateTime.MinValue : context.NextBOD);
 
@@ -442,7 +872,7 @@ namespace Server.Engines.BulkOrders
 
                     if (alt != null && alt != from)
                     {
-                        BulkOrderContext otherContext = GetContext(from, false);
+                        BulkOrderContext? otherContext = GetContext(from, false);
 
                         if (otherContext != null && otherContext.NextBOD > next)
                             next = otherContext.NextBOD;
@@ -460,7 +890,7 @@ namespace Server.Engines.BulkOrders
             if (from is PlayerMobile && !((PlayerMobile)from).RTT("AFK bulk order check."))
                 return;
 
-            BulkOrderContext context = GetContext(from, true);
+            BulkOrderContext? context = GetContext(from, true);
 
             if (context == null)
                 return;
@@ -479,16 +909,35 @@ namespace Server.Engines.BulkOrders
 
             bod.Randomize(from);
 
-            TimeSpan delay;
+            /*
+             Delay model:
+             Cooldowns are bound to the type of BOD issued, not the player's skill tier.
 
-            if (Core.UOTC_CFG || Core.Debug)
-                delay = TimeSpan.FromSeconds(3.0); // instant BODs
-            else if (theirSkill >= 70.1)
+             - LargeBOD  -> LargeDelay
+             - SmallBOD  -> SmallDelay
+             - Low-skill safeguard:
+                 Players below 50.1 skill receive TinyDelay for SmallBODs to prevent early-stage BOD farming.
+
+             This ensures pacing follows task weight (job size), not player identity,
+             and prevents small orders from inheriting large-order cooldowns.
+            */
+            TimeSpan delay;
+            if (Core.GMNTC_CFG)
+            {
+                delay = TimeSpan.FromSeconds(3.0);
+            }
+            else if (bod is LargeBOD)
+            {
                 delay = LargeDelay;
-            else if (theirSkill >= 50.1)
-                delay = SmallDelay;
-            else
+            }
+            else if (theirSkill < 50.1)
+            {
                 delay = TinyDelay;
+            }
+            else
+            {
+                delay = SmallDelay;
+            }
 
             context.NextBOD = DateTime.UtcNow + delay;
 
@@ -509,13 +958,13 @@ namespace Server.Engines.BulkOrders
 
         public void UnregisterOffer(Mobile from)
         {
-            BulkOrderContext context = GetContext(from, false);
+            BulkOrderContext? context = GetContext(from, false);
 
             if (context != null)
                 context.CurrentOffer = null;
         }
 
-        public SmallBulkEntry GetRandomSmallEntry()
+        public SmallBulkEntry? GetRandomSmallEntry()
         {
             SmallBulkEntry[][] allEntries = GetSmallEntries();
 
@@ -542,7 +991,7 @@ namespace Server.Engines.BulkOrders
             return null;
         }
 
-        public SmallBulkEntry GetRandomSmallEntry(Mobile from)
+        public SmallBulkEntry? GetRandomSmallEntry(Mobile from)
         {
             SmallBulkEntry[][] allEntries = GetSmallEntries();
 
@@ -637,7 +1086,7 @@ namespace Server.Engines.BulkOrders
             if (CraftSystem == null)
                 return true;
 
-            CraftItem craftItem = CraftSystem.CraftItems.SearchFor(itemType);
+            CraftItem? craftItem = CraftSystem.CraftItems.SearchFor(itemType);
 
             if (craftItem == null)
                 return false;
@@ -657,7 +1106,7 @@ namespace Server.Engines.BulkOrders
 
         public bool HandleBulkOrderDropped(Mobile from, BaseVendor vendor, BaseBOD bod)
         {
-            BulkOrderContext context = GetContext(from, false);
+            BulkOrderContext? context = GetContext(from, false);
 
             if (context != null && DateTime.UtcNow < context.NextTurnIn)
             {
@@ -703,8 +1152,8 @@ namespace Server.Engines.BulkOrders
             {
                 vendor.SayTo(from, "Thank you so much!  Select a reward for your effort.");
 
-                // call our data recorder to attribute these points to a player for our leader board. 
-                DataRecorder.DataRecorder.RecordBODPoints(from, points);
+                // call our data recorder to attribute these points to a player for our leader board.
+                DataRecorder.DataRecorder.Add(from, RecorderDomain.BODPoints, points);
 
                 context.Pending = new PendingReward(points, bod is LargeBOD);
 
@@ -718,7 +1167,7 @@ namespace Server.Engines.BulkOrders
             {
                 vendor.SayTo(from, 1045132); // Thank you so much!  Here is a reward for your effort.
 
-                Item reward = GetRandomReward(points);
+                Item? reward = GetRandomReward(points);
 
                 if (reward != null)
                 {   // describe to the system whence this item originated
@@ -729,18 +1178,40 @@ namespace Server.Engines.BulkOrders
 
             if (GoldRewards && gold > 0)
             {
-                gold = Math.Max(1, (int)(gold * GoldScalar));
+                gold = Math.Max(1, (int)Math.Round(gold * GlobalGoldScalar * GoldScalar));
 
                 if (gold > 1000)
                     from.AddToBackpack(new BankCheck(gold));
                 else if (gold > 0)
                     from.AddToBackpack(new Gold(gold));
 
-                // call our data recorder to attribute this gold earned to a player for our leader board. 
-                DataRecorder.DataRecorder.RecordBODGold(from as Mobile, gold);
+                // Map BOD type to the correct profession-specific gold bucket
+                RecorderDomain? bodGoldDomain = bod switch
+                {
+                    SmallSmithBOD or LargeSmithBOD => RecorderDomain.SmithBODGold,
+                    SmallTailorBOD or LargeTailorBOD => RecorderDomain.TailorBODGold,
+                    SmallCarpenterBOD or LargeCarpenterBOD => RecorderDomain.CarpenterBODGold,
+                    _ => null
+                };
+
+                // Debug safety net - catch unknown BOD types during development
+                if (Core.Debug && bodGoldDomain == null)
+                {
+                    string bodType = bod?.GetType().Name ?? "null";
+
+                    Debug.Assert(false, $"Unknown BOD type encountered: {bodType}");
+                    Utility.Monitor.WriteLine($"[DataRecorder] Unknown BOD type: {bodType} - gold NOT recorded", ConsoleColor.Red);
+                }
+
+                // Only record gold if we successfully mapped it to a valid bucket
+                if (bodGoldDomain != null)
+                {
+                    DataRecorder.DataRecorder.Add(from, bodGoldDomain.Value, gold);
+                }
 
                 LogHelper logger = new LogHelper("BulkOrderGold.log", false, true);
-                logger.Log(LogType.Mobile, from, string.Format("Handed in {0} ({1}) for {2} gp.", bod.ToString(), FormatBulkOrder(bod), gold));
+                logger.Log(LogType.Mobile, from, string.Format("Handed in {0} ({1}) for {2} gp.",
+                    bod.ToString(), FormatBulkOrder(bod), gold));
                 logger.Finish();
             }
 
@@ -757,7 +1228,7 @@ namespace Server.Engines.BulkOrders
             return true;
         }
 
-        private Item GetRandomReward(int points)
+        private Item? GetRandomReward(int points)
         {
             RewardEntry[] group = GetRewardGroup(points);
 
@@ -830,7 +1301,7 @@ namespace Server.Engines.BulkOrders
 
         public void BeginClaimReward(Mobile from, BaseVendor vendor)
         {
-            BulkOrderContext context = GetContext(from, false);
+            BulkOrderContext? context = GetContext(from, false);
 
             if (context == null)
                 return;
@@ -864,7 +1335,7 @@ namespace Server.Engines.BulkOrders
 
         public void SavePoints(Mobile from)
         {
-            BulkOrderContext context = GetContext(from, false);
+            BulkOrderContext? context = GetContext(from, false);
 
             if (context == null)
                 return;
@@ -972,7 +1443,7 @@ namespace Server.Engines.BulkOrders
                 return;
 
             // if we have a pending offer, show it
-            BulkOrderContext context = GetContext(from, false);
+            BulkOrderContext? context = GetContext(from, false);
 
             if (context != null)
             {
@@ -1061,6 +1532,9 @@ namespace Server.Engines.BulkOrders
 
         private static void Load()
         {
+            InitResourceValues();
+            InitCraftItemIndex();
+            m_ComponentValueCache.Clear();
             LoadConfig();
             LoadContexts();
         }
@@ -1071,15 +1545,18 @@ namespace Server.Engines.BulkOrders
 
             try
             {
-                XmlTextWriter writer = new XmlTextWriter(CfgFileName, Encoding.Default);
-                writer.Formatting = Formatting.Indented;
+                using (XmlTextWriter writer = new XmlTextWriter(CfgFileName, Encoding.Default))
+                {
+                    writer.Formatting = Formatting.Indented;
 
-                writer.WriteStartDocument(true);
-                writer.WriteStartElement("BulkOrderConfig");
-                writer.WriteAttributeString("version", "3");
+                    writer.WriteStartDocument(true);
+                    writer.WriteStartElement("BulkOrderConfig");
+                    writer.WriteAttributeString("version", "5");
 
-                try
-                {   // version 3
+                    // version 5
+                    writer.WriteElementString("GoldRewardModel", GoldRewardModel.ToString());
+
+                    // version 3
                     writer.WriteElementString("LargeEnabled", LargeEnabled.ToString());
 
                     writer.WriteElementString("AccountWideDelays", AccountWideDelays.ToString());
@@ -1091,7 +1568,7 @@ namespace Server.Engines.BulkOrders
                     writer.WriteElementString("RewardsGump", RewardsGump.ToString());
                     writer.WriteElementString("OfferOnTurnIn", OfferOnTurnIn.ToString());
 
-                    writer.WriteElementString("GoldScalar", GoldScalar.ToString());
+                    writer.WriteElementString("GoldScalar", GlobalGoldScalar.ToString());
 
                     writer.WriteElementString("SmallBankPerc", SmallBankPerc.ToString());
                     writer.WriteElementString("LargeBankPerc", LargeBankPerc.ToString());
@@ -1101,16 +1578,16 @@ namespace Server.Engines.BulkOrders
                     writer.WriteElementString("LargeDelay", LargeDelay.ToString());
 
                     writer.WriteElementString("TurnInDelay", TurnInDelay.ToString());
-                }
-                finally { writer.WriteEndDocument(); }
 
-                writer.Close();
+                    writer.WriteEndDocument();
+                }
             }
             catch (Exception e)
             {
                 Console.WriteLine("BulkOrderSystem Error: {0}", e);
             }
         }
+
 
         private static void LoadConfig()
         {
@@ -1121,61 +1598,90 @@ namespace Server.Engines.BulkOrders
                 if (!File.Exists(CfgFileName))
                     return; // nothing to read
 
-                XmlTextReader reader = new XmlTextReader(CfgFileName);
-                reader.WhitespaceHandling = WhitespaceHandling.None;
-                reader.MoveToContent();
-
-                int verison = Int32.Parse(reader.GetAttribute("version"));
-                reader.ReadStartElement("BulkOrderConfig");
-
-                switch (verison)
+                using (XmlTextReader reader = new XmlTextReader(CfgFileName))
                 {
-                    case 3:
-                        {
-                            LargeEnabled = Boolean.Parse(reader.ReadElementString("LargeEnabled"));
-                            goto case 2;
-                        }
-                    case 2:
-                        {
-                            AccountWideDelays = Boolean.Parse(reader.ReadElementString("AccountWideDelays"));
-                            goto case 1;
-                        }
-                    case 1:
-                        {
-                            EnabledFlags = (BulkOrderFlags)Byte.Parse(reader.ReadElementString("EnabledFlags"));
-                            goto case 0;
-                        }
-                    case 0:
-                        {
-                            GoldRewards = Boolean.Parse(reader.ReadElementString("GoldRewards"));
-                            FameRewards = Boolean.Parse(reader.ReadElementString("FameRewards"));
-                            RewardsGump = Boolean.Parse(reader.ReadElementString("RewardsGump"));
-                            OfferOnTurnIn = Boolean.Parse(reader.ReadElementString("OfferOnTurnIn"));
+                    reader.WhitespaceHandling = WhitespaceHandling.None;
+                    reader.MoveToContent();
 
-                            GoldScalar = Double.Parse(reader.ReadElementString("GoldScalar"));
+                    int version = Int32.Parse(reader.GetAttribute("version"));
+                    reader.ReadStartElement("BulkOrderConfig");
 
-                            SmallBankPerc = Int32.Parse(reader.ReadElementString("SmallBankPerc"));
-                            LargeBankPerc = Int32.Parse(reader.ReadElementString("LargeBankPerc"));
+                    switch (version)
+                    {
+                        case 5:
+                            {
+                                // version 5
+                                string modelText = reader.ReadElementString("GoldRewardModel");
 
-                            TinyDelay = TimeSpan.Parse(reader.ReadElementString("TinyDelay"));
-                            SmallDelay = TimeSpan.Parse(reader.ReadElementString("SmallDelay"));
-                            LargeDelay = TimeSpan.Parse(reader.ReadElementString("LargeDelay"));
+                                GoldRewardModel parsed;
+                                if (!Enum.TryParse(modelText, true, out parsed))
+                                    parsed = GoldRewardModel.GoldVendorHalf; // safe default
 
-                            TurnInDelay = TimeSpan.Parse(reader.ReadElementString("TurnInDelay"));
+                                GoldRewardModel = parsed;
 
-                            break;
-                        }
+                                goto case 3;
+                            }
+
+                        case 4:
+                            {
+                                // version 4: legacy bool
+                                bool rewardGoldByCraftValue = Boolean.Parse(reader.ReadElementString("RewardGoldByCraftValue"));
+                                GoldRewardModel = rewardGoldByCraftValue
+                                    ? GoldRewardModel.GoldCraftValue
+                                    : GoldRewardModel.GoldVendorHalf;
+
+                                goto case 3;
+                            }
+
+                        case 3:
+                            {
+                                LargeEnabled = Boolean.Parse(reader.ReadElementString("LargeEnabled"));
+                                goto case 2;
+                            }
+
+                        case 2:
+                            {
+                                AccountWideDelays = Boolean.Parse(reader.ReadElementString("AccountWideDelays"));
+                                goto case 1;
+                            }
+
+                        case 1:
+                            {
+                                EnabledFlags = (BulkOrderFlags)Byte.Parse(reader.ReadElementString("EnabledFlags"));
+                                goto case 0;
+                            }
+
+                        case 0:
+                            {
+                                GoldRewards = Boolean.Parse(reader.ReadElementString("GoldRewards"));
+                                FameRewards = Boolean.Parse(reader.ReadElementString("FameRewards"));
+                                RewardsGump = Boolean.Parse(reader.ReadElementString("RewardsGump"));
+                                OfferOnTurnIn = Boolean.Parse(reader.ReadElementString("OfferOnTurnIn"));
+
+                                GlobalGoldScalar = Double.Parse(reader.ReadElementString("GoldScalar"));
+
+                                SmallBankPerc = Int32.Parse(reader.ReadElementString("SmallBankPerc"));
+                                LargeBankPerc = Int32.Parse(reader.ReadElementString("LargeBankPerc"));
+
+                                TinyDelay = TimeSpan.Parse(reader.ReadElementString("TinyDelay"));
+                                SmallDelay = TimeSpan.Parse(reader.ReadElementString("SmallDelay"));
+                                LargeDelay = TimeSpan.Parse(reader.ReadElementString("LargeDelay"));
+
+                                TurnInDelay = TimeSpan.Parse(reader.ReadElementString("TurnInDelay"));
+
+                                break;
+                            }
+                    }
+
+                    reader.ReadEndElement();
                 }
-
-                reader.ReadEndElement();
-
-                reader.Close();
             }
             catch (Exception e)
             {
                 LogHelper.LogException(e);
             }
         }
+
 
         private static void SaveContexts()
         {
@@ -1233,11 +1739,11 @@ namespace Server.Engines.BulkOrders
                                 BulkOrderType type = (BulkOrderType)reader.ReadSByte();
                                 int contextsCount = reader.ReadInt();
 
-                                BulkOrderSystem system = GetSystem(type);
+                                BulkOrderSystem? system = GetSystem(type);
 
                                 for (int j = 0; j < contextsCount; j++)
                                 {
-                                    Mobile m = reader.ReadMobile();
+                                    Mobile? m = reader.ReadMobile();
 
                                     BulkOrderContext context = new BulkOrderContext(m);
 
@@ -1256,7 +1762,7 @@ namespace Server.Engines.BulkOrders
 
                             for (int i = 0; i < count; i++)
                             {
-                                Mobile m = reader.ReadMobile();
+                                Mobile? m = reader.ReadMobile();
 
                                 LoadLegacyContext(reader, m);
                             }
@@ -1297,7 +1803,7 @@ namespace Server.Engines.BulkOrders
 
             if (flags.HasFlag(LegacyFlag.CurrentOffer))
             {
-                Item currentOffer = reader.ReadItem();
+                Item? currentOffer = reader.ReadItem();
 
                 if (currentOffer != null)
                     currentOffer.Delete();
@@ -1315,12 +1821,12 @@ namespace Server.Engines.BulkOrders
             double banked = reader.ReadDouble();
             PendingReward pending = new PendingReward(reader);
 
-            BulkOrderSystem system = GetSystem(type);
+            BulkOrderSystem? system = GetSystem(type);
 
             if (system == null)
                 return;
 
-            BulkOrderContext context = system.GetContext(m, true);
+            BulkOrderContext? context = system.GetContext(m, true);
 
             if (context == null)
                 return;
@@ -1334,7 +1840,6 @@ namespace Server.Engines.BulkOrders
 
         #region Compute Gold
 
-        public static bool RewardGoldByCraftValue = false;
         public static int RewardGoldRandomization = 10;
 
         public virtual int ComputeGold(BaseBOD bod, int points)
@@ -1348,21 +1853,32 @@ namespace Server.Engines.BulkOrders
                 int value;
 
                 // 1/16/24, Yoar: Reward gold can be estimated based on crafting requirements
-                if (RewardGoldByCraftValue)
+                switch (GoldRewardModel)
                 {
-                    value = GetCraftValue(CraftSystem, sbod.Type, resource, sbod.RequireExceptional);
-                }
-                else
-                {
-                    /* The rewards are threefold. The first reward is gold, equal to half its vendor's value in gold for non-large bulk deeds. 
-                     *  So, if an object is valued at 200 gold outside, then it would yield 100 gold multiplied by the requested amount. 
-                     *  A check will be given to the person fulfilling the order if the amount is more than the person can carry. 
-                     * https://uo.stratics.com/content/basics/bulk_orders_archive.shtml#rewards 
-                     */
-                    value = GetVendorPrice(sbod.Type, resource, sbod.RequireExceptional);
+                    case GoldRewardModel.GoldCraftValue:
+                        value = GetCraftValue(CraftSystem, sbod.Type, resource, sbod.RequireExceptional);
+                        break;
 
-                    // half the value
-                    value /= 2;
+                    case GoldRewardModel.GoldVendorHalf:
+                        /* The rewards are threefold. The first reward is gold, equal to half its vendor's value in gold for non-large bulk deeds.
+                         * So, if an object is valued at 200 gold outside, then it would yield 100 gold multiplied by the requested amount.
+                         * A check will be given to the person fulfilling the order if the amount is more than the person can carry.
+                         * https://uo.stratics.com/content/basics/bulk_orders_archive.shtml#rewards
+                         * [OBSOLETE MODEL NOTICE]
+                         * GoldVendorHalf is deprecated.
+                         * It depends on NPC vendor pricing coverage, which is incomplete on OSI-derived datasets.
+                         * Missing vendor prices are treated as non-valued items (0 gp).
+                         * This model is retained for legacy compatibility only.
+                         * Prefer GoldCraftValue.
+                         */
+                        value = GetVendorPrice(sbod.Type, resource, sbod.RequireExceptional);
+
+                        // half the value
+                        value /= 2;
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Unknown GoldRewardModel: " + GoldRewardModel);
                 }
 
                 value *= bod.AmountMax;
@@ -1370,8 +1886,14 @@ namespace Server.Engines.BulkOrders
                 if (RewardGoldRandomization > 0)
                     value = value * (100 + Utility.RandomMinMax(-RewardGoldRandomization, +RewardGoldRandomization)) / 100;
 
-                if (value < 1)
-                    value = 1;
+#if DEBUG
+                if (value <= 0)
+                    throw new InvalidOperationException("ComputeGold: Computed gold value <= 0 (unaccountable valuation).");
+#endif
+
+                if (value < 0)
+                    value = 0;
+
 
                 return value;
             }
@@ -1382,17 +1904,23 @@ namespace Server.Engines.BulkOrders
 
             return 0;
         }
-
+        [Obsolete("GoldVendorHalf model is deprecated. NPC vendor pricing coverage is incomplete; many items have no valid price. Use GoldCraftValue instead.", false)]
         private static int GetVendorPrice(Type itemType, CraftResource resource, bool exceptional)
         {
-            const int qualityBonus = 50; // percentage bonus for an exceptional requirement
-            const int materialBonus = 50; // percentage bonus for a non-standard resource requirement
-            const int materialTierBonus = 10; // percentage bonus per resource tier
+            const int qualityBonus = 50;       // percentage bonus for an exceptional requirement
+            const int materialBonus = 50;      // percentage bonus for a non-standard resource requirement
+            const int materialTierBonus = 10;  // percentage bonus per resource tier
 
-            int vendorPrice = BaseVendor.PlayerPays(itemType);
+            int vendorPrice = BaseVendor.VendorPays(itemType);
 
-            if (vendorPrice >= BaseVendor.PlayerPaysFailsafe)
-                vendorPrice = 2; // we don't have this item in our StandardPricingDictionary
+            if (vendorPrice == BaseVendor.VendorPaysFailsafe)
+            {
+#if DEBUG
+                throw new InvalidOperationException(
+                    $"GetVendorPrice: Vendor price lookup failed for itemType '{itemType?.FullName ?? "(null)"}'.");
+#endif
+                return 0;
+            }
 
             double dvalue = vendorPrice;
 
@@ -1401,7 +1929,6 @@ namespace Server.Engines.BulkOrders
 
             CraftResource start = CraftResources.GetStart(resource);
 
-            // make sure we have a valid 'start' value
             if (CraftResources.GetType(resource) == CraftResources.GetType(start))
             {
                 int materialIndex = (int)resource - (int)start;
@@ -1412,6 +1939,7 @@ namespace Server.Engines.BulkOrders
 
             return (int)Math.Round(dvalue);
         }
+
 
         private int GetGold(int points)
         {
@@ -1433,9 +1961,9 @@ namespace Server.Engines.BulkOrders
 
         #endregion
 
-        public BulkOrderContext GetContext(Mobile from, bool create)
+        public BulkOrderContext? GetContext(Mobile from, bool create)
         {
-            BulkOrderContext context;
+            BulkOrderContext? context;
 
             if (!m_Contexts.TryGetValue(from, out context))
             {
@@ -1450,12 +1978,12 @@ namespace Server.Engines.BulkOrders
 
         public static void SetNextBOD(Mobile from, BulkOrderType type, DateTime value)
         {
-            BulkOrderSystem system = GetSystem(type);
+            BulkOrderSystem? system = GetSystem(type);
 
             if (system == null)
                 return;
 
-            BulkOrderContext context = system.GetContext(from, true);
+            BulkOrderContext? context = system.GetContext(from, true);
 
             if (context == null)
                 return;
@@ -1516,56 +2044,125 @@ namespace Server.Engines.BulkOrders
 
         public static Dictionary<Type, double> ResourceValues { get { return m_ResourceValues; } }
 
-        private static void AddResourceValue(Type type, double value)
+        private static void AddResourceValue(Type type)
         {
-            m_ResourceValues[type] = value;
+            int dbPrice = BaseVendor.VendorPays(type);
+
+            if (dbPrice == BaseVendor.VendorPaysFailsafe)
+            {
+#if DEBUG
+                throw new InvalidOperationException(
+                    $"Resource value lookup failed for type '{type.FullName}'. " +
+                    "No database price available."
+                );
+#endif
+                m_ResourceValues[type] = 0;
+                return;
+            }
+
+            m_ResourceValues[type] = dbPrice;
+        }
+        private static void AddResourceValue(Type type, Type fallbackType)
+        {
+            double finalValue = 0;
+
+            // Primary lookup
+            int primaryPrice = BaseVendor.VendorPays(type);
+            if (primaryPrice != BaseVendor.VendorPaysFailsafe)
+            {
+                finalValue = primaryPrice;
+            }
+            else
+            {
+                // Fallback lookup
+                int fallbackPrice = BaseVendor.VendorPays(fallbackType);
+                if (fallbackPrice != BaseVendor.VendorPaysFailsafe)
+                {
+                    finalValue = fallbackPrice;
+                }
+                else
+                {
+#if DEBUG
+                    throw new InvalidOperationException(
+                        $"Resource value lookup failed for both primary type '{type.FullName}' " +
+                        $"and fallback type '{fallbackType.FullName}'. No database price available."
+                    );
+#endif
+                    finalValue = 0; // explicit for release builds
+                }
+            }
+
+            m_ResourceValues[type] = finalValue;
         }
 
         private static double GetResourceValue(Type type)
         {
             foreach (Type equivType in CraftItem.GetEquivalentResources(type))
             {
-                double value;
-
-                if (m_ResourceValues.TryGetValue(equivType, out value))
+                if (m_ResourceValues.TryGetValue(equivType, out double value))
                     return value;
             }
 
-            return FailSafeValue;
+#if DEBUG
+            if (FindCraftItem(type) != null)
+            {
+                throw new InvalidOperationException(
+                    $"GetResourceValue: '{type.FullName}' is not a priced raw resource, but IS a craftable component. " +
+                    "Component-expansion must be handled by the caller (EstimateCraftValue).");
+            }
+
+            throw new InvalidOperationException(
+                $"GetResourceValue: No resource value registered for '{type.FullName}' and it is not a craftable component.");
+#endif
+
+            return 0;
         }
 
+        // TODO: Use GetVendorPrice for these raw materials instead?
         private static void InitResourceValues()
         {
-            AddResourceValue(typeof(IronIngot), 10);
-            AddResourceValue(typeof(DullCopperIngot), 11);
-            AddResourceValue(typeof(ShadowIronIngot), 12);
-            AddResourceValue(typeof(CopperIngot), 13);
-            AddResourceValue(typeof(BronzeIngot), 14);
-            AddResourceValue(typeof(GoldIngot), 15);
-            AddResourceValue(typeof(AgapiteIngot), 16);
-            AddResourceValue(typeof(VeriteIngot), 17);
-            AddResourceValue(typeof(ValoriteIngot), 18);
+            AddResourceValue(typeof(IronIngot));
+            AddResourceValue(typeof(DullCopperIngot));
+            AddResourceValue(typeof(ShadowIronIngot));
+            AddResourceValue(typeof(CopperIngot));
+            AddResourceValue(typeof(BronzeIngot));
+            AddResourceValue(typeof(GoldIngot));
+            AddResourceValue(typeof(AgapiteIngot));
+            AddResourceValue(typeof(VeriteIngot));
+            AddResourceValue(typeof(ValoriteIngot));
 
-            AddResourceValue(typeof(Leather), 8);
-            AddResourceValue(typeof(SpinedLeather), 10);
-            AddResourceValue(typeof(HornedLeather), 12);
-            AddResourceValue(typeof(BarbedLeather), 14);
+            AddResourceValue(typeof(Leather));
+            AddResourceValue(typeof(SpinedLeather));
+            AddResourceValue(typeof(HornedLeather));
+            AddResourceValue(typeof(BarbedLeather));
 
-            AddResourceValue(typeof(Log), 7);
-            AddResourceValue(typeof(OakLog), 8);
-            AddResourceValue(typeof(AshLog), 9);
-            AddResourceValue(typeof(YewLog), 10);
-            AddResourceValue(typeof(HeartwoodLog), 12);
-            AddResourceValue(typeof(BloodwoodLog), 14);
-            AddResourceValue(typeof(FrostwoodLog), 16);
+            AddResourceValue(typeof(Log), typeof(Board));
+            AddResourceValue(typeof(OakLog), typeof(OakBoard));
+            AddResourceValue(typeof(AshLog), typeof(AshBoard));
+            AddResourceValue(typeof(YewLog), typeof(YewBoard));
+            AddResourceValue(typeof(HeartwoodLog), typeof(HeartwoodBoard));
+            AddResourceValue(typeof(BloodwoodLog), typeof(BloodwoodBoard));
+            AddResourceValue(typeof(FrostwoodLog), typeof(FrostwoodBoard));
+
+            AddResourceValue(typeof(Bone));
+
+            AddResourceValue(typeof(Cloth));
+            AddResourceValue(typeof(Feather));
         }
 
-        public static int GetCraftValue(CraftSystem craftSystem, Type itemType, CraftResource resource, bool exceptional)
+        private static int GetCraftValue(CraftSystem craftSystem, Type itemType, CraftResource resource, bool exceptional)
         {
             int value = EstimateCraftValue(craftSystem, itemType, resource, exceptional);
 
             if (value <= 0)
-                return 2; // fail safe
+            {
+#if DEBUG
+                throw new InvalidOperationException(
+                    $"GetCraftValue: Estimated craft value <= 0 for itemType '{itemType?.FullName ?? "(null)"}' " +
+                    $"(craftSystem '{craftSystem?.GetType().FullName ?? "(null)"}').");
+#endif
+                return 0;
+            }
 
             return value;
         }
@@ -1574,9 +2171,15 @@ namespace Server.Engines.BulkOrders
         public static int EstimateCraftValue(CraftSystem craftSystem, Type itemType, CraftResource resource, bool exceptional)
         {
             if (craftSystem == null)
-                return FailSafeValue;
+            {
+#if DEBUG
+                throw new InvalidOperationException(
+                    $"EstimateCraftValue: craftSystem is null for itemType '{itemType?.FullName ?? "(null)"}'.");
+#endif
+                return 0;
+            }
 
-            CraftItem craftItem = null;
+            CraftItem? craftItem = null;
 
             foreach (CraftItem ci in craftSystem.CraftItems)
             {
@@ -1588,15 +2191,42 @@ namespace Server.Engines.BulkOrders
             }
 
             if (craftItem == null)
-                return FailSafeValue;
+            {
+#if DEBUG
+                throw new InvalidOperationException(
+                    $"EstimateCraftValue: No CraftItem recipe found in craftSystem '{craftSystem.GetType().FullName}' " +
+                    $"for itemType '{itemType?.FullName ?? "(null)"}'.");
+#endif
+                return 0;
+            }
 
             double dvalue = 0.0;
+            HashSet<Type> stack = new HashSet<Type>();
 
             foreach (CraftRes craftRes in craftItem.Resources)
             {
                 Type resType = MutateResource(craftSystem, craftItem, craftRes.ItemType, resource);
+                double unitValue;
 
-                dvalue += GetResourceValue(resType) * craftRes.Amount;
+                if (TryGetRawResourceValue(resType, out unitValue))
+                {
+                    // priced raw resource
+                }
+                else if (FindCraftItem(resType) != null)
+                {
+                    // craftable component (recursive)
+                    unitValue = GetComponentValue_Recursive(craftSystem, resType, resource, stack);
+                }
+                else
+                {
+#if DEBUG
+                    throw new InvalidOperationException(
+                        $"EstimateCraftValue: Resource '{resType.FullName}' is neither a priced raw resource nor a craftable component.");
+#endif
+                    unitValue = 0;
+                }
+
+                dvalue += unitValue * craftRes.Amount;
             }
 
             double valSkill = 100.0; // assume a not quite GM crafter
@@ -1620,12 +2250,12 @@ namespace Server.Engines.BulkOrders
             if (baseType != resCol.ResType)
                 return baseType;
 
-            CraftResourceInfo baseInfo = CraftResources.GetInfo(CraftResources.GetFromType(baseType));
+            CraftResourceInfo? baseInfo = CraftResources.GetInfo(CraftResources.GetFromType(baseType));
 
             if (baseInfo == null)
                 return baseType;
 
-            CraftResourceInfo mutateInfo = CraftResources.GetInfo(resource);
+            CraftResourceInfo? mutateInfo = CraftResources.GetInfo(resource);
 
             if (mutateInfo == null)
                 return baseType;
@@ -1681,5 +2311,228 @@ namespace Server.Engines.BulkOrders
         }
 
         #endregion
+
+        #region  Craft Component Valuation
+        // Maps crafted ItemType -> all CraftItem recipes that can produce it.
+        // Built once during BulkOrderSystem initialization.
+        private static readonly Dictionary<Type, List<CraftItem>> m_CraftItemIndex =
+            new Dictionary<Type, List<CraftItem>>();
+
+        private static void InitCraftItemIndex()
+        {
+            m_CraftItemIndex.Clear();
+
+            foreach (CraftSystem cs in CraftSystem.Instances)
+            {
+                if (cs == null || cs.CraftItems == null)
+                    continue;
+
+                foreach (CraftItem ci in cs.CraftItems)
+                {
+                    if (ci == null || ci.ItemType == null)
+                        continue;
+
+                    if (!m_CraftItemIndex.TryGetValue(ci.ItemType, out List<CraftItem>? list))
+                    {
+                        list = new List<CraftItem>();
+                        m_CraftItemIndex[ci.ItemType] = list;
+                    }
+
+                    list.Add(ci);
+                }
+            }
+
+#if DEBUG
+            Utility.Monitor.WriteLine(
+                "BulkOrderSystem: CraftItem index built. {0} distinct ItemTypes indexed.",
+                ConsoleColor.Cyan,
+                m_CraftItemIndex.Count);
+#endif
+        }
+
+        private static CraftItem? FindCraftItem(Type itemType)
+        {
+            if (itemType == null)
+                return null;
+
+            EnsureCraftItemIndex();
+
+            if (m_CraftItemIndex.TryGetValue(itemType, out List<CraftItem>? list) && list != null && list.Count > 0)
+                return list[0];
+
+            return null;
+        }
+        private static double GetComponentValue_OneLevel(CraftSystem craftSystem, Type componentType, CraftResource resource)
+        {
+            CraftItem? ci = FindCraftItem(componentType);
+
+            if (ci == null)
+                return 0;
+
+            double dvalue = 0.0;
+
+            foreach (CraftRes craftRes in ci.Resources)
+            {
+                Type resType = MutateResource(craftSystem, ci, craftRes.ItemType, resource);
+
+                // Raw-only lookup (do NOT recurse yet).
+                double rawValue;
+                bool found = false;
+
+                foreach (Type equivType in CraftItem.GetEquivalentResources(resType))
+                {
+                    if (m_ResourceValues.TryGetValue(equivType, out rawValue))
+                    {
+                        dvalue += rawValue * craftRes.Amount;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+#if DEBUG
+                    throw new InvalidOperationException(
+                        $"GetComponentValue_OneLevel: Component '{componentType.FullName}' depends on '{resType.FullName}', " +
+                        "which is not a priced raw resource. Nested component expansion not yet implemented.");
+#endif
+                    return 0;
+                }
+            }
+
+            return dvalue;
+        }
+
+        private static void EnsureCraftItemIndex()
+        {
+            if (m_CraftItemIndex.Count == 0)
+                InitCraftItemIndex();
+        }
+        private struct ComponentKey : IEquatable<ComponentKey>
+        {
+            public readonly Type Type;
+            public readonly CraftResource Resource;
+
+            public ComponentKey(Type type, CraftResource resource)
+            {
+                Type = type;
+                Resource = resource;
+            }
+
+            public bool Equals(ComponentKey other)
+            {
+                return Type == other.Type && Resource == other.Resource;
+            }
+
+            public override bool Equals(object? obj)
+            {
+                return obj is ComponentKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int h = 17;
+                    h = (h * 31) + (Type != null ? Type.GetHashCode() : 0);
+                    h = (h * 31) + (int)Resource;
+                    return h;
+                }
+            }
+        }
+
+        private static readonly Dictionary<ComponentKey, double> m_ComponentValueCache =
+            new Dictionary<ComponentKey, double>();
+
+        private static bool TryGetRawResourceValue(Type type, out double value)
+        {
+            foreach (Type equivType in CraftItem.GetEquivalentResources(type))
+            {
+                if (m_ResourceValues.TryGetValue(equivType, out value))
+                    return true;
+            }
+
+            value = 0;
+            return false;
+        }
+        private static double GetComponentValue_Recursive(CraftSystem craftSystem, Type componentType, CraftResource resource, HashSet<Type> stack)
+        {
+            if (componentType == null)
+                return 0;
+
+            ComponentKey key = new ComponentKey(componentType, resource);
+
+            if (m_ComponentValueCache.TryGetValue(key, out double cached))
+                return cached;
+
+            if (stack == null)
+                stack = new HashSet<Type>();
+
+            // Recursion guard
+            if (!stack.Add(componentType))
+            {
+#if DEBUG
+                throw new InvalidOperationException(
+                    $"Component expansion recursion detected for '{componentType.FullName}'.");
+#endif
+                return 0;
+            }
+
+            try
+            {
+                CraftItem? ci = FindCraftItem(componentType);
+
+                if (ci == null)
+                {
+#if DEBUG
+                    throw new InvalidOperationException(
+                        $"GetComponentValue_Recursive: No CraftItem recipe found for component '{componentType.FullName}'.");
+#endif
+                    return 0;
+                }
+
+                // NOTE: This assumes craft output quantity is 1. If you later encounter batch crafts,
+                // we will need to divide by output count (and fail-fast in DEBUG when ambiguous).
+                double dvalue = 0.0;
+
+                foreach (CraftRes craftRes in ci.Resources)
+                {
+                    Type resType = MutateResource(craftSystem, ci, craftRes.ItemType, resource);
+
+                    double unitValue;
+
+                    // Raw material?
+                    if (TryGetRawResourceValue(resType, out unitValue))
+                    {
+                        // ok
+                    }
+                    else if (FindCraftItem(resType) != null)
+                    {
+                        // Nested component
+                        unitValue = GetComponentValue_Recursive(craftSystem, resType, resource, stack);
+                    }
+                    else
+                    {
+#if DEBUG
+                        throw new InvalidOperationException(
+                            $"GetComponentValue_Recursive: Component '{componentType.FullName}' depends on '{resType.FullName}', " +
+                            "which is neither a priced raw resource nor a craftable component.");
+#endif
+                        return 0;
+                    }
+
+                    dvalue += unitValue * craftRes.Amount;
+                }
+
+                m_ComponentValueCache[key] = dvalue;
+                return dvalue;
+            }
+            finally
+            {
+                stack.Remove(componentType);
+            }
+        }
+
+        #endregion  Craft Component Valuation
     }
 }

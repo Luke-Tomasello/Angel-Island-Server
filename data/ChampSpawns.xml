@@ -1,0 +1,617 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Champion spawn definitions (Scripts/Engines/ChampionSpawn/ChampDefinitions.cs).
+  Generated 10/27/26 from ChampLevelData.CreateSpawn() (r1145) and verified level-for-level against it before that code was removed.
+
+  <Champ name="...">         a definition; a champ engine selects it by name ([props DefinitionName). Names C# relies on are in ChampNames.
+    <Level ...>              one level, in order; the last level is the champion
+      repeat                 optional: the level is used this many times in a row (default 1)
+      maxKills               kills to advance
+      maxMobs                mobiles alive at once
+      maxSpawn               mobiles created per respawn
+      maxRange               spawn distance from the engine
+      spawnDelaySeconds      optional: delay between respawns (default 0)
+      expireMinutes          time before a level that stalls drops back
+      flags                  optional: SpawnFlags names, comma separated (SpawnFar, AvoidPlayers, ...)
+      captain                optional: one of these per level
+      <Monster type="..."/>  a mobile type; one is picked at random per spawn (list a type twice to weight it)
+      <Name name="..." title="..."/>  optional: the spawned mobile is given one of these names (title optional)
+
+  A number is a literal or a reference to a public static field of an approved class, read when the definition is
+  applied to a champ (approved: CoreAI), e.g. maxKills="CoreAI.SpiritFirstWaveNumber".
+  A placed champ keeps the levels it was given: a change here reaches it only when its DefinitionName is set again.
+  [ChampDefs lists the definitions; [ChampDefs reload reads this file again.
+-->
+<ChampSpawns version="1">
+  <Champ name="Abyss">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="Mongbat" />
+      <Monster type="Imp" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="Gargoyle" />
+      <Monster type="Harpy" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="25" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="FireGargoyle" />
+      <Monster type="StoneGargoyle" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="17" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="Daemon" />
+      <Monster type="Succubus" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="Semidar" />
+    </Level>
+  </Champ>
+  <Champ name="Arachnid">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="Scorpion" />
+      <Monster type="GiantSpider" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="TerathanDrone" />
+      <Monster type="TerathanWarrior" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="25" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="DreadSpider" />
+      <Monster type="TerathanMatriarch" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="17" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="PoisonElemental" />
+      <Monster type="TerathanAvenger" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="Mephitis" />
+    </Level>
+  </Champ>
+  <Champ name="ColdBlood">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="Lizardman" />
+      <Monster type="Snake" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="LavaLizard" />
+      <Monster type="OphidianWarrior" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="25" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="Drake" />
+      <Monster type="OphidianArchmage" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="17" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="Dragon" />
+      <Monster type="OphidianKnight" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="Rikktor" />
+    </Level>
+  </Champ>
+  <Champ name="ForestLord">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="Pixie" />
+      <Monster type="ShadowWisp" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="Kirin" />
+      <Monster type="Wisp" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="25" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="Centaur" />
+      <Monster type="Unicorn" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="17" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="EtherealWarrior" />
+      <Monster type="SerpentineDragon" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="LordOaks" />
+    </Level>
+  </Champ>
+  <Champ name="FrozenHost">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="FrostOoze" />
+      <Monster type="FrostSpider" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="FrostTroll" />
+      <Monster type="IceSerpent" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="25" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="SnowElemental" />
+      <Monster type="FrostNymph" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="17" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="IceFiend" />
+      <Monster type="WhiteWyrm" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="Azothu" />
+    </Level>
+  </Champ>
+  <Champ name="UnholyTerror">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="Bogle" />
+      <Monster type="Ghoul" />
+      <Monster type="Shade" />
+      <Monster type="Spectre" />
+      <Monster type="Wraith" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="BoneMagi" />
+      <Monster type="Mummy" />
+      <Monster type="SkeletalMage" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="25" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="BoneKnight" />
+      <Monster type="BoneMagiLord" />
+      <Monster type="SkeletalKnight" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="17" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="BoneKnightLord" />
+      <Monster type="RottingCorpse" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="Neira" />
+    </Level>
+  </Champ>
+  <Champ name="VerminHorde">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="GiantRat" />
+      <Monster type="Slime" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="Ratman" />
+      <Monster type="DireWolf" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="25" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="HellHound" />
+      <Monster type="RatmanMage" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="17" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="RatmanArcher" />
+      <Monster type="SilverSerpent" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="Barracoon" />
+    </Level>
+  </Champ>
+  <Champ name="Deceit_Mini">
+    <Level maxKills="9" maxMobs="5" maxSpawn="1" maxRange="8" expireMinutes="10">
+      <Monster type="Skeleton" />
+    </Level>
+    <Level maxKills="15" maxMobs="4" maxSpawn="1" maxRange="8" expireMinutes="15">
+      <Monster type="SkeletalKnight" />
+      <Monster type="BoneKnight" />
+    </Level>
+    <Level maxKills="16" maxMobs="2" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="SkeletalMage" />
+      <Monster type="BoneMagi" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="20">
+      <Monster type="BoneDemon" />
+      <Monster type="SkeletalDragon" />
+    </Level>
+  </Champ>
+  <Champ name="Destard_Mini">
+    <Level maxKills="9" maxMobs="5" maxSpawn="1" maxRange="8" expireMinutes="10">
+      <Monster type="Lizardman" />
+      <Monster type="OphidianWarrior" />
+    </Level>
+    <Level maxKills="15" maxMobs="4" maxSpawn="1" maxRange="8" expireMinutes="15">
+      <Monster type="Drake" />
+      <Monster type="Wyvern" />
+    </Level>
+    <Level maxKills="16" maxMobs="2" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="Dragon" />
+      <Monster type="OphidianKnight" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="20">
+      <Monster type="AncientWyrm" />
+    </Level>
+  </Champ>
+  <Champ name="Hythloth_Mini">
+    <Level maxKills="9" maxMobs="5" maxSpawn="1" maxRange="8" expireMinutes="10">
+      <Monster type="Imp" />
+      <Monster type="HellHound" />
+    </Level>
+    <Level maxKills="15" maxMobs="4" maxSpawn="1" maxRange="8" expireMinutes="15">
+      <Monster type="Gargoyle" />
+      <Monster type="ChaosDaemon" />
+    </Level>
+    <Level maxKills="16" maxMobs="2" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="Succubus" />
+      <Monster type="Daemon" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="20">
+      <Monster type="Balron" />
+    </Level>
+  </Champ>
+  <Champ name="Ice_Mini">
+    <Level maxKills="9" maxMobs="5" maxSpawn="1" maxRange="8" expireMinutes="10">
+      <Monster type="FrostOoze" />
+      <Monster type="FrostSpider" />
+    </Level>
+    <Level maxKills="15" maxMobs="4" maxSpawn="1" maxRange="8" expireMinutes="15">
+      <Monster type="IceElemental" />
+      <Monster type="FrostSpider" />
+    </Level>
+    <Level maxKills="16" maxMobs="2" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="IceFiend" />
+      <Monster type="FrostNymph" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="20">
+      <Monster type="ArcticOgreLord" />
+    </Level>
+  </Champ>
+  <Champ name="Wind_Mini">
+    <Level maxKills="9" maxMobs="5" maxSpawn="1" maxRange="8" expireMinutes="10">
+      <Monster type="EvilMage" />
+    </Level>
+    <Level maxKills="15" maxMobs="4" maxSpawn="1" maxRange="8" expireMinutes="15">
+      <Monster type="Lich" />
+      <Monster type="EvilMageLord" />
+    </Level>
+    <Level maxKills="16" maxMobs="2" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="LichLord" />
+      <Monster type="CouncilMember" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="AncientLich" />
+    </Level>
+  </Champ>
+  <Champ name="Wrong_Mini">
+    <Level maxKills="9" maxMobs="5" maxSpawn="1" maxRange="8" expireMinutes="10">
+      <Monster type="Zombie" />
+      <Monster type="HeadlessOne" />
+      <Monster type="Slime" />
+    </Level>
+    <Level maxKills="15" maxMobs="4" maxSpawn="1" maxRange="8" expireMinutes="15">
+      <Monster type="GoreFiend" />
+      <Monster type="FleshGolem" />
+    </Level>
+    <Level maxKills="16" maxMobs="2" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="BloodElemental" />
+      <Monster type="RottingCorpse" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="FleshRenderer" />
+    </Level>
+  </Champ>
+  <Champ name="AI_Escape">
+    <Level maxKills="CoreAI.SpiritFirstWaveNumber" maxMobs="5" maxSpawn="5" maxRange="18" expireMinutes="CoreAI.SpiritExpireDelay">
+      <Monster type="Spirit" />
+    </Level>
+    <Level maxKills="CoreAI.SpiritSecondWaveNumber" maxMobs="5" maxSpawn="5" maxRange="18" expireMinutes="CoreAI.SpiritExpireDelay">
+      <Monster type="VengefulSpirit" />
+    </Level>
+    <Level maxKills="CoreAI.SpiritThirdWaveNumber" maxMobs="5" maxSpawn="5" maxRange="18" expireMinutes="CoreAI.SpiritExpireDelay">
+      <Monster type="Soul" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="18" expireMinutes="CoreAI.SpiritExpireDelay">
+      <Monster type="AngelofJustice" />
+    </Level>
+  </Champ>
+  <Champ name="AI_Guard">
+    <Level maxKills="5" maxMobs="5" maxSpawn="5" maxRange="12" expireMinutes="CoreAI.GuardSpawnExpireDelay">
+      <Monster type="AIPostGuard" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="12" expireMinutes="CoreAI.GuardSpawnExpireDelay">
+      <Monster type="AIGuardCaptain" />
+    </Level>
+  </Champ>
+  <Champ name="Test">
+    <Level repeat="36" maxKills="10" maxMobs="10" maxSpawn="5" maxRange="5" spawnDelaySeconds="1" expireMinutes="40">
+      <Monster type="slime" />
+      <Monster type="rat" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="Barracoon" />
+      <Monster type="Semidar" />
+      <Monster type="Rikktor" />
+      <Monster type="Neira" />
+      <Monster type="LordOaks" />
+      <Monster type="Mephitis" />
+    </Level>
+  </Champ>
+  <Champ name="Test2">
+    <Level maxKills="5" maxMobs="3" maxSpawn="1" maxRange="1" spawnDelaySeconds="5" expireMinutes="40">
+      <Monster type="Dragon" />
+      <Monster type="WhiteWyrm" />
+    </Level>
+    <Level maxKills="300" maxMobs="150" maxSpawn="1" maxRange="15" spawnDelaySeconds="1" expireMinutes="40">
+      <Monster type="GiantRat" />
+      <Monster type="Slime" />
+    </Level>
+    <Level maxKills="100" maxMobs="30" maxSpawn="5" maxRange="12" spawnDelaySeconds="5" expireMinutes="40">
+      <Monster type="Orc" />
+      <Monster type="OrcishMage" />
+    </Level>
+    <Level maxKills="4" maxMobs="3" maxSpawn="1" maxRange="5" spawnDelaySeconds="12" expireMinutes="40">
+      <Monster type="GolemController" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="Barracoon" />
+      <Monster type="Semidar" />
+      <Monster type="Rikktor" />
+      <Monster type="Neira" />
+      <Monster type="LordOaks" />
+      <Monster type="Mephitis" />
+    </Level>
+  </Champ>
+  <Champ name="Pirate_Full_Sea">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="75" expireMinutes="10" flags="SpawnFar">
+      <Monster type="WaterElemental" />
+      <Monster type="SeaSerpent" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="75" expireMinutes="10" flags="SpawnFar">
+      <Monster type="SeaSerpent" />
+      <Monster type="Kraken" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="12" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="PirateDeckHand" />
+      <Monster type="PirateWench" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="8" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="PirateWench" />
+      <Monster type="Pirate" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="PirateChamp" />
+    </Level>
+  </Champ>
+  <Champ name="Bob">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="PolymorphicBob" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="PolymorphicBob" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="12" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="PolymorphicBob" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="8" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="PolymorphicBob" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="TheOneBob" />
+    </Level>
+  </Champ>
+  <Champ name="Vampire">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="20" expireMinutes="10">
+      <Monster type="VampireBat" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="20" expireMinutes="20">
+      <Monster type="VampireBat" />
+      <Monster type="WalkingDead" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="12" maxSpawn="6" maxRange="20" expireMinutes="40">
+      <Monster type="WalkingDead" />
+      <Monster type="WalkingDead" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="8" maxSpawn="4" maxRange="20" expireMinutes="50">
+      <Monster type="Vampire" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="60">
+      <Monster type="VladDracula" />
+    </Level>
+  </Champ>
+  <Champ name="KinCity">
+    <Level repeat="2" maxKills="40" maxMobs="40" maxSpawn="5" maxRange="40" expireMinutes="60">
+      <Monster type="GolemController" />
+    </Level>
+  </Champ>
+  <Champ name="Doppelganger">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="Doppelganger" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="Doppelganger" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="25" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="Doppelganger" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="17" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="Doppelganger" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="AdamAnt" />
+    </Level>
+  </Champ>
+  <Champ name="ThePumpkinKing">
+    <Level repeat="5" maxKills="25" maxMobs="15" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="Doppelganger" />
+    </Level>
+    <Level repeat="4" maxKills="20" maxMobs="12" maxSpawn="5" maxRange="24" expireMinutes="10">
+      <Monster type="Doppelganger" />
+    </Level>
+    <Level repeat="4" maxKills="15" maxMobs="8" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="Doppelganger" />
+    </Level>
+    <Level repeat="3" maxKills="10" maxMobs="6" maxSpawn="3" maxRange="24" expireMinutes="10">
+      <Monster type="Doppelganger" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="ThePumpkinKing" />
+    </Level>
+  </Champ>
+  <Champ name="GargoyleQueen">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="Imp" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="Gargoyle" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="25" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="Gargoyle" />
+      <Monster type="StoneGargoyle" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="17" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="Gargoyle" />
+      <Monster type="FireGargoyle" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="QueenZhah" />
+    </Level>
+  </Champ>
+  <Champ name="Christmas_Mini">
+    <Level maxKills="9" maxMobs="5" maxSpawn="1" maxRange="8" expireMinutes="10">
+      <Monster type="PolymorphicMisfitToy" />
+    </Level>
+    <Level maxKills="15" maxMobs="4" maxSpawn="1" maxRange="8" expireMinutes="15">
+      <Monster type="PolymorphicMisfitToy" />
+      <Monster type="PolymorphicToySoldier" />
+    </Level>
+    <Level maxKills="16" maxMobs="2" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="PolymorphicToySoldier" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="AbominableSnowman" />
+    </Level>
+  </Champ>
+  <Champ name="Pirate_Full_Land">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="GiantRat" />
+      <Monster type="PirateDeckHand" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="PirateWench" />
+      <Monster type="BilgeRat" />
+      <Monster type="Lancehead" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="12" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="PirateDeckHand" />
+      <Monster type="PirateWench" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="8" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="PirateWench" />
+      <Monster type="Pirate" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="PirateChamp" />
+    </Level>
+  </Champ>
+  <Champ name="Pirate_Mini">
+    <Level maxKills="9" maxMobs="5" maxSpawn="1" maxRange="8" expireMinutes="10">
+      <Monster type="PirateDeckHand" />
+    </Level>
+    <Level maxKills="15" maxMobs="4" maxSpawn="1" maxRange="8" expireMinutes="15">
+      <Monster type="PirateWench" />
+    </Level>
+    <Level maxKills="16" maxMobs="2" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="Pirate" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="RedBeard" />
+      <Name name="Captain Kidd" />
+      <Name name="Captain Edward Teach" />
+      <Name name="Captain Blackbeard" />
+      <Name name="Calico Jack" />
+      <Name name="Sir Henry Morgan" />
+      <Name name="Captain Thomas Edwards" />
+    </Level>
+  </Champ>
+  <Champ name="Cove_Orcs">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10">
+      <Monster type="Orc" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10">
+      <Monster type="Orc" />
+      <Monster type="OrcishMage" />
+      <Monster type="OrcCaptain" />
+      <Monster type="OrcCaptain" />
+      <Monster type="OrcCaptain" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="25" maxSpawn="6" maxRange="24" expireMinutes="10">
+      <Monster type="Orc" />
+      <Monster type="OrcishMage" />
+      <Monster type="OrcishLord" />
+      <Monster type="OrcishLord" />
+      <Monster type="OrcishLord" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="17" maxSpawn="4" maxRange="24" expireMinutes="10">
+      <Monster type="Orc" />
+      <Monster type="OrcishMage" />
+      <Monster type="OrcCaptain" />
+      <Monster type="OrcishLord" />
+      <Monster type="OrcBomber" />
+      <Monster type="OrcBrute" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="Khartag" />
+    </Level>
+  </Champ>
+  <Champ name="GOT_Full">
+    <Level repeat="5" maxKills="40" maxMobs="40" maxSpawn="10" maxRange="24" expireMinutes="10" captain="GotWhiteWalker">
+      <Monster type="GotWarrior" />
+      <Monster type="GotWolf" />
+      <Monster type="GotZombie" />
+      <Monster type="GotSkeleton" />
+    </Level>
+    <Level repeat="4" maxKills="38" maxMobs="38" maxSpawn="9" maxRange="24" expireMinutes="10" captain="GotWhiteWalker">
+      <Monster type="GotMage" />
+      <Monster type="GotWarrior" />
+      <Monster type="GotWolf" />
+      <Monster type="GotZombie" />
+      <Monster type="GotSkeleton" />
+      <Monster type="GotBoneKnight" />
+    </Level>
+    <Level repeat="4" maxKills="25" maxMobs="25" maxSpawn="6" maxRange="24" expireMinutes="10" captain="GotWhiteWalker">
+      <Monster type="GotMage" />
+      <Monster type="GotWarrior" />
+      <Monster type="GotBoneKnight" />
+    </Level>
+    <Level repeat="3" maxKills="17" maxMobs="17" maxSpawn="4" maxRange="24" expireMinutes="10" captain="GotWhiteWalker">
+      <Monster type="GotMage" />
+      <Monster type="GotWarrior" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="1" expireMinutes="40">
+      <Monster type="GotNightKing" />
+    </Level>
+  </Champ>
+  <Champ name="GOT_Mini">
+    <Level maxKills="9" maxMobs="5" maxSpawn="1" maxRange="8" expireMinutes="10">
+      <Monster type="GotWarrior" />
+      <Monster type="GotWolf" />
+      <Monster type="GotZombie" />
+      <Monster type="GotSkeleton" />
+    </Level>
+    <Level maxKills="15" maxMobs="4" maxSpawn="1" maxRange="8" expireMinutes="15">
+      <Monster type="GotMage" />
+      <Monster type="GotWarrior" />
+      <Monster type="GotWolf" />
+      <Monster type="GotZombie" />
+      <Monster type="GotSkeleton" />
+      <Monster type="GotBoneKnight" />
+    </Level>
+    <Level maxKills="16" maxMobs="2" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="GotMage" />
+      <Monster type="GotWarrior" />
+      <Monster type="GotBoneKnight" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="20">
+      <Monster type="GotWhiteWalker" />
+    </Level>
+  </Champ>
+  <Champ name="Pirate_Micro">
+    <Level maxKills="9" maxMobs="3" maxSpawn="1" maxRange="8" expireMinutes="10">
+      <Monster type="PirateDeckHand" />
+    </Level>
+    <Level maxKills="3" maxMobs="2" maxSpawn="1" maxRange="8" expireMinutes="15">
+      <Monster type="PirateWench" />
+    </Level>
+    <Level maxKills="2" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="Pirate" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="RedBeard" />
+    </Level>
+  </Champ>
+  <Champ name="Pirate_Micro_Melee">
+    <Level maxKills="12" maxMobs="5" maxSpawn="1" maxRange="8" expireMinutes="10">
+      <Monster type="PirateDeckHand" />
+    </Level>
+    <Level maxKills="1" maxMobs="1" maxSpawn="1" maxRange="8" expireMinutes="40">
+      <Monster type="Pirate" />
+    </Level>
+  </Champ>
+</ChampSpawns>

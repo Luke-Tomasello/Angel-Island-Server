@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -40,7 +40,7 @@ namespace Server.Factions
         private Mobile m_Placer;
         private DateTime m_TimeOfPlacement;
 
-        private Timer m_Concealing;
+        private Timer? m_Concealing;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public Faction Faction
@@ -105,7 +105,7 @@ namespace Server.Factions
 
             if (silverToAward > 0 && m_Placer != null && m_Faction != null)
             {
-                PlayerState victimState = PlayerState.Find(from);
+                PlayerState? victimState = PlayerState.Find(from);
 
                 if (victimState != null && victimState.CanGiveSilverTo(m_Placer) && victimState.KillPoints > 0)
                 {
@@ -140,7 +140,7 @@ namespace Server.Factions
             if (m == null)
                 return 502956; // You cannot place a trap on that.
 
-            if (Core.RuleSets.MLRules())
+            if (Core.RuleSets.MondainsLegacyRules())
             {
                 foreach (Item item in m.GetItemsInRange(p, 0))
                 {
@@ -153,7 +153,7 @@ namespace Server.Factions
             {
                 case AllowedPlacing.FactionStronghold:
                     {
-                        StrongholdRegion region = (StrongholdRegion)Region.Find(p, m).GetRegion(typeof(StrongholdRegion));
+                        StrongholdRegion? region = (StrongholdRegion?)Region.Find(p, m).GetRegion(typeof(StrongholdRegion));
 
                         if (region != null && region.Faction == m_Faction)
                             return 0;
@@ -162,7 +162,7 @@ namespace Server.Factions
                     }
                 case AllowedPlacing.AnyFactionTown:
                     {
-                        Town town = Town.FromRegion(Region.Find(p, m));
+                        Town? town = Town.FromRegion(Region.Find(p, m));
 
                         if (town != null)
                             return 0;
@@ -171,7 +171,7 @@ namespace Server.Factions
                     }
                 case AllowedPlacing.ControlledFactionTown:
                     {
-                        Town town = Town.FromRegion(Region.Find(p, m));
+                        Town? town = Town.FromRegion(Region.Find(p, m));
 
                         if (town != null && town.Owner == m_Faction)
                             return 0;

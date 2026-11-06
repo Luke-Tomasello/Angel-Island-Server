@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -53,7 +53,7 @@ namespace Server.Items
     public class CollectionBox : Item
     {
         private string m_ConditionStr;
-        private ObjectConditional m_ConditionImpl;
+        private ObjectConditional? m_ConditionImpl;
         private string m_AcceptMessage;
         private string m_DenyMessage;
         private bool m_PublicScores;
@@ -62,8 +62,8 @@ namespace Server.Items
         private List<Mobile> m_Winners;
         private byte m_Decimals;
         private CollectionMode m_CollectionMode;
-        private string m_ItemPropertyStr;
-        private PropertyInfo[] m_ItemPropertyImpl;
+        private string? m_ItemPropertyStr;
+        private PropertyInfo[]? m_ItemPropertyImpl;
         private string m_ShoutMessage;
         private int m_ShoutRange;
         private TimeSpan m_ShoutDelay;
@@ -71,7 +71,7 @@ namespace Server.Items
         private PointScalar[] m_PointScalars = new PointScalar[6];
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-        public string Condition
+        public string? Condition
         {
             get { return m_ConditionStr; }
             set
@@ -161,7 +161,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public string ItemProperty
+        public string? ItemProperty
         {
             get { return m_ItemPropertyStr; }
             set
@@ -172,8 +172,8 @@ namespace Server.Items
                 {
                     try
                     {
-                        string failReason = null;
-                        PropertyInfo[] chain = Properties.GetPropertyInfoChain(null, m_ConditionImpl == null ? typeof(Item) : m_ConditionImpl.Type, value, false, ref failReason);
+                        string? failReason = null;
+                        PropertyInfo[]? chain = Properties.GetPropertyInfoChain(null, m_ConditionImpl == null ? typeof(Item) : m_ConditionImpl.Type, value, false, ref failReason);
 
                         if (chain != null && chain.Length != 0)
                         {
@@ -224,7 +224,7 @@ namespace Server.Items
             set { m_Link = value; }
         }
 
-        private PointScalar GetPointScalar(int index)
+        private PointScalar? GetPointScalar(int index)
         {
             if (index < 0 || index >= m_PointScalars.Length)
                 return null;
@@ -238,22 +238,22 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public PointScalar PointScalar1 { get { return GetPointScalar(0); } set { } }
+        public PointScalar? PointScalar1 { get { return GetPointScalar(0); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public PointScalar PointScalar2 { get { return GetPointScalar(1); } set { } }
+        public PointScalar? PointScalar2 { get { return GetPointScalar(1); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public PointScalar PointScalar3 { get { return GetPointScalar(2); } set { } }
+        public PointScalar? PointScalar3 { get { return GetPointScalar(2); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public PointScalar PointScalar4 { get { return GetPointScalar(3); } set { } }
+        public PointScalar? PointScalar4 { get { return GetPointScalar(3); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public PointScalar PointScalar5 { get { return GetPointScalar(4); } set { } }
+        public PointScalar? PointScalar5 { get { return GetPointScalar(4); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public PointScalar PointScalar6 { get { return GetPointScalar(5); } set { } }
+        public PointScalar? PointScalar6 { get { return GetPointScalar(5); } set { } }
 
         [Constructable]
         public CollectionBox()
@@ -366,8 +366,8 @@ namespace Server.Items
 
             try
             {
-                string failReason = null;
-                PropertyInfo p = Properties.GetPropertyInfo(ref obj, m_ItemPropertyImpl, ref failReason);
+                string? failReason = null;
+                PropertyInfo? p = Properties.GetPropertyInfo(ref obj, m_ItemPropertyImpl, ref failReason);
 
                 value = (double)p.GetValue(obj);
                 return true;
@@ -779,7 +779,7 @@ namespace Server.Items
 
         private void UpdateGump(Mobile from)
         {
-            InternalGump g = from.FindGump(typeof(InternalGump)) as InternalGump;
+            InternalGump? g = from.FindGump(typeof(InternalGump)) as InternalGump;
 
             if (g != null && g.Box == this)
             {
@@ -834,11 +834,11 @@ namespace Server.Items
         public class PointScalar
         {
             private string m_ConditionStr;
-            private ObjectConditional m_ConditionImpl;
+            private ObjectConditional? m_ConditionImpl;
             private int m_Scalar;
 
             [CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-            public string Condition
+            public string? Condition
             {
                 get { return m_ConditionStr; }
                 set
@@ -1017,7 +1017,7 @@ namespace Server.Items
 
                         for (int i = 0; i < count; i++)
                         {
-                            Mobile m = reader.ReadMobile();
+                            Mobile? m = reader.ReadMobile();
 
                             double score;
 

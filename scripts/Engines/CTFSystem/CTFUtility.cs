@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -243,7 +243,7 @@ namespace Server.Engines
             ArrayList list = m.Backpack.FindAllItems();
             for (int ix = 0; ix < list.Count; ix++)
             {   // is it a book?
-                BaseBook bb = list[ix] as BaseBook;
+                BaseBook? bb = list[ix] as BaseBook;
                 // is it the right type?
                 if (bb != null && bb.Subtype == type)
                     // is it the right version?
@@ -435,7 +435,7 @@ namespace Server.Engines
             Misc.Strandedness.ProcessStranded(o as Mobile, false, Map.Felucca);
         }
 
-        private FlagRespawnTimer m_FlagRespawnTimer = null;
+        private FlagRespawnTimer? m_FlagRespawnTimer = null;
         public class FlagRespawnTimer : Timer
         {
             private CTFControl m_ctfc;
@@ -522,7 +522,7 @@ namespace Server.Engines
             BroadcastMessage(GetTeam(Defense), SystemMessageColor, "Flag recovery no longer possible.");
         }
 
-        private Point3D GetTeamBase(Mobile m)
+        private Point3D GetTeamBase(Mobile? m)
         {
             return GetTeamBase(GetTeam(m));
         }
@@ -547,7 +547,7 @@ namespace Server.Engines
         // less than 6 tiles from the Flag counts as 'guarding the flag'
         public double GuardingFlag()
         {
-            Dictionary<PlayerMobile, PlayerContextData> team = GetTeam(Defense);
+            Dictionary<PlayerMobile, PlayerContextData>? team = GetTeam(Defense);
             int count = 0;
             if (team != null && Flag != null && !Flag.Deleted)
             {
@@ -612,7 +612,7 @@ namespace Server.Engines
             ClearHand(m, m.FindItemOnLayer(Layer.TwoHanded));
         }
 
-        public void ClearHand(Mobile m, Item item)
+        public void ClearHand(Mobile m, Item? item)
         {
             if (item != null && item.Movable)
             {
@@ -650,7 +650,7 @@ namespace Server.Engines
             return new TimeSpan(0, rounds_left * RoundMinutes, (int)GetRoundRemainingTime().TotalSeconds);
         }
 
-        private Dictionary<PlayerMobile, PlayerContextData> GetOpposingTeam(Team t)
+        private Dictionary<PlayerMobile, PlayerContextData>? GetOpposingTeam(Team t)
         {
             if (t == Team.Red)
                 return m_BlueTeam;
@@ -659,7 +659,7 @@ namespace Server.Engines
             return null;
         }
 
-        private Dictionary<PlayerMobile, PlayerContextData> GetTeam(Team t)
+        private Dictionary<PlayerMobile, PlayerContextData>? GetTeam(Team t)
         {
             if (t == Team.Red)
                 return m_RedTeam;
@@ -668,9 +668,9 @@ namespace Server.Engines
             return null;
         }
 
-        private Team GetTeam(Mobile m)
+        private Team GetTeam(Mobile? m)
         {
-            PlayerMobile pm = m as PlayerMobile;
+            PlayerMobile? pm = m as PlayerMobile;
             if (pm == null)
                 return Team.None;
             if (m_RedTeam.ContainsKey(pm))
@@ -690,7 +690,7 @@ namespace Server.Engines
 
         PlayerContextData GetPlayerContextData(Mobile m)
         {
-            Dictionary<PlayerMobile, PlayerContextData> team = GetTeam(GetTeam(m));
+            Dictionary<PlayerMobile, PlayerContextData>? team = GetTeam(GetTeam(m));
             if (team == null)
                 return null;
 
@@ -747,7 +747,7 @@ namespace Server.Engines
         }
         private Dictionary<Mobile, PlayerRequests> m_WatchTable = new Dictionary<Mobile, PlayerRequests>();
 
-        private bool MobileOk(Mobile m)
+        private bool MobileOk(Mobile? m)
         {
             if (m == null || m.Deleted)
                 return false;
@@ -775,22 +775,6 @@ namespace Server.Engines
             }
 
             return true;
-        }
-
-        private bool IsCTFRegion(Point3D location, Map map)
-        {
-            ArrayList regions = Server.Region.FindAll(location, map);
-            if (regions != null)
-            {
-                for (int ix = 0; ix < regions.Count; ix++)
-                {
-                    Region rx = regions[ix] as Region;
-                    if (rx.UId == this.CustomRegion.UId)
-                        return true;
-                }
-            }
-
-            return false;
         }
 
         private class CTFTarget : Target
@@ -845,7 +829,7 @@ namespace Server.Engines
             }
         }
 
-        private void TeleportPlayer(Mobile m, Map map, Point3D destination)
+        private void TeleportPlayer(Mobile? m, Map map, Point3D destination)
         {   // do not teleport players that are not online and have already been moved to the internal map
             if (m == null || m.Deleted || (m.NetState == null && m.Map == Map.Internal))
                 return;
@@ -856,12 +840,12 @@ namespace Server.Engines
             m.PlaySound(0x1FC);                 // dest sound
         }
 
-        private void TeleportPlayer(PlayerMobile m, Map map, Point3D destination)
+        private void TeleportPlayer(PlayerMobile? m, Map map, Point3D destination)
         {
             TeleportPlayer(m as Mobile, map, destination);
         }
 
-        private void TeleportPlayerCTF(Mobile m, Point3D destination)
+        private void TeleportPlayerCTF(Mobile? m, Point3D destination)
         {
             destination = Spawner.GetSpawnPosition(CustomRegion.Map, destination, 6, SpawnFlags.None, m);
             TeleportPlayer(m, CustomRegion.Map, destination);
@@ -873,15 +857,6 @@ namespace Server.Engines
             {   // don't send them if they are already there
                 if (IsPlayerHome(m) == false)
                     TeleportPlayerCTF(m, destination);
-            }
-        }
-
-        private void TeleportTeamHome(Dictionary<PlayerMobile, PlayerContextData> table)
-        {
-            // send them back to where they started from
-            foreach (KeyValuePair<PlayerMobile, PlayerContextData> kvp in table)
-            {
-                TeleportPlayer(kvp.Key, kvp.Value.Map, kvp.Value.Location);
             }
         }
 
@@ -920,7 +895,7 @@ namespace Server.Engines
             }
         }
 
-        private void DeColorizePlayer(Mobile m)
+        private void DeColorizePlayer(Mobile? m)
         {
             if (m == null)
                 return;
@@ -953,14 +928,6 @@ namespace Server.Engines
                     (i as BaseArmor).PopHue();
             }
 
-        }
-
-        private void DeColorizeTeam(Dictionary<PlayerMobile, PlayerContextData> table)
-        {
-            foreach (PlayerMobile m in table.Keys)
-            {
-                DeColorizePlayer(m);
-            }
         }
 
         private void FreezeTeam(Dictionary<PlayerMobile, PlayerContextData> table, bool freeze)
@@ -1002,12 +969,12 @@ namespace Server.Engines
             }
         }
 
-        private void BroadcastArrow(Dictionary<PlayerMobile, PlayerContextData> table)
+        private void BroadcastArrow(Dictionary<PlayerMobile, PlayerContextData>? table)
         {
             BroadcastArrow(table, true);
         }
 
-        private void BroadcastArrow(Dictionary<PlayerMobile, PlayerContextData> table, bool show)
+        private void BroadcastArrow(Dictionary<PlayerMobile, PlayerContextData>? table, bool show)
         {
             if (table != null)
             {
@@ -1036,7 +1003,7 @@ namespace Server.Engines
             }
         }
 
-        private void BroadcastMessage(Dictionary<PlayerMobile, PlayerContextData> table, int hue, string message)
+        private void BroadcastMessage(Dictionary<PlayerMobile, PlayerContextData>? table, int hue, string message)
         {
             if (table != null)
             {
@@ -1056,7 +1023,7 @@ namespace Server.Engines
             }
         }
 
-        private void BroadcastBeep(Dictionary<PlayerMobile, PlayerContextData> table, int SoundId)
+        private void BroadcastBeep(Dictionary<PlayerMobile, PlayerContextData>? table, int SoundId)
         {
             if (table != null)
             {
@@ -1127,20 +1094,6 @@ namespace Server.Engines
 
         public enum Team { Red, Blue, None }
 
-        private bool IsRedTeam(PlayerMobile m)
-        {
-            if (m == null)
-                return false;
-            return m_RedTeam.ContainsKey(m as PlayerMobile);
-        }
-
-        private bool IsBlueTeam(PlayerMobile m)
-        {
-            if (m == null)
-                return false;
-            return m_BlueTeam.ContainsKey(m as PlayerMobile);
-        }
-
         private bool HasFlag(Mobile m)
         {
             if (Flag == null || m == null)
@@ -1164,7 +1117,7 @@ namespace Server.Engines
 
         public class TrackArrow : QuestArrow
         {
-            private Mobile m_From;
+            private Mobile? m_From;
             private Timer m_Timer;
 
             public TrackArrow(Mobile from, Item target, int range)
@@ -1309,7 +1262,7 @@ namespace Server.Engines
             }
         }
 
-        private Dictionary<PlayerMobile, PlayerContextData> GetWinningTeam()
+        private Dictionary<PlayerMobile, PlayerContextData>? GetWinningTeam()
         {
             if (OffenseScore > DefenseScore)
                 return GetTeam(Offense);
@@ -1319,7 +1272,7 @@ namespace Server.Engines
                 return null;
         }
 
-        private Dictionary<PlayerMobile, PlayerContextData> GetLosingTeam()
+        private Dictionary<PlayerMobile, PlayerContextData>? GetLosingTeam()
         {
             if (OffenseScore > DefenseScore)
                 return GetTeam(Defense);
@@ -1329,17 +1282,7 @@ namespace Server.Engines
                 return null;
         }
 
-        private BaseContainer GetWinningTeamChest()
-        {
-            if (OffenseScore > DefenseScore)
-                return GetTeamChest(Offense) as BaseContainer;
-            else if (DefenseScore > OffenseScore)
-                return GetTeamChest(Defense) as BaseContainer;
-            else
-                return null;
-        }
-
-        private BaseContainer GetLosingTeamChest()
+        private BaseContainer? GetLosingTeamChest()
         {
             if (OffenseScore > DefenseScore)
                 return GetTeamChest(Defense) as BaseContainer;

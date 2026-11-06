@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -89,7 +89,7 @@ namespace Server.Mobiles
         public override void InitOutfit()
         {
             base.InitOutfit();
-            Item hat = FindItemOnLayer(Layer.Helm);
+            Item? hat = FindItemOnLayer(Layer.Helm);
             if (hat != null)
                 hat.Delete();
 
@@ -100,53 +100,50 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // ai special
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
+                int gold = Utility.RandomMinMax(600, 700);
+
+                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
+                {
+                    // 30% boost to gold
+                    gold += gold / 3;
+                }
+
+                PackGold(gold);
+            }
+            else
+            {
                 PackGem();
                 PackMagicEquipment(1, 3, 0.80, 0.80);
                 PackMagicEquipment(1, 3, 0.10, 0.10);
-                PackGold(600, 700);
 
                 // Category 3 MID
                 PackMagicItem(1, 2, 0.10);
                 PackMagicItem(1, 2, 0.05);
 
+                // pack bulk reg
+                PackItem(new MandrakeRoot(Utility.RandomMinMax(10, 20)));
+            }
+        }
+
+        public override void GenerateNonStandardLoot()
+        {
+            if (Spawning)
+            {
+            }
+            else
+            {
                 // Froste: 12% random IOB drop
                 if (0.12 > Utility.RandomDouble())
                 {
-                    Item iob = null;
+                    Item? iob = null;
                     if (0.75 > Utility.RandomDouble())
                         iob = Loot.RandomIOB();
                     else
                         iob = CaptainsHat("a pirate captain's hat");
                     PackItem(iob);
-                }
-
-                // pack bulk reg
-                PackItem(new MandrakeRoot(Utility.RandomMinMax(10, 20)));
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    // ai special
                 }
             }
         }

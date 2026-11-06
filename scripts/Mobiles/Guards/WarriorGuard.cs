@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -69,7 +69,7 @@ namespace Server.Mobiles
         {
         }
 
-        public WarriorGuard(Mobile target)
+        public WarriorGuard(Mobile? target)
             : base(target)
         {
         }
@@ -136,7 +136,7 @@ namespace Server.Mobiles
                         if (value.Body.IsHuman)
                             Say(500131); // Thou wilt regret thine actions, swine!
                         else
-                            Say("There is place for you here, vile beast.");
+                            Say("There is no place for you here, vile beast.");
 
                     if (m_AttackTimer != null)
                     {
@@ -343,7 +343,7 @@ namespace Server.Mobiles
                 // transport setup
                 (target as PlayerMobile).PrisonInmate = true;
                 (target as PlayerMobile).MinimumSentence = DateTime.UtcNow + duration;
-                Item aiEntrance = new AIEntrance();
+                Item aiEntrance = new AIEntrance(checkMurders: false, context: AIEntrance.Context.PrisonCommand);
                 aiEntrance.OnMoveOver(target);
                 aiEntrance.Delete();
             }
@@ -382,7 +382,7 @@ namespace Server.Mobiles
                 {
                     Stop();
                 }
-                else if (Core.RuleSets.SiegeStyleRules())
+                else if (Core.RuleSets.SiegeRules())
                 {// <instakill>
                     TeleportTo(target);
                     target.BoltEffect(0);
@@ -390,7 +390,7 @@ namespace Server.Mobiles
                     if (target is BaseCreature)
                         ((BaseCreature)target).NoKillAwards = true;
 
-                    target.Damage(target.HitsMax, m_Owner, this);
+                    target.Damage(target.HitsMax, m_Owner, new DamageContext { Source = this });
                     target.Kill(); // just in case, maybe Damage is overriden on some shard
 
                     if (target.Corpse != null && !target.Player)
@@ -401,26 +401,23 @@ namespace Server.Mobiles
                 }// </instakill>
                 else if (Core.RuleSets.MortalisRules())
                 {
+                    // for the new Mortalis, we will use the Siege style InstaKill
+
                     TeleportTo(target);
                     target.BoltEffect(0);
 
                     if (target is BaseCreature)
-                    {
                         ((BaseCreature)target).NoKillAwards = true;
 
-                        target.Damage(target.HitsMax, m_Owner, this);
-                        target.Kill(); // just in case, maybe Damage is overriden on some shard
+                    target.Damage(target.HitsMax, m_Owner, new DamageContext { Source = this });
+                    target.Kill(); // just in case, maybe Damage is overriden on some shard
 
-                        if (target.Corpse != null && !target.Player)
-                            target.Corpse.Delete();
-                    }
-                    else
-                    {   // no guardwhack on Mortalis - go to prison
-                        Imprison(target, TimeSpan.FromHours(1));
-                    }
+                    if (target.Corpse != null && !target.Player)
+                        target.Corpse.Delete();
 
                     m_Owner.Focus = null;
                     Stop();
+
                 }
                 else if (!m_Owner.InRange(target, 20))
                 {
@@ -500,10 +497,10 @@ namespace Server.Mobiles
             private WarriorGuard m_Owner;
             private int m_Stage;
             private bool m_AutoDelete;
-            private Mobile m_Mobile;
+            private Mobile? m_Mobile;
             private int[] said = new int[5];
 
-            public IdleTimer(WarriorGuard owner, Mobile m, bool AutoDelete)
+            public IdleTimer(WarriorGuard owner, Mobile? m, bool AutoDelete)
                 : base(TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(2.5))
             {
                 m_Owner = owner;

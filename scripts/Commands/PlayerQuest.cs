@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -79,7 +79,7 @@ namespace Server.Commands
                         return;
                     }
 
-                    BaseContainer bc = o as BaseContainer;
+                    BaseContainer? bc = o as BaseContainer;
 
                     if (Misc.Diagnostics.Assert(from.Backpack != null, "from.Backpack == null", Utility.FileInfo()) == false)
                     {
@@ -139,7 +139,7 @@ namespace Server.Commands
 
             public bool CheckAccess(Mobile m)
             {   // Allow access if the player is owner of the house.
-                BaseHouse house = BaseHouse.FindHouseAt(m);
+                BaseHouse? house = BaseHouse.FindHouseAt(m);
                 return (house != null && house.IsOwner(m));
             }
         }

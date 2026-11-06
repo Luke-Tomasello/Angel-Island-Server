@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -79,7 +79,7 @@ namespace Server.Mobiles
         public override bool DoActionCombat(MobileInfo info)
         {
             m_Mobile.DebugSay(DebugFlags.AI, "doing HumanMeleeAI combat action");
-            Mobile combatant = info.target;
+            Mobile? combatant = info.target;
             m_Mobile.Warmode = true;
 
             if (combatant == null || info.gone || info.dead || info.hidden || info.fled)

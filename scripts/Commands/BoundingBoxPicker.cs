@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -38,7 +38,7 @@ namespace Server
             Begin(from, callback, null, state);
         }
 
-        public static void Begin(Mobile from, BoundingBoxCallback callback, BoundingBoxCancelCallback onCancel, object state)
+        public static void Begin(Mobile from, BoundingBoxCallback callback, BoundingBoxCancelCallback? onCancel, object state)
         {
             from.SendMessage("Target the first location of the bounding box.");
             from.Target = new PickTarget(callback, onCancel, state);
@@ -48,17 +48,17 @@ namespace Server
         {
             private Point3D m_Store;
             private bool m_First;
-            private Map m_Map;
+            private Map? m_Map;
             private BoundingBoxCallback m_Callback;
-            private BoundingBoxCancelCallback m_OnCancel;
+            private BoundingBoxCancelCallback? m_OnCancel;
             private object m_State;
 
-            public PickTarget(BoundingBoxCallback callback, BoundingBoxCancelCallback onCancel, object state)
+            public PickTarget(BoundingBoxCallback callback, BoundingBoxCancelCallback? onCancel, object state)
                 : this(Point3D.Zero, true, null, callback, onCancel, state)
             {
             }
 
-            public PickTarget(Point3D store, bool first, Map map, BoundingBoxCallback callback, BoundingBoxCancelCallback onCancel, object state)
+            public PickTarget(Point3D store, bool first, Map? map, BoundingBoxCallback callback, BoundingBoxCancelCallback? onCancel, object state)
                 : base(-1, true, TargetFlags.None)
             {
                 m_Store = store;
@@ -71,7 +71,7 @@ namespace Server
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                IPoint3D p = targeted as IPoint3D;
+                IPoint3D? p = targeted as IPoint3D;
 
                 if (p == null)
                     return;

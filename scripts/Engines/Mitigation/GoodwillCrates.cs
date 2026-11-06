@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -39,6 +39,12 @@ namespace Server.Misc
         [Flipable(0x9A9, 0xE7E)]
         public class GoodwillCrate : LockableContainer
         {
+            public override Item Dupe(int amount)
+            {
+                GoodwillCrate new_item = new GoodwillCrate();
+                Utility.CopyProperties(this, new_item);
+                return base.Dupe(new_item, amount);
+            }
             public override int DefaultGumpID { get { return 0x44; } }
             public override int DefaultDropSound { get { return 0x42; } }
             public override Rectangle2D Bounds
@@ -111,6 +117,12 @@ namespace Server.Misc
         [Flipable(0x9A9, 0xE7E)]
         public class SmallGoodwillCrate : GoodwillCrate
         {
+            public override Item Dupe(int amount)
+            {
+                SmallGoodwillCrate new_item = new SmallGoodwillCrate();
+                Utility.CopyProperties(this, new_item);
+                return base.Dupe(new_item, amount);
+            }
             public override int DefaultGumpID { get { return 0x44; } }
             public override int DefaultDropSound { get { return 0x42; } }
 
@@ -150,6 +162,12 @@ namespace Server.Misc
         [Flipable(0xE3F, 0xE3E)]
         public class MediumGoodwillCrate : GoodwillCrate
         {
+            public override Item Dupe(int amount)
+            {
+                MediumGoodwillCrate new_item = new MediumGoodwillCrate();
+                Utility.CopyProperties(this, new_item);
+                return base.Dupe(new_item, amount);
+            }
             public override int DefaultGumpID { get { return 0x44; } }
             public override int DefaultDropSound { get { return 0x42; } }
 
@@ -190,6 +208,12 @@ namespace Server.Misc
         [FlipableAttribute(0xe3c, 0xe3d)]
         public class LargeGoodwillCrate : GoodwillCrate
         {
+            public override Item Dupe(int amount)
+            {
+                LargeGoodwillCrate new_item = new LargeGoodwillCrate();
+                Utility.CopyProperties(this, new_item);
+                return base.Dupe(new_item, amount);
+            }
             public override int DefaultGumpID { get { return 0x44; } }
             public override int DefaultDropSound { get { return 0x42; } }
 

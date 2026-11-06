@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -16,6 +16,48 @@
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
  *   (at your option) any later version.
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
+ * Mount Stamina System
+ * --------------------
+ *
+ * Purpose:
+ *   Reintroduces classic-style mount endurance by allowing mounts to tire
+ *   from sustained running. Unlike standard RunUO, rider stamina is not
+ *   tied to mount stamina; instead, each mount maintains and consumes its
+ *   own stamina pool.
+ *
+ * Design Goals:
+ *   - Make mount choice meaningful without making travel frustrating.
+ *   - Preserve OSI-style stamina regeneration, feeding, and recovery.
+ *   - Reward mount training naturally through improved Dexterity/Stamina.
+ *   - Allow runtime tuning without code changes.
+ *
+ * Overview:
+ *   While mounted and running, mounts periodically lose stamina. The rate
+ *   of loss is determined by the mount's endurance multiplier and the
+ *   global MountEnduranceFactor. As stamina declines, the rider receives
+ *   warning messages indicating the mount is becoming fatigued.
+ *
+ * Endurance Model:
+ *   Endurance is derived from the mount's physical stamina characteristics.
+ *   Training a mount improves Dexterity, which increases StamMax and
+ *   therefore overall endurance.
+ *
+ * Runtime Tuning:
+ *   CoreAI.MountEnduranceFactor provides a global multiplier that can be
+ *   adjusted live without code changes. This allows staff to tune overall
+ *   travel times while preserving the relative differences between mount
+ *   types.
+ *
+ * Recovery:
+ *   - Standard stamina regeneration remains intact.
+ *   - Feeding restores stamina.
+ *   - "All Follow Me" provides a small stamina refresh based upon loyalty.
+ *   - Standing and walking recover stamina normally.
  *
  ***************************************************************************/
 
@@ -67,13 +109,18 @@ namespace Server.Misc
         {
             get
             {
-                // 3/11/32 Yoar, Disabled mount stamina
-#if false
-                // no mount stamina on Angel Island/Mortalis
-                return (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules());
-#else
-                return false;
-#endif
+                // 7/18/2026, Adam: tested against Season 2, and seemed good. Turning on everywhere
+                return true;
+
+                // 6/20/2026, Adam: just test here, if it work out, turn on everywhere
+                //return (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules());
+                //                // 3/11/32 Yoar, Disabled mount stamina
+                //#if false
+                //                // no mount stamina on Angel Island/Mortalis
+                //                return (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules());
+                //#else
+                //                return false;
+                //#endif
             }
         }
 
@@ -93,7 +140,7 @@ namespace Server.Misc
                          * change: stamina drain from taking damage reduced for players
                          * reason: on-damage stam drain too severe
                          */
-                        if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) && m.Player && m.Str <= 120)
+                        if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) && m.Player && m.Str <= 120)
                         {
                             fatigue = (damage * ((double)m.HitsMax / 2 / m.Hits) * m.Stam / 100) - 5.0;
                             break;
@@ -144,13 +191,13 @@ namespace Server.Misc
                 }
             }
 
-            BaseMount mount = from.Mount as BaseMount;
+            BaseMount? mount = from.Mount as BaseMount;
             bool mounted = (mount != null);
 
             if (!MountStamina)
                 mounted = false;
 
-            if (!mounted && ((!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules()) || (e.Direction & Direction.Running) != 0))
+            if (!mounted && ((!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules()) || (e.Direction & Direction.Running) != 0))
             {
                 if (((from.Stam * 100) / Math.Max(from.StamMax, 1)) < 10)
                     --from.Stam;
@@ -204,19 +251,33 @@ namespace Server.Misc
                 }
                 else
                 {
-                    if (((pm.StepsTaken % 6) == 0) && ((e.Direction & Direction.Running) != 0))
-                    {
-                        // scale riders stamina loss relative to mount so that the status bar reflects something close
-                        //	to the stamina available to you right now. I believe this is how old school UO looked
-                        DrainStamina(pm, (double)from.StamMax / mount.StamMax);
+                    double multiplier = mount.MountEnduranceMultiplier * CoreAI.MountEnduranceFactor;
+                    int drainEvery = Math.Max(1, (int)Math.Round(6.0 * multiplier));
 
+                    if (((pm.StepsTaken % drainEvery) == 0) && ((e.Direction & Direction.Running) != 0))
+                    {
                         --mount.Stam;
 
-                        if (mount.Stam > 0 && mount.Stam <= 12 && !MountStaminaWarning.Recall(from))
+                        if (!MountStaminaWarning.Recall(from))
                         {
-                            MountStaminaWarning.Remember(from, 3.0);
-                            from.SendLocalizedMessage(500133); // Your mount is very fatigued.
-                            Effects.PlaySound(from, from.Map, mount.GetAngerSound());
+                            int pct = (mount.Stam * 100) / Math.Max(mount.StamMax, 1);
+
+                            if (pct <= 10)
+                            {
+                                MountStaminaWarning.Remember(from, 3.0);
+                                from.SendLocalizedMessage(500133); // Your mount is very fatigued.
+                                Effects.PlaySound(from, from.Map, mount.GetAngerSound());
+                            }
+                            else if (pct <= 25)
+                            {
+                                MountStaminaWarning.Remember(from, 6.0);
+                                from.SendMessage("Your mount is growing weary.");
+                            }
+                            else if (pct <= 50)
+                            {
+                                MountStaminaWarning.Remember(from, 10.0);
+                                from.SendMessage("Your mount begins to tire.");
+                            }
                         }
                     }
                 }
@@ -260,6 +321,44 @@ namespace Server.Misc
                 pm.StamDrain -= iDrain;
                 pm.Stam -= iDrain;
             }
+        }
+        public static double GetMountEnduranceMultiplier(BaseMount mount)
+        {
+            if (mount == null)
+                return 1.0;
+
+            const double MinMultiplier = 1.40;
+            const double MaxMultiplier = 1.60;
+
+            const double MinScore = 60.0;   // average low-end horse/llama neighborhood
+            const double MaxScore = 150.0;  // trained / high-end mount neighborhood
+
+            double score = GetMountEnduranceScore(mount);
+
+            double normalized = (score - MinScore) / (MaxScore - MinScore);
+
+            normalized = Math.Max(0.0, normalized);
+            normalized = Math.Min(1.0, normalized);
+
+            return MinMultiplier + ((MaxMultiplier - MinMultiplier) * normalized);
+        }
+
+        public static double GetMountEnduranceScore(BaseMount mount)
+        {
+            if (mount == null)
+                return 0.0;
+
+            double stam = Math.Max(1, mount.StamMax);
+            double str = Math.Max(1, mount.Str);
+
+            // Travel endurance model:
+            // - StamMax is the primary signal.
+            // - Strength contributes only as a small compressed bonus.
+            // - Do not use Power here; Power is a combat/spawn-budget metric and
+            //   creates excessive gaps between ordinary and elite mounts.
+            double strengthBonus = Math.Sqrt(str) * 1.5;
+
+            return stam + strengthBonus;
         }
     }
 }

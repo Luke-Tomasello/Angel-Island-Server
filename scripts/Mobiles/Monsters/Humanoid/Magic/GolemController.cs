@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -139,12 +139,12 @@ namespace Server.Mobiles
             else
                 VirtualArmor = 16;
 
-            if (Core.RuleSets.AngelIslandRules())
-            {
+            if (UsesBandages)
                 PackItem(new Bandage(Utility.RandomMinMax(VirtualArmor, VirtualArmor * 2)), lootType: LootType.UnStealable);
+            if (UsesPotions)
                 PackStrongPotions(6, 12);
+            if (Core.RuleSets.AngelIslandRules() /*this really needs to be an ability*/)
                 PackItem(new Pouch(), lootType: LootType.UnStealable);
-            }
         }
 
         public void AddArcane(Item item)
@@ -224,52 +224,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+
+            // https://web.archive.org/web/20011006081648/http://uo.stratics.com/hunters/controller.shtml
+            // 	300 Gold, Arcane Gems, Magic Weapon
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(125, 175);
-                //drop 0-8 empty bottles on death
-                for (int i = 0; i < Utility.Random(8); ++i)
-                {
-                    PackItem(new Bottle());
-                }
-
-                if (0.1 > Utility.RandomDouble())
-                    PackItem(new ArcaneGem());
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {
-                    // https://web.archive.org/web/20011006081648/http://uo.stratics.com/hunters/controller.shtml
-                    // 	300 Gold, Arcane Gems, Magic Weapon
-                    if (Spawning)
-                    {
-                        PackGold(300);
-                    }
-                    else
-                    {
+                // Found as loot on Controllers. Tailors can use an Arcane Gem on exceptional quality items to make Arcane clothing. Arcane Gems can be used to recharge Arcane Clothing that has run out of charges.
+                // 6/3/2023, Adam. These appear to be in our era, but we will need to decide if we want them on Siege
+                if (PublishInfo.Publish >= 15)
+                    if (0.2 > Utility.RandomDouble())
+                        PackItem(new ArcaneGem());
 
-                        // Found as loot on Controllers. Tailors can use an Arcane Gem on exceptional quality items to make Arcane clothing. Arcane Gems can be used to recharge Arcane Clothing that has run out of charges.
-                        // 6/3/2023, Adam. These appear to be in our era, but we will need to decide if we want them on Siege
-                        if (!Core.RuleSets.SiegeStyleRules())
-                            if (0.2 > Utility.RandomDouble())
-                                PackItem(new ArcaneGem());
-
-                        PackMagicWeapon(minLevel: 1, maxLevel: 2, chance: 0.30);
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        if (0.7 > Utility.RandomDouble())
-                            PackItem(new ArcaneGem());
-
-                    AddLoot(LootPack.Rich);
-                }
+                PackMagicWeapon(minLevel: 1, maxLevel: 2, chance: 0.30);
             }
         }
 

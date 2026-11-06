@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -73,57 +73,24 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020806192318/uo.stratics.com/hunters/termat.shtml
+            // 150 to 300 Gold, Magic Items, Gems, Scrolls, 5 Spiders Silk
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(300, 400);
-                PackItem(new SpidersSilk(10));
-                PackScroll(1, 7);
-                PackScroll(1, 7);
-                PackMagicEquipment(1, 2, 0.20, 0.20);
-                PackPotion();
-                // Category 3 MID 
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
+                PackGold(150, 300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020806192318/uo.stratics.com/hunters/termat.shtml
-                    // 150 to 300 Gold, Magic Items, Gems, Scrolls, 5 Spiders Silk
-                    if (Spawning)
-                    {
-                        PackGold(150, 300);
-                    }
-                    else
-                    {
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 2);
-                        else
-                            PackMagicItem(1, 2, 0.05);
-
-                        PackGem(2, .9);
-                        PackGem(1, .5);
-                        PackScroll(1, 7);
-                        PackScroll(1, 7, 0.8);
-                        PackItem(new SpidersSilk(5));
-                    }
-                }
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 2);
                 else
-                {
-                    if (Spawning)
-                    {
-                        PackItem(new SpidersSilk(5));
+                    PackMagicItem(1, 2, 0.05);
 
-                        if (Core.RuleSets.AOSRules())
-                            PackNecroReg(Utility.RandomMinMax(4, 10));
-                    }
-
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.Average, 2);
-                    AddLoot(LootPack.MedScrolls, 2);
-                    AddLoot(LootPack.Potions);
-                }
+                PackGem(2, .9);
+                PackGem(1, .5);
+                PackScroll(1, 7);
+                PackScroll(1, 7, 0.8);
+                PackItem(new SpidersSilk(5));
             }
         }
 

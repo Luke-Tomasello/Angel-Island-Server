@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,26 @@
 
 /* Scripts/Engines/AngelIsland/AITeleporters.cs
  * ChangeLog
+ *  10/18/26, Adam (confinement Stage 5)
+ *      AIParoleExit and AIEscapeExit ask the release vetoes (ConfinementVetoes.RefuseAutomated) before anything moves or is
+ *      checked out: in OnMoveOver, and again in DoTeleport (a delayed exit; the prison's parole kick calls it directly).
+ *  10/17/26, Adam (confinement admission refactor R3)
+ *      AIEntrance.OnMoveOver delegates to the shared admission runner (PrisonAdmission): EntranceSent for the PrisonCommand
+ *      context (guards, the murderer prompt), EntranceVoluntary for the world tile, with the tile's effects, sound and
+ *      delay. Every refusal (ticket, bank under the bank's real slot rule, five murders, already in prison, no backpack)
+ *      is checked before anything changes; a voluntary refusal sends the same messages and leaves everything as it was.
+ *      StartTeleport, DoTeleport, AlreadyAPrisoner, HasDeathRobe, DeleteAllQuestTickets and the visitor field are gone
+ *      (the runner's steps); the delayed teleport is the runner's deferred step, which reports a failure. Same return
+ *      value: true when refused, false once taken. Serialization unchanged.
+ *  10/17/26, Adam (AIParoleExit.CheckParole)
+ *      Moved the parole checks out of AIParoleExit.OnMoveOver into the side-effect-free static CheckParole()
+ *      so Utility.CanBoot can ask the same questions before a staff boot. Same checks, same order, same messages.
+ *      ExceedsIPLimit and TorExitNode are now static.
+ *      AIEntrance: GetAnyQuestTicket is now static and HasValidQuestTicket() was added (read-only) for Confinement.Plan.
+ *      Confinement Stage 2: the check-in/check-out state changes moved to PrisonOperations (ConfinementOperations.cs),
+ *      unchanged and in the same order: AIParoleExit.DoTeleport -> ParoleCheckOut, AIEscapeExit.DoTeleport -> EscapeCheckOut,
+ *      AIEntrance -> SetInmateFlag and ConfiscatePossessions (EquipInmate is now PrisonOperations.IssueInmateKit).
+ *      Moving, eligibility, effects and messages stay here.
  *  11/13/2023,s Adam (Exit Cave)
  *      When exiting the cave (escape), allow rares and smuggled items to be in sub-containers.
  *  11/5/2023, Adam (OnMoveOver/Backpack/Bankbox overload)
@@ -155,6 +175,7 @@
  *		Modification of the current Teleporter.cs file that allows us to check the user's kills and whether they are dead or not.
  *		Automagically set the location point and map to put the user inside the cellblock on AI.
  */
+using Server.Engines.ConfinementSystem;
 using Server.Engines.CrownSterlingSystem;
 using Server.Engines.DataRecorder;
 using Server.Guilds;
@@ -171,12 +192,17 @@ namespace Server.Items
 {
     public class AIEntrance : Item
     {
+        public override Item Dupe(int amount)
+        {
+            AIEntrance new_item = new AIEntrance();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
         private bool m_Active, m_SourceEffect, m_DestEffect;
         private int m_SoundID;
         private bool m_CheckMurders = true;
         private TimeSpan m_Delay;
         private Context m_Context;
-        private bool m_Visitor = false;
         private bool SentToPrison { get { return (m_Context & Context.PrisonCommand) != 0; } }
 
         #region Props
@@ -253,288 +279,95 @@ namespace Server.Items
             else
                 LabelTo(from, "(inactive)");
         }
-        public virtual void StartTeleport(Mobile m)
-        {
-            //shut down all AITeleportQueryGumps
-            m.CloseGumps(typeof(AITeleportQueryGump));
-
-            if (m_Delay == TimeSpan.Zero)
-                DoTeleport(m);
-            else
-                Timer.DelayCall(m_Delay, new TimerStateCallback(DoTeleport_Callback), m);
-        }
-        private void DoTeleport_Callback(object state)
-        {
-            DoTeleport((Mobile)state);
-        }
-        public virtual void DoTeleport(Mobile m)
-        {
-            Utility.StablePets(m, 13);
-
-            // Adam, 8/6/21: Hue the death robe orange. kind of a funky orange hue. Look for a better one
-            if (!HasDeathRobe(m))
-            {
-                DeathRobe robe = new Server.Items.DeathRobe();
-                robe.Hue = 0x2b;
-                if (!m.AddToBackpack(robe))
-                    robe.Delete();
-            }
-
-            if (m_SourceEffect)
-                Effects.SendLocationEffect(m.Location, m.Map, 0x3728, 10, 10);
-
-            // give them access to the prison
-            if (m.Player && m.AccessLevel == AccessLevel.Player)
-            {
-                if (m_Visitor)
-                    ((PlayerMobile)m).PrisonVisitor = true;
-                else
-                    ((PlayerMobile)m).PrisonInmate = true;
-            }
-
-            // This puts them in the Warden's office on Angel Island.
-            Server.Point3D location = new Point3D(355, 836, 20);
-            m.MoveToWorld(location, Map.Felucca);
-
-            if (m_DestEffect)
-                Effects.SendLocationEffect(m.Location, m.Map, 0x3728, 10, 10);
-
-            if (m_SoundID > 0)
-                Effects.PlaySound(m.Location, m.Map, m_SoundID);
-        }
-        private bool AlreadyAPrisoner(Mobile m)
-        {
-            if (m != null && m.Region != null && m.Region.IsAngelIslandRules)
-                return true;
-
-            return false;
-        }
+        /// <summary>
+        /// The prison entrance, through the shared admission runner (PrisonAdmission, ConfinementAdmission.cs): the
+        /// PrisonCommand context (guards, the murderer prompt) is EntranceSent, anything else the voluntary tile
+        /// (EntranceVoluntary: ticket, bank and murder rules, with this tile's effects, sound and delay). Every refusal is
+        /// checked first and changes nothing (the voluntary ones send the entrance's messages); the steps then run in the
+        /// entrance's order on the facet they stand on. Returns true (stay on the tile) when refused, as before, false
+        /// once the entrance has taken them. A failed step is written to Prison.log and the console.
+        /// </summary>
         public override bool OnMoveOver(Mobile m)
         {
-            if (m_Active)
-            {
-                PlayerMobile pm = m as PlayerMobile;
-                if (pm == null || pm.Backpack == null || pm.BankBox == null || AlreadyAPrisoner(m))
-                    return true;
-
-                // they're walking in (murderer or a guest)
-                if (!SentToPrison)
-                {
-                    byte bags = 0;
-                    if (!Teleporter.CheckBank(pm, ref bags))
-                    {
-                        // count up all the items
-                        int count = 0;
-                        int equipment = Utility.GetEquippedItems(m).Count;
-                        equipment += m.Holding == null ? 0 : 1; // account for items on the cursor
-                        int belongings = m.Backpack.GetDeepItems().Count;
-                        count = equipment + belongings;
-
-                        // they are alive and walking in. We simply refuse entry at this point
-                        m.SendMessage("Your bank box cannot store the {0} items you are trying to bring in.", count);
-                        m.SendMessage("Come back when you have emptied your bank box a bit or carrying fewer items.");
-                        return true;
-                    }
-                }
-
-                m_Visitor = HoldingQuestTicket(m);
-
-                // Murders can play at the prison quest like everyone else
-                //  However, you cannot use a prison quest ticket to get out (visitor status) if you were sent to prison
-                if (m_Visitor && SentToPrison)
-                {   // void their ticket
-                    m_Visitor = false;
-                    DeleteQuestTicket(m);
-                }
-
-                if (m.AccessLevel == AccessLevel.Player)
-                {   // skip these checks if your were sent to prison via [prison command
-                    if (!SentToPrison)
-                    {
-                        if (m_Visitor)
-                        {
-                            m.SendMessage("You may enter.");
-                        }
-                        else if (!pm.PrisonInmate && m_CheckMurders && m.ShortTermMurders < 5)
-                        {
-                            // We want to make sure we're teleporting a PK and not some random blubie.
-                            m.SendMessage("You must have at least five short term murder counts to use this.");
-                            return true;
-                        }
-                    }
-
-                    // dismount player
-                    IMount mt = m.Mount;
-                    if (mt != null)
-                        mt.Rider = null;
-
-                    // drop what they are holding
-                    Utility.DropHolding(m);
-
-                    // delete contraband. For now, lighthouse passes count as contraband
-                    ArrayList items = new ArrayList(m.Backpack.Items);
-                    foreach (Item i in items)
-                    {
-                        if (i is LightHousePass)
-                            i.Delete();
-                    }
-
-                    // attempt to move items to bank.
-                    if (Teleporter.BankEverything(m) == false)
-                    {
-                        if (SentToPrison)
-                        {   // sorry to say, we're dropping your stuff here
-                            Teleporter.DropEverything(m);
-                            m.SendMessage("Your items cannot be deposited in your bank box because it is full.");
-                            m.SendMessage("So they were lost.");
-                        }
-                        else
-                        {   // they are alive and walking in
-                            m.SendMessage("Your items cannot be deposited in your bank box because it is full.");
-                            m.SendMessage("Come back when you have emptied your bank box a bit.");
-                            return true;
-                        }
-                    }
-                    else
-                    {
-                        m.SendMessage("Your worldly possessions have been placed in your bank for safekeeping.");
-                    }
-
-                    // robe, stinger, spellbook;
-                    EquipInmate(m);
-                }
-
-                StartTeleport(m);
-
-                if (!m.Alive && m.NetState != null)
-                {
-                    m.CloseGump(typeof(ResurrectGump));
-                    m.SendGump(new ResurrectGump(m, ResurrectMessage.Healer));
-                }
-
-                return false;
-            }
-
-            return true;
-        }
-        private void EquipInmate(Mobile m)
-        {
-            // Give them a Deathrobe, Stinger dagger, and a blank spell book
-            if (m.Alive)
-            {
-                RemoveDeathRobes(m);
-                // Adam, 8/6/21: Hue the death robe orange. kind of a funky orange hue. Look for a better one
-                DeathRobe robe = new Server.Items.DeathRobe();
-                robe.Hue = 0x2b;
-                if (!m.EquipItem(robe))
-                    robe.Delete();
-            }
-
-            Item aiStinger = new AIStinger();
-            if (!m.AddToBackpack(aiStinger))
-                aiStinger.Delete();
-
-            Item spellbook = new Spellbook();
-            if (!m.AddToBackpack(spellbook))
-                spellbook.Delete();
-        }
-        private bool HasDeathRobe(Mobile m)
-        {
-            if (m != null && m.Items != null)
-                foreach (Item item in m.Items)
-                    if (item is DeathRobe)
-                        return true;
-
-            Item dr = m.FindItemOnLayer(Layer.OuterTorso);
-            if (dr != null && dr is DeathRobe)
+            if (!m_Active || m is not PlayerMobile pm)
                 return true;
 
+            AdmissionContext ctx = new AdmissionContext(pm, pm, pm.Map)
+            {
+                CheckMurders = m_CheckMurders,
+                SourceEffect = m_SourceEffect,
+                DestEffect = m_DestEffect,
+                SoundID = m_SoundID,
+                Delay = m_Delay,
+            };
+            AdmissionResult r = PrisonAdmission.Admit(ctx, SentToPrison ? PrisonProfile.EntranceSent : PrisonProfile.EntranceVoluntary);
+
+            if (!r.Completed && !r.Denied)
+                PrisonAdmission.ReportNotCompleted(pm, r);
+            return r.Denied;
+        }
+        /// <summary>
+        /// Read-only: does m carry a valid (unexpired) quest ticket? The same test OnMoveOver uses to admit a visitor.
+        /// </summary>
+        public static bool HasValidQuestTicket(Mobile m)
+        {
+            foreach (Ticket t in GetAnyQuestTicket(m))
+                if (t != null && !t.Deleted && IsValidQuestTicket(t))
+                    return true;
             return false;
         }
-        private void RemoveDeathRobes(Mobile m)
+        public static List<Ticket> GetAnyQuestTicket(Mobile m, bool check_bank = false)
         {
-            if (m != null && m.Items != null)
-            {
-                List<Item> list = new List<Item>(m.Items);
-                foreach (Item item in list)
-                {
-                    if (item is DeathRobe)
-                    {
-                        if (item.Parent is Mobile parent)
-                            parent.RemoveItem(item);
-                        else if (item.Parent is Container container)
-                            container.RemoveItem(item);
+            List<Ticket> result = new List<Ticket>();
 
-                        item.Delete();
+            if (m == null)
+                return result;
+
+            Container cont = check_bank ? m.BankBox : m.Backpack;
+
+            if (cont == null)
+                return result;
+
+            foreach (object o in cont.GetDeepItems())
+            {
+                if (o is Ticket ticket)
+                {
+                    if (!string.IsNullOrEmpty(ticket.Passcode))
+                    {
+                        if ("F6F23E61".Equals(ticket.Passcode, StringComparison.OrdinalIgnoreCase))
+                        {
+                            result.Add(ticket);
+                        }
                     }
                 }
             }
+
+            return result;
         }
-        public bool HoldingQuestTicket(Mobile m, bool check_bank = false)
+        static bool IsQuestTicket(Ticket t)
         {
-            if (m == null) return false;
-
-            Container cont = check_bank ? m.BankBox : m.Backpack;
-
-            if (!check_bank)
-                Utility.DropHolding(m);
-
-            // find all of their tickets
-            List<Ticket> list = new List<Ticket>();
-            if (cont != null)
-                foreach (object o in cont.GetDeepItems())
-                    if (o is Ticket ticket)
-                        list.Add(ticket);
-
-            // see if they have any tickets to this venue
-            bool found = false;
-            foreach (Ticket ticket in list)
-                if (!string.IsNullOrEmpty(ticket.Passcode))
-                    if ("F6F23E61".Equals(ticket.Passcode, StringComparison.OrdinalIgnoreCase))
-                        if (ticket.Expired == false)
-                            found = true;
-
-            // did not have a ticket to this venue
-            if (found == false)
-            {
-                m.SendMessage("You must have a valid ticket to attend this quest, you cannot pass.");
+            if (t == null)
                 return false;
-            }
 
-            return true;
+            if (string.IsNullOrEmpty(t.Passcode))
+                return false;
+
+            return "F6F23E61".Equals(t.Passcode, StringComparison.OrdinalIgnoreCase);
         }
-        public void DeleteQuestTicket(Mobile m, bool check_bank = false)
+        static bool IsValidQuestTicket(Ticket t)
         {
-            if (m == null) return;
+            if (t == null)
+                return false;
 
-            Container cont = check_bank ? m.BankBox : m.Backpack;
+            if (t.Expired)
+                return false;
 
-            if (!check_bank)
-                Utility.DropHolding(m);
+            if (string.IsNullOrEmpty(t.Passcode))
+                return false;
 
-            // find all of their tickets
-            List<Ticket> list = new List<Ticket>();
-            if (cont != null)
-                foreach (object o in cont.GetDeepItems())
-                    if (o is Ticket ticket)
-                        list.Add(ticket);
-
-            // see if they have any tickets to this venue
-            bool found = false;
-            foreach (Ticket ticket in list)
-                if (!string.IsNullOrEmpty(ticket.Passcode))
-                    if ("F6F23E61".Equals(ticket.Passcode, StringComparison.OrdinalIgnoreCase))
-                        if (ticket.Expired == false)
-                        {
-                            if (ticket.Parent is Container c)
-                                c.RemoveItem(ticket);
-                            if (ticket.Parent is Mobile parent)
-                                parent.RemoveItem(ticket);
-
-                            ticket.Delete();
-                        }
-
+            return "F6F23E61".Equals(t.Passcode, StringComparison.OrdinalIgnoreCase);
         }
+
         public AIEntrance(Serial serial)
             : base(serial)
         {
@@ -600,6 +433,13 @@ namespace Server.Items
 
     public class AIParoleExit : Item
     {
+        public override Item Dupe(int amount)
+        {
+            AIParoleExit new_item = new AIParoleExit();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
+
         private bool m_Active;
         private bool m_SourceEffect;
         private bool m_DestEffect;
@@ -688,11 +528,15 @@ namespace Server.Items
 
         public virtual void DoTeleport(Mobile m)
         {
+            // a release veto (ConfinementVetoes) is asked again here: a delayed exit, and the prison's parole kick, call this
+            if (ConfinementVetoes.RefuseAutomated(m, m.Map, "the parole exit"))
+                return;
+
             if (m_SourceEffect)
                 Effects.SendLocationEffect(m.Location, m.Map, 0x3728, 10, 10);
 
             Server.Point3D location = new Point3D(818, 1087, 0);
-            m.MoveToWorld(location, Map.Felucca);
+            m.MoveToWorld(location, m.Map);
 
             if (m_DestEffect)
                 Effects.SendLocationEffect(m.Location, m.Map, 0x3728, 10, 10);
@@ -700,98 +544,26 @@ namespace Server.Items
             if (m_SoundID > 0)
                 Effects.PlaySound(m.Location, m.Map, m_SoundID);
 
-            if (m.Player && m.AccessLevel == AccessLevel.Player)
-            {
-                AITeleportHelper.EmptyPackOnExit(m, true);
-                ((PlayerMobile)m).PrisonInmate = false;
-                ((PlayerMobile)m).PrisonVisitor = false;
-                if (!Core.RuleSets.MortalisRules())
-                    ((PlayerMobile)m).Mortal = false;
-                ((PlayerMobile)m).ResetKillTime();
-                ((PlayerMobile)m).MinimumSentence = DateTime.MinValue;
-                (m.Account as Accounting.Account).InfractionStatus = Accounting.Account.AccountInfraction.none;
-                (m.Account as Accounting.Account).SetFlag(Accounting.Account.AccountFlag.ExceedsMachineInfoLimit, false);
-                Server.Engines.Chat.ChatHelper.SetChatBan(((PlayerMobile)m), false);
-                UnGuildFromOutcast(((PlayerMobile)m));
-                AIPUtils.DecolorizeRobe(m);
-                AIPUtils.KillPrisonPets(m);
-            }
-        }
-        private void UnGuildFromOutcast(PlayerMobile pm)
-        {
-            // remove them from The Outcast guild
-            if (pm != null && pm.Guild != null && pm.Guild.Abbreviation.Contains("ToC", StringComparison.OrdinalIgnoreCase))
-                ((Guild)pm.Guild).ResignMember(pm, force: true);
+            // prison check-out: parole bookkeeping and consequences (pack, flags, sentence, chat ban, guild, robe, pets)
+            PrisonOperations.ParoleCheckOut(m);
         }
         public override bool OnMoveOver(Mobile m)
         {
-            // prisoners get out free during server wars.
-            bool bServerWars = (Server.Misc.AutoSave.SavesEnabled == false && Server.Misc.AutoRestart.Restarting == true);
-            Accounting.Account acct = m.Account as Accounting.Account;
-
             if (m_Active)
             {
-                if (!m.Player || acct == null)
+                if (!m.Player || !(m.Account is Accounting.Account))
                     return true;
 
-                if (m.AccessLevel == AccessLevel.Player)
+                ParoleDenial denial = CheckParole(m, afterBoot: false);
+                if (denial != ParoleDenial.None)
                 {
-                    if (bServerWars == true)
-                    {
-                        m.SendMessage("During Server Wars all prisoners go free!");
-                        return true;
-                    }
-
-                    // Make sure they've worked off their counts
-                    if (m is PlayerMobile pm)
-                    {
-                        if (pm.ShortTermCriminalCounts > 0)
-                        {
-                            // We don't want people leaving on parole if they've not worked off their counts
-                            m.SendMessage("You still have {0} criminal counts against you. You must have 0 to be paroled.", (m as PlayerMobile).ShortTermCriminalCounts);
-                            return true;
-                        }
-
-                        if (DateTime.UtcNow < pm.MinimumSentence)
-                        {
-                            // We don't want people leaving on parole if they've not served their minimum sentence
-                            TimeSpan delta = pm.MinimumSentence - DateTime.UtcNow;
-                            int days = delta.Days;
-                            int hours = delta.Hours;
-                            int minutes = delta.Minutes;
-                            m.SendMessage("Your sentence will be up in {0} days, {1} hours, and {2} minutes.", days, hours, minutes);
-                            return true;
-                        }
-
-                        if (ExceedsIPLimit(pm))
-                        {
-                            m.SendMessage("You must wait for your other account(s) to logout.");
-                            return true;
-                        }
-
-                        // You're never leaving prison
-                        if (TorExitNode(pm))
-                        {
-                            m.SendMessage("You entered this shard via an illegal connection type. You will never leave prison.");
-                            return true;
-                        }
-                    }
-
-                    // Make sure they've worked off their counts
-                    if (m.ShortTermMurders > 4 && Core.RuleSets.AngelIslandRules())
-                    {
-                        // We don't want people leaving on parole if they've not worked out of stat-loss
-                        m.SendMessage("You must have less than 5 short term murder counts to be paroled.");
-                        return true;
-                    }
-
-                    if (!m.Alive)
-                    {
-                        // and we don't want them leaving as a ghost either.
-                        m.SendMessage("You must be alive to use this.");
-                        return true;
-                    }
+                    m.SendMessage(DenialText(m, denial, toStaff: false));
+                    return true;
                 }
+
+                // release vetoes (ConfinementVetoes), before anything moves or is checked out
+                if (ConfinementVetoes.RefuseAutomated(m, m.Map, "the parole exit"))
+                    return true;
 
                 StartTeleport(m);
                 return false;
@@ -799,9 +571,80 @@ namespace Server.Items
 
             return true;
         }
-        public bool ExceedsIPLimit(PlayerMobile pm)
+
+        public enum ParoleDenial { None, ServerWars, CriminalCounts, MinimumSentence, IPLimit, TorExitNode, MurderCounts, Dead }
+
+        /// <summary>
+        /// Why this exit would refuse to parole m, or None. No side effects; OnMoveOver and Utility.CanBoot both use it.
+        /// afterBoot: judge m as it will be after Utility.Boot has cleared its criminal counts, minimum sentence and infraction status.
+        /// </summary>
+        public static ParoleDenial CheckParole(Mobile m, bool afterBoot)
         {
-            Accounting.Account acct = pm.Account as Accounting.Account;
+            if (m.AccessLevel != AccessLevel.Player)
+                return ParoleDenial.None;
+
+            // prisoners get out free during server wars.
+            bool bServerWars = (Server.Misc.AutoSave.SavesEnabled == false && Server.Misc.AutoRestart.Restarting == true);
+            if (bServerWars == true)
+                return ParoleDenial.ServerWars;
+
+            // Make sure they've worked off their counts
+            if (m is PlayerMobile pm)
+            {
+                // We don't want people leaving on parole if they've not worked off their counts
+                if (!afterBoot && pm.ShortTermCriminalCounts > 0)
+                    return ParoleDenial.CriminalCounts;
+
+                // We don't want people leaving on parole if they've not served their minimum sentence
+                if (!afterBoot && DateTime.UtcNow < pm.MinimumSentence)
+                    return ParoleDenial.MinimumSentence;
+
+                if (ExceedsIPLimit(pm))
+                    return ParoleDenial.IPLimit;
+
+                // You're never leaving prison
+                if (TorExitNode(pm, afterBoot))
+                    return ParoleDenial.TorExitNode;
+            }
+
+            // We don't want people leaving on parole if they've not worked out of stat-loss
+            if (m.ShortTermMurders > 4 && Core.RuleSets.AIPrisonSystem())
+                return ParoleDenial.MurderCounts;
+
+            // and we don't want them leaving as a ghost either.
+            if (!m.Alive)
+                return ParoleDenial.Dead;
+
+            return ParoleDenial.None;
+        }
+        public static string DenialText(Mobile m, ParoleDenial denial, bool toStaff)
+        {
+            switch (denial)
+            {
+                case ParoleDenial.ServerWars:
+                    return toStaff ? "During Server Wars the parole exit does not move prisoners." : "During Server Wars all prisoners go free!";
+                case ParoleDenial.CriminalCounts:
+                    return string.Format(toStaff ? "They still have {0} criminal counts against them. They must have 0 to be paroled." : "You still have {0} criminal counts against you. You must have 0 to be paroled.", (m as PlayerMobile)?.ShortTermCriminalCounts);
+                case ParoleDenial.MinimumSentence:
+                    {
+                        TimeSpan delta = ((PlayerMobile)m).MinimumSentence - DateTime.UtcNow;
+                        return string.Format(toStaff ? "Their sentence will be up in {0} days, {1} hours, and {2} minutes." : "Your sentence will be up in {0} days, {1} hours, and {2} minutes.", delta.Days, delta.Hours, delta.Minutes);
+                    }
+                case ParoleDenial.IPLimit:
+                    return toStaff ? "They must wait for their other account(s) to logout." : "You must wait for your other account(s) to logout.";
+                case ParoleDenial.TorExitNode:
+                    return toStaff ? "They entered this shard via an illegal connection type and will never leave prison." : "You entered this shard via an illegal connection type. You will never leave prison.";
+                case ParoleDenial.MurderCounts:
+                    return toStaff ? "They must have less than 5 short term murder counts to be paroled." : "You must have less than 5 short term murder counts to be paroled.";
+                case ParoleDenial.Dead:
+                    return toStaff ? "They must be alive to exit." : "You must be alive to use this.";
+                default:
+                    return string.Empty;
+            }
+        }
+        public static bool ExceedsIPLimit(PlayerMobile pm)
+        {
+            Accounting.Account? acct = pm.Account as Accounting.Account;
             if (acct != null && pm.NetState != null)
             {
                 IPAddress ip = pm.NetState.Address;
@@ -809,11 +652,11 @@ namespace Server.Items
             }
             return false;
         }
-        public bool TorExitNode(PlayerMobile pm)
-        {
-            Accounting.Account acct = pm.Account as Accounting.Account;
+        public static bool TorExitNode(PlayerMobile pm, bool afterBoot = false)
+        {   // after a boot the infraction status is None, so only the account flag remains
+            Accounting.Account? acct = pm.Account as Accounting.Account;
             if (acct != null && pm.NetState != null)
-                return acct.InfractionStatus == Accounting.Account.AccountInfraction.TorExitNode || acct.GetFlag(Accounting.Account.IPFlags.IsTorExitNode);
+                return (!afterBoot && acct.InfractionStatus == Accounting.Account.AccountInfraction.TorExitNode) || acct.GetFlag(Accounting.Account.IPFlags.IsTorExitNode);
             return false;
         }
         public AIParoleExit(Serial serial)
@@ -879,6 +722,12 @@ namespace Server.Items
 
     public class AIEscapeExit : Item
     {
+        public override Item Dupe(int amount)
+        {
+            AIEscapeExit new_item = new AIEscapeExit();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
         private bool m_Active;
         private bool m_SourceEffect;
         private bool m_DestEffect;
@@ -968,11 +817,15 @@ namespace Server.Items
 
         public virtual void DoTeleport(Mobile m)
         {
+            // a release veto (ConfinementVetoes) is asked again here, for an exit with a delay
+            if (ConfinementVetoes.RefuseAutomated(m, m.Map, "the escape exit"))
+                return;
+
             if (m_SourceEffect)
                 Effects.SendLocationEffect(m.Location, m.Map, 0x3728, 10, 10);
 
             Server.Point3D location = new Point3D(5671, 2391, 50);  // lighthouse
-            m.MoveToWorld(location, Map.Felucca);
+            m.MoveToWorld(location, m.Map);
 
             if (m_DestEffect)
                 Effects.SendLocationEffect(m.Location, m.Map, 0x3728, 10, 10);
@@ -980,64 +833,9 @@ namespace Server.Items
             if (m_SoundID > 0)
                 Effects.PlaySound(m.Location, m.Map, m_SoundID);
 
-            if (m.Player && m.AccessLevel == AccessLevel.Player)
-            {
-                // will preserve Rare and Smuggled items
-                AITeleportHelper.EmptyPackOnExit(m, false);
-
-                // release the lock on global chat
-                Server.Engines.Chat.ChatHelper.SetChatBan(((PlayerMobile)m), false);
-
-                // Adam: The following code prohibits the STC from dropping below 5
-                //	as per design.
-                int oldSTC = ((PlayerMobile)m).ShortTermMurders;
-                int newSTC = ((PlayerMobile)m).ShortTermMurders;
-
-                if (((PlayerMobile)m).ShortTermMurders >= 10)
-                    newSTC = ((PlayerMobile)m).ShortTermMurders / 2;
-                else if (((PlayerMobile)m).ShortTermMurders > 5)
-                    newSTC = 5;
-
-                ((PlayerMobile)m).ShortTermMurders = newSTC;
-
-                if (oldSTC - newSTC > 0)
-                    ((PlayerMobile)m).SendMessage("Your short term murders have been reduced to {0}", ((PlayerMobile)m).ShortTermMurders);
-
-                ((PlayerMobile)m).PrisonInmate = false;
-                ((PlayerMobile)m).PrisonVisitor = false;
-
-                ((PlayerMobile)m).ResetKillTime();
-
-                AIPUtils.DecolorizeRobe(m);
-
-                // drop everything held to backpack
-                //AIPUtils.DroptoBackpack(m);
-
-                // drop all but robe in backpack
-                AIPUtils.Undress(m);
-
-                AIPUtils.KillPrisonPets(m);
-
-                // leader board baby!
-                DataRecorder.RecordPQuestPoints(m, escapes: 1, rares: CountRares(m), sterling: m.Backpack.GetAmount(typeof(Sterling)));
-            }
-        }
-
-        private int CountRares(Mobile m)
-        {
-            if (m != null && m.Backpack != null)
-            {
-                List<Item> list = new(m.Backpack.GetDeepItems().Cast<Item>().ToList());
-                if (m.Items != null && list.Count > 0)
-                    list.AddRange(m.Items.Cast<Item>().ToList());
-                int count = 0;
-                foreach (Item item in list)
-                    if (item.GetFlag(LootType.Rare))
-                        count++;
-
-                return count;
-            }
-            return 0;
+            // prison check-out: escape bookkeeping and consequences (pack keeps rares, murder reduction, flags, robe,
+            //  undress, pets, leaderboard). The short-term murder reduction never takes them below 5, as per design.
+            PrisonOperations.EscapeCheckOut(m);
         }
         public override bool OnMoveOver(Mobile m)
         {
@@ -1052,6 +850,10 @@ namespace Server.Items
                     m.SendMessage("You must be alive to use this.");
                     return true;
                 }
+
+                // release vetoes (ConfinementVetoes), before anything moves or is checked out
+                if (ConfinementVetoes.RefuseAutomated(m, m.Map, "the escape exit"))
+                    return true;
 
                 StartTeleport(m);
                 return false;
@@ -1130,6 +932,12 @@ namespace Server.Items
 
     public class AICaveEntrance : Item
     {
+        public override Item Dupe(int amount)
+        {
+            AICaveEntrance new_item = new AICaveEntrance();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
         private bool m_Active;
         private bool m_SourceEffect;
         private bool m_DestEffect;
@@ -1220,8 +1028,8 @@ namespace Server.Items
         {
             Server.Point3D location = new Point3D(311, 787, -24);
 
-            Server.Mobiles.BaseCreature.TeleportPets(m, location, Map.Felucca);
-            m.MoveToWorld(location, Map.Felucca);
+            Server.Mobiles.BaseCreature.TeleportPets(m, location, m.Map);
+            m.MoveToWorld(location, m.Map);
 
             if (m_DestEffect)
                 Effects.SendLocationEffect(m.Location, m.Map, 0x3728, 10, 10);
@@ -1361,6 +1169,12 @@ namespace Server.Items
 
     public class AISpawnEntrance : Item
     {
+        public override Item Dupe(int amount)
+        {
+            AISpawnEntrance new_item = new AISpawnEntrance();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
         private bool m_Active;
         private bool m_SourceEffect;
         private bool m_DestEffect;
@@ -1452,7 +1266,7 @@ namespace Server.Items
         public virtual void DoTeleport(Mobile m)
         {
             Server.Point3D location = locations[location_ndx++]; if (location_ndx == locations.Length) location_ndx = 0;
-            m.MoveToWorld(location, Map.Felucca);
+            m.MoveToWorld(location, m.Map);
 
             if (m_DestEffect)
                 Effects.SendLocationEffect(m.Location, m.Map, 0x3728, 10, 10);
@@ -1561,7 +1375,7 @@ namespace Server.Items
                 // mark some stuff as LootType Rare/Smuggled
                 for (int ix = 0; ix < stuff.Count; ix++)
                 {
-                    Item item = stuff[ix] as Item;
+                    Item? item = stuff[ix] as Item;
 
                     // no lighthouse pass rare for those that just wait out their time
                     if (item is LightHousePass && ParoleExit != true)
@@ -1576,7 +1390,7 @@ namespace Server.Items
                 // what we can take out and what we cannot
                 for (int ix = 0; ix < stuff.Count; ix++)
                 {
-                    Item item = stuff[ix] as Item;
+                    Item? item = stuff[ix] as Item;
 
                     // don't delete the containers
                     if (item is Container)

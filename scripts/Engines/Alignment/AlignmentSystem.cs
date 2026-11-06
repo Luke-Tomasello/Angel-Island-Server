@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -88,7 +88,7 @@ namespace Server.Engines.Alignment
 
     public static class AlignmentSystem
     {
-        public static bool Enabled { get { return (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules()); } }
+        public static bool Enabled { get { return Core.RuleSets.AlignmentSystemEnabled(); } }
 
         public static void Initialize()
         {
@@ -117,12 +117,12 @@ namespace Server.Engines.Alignment
                 HandleAggressiveAction(e.Aggressor, e.Aggressed);
         }
 
-        public static AlignmentType Find(Mobile mob, bool inherit = false, bool creatureAllegiances = false)
+        public static AlignmentType Find(Mobile? mob, bool inherit = false, bool creatureAllegiances = false)
         {
             if (mob == null)
                 return AlignmentType.None;
 
-            Guild g = mob.Guild as Guild;
+            Guild? g = mob.Guild as Guild;
 
             if (g != null)
                 return g.Alignment;
@@ -164,8 +164,8 @@ namespace Server.Engines.Alignment
                 targetMaster = GetMaster(targetMaster);
             }
 
-            Guild sourceGuild = sourceMaster.Guild as Guild;
-            Guild targetGuild = targetMaster.Guild as Guild;
+            Guild? sourceGuild = sourceMaster.Guild as Guild;
+            Guild? targetGuild = targetMaster.Guild as Guild;
 
             AlignmentType sourceAlignment = (sourceGuild == null ? AlignmentType.None : sourceGuild.Alignment);
             AlignmentType targetAlignment = (targetGuild == null ? AlignmentType.None : targetGuild.Alignment);
@@ -210,7 +210,7 @@ namespace Server.Engines.Alignment
         {
             if (m is BaseCreature)
             {
-                Mobile master = ((BaseCreature)m).GetMaster();
+                Mobile? master = ((BaseCreature)m).GetMaster();
 
                 if (master != null)
                     return master;
@@ -234,9 +234,9 @@ namespace Server.Engines.Alignment
             return (ComputeAllegiance(source, target, inherit, creatureAllegiances) == Allegiance.Traitor);
         }
 
-        public static string GetName(AlignmentType type)
+        public static string? GetName(AlignmentType type)
         {
-            Alignment alignment = Alignment.Get(type);
+            Alignment? alignment = Alignment.Get(type);
 
             if (alignment != null)
                 return alignment.Definition.Name;
@@ -257,9 +257,9 @@ namespace Server.Engines.Alignment
             return display;
         }
 
-        public static string GetTitle(Mobile mob)
+        public static string? GetTitle(Mobile mob)
         {
-            Alignment alignment = Alignment.Get(Find(mob));
+            Alignment? alignment = Alignment.Get(Find(mob));
 
             if (alignment == null)
                 return null;
@@ -267,9 +267,9 @@ namespace Server.Engines.Alignment
             return alignment.Definition.Title;
         }
 
-        public static string GetRankTitle(Mobile mob)
+        public static string? GetRankTitle(Mobile mob)
         {
-            Alignment alignment = Alignment.Get(Find(mob));
+            Alignment? alignment = Alignment.Get(Find(mob));
 
             if (alignment == null)
                 return null;
@@ -286,7 +286,7 @@ namespace Server.Engines.Alignment
 
         public static int GetRank(Mobile mob)
         {
-            AlignmentPlayer pl = AlignmentPlayer.Find(mob);
+            AlignmentPlayer? pl = AlignmentPlayer.Find(mob);
 
             if (pl != null)
                 return pl.Rank;
@@ -296,7 +296,7 @@ namespace Server.Engines.Alignment
 
         public static int GetHue(AlignmentType type, bool primary = true)
         {
-            Alignment alignment = Alignment.Get(type);
+            Alignment? alignment = Alignment.Get(type);
 
             if (alignment == null)
                 return 0;
@@ -312,7 +312,7 @@ namespace Server.Engines.Alignment
             if (mob == null)
                 return false;
 
-            StaticRegion sr = mob.Region.GetRegion(typeof(StaticRegion)) as StaticRegion;
+            StaticRegion? sr = mob.Region.GetRegion(typeof(StaticRegion)) as StaticRegion;
 
             return (sr != null && sr.GuildAlignment == type);
         }
@@ -323,7 +323,7 @@ namespace Server.Engines.Alignment
             {
                 TheFlag.ReturnFlags(m);
 
-                AlignmentPlayer pl = AlignmentPlayer.Find(m);
+                AlignmentPlayer? pl = AlignmentPlayer.Find(m);
 
                 if (pl != null)
                     pl.OnAlign(g.Alignment, oldType);
@@ -331,7 +331,7 @@ namespace Server.Engines.Alignment
                 ClearTraitor(m);
             }
 
-            Server.Items.TownshipStone ts = g.TownshipStone as Server.Items.TownshipStone;
+            Server.Items.TownshipStone? ts = g.TownshipStone as Server.Items.TownshipStone;
 
             if (ts != null && ts.CustomRegion != null)
                 ts.CustomRegion.GuildAlignment = g.Alignment;
@@ -380,8 +380,8 @@ namespace Server.Engines.Alignment
             // (1) they are of opposing alignment and...
             if (targetAlignment != AlignmentType.None && sourceAlignment != targetAlignment)
             {
-                Guild sourceGuild = source.Guild as Guild;
-                Guild targetGuild = target.Guild as Guild;
+                Guild? sourceGuild = source.Guild as Guild;
+                Guild? targetGuild = target.Guild as Guild;
 
                 // (2) we're not guild allies
                 if (sourceGuild == null || targetGuild == null || (sourceGuild != targetGuild && !sourceGuild.IsAlly(targetGuild)))
@@ -430,19 +430,34 @@ namespace Server.Engines.Alignment
             return (m_TraitorTimers.ContainsKey(m));
         }
 
+        private static readonly string[] TraitorMessages =
+        {
+            "You have betrayed your kin! They will regard you as an enemy for a short while.",
+            "Your treachery has been witnessed! Your kin will treat you as an enemy for a short while.",
+            "You have turned against your own kind. They will regard you as an enemy for a short while."
+        };
+
         public static void ResetTraitor(Mobile m)
         {
-            TraitorTimer timer;
+            TraitorTimer? timer;
 
             if (m_TraitorTimers.TryGetValue(m, out timer))
+            {
                 timer.LastAggression = DateTime.UtcNow;
+            }
             else
-                (m_TraitorTimers[m] = new TraitorTimer(m)).Start();
+            {
+                m.SendMessage(TraitorMessages[0/*Utility.Random(TraitorMessages.Length)*/]);
+
+                timer = new TraitorTimer(m);
+                m_TraitorTimers[m] = timer;
+                timer.Start();
+            }
         }
 
         public static void ClearTraitor(Mobile m)
         {
-            TraitorTimer timer;
+            TraitorTimer? timer;
 
             if (m_TraitorTimers.TryGetValue(m, out timer))
             {
@@ -493,8 +508,8 @@ namespace Server.Engines.Alignment
 
             if (AlignmentConfig.KillPointsEnabled && victim.Player && killer.Player && victimAlignment != AlignmentType.None && killerAlignment != victimAlignment)
             {
-                AlignmentPlayer victimPlayer = AlignmentPlayer.Find(victim, true);
-                AlignmentPlayer killerPlayer = AlignmentPlayer.Find(killer, true);
+                AlignmentPlayer? victimPlayer = AlignmentPlayer.Find(victim, true);
+                AlignmentPlayer? killerPlayer = AlignmentPlayer.Find(killer, true);
 
                 if (victimPlayer != null && killerPlayer != null && DateTime.UtcNow >= victimPlayer.NextKillAward)
                 {
@@ -553,8 +568,8 @@ namespace Server.Engines.Alignment
 
             int offset = (award != 1 ? 0 : 2); // for pluralization
 
-            string team1Name = (team1.Length == 1 ? team1[0].Owner.Name : GetName(Find(team1[0].Owner, false, true)));
-            string team2Name = (team2.Length == 1 ? team2[0].Owner.Name : GetName(Find(team2[0].Owner, false, true)));
+            string? team1Name = (team1.Length == 1 ? team1[0].Owner.Name : GetName(Find(team1[0].Owner, false, true)));
+            string? team2Name = (team2.Length == 1 ? team2[0].Owner.Name : GetName(Find(team2[0].Owner, false, true)));
 
             string args = string.Format("{0}\t{1}\t{2}", award, team2Name, team1Name);
 
@@ -625,7 +640,7 @@ namespace Server.Engines.Alignment
                     }
                 case CreatureAllegiance.Regional:
                     {
-                        Alignment alignment = Alignment.Get(bc.GuildAlignment);
+                        Alignment? alignment = Alignment.Get(bc.GuildAlignment);
 
                         if (alignment != null && alignment.Definition.GlobalAllegiance)
                             return true;
@@ -639,14 +654,6 @@ namespace Server.Engines.Alignment
 
         public static void HandleSpawn(BaseCreature bc)
         {
-#if false
-            AlignmentType prim = bc.DefaultGuildAlignment;
-            AlignmentType scnd = AlignmentType.None;// bc.SecondaryGuildAlignment;
-
-            // prefer secondary alignment if we're spawning in a matching alignment region
-            if (bc.GuildAlignment == prim && scnd != AlignmentType.None && scnd == GetRegionAlignment(bc))
-                bc.GuildAlignment = scnd;
-#endif
         }
         public static AlignmentType GetDynamicAlignment(BaseCreature bc, AlignmentType[] types)
         {
@@ -673,15 +680,15 @@ namespace Server.Engines.Alignment
             if (bc.Spawner != null && bc.Home != Point3D.Zero)
                 loc = bc.Home;
 
-            if (bc.ChampEngine != null)
-                loc = bc.ChampEngine.Location;
+            if (bc.SpawnerEngine != null)
+                loc = bc.SpawnerEngine.Location;
 
             return GetRegionAlignment(loc, bc.Map);
         }
 
         public static AlignmentType GetRegionAlignment(Point3D loc, Map map)
         {
-            StaticRegion sr = StaticRegion.FindStaticRegion(loc, map);
+            StaticRegion? sr = StaticRegion.FindStaticRegion(loc, map);
 
             if (sr != null)
                 return sr.GuildAlignment;

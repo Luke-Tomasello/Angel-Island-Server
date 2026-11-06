@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -100,7 +100,7 @@ namespace Server.Engines.Plants
 
         private void AddResourcesState(int x, int y)
         {
-            PlantResourceInfo resInfo = PlantResourceInfo.GetInfo(m_Plant.PlantType, m_Plant.PlantHue);
+            PlantResourceInfo? resInfo = PlantResourceInfo.GetInfo(m_Plant.PlantType, m_Plant.PlantHue);
 
             PlantSystem system = m_Plant.PlantSystem;
             int totalResources = system.AvailableResources + system.LeftResources;
@@ -214,7 +214,7 @@ namespace Server.Engines.Plants
                     }
                 case 7: // Gather resources
                     {
-                        PlantResourceInfo resInfo = PlantResourceInfo.GetInfo(m_Plant.PlantType, m_Plant.PlantHue);
+                        PlantResourceInfo? resInfo = PlantResourceInfo.GetInfo(m_Plant.PlantType, m_Plant.PlantHue);
                         PlantSystem system = m_Plant.PlantSystem;
 
                         if (resInfo == null)

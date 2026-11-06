@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,8 @@
 
 /* Scripts/Engines/Township/TownshipStone.cs
  * CHANGELOG:
+ *  5/17/2026, Adam
+ *      Broke out PackUpTownship code into a separate file
  *  6/19/2024, Adam
  *      Fix a bug that was causing a failure to decay 'visits' in a timely manner.
  *      Schedule daily Township charges to happen at 12:00 AM UTC (GMT)
@@ -118,12 +120,11 @@
  */
 
 using Server.Diagnostics;
-using Server.Engines.Plants;
 using Server.Guilds;
 using Server.Gumps;
+using Server.Misc;
 using Server.Mobiles;
 using Server.Multis;
-using Server.Multis.StaticHousing;
 using Server.Regions;
 using Server.Targeting;
 using Server.Township;
@@ -135,7 +136,7 @@ using System.Text;
 
 namespace Server.Items
 {
-    public class TownshipStone : CustomRegionControl, IOracleDestination
+    public partial class TownshipStone : CustomRegionControl, IOracleDestination
     {
         public const int MAX_GOLD_HELD = 10000000;
         public const int INITIAL_RADIUS = 50;
@@ -144,6 +145,14 @@ namespace Server.Items
         private static readonly List<TownshipStone> m_Instances = new List<TownshipStone>();
 
         public static List<TownshipStone> AllTownshipStones { get { return m_Instances; } }
+
+
+        private List<Serial> m_StashedTownshipNPCs = new List<Serial>();
+
+        public List<Serial> StashedTownshipNPCs
+        {
+            get { return m_StashedTownshipNPCs; }
+        }
 
         public static void Initialize()
         {
@@ -162,7 +171,7 @@ namespace Server.Items
         {
             Mobile from = e.Mobile;
 
-            TownshipRegion tsr = TownshipRegion.GetTownshipAt(from);
+            TownshipRegion? tsr = TownshipRegion.GetTownshipAt(from);
 
             if (tsr == null || tsr.TStone == null)
             {
@@ -183,7 +192,7 @@ namespace Server.Items
         {
             Mobile from = e.Mobile;
 
-            TownshipRegion tsr = TownshipRegion.GetTownshipAt(from);
+            TownshipRegion? tsr = TownshipRegion.GetTownshipAt(from);
 
             if (tsr == null || tsr.TStone == null)
             {
@@ -205,7 +214,6 @@ namespace Server.Items
         }
 
         #endregion
-
         public override string DefaultName { get { return "a township stone"; } }
 
         private Guild m_Guild;
@@ -304,7 +312,7 @@ namespace Server.Items
         {
         }
 
-        public TownshipStone(Guild g)
+        public TownshipStone(Guild? g)
             : base()
         {
             ItemID = 0xED4;
@@ -338,6 +346,13 @@ namespace Server.Items
                 CustomRegion.GuildAlignment = g.Alignment;
             }
 
+            // seasons are only 3 months. also our population is small, so boost starting Fame (activity)
+            if (Core.RuleSets.SeasonsRules())
+            {
+                m_ActivityLevel = Township.ActivityLevel.MEDIUM;
+                m_WeeksAtThisLevel++;
+            }
+
             m_Instances.Add(this);
         }
 
@@ -360,7 +375,7 @@ namespace Server.Items
         private void InitRegionProps()
         {
             CustomRegion.IsGuarded = false;
-            CustomRegion.CanRessurect = true;
+            CustomRegion.CanResurrect = true;
             CustomRegion.CanUsePotions = true;
             CustomRegion.EnableStuckMenu = true;
             CustomRegion.EnableHousing = true;
@@ -374,6 +389,49 @@ namespace Server.Items
         {
             // do not change the hue
         }
+
+        #region NPC stashing and registration
+        public void RegisterStashedNPC(Mobile npc)
+        {
+            if (npc == null || npc.Deleted)
+                return;
+
+            if (!m_StashedTownshipNPCs.Contains(npc.Serial))
+                m_StashedTownshipNPCs.Add(npc.Serial);
+        }
+
+        public void UnregisterStashedNPC(Mobile npc)
+        {
+            if (npc != null)
+                m_StashedTownshipNPCs.Remove(npc.Serial);
+        }
+
+        public bool HasStashedNPC(Type type)
+        {
+            DefragStashedNPCs();
+
+            for (int i = 0; i < m_StashedTownshipNPCs.Count; i++)
+            {
+                Mobile? npc = World.FindMobile(m_StashedTownshipNPCs[i]);
+
+                if (npc != null && type.IsAssignableFrom(npc.GetType()))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void DefragStashedNPCs()
+        {
+            for (int i = m_StashedTownshipNPCs.Count - 1; i >= 0; i--)
+            {
+                Mobile? npc = World.FindMobile(m_StashedTownshipNPCs[i]);
+
+                if (npc == null || npc.Deleted || npc.Map != Map.Internal)
+                    m_StashedTownshipNPCs.RemoveAt(i);
+            }
+        }
+        #endregion NPC stashing and registration
 
         public void HandleSpeech(SpeechEventArgs e)
         {
@@ -435,7 +493,7 @@ namespace Server.Items
 
                     e.Handled = true;
                 }
-                else if (e.Speech.ToLower() == "i wish to make this unrestricted access" && (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules()))
+                else if (e.Speech.ToLower() == "i wish to make this unrestricted access" && (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules()))
                 {
                     if (!HasAccess(from, Township.TownshipAccess.Ally))
                     {
@@ -449,7 +507,7 @@ namespace Server.Items
 
                     e.Handled = true;
                 }
-                else if (e.Speech.ToLower() == "i wish to make this restricted access" && (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules()))
+                else if (e.Speech.ToLower() == "i wish to make this restricted access" && (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules()))
                 {
                     if (!HasAccess(from, Township.TownshipAccess.Ally))
                     {
@@ -479,7 +537,9 @@ namespace Server.Items
             {
                 from.SendMessage("Allies of the township may not use this command.");
             }
-            else if (from.Criminal && from.AccessLevel == AccessLevel.Player)
+            // NOTE: OSI relied on short criminal timers for travel denial.
+            // Mortalis uses explicit travel restriction logic; Criminal is no longer sufficient.
+            else if (from is PlayerMobile pm && !pm.CanCriminalTravel && from.AccessLevel == AccessLevel.Player)
             {
                 from.SendLocalizedMessage(1005270); // Thou'rt a criminal and cannot escape so easily...
             }
@@ -565,7 +625,7 @@ namespace Server.Items
 
         public bool IsCoLeader(Mobile m)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             return (house != null && house.IsCoOwner(m));
         }
@@ -667,7 +727,7 @@ namespace Server.Items
 
         public bool IsEnemy(Mobile m)
         {
-            Guild g = m.Guild as Guild;
+            Guild? g = m.Guild as Guild;
 
             if (g != null && !m_Guild.IsAlly(g) && m_Guild.IsEnemy(g))
                 return true;
@@ -689,15 +749,15 @@ namespace Server.Items
             if (m_Guild == null)
                 return 0;
 
-            foreach (BaseHouse house in this.TownshipHouses)
+            m_Enemies.Clear();
+
+            foreach (BaseHouse house in TownshipHouses)
             {
                 if (house.Owner != null && IsMemberOrAlly(house.Owner))
                 {
                     for (int i = 0; i < house.Bans.Count; i++)
                     {
-                        Mobile m = house.Bans[i] as Mobile;
-
-                        if (m != null)
+                        if (house.Bans[i] is Mobile m)
                             AddEnemy(m);
                     }
                 }
@@ -962,9 +1022,13 @@ namespace Server.Items
 
             for (int i = m_Instances.Count - 1; i >= 0; i--)
             {
+                // even when FreezeTownshipDecay is set, we still want to decay visits
                 m_Instances[i].DecayVisits();           // if the week is changing, decay the visits
-                m_Instances[i].ApplyLBFameSubsity();    // apply any fame visits
-                m_Instances[i].DoDailyTownshipFees();   // calc and apply any daily charges
+                if (!CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.FreezeTownshipDecay))
+                {
+                    m_Instances[i].ApplyLBFameSubsidy();        // apply any fame visits
+                    m_Instances[i].DoDailyTownshipFees();   // calc and apply any daily charges
+                }
             }
 
             return numberoftownships - m_Instances.Count;
@@ -981,12 +1045,12 @@ namespace Server.Items
             }
             return 0;
         }
-        private void ConsumeLBTaxSubsidy(int total)
+        private void ConsumeLBTaxSubsidy(int subtotal)
         {
             if (LBTaxSubsidy > 0)
             {
-                int cost = CalcLBTaxSubsidy(total);
-                LBTaxSubsidy -= 2 * cost;
+                int discount = CalcLBTaxSubsidy(subtotal);
+                LBTaxSubsidy -= 2 * discount;
             }
             return;
         }
@@ -1072,77 +1136,86 @@ namespace Server.Items
                 SetTownshipStoneBool(TownshipStoneBoolTable.HasLBFameSubsidy, m_LBFameSubsidy > 0);
             }
         }
-        #region Fame Constants
-        /* Kill Point Cost of a visit (heuristic model)
-             * average kill point yield from a champ spawn is about 85668
-             * We want to award a township BOOMING visits should the township take down a champ
-             * 41 visits are required each day (288/7)
-             * So... we will convert each 2098 (85668/41/7) chunk of their LBFameSubsidy into one visit, not to exceed 41 visits for the day.
-             * -- weekly values --
-             * NoneToLow = 36;
-             * LowToMedium = 72;
-             * MediumToHigh = 144;
-             * HighToBooming = 288;
-            */
+        #region Lord British Fame Subsidy
 
-        public const int LBFameVisitCost = 288;             // cost in fame for one visit
-        public const int LBFameDailyCost = 288 * 41;        // 288 damage points consumed for each visit awarded * 41 visits (BOOMING)
-        public const int LBFameDailyAwardGoal = 41;         // we want to award this many visits per day (natural visits may reduce this number)
-        public const int LBFameWeeklyAwardGoal = 41 * 7;    // we want to award this many visits per week (natural visits may reduce this number)
+        /*
+         * Lord British Fame Subsidy
+         *
+         * Champion participation deposits consumable fame credit into LBFameSubsidy.
+         * This credit is converted into bonus township visits, allowing successful
+         * adventuring guilds to improve or maintain township activity.
+         *
+         * Natural visits still count normally. Fame visits only fill the remaining
+         * daily gap up to LBFameDailyAwardGoal, so the subsidy supplements activity
+         * rather than replacing it outright.
+         *
+         * No fake mobiles are created here. Fame visits are applied directly to the
+         * township visit counters.
+         */
 
-        private bool CheckFameApply()
+        public const int LBFameVisitCost = 288;             // Fame points consumed per bonus visit
+        public const int LBFameDailyAwardGoal = 41;         // Maximum bonus-assisted visits per day
+        public const int LBFameWeeklyAwardGoal = 41 * 7;    // Weekly BOOMING target reference
+        public const int LBFameDailyCost = LBFameVisitCost * LBFameDailyAwardGoal;
+
+        private bool CanApplyLBFameVisit()
         {
             DayOfWeek day = Now().DayOfWeek;
             int weekOfYear = System.Globalization.ISOWeek.GetWeekOfYear(Now());
+
+            // Fresh stones or week rollover must be allowed through so DecayVisits()
+            // can normalize the visit accounting before we test today's count.
             if (m_LastVisit == DateTime.MinValue || m_CurrentWeekOfYear != weekOfYear)
-                // Ok: a fresh stone, or the Week Will Rollover
                 return true;
 
-            // okay if we've not reached our goal for the day
+            // Fame only fills the remaining daily activity gap.
             return m_VisitorCounts[day] < LBFameDailyAwardGoal;
         }
-        #endregion Fame Constants
-        public void ApplyLBFameSubsity()
-        {
-            DayOfWeek day = Now().DayOfWeek;
 
-            int temp = 0;
-            while (LBFameSubsidy >= LBFameVisitCost && CheckFameApply())
+        public void ApplyLBFameSubsidy()
+        {
+            int visitsAwarded = 0;
+
+            while (LBFameSubsidy >= LBFameVisitCost && CanApplyLBFameVisit())
             {
+                if (!RegisterLBFameVisit())
+                    break;
+
                 LBFameSubsidy -= LBFameVisitCost;
-                RegisterFakeVisit();    // Region.OnEnter() is where the week is rolled over
-                temp++;
+                visitsAwarded++;
             }
-            m_LastLBFameSubsidy = temp;
+
+            m_LastLBFameSubsidy = visitsAwarded;
 
             if (m_LastLBFameSubsidy > 0)
             {
                 LogHelper logger = new LogHelper("Township Fame Awards.log", overwrite: false, sline: true);
-                logger.Log($"{FormatName()} was awarded {m_LastLBFameSubsidy} bonus visits for {Now().DayOfWeek.ToString()}");
+                logger.Log($"{FormatName()} was awarded {m_LastLBFameSubsidy} bonus visits for {Now().DayOfWeek}");
                 logger.Finish();
             }
         }
-        private void RegisterFakeVisit()
-        {
-            if (CustomRegion != null)
-            {
-                PlayerMobile dummy = new PlayerMobile();
-                dummy.Player = true;
-                CustomRegion.OnEnter(dummy);    // this where visits are counted
-                Timer.DelayCall(TimeSpan.FromSeconds(5), new TimerStateCallback(DeleteDummyTick), new object[] { dummy });
-            }
-        }
-        private void DeleteDummyTick(object state)
-        {
-            object[] aState = (object[])state;
 
-            if (aState[0] != null && aState[0] is PlayerMobile pm && pm.Deleted == false)
-            {
-                pm.Delete();
-            }
+        private bool RegisterLBFameVisit()
+        {
+            // Keep all rollover behavior centralized in the same path real visits use.
+            DecayVisits();
+
+            DayOfWeek day = Now().DayOfWeek;
+
+            // DecayVisits() may have rolled the week/day forward, so recheck the cap
+            // after normalization.
+            if (m_VisitorCounts[day] >= LBFameDailyAwardGoal)
+                return false;
+
+            m_LastVisit = Now();
+            m_VisitorCounts[day]++;
+
+            return true;
         }
 
-        public static TownshipStone GetPlayerTownship(Mobile player)
+        #endregion Lord British Fame Subsidy
+
+        public static TownshipStone? GetPlayerTownship(Mobile player)
         {
             if (player != null && player is PlayerMobile pm && pm.Guild is Guild guild && guild.TownshipStone is TownshipStone ts)
                 return ts;
@@ -1159,22 +1232,40 @@ namespace Server.Items
         {
             StringBuilder subsidiesListing = new StringBuilder();
 
-            /* info on subsidies
+            /*
+             * Display effective tax subsidy purchasing power rather than raw subsidy
+             * points. LBTaxSubsidy burns at a 2:1 ratio, so players naturally think
+             * in terms of future gold reduction available, not internal subsidy units.
              */
-            //subsidiesListing.Append("<br><br>-- Subsidies --");
-
-            subsidiesListing.Append("<br>LB Tax Subsidy Banked: ");
-            subsidiesListing.Append(LBTaxSubsidy / 2 + " gold");
+            subsidiesListing.Append("<br>LB Tax Subsidy Available: ");
+            subsidiesListing.Append((LBTaxSubsidy / 2) + " gold");
 
             subsidiesListing.Append("<br>LB Fame Bonus points banked: ");
             subsidiesListing.Append(LBFameSubsidy);
+
             subsidiesListing.Append("<br>Approximate Fame Bonus Days Remaining: ");
             subsidiesListing.Append(LBFameSubsidy / (LBFameDailyAwardGoal * LBFameVisitCost));
+
             subsidiesListing.Append("<br>Approximate Fame Bonus Weeks Remaining: ");
             subsidiesListing.Append(LBFameSubsidy / (LBFameWeeklyAwardGoal * LBFameVisitCost));
 
             m_FameAndTaxBankHTML = subsidiesListing.ToString();
         }
+        // Calculates the township's total daily operating cost.
+        //
+        // Township fees are influenced by two independent economic systems:
+        //
+        // 1. Township activity modifiers:
+        //    Rewards active, socially relevant townships while penalizing inactive
+        //    or convenience-based settlements. This is township-local scaling.
+        //
+        // 2. ADU (Average Daily Users) infrastructure discounts:
+        //    Applies shard-wide population normalization to expensive optional
+        //    civilization systems (guards, premium NPCs, extended regions, etc).
+        //    This allows advanced township infrastructure to remain attainable
+        //    across shards with very different population sizes.
+        //
+        // These systems intentionally operate on different axes and stack together.
         public int GetTotalFeePerDay(bool recordFees, ref int discount)
         {
             //make sure special NPC requirements are met.
@@ -1189,15 +1280,19 @@ namespace Server.Items
                 case Township.ActivityLevel.NONE:
                     basefee_activitymodifier = Township.TownshipSettings.BaseModifierNone;
                     break;
+
                 case Township.ActivityLevel.LOW:
                     basefee_activitymodifier = Township.TownshipSettings.BaseModifierLow;
                     break;
+
                 case Township.ActivityLevel.MEDIUM:
                     basefee_activitymodifier = Township.TownshipSettings.BaseModifierMed;
                     break;
+
                 case Township.ActivityLevel.HIGH:
                     basefee_activitymodifier = Township.TownshipSettings.BaseModifierHigh;
                     break;
+
                 case Township.ActivityLevel.BOOMING:
                     basefee_activitymodifier = Township.TownshipSettings.BaseModifierBoom;
                     break;
@@ -1205,14 +1300,9 @@ namespace Server.Items
 
             int total = 0;
 
-            //// heading
-            //if (recordFees)
-            //{
-            //    feeListing.Append("<br><b>Daily Fees</b>");
-            //}
-
             //base fee
             total += (int)(Township.TownshipSettings.BaseFee * basefee_activitymodifier);
+
             if (recordFees)
             {
                 feeListing.Append("<br>Base Fee: ");
@@ -1220,44 +1310,55 @@ namespace Server.Items
             }
 
             //NPC fees
-            total += CalculateNPCFee();
+            int npcFee = CalculateNPCFee();
+            npcFee = ApplyADUInfrastructureReduction(npcFee);
+
+            total += npcFee;
+
             if (recordFees)
             {
                 feeListing.Append("<br>NPCs: ");
-                feeListing.Append(CalculateNPCFee());
+                feeListing.Append(npcFee);
             }
 
             //travel fees
             if (this.NoGateOut)
             {
                 total += Township.TownshipSettings.NoGateOutFee;
+
                 if (recordFees)
                 {
                     feeListing.Append("<br>No Gate Out: ");
                     feeListing.Append(Township.TownshipSettings.NoGateOutFee);
                 }
             }
+
             if (this.NoGateInto)
             {
                 total += Township.TownshipSettings.NoGateInFee;
+
                 if (recordFees)
                 {
                     feeListing.Append("<br>No Gate In: ");
                     feeListing.Append(Township.TownshipSettings.NoGateInFee);
                 }
             }
+
             if (this.NoRecallOut)
             {
                 total += Township.TownshipSettings.NoRecallOutFee;
+
                 if (recordFees)
                 {
                     feeListing.Append("<br>No Recall Out: ");
                     feeListing.Append(Township.TownshipSettings.NoRecallOutFee);
                 }
             }
+
             if (this.NoRecallInto)
             {
                 total += Township.TownshipSettings.NoRecallInFee;
+
                 if (recordFees)
                 {
                     feeListing.Append("<br>No Recall In: ");
@@ -1268,23 +1369,39 @@ namespace Server.Items
             //lawlevel fees
             if (LawLevel != Township.LawLevel.NONE)
             {
-                total += CalculateLawLevelFee();
+                int lawLevelFee = CalculateLawLevelFee();
+                lawLevelFee = ApplyADUInfrastructureReduction(lawLevelFee);
+
+                total += lawLevelFee;
+
                 if (recordFees)
                 {
                     feeListing.Append("<br>Lawlevel: ");
-                    feeListing.Append(CalculateLawLevelFee());
+                    feeListing.Append(lawLevelFee);
                 }
             }
 
             //extended region fee
             if (this.Extended)
             {
-                total += (int)(Township.TownshipSettings.ExtendedFee * basefee_activitymodifier);
+                int extendedFee = (int)(TownshipSettings.ExtendedFee * basefee_activitymodifier);
+                extendedFee = ApplyADUInfrastructureReduction(extendedFee);
+
+                total += extendedFee;
+
                 if (recordFees)
                 {
                     feeListing.Append("<br>Extended Area: ");
-                    feeListing.Append((int)(Township.TownshipSettings.ExtendedFee * basefee_activitymodifier));
+                    feeListing.Append(extendedFee);
                 }
+            }
+
+            //population-based infrastructure discount notice
+            if (recordFees && TownshipInfrastructureDiscount > 0.0)
+            {
+                feeListing.Append("<br>Population Infrastructure Discount: ");
+                feeListing.Append((int)(TownshipInfrastructureDiscount * 100.0));
+                feeListing.Append("%");
             }
 
             if (this.m_LastLBFameSubsidy != 0)
@@ -1307,32 +1424,14 @@ namespace Server.Items
             // tax subsidy. Must be last in Total calculations
             discount = this.CalcLBTaxSubsidy(subtotal: total);
             total -= discount;
+
             if (recordFees)
             {
                 feeListing.Append("<br>Tax Subsidy: ");
                 feeListing.Append((int)discount);
             }
 
-            ///* info on subsidies
-            // */
-            //if (recordFees)
-            //{
-            //    feeListing.Append("<br><br>-- Subsidies --");
-
-            //    feeListing.Append("<br>LB Tax Subsidy Banked: ");
-            //    feeListing.Append(LBTaxSubsidy + " gold");
-
-            //    feeListing.Append("<br>LB Fame Bonus points banked: ");
-            //    feeListing.Append(LBFameSubsidy);
-            //    feeListing.Append("<br>Approximate Fame Bonus Days Remaining: ");
-            //    feeListing.Append(LBFameSubsidy / (LBFameDailyAwardGoal * LBFameVisitCost));
-            //    feeListing.Append("<br>Approximate Fame Bonus Weeks Remaining: ");
-            //    feeListing.Append(LBFameSubsidy / (LBFameWeeklyAwardGoal * LBFameVisitCost));
-            //}
-
-
-            /* Grand Total
-             */
+            /* Grand Total */
             if (recordFees)
             {
                 feeListing.Append("<br><br>Total: ");
@@ -1343,12 +1442,46 @@ namespace Server.Items
 
             return total;
         }
+        private int ApplyADUInfrastructureReduction(int fee)
+        {
+            if (fee <= 0)
+                return fee;
 
+            double reduction = TownshipInfrastructureDiscount;
+
+            if (reduction <= 0.0)
+                return fee;
+
+            if (reduction > 1.0)
+                reduction = 1.0;
+
+            return (int)(fee * (1.0 - reduction));
+        }
+        public static double TownshipInfrastructureDiscount
+        {
+            get
+            {
+                int adu = Stats.AverageDailyUsers;
+
+                if (adu >= 300)
+                    return 0.0;
+
+                if (adu >= 200)
+                    return 0.10;
+
+                if (adu >= 100)
+                    return 0.20;
+
+                if (adu >= 50)
+                    return 0.35;
+
+                return 0.50;
+            }
+        }
         public int CalculateLawLevelFee()
         {
             return CalculateLawLevelFee(m_LawLevel);
         }
-
         public int CalculateLawLevelFee(Township.LawLevel ll)
         {
             double cost = 0.0;
@@ -1357,11 +1490,21 @@ namespace Server.Items
             {
                 case Township.LawLevel.NONE:
                     break;
+
                 case Township.LawLevel.LAWLESS:
                     cost += Township.TownshipSettings.LawlessFee;
                     break;
+
                 case Township.LawLevel.AUTHORITY:
                     cost += Township.TownshipSettings.LawAuthFee;
+                    break;
+
+                case Township.LawLevel.GUARDED:
+
+                    if (!(Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+                        return 0;
+
+                    cost += Township.TownshipSettings.LawGuardedFee;
                     break;
             }
 
@@ -1370,15 +1513,19 @@ namespace Server.Items
                 case Township.ActivityLevel.NONE:
                     cost *= Township.TownshipSettings.LLModifierNone;
                     break;
+
                 case Township.ActivityLevel.LOW:
                     cost *= Township.TownshipSettings.LLModifierLow;
                     break;
+
                 case Township.ActivityLevel.MEDIUM:
                     cost *= Township.TownshipSettings.LLModifierMed;
                     break;
+
                 case Township.ActivityLevel.HIGH:
                     cost *= Township.TownshipSettings.LLModifierHigh;
                     break;
+
                 case Township.ActivityLevel.BOOMING:
                     cost *= Township.TownshipSettings.LLModifierBoom;
                     break;
@@ -1386,7 +1533,6 @@ namespace Server.Items
 
             return (int)cost;
         }
-
         public int CalculateNPCFee()
         {
             int totalFee = 0;
@@ -1483,7 +1629,7 @@ namespace Server.Items
         {
             bool bReturn;
 
-            if (Server.Misc.TestCenter.Enabled)
+            if (Server.Engines.TestCenterServer.Enabled)
             {
                 bReturn = (m_ALLastCalculated + TimeSpan.FromDays(0.5) < Now());
             }
@@ -1512,7 +1658,7 @@ namespace Server.Items
                 else
                     offset_time = 0;    // restore normal time
 
-                SendSystemMessage(string.Format($"Date is now {(DateTime.UtcNow + TimeSpan.FromDays(8 * offset_time)).ToString()}"));
+                SendMessageNearby(string.Format($"Date is now {(DateTime.UtcNow + TimeSpan.FromDays(8 * offset_time)).ToString()}"));
             }
         }
 #endif
@@ -1532,7 +1678,19 @@ namespace Server.Items
                     CalculateActivityLevel();
             }
         }
-
+        [CommandProperty(AccessLevel.Administrator)]
+        public bool ForceRefreshSubsidyInfo
+        {
+            get { return false; }
+            set
+            {
+                if (value)
+                {
+                    RecordFameAndTaxBankInfo();
+                    SendMessageNearby("Township fame and tax subsidy display refreshed.");
+                }
+            }
+        }
         private void CalculateActivityLevel()
         {
             int visitorsThisWeek = m_VisitorCounts.VisitorsThisWeek;
@@ -1654,7 +1812,7 @@ namespace Server.Items
             get { return TownshipNPCs.Count; }
         }
 
-        public bool HasNPC(Type type)
+        public bool HasActiveNPC(Type type)
         {
             foreach (Mobile m in TownshipNPCs)
             {
@@ -1678,44 +1836,49 @@ namespace Server.Items
             return count;
         }
 
-        public void RemoveNPCs(Type type)
+        public void CheckNPCRequirements(Type? toCheck = null)
         {
-            foreach (Mobile m in TownshipNPCs)
+            if ((toCheck == null || toCheck == typeof(TSEmissary)) &&
+                !HasNPCRequirement(typeof(TSEmissary)))
             {
-                if (m != null && type.IsAssignableFrom(m.GetType()))
-                    m.Delete();
-            }
-        }
-
-        public void CheckNPCRequirements(Type toCheck = null)
-        {
-            if ((toCheck == null || toCheck == typeof(TSEmissary)) && !HasNPC(typeof(TSEmissary)))
-            {
-                if (m_LawLevel == Township.LawLevel.AUTHORITY)
+                if (m_LawLevel == Township.LawLevel.AUTHORITY ||
+                    m_LawLevel == Township.LawLevel.GUARDED)
+                {
                     m_LawLevel = Township.LawLevel.NONE;
+                    SyncGuardedRegionState();
+                }
             }
 
-            if ((toCheck == null || toCheck == typeof(TSEvocator)) && !HasNPC(typeof(TSEvocator)))
+            if ((toCheck == null || toCheck == typeof(TSEvocator)) &&
+                !HasNPCRequirement(typeof(TSEvocator)))
             {
-                this.NoRecallInto = false;
-                this.NoRecallOut = false;
-                this.NoGateInto = false;
-                this.NoGateOut = false;
+                NoRecallInto = false;
+                NoRecallOut = false;
+                NoGateInto = false;
+                NoGateOut = false;
             }
 
-            if ((toCheck == null || toCheck == typeof(TSTownCrier)) && !HasNPC(typeof(TSTownCrier)))
+            if ((toCheck == null || toCheck == typeof(TSTownCrier)) &&
+                !HasNPCRequirement(typeof(TSTownCrier)))
             {
                 if (m_Extended)
                     ReduceRegion();
             }
 
-            if ((toCheck == null || toCheck == typeof(TSNecromancer)) && !HasNPC(typeof(TSNecromancer)))
+            if ((toCheck == null || toCheck == typeof(TSNecromancer)) &&
+                !HasNPCRequirement(typeof(TSNecromancer)))
             {
-                if (CustomRegion != null && CustomRegion.Season == SeasonType.Desolation)
+                if (CustomRegion != null &&
+                    CustomRegion.Season == SeasonType.Desolation)
+                {
                     CustomRegion.Season = SeasonType.Default;
+                }
             }
         }
-
+        private bool HasNPCRequirement(Type type)
+        {
+            return HasActiveNPC(type) || HasStashedNPC(type);
+        }
         public void DefragTownshipNPCs()
         {
             for (int i = m_TownshipNPCs.Count - 1; i >= 0; i--)
@@ -1723,6 +1886,8 @@ namespace Server.Items
                 if (m_TownshipNPCs[i].Deleted)
                     m_TownshipNPCs.RemoveAt(i);
             }
+
+            DefragStashedNPCs();
         }
 
         #endregion
@@ -1779,7 +1944,7 @@ namespace Server.Items
             set { }
         }
 
-        private Item m_WelcomeMat; // cached ref. to the welcome mat
+        private Item? m_WelcomeMat; // cached ref. to the welcome mat
 
         [CommandProperty(AccessLevel.GameMaster)]
         public Item WelcomeMat
@@ -1821,7 +1986,7 @@ namespace Server.Items
 
         public void SetItemOwner(Item item, Mobile owner, DateTime placed)
         {
-            Township.TownshipItemContext c = m_ItemRegistry.Lookup(item, true);
+            Township.TownshipItemContext? c = m_ItemRegistry.Lookup(item, true);
 
             if (c != null)
             {
@@ -1830,9 +1995,9 @@ namespace Server.Items
             }
         }
 
-        public Mobile GetItemOwner(Item item)
+        public Mobile? GetItemOwner(Item item)
         {
-            Township.TownshipItemContext c = m_ItemRegistry.Lookup(item);
+            Township.TownshipItemContext? c = m_ItemRegistry.Lookup(item);
 
             if (c == null && item is AddonComponent)
             {
@@ -2012,9 +2177,20 @@ namespace Server.Items
         public Township.LawLevel LawLevel
         {
             get { return m_LawLevel; }
-            set { m_LawLevel = value; }
+            set
+            {
+                m_LawLevel = value;
+                SyncGuardedRegionState();
+            }
         }
+        private void SyncGuardedRegionState()
+        {
+            if (CustomRegion == null)
+                return;
 
+            CustomRegion.EnableGuards = (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules())
+                                        && m_LawLevel == Township.LawLevel.GUARDED;
+        }
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
         public DateTime LastLawChange
         {
@@ -2026,7 +2202,6 @@ namespace Server.Items
         {
             get { return true; }
         }
-
         public bool IsMobileCountable(Mobile attacker)
         {
             bool bReturn;
@@ -2034,36 +2209,49 @@ namespace Server.Items
             switch (LawLevel)
             {
                 case Township.LawLevel.LAWLESS:
+
+                    // No murder counts are issued within lawless townships
                     bReturn = false;
                     break;
+
                 case Township.LawLevel.AUTHORITY:
+                case Township.LawLevel.GUARDED:
+
+                    // Township members/allies are exempt from murder counts within sovereign townships
                     if (IsMemberOrAlly(attacker))
                         bReturn = false;
                     else
                         bReturn = true;
+
                     break;
+
                 default:
                 case Township.LawLevel.NONE:
+
+                    // Standard Lord British murder count rules apply
                     bReturn = true;
                     break;
             }
 
             return bReturn;
         }
-
         public static string FormatLawLevel(Township.LawLevel lawLevel)
         {
             switch (lawLevel)
             {
                 case Township.LawLevel.AUTHORITY:
                     return "Grant of Authority";
+
                 case Township.LawLevel.LAWLESS:
                     return "Lawless";
+
+                case Township.LawLevel.GUARDED:
+                    return "Guarded";
+
                 default:
                     return "Standard";
             }
         }
-
         #endregion
 
         #region On[Enter/Exit]
@@ -2095,29 +2283,13 @@ namespace Server.Items
         {
             bool bShowEnterMessage = m_ShowTownshipMessages;
 
-            PlayerMobile pm = m as PlayerMobile;
+            PlayerMobile? pm = m as PlayerMobile;
 
             if (pm != null && pm.LastRegionIn is HouseRegion)
                 bShowEnterMessage = false;
 
             if (m.Player && m.AccessLevel == AccessLevel.Player) //only count players, not mobs or staff
-            {
-                DayOfWeek day = Now().DayOfWeek;
-
-                // reset daily stats if need be
-                DecayVisits();
-
-                // set last visit time
-                m_LastVisit = Now();
-
-                // register visitor
-                if (!m_TodaysVisitors.Contains(m))
-                {
-                    m_TodaysVisitors.Add(m);
-                    m_VisitorCounts[day]++;
-                }
-            }
-
+                RegisterVisit(m);
             if (bShowEnterMessage)
             {
                 string sizeDesc = GetTownshipSizeDesc(ActivityLevel).ToLower();
@@ -2132,16 +2304,25 @@ namespace Server.Items
                 switch (LawLevel)
                 {
                     case Township.LawLevel.AUTHORITY:
+                    case Township.LawLevel.GUARDED:
                         enterMessage.Append("The ");
                         enterMessage.Append(GuildName);
-                        enterMessage.Append(" has received a Grant of Authority by Lord British to enforce ");
+
+                        if (LawLevel == Township.LawLevel.GUARDED && (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+                            enterMessage.Append(" has established a guarded township under Grant of Authority by Lord British to enforce ");
+                        else
+                            enterMessage.Append(" has received a Grant of Authority by Lord British to enforce ");
+
                         enterMessage.Append("the law within this ");
                         enterMessage.Append(sizeDesc);
                         enterMessage.Append(".");
+
                         enterMessage.Append("  The following guilds are authorized to protect this town: ");
+
                         try
                         {
                             enterMessage.Append(this.GuildAbbreviation);
+
                             foreach (object o in m_Guild.Allies)
                             {
                                 if (o is Guild)
@@ -2149,12 +2330,18 @@ namespace Server.Items
                             }
                         }
                         catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
+
+                        if (LawLevel == Township.LawLevel.GUARDED && (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+                            enterMessage.Append("  Township guards are active within this region.");
+
                         break;
+
                     case Township.LawLevel.LAWLESS:
                         enterMessage.Append("Beware!  There are no laws being enforced within this ");
                         enterMessage.Append(sizeDesc);
                         enterMessage.Append("!");
                         break;
+
                     case Township.LawLevel.NONE:
                     default:
                         //enterMessage.Append("Lord British enforces the laws within this ");
@@ -2166,6 +2353,25 @@ namespace Server.Items
 
                 m.SendMessage(enterMessage.ToString());
             }
+        }
+        private bool RegisterVisit(Mobile m)
+        {
+            if (m == null || !m.Player || m.AccessLevel != AccessLevel.Player)
+                return false;
+
+            DecayVisits();
+
+            m_LastVisit = Now();
+
+            DayOfWeek day = Now().DayOfWeek;
+
+            if (m_TodaysVisitors.Contains(m))
+                return false;
+
+            m_TodaysVisitors.Add(m);
+            m_VisitorCounts[day]++;
+
+            return true;
         }
 
         public override void OnExit(Mobile m)
@@ -2198,7 +2404,7 @@ namespace Server.Items
                 {
                     for (int y = rect.Start.Y; y < rect.End.Y; y++)
                     {
-                        HouseRegion r = Server.Region.Find(new Point3D(x, y, this.Z), this.Map) as HouseRegion;
+                        HouseRegion? r = Server.Region.Find(new Point3D(x, y, this.Z), this.Map) as HouseRegion;
 
                         if (r != null && r.House != null && !list.Contains(r.House))
                             list.Add(r.House);
@@ -2435,7 +2641,7 @@ namespace Server.Items
                         if (house is SiegeTent || house.Owner == null)
                             continue; // ignore completely
 
-                        Guild houseGuild = house.Owner.Guild as Guild;
+                        Guild? houseGuild = house.Owner.Guild as Guild;
 
                         if (houseGuild != null && (m_Guild == houseGuild || m_Guild.IsAlly(houseGuild)))
                             count += house.MaxLockDowns;
@@ -2481,7 +2687,7 @@ namespace Server.Items
                         if (house is SiegeTent || house.Owner == null)
                             continue; // ignore completely
 
-                        Guild houseGuild = house.Owner.Guild as Guild;
+                        Guild? houseGuild = house.Owner.Guild as Guild;
 
                         if (houseGuild != null && (m_Guild == houseGuild || m_Guild.IsAlly(houseGuild)))
                             count += house.MaxLockboxes;
@@ -2501,9 +2707,9 @@ namespace Server.Items
             return (m_LockdownRegistry.ContainsKey(item));
         }
 
-        public Mobile GetLockdownOwner(Item item)
+        public Mobile? GetLockdownOwner(Item item)
         {
-            LockDownContext context;
+            LockDownContext? context;
 
             if (m_LockdownRegistry.TryGetValue(item, out context))
                 return context.Mobile;
@@ -2678,7 +2884,7 @@ namespace Server.Items
 
         public static bool IsTownshipLockdown(Item item)
         {
-            TownshipRegion tsr = TownshipRegion.GetTownshipAt(item);
+            TownshipRegion? tsr = TownshipRegion.GetTownshipAt(item);
 
             return (tsr != null && tsr.TStone != null && tsr.TStone.IsLockedDown(item));
         }
@@ -2810,7 +3016,7 @@ namespace Server.Items
 
         private void DefragLivestock()
         {
-            List<BaseCreature> toRemove = null;
+            List<BaseCreature>? toRemove = null;
 
             foreach (BaseCreature bc in m_Livestock.Keys)
             {
@@ -2885,7 +3091,7 @@ namespace Server.Items
 
         public bool IsLivestockOwner(BaseCreature bc, Mobile m)
         {
-            Mobile owner;
+            Mobile? owner;
 
             return (m_Livestock.TryGetValue(bc, out owner) && m == owner);
         }
@@ -2975,536 +3181,20 @@ namespace Server.Items
         {
             get { return m_Scaffolds; }
         }
-        #region PackUpTownship
-        public bool PackUpTownship(Mobile from, LogHelper logger)
-        {
-            if (this is TownshipStone stone && !IsPackedUp())
-            {
-                logger.Log(string.Format("--packing up township for {0}.--", stone.Guild));
-                logger.Log(LogType.Mobile, from);
-
-                // disallow packing up township if the guild stone is being moved
-                if (stone.Guild == null || stone.Guild.Guildstone == null || stone.Guild.Guildstone.Map == Map.Internal)
-                {
-                    from.SendMessage("You cannot pack up your township while your guild stone is being moved.");
-                    from.SendMessage("Place your guild stone and try again.");
-                    return false;
-                }
-
-                List<IEntity> ignore_list = new List<IEntity>();
-
-                #region Register unregistered Christmas trees
-                {
-                    TownshipRegion tsr = TownshipRegion.GetTownshipAt(stone);
-                    if (tsr != null)
-                    {
-                        foreach (var rect in tsr.Coords)
-                        {
-                            IPooledEnumerable eable = Map.Felucca.GetItemsInBounds(new Rectangle2D(rect.Start, rect.End));
-                            foreach (Item item in eable)
-                            {
-                                if (ignore_list.Contains(item) || item.Deleted)
-                                    continue;
-
-                                if (item is ChristmasTreeAddon)
-                                {
-                                    if (!IsInHouse(item))
-                                    {
-                                        if (!stone.ItemRegistry.Table.Keys.Contains(item))
-                                        {
-                                            TownshipItemHelper.SetOwnership(item, from);
-                                            if (!stone.ItemRegistry.Table.Keys.Contains(item))
-                                                ; // error
-                                        }
-                                    }
-                                    else
-                                        ; // just want to know
-                                }
-                            }
-                            eable.Free();
-                        }
-                    }
-                    else
-                        ; // error
-                }
-                #endregion Register unregistered Christmas trees
-
-                List<TownshipLivestockRestorationDeed> livestockDeeds = new();
-                #region Livestock
-                {
-                    if (stone.Livestock != null)
-                    {
-                        foreach (BaseCreature bc in stone.Livestock.Keys)
-                        {
-                            if (ignore_list.Contains(bc) || bc.Deleted)
-                                continue;
-
-                            TownshipLivestockRestorationDeed deed = new TownshipLivestockRestorationDeed(stone, bc);
-                            livestockDeeds.Add(deed);
-                        }
-
-                        foreach (var unit in livestockDeeds)
-                            logger.Log(string.Format("Packing {0} into deed {1}", unit.Mobile, unit));
-                    }
-                }
-                #endregion Livestock
-
-                List<TownshipItemRestorationDeed> lockdownDeeds = new();
-                #region  pack up township lockdowns
-                {
-                    List<Item> toMove = new List<Item>();
-                    foreach (Item item in stone.LockdownRegistry.Keys)
-                    {
-                        if (ignore_list.Contains(item) || item.Deleted)
-                            continue;
-
-                        item.SetLastMoved();
-                        toMove.Add(item);
-                        ignore_list.Add(item);
-                    }
-
-                    if (toMove.Count > 0)
-                    {
-                        foreach (Item item in toMove)
-                            lockdownDeeds.Add(new TownshipItemRestorationDeed(stone, item));
-
-                        foreach (var unit in lockdownDeeds)
-                            logger.Log(string.Format("Packing {0} into deed {1}", unit.Item, unit));
-                    }
-
-                }
-                #endregion pack up township lockdowns
-
-                List<TownshipNPCDeed> NPCDeeds = new();
-                #region pack up the NPCs
-                {   // pack up the NPCs
-                    Dictionary<Mobile, Item> logging = new();
-                    if (stone.TownshipNPCs != null)
-                    {
-                        List<Mobile> list = stone.TownshipNPCs;
-                        foreach (Mobile m in list)
-                        {
-                            if (ignore_list.Contains(m) || m.Deleted)
-                                continue;
-
-                            TownshipNPCDeed deed = ConfirmRedeedNPCGump.GetDeed(from, m.GetType());
-                            deed.RestorationMobile = m.Serial;
-                            logging.Add(m, deed);
-                            m.MoveToIntStorage();
-                            NPCDeeds.Add(deed);
-                        }
-
-                        foreach (var unit in logging)
-                            logger.Log(string.Format("Packing {0} into deed {1}", unit.Key, unit.Value));
-                    }
-                }
-                #endregion pack up the NPCs
-
-                List<TownshipItemRestorationDeed> plantDeeds = new();
-                SmallCrate seedBox = new SmallCrate();
-                seedBox.Name = "(seeds)";
-                #region Plants
-                {
-                    List<Item> toMove = new();
-                    List<ITownshipItem> list = new();
-                    foreach (var ele in Utility.TownshipItems(stone, new List<Type>() { typeof(TownshipPlantItem) }))
-                    {
-                        if (ignore_list.Contains(ele as Item) || ele.Deleted)
-                            continue;
-                        list.Add(ele);
-                    }
-                    if (list.Count > 0)
-                    {
-                        seedBox.MaxItems = list.Count;  // ensure storage
-                        foreach (var tpi in list)
-                            if (tpi is StaticPlantItem spi && !spi.Deleted)
-                            {
-                                if (spi.PlantStatus == PlantStatus.DecorativePlant)
-                                {   // grab the decorative plant
-                                    toMove.Add(spi);
-                                    ignore_list.Add(spi);
-                                }
-                                else if (spi.PlantStatus != PlantStatus.DeadTwigs)
-                                {   // generate a seed
-                                    Seed seed = new Seed(spi.PlantType, spi.PlantHue, showType: true);
-                                    seed.Name = string.Format("{0} {1} seed", seed.PlantHue, seed.PlantType);
-                                    logger.Log(string.Format("Generating seed {0} from {1}", seed, spi));
-                                    if (!seedBox.TryDropItem(World.GetSystemAcct(), seed, sendFullMessage: false))
-                                        throw new ApplicationException(string.Format("Max items:{0} insufficient to store seeds in seed box:{1}.", seedBox.MaxItems, seedBox));
-                                    logger.Log(string.Format("Dropping seed {0} into {1}", seed, seedBox));
-                                    if (TownshipItemHelper.AllTownshipItems.Contains(tpi))
-                                        TownshipItemHelper.Unregister(tpi);
-                                    spi.Delete();
-                                    ignore_list.Add(spi);
-                                }
-                            }
-
-                        if (toMove.Count > 0 || seedBox.Items.Count > 0)
-                        {
-                            foreach (Item item in toMove)
-                                if (item.Deleted)
-                                    throw new ApplicationException("Trying to deed an item that has already been deleted.");
-                                else
-                                    plantDeeds.Add(new TownshipItemRestorationDeed(stone, item));
-
-                            foreach (var unit in plantDeeds)
-                                logger.Log(string.Format("Packing {0} into deed {1}", unit.Item, unit));
-
-                            foreach (var deed in seedBox.Items)
-                                logger.Log(string.Format("Packing deed {0} into deed box {1}", deed, seedBox));
-                        }
-                    }
-                }
-                #endregion Plants
-
-                List<TownshipItemRestorationDeed> addonDeeds = new();
-                SmallCrate addonDeedBox = new();
-                addonDeedBox.Name = "(deeds)";
-                #region cleanup the township building items
-                {   // cleanup the township building items
-
-                    List<Item> toMove = new();
-
-                    List<Item> list = new List<Item>(stone.ItemRegistry.Table.Keys);
-                    foreach (Item tsi in list)
-                    {
-                        if (ignore_list.Contains(tsi) || tsi.Deleted)
-                            continue;
-
-                        if (tsi is PlantAddon pa && ignore_list.Contains(pa.PlantItem))
-                            continue;
-
-                        /// probably not needed as the preview has not yet been added to thew township items
-                        if (tsi is BaseAddon preview && preview.GetItemBool(ItemBoolTable.Preview))
-                        {   // exploit prevention
-                            System.Diagnostics.Debug.Assert(false); // we still want to know if it's possible
-                            continue;
-                        }
-
-                        if (!IsInHouse(tsi))
-                        {
-                            if (tsi is StaticHouseHelper.FixerAddon)
-                            {
-                                ignore_list.Contains(tsi);
-                                continue;
-                            }
-                            else if (tsi is BaseAddon ba)
-                            {
-#if true
-                                Item addon = ba as Item;
-                                Item deed;
-                                if (!Utility.IsRedeedableAddon(addon, out deed))
-                                {   // no deed for this addon, we will just grab the naked addon
-                                    addon.SetLastMoved();
-                                    toMove.Add(addon);
-                                    ignore_list.Add(addon);
-                                }
-                                else
-                                {   // add the deed for redeedable addon/trophy/wall hanger
-                                    // For BaseAddon, we need to stuff the addon hue into the deed. This will be reflected when the addon is instantiated.
-                                    if (deed is BaseAddonDeed) deed.Hue = addon.Hue;
-                                    logger.Log(string.Format("Generating deed {0} from {1}", deed, addon));
-                                    if (!addonDeedBox.TryDropItem(World.GetSystemAcct(), deed, sendFullMessage: false))
-                                        throw new ApplicationException(string.Format("Max items:{0} insufficient to store deeds in deed box:{1}.", addonDeedBox.MaxItems, addonDeedBox));
-                                    logger.Log(string.Format("Dropping deed {0} into {1}", deed, addonDeedBox));
-
-                                    addon.Delete();
-                                    ignore_list.Add(addon);
-                                }
-#else
-                                tsi.SetLastMoved();
-                                toMove.Add(tsi);
-                                ignore_list.Add(tsi);
-#endif
-                            }
-                            else
-                            {
-                                // Credit townstone
-                                if (ignore_list.Contains(tsi))
-                                    continue;
-                                else
-                                    switch (DefTownshipCraft.CreditTownship(stone, tsi))
-                                    {
-                                        case DefTownshipCraft.CreditResult.Failed:
-                                            {
-                                                logger.Log(string.Format("Failed to credit township for {0}", tsi));
-                                                tsi.Delete();
-                                                ignore_list.Add(tsi);
-                                                break;
-                                            }
-                                        case DefTownshipCraft.CreditResult.Partial:
-                                            {
-                                                logger.Log(string.Format("Partial to credit township for {0}", tsi));
-                                                tsi.Delete();
-                                                ignore_list.Add(tsi);
-                                                break;
-                                            }
-                                        case DefTownshipCraft.CreditResult.Full:
-                                            {
-                                                logger.Log(string.Format("Full to credit township for {0}", tsi));
-                                                tsi.Delete();
-                                                ignore_list.Add(tsi);
-                                                break;
-                                            }
-                                    }
-                            }
-                        }
-                        else
-                            ; // error
-                    }
-
-                    if (toMove.Count > 0 || addonDeedBox.Items.Count > 0)
-                    {
-                        foreach (Item item in toMove)
-                            if (item.Deleted)
-                                throw new ApplicationException("Trying to deed an item that has already been deleted.");
-                            else
-                                addonDeeds.Add(new TownshipItemRestorationDeed(stone, item));
-
-                        foreach (var unit in addonDeeds)
-                            logger.Log(string.Format("Packing {0} into deed {1}", unit.Item, unit));
-
-                        foreach (var deed in addonDeedBox.Items)
-                            logger.Log(string.Format("Packing deed {0} into deed box {1}", deed, addonDeedBox));
-                    }
-                }
-                #endregion cleanup the township building items
-
-                #region cleanup the township scaffolding
-                {   // cleanup the township building items
-
-                    List<Item> list = new List<Item>(stone.Scaffolds);
-                    foreach (Item tsi in list)
-                    {
-                        if (ignore_list.Contains(tsi) || tsi.Deleted)
-                            continue;
-
-                        // Credit townstone
-                        if (tsi is Scaffold scaffold)
-                            switch (DefTownshipCraft.CreditTownship(stone, scaffold.ToBuild))
-                            {
-                                case DefTownshipCraft.CreditResult.Failed:
-                                    {
-                                        logger.Log(string.Format("Failed to credit township for {0}", tsi));
-                                        tsi.Delete();
-                                        ignore_list.Add(tsi);
-                                        break;
-                                    }
-                                case DefTownshipCraft.CreditResult.Partial:
-                                    {
-                                        logger.Log(string.Format("Partial to credit township for {0}", tsi));
-                                        tsi.Delete();
-                                        ignore_list.Add(tsi);
-                                        break;
-                                    }
-                                case DefTownshipCraft.CreditResult.Full:
-                                    {
-                                        logger.Log(string.Format("Full to credit township for {0}", tsi));
-                                        tsi.Delete();
-                                        ignore_list.Add(tsi);
-                                        break;
-                                    }
-                            }
-                        else
-                            throw new ApplicationException(string.Format("Found {0} while looking for scaffolds.", tsi));
-                    }
-                }
-                #endregion cleanup the township building items
-
-                List<MovingCrate> movingCrates = new();
-
-                #region Moving Crate Key
-                uint keyValue = Key.RandomValue();
-                Key key = new Key(KeyType.Magic, keyValue);
-                key.LootType = LootType.Blessed;
-                key.Name = string.Format("a moving crate key for {0}", stone.Guild.Abbreviation ?? stone.Guild.Name);
-                #endregion Moving Crate Key
-
-                #region Build Moving Crates
-                {
-                    if (livestockDeeds.Count > 0)
-                    {
-                        MovingCrate crate = new MovingCrate(livestockDeeds.Count, Utility.RandomSpecialHue("livestockDeeds"), stone);
-                        crate.Label = "(livestock deeds)";
-                        foreach (Item deed in livestockDeeds)
-                            if (!crate.TryDropItem(World.GetSystemAcct(), deed, sendFullMessage: false))
-                                throw new ApplicationException(string.Format("Max items:{0} insufficient to store items in moving crate.", livestockDeeds.Count));
-                        ConfigureLock(crate, keyValue);
-                        movingCrates.Add(crate);
-                        logger.Log(string.Format("Adding {0} to moving crate {1}", crate.Label, crate));
-                    }
-                    if (lockdownDeeds.Count > 0)
-                    {
-                        MovingCrate crate = new MovingCrate(lockdownDeeds.Count, Utility.RandomSpecialHue("lockdownDeeds"), stone);
-                        crate.Label = "(lockdown deeds)";
-                        foreach (Item deed in lockdownDeeds)
-                            if (!crate.TryDropItem(World.GetSystemAcct(), deed, sendFullMessage: false))
-                                throw new ApplicationException(string.Format("Max items:{0} insufficient to store items in moving crate.", lockdownDeeds.Count));
-                        ConfigureLock(crate, keyValue);
-                        movingCrates.Add(crate);
-                        logger.Log(string.Format("Adding {0} to moving crate {1}", crate.Label, crate));
-                    }
-                    if (NPCDeeds.Count > 0)
-                    {
-                        MovingCrate crate = new MovingCrate(NPCDeeds.Count, Utility.RandomSpecialHue("NPCDeeds"), stone);
-                        crate.Label = "(NPC deeds)";
-                        foreach (Item deed in NPCDeeds)
-                            if (!crate.TryDropItem(World.GetSystemAcct(), deed, sendFullMessage: false))
-                                throw new ApplicationException(string.Format("Max items:{0} insufficient to store items in moving crate.", NPCDeeds.Count));
-                        ConfigureLock(crate, keyValue);
-                        movingCrates.Add(crate);
-                        logger.Log(string.Format("Adding {0} to moving crate {1}", crate.Label, crate));
-                    }
-                    if (plantDeeds.Count > 0 || seedBox.Items.Count > 0)
-                    {   // add one for the seedbox container itself
-                        int item_count = plantDeeds.Count + seedBox.Items.Count + (seedBox.Items.Count > 0 ? 1 : 0);
-                        MovingCrate crate = new MovingCrate(item_count, Utility.RandomSpecialHue("plantDeeds"), stone);
-                        crate.Label = "(seeds & decorative plants)";
-                        // first the seedbox
-                        if (seedBox.Items.Count > 0)
-                        {
-                            if (!crate.TryDropItem(World.GetSystemAcct(), seedBox, sendFullMessage: false))
-                                throw new ApplicationException(string.Format("Max items:{0} insufficient to store items in moving crate.", item_count));
-
-                            logger.Log(string.Format("Adding {0} to moving crate {1} {2}", seedBox, crate, crate.Label));
-                        }
-                        // now the deeds
-                        if (plantDeeds.Count > 0)
-                        {
-                            foreach (Item deed in plantDeeds)
-                                if (!crate.TryDropItem(World.GetSystemAcct(), deed, sendFullMessage: false))
-                                    throw new ApplicationException(string.Format("Max items:{0} insufficient to store items in moving crate.", item_count));
-
-                            logger.Log(string.Format("Adding {0} to moving crate {1}", crate.Label, crate));
-                        }
-                        ConfigureLock(crate, keyValue);
-                        movingCrates.Add(crate);
-                    }
-                    if (addonDeeds.Count > 0 || addonDeedBox.Items.Count > 0)
-                    {
-                        int item_count = addonDeeds.Count + addonDeedBox.Items.Count + (addonDeedBox.Items.Count > 0 ? 1 : 0);
-                        MovingCrate crate = new MovingCrate(item_count, Utility.RandomSpecialHue("addonDeeds"), stone);
-                        crate.Label = "(addon deeds)";
-                        // first the addonDeedBox
-                        if (addonDeedBox.Items.Count > 0)
-                        {
-                            if (!crate.TryDropItem(World.GetSystemAcct(), addonDeedBox, sendFullMessage: false))
-                                throw new ApplicationException(string.Format("Max items:{0} insufficient to store items in moving crate.", item_count));
-
-                            logger.Log(string.Format("Adding {0} to moving crate {1} {2}", addonDeedBox, crate, crate.Label));
-                        }
-                        // now the deeds
-                        if (addonDeeds.Count > 0)
-                        {
-                            foreach (Item deed in addonDeeds)
-                                if (!crate.TryDropItem(World.GetSystemAcct(), deed, sendFullMessage: false))
-                                    throw new ApplicationException(string.Format("Max items:{0} insufficient to store items in moving crate.", item_count));
-                        }
-                        ConfigureLock(crate, keyValue);
-                        movingCrates.Add(crate);
-                        logger.Log(string.Format("Adding {0} to moving crate {1}", crate.Label, crate));
-                    }
-
-                }
-                #endregion Build Moving Crates
-
-                #region Townstone and Guild (Da stones baby, da stones!)
-                {
-                    if (movingCrates.Count > 0)
-                    {
-                        TownshipRestorationDeed townshipDeed = new TownshipRestorationDeed(stone, movingCrates, key);
-                        switch (Utility.SecureGive(from, townshipDeed))
-                        {
-                            case Backpack:
-                                {
-                                    from.SendMessage("A township restoration deed was placed in your backpack.");
-                                    logger.Log(string.Format("A township restoration deed was placed in the backpack of {0}", from));
-                                    break;
-                                }
-                            case BankBox:
-                                {
-                                    from.SendMessage("A township restoration deed was placed in your bank box.");
-                                    logger.Log(string.Format("A township restoration deed was placed in the bank box of {0}", from));
-                                    break;
-                                }
-                            default:
-                                {
-                                    from.SendMessage("A township restoration deed was dropped at your feet.");
-                                    logger.Log(string.Format("A township restoration deed was placed at the feet of {0} (locked down)", from));
-                                    break;
-                                }
-                        }
-                        switch (Utility.SecureGive(from, key))
-                        {
-                            case Backpack:
-                                {
-                                    from.SendMessage("The key to your moving crates was placed in your backpack.");
-                                    logger.Log(string.Format("A moving crate key was placed in the backpack of {0}", from));
-                                    break;
-                                }
-                            case BankBox:
-                                {
-                                    from.SendMessage("The key to your moving crates was placed in your bank box.");
-                                    logger.Log(string.Format("A moving crate key was placed in the bank box of {0}", from));
-                                    break;
-                                }
-                            default:
-                                {
-                                    from.SendMessage("The key to your moving crates dropped at your feet.");
-                                    logger.Log(string.Format("A moving crate key was placed at the feet of {0} (locked down)", from));
-                                    break;
-                                }
-                        }
-                        SetTownshipStoneBool(TownshipStoneBoolTable.IsPackedUp, true);
-                    }
-                    else
-                    {
-                        from.SendMessage("Nothing to pack up.");
-                        return false;
-                    }
-                }
-                #endregion Townstone and Guild (Da stones baby, da stones!) 
-
-                logger.Log(LogType.Mobile, from);
-                logger.Log(string.Format("--township for {0} packed up.--", stone.Guild));
-            }
-
-            return true;
-        }
-        private static bool IsInHouse(Item item)
-        {
-            return BaseHouse.Find(item.Location, item.Map) != null;
-        }
-        private static void ConfigureLock(LockableContainer c, uint keyValue)
-        {
-            // LockLevel of 0 means that the door can't be picklocked
-            // LockLevel of -255 means it's magic locked
-            c.Locked = true;
-            c.MaxLockLevel = 0; // ?
-            c.LockLevel = 0;
-            c.KeyValue = keyValue;
-        }
-        public bool IsPackedUp()
-        {
-            // packed up, but crates have not yet been created
-            if (GetTownshipStoneBool(TownshipStoneBoolTable.IsPackedUp))
-                return true;
-
-            // If we have crates, they must be emptied
-            foreach (Item item in World.Items.Values)
-                if (item.Deleted == false && item is MovingCrate mc && mc.Property == this)
-                    return true;
-            return false;
-        }
-        #endregion PackUpTownship
 
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
 
-            int version = 19;
+            int version = 20;
             writer.Write(version);                      // version
             writer.WriteEncodedInt((int)m_BoolTable);   // version 16 (always follows version
+
+            // version 20
+            writer.Write(m_StashedTownshipNPCs.Count);
+
+            for (int i = 0; i < m_StashedTownshipNPCs.Count; i++)
+                writer.Write(m_StashedTownshipNPCs[i]);
 
             // version 19
             writer.Write(m_FameAndTaxBankHTML);
@@ -3599,6 +3289,16 @@ namespace Server.Items
 
             switch (version)
             {
+                case 20:
+                    {
+                        int count = reader.ReadInt();
+
+                        m_StashedTownshipNPCs = new List<Serial>(count);
+
+                        for (int i = 0; i < count; i++)
+                            m_StashedTownshipNPCs.Add(reader.ReadInt());
+                        goto case 19;
+                    }
                 case 19:
                     {
                         m_FameAndTaxBankHTML = reader.ReadString();
@@ -3639,8 +3339,8 @@ namespace Server.Items
 
                             for (int i = 0; i < count; i++)
                             {
-                                BaseCreature bc = reader.ReadMobile() as BaseCreature;
-                                Mobile owner = reader.ReadMobile();
+                                BaseCreature? bc = reader.ReadMobile() as BaseCreature;
+                                Mobile? owner = reader.ReadMobile();
 
                                 if (bc != null)
                                     m_Livestock[bc] = owner;
@@ -3656,7 +3356,7 @@ namespace Server.Items
 
                                 if (bc != null)
                                 {
-                                    Mobile lastOwner = null;
+                                    Mobile? lastOwner = null;
 
                                     if (bc.Owners.Count != 0)
                                         lastOwner = (Mobile)bc.Owners[bc.Owners.Count - 1];
@@ -3681,7 +3381,7 @@ namespace Server.Items
                         int count = reader.ReadEncodedInt();
                         for (int i = 0; i < count; i++)
                         {
-                            Item item = reader.ReadItem();
+                            Item? item = reader.ReadItem();
                             LockDownContext context = new LockDownContext(reader);
                             if (item != null)
                             {
@@ -3759,6 +3459,9 @@ namespace Server.Items
 
             if (version < 14)
                 ValidationQueue<TownshipStone>.Enqueue(this);
+
+            // Revalidate NPC-backed township capabilities after deserialize
+            CheckNPCRequirements(typeof(TSEmissary));
         }
 
         public void Validate(object state)
@@ -3805,7 +3508,7 @@ namespace Server.Items
             if (!from.Alive)
                 return;
 
-            Item item = targeted as Item;
+            Item? item = targeted as Item;
 
             if (item == null || (item is Container && !(item is KeyRing)))
             {

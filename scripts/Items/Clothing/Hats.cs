@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -697,7 +697,7 @@ namespace Server.Items
         public override int LabelNumber { get { return 1041072; } } // a magical wizard's hat
 
         #region Stat Mods
-        public void AddStatMods(Mobile m)
+        public void AddStatMods(Mobile? m)
         {
             if (m == null)
                 return;
@@ -713,7 +713,7 @@ namespace Server.Items
             m.AddStatMod(intMod);
         }
 
-        public void RemoveStatMods(Mobile m)
+        public void RemoveStatMods(Mobile? m)
         {
             if (m == null)
                 return;

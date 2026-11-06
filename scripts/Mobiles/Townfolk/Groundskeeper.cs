@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,7 +76,7 @@ namespace Server.Mobiles
         private const int m_DeleteMinutes = 5;
         private WorkState m_workState = WorkState.Idle;
         private ArrayList m_itemsNear = new ArrayList();
-        private DeleteTimer m_Timer;
+        private DeleteTimer? m_Timer;
 
         /*
 		 * 1. m_scanRangeNear and m_reach should probably be the same, or at least reach should exceed scan range or you will get stuck finding things you can�t pickup.
@@ -203,14 +203,14 @@ namespace Server.Mobiles
 
         private static bool CheckHouse(Item item)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(item);
+            BaseHouse? house = BaseHouse.FindHouseAt(item);
 
             return (house != null && house.Contains(item));
         }
 
         private static bool CheckBoat(Item item)
         {
-            BaseBoat boat = BaseBoat.FindBoatAt(item);
+            BaseBoat? boat = BaseBoat.FindBoatAt(item);
 
             return (boat != null && boat.Contains(item));
         }
@@ -229,7 +229,7 @@ namespace Server.Mobiles
             {
                 if (ix is RecallRune)
                 {
-                    RecallRune rx = ix as RecallRune;
+                    RecallRune? rx = ix as RecallRune;
                     if (rx.Marked && rx.Description != null)
                         if (++runeCount <= 3)
                             remove.Add(ix);
@@ -346,7 +346,7 @@ namespace Server.Mobiles
 
             if (itemsFar.Count > 0)
             {
-                Item item = itemsFar[Utility.Random(itemsFar.Count)] as Item;
+                Item? item = itemsFar[Utility.Random(itemsFar.Count)] as Item;
                 // drop an auto deleting waypoint at this bit of rubbish. DoActionWander will drive the mob towards the WayPoint
                 //	when we arrive at the waypoint, it will auto distruct.
                 DestroyWayPoints();             // destroy the old waypoints
@@ -446,7 +446,7 @@ namespace Server.Mobiles
         // called from baseguard to manage trash pick-up in the area of the guard.
         public static void DoGroundskeeper(Mobile m)
         {
-            GroundskeeperStatus al;
+            GroundskeeperStatus? al;
             if (m_managers.Contains(m))                         // if we have it already
                 al = m_managers[m] as GroundskeeperStatus;      // get the GroundskeeperStatus for this manager
             else

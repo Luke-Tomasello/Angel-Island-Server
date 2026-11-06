@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts\Items\Skill Items\Magical\Potions\BasePotion.cs
  * ChangeLog
+ *  10/16/26, Adam
+ *      Removed the OnDragDrop override. It merged stacks directly, bypassing container capacity, weight and
+ *      store checks. Potions now use Item.OnDragDrop -> Container.OnStackAttempt like every other stackable.
  *  6/29/23, Yoar
  *      Added old name overrides
  *  3/14/22, Yoar
@@ -31,6 +34,7 @@
  *		Added check to only create empty bottles in backpack for Players
  */
 
+using Scripts.Misc;
 using Server.Engines.Craft;
 using Server.Mobiles;
 using Server.Text;
@@ -92,7 +96,7 @@ namespace Server.Items
 
                 if (number >= 1041314 && number <= 1041333)
                 {
-                    string name;
+                    string? name;
 
                     if (Cliloc.Lookup.TryGetValue(number, out name))
                     {
@@ -144,7 +148,7 @@ namespace Server.Items
         {
             m_PotionEffect = effect;
 
-            Stackable = false;
+            Stackable = Core.RuleSets.StackablePotions();
             Weight = 1.0;
         }
 
@@ -152,13 +156,44 @@ namespace Server.Items
             : base(serial)
         {
         }
+        public override Item Dupe(int amount)
+        {
+            // Create a new instance of the exact same concrete potion type.
+            Item? copy = null;
 
+            try
+            {
+                copy = (Item)Activator.CreateInstance(this.GetType());
+                if (copy != null)
+                    Utility.CopyProperties(this, copy);
+            }
+            catch
+            {
+                // If a potion type has no parameterless ctor, it must override Dupe itself.
+                // Returning base.Dupe(amount) is usually wrong for potions, so fail hard or fallback.
+                return base.Dupe(amount);
+            }
+
+            // Verify identity/stack rules.
+            if (Core.RuleSets.StackablePotions())
+                System.Diagnostics.Debug.Assert(Item.StackableRule(this, copy, checkMovable: false));
+
+            return base.Dupe(copy, amount);
+        }
+        public override int GetContainerSlotCount()
+        {
+            return this.Amount;
+        }
+        public override int GetContainerSlotCountForAmount(int amount)
+        {
+            return amount;
+        }
         public virtual bool RequireFreeHand { get { return true; } }
 
         public static bool HasFreeHand(Mobile m)
         {
-            Item handOne = m.FindItemOnLayer(Layer.OneHanded);
-            Item handTwo = m.FindItemOnLayer(Layer.TwoHanded);
+            Item? handOne = m.FindItemOnLayer(Layer.OneHanded);
+            Item? handTwo = m.FindItemOnLayer(Layer.TwoHanded);
 
             if (handTwo is BaseWeapon)
                 handOne = handTwo;
@@ -173,6 +208,13 @@ namespace Server.Items
 
             if (from.InRange(this.GetWorldLocation(), 1))
             {
+                // Ownership check first
+                if (this is Item it && !StartingLootMonitor.CanUse(from, it))
+                {
+                    from.SendMessage("This potion is bound to another soul.");
+                    return;
+                }
+
                 if (!RequireFreeHand || HasFreeHand(from))
                     Drink(from);
                 else
@@ -217,13 +259,15 @@ namespace Server.Items
 
             m.PlaySound(0x2D6);
 
-            if (m is PlayerMobile && !Engines.ConPVP.DuelContext.IsFreeConsume(m))
-                m.AddToBackpack(new Bottle());
-
             if (m.Body.IsHuman /*&& !m.Mounted*/ )
                 m.Animate(34, 5, 1, true, false, 0);
         }
 
+        public static void GiveEmptyBottle(Mobile m)
+        {
+            if (m is PlayerMobile && !Engines.ConPVP.DuelContext.IsFreeConsume(m))
+                m.AddToBackpack(new Bottle());
+        }
         public static TimeSpan Scale(Mobile m, TimeSpan v)
         {
             if (!Core.RuleSets.AOSRules())
@@ -262,7 +306,7 @@ namespace Server.Items
 
                 // Publish 15
                 // You will now be able to make potions directly into a potion keg.
-                if (pack != null && (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || PublishInfo.Publish >= 15))
+                if (pack != null && (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules() || PublishInfo.Publish >= 15))
                 {
                     List<PotionKeg> kegs = pack.FindItemsByType<PotionKeg>();
 

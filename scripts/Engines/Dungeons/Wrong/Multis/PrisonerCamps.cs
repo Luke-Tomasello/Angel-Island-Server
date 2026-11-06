@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,7 +52,7 @@ namespace Server.Multis
             // we want these guys outside the jail cell
             int x = 0;
             int y = 9;
-            Mobile m = null;
+            Mobile? m = null;
             if (Utility.Chance(0.10))
                 m = new BrigandLeader();
             else
@@ -147,7 +147,7 @@ namespace Server.Multis
             // we want these guys outside the jail cell
             int x = 9;
             int y = 0;
-            Mobile m = null;
+            Mobile? m = null;
             if (Utility.Chance(0.10))
                 m = new EvilMageLord();
             else
@@ -227,7 +227,7 @@ namespace Server.Multis
             int x = 0;
             int y = 2;
 
-            Mobile m = null;
+            Mobile? m = null;
             if (Utility.Chance(0.10))
                 m = new BrigandLeader();
             else

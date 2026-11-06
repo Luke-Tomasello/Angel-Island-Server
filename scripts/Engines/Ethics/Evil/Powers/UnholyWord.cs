@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,9 +48,9 @@ namespace Server.Ethics.Evil
         // Question(8)[B] on the boards
         private void Power_OnTarget(Mobile fromMobile, object obj, object state)
         {
-            Player from = state as Player;
+            Player? from = state as Player;
 
-            Mobile target = obj as Mobile;
+            Mobile? target = obj as Mobile;
 
             if (target == null || target.Player == false || !target.Hero)
             {   // not sure
@@ -98,7 +98,7 @@ namespace Server.Ethics.Evil
                 from.DoHarmful(combatant);
 
                 // death
-                AOS.Damage(combatant, from, combatant.Hits, combatant.Hits, 0, 0, 0, 0, this);
+                AOS.Damage(combatant, from, combatant.Hits, new DamageContext { Source = this });
                 combatant.Poison = Poison.Lethal;   // die on next tick
 
                 // This power consumes a huge amount of lifeforce, but allows you to target a hero and simply kill them dead. 

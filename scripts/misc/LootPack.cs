@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -103,7 +103,7 @@ namespace Server
         {
             List<DamageStore> list = BaseCreature.GetLootingRights(dead.DamageEntries, dead.HitsMax);
 
-            DamageStore highest = null;
+            DamageStore? highest = null;
 
             for (int i = 0; i < list.Count; ++i)
             {
@@ -155,7 +155,7 @@ namespace Server
                 if (!shouldAdd)
                     continue;
 
-                Item item = entry.Construct(from, luckChance, spawning);
+                Item? item = entry.Construct(from, luckChance, spawning);
 
                 if (item != null)
                 {
@@ -436,13 +436,13 @@ namespace Server
             set { m_MaxIntensity = value; }
         }
 
-        public LootPackItem[] Items
+        public LootPackItem[]? Items
         {
             get { return m_Items; }
             set { m_Items = value; }
         }
 
-        public Item Construct(Mobile from, int luckChance, bool spawning)
+        public Item? Construct(Mobile from, int luckChance, bool spawning)
         {
             if (m_AtSpawnTime != spawning)
                 return null;
@@ -496,7 +496,7 @@ namespace Server
             return 5;
         }
 
-        public Item Mutate(Mobile from, int luckChance, Item item)
+        public Item? Mutate(Mobile from, int luckChance, Item? item)
         {
             // 11/1/21: adam, turned off for safety
             if (item != null && false)
@@ -706,7 +706,7 @@ namespace Server
                 }
             };
 
-        public static Item RandomScroll(int index, int minCircle, int maxCircle)
+        public static Item? RandomScroll(int index, int minCircle, int maxCircle)
         {
             --minCircle;
             --maxCircle;
@@ -734,11 +734,11 @@ namespace Server
             return Loot.RandomScroll(minCircle * 8, (maxCircle * 8) + 7, SpellbookType.Regular);
         }
 
-        public Item Construct()
+        public Item? Construct()
         {
             try
             {
-                Item item;
+                Item? item;
 
                 if (m_Type == typeof(BaseRanged))
                     item = Loot.RandomRangedWeapon();

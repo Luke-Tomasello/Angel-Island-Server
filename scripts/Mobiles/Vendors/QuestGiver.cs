@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -144,7 +144,7 @@ namespace Server.Mobiles
         #endregion QuestGiver Data
 
         #region Variable Management
-        Dictionary<string, VariableInfo> SelectDatabase(Mobile m)
+        Dictionary<string, VariableInfo> SelectDatabase(Mobile? m)
         {
             if (m == null)
                 return m_GlobalVariableDatabase;
@@ -158,7 +158,7 @@ namespace Server.Mobiles
 
             return null;
         }
-        private object GetVar(string varName, Mobile m = null)
+        private object? GetVar(string varName, Mobile? m = null)
         {   // select the database
             Dictionary<string, VariableInfo> db = SelectDatabase(m);
             // all variables will be lower case
@@ -167,7 +167,7 @@ namespace Server.Mobiles
                 return db[varName].Value;
             return null;
         }
-        private VariableInfo GetVarInfo(string varName, Mobile m = null)
+        private VariableInfo? GetVarInfo(string varName, Mobile? m = null)
         {   // select the database
             Dictionary<string, VariableInfo> db = SelectDatabase(m);
             // all variables will be lower case
@@ -176,7 +176,7 @@ namespace Server.Mobiles
                 return db[varName];
             return null;
         }
-        private bool DeleteVar(string varName, Mobile m = null)
+        private bool DeleteVar(string varName, Mobile? m = null)
         {   // select the database
             Dictionary<string, VariableInfo> db = SelectDatabase(m);
             if (db.ContainsKey(varName))
@@ -186,12 +186,12 @@ namespace Server.Mobiles
             }
             return false;
         }
-        private bool SetVar(string varName, object value, VariableInfo.Attributes flags, Mobile m = null)
+        private bool SetVar(string varName, object? value, VariableInfo.Attributes flags, Mobile? m = null)
         {
             string failReason = string.Empty;
             return SetVar(varName, value, flags, ref failReason, m);
         }
-        private bool SetVar(string varName, object value, VariableInfo.Attributes flags, ref string failReason, Mobile m = null)
+        private bool SetVar(string varName, object? value, VariableInfo.Attributes flags, ref string failReason, Mobile? m = null)
         {   // select the database
             Dictionary<string, VariableInfo> db = SelectDatabase(m);
             // all variables will be lower case
@@ -288,6 +288,8 @@ namespace Server.Mobiles
             CantWalkLand = true;
             InitStats(75, 75, 75);
             EmoteHue = Utility.RandomYellowHue();
+
+            InitializeSystemVariables();
         }
 
         public QuestGiver(Serial serial)
@@ -489,7 +491,7 @@ namespace Server.Mobiles
                             Dictionary<string, VariableInfo> tmp = new();
                             for (int jx = 0; jx < jcount; jx++)
                             {
-                                string varName = reader.ReadString();
+                                string? varName = reader.ReadString();
                                 object value = Utility.Reader(reader);
                                 int flags = reader.ReadInt();
                                 tmp.Add(varName, new VariableInfo(value, (VariableInfo.Attributes)flags));
@@ -504,7 +506,7 @@ namespace Server.Mobiles
                         int count = reader.ReadInt();
                         for (int ix = 0; ix < count; ix++)
                         {
-                            string varName = reader.ReadString();
+                            string? varName = reader.ReadString();
                             object value = Utility.Reader(reader);
                             int flags = reader.ReadInt();
                             m_GlobalVariableDatabase.Add(varName, new VariableInfo(value, (VariableInfo.Attributes)flags));
@@ -522,7 +524,7 @@ namespace Server.Mobiles
                         int cond_count = reader.ReadInt();
                         for (int ix = 0; ix < cond_count; ix++)
                         {
-                            string key = reader.ReadString();
+                            string? key = reader.ReadString();
                             int nelts = reader.ReadInt();
                             List<string> values = new List<string>();
                             for (int jx = 0; jx < nelts; jx++)
@@ -566,7 +568,7 @@ namespace Server.Mobiles
                         int kwdb_count = reader.ReadInt();
                         for (int ix = 0; ix < kwdb_count; ix++)
                         {
-                            string key = reader.ReadString();
+                            string? key = reader.ReadString();
                             int obj_count = reader.ReadInt();
                             List<object> list = new List<object>();
                             for (int jx = 0; jx < obj_count; jx++)
@@ -589,7 +591,7 @@ namespace Server.Mobiles
                         int idb_count = reader.ReadInt();
                         for (int ix = 0; ix < idb_count; ix++)
                         {
-                            Item key = reader.ReadItem();
+                            Item? key = reader.ReadItem();
                             int obj_count = reader.ReadInt();
                             List<object> list = new List<object>();
                             for (int jx = 0; jx < obj_count; jx++)
@@ -643,6 +645,13 @@ namespace Server.Mobiles
             NameHue = CalcInvulNameHue();
 
             // finally, initialize our variable database with system variables if they are not already set
+            InitializeSystemVariables();
+        }
+
+        // System variable defaults. Applied to new QuestGivers at construction and to loaded QuestGivers after
+        //  Deserialize; values that already exist (e.g. loaded from the save) are left unchanged.
+        private void InitializeSystemVariables()
+        {
             //if (m_VariableDatabase.ContainsKey("needsReview") == false)
             //m_VariableDatabase.Add("needsReview", new VariableInfo(true, VariableInfo.Attributes.System | VariableInfo.Attributes.ReadOnly));
 
@@ -712,7 +721,7 @@ namespace Server.Mobiles
 
         public bool IsHomeOwner(Mobile m)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
             if (house != null)
                 return house.IsCoOwner(m);
             return false;
@@ -785,31 +794,9 @@ namespace Server.Mobiles
             return false;
         }
 
-        private string GetTrackedItemLabel(Item dropped)
-        {
-            foreach (KeyValuePair<Item, object[]> kvp in m_ItemDatabase)
-            {
-                if (kvp.Key == dropped && GetField(kvp.Value, Field.Track) != null)
-                    return GetField(kvp.Value, Field.Name) as string;
-            }
-
-            return null;
-        }
-
-        private bool TrackedItem(Item dropped)
-        {
-            foreach (KeyValuePair<Item, object[]> kvp in m_ItemDatabase)
-            {
-                if (kvp.Key == dropped && GetField(kvp.Value, Field.Track) != null)
-                    return true;
-            }
-
-            return false;
-        }
-
         private bool UnTrackItem(Item dropped)
         {
-            Item found = null;
+            Item? found = null;
             foreach (KeyValuePair<Item, object[]> kvp in m_ItemDatabase)
             {
                 if (kvp.Key == dropped && GetField(kvp.Value, Field.Track) != null)
@@ -888,7 +875,7 @@ namespace Server.Mobiles
                                 int error = 0;
                                 string exp_result = string.Empty;
 
-                                object o = ExpressionRun(from, temp, ref error, ref failReason);
+                                object? o = ExpressionRun(from, temp, ref error, ref failReason);
                                 if (o != null)
                                     exp_result = (string)o;
 
@@ -972,22 +959,7 @@ namespace Server.Mobiles
             else return false;
         }
 
-        private bool DetermineExpressionTruth(object o, List<string> tokens)
-        {
-            bool foundElse = false;
-            string match = o == null ? "" : o.ToString();
-            foreach (string s in tokens)
-            {
-                if (s.Equals("else", StringComparison.OrdinalIgnoreCase))
-                    foundElse = true;
-                else if (match.Equals(s, StringComparison.OrdinalIgnoreCase) && foundElse)
-                    return false;
-                else if (match.Equals(s, StringComparison.OrdinalIgnoreCase) && !foundElse)
-                    return true;
-            }
-            return false;
-        }
-        private object ExpressionRun(Mobile m, List<string> temp, ref int error, ref string failReason)
+        private object? ExpressionRun(Mobile m, List<string> temp, ref int error, ref string failReason)
         {
             ExpressionEvaluator evaluator = new ExpressionEvaluator();
             string[] str_tokens = temp.ToArray();
@@ -1012,7 +984,7 @@ namespace Server.Mobiles
                         {
                             if (str_token.Contains("OldName", StringComparison.OrdinalIgnoreCase))
                             {
-                                object o = GetVar(str_token);
+                                object? o = GetVar(str_token);
                                 if (o is string)
                                     script = script.Replace(str_token, '"' + LookupOldName(o as string) + '"');
                                 else
@@ -1152,7 +1124,7 @@ namespace Server.Mobiles
                 string failReason = string.Empty;
                 bool exp_result = false;
 
-                object o = ExpressionRun(m, temp, ref error, ref failReason);
+                object? o = ExpressionRun(m, temp, ref error, ref failReason);
                 if (o != null)
                     exp_result = (bool)o;
 
@@ -1198,7 +1170,7 @@ namespace Server.Mobiles
                     if (props[i].CanRead)
                     {
                         // only integral and string types for now
-                        object p = props[i].GetValue(o, null);
+                        object? p = props[i].GetValue(o, null);
                         //       sbyte ,       byte ,       short ,       ushort ,       int ,       uint ,       long ,       ulong ,       char, and    string
                         if (p is sbyte || p is byte || p is short || p is ushort || p is int || p is uint || p is long || p is ulong || p is char || p is string)
                             table.Add(props[i].Name, props[i].GetValue(o, null));
@@ -1211,258 +1183,6 @@ namespace Server.Mobiles
 
             return table;
         }
-#if false
-        private bool IsNumber(string s)
-        {
-            int i = 0;
-            return int.TryParse(s, out i);
-        }
-        private bool And(List<string> temp)
-        {
-            return temp.Count > 0 && temp[0].Equals("&&");
-        }
-        private bool Or(List<string> temp)
-        {
-            return temp.Count > 0 && temp[0].Equals("||");
-        }
-        private void Eat(ref List<string> temp, int count)
-        {   // here we protect against an ill-formed statement. Example: "1 == 1 && 2 != 3 &&"
-            // ------------------------------------------------------------------------------^- end of string!
-            temp.RemoveRange(0, Math.Min(count,temp.Count));
-        }
-        protected bool QGExpEval(ref List<string> temp, ref int error, ref string failReason)
-        {
-            object term1 = LookupTerm(temp[0]);
-            string eq_op = temp[1];
-            object term2 = LookupTerm(temp[2]);
-            /* determine the type to convert to
-             * The first term with a known type will be the driver type (known property). 
-             * We will try to convert the second term to the driver type
-             * If neither are known, the user is comparing things which are not an item property.
-             *  In this case, we will use the first term to determine the type.
-             */
-            Type driver = 
-                // property values trump all other data types
-                m_VariableDatabase.ContainsKey(temp[0]) ? 
-                    term1.GetType() :
-                m_VariableDatabase.ContainsKey(temp[2]) ? 
-                    term2.GetType() : 
-                    // I'm guessing here that numbers should trump strings
-                IsNumber(temp[0]) ? 
-                    typeof(int) :
-                IsNumber(temp[1]) ?
-                    typeof(int) :
-                    // default
-                typeof(string);
-            bool mct = MakeCompatibleTerms(driver, ref term1, ref term2);
-            if (mct == false)
-            {
-                error = -1;
-                failReason = "incompatible terms";
-                return false;
-            }
-
-            bool exp_result;
-            // pick off the first expression
-            {
-                exp_result = QGExpEval(term1, temp[1], term2, ref error, ref failReason);
-                if (error != 0)
-                {
-                    return false;
-                }
-                Eat(ref temp, 3);
-            }
-            /* When to stop processing:
-             * A string of AND conditions exits as soon as the first AND fails.
-             * A string of OR conditions exits as soon as the first OR passes.
-             * We exit by gobbling-up all like operators (ANDs and ORs) once the above is known
-             */
-            if (And(temp) && exp_result == false)
-            {   // exit current AND conditions as soon as truth or falsehood is known
-                while (And(temp))
-                {
-                    Eat(ref temp, 1); // remove the "&&"
-                    Eat(ref temp, 3); // remove the expression
-                }
-            }
-            else if (And(temp))
-            {
-                Eat(ref temp, 1); // remove the "&&"
-                exp_result = QGExpEval(ref temp, ref error, ref failReason);
-                return exp_result;
-            }
-            
-            if (Or(temp) && exp_result == false)
-            {
-                Eat(ref temp, 1); // remove the "||"
-                exp_result = QGExpEval(ref temp, ref error, ref failReason);
-                return exp_result;
-            }
-            else if (Or(temp) || And(temp))
-            {   // exit current OR/AND conditions as soon as truth or falsehood is known
-                while (Or(temp) || And(temp))
-                {   // see note*
-                    Eat(ref temp, 1); // remove the "||" or "&&"
-                    Eat(ref temp, 3); // remove the expression
-                }
-            }
-
-            /* Note*
-             * The first true OR condition eats ALL ANDs and ORs when we don't have parenthesis
-             * The QG and C# are in agreement in our evaluation.
-             * 
-                if (false || true || false && true)
-                    ; // QG & C# compiler says this statement is true
-                else
-                    ;
-
-                if (false || true || false && false)
-                    ; // QG & C# compiler says this statement is true
-                else
-                    ;
-            *
-            */
-
-            return exp_result;
-        }
-        protected object ConvertToType(Type typeTo, object term)
-        {
-            if (term.GetType() == typeTo)
-                return term;
-
-            var converter = System.ComponentModel.TypeDescriptor.GetConverter(term.GetType());
-            try
-            {
-                object result = null;
-                if (converter.CanConvertTo(typeTo))
-                    result = converter.ConvertTo(term, typeTo);
-                else if (term.GetType() == typeof(string))
-                {   // ConvertTo won't convert strings to integral types, so we'll help'em out
-                    //  so "1234" would be converted to 1234 and reprocessed to get the correct conversion (maybe signed, unsigned, byte, whatever.)
-                    //  "apple" would fail, and you would get the null conversion (since "apple" cannot be converted to an int)
-                    Int32 tmp = 0;
-                    if (Int32.TryParse(term as string, out tmp))
-                        return ConvertToType(typeTo, tmp);
-                    // now for bool
-                    bool btmp = false;
-                    if (bool.TryParse(term as string, out btmp))
-                        return ConvertToType(typeTo, btmp);
-                }
-                return result;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-        protected bool MakeCompatibleTerms(Type driver, ref object term1, ref object term2)
-        {
-            // type conversions we handle
-            // sbyte , byte , short , ushort , int , uint , long , ulong , char , and string
-            object result = null;
-
-            result = ConvertToType(driver, term1);
-            if (result == null)
-                return false;
-            else
-                term1 = result;
-
-            result = ConvertToType(driver, term2);
-            if (result == null)
-                return false;
-            else
-                term2 = result;
-
-         return true;
-        }
-        protected object LookupTerm(string term)
-        {   // see if this is a known item property
-            //  if so, convert if from string to it's actual type
-            if (m_VariableDatabase.ContainsKey(term))
-                // this ugliness simply removes the pluralization decoration from the string, example: "apple%s%"
-                if (m_VariableDatabase[term].Value.GetType() == typeof(string) && m_VariableDatabase[term].Value is string s && !string.IsNullOrEmpty(s))
-                    return s.Split('%')[0];
-                else
-                    return m_VariableDatabase[term].Value;
-            return term;
-        }
-        protected bool QGExpEval(object term1, string eq_op, object term2, ref int error, ref string failReason)
-        {
-            switch(eq_op)
-            {
-                case "==":
-                    {
-                        if (term1.GetType() == typeof(string) && term2.GetType() == typeof(string))
-                            return (term1 as string).Equals(term2 as string, StringComparison.OrdinalIgnoreCase);
-                        return term1.Equals(term2);
-                    }
-                case "!=":
-                    {
-                        if (term1.GetType() == typeof(string) && term2.GetType() == typeof(string))
-                            return !(term1 as string).Equals(term2 as string, StringComparison.OrdinalIgnoreCase);
-                        return !term1.Equals(term2);
-                    }
-                case "<":
-                    {
-                        if (term1.GetType() == typeof(string) && term2.GetType() == typeof(string))
-                            return (term1 as string).CompareTo(term2 as string) < 0;
-
-                        return Comparer.DefaultInvariant.Compare(term1, term2)  < 0;
-                    }
-                case ">":
-                    {
-                        if (term1.GetType() == typeof(string) && term2.GetType() == typeof(string))
-                            return (term1 as string).CompareTo(term2 as string) > 0;
-
-                        return Comparer.DefaultInvariant.Compare(term1, term2) > 0;
-                    }
-                case "<=":
-                    {
-                        int result = 0;
-                        if (term1.GetType() == typeof(string) && term2.GetType() == typeof(string))
-                            result = (term1 as string).CompareTo(term2 as string);
-                        else
-                            result = Comparer.DefaultInvariant.Compare(term1, term2);
-                        return result <= 0;
-                    }
-                case ">=":
-                    {
-                        int result = 0;
-                        if (term1.GetType() == typeof(string) && term2.GetType() == typeof(string))
-                            result = (term1 as string).CompareTo(term2 as string);
-                        else
-                            result = Comparer.DefaultInvariant.Compare(term1, term2);
-                        return result >= 0;
-                    }
-                default:
-                    error = -1;
-                    failReason = "Unknown operator";
-                    return false;
-            }
-
-        }
-        protected string NormalizeProperty(string s1)
-        {
-            int dmy = 0;
-            if (int.TryParse(s1, out dmy))
-                // it's a normal int
-                return s1;
-            
-            // now try to parse something like DEADBEEF
-            if (int.TryParse(s1, NumberStyles.HexNumber, null, out dmy))
-                return dmy.ToString();
-
-            // now try to parse something like 0XDEADBEEF
-            if (s1.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-            {
-                string temp= s1.Substring(2);
-                if (int.TryParse(temp, NumberStyles.HexNumber, null, out dmy))
-                    return dmy.ToString();
-            }
-            // not a number
-            return s1.ToLower();
-        }
-#endif
         protected bool DragDropDisposition(Mobile from, Item dropped)
         {
             // what we do with the item dropped
@@ -1521,7 +1241,7 @@ namespace Server.Mobiles
             Name,
             Track,
         }
-        private object GetField(object[] tokens, Field field)
+        private object? GetField(object[] tokens, Field field)
         {
             for (int ix = 0; ix < tokens.Length; ix++)
             {
@@ -1655,7 +1375,7 @@ namespace Server.Mobiles
                     QGLogger(e.Mobile);
             }
         }
-        private void QGLogger(Mobile from)
+        private void QGLogger(Mobile? from)
         {
             LogHelper logger = new LogHelper(string.Format("QuestGiver({0})Review.log", this.Serial), true, true, true);
             logger.Log(LogType.Text, string.Format("At {0} {1} {2} review. (Owner={3}, From={4})",
@@ -1860,7 +1580,7 @@ namespace Server.Mobiles
                         e.Handled = true;
                         string failReason = string.Empty;
                         SetVar("some_number", 9999, VariableInfo.Attributes.None, ref failReason);
-                        object o = GetVar("some_number");
+                        object? o = GetVar("some_number");
 
                         SetVar("system_var", "I am a system variable", VariableInfo.Attributes.System, ref failReason);
                         o = GetVar("system_var");
@@ -1918,7 +1638,7 @@ namespace Server.Mobiles
                                     break;
 
                                 case "memory":
-                                    from.SendMessage("Memory set to {0} minutes.", (int)GetVar("memory"));
+                                    from.SendMessage("Memory set to {0} minutes.", (double)GetVar("memory"));
                                     break;
                             }
                         }
@@ -1932,10 +1652,10 @@ namespace Server.Mobiles
                             List<string> temp = tokens.Select(i => i.ToString()).ToList();
                             temp.RemoveRange(0, 2);
                             int error = 0;
-                            object exp_result = null;
+                            object? exp_result = null;
                             string failReason = string.Empty;
 
-                            object o = ExpressionRun(from, temp, ref error, ref failReason);
+                            object? o = ExpressionRun(from, temp, ref error, ref failReason);
                             if (o != null)
                                 exp_result = o.ToString();
 
@@ -1951,7 +1671,7 @@ namespace Server.Mobiles
                                         {
                                             // Pattern match for invalid characters
 
-                                            string text = exp_result as string;
+                                            string? text = exp_result as string;
                                             if (InvalidNamePatt.IsMatch(text))
                                             {
                                                 // Invalid chars
@@ -1975,7 +1695,7 @@ namespace Server.Mobiles
                                     case "title":
                                         {
                                             // Pattern match for invalid characters
-                                            string text = exp_result as string;
+                                            string? text = exp_result as string;
                                             if (InvalidNamePatt.IsMatch(text))
                                             {
                                                 // Invalid chars
@@ -2000,7 +1720,7 @@ namespace Server.Mobiles
                                         {
                                             int result;
                                             // max 12 tiles
-                                            string text = exp_result as string;
+                                            string? text = exp_result as string;
                                             if (int.TryParse(text, out result) && result >= 0 && result < 12)
                                             {
                                                 SetVar("distance", result, VariableInfo.Attributes.System | VariableInfo.Attributes.Serialize);
@@ -2015,7 +1735,7 @@ namespace Server.Mobiles
                                         {
                                             double result;
                                             // max 72 hours
-                                            string text = exp_result as string;
+                                            string? text = exp_result as string;
                                             if (double.TryParse(text, out result) && result > 0 && result < TimeSpan.FromHours(72).TotalMinutes)
                                             {
                                                 SetVar("memory", result, VariableInfo.Attributes.System | VariableInfo.Attributes.Serialize);
@@ -2094,7 +1814,7 @@ namespace Server.Mobiles
                                 // remove the first token 'keywords'
 
                                 object[][] chunks = SplitArray(tokens, '|');
-                                string keyword = chunks[0][1] as string;
+                                string? keyword = chunks[0][1] as string;
 
                                 // shared placeholder for all of these keywords and aliases
                                 object[] actions = new object[0];
@@ -2519,7 +2239,7 @@ namespace Server.Mobiles
                             if (tokens.Length > 2 && tokens[2] is string)
                             {   // loop over all of the keywords and delete it if it exists.
                                 e.Handled = true;
-                                VariableInfo inf = GetVarInfo((tokens[2] as string).ToLower().Trim());
+                                VariableInfo? inf = GetVarInfo((tokens[2] as string).ToLower().Trim());
                                 if (inf == null)
                                 {
                                     PrivateOverheadMessage(MessageType.Regular, 0x3B2, false, string.Format("'{0}' not found.", tokens[2] as string), from.NetState);
@@ -2607,12 +2327,6 @@ namespace Server.Mobiles
             object o = evaluator.ScriptEvaluate(script);
             return o;
         }
-        private string MakeKey(string text)
-        {
-            if (text.Contains(' '))
-                return "\"" + text + "\"";
-            return text;
-        }
         private bool ValidateVerbArgs(object o, string args)
         {
             if (o is string s && s.ToLower().Equals("play", StringComparison.OrdinalIgnoreCase))
@@ -2664,7 +2378,7 @@ namespace Server.Mobiles
                         return index;
             return -1;
         }
-        private string GetChunk(string temp, Regex exp)
+        private string? GetChunk(string temp, Regex exp)
         {
             var match_condition = exp.Match(temp);
             if (!match_condition.Success)
@@ -2672,7 +2386,7 @@ namespace Server.Mobiles
 
             return match_condition.Value;
         }
-        private string[] GetChunks(string temp, Regex exp)
+        private string[]? GetChunks(string temp, Regex exp)
         {
             var match_condition = exp.Match(temp);
             if (!match_condition.Success)
@@ -2703,7 +2417,7 @@ namespace Server.Mobiles
 
             // get a modifiable copy
             string temp = text;
-            string chunk;
+            string? chunk;
 
             chunk = GetChunk(temp, new Regex("condition"));
             if (chunk != null)
@@ -2723,7 +2437,7 @@ namespace Server.Mobiles
             else
                 return false;
 
-            string[] chunks;
+            string[]? chunks;
             chunks = GetChunks(temp, TokenOpToken);
             if (chunks.Length == 3)
             {
@@ -2873,7 +2587,7 @@ namespace Server.Mobiles
                             {   // Has <item_label> (branch to) <keyword>
                                 if (action.Length == 3 && action[1] is string && action[2] is string)
                                 {
-                                    Memory.ObjectMemory om = m_PlayerMemory.Recall(from as object);
+                                    Memory.ObjectMemory? om = m_PlayerMemory.Recall(from as object);
                                     // look to see if the player was given one of these yet
                                     if (om != null && om.Context != null)
                                     {
@@ -3036,7 +2750,7 @@ namespace Server.Mobiles
                             {
                                 bool known = false;
                                 bool given = false;
-                                string name = null;
+                                string? name = null;
                                 foreach (KeyValuePair<Item, object[]> kvp in m_ItemDatabase)
                                 {
                                     if (action[1] is string)
@@ -3049,7 +2763,7 @@ namespace Server.Mobiles
                                             {   // I have one now
                                                 if (Backpack != null && from.Backpack != null)
                                                 {
-                                                    Item item = kvp.Key;
+                                                    Item? item = kvp.Key;
                                                     if ((action[0] as string).ToLower() == "dupe")
                                                         item = Utility.Dupe(kvp.Key);
                                                     else
@@ -3083,7 +2797,7 @@ namespace Server.Mobiles
                                     if (m_PlayerMemory.Recall(from) == false)
                                     {
                                         // we havn't seen this player yet
-                                        object memory = GetVar("memory");
+                                        object? memory = GetVar("memory");
                                         m_PlayerMemory.Remember(from, TimeSpan.FromSeconds((double)(memory == null ? 30 : memory) * 60).TotalSeconds);   // remember him for this long (*60 convert to minutes)
                                     }
                                     else
@@ -3091,7 +2805,7 @@ namespace Server.Mobiles
                                         m_PlayerMemory.Refresh(from);
 
                                     // extract the context object
-                                    Memory.ObjectMemory om = m_PlayerMemory.Recall(from as object);
+                                    Memory.ObjectMemory? om = m_PlayerMemory.Recall(from as object);
                                     if (om.Context == null)
                                         om.Context = new List<string>();
 
@@ -3112,7 +2826,7 @@ namespace Server.Mobiles
                             {
                                 if (action.Length >= 4)
                                 {
-                                    object existing = GetVar(action[1] as string, from);
+                                    object? existing = GetVar(action[1] as string, from);
                                     if (existing == null)
                                     {   // we will create and seed this variable with a default value
                                         // if it looks like a string, give it a "" value. If a number, a 0 value
@@ -3143,7 +2857,7 @@ namespace Server.Mobiles
         {
             Reset(null);
         }
-        private void Reset(Mobile from)
+        private void Reset(Mobile? from)
         {
             int count = 0;
             List<string> varsToDelete = new();
@@ -3222,36 +2936,6 @@ namespace Server.Mobiles
             string temp = "";
             if (expandMacros)
                 ExpandMacros(m, ref tokens, offset);
-#if false
-            ExpansionStatus result;
-            string match = null;
-            if ((result = ExpandMacros(ref tokens, offset, ref match)) == ExpansionStatus.Okay)
-                for (int ix = 0; ix < tokens.Length; ix++)
-                {
-                    if (temp.Length > 0 && tokens[ix] is string)
-                        temp += ' ';
-
-                    if (tokens[ix] is string)
-                        temp += (tokens[ix] as string).Contains(' ') ? '"' + (tokens[ix] as string) + '"' : tokens[ix] as string;
-                    else
-                        temp += (Char)tokens[ix];       // add in punction like a comma (which was turned to a Char for parsing reasons
-                                                        // it's now returned
-                }
-            else
-            {
-                if (result == ExpansionStatus.Unknown)                              // I never had one of these
-                    temp = string.Format("I know nothing about a {0}.", match);
-                else if (result == ExpansionStatus.HaveAll)                         // i've not given any of these out
-                    temp = string.Format("The {0} is in my backpack.", match);
-                else if (result == ExpansionStatus.BadField)                        // i have the item, but I don't know the field
-                    temp = string.Format("Bad field used for: {0}.", match);
-                else
-                    temp = string.Format("I'm sorry. I'm at a loss looking for a {0}.", match);
-            }
-
-
-            return temp;
-#endif
             return GlueString(tokens, offset);
         }
         private string GlueString(object[] tokens, int offset)
@@ -3308,21 +2992,21 @@ namespace Server.Mobiles
             Unknown,            // I never knew of this item
             NoMore,             // I have no more
             HaveAll,            // I have all that there are
-            Deleted,            // deleted or freeze dried
+            Deleted,            // deleted
             BadField,           // I know the item, but there was a problem with the field
         }
         protected void ExpandMacros(Mobile m, ref object[] tokens, int offset)
         {
             for (int ix = offset; ix < tokens.Length; ix++)
             {
-                string temp = tokens[ix].ToString();
+                string? temp = tokens[ix].ToString();
                 int first = temp.IndexOf('%');
                 int last = temp.LastIndexOf('%');
 
                 if (first != -1 && last != -1 && first < last)
                 {
                     string prop = temp.Substring(first + 1, last - first - 1);
-                    object o = GetVar(prop);    // first try to expand from the global database
+                    object? o = GetVar(prop);    // first try to expand from the global database
                     if (o == null)
                         o = GetVar(prop, m);     // next try to expand from the specific player's database
                     if (o != null)
@@ -3345,7 +3029,7 @@ namespace Server.Mobiles
             else
                 NameCache.Add(text, null);
 
-            Item item = null;
+            Item? item = null;
             try
             {
                 if (CacheFactory.OldNameToTypeQuickTable.ContainsKey(text))
@@ -3368,114 +3052,11 @@ namespace Server.Mobiles
                     item.Delete();
             }
         }
-#if false
-        protected ExpansionStatus ExpandMacros(ref object[] tokens, int offset, ref string match)
-        {
-            List<object> list = new List<object>();
-            for (int ix = offset; ix < tokens.Length; ix++)
-            {
-                string temp = tokens[ix] as string;
-
-                if (temp == null)
-                {   // a delimiter like '|'
-                    list.Add(tokens[ix]);
-                    continue;
-                }
-
-                temp = temp.Replace("%%", "\r");                                                // escape double '%' as a literal
-                int name_start = temp.IndexOf('%');                                             // locate start of name
-                int name_end = temp.LastIndexOf('%');                                           // locate end of name
-                int field_start = temp.IndexOf('.');                                            // locate start of field
-                int tail = temp.LastIndexOfAny(new char[] { '.', ',', '!', '?' });              // any tail delimiters?
-                int field_end = (field_start == tail || tail < 0) ? temp.Length - 1 : tail - 1; //	end of field
-
-                // %sword%.location
-                if (name_start < name_end && field_start < field_end && name_start >= 0 && field_start >= 0)
-                {   // okay, looks like a macro
-                    // extract the name(sword) and field(location)
-                    string name = temp.Substring(name_start + 1, (name_end - name_start) - 1);      // extract the name
-                    string field = temp.Substring(field_start + 1, (field_end - field_start));      // extract the field
-                    temp = temp.Replace(string.Format("%{0}%.{1}", name, field), "{0}");            // format string preserveing head and tail characters
-                    temp = temp.Replace("\r", "%");                                                 // unescape literal '%'
-
-                    // tell the user what we think we are dealing with
-                    match = name;
-
-                    if (name == "npc")
-                    {
-                        if (field == "location")
-                        {
-                            list.Add(string.Format(temp, GetLocation(this.Location, this.Map)));
-                        }
-                        else if (field == "name")
-                        {
-                            list.Add(string.Format(temp, this.Name));
-                        }
-                        else
-                            return ExpansionStatus.BadField;
-                    }
-                    else if (name == "pc")
-                    {
-                        if (field == "location")
-                        {
-                            list.Add(string.Format(temp, GetLocation(m_From.Location, m_From.Map)));
-                        }
-                        else if (field == "name")
-                        {
-                            list.Add(string.Format(temp, m_From.Name));
-                        }
-                        else
-                            return ExpansionStatus.BadField;
-                    }
-                    else
-                    {
-                        // did we ever know of this item?
-                        if (Lookup(name) == null)
-                            return ExpansionStatus.Unknown;
-
-                        // okay, we know of this item. See if we have given any out
-                        Item item;
-
-                        // look for an entry in our database that does not exist in our inventory
-                        if ((item = Lookup(name, false)) == null)
-                            // we've not given any out
-                            return ExpansionStatus.HaveAll;
-
-                        if (field == "location")
-                        {
-                            list.Add(string.Format(temp, GetItemLocation(item)));
-
-                            // warn the player that they are being tracked
-                            if (item.RootParent is PlayerMobile)
-                            {
-                                PlayerMobile pm = item.RootParent as PlayerMobile;
-                                if (pm.Map != Map.Internal)
-                                {
-                                    string realName = item.Name;
-                                    if (item.Name == null || item.Name.Length == 0)
-                                        realName = item.ItemData.Name;
-
-                                    pm.SendMessage("The {0} ({1}) you carry is being used to track you!", name, realName);
-                                }
-                            }
-                        }
-                        else
-                            return ExpansionStatus.BadField;
-                    }
-                }
-                else
-                    list.Add(tokens[ix]);
-            }
-
-            tokens = list.ToArray();
-            return ExpansionStatus.Okay;
-        }
-#endif
-        private Item Lookup(string name, bool exists)
+        private Item? Lookup(string name, bool exists)
         {
             foreach (KeyValuePair<Item, object[]> kvp in m_ItemDatabase)
                 if (GetField(kvp.Value, Field.Track) != null && GetField(kvp.Value, Field.Name) as string == name)
-                {   // deleted of freeze dried.
+                {   // deleted
                     if (kvp.Key.Deleted)
                         continue;
 
@@ -3487,7 +3068,7 @@ namespace Server.Mobiles
             return null;
         }
 
-        private Item Lookup(string name)
+        private Item? Lookup(string name)
         {
             foreach (KeyValuePair<Item, object[]> kvp in m_ItemDatabase)
                 if (GetField(kvp.Value, Field.Track) != null && GetField(kvp.Value, Field.Name) as string == name)
@@ -3504,7 +3085,7 @@ namespace Server.Mobiles
                 // look at our current set of keywords skipping to offest (ignore 'keywords' etc.)
                 for (int mx = offset; mx < tokens.Length; mx++)
                 {
-                    string s = tokens[mx] as string;
+                    string? s = tokens[mx] as string;
                     if (s == "onenter" || s == "onreceive" || s == "onreturn" | s == "terminate")
                     {
                         // found it
@@ -3525,7 +3106,7 @@ namespace Server.Mobiles
                 // look at our current set of keywords skipping to offest (ignore 'keywords' etc.)
                 for (int mx = offset; mx < tokens.Length; mx++)
                 {
-                    string s = tokens[mx] as string;
+                    string? s = tokens[mx] as string;
                     if (m_PrivateKeywords.Contains(s))
                     {
                         // found it
@@ -3594,65 +3175,9 @@ namespace Server.Mobiles
                     return true;
                 }
             }
-#if false
-            // check each keyword entry for a special dotted keyword phrase
-            foreach (KeyValuePair<string, object[]> kvp in m_KeywordDatabase)
-            {   // does it even look like a key phrase?
-                if (kvp.Key.IndexOf('.') != -1)
-                {   // we may have something
-                    string[] temp = kvp.Key.Split(new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (temp.Length <= 1)
-                        continue;           // must be at least two keywords
-                    for (int ix = 0; ix < temp.Length; ix++)
-                    {
-                        if (MatchPhraseKey(tokens, offset, temp[ix]))
-                        {
-                            if (ix == temp.Length - 1)
-                            {
-                                found = kvp.Key;    // the match
-                                return true;        // we have matched all terms of this key phrase
-                            }
-                        }
-                        else
-                            break;          // oops, no match
-                    }
-                }
-            }
-#endif
             // not found
             return false;
         }
-#if false
-        protected bool MatchPhraseKey(object[] tokens, int offset, string match)
-        {
-            if (tokens.Length > offset && tokens[offset] is string)
-            {
-                for (int ix = offset; ix < tokens.Length; ix++)
-                {
-                    if (tokens[ix] is string)
-                    {
-                        // remove punctuation from token as "hello!" should match the keyword "hello"
-                        string kword = tokens[ix] as string;
-                        int ndx;
-                        char[] delims = new char[] { '.', ',', '!' };
-                        while ((ndx = kword.IndexOfAny(delims)) != -1)
-                            kword = kword.Remove(ndx, 1);
-
-                        // okay, we have a clean keyword, look it up
-                        if (kword == match)
-                            return true;
-                    }
-                    if (tokens[ix] is Char && (Char)tokens[ix] == '|')
-                    {   // we're done .. this ('|') starts the action
-                        return false;
-                    }
-                }
-            }
-
-            // not found
-            return false;
-        }
-#endif
         protected bool FindKeyword(object[] tokens, int offset, out string found)
         {
             found = null;
@@ -3663,7 +3188,7 @@ namespace Server.Mobiles
                     if (tokens[ix] is string)
                     {
                         // remove punctuation from token as "hello!" should match the keyword "hello"
-                        string kword = tokens[ix] as string;
+                        string? kword = tokens[ix] as string;
                         int ndx;
                         char[] delims = new char[] { '.', ',', '!' };
                         while ((ndx = kword.IndexOfAny(delims)) != -1)
@@ -3864,12 +3389,6 @@ namespace Server.Mobiles
                 return input;
         }
         #region StringToKeyPhrase (Obsolete)
-#if false
-        protected string StringToKeyPhrase(string text)
-        {
-            return text.Replace("\"", "").Replace(' ', '.').Trim();
-        }
-#endif
         #endregion StringToKeyPhrase (Obsolete)
         protected object[] Compile(string input)
         {   // compile the string into an array of objects
@@ -3924,36 +3443,6 @@ namespace Server.Mobiles
                 return;
             }
         }
-#if false
-        private bool LRTokenParser(ref string input, List<object> list)
-        {
-            Regex Token = new Regex(@"^("".*?""|\b[0-9]+\b|\b[a-zA-Z][a-zA-Z0-9_\.]+\b)");
-            Regex Puncuation = new Regex(@"^(?![""])\p{P}");
-
-            string chunk;
-
-            chunk = GetChunk(input, Token);
-            if (chunk != null)
-            {
-                list.Add(chunk);
-                input = RemoveChunk(input, Token);
-            }
-            else
-                return false;
-
-            chunk = GetChunk(input, Puncuation);
-            if (chunk != null)
-            {
-                list.Add(chunk);
-                input = RemoveChunk(input, Puncuation);
-            }
-
-            if (input.Equals(string.Empty))
-                return true;
-
-            return LRTokenParser(ref input, list);
-        }
-#endif
         #region Standard Vendor Functions        
         protected ArrayList GetItems()
         {   // arraylist to get all items in vendor backpack used for destroying vendors
@@ -3974,7 +3463,7 @@ namespace Server.Mobiles
         }
         public virtual void Destroy(bool toBackpack)
         {
-            Item shoes = this.FindItemOnLayer(Layer.Shoes);
+            Item? shoes = this.FindItemOnLayer(Layer.Shoes);
 
             if (shoes is Sandals)
                 shoes.Hue = 0;
@@ -4068,7 +3557,7 @@ namespace Server.Mobiles
 
             PrivateOverheadMessage(MessageType.Regular, 0x3B2, false, string.Format("Okay."), from.NetState);
         }
-        private object[] AppendField(object[] tokens, Field field, object value)
+        private object[] AppendField(object[]? tokens, Field field, object? value)
         {
             List<object> list = new List<object>();
 
@@ -4216,7 +3705,7 @@ namespace Server.Items
             }
             else
             {
-                BaseHouse house = BaseHouse.FindHouseAt(from);
+                BaseHouse? house = BaseHouse.FindHouseAt(from);
 
                 if (house == null || !house.IsOwner(from))
                 {

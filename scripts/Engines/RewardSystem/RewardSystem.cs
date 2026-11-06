@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -50,8 +50,8 @@ namespace Server.Engines.RewardSystem
 {
     public class RewardSystem
     {
-        private static RewardCategory[] m_Categories;
-        private static RewardList[] m_Lists;
+        private static RewardCategory[]? m_Categories;
+        private static RewardList[]? m_Lists;
         private static ArrayList m_Codes;
         private static string m_RewardCode, m_RewardType, m_RewardUsed;
 
@@ -119,7 +119,7 @@ namespace Server.Engines.RewardSystem
             XmlDocument doc = new XmlDocument();
             doc.Load(filePath);
 
-            XmlElement root = doc["RewardCodes"];
+            XmlElement? root = doc["RewardCodes"];
 
             int count = Accounts.GetInt32(Accounts.GetAttribute(root, "count", "0"), 0);
             m_Codes = new ArrayList();
@@ -237,7 +237,7 @@ namespace Server.Engines.RewardSystem
             }
         }
 
-        public static RewardList[] Lists
+        public static RewardList[]? Lists
         {
             get
             {
@@ -254,7 +254,7 @@ namespace Server.Engines.RewardSystem
             if (list == null)
                 return false;
 
-            Account acct = mob.Account as Account;
+            Account? acct = mob.Account as Account;
 
             if (acct == null)
                 return false;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,6 +66,10 @@ namespace Server.Mobiles
         }
         public override Characteristics MyCharacteristics { get { return Characteristics.Run | Characteristics.Fly; } }
         public override int Meat { get { return 1; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
+        // strong mongbat
+        //public override int Hides { get { return 6; } }
+        //public override HideType HideType { get { return HideType.Regular; } }
         public override FoodType FavoriteFood { get { return FoodType.Meat; } }
 
         public Mongbat(Serial serial)
@@ -75,26 +79,15 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-                PackGold(1, 25);
+            // http://web.archive.org/web/20020210133039/uo.stratics.com/hunters/mongbat.shtml
+            // 1 Raw Ribs (carved), 6 Hides (carved) off of stronger Mongbat. The stronger version also give 0 to 50 Gold.
+
+            if (Spawning)
+            {
+
+            }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020210133039/uo.stratics.com/hunters/mongbat.shtml
-                    // 1 Raw Ribs (carved), 6 Hides (carved) off of stronger Mongbat. The stronger version also give 0 to 50 Gold.
-
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Poor);
-                }
             }
         }
 

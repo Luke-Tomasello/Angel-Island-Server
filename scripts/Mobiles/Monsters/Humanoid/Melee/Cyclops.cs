@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -79,42 +79,24 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020202091348/uo.stratics.com/hunters/cyclops.shtml
+            // 450 to 650 Gold, Potions, Arrows, Gems, Magic Items
+            // https://web.archive.org/web/20010803063818fw_/http://uo.stratics.com/hunters/cyclops.shtml
+            // 	200 to 250 gold, Potions, Arrows, Gems, Magic Items
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
                 PackGold(200, 250);
-                PackMagicEquipment(1, 2, 0.15, 0.15);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020202091348/uo.stratics.com/hunters/cyclops.shtml
-                    // 450 to 650 Gold, Potions, Arrows, Gems, Magic Items
-                    // https://web.archive.org/web/20010803063818fw_/http://uo.stratics.com/hunters/cyclops.shtml
-                    // 	200 to 250 gold, Potions, Arrows, Gems, Magic Items
-                    if (Spawning)
-                    {
-                        PackGold(200, 250);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackPotion(.5);
-                        PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
-                        PackGem(Utility.RandomMinMax(1, 4));
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 2, 0.15, 0.15);
-                        else
-                            PackMagicItem(1, 1, 0.05);
-                    }
-                }
+                PackPotion();
+                PackPotion(.5);
+                PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
+                PackGem(Utility.RandomMinMax(1, 4));
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 2, 0.15, 0.15);
                 else
-                {
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.Average);
-                }
+                    PackMagicItem(1, 1, 0.05);
             }
         }
 

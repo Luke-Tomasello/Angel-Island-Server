@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,7 +28,6 @@
  */
 
 using Server.Mobiles;
-using Server.Multis;
 using Server.Targeting;
 using System;
 
@@ -92,7 +91,7 @@ namespace Server.Spells.Eighth
                     duration = TimeSpan.FromSeconds(Utility.Random(80, 40));
 
                 // See full explanation in BaseHouse.cs
-                if (BaseHouse.TargetExploitCheck(this.Name, Caster, null, new Point3D(p)) == BaseHouse.ExploitType.None)
+                if (Utility.TargetExploitCheck(this.Name, Caster, null, new Point3D(p)) == Utility.ExploitType.None)
                     BaseCreature.Summon(new EnergyVortex(), false, Caster, new Point3D(p), 0x212, duration);
             }
 
@@ -101,9 +100,9 @@ namespace Server.Spells.Eighth
 
         private class InternalTarget : Target
         {
-            private EnergyVortexSpell m_Owner;
+            private EnergyVortexSpell? m_Owner;
 
-            public InternalTarget(EnergyVortexSpell owner)
+            public InternalTarget(EnergyVortexSpell? owner)
                 : base(12, true, TargetFlags.None)
             {
                 m_Owner = owner;

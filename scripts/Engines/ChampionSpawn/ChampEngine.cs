@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,19 @@
 
 /* Scripts/Engines/ChampionSpawn/ChampEngine.cs
  * ChangeLog:
+ *  10/28/2026, Adam (MaxLevels, version 19)
+ *      MaxLevels (GM): the total number of spawn levels a run plays (0 = all). The remaining budget is spread evenly over the
+ *      levels still ahead and always ends on the last spawn level; the boss level always runs last. Levels already run count
+ *      toward the total (m_LevelsRun), so a change mid-run applies at the next advance. Levels are skipped, never removed.
+ *      Start, advance, rollback, completion, Level and MaxLevels changes are written to Logs/ChampLevels.log.
+ *  10/27/2026, Adam (DefinitionName, version 18)
+ *      Champion definitions now come from Data/ChampSpawns.xml (ChampDefinitions). DefinitionName (a string) replaces
+ *      SpawnType (the SpawnTypes enum, removed): setting it applies that definition (new levels; restarts the champ if it
+ *      is running), as SpawnType did; an unknown name leaves the champ unchanged (reported). The serialized levels remain
+ *      the champ's own snapshot and are never rebuilt on load.
+ *      Version 18 saves the definition name where the SpawnTypes ordinal was; older saves map the ordinal through
+ *      LegacyChampTypes. A champ with no definition (SpawnTypes.None) still becomes Abyss on load.
+ *      [props offers the loaded definition names as a pick list for DefinitionName ([StringList]), as it did for the enum.
  *  3/31/2024, Adam (ITriggerable)
  *  11/14/2023, Adam (Slayer/Team)
  *      Allow the setting of a Slayer and Team properties on the mobile itself.
@@ -96,7 +109,6 @@ using Server.Gumps;
 using Server.Items;
 using Server.Items.Triggers;
 using Server.Mobiles;
-using Server.Spells;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -115,6 +127,13 @@ namespace Server.Engines.ChampionSpawn
     // Plasma: Core champion spawn class.  
     public abstract class ChampEngine : Item, ITriggerable
     {
+        public override Item Dupe(int amount)
+        {
+            ChampEngine? new_item = Activator.CreateInstance(this.GetType()) as ChampEngine;
+            Utility.CopyProperties(this, new_item);
+
+            return base.Dupe(new_item, amount);
+        }
         public static List<ChampEngine> Instances = new List<ChampEngine>();
         #region Morph Mode
         private MorphMode m_MorphMode = MorphMode.Default;
@@ -146,14 +165,18 @@ namespace Server.Engines.ChampionSpawn
         #endregion FDBackup/Restore
 
         #region Kill Monitoring
+
         Item m_TriggerLinkPlayers;
+        [CopyableAttribute(CopyType.DoNotCopy)]
         [CommandProperty(AccessLevel.GameMaster)]
         public Item TriggerLinkPlayers
         {
             get { return m_TriggerLinkPlayers; }
             set { m_TriggerLinkPlayers = value; }
         }
+
         Item m_TriggerLinkCreature;
+        [CopyableAttribute(CopyType.DoNotCopy)]
         [CommandProperty(AccessLevel.GameMaster)]
         public Item TriggerLinkCreatures
         {
@@ -261,18 +284,20 @@ namespace Server.Engines.ChampionSpawn
         // Members
         #region members
 
-        private ChampSliceTimer m_Slice;                    // Slice timer  
-        private ChampRestartTimer m_Restart;                // Restart timer	
+        private ChampSliceTimer? m_Slice;                    // Slice timer  
+        private ChampRestartTimer? m_Restart;                // Restart timer	
         private DateTime m_End;                             // Holds next respawn time
-        protected ChampLevelData.SpawnTypes m_Type;         // Which spawn type this is ( cold blood etc )
+        protected string m_DefinitionName = string.Empty;   // Which champion definition this is ( cold blood etc ), Data/ChampSpawns.xml
         protected ArrayList m_Monsters;                     // Mobile container
         protected ArrayList m_FreeMonsters;                 // Mobile container for old spawn
         protected int m_LevelCounter;                       // Current level
+        protected int m_MaxLevels;                          // total spawn levels per run (0 = all)
+        protected int m_LevelsRun = 1;                      // spawn levels run this run, including the current one
         protected DateTime m_ExpireTime;                    // Level down datetime
         protected DateTime m_SpawnTime;                     // Respawn datetime
         protected TimeSpan m_RestartDelay;                  // Restart delay
         protected bool m_bRestart;                          // Restart timer on/off
-        public ChampGraphics m_Graphics;                 // Graphics object
+        public ChampGraphics? m_Graphics;                 // Graphics object
         protected int m_Kills;                              // Kill counter
         protected string m_NavDest;                         // Allow mobs to navigate!		
         protected double m_LevelScale;                      // Virtually scales the maxmobs and maxrange
@@ -334,14 +359,21 @@ namespace Server.Engines.ChampionSpawn
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public ChampLevelData.SpawnTypes SpawnType                  // SpawnType.  Changing this will also restart the champ if active.
+        [StringList(typeof(ChampDefinitions), nameof(ChampDefinitions.Names))]  // [props: pick from the loaded definitions
+        public string DefinitionName                // champion definition.  Changing this will also restart the champ if active.
         {
-            get { return (m_Type); }
+            get { return (m_DefinitionName); }
             set
             {
-                m_Type = value;
+                ChampDefinition? definition = ChampDefinitions.Find(value);
+                if (definition == null)
+                {
+                    ChampDefinitions.ReportUnknown(value, this);
+                    return;
+                }
+                m_DefinitionName = definition.Name;
                 StopSlice();                // stop slice timer and create new spawn type
-                SpawnLevels = ChampLevelData.CreateSpawn(m_Type);
+                SpawnLevels = definition.CreateLevels();
                 // begin
                 if (Running)
                     StartSpawn();
@@ -376,6 +408,16 @@ namespace Server.Engines.ChampionSpawn
                     m_Graphics = null;
                 }
             }
+        }
+
+        public List<Item> GetItems()
+        {
+            List<Item> list = new();
+
+            if (m_Graphics != null)
+                list.AddRange(m_Graphics.GetItems());
+
+            return list;
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -449,16 +491,66 @@ namespace Server.Engines.ChampionSpawn
                     // wipe monsters first !
                     WipeMonsters();
                     m_Kills = 0;
+                    LogLevels(string.Format("Level set {0} -> {1}", m_LevelCounter, value));
                     m_LevelCounter = value;
+                    m_LevelsRun = value + 1;
                     // reset level down time
                     m_ExpireTime = DateTime.UtcNow + Lvl_ExpireDelay;
                 }
             }
         }
+
+        // Total number of spawn levels a run plays (0 = all). The boss level always runs last.
+        //  Takes effect at the next level advance: levels already run count toward the total.
+        [CommandProperty(AccessLevel.GameMaster)]
+        public int MaxLevels
+        {
+            get { return m_MaxLevels; }
+            set
+            {
+                int old = m_MaxLevels;
+                m_MaxLevels = Math.Max(0, value);
+                if (old != m_MaxLevels)
+                    LogLevels(string.Format("MaxLevels {0} -> {1} (level {2}, played {3})", old, m_MaxLevels, m_LevelCounter, m_LevelsRun));
+            }
+        }
+
+        // level advancement / rollback history, Logs/ChampLevels.log
+        protected void LogLevels(string text)
+        {
+            try
+            {
+                LogHelper logger = new LogHelper("ChampLevels.log", overwrite: false, sline: true, quiet: true);
+                logger.Log(LogType.Text, string.Format("{0} 0x{1:X} {2}: {3}", m_DefinitionName, Serial.Value, Location, text));
+                logger.Finish();
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogException(e);
+            }
+        }
+
+        // the level that follows the current one: the remaining budget (MaxLevels - levels run) is spread evenly over the
+        //  spawn levels still ahead, ending on the last spawn level; with no budget left, the boss level.
+        protected int NextLevel()
+        {
+            int boss = SpawnLevels.Count - 1;
+            int ahead = boss - 1 - m_LevelCounter;      // spawn levels after the current one
+            if (m_MaxLevels <= 0 || ahead <= 0)
+                return m_LevelCounter + 1;
+
+            int remaining = m_MaxLevels - m_LevelsRun;
+            if (remaining <= 0)
+                return boss;
+            if (remaining >= ahead)
+                return m_LevelCounter + 1;
+
+            return m_LevelCounter + Math.Max(1, (int)Math.Round((double)ahead / remaining, MidpointRounding.AwayFromZero));
+        }
         private void NotifyStaff()
         {
             int hue = Utility.RandomSpecialHue(hash: m_LevelCounter);
-            Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.GameMaster, hue, string.Format("[{0}] Champ {1} is on level {2}", "System", m_Type, m_LevelCounter));
+            Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.GameMaster, hue, string.Format("[{0}] Champ {1} is on level {2}", "System", m_DefinitionName, m_LevelCounter));
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -518,37 +610,6 @@ namespace Server.Engines.ChampionSpawn
                     ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_MaxKills = value;
             }
         }
-#if false
-        [CommandProperty(AccessLevel.GameMaster)]
-        public bool Lvl_FactoryMobs         // Factory Mobs - Are these mobiles to be factory created?
-        {
-            get { return (((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Flags & SpawnFlags.FactoryMobile) != 0; }
-            set
-            {
-
-                if (value)
-                    ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Flags |= SpawnFlags.FactoryMobile;
-                else
-                    ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Flags &= ~SpawnFlags.FactoryMobile;
-            }
-        }
-
-        [CommandProperty(AccessLevel.GameMaster)]
-        public bool ClearAllFactories         // clear all Factory flags
-        {
-            get { return false; }
-            set
-            {
-                if (value)
-                    if (SpawnLevels != null && SpawnLevels.Count > 0)
-                        for (int level = 0; level < SpawnLevels.Count; level++)
-                            ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Flags &= ~SpawnFlags.FactoryMobile;
-
-                if (m_LevelError == LevelErrors.No_Factory)
-                    m_LevelError = LevelErrors.None;
-            }
-        }
-#endif
         private int m_Team = 0;
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -561,18 +622,20 @@ namespace Server.Engines.ChampionSpawn
                     m_Team = value;
             }
         }
-        private SlayerName m_Slayer = SlayerName.None;
+
+        // Slayer : Useful for arming champs with slayer weapons
+        [CommandProperty(AccessLevel.GameMaster)]
+        public virtual SlayerName SlayerOffensive { get; set; } = SlayerName.None;
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public SlayerName Slayer         // Slayer : Useful for arming champs with slayer weapons
-        {
-            get { return m_Slayer; }
-            set
-            {
-                if (value != m_Slayer)
-                    m_Slayer = value;
-            }
-        }
+        public virtual DefensiveSlayer SlayersDefensive { get; set; } = DefensiveSlayer.None;
+
+        /// <summary>
+        /// If true, the ChampEngine will override this creature's slayer settings.
+        /// If false (default), the creature's own slayer properties are respected.
+        /// </summary>
+        [CommandProperty(AccessLevel.GameMaster)]
+        public virtual bool SlayersOverride { get; set; } = false;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public int Lvl_MaxRange         // Max Range : Max distance mobs will spawn 
@@ -650,8 +713,8 @@ namespace Server.Engines.ChampionSpawn
 
         }
 
-        
 
+        [CommandProperty(AccessLevel.Seer)]
         public string NavDestination
         {
             get { return m_NavDest; }
@@ -683,8 +746,7 @@ namespace Server.Engines.ChampionSpawn
             m_bRestart = false;
 
             //load default spawn just so there's no nulls on the [props
-            //SpawnLevels = ChampLevelData.CreateSpawn(ChampLevelData.SpawnTypes.Abyss);
-            SpawnType = ChampLevelData.SpawnTypes.Abyss;
+            DefinitionName = ChampNames.Abyss;
 
             Instances.Add(this);
         }
@@ -701,7 +763,28 @@ namespace Server.Engines.ChampionSpawn
         {
             base.Serialize(writer);
 
-            writer.Write((int)14);           // version
+            writer.Write((int)19);           // version
+
+            // version 19 - MaxLevels
+            writer.Write(m_MaxLevels);
+            writer.Write(m_LevelsRun);
+
+            // version 18 - definition name, written in place of the version 0 SpawnTypes ordinal (below)
+
+            // version 17 - Spawn exclusion rect
+            writer.Write(HasSpawnExclusionRect);
+
+            if (HasSpawnExclusionRect)
+            {
+                writer.Write(SpawnExcludeStart);
+                writer.Write(SpawnExcludeEnd);
+            }
+
+            // version 16
+            writer.Write(SlayersOverride);
+
+            // version 15
+            writer.Write((int)SlayersDefensive);
 
             // version 14
             writer.Write(m_HomeRange);
@@ -734,7 +817,7 @@ namespace Server.Engines.ChampionSpawn
             writer.Write(m_NavDest);
 
             // version 5
-            writer.Write((int)m_Slayer);  // errors for this level
+            writer.Write((int)SlayerOffensive);  // errors for this level
             writer.Write(m_Team);  // errors for this level
 
             #region version 4 (ChampGFX)
@@ -761,7 +844,7 @@ namespace Server.Engines.ChampionSpawn
             writer.WriteDeltaTime(m_End);       //Next spawn time
 
             // first up is the spawn data       // version 0
-            writer.Write((int)m_Type);
+            writer.Write(m_DefinitionName);     // version 18: the definition name (was the SpawnTypes ordinal)
             writer.Write((int)SpawnLevels.Count);
             foreach (ChampLevelData data in SpawnLevels)
                 data.Serialize(writer);
@@ -796,6 +879,37 @@ namespace Server.Engines.ChampionSpawn
 
             switch (version)
             {
+                case 19:
+                    {
+                        m_MaxLevels = reader.ReadInt();
+                        m_LevelsRun = reader.ReadInt();
+                        goto case 18;
+                    }
+                case 18:
+                    {   // the definition name replaces the SpawnTypes ordinal (read in case 0)
+                        goto case 17;
+                    }
+                case 17:
+                    {
+                        bool hasRect = reader.ReadBool();
+
+                        if (hasRect)
+                        {
+                            SpawnExcludeStart = reader.ReadPoint3D();
+                            SpawnExcludeEnd = reader.ReadPoint3D();
+                        }
+                        goto case 16;
+                    }
+                case 16:
+                    {
+                        SlayersOverride = reader.ReadBool();
+                        goto case 15;
+                    }
+                case 15:
+                    {
+                        SlayersDefensive = (DefensiveSlayer)reader.ReadInt();
+                        goto case 14;
+                    }
                 case 14:
                     {
                         m_HomeRange = reader.ReadShort();
@@ -848,7 +962,7 @@ namespace Server.Engines.ChampionSpawn
                     }
                 case 5:
                     {
-                        m_Slayer = (SlayerName)reader.ReadInt();
+                        SlayerOffensive = (SlayerName)reader.ReadInt();
                         m_Team = reader.ReadInt();
                         goto case 4;
                     }
@@ -888,7 +1002,10 @@ namespace Server.Engines.ChampionSpawn
                     {
 
                         // read it all back in									
-                        m_Type = ((ChampLevelData.SpawnTypes)reader.ReadInt());
+                        if (version >= 18)
+                            m_DefinitionName = reader.ReadString() ?? string.Empty;
+                        else    // a SpawnTypes ordinal
+                            m_DefinitionName = LegacyChampTypes.ToName(reader.ReadInt()) ?? string.Empty;
 
                         int a = reader.ReadInt();
                         SpawnLevels = new ArrayList();
@@ -900,6 +1017,8 @@ namespace Server.Engines.ChampionSpawn
                         m_Monsters = reader.ReadMobileList();
                         m_FreeMonsters = reader.ReadMobileList();
                         m_LevelCounter = reader.ReadInt();
+                        if (version < 19)
+                            m_LevelsRun = m_LevelCounter + 1;
                         m_Kills = reader.ReadInt();
                         m_ExpireTime = reader.ReadDateTime();
 
@@ -948,8 +1067,8 @@ namespace Server.Engines.ChampionSpawn
 
             }
 
-            if (m_Type == ChampLevelData.SpawnTypes.None)
-                SpawnType = ChampLevelData.SpawnTypes.Abyss;
+            if (string.IsNullOrEmpty(m_DefinitionName))     // no definition (SpawnTypes.None): as before, Abyss
+                DefinitionName = ChampNames.Abyss;
 
             Timer.DelayCall(UpdateGFXTick);
         }
@@ -968,6 +1087,8 @@ namespace Server.Engines.ChampionSpawn
             Running = true;
             m_Kills = 0;
             m_LevelCounter = 0;
+            m_LevelsRun = 1;
+            LogLevels(string.Format("start ({0} spawn levels + boss, MaxLevels {1})", SpawnLevels.Count - 1, m_MaxLevels));
             WipeMonsters();
             StartSlice();
         }
@@ -1125,6 +1246,28 @@ namespace Server.Engines.ChampionSpawn
             }
         }
         #endregion  ClearMonsters
+
+        public List<Mobile> GetMobiles()
+        {
+            List<Mobile> list = new();
+
+            if (m_Monsters != null)
+            {
+                foreach (Mobile m in m_Monsters)
+                    if (m != null && !m.Deleted)
+                        list.Add(m);
+            }
+
+            if (m_FreeMonsters != null)
+            {
+                foreach (Mobile m in m_FreeMonsters)
+                    if (m != null && !m.Deleted)
+                        list.Add(m);
+
+            }
+
+            return list;
+        }
         #region FreezMonsters
         [CommandProperty(AccessLevel.GameMaster)]
         public bool FreezeMonsters
@@ -1175,64 +1318,59 @@ namespace Server.Engines.ChampionSpawn
                 return false;  // must have been out of range
             }
         }
+
         protected virtual void AdvanceLevel()
         {
-            //reset kills etc and level up
+            int kills = m_Kills;
             m_Kills = 0;
+
             if (!IsFinalLevel)
             {
-                // Check if the next level is the same as the current level's monster array				
-                if (CompareLevel(1) == false)
+                int next = NextLevel();     // MaxLevels may skip levels
+                LogLevels(string.Format("advance {0} -> {1} (kills {2}/{3}; played {4}, MaxLevels {5})",
+                    m_LevelCounter, next, kills, Lvl_MaxKills, m_LevelsRun + 1, m_MaxLevels));
+
+                // If the next level is different, transition population gradually (no visible poof)
+                if (CompareLevel(next - m_LevelCounter) == false)
                 {
-                    // anything left in the mob list gets moved into the free list
-                    //first we let anything in the free list go
-                    m_FreeMonsters.Clear();
-                    // shift all mobs into the free list
+                    // Move ALL current mobs into the free list so they remain tracked and can be retired cleanly.
+                    // Do NOT clear m_FreeMonsters here; it is the retirement pool.
                     foreach (Mobile m in m_Monsters)
                     {
-                        if (m_FreeMonsters.Count < ((ChampLevelData)SpawnLevels[m_LevelCounter + 1]).m_MaxMobs)
+                        if (m != null && !m.Deleted)
                             m_FreeMonsters.Add(m);
-                        else
-                            break;
                     }
-                    // Clear original list if anything's left
+
                     m_Monsters.Clear();
-
                 }
-                // next level
-                ++m_LevelCounter;
 
-                // let staff know
+                m_LevelCounter = next;
+                ++m_LevelsRun;
+
                 NotifyStaff();
 
-                //reset expire time
                 m_ExpireTime = DateTime.UtcNow + Lvl_ExpireDelay;
                 m_SpawnTime = DateTime.UtcNow;
             }
             else
             {
-                //Last level (champ) is over
+                LogLevels(string.Format("complete: boss level {0} cleared (played {1}, MaxLevels {2})", m_LevelCounter, m_LevelsRun, m_MaxLevels));
                 StopSlice();
                 m_LevelCounter = 0;
                 Running = false;
 
-                // update altar
                 if (GetBool(ChampGFX.Altar))
                     m_Graphics.Update();
 
-                // Start restart timer !
                 if (m_bRestart)
-                {
-                    //pla: 13/01/07.
-                    //changed to use DoTimer
                     DoTimer(m_RestartDelay);
-                }
 
                 UpdateMonitors("The champ is dead.");
             }
 
             UpdateMonitors(string.Format("level:{0}", m_LevelCounter));
         }
+
         private bool HaveCaptain()
         {
             if (m_Monsters != null)
@@ -1275,66 +1413,87 @@ namespace Server.Engines.ChampionSpawn
             }
             m_SpawnTime = DateTime.UtcNow + Lvl_SpawnDelay;
 
-            // if free list has monsters in it, we convert them one a second 
+
+            // if free list has monsters in it, we convert them one a second
             // preferably away from the players
-            Mobile victim = null;
-            bool random = false;
             if (m_FreeMonsters.Count > 0)
             {
-                // try and find a mob that can't be seen by a player
+                int victimIndex = -1;
+                bool random = false;
+
+                // Try to find a victim that cannot be seen by a player
                 for (int i = 0; i < m_FreeMonsters.Count; ++i)
                 {
-                    Mobile m = (Mobile)m_FreeMonsters[i];
-                    random = false;
-                    IPooledEnumerable eable = m.GetMobilesInRange(15);
+                    Mobile? cand = (Mobile?)m_FreeMonsters[i];
+                    if (cand == null || cand.Deleted)
+                    {
+                        m_FreeMonsters.RemoveAt(i--);
+                        continue;
+                    }
+
+                    bool seen = false;
+                    IPooledEnumerable eable = cand.GetMobilesInRange(15);
                     foreach (Mobile t in eable)
                     {
                         if (t is PlayerMobile)
                         {
-                            // found a player. no good!.	
-                            random = true;
+                            seen = true;
                             break;
                         }
                     }
                     eable.Free();
-                    if (!random)
+
+                    if (!seen)
                     {
-                        // this mob will do!
-                        victim = m;
-                        m_FreeMonsters.RemoveAt(i);
+                        victimIndex = i;
+                        random = false;
                         break;
                     }
                 }
 
-                // if we couldn't find one out of sight, pick one at random
-                if (random)
+                // If we could not find one out of sight, pick one at random
+                if (victimIndex == -1)
                 {
-                    Random r = new Random();
-                    int i = r.Next(m_FreeMonsters.Count);
-                    victim = (Mobile)m_FreeMonsters[i];
-                    m_FreeMonsters.RemoveAt(i);
+                    random = true;
+                    victimIndex = Utility.Random(m_FreeMonsters.Count);
                 }
 
+                Mobile? victim = (Mobile?)m_FreeMonsters[victimIndex];
+                if (victim == null || victim.Deleted)
+                {
+                    m_FreeMonsters.RemoveAt(victimIndex);
+                    return;
+                }
+
+                // If we are over cap, retire (delete) old mobs without replacement until we are under cap.
+                // This prevents "carry forward everything" from stalling the new level forever.
+                if (m_Monsters.Count + m_FreeMonsters.Count > Lvl_MaxMobs)
+                {
+                    m_FreeMonsters.RemoveAt(victimIndex);
+                    victim.Delete();
+                    return;
+                }
+
+                // Otherwise, attempt a normal replacement (spawn new, then delete old)
                 Mobile n = Spawn();
                 if (n == null)
+                {
+                    // Spawn failed. Do NOT orphan the victim; leave it tracked and try again next slice.
                     return;
+                }
 
+                // Success: now we can remove the victim from tracking
+                m_FreeMonsters.RemoveAt(victimIndex);
                 m_Monsters.Add(n);
 
-                // we cannot reuse the location of a victem if they have different water/land domains
                 bool sameType = (n.CanSwim == victim.CanSwim && n.CantWalkLand == victim.CantWalkLand);
 
-                // perform rangecheck to see if we can just replace this mob with one from new level
                 if (!random && sameType && victim.GetDistanceToSqrt(Location) <= Lvl_MaxRange)
-                    // they are within spawn range, so replace with new mob in same location													
                     n.MoveToWorld(victim.Location, Map);
-                else    // spawn somewhere randomly
+                else
                     n.MoveToWorld(GetSpawnLocation(n), Map);
 
-                //delete old mob
                 victim.Delete();
-
-                // setup new mob
                 PrepMob(n);
             }
         }
@@ -1349,11 +1508,16 @@ namespace Server.Engines.ChampionSpawn
                     // They didn't even get 20% !!, go back a level.....
                     if (Level > 0)
                     {
+                        int run = m_LevelsRun;
+                        int from = m_LevelCounter;
                         // if previous level is the same as the current, just decrease level counter
                         if (CompareLevel(-1) == true)
                             --m_LevelCounter;
                         else    //otherwise wipe mobs when leveling down
                             --Level;
+                        m_LevelsRun = Math.Max(1, run - 1);
+                        LogLevels(string.Format("rollback {0} -> {1} (expired: kills {2}/{3} under 20%; played {4}, MaxLevels {5})",
+                            from, m_LevelCounter, Kills, Lvl_MaxKills, m_LevelsRun, m_MaxLevels));
                     }
                     Kills = 0;
                     InvalidateProperties();
@@ -1367,23 +1531,44 @@ namespace Server.Engines.ChampionSpawn
         }
         protected virtual void PrepMob(Mobile m)
         {
-            BaseCreature bc = m as BaseCreature;
+            BaseCreature? bc = m as BaseCreature;
             if (bc != null)
             {
                 bc.Tamable = false;
-                bc.Home = !string.IsNullOrEmpty(m_NavDest) ? new Point3D() : Location;
-                bc.RangeHome = Lvl_MaxRange;
+
+                // If this spawn uses navigation, Home is intentionally cleared so
+                // navigation logic can drive movement.
+                //
+                // Otherwise, use the creature's actual spawn location as Home.
+                // Using the champ engine location causes mobs to leash back toward
+                // the engine center and can create clumping around structures.
+                bc.Home = !string.IsNullOrEmpty(m_NavDest)
+                    ? new Point3D()
+                    : bc.Location;
+
+                // HomeRange is a runtime override for normal champ spawn behavior.
+                // If unset, fall back to the level-defined max range.
+                bc.RangeHome = m_HomeRange >= 1 ? m_HomeRange : Lvl_MaxRange;
+
                 bc.NavDestination = m_NavDest;
                 bc.Tamable = false;             // can be overridden in Configure
                 bc.Configure(m_LevelCounter, SpawnLevels != null ? SpawnLevels.Count : 0);   // tell the creature at what level they should perform
                 bc.Team = m_Team;
-                bc.Slayer = m_Slayer;           // have all weapons deliver a slayer blow.
+
+                // Apply Offensive Slayer from the ChampEngine
+                if (bc.SlayerOffensive == SlayerName.None || this.SlayersOverride)
+                    bc.SlayerOffensive = this.SlayerOffensive;      // All weapons will deliver a slayer blow
+
+                // Apply Defensive Slayers from the ChampEngine
+                if (bc.SlayersDefensive == DefensiveSlayer.None || this.SlayersOverride)
+                    bc.SlayersDefensive = this.SlayersDefensive;    // Creature is vulnerable to this slayer group
+
                 bc.DebugMode = m_DebugMobile;   // set the debug mode
                 bc.PassiveSpeed = m_dPassiveSpeed == 0.0 ? bc.PassiveSpeed : m_dPassiveSpeed;
                 bc.ActiveSpeed = m_dActiveSpeed == 0.0 ? bc.ActiveSpeed : m_dActiveSpeed;
                 {   // custom name and/or title
-                    string name = null;
-                    string title = null;
+                    string? name = null;
+                    string? title = null;
                     if (GetNameAndTitle(ref name, ref title))
                     {
                         if (!string.IsNullOrEmpty(name))
@@ -1426,7 +1611,7 @@ namespace Server.Engines.ChampionSpawn
         {
             if (ai is MageAI && ai is not HybridAI)
             {
-                bc.DropHolding();
+                bc.DropHeldItems();
 
                 // brigand skills
                 bc.SetSkill(SkillName.Fencing, 60.0, 82.5);
@@ -1473,9 +1658,9 @@ namespace Server.Engines.ChampionSpawn
             m_Restart = new ChampRestartTimer(this, delay);
             m_Restart.Start();
         }
-        protected Mobile Factory(Type type)
+        protected Mobile? Factory(Type type)
         {
-            Mobile mx = null;
+            Mobile? mx = null;
             // look for a factory that knows how to spawn one of these
             foreach (Item ix in Items)
             {
@@ -1519,8 +1704,8 @@ namespace Server.Engines.ChampionSpawn
         }
         protected bool GetNameAndTitle(ref string name, ref string title)
         {
-            string[] names = ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Names;
-            string[] titles = ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Titles;
+            string[]? names = ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Names;
+            string[]? titles = ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Titles;
 
             if (names != null && names.Length > 0)
             {
@@ -1541,28 +1726,15 @@ namespace Server.Engines.ChampionSpawn
         {
             return Spawn(new Type[] { type });
         }
-        protected Mobile Spawn(params Type[] types)
+        protected Mobile? Spawn(params Type[] types)
         {
             try
             {
-#if false
-                if ((((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Flags & SpawnFlags.FactoryMobile) != 0)
                 {
-                    Mobile m = Factory(types[Utility.Random(types.Length)]);
+                    Mobile? m = Activator.CreateInstance(types[Utility.Random(types.Length)]) as Mobile;
                     if (m is BaseCreature bc)
                     {
-                        bc.ChampEngine = this;
-                        bc.GuardIgnore = true;
-                    }
-                    return m;
-                }
-                else
-#endif
-                {
-                    Mobile m = Activator.CreateInstance(types[Utility.Random(types.Length)]) as Mobile;
-                    if (m is BaseCreature bc)
-                    {
-                        bc.ChampEngine = this;
+                        bc.SpawnerEngine = this;
                         bc.GuardIgnore = true;
                     }
                     return m;
@@ -1579,21 +1751,112 @@ namespace Server.Engines.ChampionSpawn
         private short m_HomeRange = -1;
         [CommandProperty(AccessLevel.GameMaster)]
         public short HomeRange { get { return m_HomeRange; } set { m_HomeRange = value; } }
+
+        #region Spawn Location
         protected virtual Point3D GetSpawnLocation(Mobile m)
         {
-            // range
-            int level_range = m_HomeRange >= 1 ? m_HomeRange : Lvl_MaxRange;    // we allow a run-time override of the home range
-            int range = (level_range < 2 && IsFinalLevel) ? 0 : level_range;    // we want the champ to spawn dead center
-            // spawn flags
-            SpawnFlags sflags = ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Flags;  // get the default spawn flags for this level. For instance, certain champs like Pirates 'SpawnFar'
-            sflags |= SpawnFlags.AvoidPlayers;                                          // avoid players if possible
-            if (m_ClearPath) sflags |= SpawnFlags.ClearPath;                            // must be able to get back to the spawner
-            sflags |= SpawnFlags.Concentric;                                            // smoother distribution
-            IPoint3D px = Spawner.GetSpawnPosition(Map, Location, range, sflags, m);
-            if (range == 0)
-                Utility.GetSurfaceTop(m, ref px); // the champ needs to spawn on top of the alter
+            // Determine spawn range.
+            //
+            // Final champ levels ALWAYS respect the level-defined range
+            // (typically 0, forcing the champ to spawn dead-center).
+            //
+            // Normal spawn waves may optionally use the runtime HomeRange override.
+            int range = IsFinalLevel
+                ? Lvl_MaxRange
+                : (m_HomeRange >= 1 ? m_HomeRange : Lvl_MaxRange);
+
+            // Default spawn origin is the champ engine location.
+            Point3D location = Location;
+
+            // Start with the level's configured spawn flags.
+            //
+            // Examples: some champ types may request SpawnFar or other special behavior.
+            SpawnFlags sflags = ((ChampLevelData)SpawnLevels[m_LevelCounter]).m_Flags;
+
+            // General champ-spawn behavior.
+            sflags |= SpawnFlags.AvoidPlayers;
+
+            if (m_ClearPath)
+                sflags |= SpawnFlags.ClearPath;
+
+            // Use smoother distribution around the selected origin.
+            sflags |= SpawnFlags.Concentric;
+
+            // Platform final champ adjustment.
+            //
+            // When the final champ is configured to spawn at center,
+            // lift it onto the platform surface.
+            //
+            // FYI: GetSurfaceTop does not work correctly here.
+            if (IsFinalLevel && range < 3 && m_ChampGFX.HasFlag(ChampGFX.Platform))
+                location.Z += 5;
+
+            // Normal spawn-wave exclusion handling.
+            //
+            // Spawn exclusion rects are used to prevent normal wave mobs from spawning
+            // inside structures, behind doors, or in otherwise bad interior areas.
+            //
+            // Final champ placement intentionally ignores this restriction so the boss
+            // can still spawn at the designed center/platform location.
+            if (!IsFinalLevel && HasSpawnExclusionRect)
+            {
+                Rectangle3D blockedRect = SpawnExclusionRect;
+                const int maxAttempts = 100;
+
+                for (int i = 0; i < maxAttempts; i++)
+                {
+                    IPoint3D candidate = Spawner.GetSpawnPosition(Map, location, range, sflags, m);
+                    Point3D p = (Point3D)candidate;
+
+                    if (!blockedRect.Contains(p))
+                        return p;
+                }
+
+                ; // break here to determine if we are failing
+            }
+
+            // Final fallback:
+            //
+            // Either:
+            // - this is the final champ,
+            // - no exclusion rect is configured, or
+            // - all retry attempts landed inside the blocked rect.
+            //
+            // Return the normal spawn result rather than failing spawn entirely.
+            IPoint3D px = Spawner.GetSpawnPosition(Map, location, range, sflags, m);
+
             return (Point3D)px;
         }
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Point3D SpawnExcludeStart { get; set; }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Point3D SpawnExcludeEnd { get; set; }
+
+        private bool HasSpawnExclusionRect
+        {
+            get { return SpawnExcludeStart != Point3D.Zero || SpawnExcludeEnd != Point3D.Zero; }
+        }
+
+        private Rectangle3D SpawnExclusionRect
+        {
+            get
+            {
+                int x1 = Math.Min(SpawnExcludeStart.X, SpawnExcludeEnd.X);
+                int y1 = Math.Min(SpawnExcludeStart.Y, SpawnExcludeEnd.Y);
+                int z1 = Math.Min(SpawnExcludeStart.Z, SpawnExcludeEnd.Z);
+
+                int x2 = Math.Max(SpawnExcludeStart.X, SpawnExcludeEnd.X);
+                int y2 = Math.Max(SpawnExcludeStart.Y, SpawnExcludeEnd.Y);
+                int z2 = Math.Max(SpawnExcludeStart.Z, SpawnExcludeEnd.Z);
+
+                return new Rectangle3D(
+                    new Point3D(x1, y1, z1),
+                    new Point3D(x2, y2, z2));
+            }
+        }
+        #endregion spawn Location
+
         private bool m_ClearPath = false;
         [CommandProperty(AccessLevel.GameMaster)]
         public bool ClearPath { get { return m_ClearPath; } set { m_ClearPath = value; } }
@@ -1608,6 +1871,105 @@ namespace Server.Engines.ChampionSpawn
             if (m_Graphics != null)
                 m_Graphics.UpdateLocation();
         }
+        #region Kill Level
+        private Timer? m_KillLevelTimer;
+        private Queue<Mobile>? m_KillQueue;
+        [CommandProperty(AccessLevel.Administrator)]
+        public bool KillLevel
+        {
+            get { return false; }
+            set
+            {
+                if (!value)
+                    return;
+
+                StartKillLevelSweep();
+            }
+        }
+
+        private void StartKillLevelSweep()
+        {
+            // Stop any existing sweep
+            if (m_KillLevelTimer != null)
+            {
+                m_KillLevelTimer.Stop();
+                m_KillLevelTimer = null;
+            }
+
+            // Build a unique list (Monsters + FreeMonsters)
+            List<Mobile> list = new List<Mobile>();
+
+            if (Monsters != null)
+            {
+                foreach (Mobile m in Monsters)
+                {
+                    if (m != null && !m.Deleted && !list.Contains(m))
+                        list.Add(m);
+                }
+            }
+
+            // NOTE:
+            // We intentionally do NOT include FreeMonsters in KillLevel sweeps.
+            //
+            // FreeMonsters represents the transition/retirement pool between levels.
+            // The champ engine is responsible for gradually converting or deleting
+            // those mobs during Respawn() to avoid visible "poofing" on level changes.
+            //
+            // Including FreeMonsters here would short-circuit that lifecycle and can
+            // mask bookkeeping bugs (e.g., leaked or orphaned mobs). For testing
+            // level transition integrity, we only kill the active Monsters list.
+
+            //if (FreeMonsters != null)
+            //{
+            //    foreach (Mobile m in FreeMonsters)
+            //    {
+            //        if (m != null && !m.Deleted && !list.Contains(m))
+            //            list.Add(m);
+            //    }
+            //}
+
+            m_KillQueue = new Queue<Mobile>(list);
+
+            // If nothing to do, bail
+            if (m_KillQueue.Count == 0)
+                return;
+
+            // Kill one per second until queue exhausted
+            m_KillLevelTimer = Timer.DelayCall(TimeSpan.FromSeconds(1.0), TimeSpan.FromSeconds(1.0), KillLevelTick);
+        }
+
+        private void KillLevelTick()
+        {
+            // Drain until we find one killable target, or we run out.
+            while (m_KillQueue != null && m_KillQueue.Count > 0)
+            {
+                Mobile m = m_KillQueue.Dequeue();
+
+                if (m == null || m.Deleted || !m.Alive)
+                    continue;
+
+                try
+                {
+                    m.Kill(); // exactly one kill per tick
+                }
+                catch
+                {
+                    // swallow; keep sweep alive
+                }
+
+                return; // IMPORTANT: one per second
+            }
+
+            // Nothing left to kill: stop timer
+            if (m_KillLevelTimer != null)
+            {
+                m_KillLevelTimer.Stop();
+                m_KillLevelTimer = null;
+            }
+
+            m_KillQueue = null;
+        }
+        #endregion Kill Level
         public override void OnMapChange()
         {
             base.OnMapChange();
@@ -1635,10 +1997,10 @@ namespace Server.Engines.ChampionSpawn
             if (from.AccessLevel >= AccessLevel.GameMaster)
             {
                 if (Running)
-                    LabelTo(from, "{0} (Active; Level: {1} / {2}; Kills: {3}/{4})", m_Type, Level, SpawnLevels.Count - 1, m_Kills, Lvl_MaxKills);
+                    LabelTo(from, "{0} (Active; Level: {1} / {2}; Kills: {3}/{4})", m_DefinitionName, Level, SpawnLevels.Count - 1, m_Kills, Lvl_MaxKills);
                 else
                 {
-                    LabelTo(from, "{0} (Inactive; Levels : {1}) ", m_Type, SpawnLevels.Count - 1);
+                    LabelTo(from, "{0} (Inactive; Levels : {1}) ", m_DefinitionName, SpawnLevels.Count - 1);
                     if (m_Restart != null)
                         if (m_Restart.Running)
                             LabelTo(from, "Restart timer active...!");

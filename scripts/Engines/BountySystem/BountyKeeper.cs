@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -31,7 +31,7 @@
  *          objects will be off by 7-8 hours, depending on DST
  *  The above change fixes this problem by ensuring all DateTime objects are always written as UTC and converted to local on read.
  *  7/05/10, Pix
- *      Remove UpdateTownCrier, call PJUM.UpdateAnnouncements instead.
+ *      Remove UpdateTownCrier, call PlayerJusticeSystem.UpdateAnnouncements instead.
  *      Added allied-guilds cannot collect head.
  *	5/17/10, adam
  *		o Cap CurrentLBBonusAmount with a a new const MaxLBBonusAmount currently set to 300 gp.
@@ -83,7 +83,7 @@ using System.IO;
 using System.Net;
 using System.Xml;
 
-namespace Server.BountySystem
+namespace Server.Engines
 {
     /// <summary>
     /// Summary description for BountyKeeper.
@@ -116,7 +116,53 @@ namespace Server.BountySystem
             m_bounties.Remove(b);
         }
 
-        private static ArrayList Bounties
+        public static Bounty? FindPlacer(PlayerMobile? pm)
+        {
+            foreach (Bounty b in m_bounties)
+            {
+                if (b.Placer == pm)
+                    return b;
+            }
+
+            return null;
+        }
+        public static Bounty? FindWanted(PlayerMobile? pm)
+        {
+            foreach (Bounty b in m_bounties)
+            {
+                if (b.WantedPlayer == pm)
+                    return b;
+            }
+
+            return null;
+        }
+        public static bool ReplaceAllPlacer(PlayerMobile oldPlacer, PlayerMobile newPlacer)
+        {
+            int count = 0;
+            foreach (Bounty b in m_bounties)
+            {   // replace all
+                if (b.Placer == oldPlacer)
+                {
+                    b.Placer = newPlacer;
+                    count++;
+                }
+            }
+            return count > 0;
+        }
+        public static bool ReplaceAllWanted(PlayerMobile oldWanted, PlayerMobile newWanted)
+        {
+            int count = 0;
+            foreach (Bounty b in m_bounties)
+            {   // replace all
+                if (b.WantedPlayer == oldWanted)
+                {
+                    b.WantedPlayer = newWanted;
+                    count++;
+                }
+            }
+            return count > 0;
+        }
+        public static ArrayList Bounties
         {
             get { return m_bounties; }
         }
@@ -134,7 +180,7 @@ namespace Server.BountySystem
 
         public static bool CanCollectReward(PlayerMobile collector, Head head)
         {
-            PlayerMobile dead = (head != null) ? head.Player : null;
+            PlayerMobile? dead = (head != null) ? head.Player : null;
             bool bReturn = true;
 
             // sanity
@@ -323,24 +369,76 @@ namespace Server.BountySystem
 
         public static bool SharedAccount(Mobile dead, Mobile collector)
         {
-            if (dead != null && dead.Account != null && collector != null && collector.Account != null)
+            if (dead == null || collector == null)
+                return false;
+
+            Accounting.Account? acct1 = collector.Account as Accounting.Account;
+            Accounting.Account? acct2 = dead.Account as Accounting.Account;
+
+            if (acct1 == null || acct2 == null)
+                return false;
+
+            if (acct1.LoginIPs == null || acct2.LoginIPs == null ||
+                acct1.LoginIPs.Length == 0 || acct2.LoginIPs.Length == 0)
             {
-                Accounting.Account acct1 = collector.Account as Accounting.Account;
-                Accounting.Account acct2 = dead.Account as Accounting.Account;
-                if (acct1 != null && acct2 != null && acct1.LoginIPs != null && acct2.LoginIPs != null && acct1.LoginIPs.Length > 0 && acct2.LoginIPs.Length > 0)
+                return false;
+            }
+
+#if DEBUG
+            // Staff routinely access multiple test accounts from the same IP.
+            // Do not treat a shared IP as evidence of a shared account when that
+            // IP also appears in the login history of any staff account.
+            if (acct1.AccessLevel > AccessLevel.Player ||
+                acct2.AccessLevel > AccessLevel.Player)
+            {
+                return false;
+            }
+#endif
+
+            foreach (IPAddress ip1 in acct1.LoginIPs)
+            {
+                foreach (IPAddress ip2 in acct2.LoginIPs)
                 {
-                    foreach (IPAddress ip1 in acct1.LoginIPs)
-                    {
-                        foreach (IPAddress ip2 in acct2.LoginIPs)
-                        {
-                            if (ip1.Equals(ip2))
-                                return true;
-                        }
-                    }
+                    if (!ip1.Equals(ip2))
+                        continue;
+
+#if DEBUG
+                    if (IsStaffAssociatedIP(ip1))
+                        continue;
+#endif
+
+                    return true;
                 }
             }
+
             return false;
         }
+
+#if DEBUG
+        private static bool IsStaffAssociatedIP(IPAddress ip)
+        {
+            if (ip == null)
+                return false;
+
+            foreach (Accounting.Account account in Accounting.Accounts.Table.Values)
+            {
+                if (account == null ||
+                    account.AccessLevel <= AccessLevel.Player ||
+                    account.LoginIPs == null)
+                {
+                    continue;
+                }
+
+                foreach (IPAddress loginIP in account.LoginIPs)
+                {
+                    if (ip.Equals(loginIP))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+#endif
 
         // returns:
         // true if head taken, false if not
@@ -360,7 +458,7 @@ namespace Server.BountySystem
             {
                 int goldRewarded = 0;
                 int goldForLBBonus = 0;
-                bool eligibleforlbbonus = false;
+                bool eligibleForLBBonus = false;
                 if (h.IsPlayerHead && h.HeadType == HeadType.Regular)
                 {
                     if (BountyKeeper.CanCollectReward((PlayerMobile)from, h))
@@ -368,21 +466,21 @@ namespace Server.BountySystem
                         ArrayList found_bounties = new ArrayList();
                         foreach (Bounty b in BountyKeeper.Bounties)
                         {
-                            if (b.WantedPlayer == h.Player)
+                            if (PlayersMatch(b.WantedPlayer, h.Player))
                             {
                                 if (h.Created > b.RewardDate)
                                 {
                                     goldRewarded += b.Reward;
                                     if (b.LBBonus)
                                     {
-                                        eligibleforlbbonus = true;
+                                        eligibleForLBBonus = true;
                                     }
                                     found_bounties.Add(b);
                                 }
                             }
                         }
 
-                        if (eligibleforlbbonus)
+                        if (eligibleForLBBonus)
                         {
                             goldForLBBonus = BountyKeeper.CurrentLBBonusAmount;
                         }
@@ -406,15 +504,16 @@ namespace Server.BountySystem
                                 LogHelper Logger = new LogHelper("BountySystem.log", false, true);
                                 string p1 = Logger.Format(LogType.Mobile, from);
                                 string p2 = Logger.Format(LogType.Mobile, h.Player);
-                                Logger.Log(LogType.Text,
-                                    string.Format("({0}) received {2} gold ({3} reward + {4} LB bonus) for turing in the head of ({1}). ", p1, p2, goldGiven, goldRewarded, goldForLBBonus)
-                                );
+                                Logger.Log(
+                                        LogType.Text,
+                                        $"({p1}) received {goldGiven} gold ({goldRewarded} reward + {goldForLBBonus} LB bonus) for turning in the head of ({p2})."
+                                    );
                                 Logger.Finish();
                             }
                         }
                         else
                         {
-                            if (Engines.TCCS.FindEntry(h.Player) == null)
+                            if (Engines.TownCrierBulletinSystem.FindEntry(h.Player) == null)
                                 message = -2; // You disgusting miscreant!  Why are you giving me an innocent person's head?
                             else
                                 message = -5; // My thanks for slaying this vile person, but the bounty has already been collected.
@@ -429,11 +528,11 @@ namespace Server.BountySystem
                             found_bounties.Clear();
                         }
 
-                        //Call UpdateAnnouncements to update any messages on the town crier from the PJUM
+                        //Call UpdateAnnouncements to update any messages on the town crier from the PlayerJusticeSystem
                         // system that are affected by bounties being collected.
                         try
                         {
-                            PJUM.PJUM.UpdateAnnouncements();
+                            PlayerJusticeSystem.UpdateAnnouncements();
                         }
                         catch (Exception e)
                         {
@@ -458,8 +557,20 @@ namespace Server.BountySystem
             return bReturn;
         }
 
+        public static bool PlayersMatch(Mobile wanted, Mobile head)
+        {
+            if (wanted == head)
+                return true;
 
-        //Pix - 2010.07.05 - this 'work' is already done in the PJUM system, so call it instead.
+            if (wanted == null || head == null)
+                return false;
+
+            if (wanted is Substitute sub)
+                return sub.OwnerGUID != 0 && sub.OwnerGUID == head.AcctGUID;
+
+            return false;
+        }
+        //Pix - 2010.07.05 - this 'work' is already done in the PlayerJusticeSystem system, so call it instead.
 
         // after a bounty has been collected, remove the old message from the town crier
         //	and replace it with this message
@@ -468,7 +579,7 @@ namespace Server.BountySystem
         //			if (b == null)
         //				return;
         //
-        //			Engines.ListEntry le = Engines.TCCS.FindEntry(b.TownCrierEntryID);
+        //			Engines.ListEntry le = Engines.TownCrierBulletinSystem.FindEntry(b.TownCrierEntryID);
         //			if (le != null)
         //			{
         //				string[] lns = new string[2];
@@ -477,10 +588,10 @@ namespace Server.BountySystem
         //					lns[0] = string.Format("{0} is an enemy of the kingdom.", le.Mobile.Name);
         //					lns[1] = string.Format("{0} was last seen at {1}.", le.Mobile.Name, le.Mobile.Location);
         //					Engines.ListEntry nle = new Engines.ListEntry(lns, le.Mobile, le.DateTime, le.Type);
-        //					Engines.TCCS.AddEntry(nle);		// add the updated message
+        //					Engines.TownCrierBulletinSystem.AddEntry(nle);		// add the updated message
         //				}
         //
-        //				Engines.TCCS.RemoveEntry(le);	// kill the old message
+        //				Engines.TownCrierBulletinSystem.RemoveEntry(le);	// kill the old message
         //			}
         //		}
 
@@ -548,7 +659,7 @@ namespace Server.BountySystem
                 XmlDocument doc = new XmlDocument();
                 doc.Load(filePath);
 
-                XmlElement root = doc["Bounties"];
+                XmlElement? root = doc["Bounties"];
 
                 try
                 {
@@ -582,7 +693,7 @@ namespace Server.BountySystem
             catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
         }
 
-        public static string GetText(XmlElement node, string defaultValue)
+        public static string GetText(XmlElement? node, string defaultValue)
         {
             if (node == null)
                 return defaultValue;
@@ -593,7 +704,7 @@ namespace Server.BountySystem
         {
             try
             {
-                if (CoreAI.IsDynamicPatchSet(CoreAI.PatchIndex.HasPatchedTime) == false)
+                if (CoreAI.IsDynamicPatchSet(CoreAI.PatchIndex.PatchV237) == false)
                     return XmlConvert.ToDateTime(dateTimeString);
                 else
                     return XmlConvert.ToDateTime(dateTimeString, XmlDateTimeSerializationMode.Utc);
@@ -655,7 +766,7 @@ namespace Server.BountySystem
 
             if (e != null && e.Mobile != null && e.Length == 1)
             {
-                if (e.Mobile.Region != null && e.Mobile.Region.IsAngelIslandRules)
+                if (e.Mobile.Region != null && e.Mobile.Region.IsPrisonRules)
                 {
                     AddResponse("You cannot place a bounty on someone while you are in prison.");
                 }
@@ -681,17 +792,31 @@ namespace Server.BountySystem
                     }
                     else if (cont != null && cont.ConsumeTotal(typeof(Gold), amount))
                     {
+                        // Audit log: bounty creation + proof of bank gold consumption
+                        LogHelper logger = new LogHelper("BountySystem.log", false, true);
+                        string p1 = logger.Format(LogType.Mobile, bountyPlacer);
+                        string p2 = logger.Format(LogType.Mobile, m); // m is the bounty target (Mobile)
+                        logger.Log(
+                            LogType.Text,
+                            string.Format(
+                                "({0}) placed a bounty of {1} gold on ({2}). Consumed {1} gold from bank container (0x{3:X8}).",
+                                p1,
+                                amount,
+                                p2,
+                                (int)cont.Serial
+                            )
+                        );
+                        logger.Finish();
+
                         BountyKeeper.Add(new Bounty(bountyPlacer, (PlayerMobile)m, amount, false));
                         AddResponse("You have posted a bounty for the head of " + m.Name + "!");
                         AddResponse("Amount of GP removed from your bank: " + amount);
                         ((PlayerMobile)m).SendMessage(bountyPlacer.Name + " has just placed a bounty on your head for " + amount + " gold.");
 
-                        //Flag player criminal, but don't guardwhack
-                        //bountyPlacer.Criminal = true;
-                        //Flag to only the player you place the bounty on.
-                        if (!bountyPlacer.PermaFlags.Contains(m))
+                        // Flag to only the player you place the bounty on.
+                        if (!bountyPlacer.ContainsPermaFlag(m))
                         {
-                            bountyPlacer.PermaFlags.Add(m);
+                            bountyPlacer.AddPermaFlag(m, TimeSpan.MaxValue);
                             bountyPlacer.Delta(MobileDelta.Noto);
                             ExpireTimer et = new ExpireTimer(bountyPlacer, m, TimeSpan.FromMinutes(2.0));
                             et.Start();
@@ -728,7 +853,7 @@ namespace Server.BountySystem
 
             protected override void OnTick()
             {
-                m_placer.PermaFlags.Remove(m_target);
+                m_placer.RemovePermaFlag(m_target);
                 m_placer.Delta(MobileDelta.Noto);
             }
         }

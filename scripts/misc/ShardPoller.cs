@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -207,11 +207,11 @@ namespace Server.Misc
             if (ns == null)
                 return;
 
-            ShardPollGump spg = null;
+            ShardPollGump? spg = null;
 
             for (int i = 0; i < m_ActivePollers.Count; ++i)
             {
-                ShardPoller poller = (ShardPoller)m_ActivePollers[i];
+                ShardPoller? poller = (ShardPoller?)m_ActivePollers[i];
 
                 if (poller.Deleted || !poller.Active)
                     continue;
@@ -370,7 +370,7 @@ namespace Server.Misc
             return 30;
         }
 
-        public int GetBreaks(string title)
+        public int GetBreaks(string? title)
         {
             if (title == null)
                 return 1;
@@ -426,7 +426,7 @@ namespace Server.Misc
         private Mobile m_From;
         private ShardPoller m_Poller;
         private bool m_Editing;
-        private Queue m_Polls;
+        private Queue? m_Polls;
 
         public bool Editing { get { return m_Editing; } }
 
@@ -440,7 +440,7 @@ namespace Server.Misc
 
         private const int LabelColor32 = 0xFFFFFF;
 
-        public ShardPollGump(Mobile from, ShardPoller poller, bool editing, Queue polls)
+        public ShardPollGump(Mobile from, ShardPoller poller, bool editing, Queue? polls)
             : base(50, 50)
         {
             m_From = from;
@@ -537,7 +537,7 @@ namespace Server.Misc
         {
             if (m_Polls != null && m_Polls.Count > 0)
             {
-                ShardPoller poller = (ShardPoller)m_Polls.Dequeue();
+                ShardPoller? poller = (ShardPoller?)m_Polls.Dequeue();
 
                 if (poller != null)
                     Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(poller.SendQueuedPoll_Callback), new object[] { m_From, m_Polls });
@@ -551,7 +551,7 @@ namespace Server.Misc
                     return;
 
                 int switched = switches[0] - 1;
-                ShardPollOption opt = null;
+                ShardPollOption? opt = null;
 
                 if (switched < m_Poller.Options.Length)
                     opt = m_Poller.Options[switched];
@@ -593,9 +593,9 @@ namespace Server.Misc
     public class ShardPollPrompt : Prompt
     {
         private ShardPoller m_Poller;
-        private ShardPollOption m_Option;
+        private ShardPollOption? m_Option;
 
-        public ShardPollPrompt(ShardPoller poller, ShardPollOption opt)
+        public ShardPollPrompt(ShardPoller poller, ShardPollOption? opt)
         {
             m_Poller = poller;
             m_Option = opt;
@@ -623,7 +623,7 @@ namespace Server.Misc
             return m.Value;
         }
 
-        public static string UrlToHref(string text)
+        public static string? UrlToHref(string text)
         {
             if (text == null)
                 return null;

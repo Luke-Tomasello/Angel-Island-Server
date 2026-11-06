@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -74,39 +74,19 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(250, 350);
+            // http://web.archive.org/web/20020313114557/uo.stratics.com/hunters/eldergazer.shtml
+            // 1000 Gold, Magic Items, Gems
 
-                PackMagicEquipment(1, 2, 0.40, 0.40);
-                PackMagicEquipment(1, 2, 0.10, 0.10);
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
+            if (Spawning)
+            {
+                PackGold(1000);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020313114557/uo.stratics.com/hunters/eldergazer.shtml
-                    // 1000 Gold, Magic Items, Gems
-
-                    if (Spawning)
-                    {
-                        PackGold(1000);
-                    }
-                    else
-                    {
-                        PackMagicStuff(1, 2, 0.40);
-                        PackMagicStuff(1, 2, 0.02);
-                        PackGem(1, .9);
-                        PackGem(1, .5);
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.FilthyRich);
-                }
+                PackMagicStuff(1, 2, 0.40);
+                PackMagicStuff(1, 2, 0.02);
+                PackGem(1, .9);
+                PackGem(1, .5);
             }
         }
 

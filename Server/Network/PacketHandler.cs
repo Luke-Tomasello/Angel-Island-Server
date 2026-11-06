@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,7 +30,7 @@ namespace Server.Network
         private int m_Length;
         private bool m_Ingame;
         private OnPacketReceive m_OnReceive;
-        private ThrottlePacketCallback m_ThrottleCallback;
+        private ThrottlePacketCallback? m_ThrottleCallback;
 
         public PacketHandler(int packetID, int length, bool ingame, OnPacketReceive onReceive)
         {
@@ -64,7 +64,7 @@ namespace Server.Network
             }
         }
 
-        public ThrottlePacketCallback ThrottleCallback
+        public ThrottlePacketCallback? ThrottleCallback
         {
             get { return m_ThrottleCallback; }
             set { m_ThrottleCallback = value; }

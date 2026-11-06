@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -58,7 +58,7 @@ namespace Server.Items
         public override Item Dupe(int amount)
         {
             ActivationController new_object = new ActivationController();
-            Utility.CopyProperties(new_object, this);
+            Utility.CopyProperties(this, new_object);
             if (Links != null)
             {   // without this, 'duped' ActivationControllers will SHARE a Links list.
                 //  Add an EventSpawner to one, it adds it to the other. Change a value in one, it changes it in the other.
@@ -68,7 +68,7 @@ namespace Server.Items
             return base.Dupe(new_object, amount);
         }
 
-        private EventSpawner GetLink(int index)
+        private EventSpawner? GetLink(int index)
         {
             if (index >= 0 && index < m_Links.Count)
                 return m_Links[index];
@@ -83,7 +83,7 @@ namespace Server.Items
 
             if (value != null && value is not EventSpawner)
             {
-                this.SendSystemMessage("That is not an event spawner");
+                this.SendMessageNearby("That is not an event spawner");
                 return;
             }
 
@@ -179,7 +179,7 @@ namespace Server.Items
             // we need the timer since Sector deactivates Items first, THEN mobiles.
             // when we get called here, mobiles haven't yet been deactivated
             if (Running)
-                Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(1.0, 1.75)), new TimerStateCallback(ActivateTick), new object[] { null });
+                Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(1.0, 1.75)), new TimerStateCallback(ActivateTick), new object?[] { null });
         }
 
         private void ActivateTick(object state)

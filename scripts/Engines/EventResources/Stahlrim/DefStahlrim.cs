@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,7 +36,7 @@ namespace Server.Engines.EventResources
 {
     public class DefStahlrim : EventResourceSystem
     {
-        private static EventResourceSystem m_System;
+        private static EventResourceSystem? m_System;
 
         public static EventResourceSystem System
         {
@@ -150,7 +150,7 @@ namespace Server.Engines.EventResources
             {
                 Console.WriteLine("StahlrimSystem Saving...");
 
-                string directoryName = Path.GetDirectoryName(FilePath);
+                string? directoryName = Path.GetDirectoryName(FilePath);
 
                 if (!string.IsNullOrEmpty(directoryName) && !Directory.Exists(directoryName))
                     Directory.CreateDirectory(directoryName);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -47,7 +47,7 @@ namespace Server.Engines.Alignment
 
         public static Alignment[] Table { get { return m_Table; } }
 
-        public static Alignment Get(AlignmentType type)
+        public static Alignment? Get(AlignmentType type)
         {
             for (int i = 0; i < m_Table.Length; i++)
             {
@@ -78,7 +78,7 @@ namespace Server.Engines.Alignment
             writer.Write((byte)alignment.Type);
         }
 
-        public static Alignment ReadReference(GenericReader reader)
+        public static Alignment? ReadReference(GenericReader reader)
         {
             switch (reader.ReadByte())
             {

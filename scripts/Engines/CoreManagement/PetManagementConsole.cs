@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -23,23 +23,21 @@
  * ChangeLog
  *  9/22/2023, Adam
  *		initial check in
+ *  3/18/26, Luke
+ *      Refactored to inherit from BaseConsole.
  */
 
 using Server.Mobiles;
 
-namespace Server.Items
+namespace Server.Engines.Consoles
 {
     [NoSort]
-    [FlipableAttribute(0x1f14, 0x1f15, 0x1f16, 0x1f17)]
-    public class PetManagementConsole : Item
+    public class PetManagementConsole : BaseConsole
     {
         [Constructable]
         public PetManagementConsole()
-            : base(0x1F14)
+            : base("Pet Management Console")
         {
-            Weight = 1.0;
-            Hue = 0x534;
-            Name = "Item Management Console";
         }
 
         public PetManagementConsole(Serial serial)
@@ -50,58 +48,49 @@ namespace Server.Items
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
         public double ActiveSpeedOverride
         {
-            get
-            {
-                return CoreAI.ActiveSpeedOverride;
-            }
-            set
-            {
-                CoreAI.ActiveSpeedOverride = value;
-            }
+            get => CoreAI.ActiveSpeedOverride;
+            set => CoreAI.ActiveSpeedOverride = value;
         }
+
+        [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
         public double PassiveSpeedOverride
         {
-            get
-            {
-                return CoreAI.PassiveSpeedOverride;
-            }
-            set
-            {
-                CoreAI.PassiveSpeedOverride = value;
-            }
+            get => CoreAI.PassiveSpeedOverride;
+            set => CoreAI.PassiveSpeedOverride = value;
         }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
         public double ActiveMountedSpeedOverride
         {
-            get
-            {
-                return CoreAI.ActiveMountedSpeedOverride;
-            }
+            get => CoreAI.ActiveMountedSpeedOverride;
             set
             {
                 double oldOverride = CoreAI.ActiveMountedSpeedOverride;
                 CoreAI.ActiveMountedSpeedOverride = value;
-                // if we ever use ActiveMountedSpeedOverride anywhere besides BaseHire, we'll need to enumerate those as well
+
                 foreach (BaseHire bh in BaseHire.Registry)
                     if (bh.CurrentSpeed == oldOverride)
                         bh.CurrentSpeed = CoreAI.ActiveMountedSpeedOverride;
             }
         }
+
+        [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
         public double PassiveMountedSpeedOverride
         {
-            get
-            {
-                return CoreAI.PassiveMountedSpeedOverride;
-            }
-            set
-            {
-                CoreAI.PassiveMountedSpeedOverride = value;
-            }
+            get => CoreAI.PassiveMountedSpeedOverride;
+            set => CoreAI.PassiveMountedSpeedOverride = value;
+        }
+
+        [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
+        public double MountEnduranceFactor
+        {
+            get => CoreAI.MountEnduranceFactor;
+            set => CoreAI.MountEnduranceFactor = value;
         }
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((int)1); // version
+            writer.Write(1); // version
         }
 
         public override void Deserialize(GenericReader reader)

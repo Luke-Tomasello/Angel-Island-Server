@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,7 +30,6 @@
 
 
 using Server.Gumps;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -112,12 +111,12 @@ namespace Server.Commands
             }
         }
 
-        public static bool IsAccessible(Mobile from, object obj)
+        public static bool IsAccessible(Mobile from, object? obj)
         {
             if (from.AccessLevel >= AccessLevel.Administrator || obj == null)
                 return true;
 
-            Mobile mob;
+            Mobile? mob;
 
             if (obj is Mobile)
                 mob = (Mobile)obj;
@@ -176,7 +175,7 @@ namespace Server.Commands
         {
             for (int i = 0; i < m_Responses.Count; ++i)
             {
-                MessageEntry entry = (MessageEntry)m_Responses[i];
+                MessageEntry? entry = (MessageEntry?)m_Responses[i];
 
                 if (entry.m_Message == message)
                 {
@@ -200,7 +199,7 @@ namespace Server.Commands
         {
             for (int i = 0; i < m_Failures.Count; ++i)
             {
-                MessageEntry entry = (MessageEntry)m_Failures[i];
+                MessageEntry? entry = (MessageEntry?)m_Failures[i];
 
                 if (entry.m_Message == message)
                 {
@@ -221,7 +220,7 @@ namespace Server.Commands
             {
                 for (int i = 0; i < m_Responses.Count; ++i)
                 {
-                    object obj = m_Responses[i];
+                    object? obj = m_Responses[i];
 
                     if (obj is MessageEntry)
                     {

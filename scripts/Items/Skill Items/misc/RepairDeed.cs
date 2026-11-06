@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -94,7 +94,7 @@ namespace Server.Items
         private RepairSkillType m_Skill;
         private double m_SkillLevel;
 
-        private Mobile m_Crafter;
+        private Mobile? m_Crafter;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public RepairSkillType RepairSkill
@@ -111,7 +111,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Mobile Crafter
+        public Mobile? Crafter
         {
             get { return m_Crafter; }
             set { m_Crafter = value; InvalidateProperties(); }
@@ -162,7 +162,7 @@ namespace Server.Items
         {
         }
 
-        public RepairDeed(RepairSkillType skill, double level, Mobile crafter, bool normalizeLevel) : base(0x14F0)
+        public RepairDeed(RepairSkillType skill, double level, Mobile? crafter, bool normalizeLevel) : base(0x14F0)
         {
             if (normalizeLevel)
                 SkillLevel = (int)(level / 10) * 10;

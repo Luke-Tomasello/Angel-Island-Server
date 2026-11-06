@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -127,7 +127,7 @@ namespace Server.Engines
                         // Read them all in
                         for (int ig = 0; ig < numDODs; ig++)
                         {
-                            string sDOD = sr.ReadString();
+                            string? sDOD = sr.ReadString();
                             // Match the equivalent DOD instances and link
                             for (int ii = 0; ii < RareFactory.DODInst.Count; ii++)
                             {
@@ -165,7 +165,7 @@ namespace Server.Engines
             // Write them all
             for (int ig = 0; ig < m_DODInst.Count; ig++)
             {
-                string sDOD = ((DODInstance)m_DODInst[ig]).Name;
+                string? sDOD = ((DODInstance)m_DODInst[ig]).Name;
                 bfw.Write((string)sDOD);
             }
 

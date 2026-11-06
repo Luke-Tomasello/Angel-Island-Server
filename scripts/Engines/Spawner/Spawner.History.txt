@@ -1,0 +1,262 @@
+/* Scripts/Engines/Spawner/Spawner.cs
+ * Changelog:
+ *  12/15/2025, Adam (Nerun's Spawn())
+ *      Nerun mode now uses Classic-style streaming spawns instead of full batch refills.
+ *      Each tick spawns one creature per random interval, producing smoother, natural pacing.
+ *  4/12/2024, Adam (Spawner.ClearPath()))
+ *      Renamed to Spawner.ClearPathLand() since it only works for land navigation.
+ *  3/14/2024, Adam (CustomMobile())
+ *      Disallow custom mobiles from being tamed.
+ *  2/5/2024, Adam
+ *      Spawner property TemplateGet removed (unreliable)
+ *      New commands:
+ *      [GetTemplateMob <target spawner>
+ *      [GetTemplateItem <target spawner>
+ *      Both functions bring the template to your location
+ *  12/10/1023, Adam
+ *      Undo Christmas event hack to spawner template model.
+ *      Hack: Was leaving orphaned template mobiles/items if they are on one map vs another
+ *      Fix: Add reference counting on template mobiles/items/loot packs, and carve packs. Now all of these can be shared across multiple spawners.
+ *      Note: When the last linking spawner is deleted, the template is deleted, regardless of map.
+ *  12/4/2023, Adam (mobiles getting stuck or spawning underwater)
+ *      sometimes, the map lays water tiles over gullies/ditches in dungeons (lakes).
+ *          Example (5228, 911, -45) / (5228, 911, -65) (Destard)
+ *      For land-only mobiles, we avoid these completely. For water capable mobs, we exclude the land tiles under the water
+ *  7/26/2023, Adam (SetSkill)
+ *      Like the SetProp below, SetSkill allows you to assign skills via the spawner.
+ *          Anatomy 600.66 ; Swords ; 100.2
+ *          Combined with SetProp, these properties allow you to create 'template' mobiles via the spawner
+ *          as opposed to the 'template mobile' model.
+ *  7/11/2023, Adam (SetProp)
+ *      You can now set a string of properties to set in the spawned object. For example:
+ *          movable false ; hue 33
+ *  6/25/2023, Adam (Dupe)
+ *      Unset and restore item's Parent before and after the dupe.
+ *      Duping an item with the parent set results in side effects, including in container overload.
+ *  6/25/2023, Adam (Defrag())
+ *      since players can places houses on top of spawners, and since spawners, when they cannot find 
+ *          a good spawn location, default to the location of a spawner, you can get a scenario where 
+ *          all the creatures are spawning in the players house!
+ *          To solve this, in Defrag() we check to see if a house has been dropped on us. If so,
+ *          we move the spawner to the houses 'ban location'
+ *  5/31/2023, Adam (ChangingDungeons)
+ *      Add is changing dungeons rule. I.e., don't allow Shame spawn to end up in Wind
+ *  5/29/23, Yoar
+ *      Added ObjectCount, IsEmpty getters
+ *      Added CPAs to ObjectCount, IsEmpty, IsFull so that GMs can read these properties in-game
+ *  5/14/2023, Adam (Count)
+ *      Refactor how spawners use Count.
+ *          The old (RunUO) style used m_Count to denote how many creatures this spawner would spawn
+ *          Nerun style spawners have a count per spawner gump entry, (Nerun spawners can contain > 1 creatures on a spawner gump entry)
+ *      The refactor does away with the m_Count, and replaces it with a list of counts per spawner gump entry
+ *  3/27/23, Adam (RandomPointAdjust)
+ *      Modify RandomPointAdjust (used in concentric spawners) to apply gravity to outer edge.
+ *      Basically, we don't want a smooth distribution of objects from spawner to the edge (of the spawn radius.)
+ *      We want to 'pull' some fraction of objects away from the spawner and distribute them in the outer two bands.
+ *      See Also comments: RandomPointAdjust()
+ *  12/7/22, Adam (CanOverrideAI)
+ *      Add a new CanOverrideAI property to BaseCreature which tells at least the 'Exhibit' Spawner
+ *      if this creature may have its AI overridden. By default, the Exhibit spawner
+ *          sets the AI to Animal.
+ *  11/18/22, Adam: (Respawn())
+ *      Add new function ReCalcEnd() to be called after a respawn to recalculate the NextSpawn.
+ *  9/22/22, Adam (MaximumSpawnableRect)
+ *      Update usage of MaximumSpawnableRect() - was in Geometry.cs, not moved to a static function in Utility.cs 
+ *  9/7/22, Adam (SpawnedMobileKilled)
+ *      Add public virtual void SpawnedMobileKilled(Mobile m)
+ *      Notifies the spawner of this mobile of the death.
+ *      This is used by our special 'champ level' PushBackSpawners
+ *  9/2/22, Adam(WalkRangeCalc)
+ *      Calculates the maximum walking range for a mobile up to 128 tiles from the spawner.
+ *      Useful for shopkeepers where you would like them to walk all around the shop without having to set each spawner manually
+ *  8/30/22, Adam (Nerun's Distro spawner model)
+ *      Major rework of our spawner to support Nerun's Distro spawner model https://github.com/nerun/runuo-nerun-distro
+ *      Summary:
+ *      Our spawners work as they always have unless you enable the Nerun's compatibility mode.
+ *      When the spawner is operating in Nerun's compatibility mode, these are the differences:
+ *      1. Something from each cell is always spawned. As opposed to AI spawners where a single object from the spawn list is selected at random.
+ *      2. Support for colon delimited cell entries. This means a single spawner gump entry can look like: cat:rat:dog: etc. N of these are spawned, where N is the 'count' for that cell.
+ *      3. A 'per cell' count specifier. classic RunUO spawners have a single 'count' field that applies to every spawned item. Nerun's model has a 'count' for each entry (cell)
+ *  8/26/22, Adam
+ *      Add _defaultSpawnMap() to automatically set the UOSpawnMap based on configuration when a spawner is first created.
+ *  8/25/22, Adam (NeedsReview = 0x04)
+ *      Update the flag value on this enum
+ *  8/24/22, Adam (Concentric spawners)
+ *      HomeRange works differently for Concentric spawners.
+ *      Normally, HomeRange defines both how far the spawner can throw the creatures (items) AND the RangeHome of the creature (how far they can walk)
+ *      This model leads to clumping of creatures. 
+ *      Concentric spawners differ in that HomeRange defines ONLY how far the spawner can throw the creatures, but the creatures RangeHome is set
+ *      to a default value calculated by the 'circle' logic. Additionally, the creatures Home is set to the place where they were spawned.
+ *      This updating happens in OnAfterMobileSpawn(). The result is the creatures are scattered as per usual, but their landing spot becomes their new Home, 
+ *      and their RangeHome is restricted. 
+ *      The theory is that we should see far less clumping of creatures as their RangeHome will keep them near their spawn point.
+ *      Note: Concentric spawners are expensive as they store an array of 360 points around the circle's perimeter.
+ *          Concentric spawners work best-and are intended for-spawning large numbers of creatures over vast areas.
+ *  8/24/22, Adam (ShouldShardEnable(s))
+ *      Add new ShouldShardEnable(s) which is now used in a couple different places to determine what spawners should be respawned on which shards.
+ *  8/23/22, Adam (core spawners)
+ *      - rename CoreSpawn ==> _CoreSpawn
+ *      - rename IsConcentric ==> _IsConcentric
+ *      - rename OurWorldSize ==> _OurWorldSize
+ *      All of this to have them listed first in the spawner, as they are important to set.
+ *      - add _Shard
+ *          _Shard defines the shard (Core,Siege,AngelIsland,Renaissance,Mortalis,etc.) for which this spawner applies.
+ *          Core is special as it applies to all shards. It is standard OSI spawn
+ *          Mortalis for example would apply to only Mortalis shards.
+ *      - add ShardConfig enum: to what shard this spawner applies: Core=all shards, AngelIsland=angel island only, etc.
+ *      - add _UOSpawnMap: How it was determined this was a 'core' spawner
+ *      - add _NeedsReview: Questionable, needs review (should it be 'core' or not?
+ *      - revamp OnSingleClick() to display name+_UOSpawnMap, then the labels (core, running, etc.)
+ *      - Add SaveFlags to optimize I/O
+ *  8/22/22, Adam
+ *      Don't try to spawn a template mobile if the m_TemplateMobile has been deleted
+ *  5/23/22, Adam (CopyLayers)
+ *      Make sure the item to copy has a Parameterless Constructor
+ *      i.e., StuddedGlovesOfMining don't have such a constructor
+ *  12/12/21, Adam
+ *      Add updating of QuickTables when a spawner is deleted.
+ *	12/4/21, Yoar
+ *		Added GoldDice to configure gold drops.
+ *	11/25/21, Yoar
+ *		Added CarvePack: Specifies special carvables for creatures generated by this spawner. Works similarly to LootPack.
+ *  11/13/21, Adam (ClearPath())
+ *      Add 'clear path' checking to an spawn position. 
+ *      This prevents spawned creatures from being spawned in areas where thay could not return to the spawner (inaccessable locations.)
+ *  11/8/21, Yoar
+ *      Added calls to Mobile.OnAfterSpawn, Item.OnAfterSpawn
+ *  10/17/21, Adam (EventSpawner)
+ *      convert to using GameTime instead of ServerTime.
+ *      Also, don't delete the EventSpawner when the event is over, just delete the creatures and disable the spawner.
+ *  10/11/21, Adam
+ *      Add support for spawning on a boat
+ *  7/16/21, Adam
+ *      Added two new variables (serialized) and one not.
+ *      m_isConcentric (serialized) Tells us if we should try to distribute spawn in concentric circles aound the spawner instead of tossing all spawn out to homerange
+ *      m_concentric (not serialized) The counter that shrinks the radius for spawn
+ *      m_coreSpawn (serialized) spawners listed here https://uo.stratics.com/hunters/spawn/spawnmap.jpg are considered core spawners. By tagging them, we can find them.
+ *	6/27/2021, Adam
+ *		Rewrite all the template stuff to actually work and not be crappy-buggy.
+ *	3/6/16, Adam
+ *		1. Comment out the *display* of the OurWorldSize stuff... not sure why it's here and atleast makes the display ugly
+ *		We will look into this later and try and track down the reasoning.
+ *		2. Make our event spawners print more useful information, and allow them to take an expiration date.
+ *	3/30/10. adam
+ *		1. Add EventSpawner class
+ *		2. Force a recalc of NextSpawn if Min or Max are changed
+ *	2/23/10, Adam
+ *		Limit paragons to players using dragons or daemons to farm
+ *	5/12/09, Adam
+ *		Check for value==null when setting the LootPack
+ *	01/14/09, plasma
+ *		Added OnAfterMobileSpawn( Mobile )
+ *	10/28/08, plasma
+ *		Virtualised Spawn()
+ *	10/17/08, Adam
+ *		In OnDelete make sure to delete all templates!
+ *	10/16/08, Adam
+ *		- Add a LootPack Item (or container item) that specifies special loot for creatures generated by this spawner. BaseCreature takes care of the actual interpretation of this value.
+ *      - Make sure the current lootpack is deleted before a new one is assigned.
+ *      - Make sure to remove the loot from the parent container.
+ *	4/20/08, Adam
+ *		Make GetSpawnPosition() a public function
+ *	11/1/07, Adam
+ *		When using target mode to setup a Template Item or Mobile, set/clear the SpawnerTempMob or SpawnerTempItem for the template
+ *		We need to clear it for the old Template so that it will decay as per usual, and set it for the new one so that it does not 
+ *		decay. 
+ *		Caution: Don't use anything spawned by a spawner (still on the spawner list) as a template as the spawner will delete it
+ *		during a defrag.
+ *	8/28/07, Adam
+ *		Add a 10% chance to make the spawned creature a Paragon.
+ *		The actual decision is in BaseCreature, the spawner only creates the chance.
+ *  3/21/07, Adam (removed)
+ *      Add DynamicLootTypes for dynamic loot specification.
+ *  3/17/07, Adam
+ *      Split spawn into a Create function and a Move to world portion.
+ *      This is so we can have a public Factory method to create Template Mobiles and Items.
+ *  2/26/07, Adam
+ *      Make sure to call m_Timer.Flush() to remove any queued ticks.
+ *      This is important when setting NextSpawn and there is already a queued tick.
+ *  10/19/06, Kit
+ *		Made template mobs spawner property be set to spawner they are on.
+ *	10/18/06, Adam
+ *		- Remove notion of 'Fixed' non-decaying objects
+ *		- Refresh() items still on a spawner before decaying (called by ItemDecay in Heartbeat)
+ *	9/15/06, Adam
+ *		Add function to create a template object only if the Type of the existing template
+ *			object has changed. The prevents complex templates from being lost when someone
+ *			simply hits 'OK' on the Spawner gump
+ *	9/3/06, Adam
+ *		Add function to get the Creature List
+ *  8/16/06, Kit
+ *		Made static copy of mobs copy layers and property of those layers to new destination mob.
+ *  7/02/06, Kit
+ *		Added, property DynamicCopy, if enabled call InitOutfit/InitBody routines of mob.
+ *		Added set NameHue to -1(use notoriety) for vendors spawned with invulnerability turned off.
+ *		Fixed bug with namehue being set on all spawners.
+ *		Added call to InitOutfit() for normal template spawns to prevent cross dressing.
+ *	6/30/06, Adam
+ *		- remove evil code nulling templates on every spawn if Enable is not set
+ *		- Have TemplateEnable invoke appropriate Template Creation / Destruction code
+ *		- Propagate Lifespan for Mobiles and LastMove for items (manages decay/cleanup)
+ *		- move template creation/management into Spawner class.
+ *		- make sure template is only created on the first object specified.
+ *		- make TemplateEnable readable by GMs, but writable by Seers
+ *  06/27/06, Kit
+ *		Added templated ability to spawners, full range of props setting for spawner entry.
+ *		Set via TemplateMobile -> view props, or TemplateItem -> view props, packed out old data.
+ *  06/27/06, Kit
+ *		Added new property MobVendorInvunerable, for setting invulnerability on vendors.
+ *	6/6/06, Adam
+ *		Rename Nav --> m_NavDest to follow normal member naming conventions.
+ *	1/9/06, Adam
+ *		Change FreezeDecay to AccessLevel.Administrator - used for daily rares
+ *	12/20/05, Adam
+ *		Add many more attributes for defining dynamic creatures.
+ *	12/19/05, Adam
+ *		Add logging to the Name and Hue attributes.
+ *	12/18/05, Adam
+ *		Add the attributes Name and Hue to be applied to the spawned Object.
+ *		These are Seer access attributes.
+ *	12/16/05, Adam
+ *		Warn if we're spawning stuff in a house.
+ *		This is a problem because the item will be orphaned by the spawner
+ *		which can lead to excessive item generation.
+ *  12/05/05, Kit
+ *		Spawner now calls Think() for creature if creature has a navdestination set.
+ *  12/01/05, Kit
+ *		Added Serialization for NavDestination
+ *  11/29/05 Kit
+ *		Added NavDestination property for setting default NavPoint.
+ *  11/22/05 TK
+ *		Correction MobileDirection to be a separate value from spawner's Item.Direction
+ *  11/21/05 Taran Kain
+ *      Added MobileDirection property, just a redirect to Item.Direction
+ *	3/9/05, Adam
+ *		In Defrag() we now check to see if the spawned item is in a HouseRegion.
+ *		items in a HouseRegion are assumed to be 'freed' from the spawner and may therefore
+ *		be removed from the spawners list of managed items.
+ *		We needed this new check because putting an item in your house leaves the parent null which prevents 
+ *		the 'fixed' item from decaying and a new item from being spawned. (See previous change)
+ *	02/28/05, Adam
+ *		1. Add new FreezeDecay property to freeze the decay on spawned items.
+ *		2. When someone picks something up, parent is set to non-null. When this happens
+ *			We can clear the 'Fixed' flag (item.Fixed = false).
+ *		Detailed explanation: 
+ *			Items are removed from the spawners list of spawned items during the Defrag() run. 
+ *			This Defrag() run is roughly the frequency of the spawner. In the case of daily rares, 
+ *			this respawn rate can be days long.
+ *			Because spawned rares must necessarily sit on the ground for days and not decay, 
+ *			they have a special 'fixed' attribute that prevents them from decaying.
+ *			When a player gets a rare home, it will still be fixed until the spawner next runs and 
+ *			defrags. When this happens, the 'fixed' attribute will be cleared, and the item will 
+ *			decay as usual.
+ *	02/28/05, erlein
+ *		Now also logs addition and deletion of spawners.
+ *	02/27/05, erlein
+ *		Added logging of HomeRange and Count property changes.
+ *		Now logs all changes to these in /logs/spawnerchange.log
+ *	12/29/04, Pix
+ *		Now spawned creatures contain the location of the spawner.
+ *  6/5/04, Pix
+ *		Merged in 1.0RC0 code.
+ */

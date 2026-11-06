@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,6 +48,8 @@ namespace Server.Mobiles
     [CorpseName("a vampire bat corpse")]
     public class VampireBat : BaseCreature
     {
+        [CommandProperty(AccessLevel.GameMaster)]
+        public override DefensiveSlayer SlayersDefensive { get; set; } = DefensiveSlayer.Silver;
         [Constructable]
         public VampireBat()
             : base(AIType.AI_Melee, FightMode.All | FightMode.Weakest, 10, 1, 0.25, 0.5)
@@ -106,8 +108,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            // https://www.uoguide.com/Vampire_Bat
-            PackGold(25, 50);
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=751
+            // 25 - 50 Gold
+            // Special: None
+            // Cut Up: None
+
+            if (Spawning)
+            {
+                PackGold(25, 50);
+            }
+            else
+            {
+            }
         }
 
         public override void Serialize(GenericWriter writer)

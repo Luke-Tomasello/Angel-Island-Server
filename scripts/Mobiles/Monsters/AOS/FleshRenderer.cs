@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -98,7 +98,7 @@ namespace Server.Mobiles
         public override int Meat { get { return 20; } }
         public override Poison PoisonImmune { get { return Poison.Lethal; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 5 : 0; } }
 
         public FleshRenderer(Serial serial)
@@ -108,22 +108,56 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            PackGem();
-            PackGold(2500, 3500);
-            //PackMagicEquipment( 2, 3, 0.90, 0.90 );
-            //PackMagicEquipment( 2, 3, 0.50, 0.50 );
+            if (SpawnerEngine != null)
+            {
+                GenerateMiniBossLoot();
+                return;
+            }
 
-            // adam: add 25% chance to get a Random Slayer Instrument
-            PackSlayerInstrument(.25);
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=728
+            // 300 - 400 Gold
+            // Special: 3-6 Gems, Magic Weapons/Armor
+            // Cut Up: None
 
-            // Pigpen: Add the Dread Steel (rare) armor to this mini-boss.
-            if (Core.RuleSets.MiniBossArmor())
-                DoMiniBossArmor();
+            if (Spawning)
+            {
+                PackGold(300, 400);
+            }
+            else
+            {
+                PackGem(3, 6);
 
-            // Use our unevenly weighted table for chance resolution
-            Item item;
-            item = Loot.RandomArmorOrShieldOrWeapon();
-            PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6 /*6*/, 0, false));
+                PackMagicEquipment(2, 3, 1.0, 1.0);
+                PackMagicEquipment(2, 3, 0.50, 0.50);
+            }
+        }
+
+        private void GenerateMiniBossLoot()
+        {
+            // Champ-engine mini-boss variant.
+            // Higher gold, gem roll, slayer instrument chance, mini-boss armor,
+            // and one high-end unevenly weighted magic equipment roll.
+
+            if (Spawning)
+            {
+                PackGold(2500, 3500);
+            }
+            else
+            {
+                PackGem();
+
+                // 25% chance to drop a random slayer instrument
+                if (Core.RuleSets.SlayerInstruments())
+                    PackSlayerInstrument(0.25);
+
+                // Rare mini-boss armor drop, ruleset-gated
+                if (Core.RuleSets.MiniBossArmor())
+                    DoMiniBossArmor();
+
+                // High-end unevenly weighted armor/shield/weapon roll
+                Item item = Loot.RandomArmorOrShieldOrWeapon();
+                PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6, 0, false));
+            }
         }
         private void DoMiniBossArmor()
         {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,7 +36,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -81,9 +80,21 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021014235931/uo.stratics.com/hunters/skeletalknight.shtml
+            // 50 to 150 Gold, Potions, Arrows, Gems, Platemail Armor, Wooden Shield, Weapon Carried
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
+                PackGold(50, 150);
+            }
+            else
+            {
+                PackPotion();
+                PackPotion(0.5);
+                PackItem(new Arrow(10));    // TODO: no idea how many, use AI's value
+                PackGem(1, .9);
+                PackGem(1, .05);
+
                 switch (Utility.Random(6))
                 {
                     case 0: PackItem(new PlateArms()); break;
@@ -94,79 +105,8 @@ namespace Server.Mobiles
                     case 5: PackItem(new PlateHelm()); break;
                 }
 
-                PackPotion();
-                PackPotion();
                 PackItem(new Scimitar());
-                PackItem(new Arrow(10));
                 PackItem(new WoodenShield());
-                PackGold(100, 130);
-                PackItem(new Bone(Utility.Random(8, 12)));
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021014235931/uo.stratics.com/hunters/skeletalknight.shtml
-                    // 50 to 150 Gold, Potions, Arrows, Gems, Platemail Armor, Wooden Shield, Weapon Carried
-
-                    if (Spawning)
-                    {
-                        PackGold(50, 150);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackPotion(0.5);
-                        PackItem(new Arrow(10));    // TODO: no idea how many, use AI's value
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-
-                        switch (Utility.Random(6))
-                        {
-                            case 0: PackItem(new PlateArms()); break;
-                            case 1: PackItem(new PlateChest()); break;
-                            case 2: PackItem(new PlateGloves()); break;
-                            case 3: PackItem(new PlateGorget()); break;
-                            case 4: PackItem(new PlateLegs()); break;
-                            case 5: PackItem(new PlateHelm()); break;
-                        }
-
-                        PackItem(new Scimitar());
-                        PackItem(new WoodenShield());
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        switch (Utility.Random(6))
-                        {
-                            case 0: PackItem(new PlateArms()); break;
-                            case 1: PackItem(new PlateChest()); break;
-                            case 2: PackItem(new PlateGloves()); break;
-                            case 3: PackItem(new PlateGorget()); break;
-                            case 4: PackItem(new PlateLegs()); break;
-                            case 5: PackItem(new PlateHelm()); break;
-                        }
-
-                        PackItem(new Scimitar());
-                        PackItem(new WoodenShield());
-                    }
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Meager);
-                }
             }
         }
 

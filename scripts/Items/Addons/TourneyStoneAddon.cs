@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -183,7 +183,7 @@ namespace Server.Items
                     Contents = new ArrayList();
 
                     // Drop to pack any held items
-                    Item held = pm.Holding;
+                    Item held = pm.Dragging;
                     if (held != null)
                     {
                         held.ClearBounce();
@@ -192,7 +192,7 @@ namespace Server.Items
                             pm.Backpack.DropItem(held);
                         }
                     }
-                    pm.Holding = null;
+                    pm.Dragging = null;
 
                     // Populate from PlayerMobile's pack + equipped items
                     ArrayList PackItems = new ArrayList(pm.Items);
@@ -255,7 +255,7 @@ namespace Server.Items
 
                 for (int rpos = 0; rpos < RulesetCount; rpos++)
                 {
-                    Rule RuleChecking = (Rule)Rules[rpos];
+                    Rule? RuleChecking = (Rule?)Rules[rpos];
 
                     if (RuleChecking.Conditions.Count == 0 || RuleChecking.Active == false)
                         continue;
@@ -462,7 +462,7 @@ namespace Server.Items
                     //
                     for (int rpos = 0; rpos < RuleCount; rpos++)
                     {
-                        Rule TestRule = (Rule)Ruleset[rpos];
+                        Rule? TestRule = (Rule?)Ruleset[rpos];
                         TestRule.Active = reader.ReadBool();
 
                         // How many conditions are we dealing with?
@@ -471,7 +471,7 @@ namespace Server.Items
                         for (int cpos = 0; cpos < ConCount; cpos++)
                         {
                             // Match up each condition - they should all exist
-                            RuleCondition TestCon = (RuleCondition)TestRule.Conditions[cpos];
+                            RuleCondition? TestCon = (RuleCondition?)TestRule.Conditions[cpos];
 
                             TestCon.Configurable = reader.ReadBool();
                             if (TestCon.Configurable == true)
@@ -628,7 +628,7 @@ namespace Server.Items
                 throw (new FileNotFoundException());
 
             xdoc.Load(filePath);
-            XmlElement root = xdoc["Ruleset"];
+            XmlElement? root = xdoc["Ruleset"];
 
             RulesetVersion = Convert.ToDouble(Accounts.GetAttribute(root, "version", "0"));
 
@@ -685,7 +685,7 @@ namespace Server.Items
 
                         if (sItemType != "")
                         {
-                            Type tItemType = ScriptCompiler.FindTypeByName(sItemType);
+                            Type? tItemType = ScriptCompiler.FindTypeByName(sItemType);
 
                             if (tItemType != null)
                                 RuleCon.ItemType = tItemType;
@@ -769,7 +769,7 @@ public class TourneyStoneBase : AddonComponent
 
     public override void OnDoubleClick(Mobile from)
     {
-        BaseHouse house = BaseHouse.FindHouseAt(this);
+        BaseHouse? house = BaseHouse.FindHouseAt(this);
 
         if (from.InRange(this, 2))
         {
@@ -823,7 +823,7 @@ public class TourneyStoneRune : AddonComponent
 
     public override void OnDoubleClick(Mobile from)
     {
-        BaseHouse house = BaseHouse.FindHouseAt(this);
+        BaseHouse? house = BaseHouse.FindHouseAt(this);
 
         if (from.InRange(this, 2))
         {

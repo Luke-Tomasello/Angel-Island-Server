@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -220,7 +220,7 @@ namespace Server.Items
 
         public override void OnDoubleClick(Mobile from)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             if (house == null || !house.IsLockedDown(this))
                 from.SendLocalizedMessage(1062396); // This bulletin board must be locked down in a house to be usable.
@@ -508,10 +508,14 @@ namespace Server.Items
                         {
                             if (page >= 1 && page <= board.Messages.Count)
                             {
-                                PlayerBBMessage message = (PlayerBBMessage)board.Messages[page - 1];
-                                Mobile poster = message.Poster;
+                                PlayerBBMessage? message = (PlayerBBMessage?)board.Messages[page - 1];
+                                Mobile? poster = message.Poster;
 
-                                if (poster.AccessLevel > AccessLevel.Player && from.AccessLevel <= poster.AccessLevel)
+                                if (poster == null)
+                                {   // the poster's character was deleted (loads as null after a restart); there is no one to banish
+                                    from.SendMessage("That person no longer exists.");
+                                }
+                                else if (poster.AccessLevel > AccessLevel.Player && from.AccessLevel <= poster.AccessLevel)
                                 {
                                     from.SendLocalizedMessage(501354); // Uh oh...a bigger boot may be required.
                                 }
@@ -538,7 +542,10 @@ namespace Server.Items
                                 else
                                 {
                                     if (!house.Bans.Contains(poster))
+                                    {
                                         house.Bans.Add(poster);
+                                        house.RecordAccountBan(poster, banned: true);
+                                    }
 
                                     from.SendLocalizedMessage(1062417); // That person has been banned from this house.
 
@@ -568,7 +575,7 @@ namespace Server.Items
                     {
                         if (from.AccessLevel >= AccessLevel.GameMaster)
                         {
-                            PlayerBBMessage message = board.Greeting;
+                            PlayerBBMessage? message = board.Greeting;
 
                             if (page >= 1 && page <= board.Messages.Count)
                                 message = (PlayerBBMessage)board.Messages[page - 1];
@@ -621,7 +628,7 @@ namespace Server.Items
             AddLabel(455, 89, LabelHue, "/");
             AddLabel(470, 89, LabelHue, board.Messages.Count.ToString());
 
-            PlayerBBMessage message = board.Greeting;
+            PlayerBBMessage? message = board.Greeting;
 
             if (page >= 1 && page <= board.Messages.Count)
                 message = (PlayerBBMessage)board.Messages[page - 1];
@@ -636,7 +643,7 @@ namespace Server.Items
                 AddHtml(255, 180, 150, 20, message.Time.ToString("yyyy-MM-dd HH:mm:ss"), false, false);
 
                 Mobile poster = message.Poster;
-                string name = (poster == null ? null : poster.Name);
+                string? name = (poster == null ? null : poster.Name);
 
                 if (name == null || (name = name.Trim()).Length == 0)
                     name = "Someone";

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,7 +30,6 @@
 
 using Server.Gumps;
 using Server.Network;
-using System;
 
 namespace Server.Items
 {
@@ -107,22 +106,6 @@ namespace Server.Items
             SkillName[] skills = PowerScroll.Skills;
 
             return new PowerScroll(skills[Utility.Random(skills.Length)], 100 + (Utility.RandomMinMax(min, max) * 5));
-        }
-
-        public static PowerScroll CreateRandomNoCraft(int min, int max)
-        {
-            min /= 5;
-            max /= 5;
-
-            SkillName[] skills = PowerScroll.Skills;
-            SkillName skillName;
-
-            do
-            {
-                skillName = skills[Utility.Random(skills.Length)];
-            } while (skillName == SkillName.Blacksmith || skillName == SkillName.Tailoring);
-
-            return new PowerScroll(skillName, 100 + (Utility.RandomMinMax(min, max) * 5));
         }
 
         [Constructable]

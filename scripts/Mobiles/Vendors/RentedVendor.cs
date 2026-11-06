@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -167,7 +167,7 @@ namespace Server.Mobiles
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Mobile Landlord
+        public Mobile? Landlord
         {
             get
             {
@@ -491,11 +491,6 @@ namespace Server.Mobiles
 
             m_RentalExpireTime = reader.ReadDeltaTime();
 
-#if false
-            // 11/16/22, Adam: don't renew this vendor if the house and/or landlord are gone.
-            TimeSpan delay = House != null ? m_RentalExpireTime - DateTime.UtcNow : TimeSpan.Zero;
-            // abandoning this for now until we resolve vendors disappearing
-#else
             if (House == null || Owner == null)
             {
                 LogHelper log = new LogHelper("VendorExpire.log", false, false);
@@ -508,7 +503,6 @@ namespace Server.Mobiles
 
 
             TimeSpan delay = m_RentalExpireTime - DateTime.UtcNow;
-#endif
             m_RentalExpireTimer = new RentalExpireTimer(this, delay > TimeSpan.Zero ? delay : TimeSpan.Zero);
             m_RentalExpireTimer.Start();
         }
@@ -534,31 +528,13 @@ namespace Server.Mobiles
         public void ProcessExpire()
         {
             // 6/27/23, Yoar: Why wasn't this checked previously? Do ALL rented vendors auto-renew?
-#if false
-            if (!Renew)
-            {
-                LogHelper log = new LogHelper("VendorExpire.log", false, false);
-                if (this.Owner != null)
-                    log.Log(LogType.Mobile, this.Owner, "Vendor owner");
-                log.Log(LogType.Mobile, this, "Vendor");
-                log.Log(LogType.Text, string.Format("Not set to renew. BankAccount={0}, HoldGold={1}, RentalGold={2}.", BankAccount, HoldGold, RentalGold));
-                log.Finish();
-
-                Destroy(true);
-                return;
-            }
-#endif
 
             int renewalPrice = this.RenewalPrice;
             int totalGold = this.BankAccount + this.HoldGold;
 
             //if we dont have the gold at all on vendor destroy is
             // 11/16/22, Adam: don't renew this house of the house and/or landlord are gone.
-#if false
-            if (renewalPrice > totalGold || this.House == null)
-#else
             if (renewalPrice > totalGold)
-#endif
             {
                 LogHelper log = new LogHelper("VendorExpire.log", false, false);
                 log.Log(LogType.Mobile, this, "Vendor");

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,65 +71,15 @@ namespace Server.Engines.ResourcePool
 
         public int Create(string filename)
         {
-#if false
-            Bitmap buf = new Bitmap(830, 275);
-            Graphics gfx = Graphics.FromImage(buf);
-
-            gfx.Clear(Color.White);
-            Pen p = new Pen(Color.Black, 2);
-            Brush b = new SolidBrush(Color.Black);
-            Font f = new Font("Verdana", 12, FontStyle.Bold);
-            StringFormat sf = new StringFormat();
-            sf.Alignment = StringAlignment.Center;
-            gfx.DrawString(m_Title, f, b, 415, 5, sf);
-
-            gfx.DrawLine(p, 51, 40, 51, 245);
-            gfx.DrawLine(p, 47, 241, (m_Data.Length > 760) ? 812 : 811, 241);
-
-            f = new Font("Verdana", 10);
-            gfx.DrawString(m_xAxis, f, b, 442, 256, sf);
-            gfx.RotateTransform(-90);
-            gfx.DrawString(m_yAxis, f, b, -140, -1, sf);
-            gfx.RotateTransform(90);
-
-            // x ticks
-            p = new Pen(Color.Black, 1);
-            f = new Font("Verdana", 8);
-            for (int i = 0; i <= m_xTicks; i++)
-            {
-                int x = (int)(51 + (double)((m_Data.Length > 760) ? 761 : 760) / m_xTicks * i);
-                gfx.DrawLine(p, x, 240, x, 244);
-                gfx.DrawString(string.Format("{0}", (int)((m_xMax - m_xMin) / m_xTicks * i) + m_xMin),
-                    f, b, x, 244, sf);
-            }
-
-            sf.Alignment = StringAlignment.Far;
-            for (int i = 0; i <= m_yTicks; i++)
-            {
-                int y = (int)(40 + (double)200 / m_yTicks * i);
-                gfx.DrawLine(p, 47, y, 51, y);
-                gfx.DrawString(string.Format("{0}", (m_yMax - m_yMin) / m_yTicks * (m_yTicks - i) + m_yMin),
-                    f, b, 47, y - f.Height / 2, sf);
-            }
-
-            b = new SolidBrush(Color.FromArgb(0x99, 0xCC, 0xFF));
-            for (int i = 0; i < m_Data.Length; i++)
-            {
-                gfx.FillRectangle(b, (float)(52 + (double)760 / m_Data.Length * i), (float)(40 + (200 - (double)200 * (m_Data[i] / m_yMax))),
-                    (m_Data.Length > 760) ? 1 : (float)760 / m_Data.Length, (float)(200 * (m_Data[i] / m_yMax)));
-            }
-
-            buf.Save(filename, ImageFormat.Gif);
-#endif
             return 1;
         }
     }
 
     class ConsignmentComparer : IComparer
     {
-        public int Compare(object x, object y)
+        public int Compare(object? x, object? y)
         {
-            ResourceConsignment rc1 = x as ResourceConsignment, rc2 = y as ResourceConsignment;
+            ResourceConsignment? rc1 = x as ResourceConsignment, rc2 = y as ResourceConsignment;
 
             if (rc1 == null && rc2 != null)
                 return -1;
@@ -144,9 +94,9 @@ namespace Server.Engines.ResourcePool
 
     class TransactionComparer : IComparer
     {
-        public int Compare(object x, object y)
+        public int Compare(object? x, object? y)
         {
-            ResourceTransaction rt1 = x as ResourceTransaction, rt2 = y as ResourceTransaction;
+            ResourceTransaction? rt1 = x as ResourceTransaction, rt2 = y as ResourceTransaction;
 
             if (rt1 == null && rt2 != null)
                 return -1;
@@ -242,7 +192,7 @@ namespace Server.Engines.ResourcePool
                     ArrayList histogram = new ArrayList();
                     for (int a = 0, m = 0; a < rclist.Count; a++)
                     {
-                        ResourceConsignment rc = rclist[a] as ResourceConsignment;
+                        ResourceConsignment? rc = rclist[a] as ResourceConsignment;
                         while (histogram.Count <= rc.Amount)
                             histogram.Add((double)0);
                         histogram[rc.Amount] = (double)(histogram[rc.Amount]) + (double)1;

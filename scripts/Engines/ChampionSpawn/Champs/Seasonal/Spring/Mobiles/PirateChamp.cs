@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -35,6 +35,7 @@
  */
 
 using Server.Diagnostics;			// log helper
+using Server.Engines.CrownSterlingSystem;
 using Server.Items;
 using System;
 using System.Collections;
@@ -118,14 +119,14 @@ namespace Server.Mobiles
             base.InitOutfit();
 
             // hat
-            Item hat = FindItemOnLayer(Layer.Helm);
+            Item? hat = FindItemOnLayer(Layer.Helm);
             if (hat != null)
                 hat.Delete();
 
             AddItem(CaptainsHat("a pirate hat"));
 
             // weapon
-            Item weapon = FindItemOnLayer(Layer.OneHanded);
+            Item? weapon = FindItemOnLayer(Layer.OneHanded);
             if (weapon is BaseSword bs)
             {
                 bs.Slayer = SlayerName.DragonSlaying;
@@ -138,7 +139,7 @@ namespace Server.Mobiles
             Female = false;
 
             // beard
-            Item beard = FindItemOnLayer(Layer.FacialHair);
+            Item? beard = FindItemOnLayer(Layer.FacialHair);
             if (beard != null)
                 beard.Delete();
 
@@ -148,19 +149,19 @@ namespace Server.Mobiles
             AddItem(beard);
 
             // pants
-            Item pants = FindItemOnLayer(Layer.Pants);
+            Item? pants = FindItemOnLayer(Layer.Pants);
             if (pants != null)
                 pants.Hue = 0x01;
 
             // shirt
-            Item shirt = FindItemOnLayer(Layer.Shirt);
+            Item? shirt = FindItemOnLayer(Layer.Shirt);
             if (shirt != null)
                 shirt.Delete();
 
             AddItem(new FancyShirt(0x64A));
 
             // shoes
-            Item shoes = FindItemOnLayer(Layer.Shoes);
+            Item? shoes = FindItemOnLayer(Layer.Shoes);
             if (shoes != null)
                 shoes.Hue = 0x00;
         }
@@ -169,7 +170,7 @@ namespace Server.Mobiles
             this.Say(true, "Heh! On to Davy Jones' lockarrr..");
             this.Say(true, "Ye'll not be gettin' me hoard!");
 
-            Item weapon = FindItemOnLayer(Layer.OneHanded);
+            Item? weapon = FindItemOnLayer(Layer.OneHanded);
             if (weapon is BaseSword bs)
             {
                 bs.Movable = true;
@@ -190,7 +191,7 @@ namespace Server.Mobiles
 
         public void SpawnBoneKnight(Mobile caster)
         {
-            Mobile target = caster;
+            Mobile? target = caster;
 
             if (Map == null || Map == Map.Internal)
                 return;
@@ -237,6 +238,8 @@ namespace Server.Mobiles
                 if (!validLocation)
                     helper.Location = target.Location;
 
+                helper.OnAfterSpawn();
+
                 helper.Combatant = target;
             }
         }
@@ -270,7 +273,7 @@ namespace Server.Mobiles
             lines[0] = "Movable true";
             lines[1] = "TrapEnabled false";
             lines[2] = "TrapPower 0";
-            lines[3] = "Locked true";
+            lines[3] = "Locked false";
 
             // the chest will become movable in 10-25 minutes
             DateTime SetTime = DateTime.UtcNow + TimeSpan.FromMinutes(Utility.RandomMinMax(10, 25));
@@ -283,7 +286,6 @@ namespace Server.Mobiles
             m_MetalChest.MoveToWorld(Spawner.GetSpawnPosition(Map, Location, 2, SpawnFlags.None, m_MetalChest), Map);
 
         }
-
         private void FillChest()
         {
             int RaresDropped = 0;
@@ -296,174 +298,136 @@ namespace Server.Mobiles
                 gold.Stackable = false;
                 m_MetalChest.DropItem(gold);
                 gold.Stackable = true;
+                // add some sterling
+                Sterling sterling = new Sterling(80, 300);
+                sterling.Stackable = false;
+                m_MetalChest.DropItem(sterling);
+                sterling.Stackable = true;
             }
             Logger.Log(string.Format("TotalGold: {0}", m_MetalChest.TotalGold));
 
-            do
+            int targetRares = 3;
+
+            while (RaresDropped < targetRares)
             {
-                // "a smelly old mackerel"
-                if (Utility.RandomChance(10))
+                Item? ii = null;
+
+                switch (Utility.Random(13)) // 13 case blocks
                 {
-                    Item ii;
-                    ii = new BigFish();
-                    ii.Name = "a smelly old mackerel";
-                    ii.Weight = 5;
+                    case 0:
+                        {
+                            // rare cloth
+                            ii = new UncutCloth(50);
+                            // best ore hues (vet rewards) + really dark 'evil cloth' and of course, black
+                            ii.Hue = Utility.RandomList(2213, 2219, 2207, 2425, 1109 /*dark evil*/, 0x01 /*black*/);
+                            break;
+                        }
+
+                    case 1:
+                        {
+                            // "a smelly old mackerel"
+                            ii = new BigFish();
+                            ii.Name = "a smelly old mackerel";
+                            ii.Weight = 5;
+                            break;
+                        }
+
+                    case 2:
+                        {
+                            // single gold ingot weight 12
+                            ii = Utility.RandomBool() ? new Item(7145) : new Item(7148);
+                            ii.Weight = 12;
+                            break;
+                        }
+
+                    case 3:
+                        {
+                            // 3 gold ingots 12*3
+                            ii = Utility.RandomBool() ? new Item(7146) : new Item(7149);
+                            ii.Weight = 12 * 3;
+                            break;
+                        }
+
+                    case 4:
+                        {
+                            // 5 gold ingots 12*5
+                            ii = Utility.RandomBool() ? new Item(7147) : new Item(7150);
+                            ii.Weight = 12 * 5;
+                            break;
+                        }
+
+                    case 5:
+                        {
+                            // single silver ingot weight 6
+                            ii = Utility.RandomBool() ? new Item(7157) : new Item(7160);
+                            ii.Weight = 6;
+                            break;
+                        }
+
+                    case 6:
+                        {
+                            // 3 silver ingots 6*3
+                            ii = Utility.RandomBool() ? new Item(7158) : new Item(7161);
+                            ii.Weight = 6 * 3;
+                            break;
+                        }
+
+                    case 7:
+                        {
+                            // 5 silver ingots 6*5
+                            ii = Utility.RandomBool() ? new Item(7159) : new Item(7162);
+                            ii.Weight = 6 * 5;
+                            break;
+                        }
+
+                    case 8:
+                        {
+                            // rolled map w1
+                            ii = Utility.RandomBool() ? new Item(5357) : new Item(5358);
+                            ii.Weight = 1;
+                            break;
+                        }
+
+                    case 9:
+                        {
+                            // ship plans
+                            ii = Utility.RandomBool() ? new Item(5361) : new Item(5362);
+                            ii.Weight = 1;
+                            break;
+                        }
+
+                    case 10:
+                        {
+                            // ship model
+                            ii = Utility.RandomBool() ? new Item(5363) : new Item(5364);
+                            ii.Weight = 3;
+                            break;
+                        }
+
+                    case 11:
+                        {
+                            // "scale shield" w6
+                            ii = Utility.RandomBool() ? new Item(7110) : new Item(7111);
+                            ii.Name = "scale shield";
+                            ii.Weight = 6;
+                            break;
+                        }
+
+                    case 12:
+                        {
+                            // BackpackRewardDeed
+                            ii = new BackpackRewardDeed();
+                            break;
+                        }
+                }
+
+                if (ii != null)
+                {
                     m_MetalChest.DropRare(ii);
                     RaresDropped++;
                     Logger.Log(LogType.Item, ii);
                 }
-
-                // single gold ingot weight 12
-                if (Utility.RandomChance(10 * 2))
-                {
-                    Item ii;
-                    if (Utility.RandomBool())
-                        ii = new Item(7145);
-                    else
-                        ii = new Item(7148);
-
-                    ii.Weight = 12;
-                    m_MetalChest.DropRare(ii);
-                    RaresDropped++;
-                    Logger.Log(LogType.Item, ii);
-                }
-
-                // 3 gold ingots 12*3
-                if (Utility.RandomChance(5 * 2))
-                {
-                    Item ii;
-                    if (Utility.RandomBool())
-                        ii = new Item(7146);
-                    else
-                        ii = new Item(7149);
-
-                    ii.Weight = 12 * 3;
-                    m_MetalChest.DropRare(ii);
-                    RaresDropped++;
-                    Logger.Log(LogType.Item, ii);
-                }
-
-                // 5 gold ingots 12*5
-                if (Utility.RandomChance(1 * 2))
-                {
-                    Item ii;
-                    if (Utility.RandomBool())
-                        ii = new Item(7147);
-                    else
-                        ii = new Item(7150);
-
-                    ii.Weight = 12 * 5;
-                    m_MetalChest.DropRare(ii);
-                    RaresDropped++;
-                    Logger.Log(LogType.Item, ii);
-                }
-
-                // single silver ingot weight 6
-                if (Utility.RandomChance(10 * 2))
-                {
-                    Item ii;
-                    if (Utility.RandomBool())
-                        ii = new Item(7157);
-                    else
-                        ii = new Item(7160);
-
-                    ii.Weight = 6;
-                    m_MetalChest.DropRare(ii);
-                    RaresDropped++;
-                    Logger.Log(LogType.Item, ii);
-                }
-
-                // 3 silver ingots 6*3
-                if (Utility.RandomChance(5 * 2))
-                {
-                    Item ii;
-                    if (Utility.RandomBool())
-                        ii = new Item(7158);
-                    else
-                        ii = new Item(7161);
-
-                    ii.Weight = 6 * 3;
-                    m_MetalChest.DropRare(ii);
-                    RaresDropped++;
-                    Logger.Log(LogType.Item, ii);
-                }
-
-                // 5 silver ingots 6*5
-                if (Utility.RandomChance(1 * 2))
-                {
-                    Item ii;
-                    if (Utility.RandomBool())
-                        ii = new Item(7159);
-                    else
-                        ii = new Item(7162);
-
-                    ii.Weight = 6 * 5;
-                    m_MetalChest.DropRare(ii);
-                    RaresDropped++;
-                    Logger.Log(LogType.Item, ii);
-                }
-
-                // rolled map w1
-                if (Utility.RandomChance(20 * 2))
-                {
-                    Item ii;
-                    if (Utility.RandomBool())
-                        ii = new Item(5357);
-                    else
-                        ii = new Item(5358);
-
-                    ii.Weight = 1;
-                    m_MetalChest.DropRare(ii);
-                    RaresDropped++;
-                    Logger.Log(LogType.Item, ii);
-                }
-
-                // ship plans
-                if (Utility.RandomChance(10 * 2))
-                {
-                    Item ii;
-                    if (Utility.RandomBool())
-                        ii = new Item(5361);
-                    else
-                        ii = new Item(5362);
-
-                    ii.Weight = 1;
-                    m_MetalChest.DropRare(ii);
-                    RaresDropped++;
-                    Logger.Log(LogType.Item, ii);
-                }
-
-                // ship model
-                if (Utility.RandomChance(5 * 2))
-                {
-                    Item ii;
-                    if (Utility.RandomBool())
-                        ii = new Item(5363);
-                    else
-                        ii = new Item(5364);
-
-                    ii.Weight = 3;
-                    m_MetalChest.DropRare(ii);
-                    RaresDropped++;
-                    Logger.Log(LogType.Item, ii);
-                }
-
-                // "scale shield" w6
-                if (Utility.RandomChance(1))
-                {
-                    Item ii;
-                    if (Utility.RandomBool())
-                        ii = new Item(7110);
-                    else
-                        ii = new Item(7111);
-
-                    ii.Name = "scale shield";
-                    ii.Weight = 6;
-                    m_MetalChest.DropRare(ii);
-                    RaresDropped++;
-                    Logger.Log(LogType.Item, ii);
-                }
-            } while (RaresDropped == 0);
+            }
 
             // level 5 chest regs & gems
             TreasureMapChest.PackRegs(m_MetalChest, 5 * 10);

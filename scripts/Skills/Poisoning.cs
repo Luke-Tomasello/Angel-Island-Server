@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -60,9 +60,6 @@ namespace Server.SkillHandlers
 {
     public class Poisoning
     {
-        // 4/25/23, Yoar: Seems to be disabled for all shards?
-        public static bool PoisonCloth { get { return !Core.RuleSets.AnyAIShardRules(); } }
-
         public static void Initialize()
         {
             SkillInfo.Table[(int)SkillName.Poisoning].Callback = new SkillUseCallback(OnUse);
@@ -139,13 +136,10 @@ namespace Server.SkillHandlers
                             }
                         }
                     }
-                    else if (PoisonCloth && targeted is Cloth)
+                    else if (Core.RuleSets.PoisonedArrowsRules() && targeted is Cloth)
                     {
                         Cloth cloth = (Cloth)targeted;
-
-                        // only a single piece of cloth may be poisoned
-                        if (cloth.Amount == 1)
-                            startTimer = true;
+                        startTimer = true;
                     }
 
                     if (startTimer)
@@ -164,7 +158,7 @@ namespace Server.SkillHandlers
                     {
                         if (Core.RuleSets.AOSRules())
                             from.SendLocalizedMessage(1060204); // You cannot poison that! You can only poison infectious weapons, food or drink.
-                        else if (PoisonCloth)
+                        else if (Core.RuleSets.PoisonedArrowsRules())
                             from.SendMessage("You cannot poison that! You can only poison bladed or piercing weapons, food, drink, or a single piece of cloth.");
                         else
                             from.SendLocalizedMessage(502145); // You cannot poison that! You can only poison bladed or piercing weapons, food or drink.
@@ -191,9 +185,9 @@ namespace Server.SkillHandlers
 
                     protected override void OnTick()
                     {
-                        if (m_From.CheckTargetSkill(SkillName.Poisoning, m_Target, m_MinSkill, m_MaxSkill, new object[2] { m_Target, null } /*contextObj*/))
+                        if (m_From.CheckTargetSkill(SkillName.Poisoning, m_Target, m_MinSkill, m_MaxSkill, new object?[2] { m_Target, null } /*contextObj*/))
                         {
-                            string displayName = null;
+                            string? displayName = null;
 
                             if (m_Target is Item)
                                 displayName = ((Item)m_Target).GetBaseOldName();
@@ -210,7 +204,7 @@ namespace Server.SkillHandlers
                                 bev.Poison = m_Poison;
 
                                 // 4/25/23, Yoar: Added AI/MO check
-                                if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) && bev.Quantity > 3)
+                                if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) && bev.Quantity > 3)
                                 {
                                     m_From.SendMessage("You pour out some of the contents to make room for the poison.");
                                     bev.Quantity = 3;
@@ -222,10 +216,13 @@ namespace Server.SkillHandlers
                                 ((BaseWeapon)m_Target).PoisonCharges = 18 - (m_Poison.Level * 2);
                                 ((BaseWeapon)m_Target).PoisonSkill = m_From.Skills[SkillName.Poisoning].Fixed;
                             }
-                            else if (PoisonCloth && m_Target is Cloth && ((Cloth)m_Target).Amount == 1)
+                            else if (Core.RuleSets.PoisonedArrowsRules() && m_Target is Cloth)
                             {
                                 // delete the cloth
-                                ((Cloth)m_Target).Delete();
+                                if (((Cloth)m_Target).Amount > 1)
+                                    ((Cloth)m_Target).Amount--;
+                                else
+                                    ((Cloth)m_Target).Delete();
 
                                 // Create the poison soaked rag (PoisonCloth type)
                                 PoisonCloth PCloth = new PoisonCloth();
@@ -244,7 +241,7 @@ namespace Server.SkillHandlers
                             }
 
                             // 4/25/23, Yoar: Added AI/MO check
-                            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+                            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
                             {
                                 switch (m_Poison.Level)
                                 {
@@ -298,7 +295,7 @@ namespace Server.SkillHandlers
                                         m_From.SendLocalizedMessage(1010518); // You fail to apply a sufficient dose of poison
                                     }
                                 }
-                                else if (PoisonCloth && m_Target is Cloth)
+                                else if (Core.RuleSets.PoisonedArrowsRules() && m_Target is Cloth)
                                 {
                                     m_From.SendMessage("You fail to apply a sufficient dose of poison to soak the rag.");
                                 }

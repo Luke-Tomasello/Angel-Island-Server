@@ -1,11 +1,11 @@
-/***************************************************************************
+﻿/***************************************************************************
  *
  *   RunUO                   : May 1, 2002
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,8 +19,9 @@
  *
  ***************************************************************************/
 
-/* Engines/AngelIsland/CoreAI.cs
+/* Scripts/Engines/AngelIsland/CoreAI.cs
  * ChangeLog
+ *
  * 5/15/23, Yoar (BolaThrowLock, BolaMountLock)
  * Added configurable bola lock delays
  * 5/10/23, Yoar (PJUMBountyCap)
@@ -247,7 +248,9 @@
  */
 
 using Scripts.Misc;
+using Server.Misc;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Xml;
 
@@ -255,28 +258,263 @@ namespace Server
 {
     public partial class CoreAI
     {
+        public const int ConfigVersion = 1;
+
+        public static AccessLevel LockdownLevel = AccessLevel.Player;
+
+        // not serialized - only used for console commands and such
+        public const string OwnerIP = "192.168.1.67";
+        public const string OwnerLocalMachine = "LUKES-MAIN";
+
+        #region Seasons
+
         /// <summary>
-        /// This enum is used by at least teleporters and spawners to limit the world size.
-        /// When the global world size changes, certain spawners and teleporters will enable/disable.
+        /// Seasonal Accounting System - Gold to Points Conversion
+        ///
+        /// Purpose:
+        /// Converts cumulative gameplay earnings recorded in DataRecorder into
+        /// seasonal point progression using a delta-based, per-category model.
+        ///
+        /// Core Philosophy:
+        /// - Real profit and progression should come from gameplay, not vendor arbitrage.
+        /// - PvM remains the baseline calibration target because it defines the highest and most
+        ///   consistent and broadly accessible gold-per-hour reference.
+        /// - Different professions and activities are normalized, not artificially equalized.
+        /// - High-effort play is rewarded, but runaway leaders are gently compressed near the cap.
+        /// - Categories are processed independently so each playstyle can be tuned on its own merits.
+        ///
+        /// Accounting Model:
+        /// - DataRecorder is the source of truth for raw cumulative earnings.
+        /// - This module builds per-account snapshots from DataRecorder.
+        /// - Each category is compared against its credited baseline to determine newly earned value.
+        /// - Only newly earned value is eligible for conversion into seasonal points.
+        /// - Gold is processed once. Any value suppressed by diminishing returns or caps is not banked
+        ///   for later recovery.
+        ///
+        /// Separation of Responsibilities:
+        /// - DataRecorder:
+        ///   Tracks raw cumulative gold by earning source.
+        ///
+        /// - Seasonal accounting (this module):
+        ///   Converts recorder totals into seasonal points using delta-based bookkeeping.
+        ///
+        /// - Leaderboard system:
+        ///   Independently reads DataRecorder for rankings and display. It does not depend on
+        ///   this module's internal snapshot or baseline structures.
+        ///
+        /// Calibration Reference:
+        /// ~117,815 gold (about 90 dragons over a 90-day season) ~= 600 seasonal points
+        /// -> 200 gold per point (anchor)
+        ///
+        /// SmallBOD Sampling (2000 random deeds per profession):
+        /// - Blacksmith: ~1,151 gp  -> ~5.75 points per BOD at baseline
+        /// - Tailor:       ~626 gp  -> ~3.13 points per BOD at baseline
+        /// - Carpenter:    ~380 gp  -> ~1.90 points per BOD at baseline
+        ///
+        /// Category Rationales:
+        ///
+        /// PvM Loot:
+        /// - Baseline category.
+        /// - Represents the most consistent, visible, and broadly accessible earning model.
+        /// - Other multipliers are judged relative to this.
+        ///
+        /// Music:
+        /// - Currently treated at baseline.
+        /// - Real-world observation from a top-tier composer indicates approximately
+        ///   150,000 gold earned over a 90-day season.
+        /// - At the baseline conversion rate (200 gold per point), this corresponds to
+        ///   roughly 750 seasonal points, placing high-performing composers above PvM
+        ///   baseline but below the seasonal cap.
+        /// - This validates the current 1.0 multiplier as appropriately positioned:
+        ///   music can be competitive when played at a high level without dominating
+        ///   higher-risk or more specialized professions.
+        /// - No adjustment is currently required; additional live data will continue
+        ///   to inform future tuning if necessary.
+        ///
+        /// Chest Gold:
+        /// - Chesting has meaningful upfront friction due to lockpicking and remove trap training,
+        ///   which can be slower and less direct than reaching baseline PvM viability.
+        /// - Early progression contains more dead time before chesting becomes truly profitable.
+        /// - Strong chest targets (level 4-5, roughly 4000-5000 gp) are commonly located near
+        ///   very dangerous monsters such as dragons and similar top-end threats.
+        /// - Even when chesters avoid fighting the surrounding mobs directly, the playstyle still
+        ///   operates in dangerous spaces and requires specialized skill investment.
+        /// - Lower tier starter chests (level 2-3, roughly 2000-3000 gp) provide earlier access,
+        ///   but the overall path remains narrower and more specialized than ordinary PvM.
+        /// - For these reasons, chest gold is weighted above baseline PvM, but slightly below theft.
+        ///
+        /// Theft Gold:
+        /// - Test thief steals about 340 gp per successful criminal theft of gold.
+        /// - Assuming about 3-4 legitimate guarded-region criminal gold steals per hour,
+        ///   theft yields roughly 91,800 to 122,400 gold over a 90-day season at about
+        ///   1 active hour per day.
+        /// - In practice, qualifying theft opportunities are limited:
+        ///   players do not often carry large gold stacks in guarded regions,
+        ///   and thieves more commonly target equipment than raw gold.
+        /// - Because theft credit applies only to legitimate criminal gold theft,
+        ///   the category is intentionally overweighted relative to raw gold yield so
+        ///   successful thieves remain competitive within the seasonal system.
+        ///
+        /// Multipliers:
+        /// These normalize categories relative to PvM baseline without forcing artificial parity.
         /// </summary>
-        [Flags]
-        public enum WorldSize
-        {
-            None = 0x00,
-            Small = 0x01,
-            Medium = 0x02,
-            Large = 0x04,
-            Full = 0x08,
-        }
+
+        public static double TownshipWallCostFactor = 0.5;
+
+        // Base conversion rate: gold -> seasonal points
+        public static double SeasonsGoldPerPoint = 200.0;
+
+        // Category Multipliers
+        public static double SeasonsMusicMultiplier = 1.0;
+        public static double SeasonsPvMLootMultiplier = 1.0;
+
+        /// Chest Calibration (initial spitball):
+        /// - Chesting requires meaningful early skill investment in lockpicking and remove trap
+        /// - High-value chests are often found near top-end threats
+        /// - The playstyle is more specialized and less broadly accessible than baseline PvM
+        /// - Weighted above PvM, but kept below theft for now
+        public static double SeasonsChestMultiplier = 1.50;
+
+        /// Theft Calibration (initial spitball):
+        /// - Legitimate criminal gold theft opportunities are limited and inconsistent
+        /// - Raw gold yield alone likely understates the effort and gating involved
+        /// - Intentionally overweighted so successful thieves remain seasonally competitive
+        public static double SeasonsTheftMultiplier = 1.75;
+
+        // BOD profession multipliers
+        // Tuned separately because expected raw value differs significantly by profession.
+        public static double SeasonsSmithBODMultiplier = 1.0;
+        public static double SeasonsTailorBODMultiplier = 1.9;    // about 600 / 313
+        public static double SeasonsCarpenterBODMultiplier = 3.1; // about 600 / 190
+
+        // Seasonal Limits & Diminishing Returns
+
+        /// <summary>
+        /// Maximum seasonal points an account can earn in one season.
+        /// Defines the upper bound for progression and seasonal rewards.
+        /// </summary>
+        public static int SeasonsPointCap = 1000;
+
+        /// <summary>
+        /// Diminishing returns floor near the seasonal cap.
+        ///
+        /// Example:
+        /// 0.25 = at 100% progress, gains are reduced to 25% of normal rate.
+        ///
+        /// Higher values = more linear progression
+        /// Lower values = stronger compression near the cap
+        /// </summary>
+        public static double SeasonsMinimumAwardFactor = 0.25;
+
+        #region Seasons - Banded Progression Scaling (BPS)
+        // Seasons - Banded Progression Scaling (BPS)
+
+        // Fraction of SeasonsPointCap where soft pre-cap throttling begins.
+        // Example: 0.80 with a cap of 1000 -> soft start at 800.
+        public static double SeasonsBpsPreCapSoftStartFraction = 0.80;
+
+        // Width of the first post-threshold band.
+        // Example: 200 with a threshold of 1000 -> first post-cap band ends at 1200.
+        public static int SeasonsBpsFirstPostCapWidth = 200;
+
+        // Width of the second post-threshold band, measured from the threshold.
+        // Example: 600 with a threshold of 1000 -> second post-cap band ends at 1600.
+        public static int SeasonsBpsSecondPostCapWidth = 600;
+
+        // Width of the third post-threshold band, measured from the threshold.
+        // Example: 1000 with a threshold of 1000 -> third post-cap band ends at 2000.
+        public static int SeasonsBpsThirdPostCapWidth = 1000;
+
+        // Award multipliers per band.
+        public static double SeasonsBpsEarlyMultiplier = 1.00;
+        public static double SeasonsBpsPreCapMultiplier = 0.75;
+        public static double SeasonsBpsFirstPostCapMultiplier = 0.10;
+        public static double SeasonsBpsSecondPostCapMultiplier = 0.08;
+        public static double SeasonsBpsThirdPostCapMultiplier = 0.06;
+        public static double SeasonsBpsFinalMultiplier = 0.05;
+        #endregion Seasons - Banded Progression Scaling (BPS)
+
+        #endregion Seasons
+
+        // duration: how long wars last AFTER the final save.
+        public static TimeSpan ServerWarsDuration = TimeSpan.FromMinutes(10);
+        public static bool ServerWarsIgnore = true;
+
+        #region Criminality
+        public static int CriminalGrayMinutes = 2;      // 2 minutes
+        public static int CriminalWhackSeconds = 10;    // 10 seconds
+        public static int CriminalTravelMinutes = 2;    // 2 minutes
+
+        public static int HarmfulPvPGrayMinutes = 10;   // 10 minutes (player against another player - criminal)
+        public static int HarmfulGrayMinutes = 2;       // 2 minutes
+        public static int HarmfulWhackSeconds = 10;     // 10 seconds
+        public static int HarmfulTravelMinutes = 2;     // 2 minutes
+
+        public static int AFKGrayMinutes = 240;         // 4 hours
+        public static int AFKWhackSeconds = 10;         // 10 seconds
+        public static int AFKTravelMinutes = 2;         // 2 minutes
+
+        public static int ThievingGrayMinutes = 10;     // 10 minutes
+        public static int ThievingWhackSeconds = 10;    // 10 seconds
+        public static int ThievingTravelMinutes = 2;    // 2 minutes
+        #endregion Criminality
+
+        public static int StaticCorpseMinutes = 1440;   // 24 hours
+
+        public static double PostTeleportMoveLockMs = 150.0;
+        // Disconnect Protection:
+        // if a player disconnects in combat, they are flagged for DCP.
+        // If they reconnect within the DCPWindow, and they have less than DCPMaxUses flags, they can be protected (invulnerable and hidden) for a short time to allow them to log out properly.
+        // If they exceed DCPMaxUses, then they are not protected
+        public static int DCPMaxUses = 2;
+        public static TimeSpan DCPWindow = TimeSpan.FromMinutes(60);
+
+        public static TimeSpan PermaFlagDuration = TimeSpan.FromHours(24);
+        public static double StatGainFactor = 1.0;
+
+        #region Pacify
+
+        public static double PacifyDamageScaleKnob = 12.0;
+        public static double PacifyRobustnessBiasKnob = 25.0;
+        public static double PacifyMusicCenterKnob = 80.0;
+        public static double PacifyMusicDampenStrengthKnob = 0.90;
+        public static double PacifyTimeWeakeningKnob = 1.25;
+
+        #endregion Pacify
+
+        #region Mortalis Passive Gain System
+        public static double CmdAttackCoolMs = 30 * 1000;
+        public static double CmdComeCoolMs = 60 * 1000;
+        public static double CmdGuardCoolMs = 45 * 1000;
+        public static double CmdFollowCoolMs = 45 * 1000;
+        public static double CmdPatrolCoolMs = 45 * 1000;
+        public static double CmdDefaultCoolMs = 45 * 1000;
+        public static double FeedingCoolMs = 5.0 * 1000;
+        public static double SkillMeditationCoolMs = 10.0 * 1000;
+        public static double SkillDefaultCoolMs = 3.0 * 1000;
+        public static double StatCoolMs = 8.0 * 1000;
+        public static double HealCoolMs = 6.0 * 1000;
+        public static double CureCoolMs = 10.0 * 1000;
+        public static double GaveDamageCoolMs = 9 * 1000;
+        #endregion Mortalis Passive Gain System
+
+        // Mortalis: per-player daily vendor sell limit (total GOLD paid in any rolling 24h window)
+        public static int DailySellGoldLimit = 30000;
+
+        public static int StatsThreshold = 10;
         public static bool WatchListShowExceptions = false; // may have a client exception for running a Mac or similar
         public static bool RevealSpellDifficulty = false;
         public static bool EnablePackUp = false;
+
         public static double TrackRangeBase = 10.0;
         public static double TrackRangePerSkill = 0.1;
-        public static double FarmableCotton = 0.9;
-        public static double FarmableFlax = 0.9;
         public static int TrackRangeMin = 10;
         public static bool TrackDifficulty = false;
+        public static double TrackArrowRangeMultiplier = 2.0;
+        public static double TrackHintRangeMultiplier = 3.0;
+
+        public static double FarmableCotton = 0.9;
+        public static double FarmableFlax = 0.9;
         public static double BolaThrowLock = 2.0;
         public static double BolaMountLock = 3.0;
         public static int PJUMBountyCap = 25000;
@@ -285,6 +523,7 @@ namespace Server
         public static int AreaPeaceCrowdSize = 6;
         public static double AreaPeaceSoloBonus = 0.0;
         public static double HitPoisonChanceIncr = 0.10; // incremental chance to hit weapon poison at GM poisoning
+        public static double PoisonBandageSlipChance = 0.10; // control how often poison causes 'finger slip' when healing with bandages
         public static int BaseVendorFee = 20; // base player vendor fee per one UO day (one UO day = 2 RL hours)
         public static double MultiBoxCensure = 60000; // how long between censures
         public static double MultiBoxPlayerStopped = 4000; // player has not moved for this long.. we consider them to have stopped.
@@ -342,9 +581,6 @@ namespace Server
         public static int SpiritDepotReagents = 10;
         public static int SpiritDepotRespawnFreq = 300;
         public static double PowderOfTranslocationAvail = 0.001; // drop rate in percent
-        public static UInt64 DynamicFeatures = 0;
-        [Obsolete]                                  // the 64bit version of dynamic patcher has been replaced with a CoreAIPatcher table.
-        public static UInt64 DynamicPatches = 0;    //  this int64 can be removed at some future date, but first run, this value is converted to the new table.
         public static int SpiritDepotTRPots = 10;
 
         // AIP spirit spawn virtual armor
@@ -369,8 +605,9 @@ namespace Server
         public static bool WarnBadGMNCUO = false;           // Warn of bad CUO
         public static bool WarnBadGMNRZR = false;           // Warn of bad Razor
 
-        public static double MagicWandDropChance = 0.2;             // 20% chance at a magic wand
-        public static double EnchantedScrollDropChance = 0.5;       // 50% chance at replacing the item with an enchanted scroll
+        public static double MagicWandDropChance = 0.2;         // 20% chance at a magic wand
+        public static double EnchantedScrollDropChance = 0.5;   // 50% chance at replacing the item with an enchanted scroll
+        public static int BlankScrollMultiplier = 30;           // how many blank scrolls are dropped in treasure chests
 
         // Vorpal Bunny speed info
         public static double ActiveSpeedOverride = 0.175;       // speeds used for pets in Follow/Come/Guard mode
@@ -378,9 +615,11 @@ namespace Server
         // mounted humanoid mobiles
         public static double ActiveMountedSpeedOverride = 0.1;  // speeds used for mounted humanoids in Follow/Come/Guard mode
         public static double PassiveMountedSpeedOverride = 0.350;
+        public static double MountEnduranceFactor = 2.0;    // multiplier for how much endurance is drained when mounted        
 
         public static int SystemAccount = 0;                // Persistent System Account
         public static int AdminAccount = 0x00013237;        // Persistent Admin Account
+        public static int LordBritishAccount = 0;           // Persistent Lord British Account
 
         // purple potion explosion factors
         public static int ExplosionPotionSensitivityLevel = 100; //minimum damage before potion check happens
@@ -403,7 +642,7 @@ namespace Server
         public static int CohesionLowerDelay = 0;
         public static int CohesionFactor = 0;
 
-        // Chance to broadcast newly IDOC houses over TCCS
+        // Chance to broadcast newly IDOC houses over TownCrierBulletinSystem
         public static double IDOCBroadcastChance = 0.3;
 
         // Chance for creatures to ignore re-aggressive actions when not aggressing
@@ -437,9 +676,6 @@ namespace Server
         // Control access level of Play command
         public static AccessLevel PlayAccessLevel = AccessLevel.Player;
 
-        // enable account cleanup - heartbeat
-        public static bool TCAcctCleanupEnable = true;
-
         // ranged corrosion addition reduction
         public static int RangedCorrosionModifier = 0;
 
@@ -458,13 +694,14 @@ namespace Server
         public static int MaxAccountsPerIP = 1;         // how many accounts can be created/accessed per IP Address
         public static int MaxConcurrentAddresses = 10;  // in IPLimiter; controls how many of the same IP address can be concurrently logged in. Maybe > MaxAccountsPerIP
         public static int MaxAccountsPerMachine = 1;    // in HardwareLimiter; controls how many accounts may be accessed from the same machine
+        public static int MaxCharactersPerAccount = 5;  // 5 and 1 are natively supported by the client, but we can set this to whatever we want and enforce it server side.
 
         public static double SlayerWeaponDropRate = 0.05;
         public static double SlayerInstrumentDropRate = 0.05;
         public static double EnchantedEquipmentDropRate = 0.05; // currently hardcoded. 
         public static double SiegeGearDropFactor = 1.6;         // globally adjusts magic gear: PackMagicStuff() => SiegeGlobalTweakDrop()
 
-        //Explosion Potion timing
+        //Explosion Potion/firebomb timing
         public static double ExplosionPotionThrowDelay = 2.1;
 
         //Harvest System Constants (these are the defaults for RunUO).
@@ -487,6 +724,7 @@ namespace Server
         public static double SpellFsDmgDelay = 0.45;
         public static double SpellLightningDmgDelay = 0.35;
 
+        [CallPriority(2)]  // must come before patcher.cs is run
         public static void Configure()
         {
             // must load before the world because of the patchbits
@@ -495,76 +733,132 @@ namespace Server
             EventSink.WorldLoad += new WorldLoadEventHandler(OnLoadCliloc);
         }
 
+        /*
+         * Adding a new dynamic feature:
+         * 
+         * 1. Append the new value to the END of CoreAI.FeatureBits.
+         * 2. Use CoreAI.IsDynamicFeatureSet(), SetDynamicFeature(), and
+         *      ClearDynamicFeature() to access it.
+         * 3. No CoreAI.xml version change or migration is required.
+         * 
+         * Compatibility: CoreAI.xml (V1) persists features by NAME, while the
+         * V0 upgrade in CoreAIPatcher maps legacy bit positions by ORDINAL.
+         * Existing FeatureBits values must therefore never be renamed,
+         * reordered, removed, or reused.
+         * 
+         * Retiring a feature:
+         * - keep its original name and its original position (ordinal);
+         * - mark it [Obsolete("Retired ... Retained for FeatureBits ordinal
+         *      compatibility; do not reuse.")];
+         * - remove its remaining source references rather than suppressing
+         *      the resulting CS0618 warnings.
+         * A retired slot is never reused; new features are always appended.
+         */
         #region FeatureBits
-        public enum FeatureBits : UInt64
-        {
-            InmateRecallExploitCheck = 0x01,
-            IOBShardWide = 0x02,
-            FreezeHouseDecay = 0x04,
-            MeleePoisonSkillFactor = 0x08,
-            OpposePlayers = 0x10,
-            OpposePlayersPets = 0x20,
-            IOBJoinEnabled = 0x40,
-            GuildKinChangeDisabled = 0x80,
-            HelpStuckDisabled = 0x100,
-            SecurePremises = 0x200,
-            TowerAllowed = 0x400,
-            RangedCorrosion = 0x800,
-            BreedingEnabled = 0x1000,
-            RTTNotifyEnabled = 0x2000,
-            RazorNegotiateFeaturesEnabled = 0x4000,
-            RazorNegotiateWarnAndKick = 0x8000,
-            NewPlayerStartingArea = 0x10000,
-            NewPlayerGuild = 0x20000,
-            PetNeedsLOS = 0x40000, // in DoOrderAttack() for pets: give up if target is not in LOS (addresses the gate pet to give counts exploit)
-            LogStableCharges = 0x80000,
-            ArmorAbsorbClassic = 0x100000, // use the scaled armor AR to calculate how much damage is absorbed
-            SpiritSpeakUsageReport = 0x200000, // send admins system messages regarding SpirtHeal, and SlayerStrike 
-            OldFlee = 0x400000, // BaseAI seems to have a bug where they clear FocusMob in OnActionChanged().Flee
-            TreasureMapUsageReport = 0x800000, // send admins system messages regarding treasure map decoded 
-            SeaGypsyUsageReport = 0x1000000, // send admins system messages sea gypsy escorts 
-            IPBinderEnabled = 0x2000000, // This is pixie's code to block account access if some combination of account/ip actions are taken
-            PlayerAccountWipe = 0x4000000, // Set this bit to wipe all Player access accounts. Owner access only, auto resets after wipe. Houses and all possessions go too
-            FreezeAccountDecay = 0x8000000, // Set this bit freeze account decay
-            BulkOrdersEnabled = 0x10000000, // Set this bit to enable the bulk order system
-            StaminaDrainByWeight = 0x20000000, // Set this bit to enable stamina drain by weight
-            ShipTracking = 0x40000000, // Set this bit to enable the ship tracking system
-            MagicGearThrottleEnabled = 0x80000000, // TRUE for AI, FALSE for SP/MO
-            MagicCraftSystem = 0x100000000, // magic craft system enabled 
-            ZoraSystem = 0x200000000, // zora enabled
-            Cooperatives = 0x400000000, // are Cooperatives enabled?
-            SiegeBless = 0x800000000, // is Siege Bless enabled?
-            ChatEnabled = 0x1000000000, // is the chat system enabled?
-            CharDeleteUnrestricted = 0x2000000000, // is character deletion unrestricted?
-        };
 
-        public static bool IsDynamicFeatureSet(FeatureBits fb)
+        public enum FeatureBits
         {
-            if ((DynamicFeatures & (UInt64)fb) > 0) return true;
-            else return false;
+            InmateRecallExploitCheck = 0,
+            [Obsolete("Retired IOB feature. Retained for FeatureBits ordinal compatibility; do not reuse.")]
+            IOBShardWide,
+            FreezeHouseDecay,
+            MeleePoisonSkillFactor,
+            OpposePlayers,
+            OpposePlayersPets,
+            [Obsolete("Retired IOB feature. Retained for FeatureBits ordinal compatibility; do not reuse.")]
+            IOBJoinEnabled,
+            GuildKinChangeDisabled,
+            HelpStuckDisabled,
+            SecurePremises,
+            TowerAllowed,
+            RangedCorrosion,
+            BreedingEnabled,
+            RTTNotifyEnabled,
+            RazorNegotiateFeaturesEnabled,
+            RazorNegotiateWarnAndKick,
+            NewPlayerStartingArea,
+            NewPlayerGuild,
+            PetNeedsLOS,
+            LogStableCharges,
+            ArmorAbsorbClassic,
+            SpiritSpeakUsageReport,
+            OldFlee,
+            TreasureMapUsageReport,
+            SeaGypsyUsageReport,
+            IPBinderEnabled,
+            FreezeTownshipDecay,
+            FreezeAccountDecay,
+            BulkOrdersEnabled,
+            StaminaDrainByWeight,
+            ShipTracking,
+            MagicGearThrottleEnabled,
+            MagicCraftSystem,
+            ZoraSystem,
+            Cooperatives,
+            SiegeBless,
+            ChatEnabled,
+            CharDeleteUnrestricted,
+            PassiveTamingEnabled,
+            CmdAttackBlock,
+            CmdComeBlock,
+            CmdGuardBlock,
+            CmdFollowBlock,
+            CmdPatrolBlock,
+            CmdDefaultBlock,
+            FeedingBlock,
+            SkillMeditationBlock,
+            SkillDefaultBlock,
+            StatBlock,
+            HealBlock,
+            CureBlock,
+            GaveDamageBlock,
+            LogPassiveGains,
+            LogActualGains,
+            EthicsEnabled,
+            FactionsEnabled,
+            DragonScaleArmor,
+            TerritoriesEnabled,
+            AngelIslandVisible,
+            SiegePerilousVisible,
+            MortalisVisible,
+            SeasonsVisible,
+            TestCenterVisible,
+            UpheavalVisible
         }
 
-        public static void SetDynamicFeature(FeatureBits fb)
+        internal static bool[] DynamicFeatures = new bool[Enum.GetValues(typeof(FeatureBits)).Length];
+
+        public static bool IsDynamicFeatureSet(FeatureBits feature)
         {
-            DynamicFeatures |= (UInt64)fb;
+            return DynamicFeatures[(int)feature];
         }
 
-        public static void ClearDynamicFeature(FeatureBits fb)
+        public static void SetDynamicFeature(FeatureBits feature)
         {
-            DynamicFeatures &= ~((UInt64)fb);
+            DynamicFeatures[(int)feature] = true;
         }
-        #endregion FeatureBits
+
+        public static void ClearDynamicFeature(FeatureBits feature)
+        {
+            DynamicFeatures[(int)feature] = false;
+        }
+
+        #endregion
 
         public static void OnSave(WorldSaveEventArgs e)
         {
             Console.WriteLine("CoreAI Saving...");
-            if (!Directory.Exists("Saves/AngelIsland"))
-                Directory.CreateDirectory("Saves/AngelIsland");
 
-            string filePath = Path.Combine("Saves/AngelIsland", "CoreAI.xml");
+            string saveDirectory = Path.Combine(Core.SavesDirectory, Core.Server);
+
+            if (!Directory.Exists(saveDirectory))
+                Directory.CreateDirectory(saveDirectory);
+
+            string filePath = Path.Combine(saveDirectory, "CoreAI.xml");
 
             using (StreamWriter op = new StreamWriter(filePath))
             {
+                #region Document Header
                 XmlTextWriter xml = new XmlTextWriter(op)
                 {
                     Formatting = Formatting.Indented,
@@ -574,18 +868,115 @@ namespace Server
 
                 xml.WriteStartDocument(true);
                 xml.WriteStartElement("CoreAI");
+                xml.WriteAttributeString("version", ConfigVersion.ToString());
+                #endregion Document Header
+
+                #region Settings
+
+                #region Seasons
+
+                xml.WriteCoreXml("TownshipWallCostFactor", TownshipWallCostFactor);
+
+                xml.WriteCoreXml("SeasonsGoldPerPoint", SeasonsGoldPerPoint);
+
+                xml.WriteCoreXml("SeasonsMusicMultiplier", SeasonsMusicMultiplier);
+                xml.WriteCoreXml("SeasonsSmithBODMultiplier ", SeasonsSmithBODMultiplier);
+                xml.WriteCoreXml("SeasonsTailorBODMultiplier", SeasonsTailorBODMultiplier);
+                xml.WriteCoreXml("SeasonsCarpenterBODMultiplier", SeasonsCarpenterBODMultiplier);
+                xml.WriteCoreXml("SeasonsPvMMultiplier", SeasonsPvMLootMultiplier);
+                xml.WriteCoreXml("SeasonsTheftMultiplier", SeasonsTheftMultiplier);
+                xml.WriteCoreXml("SeasonsChestMultiplier", SeasonsChestMultiplier);
+
+                xml.WriteCoreXml("SeasonsPointCap", SeasonsPointCap);
+
+                xml.WriteCoreXml("SeasonsMinimumAwardFactor", SeasonsMinimumAwardFactor);
+
+                xml.WriteCoreXml("SeasonsBpsPreCapSoftStartFraction", SeasonsBpsPreCapSoftStartFraction);
+
+                xml.WriteCoreXml("SeasonsBpsFirstPostCapWidth", SeasonsBpsFirstPostCapWidth);
+                xml.WriteCoreXml("SeasonsBpsSecondPostCapWidth", SeasonsBpsSecondPostCapWidth);
+                xml.WriteCoreXml("SeasonsBpsThirdPostCapWidth", SeasonsBpsThirdPostCapWidth);
+
+                xml.WriteCoreXml("SeasonsBpsEarlyMultiplier", SeasonsBpsEarlyMultiplier);
+                xml.WriteCoreXml("SeasonsBpsPreCapMultiplier", SeasonsBpsPreCapMultiplier);
+                xml.WriteCoreXml("SeasonsBpsFirstPostCapMultiplier", SeasonsBpsFirstPostCapMultiplier);
+                xml.WriteCoreXml("SeasonsBpsSecondPostCapMultiplier", SeasonsBpsSecondPostCapMultiplier);
+                xml.WriteCoreXml("SeasonsBpsThirdPostCapMultiplier", SeasonsBpsThirdPostCapMultiplier);
+                xml.WriteCoreXml("SeasonsBpsFinalMultiplier", SeasonsBpsFinalMultiplier);
+                #endregion Seasons
+
+
+                xml.WriteCoreXml("LockdownLevel", (int)LockdownLevel);
+
+                xml.WriteCoreXml("ServerWarsDuration", ServerWarsDuration);
+                xml.WriteCoreXml("ServerWarsIgnore", ServerWarsIgnore);
+
+                xml.WriteCoreXml("CriminalGrayMinutes", CriminalGrayMinutes);
+                xml.WriteCoreXml("CriminalWhackSeconds", CriminalWhackSeconds);
+                xml.WriteCoreXml("CriminalTravelMinutes", CriminalTravelMinutes);
+
+                xml.WriteCoreXml("HarmfulGrayMinutes", HarmfulGrayMinutes);
+                xml.WriteCoreXml("HarmfulPvPGrayMinutes", HarmfulPvPGrayMinutes);
+                xml.WriteCoreXml("HarmfulWhackSeconds", HarmfulWhackSeconds);
+                xml.WriteCoreXml("HarmfulTravelMinutes", HarmfulTravelMinutes);
+
+                xml.WriteCoreXml("AFKGrayMinutes", AFKGrayMinutes);
+                xml.WriteCoreXml("AFKWhackMinutes", AFKWhackSeconds);
+                xml.WriteCoreXml("AFKTravelMinutes", AFKTravelMinutes);
+
+                xml.WriteCoreXml("ThievingGrayMinutes", ThievingGrayMinutes);
+                xml.WriteCoreXml("ThievingWhackSeconds", ThievingWhackSeconds);
+                xml.WriteCoreXml("ThievingTravelMinutes", ThievingTravelMinutes);
+
+                xml.WriteCoreXml("StaticCorpseMinutes", StaticCorpseMinutes);
+
+                xml.WriteCoreXml("PostTeleportMoveLockMs", PostTeleportMoveLockMs);
+
+                xml.WriteCoreXml("PermaFlagDuration", PermaFlagDuration);
+                xml.WriteCoreXml("StatGainFactor", StatGainFactor);
+
+                xml.WriteCoreXml("PacifyDamageScaleKnob", PacifyDamageScaleKnob);
+                xml.WriteCoreXml("PacifyRobustnessBiasKnob", PacifyRobustnessBiasKnob);
+                xml.WriteCoreXml("PacifyMusicCenterKnob", PacifyMusicCenterKnob);
+                xml.WriteCoreXml("PacifyMusicDampenStrengthKnob", PacifyMusicDampenStrengthKnob);
+                xml.WriteCoreXml("PacifyTimeWeakeningKnob", PacifyTimeWeakeningKnob);
+
+                if (Core.RuleSets.AllShards)
+                {
+                    xml.WriteCoreXml("DailySellGoldLimit", DailySellGoldLimit);
+                    xml.WriteCoreXml("CmdAttackCoolMs", CmdAttackCoolMs);
+                    xml.WriteCoreXml("CmdComeCoolMs", CmdComeCoolMs);
+                    xml.WriteCoreXml("CmdGuardCoolMs", CmdGuardCoolMs);
+                    xml.WriteCoreXml("CmdFollowCoolMs", CmdFollowCoolMs);
+                    xml.WriteCoreXml("CmdPatrolCoolMs", CmdPatrolCoolMs);
+                    xml.WriteCoreXml("CmdDefaultCoolMs", CmdDefaultCoolMs);
+
+                    xml.WriteCoreXml("FeedingCoolMs", FeedingCoolMs);
+
+                    xml.WriteCoreXml("SkillMeditationCoolMs", SkillMeditationCoolMs);
+                    xml.WriteCoreXml("SkillDefaultCoolMs", SkillDefaultCoolMs);
+
+                    xml.WriteCoreXml("StatCoolMs", StatCoolMs);
+
+                    xml.WriteCoreXml("HealCoolMs", HealCoolMs);
+                    xml.WriteCoreXml("CureCoolMs", CureCoolMs);
+
+                    xml.WriteCoreXml("GaveDamageCoolMs", GaveDamageCoolMs);
+                }
 
                 xml.WriteCoreXml("RevealSpellDifficulty", RevealSpellDifficulty.ToString());
                 xml.WriteCoreXml("EnablePackUp", EnablePackUp.ToString());
 
                 xml.WriteCoreXml("WatchListShowExceptions", WatchListShowExceptions.ToString());
 
-                //xml.WriteCoreXml("FirstAvailableSerial", FirstAvailableSerial);
+                xml.WriteCoreXml("StatsThreshold", StatsThreshold);
 
                 xml.WriteCoreXml("TrackRangeBase", TrackRangeBase);
                 xml.WriteCoreXml("TrackRangePerSkill", TrackRangePerSkill);
                 xml.WriteCoreXml("TrackRangeMin", TrackRangeMin);
                 xml.WriteCoreXml("TrackDifficulty", TrackDifficulty.ToString());
+                xml.WriteCoreXml("TrackArrowRangeMultiplier", TrackArrowRangeMultiplier);
+                xml.WriteCoreXml("TrackHintRangeMultiplier", TrackHintRangeMultiplier);
 
                 xml.WriteCoreXml("FarmableCotton", FarmableCotton);
                 xml.WriteCoreXml("FarmableFlax", FarmableFlax);
@@ -601,6 +992,7 @@ namespace Server
                 xml.WriteCoreXml("AreaPeaceDelayBonus", AreaPeaceDelayBonus);
 
                 xml.WriteCoreXml("HitPoisonChanceIncr", HitPoisonChanceIncr);
+                xml.WriteCoreXml("PoisonBandageSlipChance", PoisonBandageSlipChance);
 
                 xml.WriteCoreXml("BaseVendorFee", BaseVendorFee);
 
@@ -686,11 +1078,15 @@ namespace Server
 
                 // PowderOfTranslocation availability
                 xml.WriteCoreXml("PowderOfTranslocationAvail", PowderOfTranslocationAvail);
-                xml.WriteCoreXml("DynamicFeatures", DynamicFeatures);
-                #region Patch Table
+
+                // V0 persistence - replaced by V1 feature saving
+                //xml.WriteCoreXml("DynamicFeatures", DynamicFeatures);
+
+                // tables
                 SavePatchTable(xml);
-                xml.WriteCoreXml("DynamicPatches", DynamicPatches);
-                #endregion Patch Table
+                SaveDynamicFeatures(xml);
+                //xml.WriteCoreXml("DynamicPatches", DynamicPatches);
+
                 xml.WriteCoreXml("SpiritDepotTRPots", SpiritDepotTRPots);
                 xml.WriteCoreXml("SpiritFirstWaveVirtualArmor", SpiritFirstWaveVirtualArmor);
                 xml.WriteCoreXml("SpiritSecondWaveVirtualArmor", SpiritSecondWaveVirtualArmor);
@@ -717,16 +1113,20 @@ namespace Server
 
                 xml.WriteCoreXml("EnchantedScrollDropChance", EnchantedScrollDropChance);
 
+                xml.WriteCoreXml("BlankScrollMultiplier", BlankScrollMultiplier);
+
                 // speeds used for pets in Follow/Come/Guard mode
                 xml.WriteCoreXml("ActiveSpeedOverride", ActiveSpeedOverride);
                 xml.WriteCoreXml("PassiveSpeedOverride", PassiveSpeedOverride);
 
                 xml.WriteCoreXml("ActiveMountedSpeedOverride", ActiveMountedSpeedOverride);
                 xml.WriteCoreXml("PassiveMountedSpeedOverride", PassiveMountedSpeedOverride);
+                xml.WriteCoreXml("MountEnduranceFactor", MountEnduranceFactor);
 
                 // System accounts. Used for automated tasks that require a mobile
                 xml.WriteCoreXml("SystemAccount", SystemAccount);
                 xml.WriteCoreXml("AdminAccount", AdminAccount);
+                xml.WriteCoreXml("LordBritishAccount", LordBritishAccount);
 
                 // purple potion explosion factors
                 xml.WriteCoreXml("ExplPotSensitivity", ExplosionPotionSensitivityLevel);
@@ -750,7 +1150,6 @@ namespace Server
                 xml.WriteCoreXml("RunningPetFactor", RunningPetFactor);
                 xml.WriteCoreXml("RunningHumFactor", RunningHumFactor);
                 xml.WriteCoreXml("PlayAccessLevel", (int)PlayAccessLevel);
-                xml.WriteCoreXml("TCAcctCleanupEnable", TCAcctCleanupEnable);
                 xml.WriteCoreXml("RangedCorrosionModifier", RangedCorrosionModifier);
                 xml.WriteCoreXml("GWRChangeDelayMinutes", GWRChangeDelayMinutes);
                 xml.WriteCoreXml("RestockCharges", RestockCharges);
@@ -759,6 +1158,7 @@ namespace Server
                 xml.WriteCoreXml("MaxAccountsPerIP", MaxAccountsPerIP);
                 xml.WriteCoreXml("MaxAddresses", MaxConcurrentAddresses);
                 xml.WriteCoreXml("MaxAccountsPerMachine", MaxAccountsPerMachine);
+                xml.WriteCoreXml("MaxCharactersPerAccount", MaxCharactersPerAccount);
 
                 // commission vendors
                 xml.WriteCoreXml("Commission", Commission);
@@ -794,6 +1194,7 @@ namespace Server
                 xml.WriteCoreXml("SpellFireballDmgDelay", SpellFireballDmgDelay);
                 xml.WriteCoreXml("SpellFsDmgDelay", SpellFsDmgDelay);
                 xml.WriteCoreXml("SpellLightningDmgDelay", SpellLightningDmgDelay);
+                #endregion Settings
 
                 xml.WriteEndElement();
                 xml.Close();
@@ -809,15 +1210,162 @@ namespace Server
         public static void OnLoad()
         {
             Console.WriteLine("CoreAI Loading...");
-            string filePath = Path.Combine("Saves/AngelIsland", "CoreAI.xml");
+
+            string filePath = Path.Combine(
+                Core.SavesDirectory,
+                Core.Server,
+                "CoreAI.xml");
+
+            // Bootstrap legacy installations so the patcher can load
+            // patch history before PatchV241 performs the migration.
+            if (!File.Exists(filePath))
+            {
+                string legacyPath = Path.Combine(
+                    Core.SavesDirectory,
+                    "AngelIsland",
+                    "CoreAI.xml");
+
+                if (!File.Exists(legacyPath))
+                    return;
+
+                filePath = legacyPath;
+            }
 
             if (!File.Exists(filePath))
                 return;
 
+            #region Document Header
             XmlDocument doc = new XmlDocument();
             doc.Load(filePath);
 
-            XmlElement root = doc["CoreAI"];
+            XmlElement? root = doc["CoreAI"];
+            #endregion Document Header
+
+            #region Settings
+
+            #region Seasons
+            TownshipWallCostFactor =
+                GetDouble(GetText(root["TownshipWallCostFactor"], ""), TownshipWallCostFactor);
+
+            SeasonsGoldPerPoint =
+                GetDouble(GetText(root["SeasonsGoldPerPoint"], ""), SeasonsGoldPerPoint);
+
+            SeasonsMusicMultiplier =
+                GetDouble(GetText(root["SeasonsMusicMultiplier"], ""), SeasonsMusicMultiplier);
+
+            SeasonsSmithBODMultiplier =
+                GetDouble(GetText(root["SeasonsSmithBODMultiplier "], ""), SeasonsSmithBODMultiplier);
+
+            SeasonsTailorBODMultiplier =
+                GetDouble(GetText(root["SeasonsTailorBODMultiplier"], ""), SeasonsTailorBODMultiplier);
+
+            SeasonsCarpenterBODMultiplier =
+                GetDouble(GetText(root["SeasonsCarpenterBODMultiplier"], ""), SeasonsCarpenterBODMultiplier);
+
+            SeasonsPvMLootMultiplier =
+                GetDouble(GetText(root["SeasonsPvMMultiplier"], ""), SeasonsPvMLootMultiplier);
+
+            SeasonsTheftMultiplier =
+                GetDouble(GetText(root["SeasonsTheftMultiplier"], ""), SeasonsTheftMultiplier);
+
+            SeasonsChestMultiplier =
+                GetDouble(GetText(root["SeasonsChestMultiplier"], ""), SeasonsChestMultiplier);
+
+            SeasonsPointCap =
+                GetInt32(GetText(root["SeasonsPointCap"], ""), SeasonsPointCap);
+
+            SeasonsMinimumAwardFactor =
+                GetDouble(GetText(root["SeasonsMinimumAwardFactor"], ""), SeasonsMinimumAwardFactor);
+
+            SeasonsBpsPreCapSoftStartFraction =
+                GetDouble(GetText(root["SeasonsBpsPreCapSoftStartFraction"], ""), SeasonsBpsPreCapSoftStartFraction);
+
+            SeasonsBpsFirstPostCapWidth =
+                GetInt32(GetText(root["SeasonsBpsFirstPostCapWidth"], ""), SeasonsBpsFirstPostCapWidth);
+
+            SeasonsBpsSecondPostCapWidth =
+                GetInt32(GetText(root["SeasonsBpsSecondPostCapWidth"], ""), SeasonsBpsSecondPostCapWidth);
+
+            SeasonsBpsThirdPostCapWidth =
+                GetInt32(GetText(root["SeasonsBpsThirdPostCapWidth"], ""), SeasonsBpsThirdPostCapWidth);
+
+            SeasonsBpsEarlyMultiplier =
+                GetDouble(GetText(root["SeasonsBpsEarlyMultiplier"], ""), SeasonsBpsEarlyMultiplier);
+
+            SeasonsBpsPreCapMultiplier =
+                GetDouble(GetText(root["SeasonsBpsPreCapMultiplier"], ""), SeasonsBpsPreCapMultiplier);
+
+            SeasonsBpsFirstPostCapMultiplier =
+                GetDouble(GetText(root["SeasonsBpsFirstPostCapMultiplier"], ""), SeasonsBpsFirstPostCapMultiplier);
+
+            SeasonsBpsSecondPostCapMultiplier =
+                GetDouble(GetText(root["SeasonsBpsSecondPostCapMultiplier"], ""), SeasonsBpsSecondPostCapMultiplier);
+
+            SeasonsBpsThirdPostCapMultiplier =
+                GetDouble(GetText(root["SeasonsBpsThirdPostCapMultiplier"], ""), SeasonsBpsThirdPostCapMultiplier);
+
+            SeasonsBpsFinalMultiplier =
+                GetDouble(GetText(root["SeasonsBpsFinalMultiplier"], ""), SeasonsBpsFinalMultiplier);
+            #endregion Seasons
+
+            LockdownLevel = (AccessLevel)GetInt32(GetText(root["LockdownLevel"], ""), (int)LockdownLevel);
+
+            ServerWarsDuration = GetTimeSpan(GetText(root["ServerWarsDuration"], ""), ServerWarsDuration);
+            ServerWarsIgnore = GetBool(root["ServerWarsIgnore"], ServerWarsIgnore);
+
+            CriminalGrayMinutes = GetInt32(GetText(root["CriminalGrayMinutes"], ""), CriminalGrayMinutes);
+            CriminalWhackSeconds = GetInt32(GetText(root["CriminalWhackSeconds"], ""), CriminalWhackSeconds);
+            CriminalTravelMinutes = GetInt32(GetText(root["CriminalTravelMinutes"], ""), CriminalTravelMinutes);
+
+            HarmfulGrayMinutes = GetInt32(GetText(root["HarmfulGrayMinutes"], ""), HarmfulGrayMinutes);
+            HarmfulPvPGrayMinutes = GetInt32(GetText(root["HarmfulPvPGrayMinutes"], ""), HarmfulPvPGrayMinutes);
+            HarmfulWhackSeconds = GetInt32(GetText(root["HarmfulWhackSeconds"], ""), HarmfulWhackSeconds);
+            HarmfulTravelMinutes = GetInt32(GetText(root["HarmfulTravelMinutes"], ""), HarmfulTravelMinutes);
+
+            AFKGrayMinutes = GetInt32(GetText(root["AFKGrayMinutes"], ""), AFKGrayMinutes);
+            AFKWhackSeconds = GetInt32(GetText(root["AFKWhackMinutes"], ""), AFKWhackSeconds);
+            AFKTravelMinutes = GetInt32(GetText(root["AFKTravelMinutes"], ""), AFKTravelMinutes);
+
+            ThievingGrayMinutes = GetInt32(GetText(root["ThievingGrayMinutes"], ""), ThievingGrayMinutes);
+            ThievingWhackSeconds = GetInt32(GetText(root["ThievingWhackSeconds"], ""), ThievingWhackSeconds);
+            ThievingTravelMinutes = GetInt32(GetText(root["ThievingTravelMinutes"], ""), ThievingTravelMinutes);
+
+            StaticCorpseMinutes = GetInt32(GetText(root["StaticCorpseMinutes"], ""), StaticCorpseMinutes);
+
+            PostTeleportMoveLockMs = GetDouble(GetText(root["PostTeleportMoveLockMs"], ""), PostTeleportMoveLockMs);
+
+            PermaFlagDuration = GetTimeSpan(GetText(root["PermaFlagDuration"], ""), PermaFlagDuration);
+
+            StatGainFactor = GetDouble(GetText(root["StatGainFactor"], ""), StatGainFactor);
+
+            PacifyDamageScaleKnob = GetDouble(GetText(root["PacifyDamageScaleKnob"], ""), PacifyDamageScaleKnob);
+            PacifyRobustnessBiasKnob = GetDouble(GetText(root["PacifyRobustnessBiasKnob"], ""), PacifyRobustnessBiasKnob);
+            PacifyMusicCenterKnob = GetDouble(GetText(root["PacifyMusicCenterKnob"], ""), PacifyMusicCenterKnob);
+            PacifyMusicDampenStrengthKnob = GetDouble(GetText(root["PacifyMusicDampenStrengthKnob"], ""), PacifyMusicDampenStrengthKnob);
+            PacifyTimeWeakeningKnob = GetDouble(GetText(root["PacifyTimeWeakeningKnob"], ""), PacifyTimeWeakeningKnob);
+
+            if (Core.RuleSets.AllShards)
+            {
+                DailySellGoldLimit = GetInt32(GetText(root["DailySellGoldLimit"], ""), DailySellGoldLimit);
+                CmdAttackCoolMs = GetDouble(GetText(root["CmdAttackCoolMs"], ""), CmdAttackCoolMs);
+                CmdComeCoolMs = GetDouble(GetText(root["CmdComeCoolMs"], ""), CmdComeCoolMs);
+                CmdGuardCoolMs = GetDouble(GetText(root["CmdGuardCoolMs"], ""), CmdGuardCoolMs);
+                CmdFollowCoolMs = GetDouble(GetText(root["CmdFollowCoolMs"], ""), CmdFollowCoolMs);
+                CmdPatrolCoolMs = GetDouble(GetText(root["CmdPatrolCoolMs"], ""), CmdPatrolCoolMs);
+                CmdDefaultCoolMs = GetDouble(GetText(root["CmdDefaultCoolMs"], ""), CmdDefaultCoolMs);
+
+                FeedingCoolMs = GetDouble(GetText(root["FeedingCoolMs"], ""), FeedingCoolMs);
+
+                SkillMeditationCoolMs = GetDouble(GetText(root["SkillMeditationCoolMs"], ""), SkillMeditationCoolMs);
+                SkillDefaultCoolMs = GetDouble(GetText(root["SkillDefaultCoolMs"], ""), SkillDefaultCoolMs);
+
+                StatCoolMs = GetDouble(GetText(root["StatCoolMs"], ""), StatCoolMs);
+
+                HealCoolMs = GetDouble(GetText(root["HealCoolMs"], ""), HealCoolMs);
+                CureCoolMs = GetDouble(GetText(root["CureCoolMs"], ""), CureCoolMs);
+
+                GaveDamageCoolMs = GetDouble(GetText(root["GaveDamageCoolMs"], ""), GaveDamageCoolMs);
+            }
 
             RevealSpellDifficulty = GetBool(root["RevealSpellDifficulty"], RevealSpellDifficulty);
 
@@ -825,12 +1373,14 @@ namespace Server
 
             WatchListShowExceptions = GetBool(root["WatchListShowExceptions"], WatchListShowExceptions);
 
-            //FirstAvailableSerial = GetInt32(GetText(root["FirstAvailableSerial"], ""), FirstAvailableSerial);
+            StatsThreshold = GetInt32(GetText(root["StatsThreshold"], ""), StatsThreshold);
 
             TrackRangeBase = GetDouble(GetText(root["TrackRangeBase"], ""), TrackRangeBase);
             TrackRangePerSkill = GetDouble(GetText(root["TrackRangePerSkill"], ""), TrackRangePerSkill);
             TrackRangeMin = GetInt32(GetText(root["TrackRangeMin"], ""), TrackRangeMin);
             TrackDifficulty = GetBool(root["TrackDifficulty"], TrackDifficulty);
+            TrackArrowRangeMultiplier = GetDouble(GetText(root["TrackArrowRangeMultiplier"], ""), TrackArrowRangeMultiplier);
+            TrackHintRangeMultiplier = GetDouble(GetText(root["TrackHintRangeMultiplier"], ""), TrackHintRangeMultiplier);
 
             FarmableCotton = GetDouble(GetText(root["FarmableCotton"], ""), FarmableCotton);
             FarmableFlax = GetDouble(GetText(root["FarmableFlax"], ""), FarmableFlax);
@@ -846,6 +1396,7 @@ namespace Server
             AreaPeaceDelayBonus = GetDouble(GetText(root["AreaPeaceDelayBonus"], ""), AreaPeaceDelayBonus);
 
             HitPoisonChanceIncr = GetDouble(GetText(root["HitPoisonChanceIncr"], ""), HitPoisonChanceIncr);
+            PoisonBandageSlipChance = GetDouble(GetText(root["PoisonBandageSlipChance"], ""), PoisonBandageSlipChance);
 
             BaseVendorFee = GetValue(root["BaseVendorFee"], BaseVendorFee);
 
@@ -914,22 +1465,13 @@ namespace Server
             // PowderOfTranslocation availability
             PowderOfTranslocationAvail = GetDouble(GetText(root["PowderOfTranslocationAvail"], ""), PowderOfTranslocationAvail);
 
-            DynamicFeatures = GetUInt64(GetText(root["DynamicFeatures"], "0"), DynamicFeatures);
-            #region PatchTable
-            // Patcher uses a new patch table unbounded by the old 64bit model
-            //  we need to read it first to allow the old patch model to 'rewrite' patch states in case a repatch is needed.
-            LoadPatchTable(root);
-            /*Obsolete*/
-            DynamicPatches = GetUInt64(GetText(root["DynamicPatches"], "0"), DynamicPatches);
-            if (DynamicPatches != 0)
-            {
-                // populate our new patch table with old patcher values
-                Populate();
-                // clear DynamicPatches - will never be used again
-                DynamicPatches = 0;
-            }
+            // V0 persistence - replaced by V1 feature loading
+            //DynamicFeatures = GetUInt64(GetText(root["DynamicFeatures"], "0"), DynamicFeatures);
 
-            #endregion PatchTable
+            // tables            
+            LoadPatchTable(root);
+            LoadDynamicFeatures(root);
+
             // more supply depot supplies
             SpiritDepotTRPots = GetValue(root["SpiritDepotTRPots"], SpiritDepotTRPots);
 
@@ -959,14 +1501,18 @@ namespace Server
 
             EnchantedScrollDropChance = GetDouble(GetText(root["EnchantedScrollDropChance"], ""), EnchantedScrollDropChance);
 
+            BlankScrollMultiplier = GetValue(root["BlankScrollMultiplier"], BlankScrollMultiplier);
+
             ActiveSpeedOverride = GetDouble(GetText(root["ActiveSpeedOverride"], ""), ActiveSpeedOverride);
             PassiveSpeedOverride = GetDouble(GetText(root["PassiveSpeedOverride"], ""), PassiveSpeedOverride);
 
             ActiveMountedSpeedOverride = GetDouble(GetText(root["ActiveMountedSpeedOverride"], ""), ActiveMountedSpeedOverride);
             PassiveMountedSpeedOverride = GetDouble(GetText(root["PassiveMountedSpeedOverride"], ""), PassiveMountedSpeedOverride);
+            MountEnduranceFactor = GetDouble(GetText(root["MountEnduranceFactor"], ""), MountEnduranceFactor);
 
             SystemAccount = GetValue(root["SystemAccount"], SystemAccount);
             AdminAccount = GetValue(root["AdminAccount"], AdminAccount);
+            LordBritishAccount = GetValue(root["LordBritishAccount"], LordBritishAccount);
 
             // purple potion explosion factors
             ExplosionPotionSensitivityLevel = GetValue(root["ExplPotSensitivity"], ExplosionPotionSensitivityLevel);
@@ -988,7 +1534,7 @@ namespace Server
             CohesionLowerDelay = GetValue(root["CohesionLowerDelay"], CohesionLowerDelay);
             CohesionFactor = GetValue(root["CohesionFactor"], CohesionFactor);
 
-            // chance to broadcast newly IDOC houses over TCCS
+            // chance to broadcast newly IDOC houses over TownCrierBulletinSystem
             IDOCBroadcastChance = GetDouble(GetText(root["IDOCBroadcastChance"], ""), IDOCBroadcastChance);
 
             // chance for creatures to ignore re-aggression when not aggressing already
@@ -1011,8 +1557,6 @@ namespace Server
 
             PlayAccessLevel = (AccessLevel)GetValue(root["PlayAccessLevel"], (int)PlayAccessLevel);
 
-            TCAcctCleanupEnable = (GetInt32(GetText(root["TCAcctCleanupEnable"], "0"), 0) != 0);
-
             RangedCorrosionModifier = GetInt32(GetText(root["RangedCorrosionModifier"], "0"), 0);
 
             GWRChangeDelayMinutes = GetInt32(GetText(root["GWRChangeDelayMinutes"], "0"), 0);
@@ -1027,6 +1571,7 @@ namespace Server
             MaxAccountsPerIP = GetInt32(GetText(root["MaxAccountsPerIP"], MaxAccountsPerIP.ToString()), 0);
             MaxConcurrentAddresses = GetInt32(GetText(root["MaxAddresses"], MaxConcurrentAddresses.ToString()), 0);
             MaxAccountsPerMachine = GetInt32(GetText(root["MaxAccountsPerMachine"], MaxAccountsPerMachine.ToString()), 0);
+            MaxCharactersPerAccount = GetInt32(GetText(root["MaxCharactersPerAccount"], MaxCharactersPerAccount.ToString()), 0);
 
             SlayerWeaponDropRate = GetDouble(GetText(root["SlayerWeaponDropRate"], ""), SlayerWeaponDropRate);
             SlayerInstrumentDropRate = GetDouble(GetText(root["SlayerInstrumentDropRate"], ""), SlayerInstrumentDropRate);
@@ -1063,18 +1608,64 @@ namespace Server
             Utility.Monitor.WriteLine("[MaxAccountsPerMachine {0}.]", Core.ConsoleColorInformational(), CoreAI.MaxAccountsPerMachine);
             // in IPLimiter; MaxAddresses controls how many of the same IP address can be concurrently logged in. Maybe > MaxAccountsPerIP
             Utility.Monitor.WriteLine("[MaxConcurrentAddresses {0}.]", Core.ConsoleColorInformational(), CoreAI.MaxConcurrentAddresses);
+            Utility.Monitor.WriteLine("[MaxCharactersPerAccount {0}.]", Core.ConsoleColorInformational(), CoreAI.MaxCharactersPerAccount);
             Utility.Monitor.WriteLine("[Force GMN CUO {0}.]", Core.ConsoleColorInformational(), CoreAI.ForceGMNCUO);
             Utility.Monitor.WriteLine("[Warn GMN CUO {0}.]", Core.ConsoleColorInformational(), CoreAI.WarnBadGMNCUO);
             Utility.Monitor.WriteLine("[Force GMN Razor {0}.]", Core.ConsoleColorInformational(), CoreAI.ForceGMNRZR);
             Utility.Monitor.WriteLine("[Warn GMN Razor {0}.]", Core.ConsoleColorInformational(), CoreAI.WarnBadGMNRZR);
+            #endregion Settings
+
+            if (AccountHandler.LockdownLevel > AccessLevel.Player)
+                Utility.Monitor.WriteLine($"[The shard is currently in lockdown mode ({AccountHandler.LockdownLevel})]", Core.ConsoleColorWarning());
+        }
+        public static TimeSpan GetTimeSpan(string value, TimeSpan defaultValue)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return defaultValue;
+
+            value = value.Trim();
+
+            // 1) Prefer .NET TimeSpan formats first (handles "1.00:00:00", "24:00:00", "0:30:00", etc.)
+            // "c" is the round-trippable constant format (default TimeSpan.ToString()).
+            if (TimeSpan.TryParseExact(value, "c", CultureInfo.InvariantCulture, out TimeSpan ts))
+                return ts;
+
+            // Try general invariant parsing (accepts a broader set, still no exceptions).
+            if (TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out ts))
+                return ts;
+
+            // 2) Try ISO 8601 / XML duration (e.g. "PT24H", "PT30M", "P1DT2H").
+            // XmlConvert has no Try* API, so prefilter to avoid using exceptions for control flow.
+            // ISO durations typically start with 'P' or "-P".
+            bool looksIsoDuration =
+                value.Length > 0 &&
+                (value[0] == 'P' || (value.Length > 1 && value[0] == '-' && value[1] == 'P'));
+
+            if (looksIsoDuration)
+            {
+                try
+                {
+                    return XmlConvert.ToTimeSpan(value);
+                }
+                catch (FormatException)
+                {
+                    // Fall through to numeric parse / default.
+                }
+            }
+
+            // 3) Try simple numeric hours (common in config files)
+            if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double hours))
+                return TimeSpan.FromHours(hours);
+
+            return defaultValue;
         }
 
-        public static int GetValue(XmlElement node, int defaultValue)
+        public static int GetValue(XmlElement? node, int defaultValue)
         {
             return GetInt32(GetText(node, defaultValue.ToString()), defaultValue);
         }
 
-        public static string GetText(XmlElement node, string defaultValue)
+        public static string GetText(XmlElement? node, string defaultValue)
         {
             if (node == null)
                 return defaultValue;
@@ -1159,6 +1750,260 @@ namespace Server
                     return defaultValue;
                 }
             }
+        }
+        #region Features
+        private static void LoadDynamicFeatures(XmlElement root)
+        {
+            Array.Clear(DynamicFeatures, 0, DynamicFeatures.Length);
+
+            XmlElement? features = root["DynamicFeatures"];
+
+            if (features == null)
+                return;
+
+            foreach (XmlElement node in features.GetElementsByTagName("Feature"))
+            {
+                FeatureBits feature;
+
+                if (Enum.TryParse(node.InnerText, out feature))
+                    DynamicFeatures[(int)feature] = true;
+            }
+        }
+        private static void SaveDynamicFeatures(XmlTextWriter xml)
+        {
+            xml.WriteStartElement("DynamicFeatures");
+
+            foreach (FeatureBits feature in Enum.GetValues(typeof(FeatureBits)))
+            {
+                if (!IsDynamicFeatureSet(feature))
+                    continue;
+
+                xml.WriteElementString("Feature", feature.ToString());
+            }
+
+            xml.WriteEndElement();
+        }
+        #endregion Features
+        #region World Size
+        /// <summary>
+        /// This enum is used by at least teleporters and spawners to limit the world size.
+        /// When the global world size changes, certain spawners and teleporters will enable/disable.
+        /// </summary>
+        [Flags]
+        public enum WorldSize
+        {
+            None = 0x00,
+            Small = 0x01,
+            Medium = 0x02,
+            Large = 0x04,
+            Full = 0x08,
+        }
+        #endregion World Size
+    }
+    /// <summary>
+    /// Handles version migration of the persisted CoreAI configuration.
+    ///
+    /// CoreAIPatcher runs before CoreAI.OnLoad() and upgrades older CoreAI.xml
+    /// formats to the current format. CoreAI itself therefore only needs to
+    /// understand the current configuration format.
+    ///
+    /// Dynamic features are stored internally by CoreAI as an ordinal FeatureBits
+    /// enum backed by a bool array, and are persisted by enum name. This removes
+    /// the former UInt64/bit-mask limitation.
+    ///
+    /// Adding a new dynamic feature:
+    ///
+    ///     1. Append the new value to the END of CoreAI.FeatureBits.
+    ///     2. Use CoreAI.IsDynamicFeatureSet(), SetDynamicFeature(), and
+    ///        ClearDynamicFeature() to access it.
+    ///     3. No CoreAI.xml version change or migration is required.
+    ///
+    /// Compatibility: V1 files are read and written by feature NAME, so a
+    /// renamed or removed value would silently drop a saved setting. The
+    /// V0 upgrade below maps each legacy bit by ORDINAL, so a reordered value
+    /// would be misattributed and a removed one rejected as unknown.
+    /// Existing FeatureBits values must therefore never be renamed,
+    /// reordered, removed, or reused.
+    ///
+    /// Retiring a feature:
+    ///
+    ///     - keep its original name and its original position (ordinal);
+    ///     - mark it [Obsolete("Retired ... Retained for FeatureBits ordinal
+    ///       compatibility; do not reuse.")];
+    ///     - remove its remaining source references rather than suppressing
+    ///       the resulting CS0618 warnings.
+    ///
+    /// A retired value still parses from CoreAI.xml and still upgrades from
+    /// V0 data. Its slot is never reused; new features are always appended.
+    ///
+    /// CoreAI.xml version history:
+    ///
+    ///     V0 - DynamicFeatures stored as a UInt64 bitfield.
+    ///     V1 - DynamicFeatures stored as named Feature elements.
+    ///
+    /// Configuration migrations belong here, not in CoreAI.OnLoad().
+    /// </summary>
+    public static class CoreAIPatcher
+    {
+        [CallPriority(1)] // must come before coreai.xml is loaded
+        public static void Configure()
+        {
+            EventSink.PreWorldLoad += new PreWorldLoadEventHandler(OnPatch);
+        }
+        private static void OnPatch()
+        {
+            string? filePath = GetCoreAIFilePath();
+
+            if (filePath == null)
+                return;
+
+            int version = GetVersion(filePath);
+
+            Console.WriteLine(
+                "CoreAIPatcher: CoreAI.xml version {0}, current version {1}.",
+                version,
+                CoreAI.ConfigVersion);
+
+            // Current version -- nothing to do.
+            if (version == CoreAI.ConfigVersion)
+                return;
+
+            // Never attempt to load a configuration newer than we understand.
+            if (version > CoreAI.ConfigVersion)
+            {
+                throw new InvalidDataException(
+                    string.Format(
+                        "CoreAI.xml version {0} is newer than supported version {1}.",
+                        version,
+                        CoreAI.ConfigVersion));
+            }
+
+            Console.WriteLine("CoreAIPatcher: CoreAI.xml requires upgrading.");
+
+            if (version == 0)
+                UpgradeV0ToV1(filePath);
+        }
+        private static void UpgradeV0ToV1(string filePath)
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.Load(filePath);
+
+            XmlElement? root = doc["CoreAI"];
+
+            if (root == null)
+                throw new InvalidDataException(
+                    "Invalid CoreAI.xml: missing CoreAI root element.");
+
+            XmlElement? features = root["DynamicFeatures"];
+
+            if (features == null)
+                throw new InvalidDataException(
+                    "Invalid V0 CoreAI.xml: missing DynamicFeatures element.");
+
+            ulong legacyBits;
+
+            if (!ulong.TryParse(features.InnerText, out legacyBits))
+                throw new InvalidDataException(
+                    "Invalid V0 CoreAI.xml: invalid DynamicFeatures value.");
+
+            //
+            // Convert the legacy UInt64 bitfield into named features.
+            //
+            features.RemoveAll();
+
+            for (int i = 0; i < 64; i++)
+            {
+                if ((legacyBits & (1UL << i)) == 0)
+                    continue;
+
+                CoreAI.FeatureBits feature = (CoreAI.FeatureBits)i;
+
+                if (!Enum.IsDefined(typeof(CoreAI.FeatureBits), feature))
+                    throw new InvalidDataException(
+                        string.Format("V0 CoreAI.xml contains unknown feature bit {0}.", i));
+
+                XmlElement node = doc.CreateElement("Feature");
+                node.InnerText = feature.ToString();
+
+                features.AppendChild(node);
+            }
+
+            //
+            // This document is now V1.
+            //
+            root.SetAttribute("version", "1");
+
+            SaveUpgrade(doc, filePath);
+
+            Console.WriteLine("CoreAIPatcher: CoreAI.xml upgraded to version 1.");
+        }
+        private static void SaveUpgrade(XmlDocument doc, string filePath)
+        {
+            string newPath = filePath + ".new";
+            string backupPath = filePath + ".v0.bak";
+
+            //
+            // Write the complete replacement first.
+            //
+            XmlWriterSettings settings = new XmlWriterSettings
+            {
+                Indent = true,
+                IndentChars = "\t"
+            };
+
+            using (XmlWriter writer = XmlWriter.Create(newPath, settings))
+                doc.Save(writer);
+
+            //
+            // Preserve the original V0 file.
+            //
+            if (File.Exists(backupPath))
+                File.Delete(backupPath);
+
+            File.Replace(newPath, filePath, backupPath);
+        }
+        private static string? GetCoreAIFilePath()
+        {
+            string filePath = Path.Combine(
+                Core.SavesDirectory,
+                Core.Server,
+                "CoreAI.xml");
+
+            if (File.Exists(filePath))
+                return filePath;
+
+            // Legacy location
+            string legacyPath = Path.Combine(
+                Core.SavesDirectory,
+                "AngelIsland",
+                "CoreAI.xml");
+
+            if (File.Exists(legacyPath))
+                return legacyPath;
+
+            return null;
+        }
+        private static int GetVersion(string filePath)
+        {
+            XmlDocument doc = new XmlDocument();
+            doc.Load(filePath);
+
+            XmlElement? root = doc["CoreAI"];
+
+            if (root == null)
+                throw new InvalidDataException("Invalid CoreAI.xml: missing CoreAI root element.");
+
+            string text = root.GetAttribute("version");
+
+            if (string.IsNullOrEmpty(text))
+                return 0;
+
+            int version;
+
+            if (!int.TryParse(text, out version))
+                throw new InvalidDataException("Invalid CoreAI.xml version.");
+
+            return version;
         }
     }
 }

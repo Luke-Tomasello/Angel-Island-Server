@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -70,7 +70,7 @@ namespace Server.Factions
 
         public static MerchantTitleInfo[] Info { get { return m_Info; } }
 
-        public static MerchantTitleInfo GetInfo(MerchantTitle title)
+        public static MerchantTitleInfo? GetInfo(MerchantTitle title)
         {
             int idx = (int)title - 1;
 
@@ -96,7 +96,7 @@ namespace Server.Factions
             return IsQualified(mob, GetInfo(title));
         }
 
-        public static bool IsQualified(Mobile mob, MerchantTitleInfo info)
+        public static bool IsQualified(Mobile mob, MerchantTitleInfo? info)
         {
             if (mob == null || info == null)
                 return false;

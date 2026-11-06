@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -85,16 +85,6 @@ namespace Server.Mobiles
                     foreach (Type type in BBSTypes)
                         if (ResourcePool.IsPooledResource(type))
                             Add(new GenericBuyInfo(type));
-#if false
-                    /*
-                    Add(new GenericBuyInfo(typeof(UncutCloth)));
-                    Add(new GenericBuyInfo(typeof(BoltOfCloth)));
-                    Add(new GenericBuyInfo(typeof(DarkYarn)));
-                    Add(new GenericBuyInfo(typeof(LightYarn)));
-                    Add(new GenericBuyInfo(typeof(LightYarnUnraveled)));
-                    */
-                    Add(new GenericBuyInfo(typeof(Cloth)));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersSellResourcesRules())
                 {
@@ -125,18 +115,6 @@ namespace Server.Mobiles
                 {   // balanced buyback system
                     foreach (Type type in BBSTypes)
                         AddToResourcePool(type);
-#if false
-                    AddToResourcePool(typeof(UncutCloth));
-                    AddToResourcePool(typeof(BoltOfCloth));
-                    AddToResourcePool(typeof(LightYarnUnraveled));
-                    AddToResourcePool(typeof(LightYarn));
-                    AddToResourcePool(typeof(DarkYarn));
-
-                    AddToResourcePool(typeof(Cloth));
-                    AddToResourcePool(typeof(Cotton));
-                    AddToResourcePool(typeof(Wool));
-                    AddToResourcePool(typeof(SpoolOfThread));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersSellResourcesRules())
                 {   // cash buyback

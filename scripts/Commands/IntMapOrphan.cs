@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -69,8 +69,8 @@ namespace Server.Commands
                 int orphans = 0;
                 foreach (Serial serial in dict.Keys)
                 {
-                    Item item = World.FindItem(serial);
-                    Mobile mob = World.FindMobile(serial);
+                    Item? item = World.FindItem(serial);
+                    Mobile? mob = World.FindMobile(serial);
                     if (item != null)
                         Logger.Log(LogType.Item, item, string.Format("Managed by Spawner {0}", dict[serial]));
                     if (mob != null)
@@ -92,8 +92,8 @@ namespace Server.Commands
                 int orphans = 0;
                 foreach (Serial serial in dict.Keys)
                 {
-                    Item item = World.FindItem(serial);
-                    Mobile mob = World.FindMobile(serial);
+                    Item? item = World.FindItem(serial);
+                    Mobile? mob = World.FindMobile(serial);
                     if (item != null && dict[serial] == Serial.MinusOne)
                     {
                         item.IsIntMapStorage = false;
@@ -123,8 +123,8 @@ namespace Server.Commands
                 int orphans = 0;
                 foreach (Serial serial in dict.Keys)
                 {
-                    Item item = World.FindItem(serial);
-                    Mobile mob = World.FindMobile(serial);
+                    Item? item = World.FindItem(serial);
+                    Mobile? mob = World.FindMobile(serial);
                     if (item != null && item.Deleted == false && dict[serial] == Serial.MinusOne)
                     {
                         Logger.Log(LogType.Item, item, "Deleted.");
@@ -175,7 +175,7 @@ namespace Server.Commands
             {
                 if (i != null && i.Deleted == false && i is Spawner)
                 {
-                    Spawner spawner = i as Spawner;
+                    Spawner? spawner = i as Spawner;
                     // template ITEM
                     if (spawner.TemplateItem != null && dict.ContainsKey(spawner.TemplateItem.Serial))
                         dict[spawner.TemplateItem.Serial] = spawner.Serial;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -95,7 +95,7 @@ namespace Server.Engines.Harvest
                 from.SendMessage((string)message);
         }
 
-        public HarvestBank GetBank(Map map, int x, int y)
+        public HarvestBank? GetBank(Map map, int x, int y)
         {
             if (map == null || map == Map.Internal)
                 return null;
@@ -103,13 +103,13 @@ namespace Server.Engines.Harvest
             x /= m_BankWidth;
             y /= m_BankHeight;
 
-            Hashtable banks = (Hashtable)m_BanksByMap[map];
+            Hashtable? banks = (Hashtable?)m_BanksByMap[map];
 
             if (banks == null)
                 m_BanksByMap[map] = banks = new Hashtable();
 
             Point2D key = new Point2D(x, y);
-            HarvestBank bank = (HarvestBank)banks[key];
+            HarvestBank? bank = (HarvestBank?)banks[key];
 
             if (bank == null)
                 banks[key] = bank = new HarvestBank(this, GetVeinAt(map, x, y));
@@ -147,7 +147,7 @@ namespace Server.Engines.Harvest
             return GetVeinFrom(randomValue);
         }
 
-        public HarvestVein GetVeinFrom(double randomValue)
+        public HarvestVein? GetVeinFrom(double randomValue)
         {
             if (m_Veins.Length == 1)
                 return m_Veins[0];

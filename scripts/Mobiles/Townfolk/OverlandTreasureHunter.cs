@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -78,11 +78,12 @@ namespace Server.Mobiles
         private static int[] GemCounts = new int[Loot.GemTypes.Count()];
         public new static void Initialize()
         {
-            EventSink.ServerStarted += new ServerStartedEventHandler(EventSink_ServerStarted);
+            // 1/26/2026, Adam: don't like this method. We will just reasonable numbers so we don't get treasure hunters looking for ~2 gems
+            //EventSink.ServerStarted += new ServerStartedEventHandler(EventSink_ServerStarted);
         }
         public static void EventSink_ServerStarted()
         {
-            CountGems();
+            //CountGems();
         }
 
         // called here, and as a Cron job every 4 hours or so.
@@ -147,7 +148,7 @@ namespace Server.Mobiles
         {
             Container pack = this.Backpack;
             if (pack == null) return null;
-            TreasureMap map;
+            TreasureMap? map;
             map = pack.FindItemByType(typeof(TreasureMap), false) as TreasureMap;
             return map;
         }
@@ -213,35 +214,19 @@ namespace Server.Mobiles
             book.Name = "Fromm's treasure hunting guide";
             AddItem(book);
 
-            Item light = null;
+            Item? light = null;
             if (Utility.RandomBool())
                 light = new Lantern();
             else
                 light = new Torch();
             PackItem(light);
 
-#if false
+            PackItem(new Lockpick(2));
+
             // select a gem for payment
             m_GemIndex = Utility.Random(TreasureMapChest.m_GemTypes.Length);
-            m_GemsRequired = 50 * (2 + Utility.Random(9)); // 100-500
-#else
-            int maxValue = GemCounts.Max();
-            int maxIndex = GemCounts.ToList().IndexOf(maxValue);
-            m_GemIndex = maxIndex;
-            if (maxValue < 100)
-            {   // protect against a gem requirement of 0 
-                m_GemsRequired = Math.Max(1, Utility.RandomMinMax(1, maxValue));
-            }
-            else
-            {
-                m_GemsRequired = Math.Min(Utility.RandomMinMax(100, 500), maxValue);
-            }
-
-            if (GemCounts[maxIndex] >= m_GemsRequired)
-                GemCounts[maxIndex] -= m_GemsRequired;
-            else
-                GemCounts[maxIndex] = 0;
-#endif
+            //m_GemsRequired = 50 * (2 + Utility.Random(9)); // 100-500
+            m_GemsRequired = Utility.Random(25, 80);
 
             PackItem(new Bandage(Utility.RandomMinMax(1, 15)), lootType: LootType.UnStealable);
         }
@@ -434,7 +419,7 @@ namespace Server.Mobiles
         public bool FindGeneralLocation()
         {
             Point3D dest = GetDestination();
-            Mobile escorter = GetEscorterWithSideEffects();
+            Mobile? escorter = GetEscorterWithSideEffects();
 
             // should never happen
             if (escorter == null || dest == Point3D.Zero)
@@ -476,7 +461,7 @@ namespace Server.Mobiles
             // ask the Town Crier to stop
             OnEscortComplete();
 
-            Mobile escorter = GetEscorterWithSideEffects();
+            Mobile? escorter = GetEscorterWithSideEffects();
             if (escorter != null)
             {
                 // make awards here
@@ -499,74 +484,36 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                // this loot drops with corpse
+            // Announced treasure hunters carry better loot because they create public risk.
+            // Manually spawned treasure hunters get only modest fallback loot.
+
 #if DEBUG
-                if (true)
+            bool announced = true;
 #else
-                if (Announce == true)
+    bool announced = Announce;
 #endif
-                {
-                    PackScroll(6, 8);
-                    PackScroll(6, 8);
-                    PackReg(10);
-                    PackReg(10);
-                }
-                else
-                {
-                    // crappy loot if manually spawned 
-                    PackGold(200, 250);
-                }
-            }
-            else if (Core.RuleSets.SiegeStyleRules())
+
+            if (Spawning)
             {
-                // this loot drops with corpse
-#if DEBUG
-                if (true)
-#else
-                if (Announce == true)
-#endif
-                {
-                    if (!Spawning)
-                    {
-                        PackScroll(6, 8);
-                        PackScroll(6, 8);
-                        PackReg(10);
-                        PackReg(10);
-                    }
-                }
-                else
-                {
-                    // crappy loot if manually spawned 
+                if (!announced)
                     PackGold(200, 250);
-                }
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    // ai special
-                }
+
+                return;
             }
 
-            return;
+            if (!announced)
+                return;
+
+            PackScroll(6, 8);
+            PackScroll(6, 8);
+
+            PackReg(10);
+            PackReg(10);
         }
 
         // We are within 10 tiles of the chest and will use normal pathing to find our Home
         //	Home is now the chest location
-        private void FindChest()
+        private void GetChestLocation()
         {
             if (this.GetDistanceToSqrt(ChestLocation) != 1.0)
                 return; // keep wandering
@@ -578,6 +525,24 @@ namespace Server.Mobiles
             // ready for digging state
             State = QuestState.AtChest;
         }
+
+        private TreasureMapChest? FindChest()
+        {
+            // Look for an existing treasure map chest within 1 tile of this mobile.
+            // Return the first match found, otherwise null.
+            if (Deleted || Map == null)
+                return null;
+
+            // Range 1 = within one tile (including same tile).
+            foreach (Item item in GetItemsInRange(1))
+            {
+                if (item is TreasureMapChest chest && !chest.Deleted && chest.Map == Map)
+                    return chest;
+            }
+
+            return null;
+        }
+
 
         // We are 1 tile from the chest location. We will now begin warning players to stand back.
         private void ReadyChest()
@@ -623,7 +588,7 @@ namespace Server.Mobiles
             // stay. if we don't, the wander code will make us keep turning
             ControlOrder = OrderType.Stay;
 
-            TreasureMap map = null;
+            TreasureMap? map = null;
             try
             { map = FindMap(); }
             catch
@@ -688,7 +653,7 @@ namespace Server.Mobiles
                     break;
 
                 case QuestState.ChestMarch: // start searching for the exact location
-                    FindChest();            //	are we within 1 tile
+                    GetChestLocation();            //	are we within 1 tile
                     break;
 
                 case QuestState.AtChest:    // tell players to stand back
@@ -765,7 +730,7 @@ namespace Server.Mobiles
                                             // no enter state
                     if (Destination == Point3D.Zero)
                     {
-                        TreasureMap map = null;
+                        TreasureMap? map = null;
                         if (this.Backpack == null)
                         {
                             LogHelper Logger = new LogHelper("EscortableProblem.log", false);
@@ -860,7 +825,7 @@ namespace Server.Mobiles
 
         private void TestComplete()
         {
-            TreasureMap map = null;
+            TreasureMap? map = null;
             try
             { map = FindMap(); }
             catch
@@ -871,6 +836,26 @@ namespace Server.Mobiles
 
             if (map.Completed == true)
                 State = QuestState.Finishing;
+
+            // 1/26/2026, Adam: better be here
+            if (FindChest() is not TreasureMapChest chest)
+            {
+                State = QuestState.Error;
+                return;
+            }
+
+            // 1/26/2026, Adam: unlock and disarm the trap once it reaches the surface
+            var z = this.Map.GetAverageZ(ChestLocation.X, ChestLocation.Y);
+            if (chest.Locked && chest.Map == this.Map && chest.Z == z)
+            {
+                this.PlaySound(0x241);
+
+                Emote($"The lock quickly yields to {(Female ? "her" : "his")} skill.");
+                this.PlaySound(0x4A);
+
+                chest.Locked = false;
+                chest.TrapEnabled = false;
+            }
 
             return;
         }

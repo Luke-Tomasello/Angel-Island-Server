@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,11 @@
 
 /* Scripts\Engines\AI\AI\BaseAI\MuxTimer.cs
  * CHANGELOG
+ *  10/26/26, Adam (measurement hook for MusicLoadTest)
+ *      MuxObserver: when set (only while a music load test runs), each MuxTick reports its lateness against the 10 ms
+ *      interval, the DMux time, the AIs serviced (thoughts) and the AIs running. Each AI counts its thoughts
+ *      (MuxThoughts) so a test can confirm specific creatures are thinking. Scheduling and AI behavior are unchanged;
+ *      with no observer the tick does no timing.
  *  10/19/2023, Adam
  *      Add some top-level try/catch statements to catch any AI crash that would otherwise be missed.
  *  10/10/2023, Adam
@@ -53,6 +58,14 @@ namespace Server.Mobiles
         private DateTime NextThought { get { return m_NextThought; } set { m_NextThought = value; } }
 
         private static Dictionary<BaseAI, bool> AIServiceTable = new();
+
+        // measurement hook (MusicLoadTest): (lateness ms against the 10 ms interval, -1 for the first tick; DMux Stopwatch
+        //  ticks; AIs serviced; AIs running). Null in normal operation.
+        public static Action<double, long, int, int>? MuxObserver;
+        private static long s_muxLastTick;                  // Stopwatch time of the previous observed tick
+        private static int s_muxThoughts, s_muxActive;      // counted by DMux for the observer
+        private long m_MuxThoughts;
+        public long MuxThoughts { get { return m_MuxThoughts; } }   // how many times this AI has been serviced
         public static void InitializeMux()
         {
             Timer.DelayCall(TimeSpan.Zero, TimeSpan.FromMilliseconds(10), new TimerCallback(MuxTick));
@@ -77,6 +90,9 @@ namespace Server.Mobiles
         private static Queue<Request> UpdateQueue = new Queue<Request>();
         private static void MuxTick()
         {
+            Action<double, long, int, int>? observer = MuxObserver;
+            long tickStart = observer != null ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
+
             while (UpdateQueue.Count > 0)
             {
                 Request change = UpdateQueue.Dequeue();
@@ -110,16 +126,29 @@ namespace Server.Mobiles
             // Tick => | AI2 needing servicing
             //         | AI3 needing servicing
             //         | ... etc
+            long dmuxStart = observer != null ? System.Diagnostics.Stopwatch.GetTimestamp() : 0;
             try { DMux(); }
             catch (Exception ex)
             {   // better safe than sorry.
                 LogHelper.LogException(ex);
             }
+
+            if (observer != null)
+            {   // measurement only (MusicLoadTest)
+                long end = System.Diagnostics.Stopwatch.GetTimestamp();
+                double late = s_muxLastTick == 0 ? -1 : (tickStart - s_muxLastTick) * 1000.0 / System.Diagnostics.Stopwatch.Frequency - 10;
+                s_muxLastTick = tickStart;
+                try { observer(late, end - dmuxStart, s_muxThoughts, s_muxActive); }
+                catch (Exception ex) { LogHelper.LogException(ex); }
+            }
+            else
+                s_muxLastTick = 0;
         }
 
         private static void DMux()
         {
             DateTime now = DateTime.UtcNow;
+            s_muxThoughts = s_muxActive = 0;
             foreach (var kvp in AIServiceTable)
             {
                 if (kvp.Value == false)
@@ -134,8 +163,11 @@ namespace Server.Mobiles
                     continue;                           // bad state
                 }
 
+                s_muxActive++;
                 if (now >= kvp.Key.NextThought)
                 {
+                    s_muxThoughts++;
+                    kvp.Key.m_MuxThoughts++;
                     kvp.Key.NextThought = now + TimeSpan.FromSeconds(kvp.Key.m_Mobile.CurrentSpeed);
                     try { kvp.Key.m_Timer.OnTick(); }
                     catch (Exception ex) { LogHelper.LogException(ex); }

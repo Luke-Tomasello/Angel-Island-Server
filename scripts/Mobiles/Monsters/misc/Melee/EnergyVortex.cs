@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,9 +26,9 @@
  *      Both Energyvortex and BladeSpirits have this flag. Keep in mind, both of these summons
  *      will prefer higher INT targets (Energyvortex) or higher STR targets (BladeSpirits) regardless of their master.
  *  5/19/23, Adam
- *      Add poison for SiegeStyleRules().
+ *      Add poison for SiegeRules().
  *  11/8/22, Adam
- *      Reduce damage for SiegeStyleRules().
+ *      Reduce damage for SiegeRules().
  *	2/9/11, adam
  *		Add Llama vortices
  *  8/16/06, Rhiannon
@@ -73,7 +73,7 @@ namespace Server.Mobiles
         public override bool DeleteCorpseOnDeath { get { return Summoned; } }
         public override bool AlwaysMurderer { get { return true; } } // Or Llama vortices will appear gray.
 
-        public override double DispelDifficulty { get { return Core.RuleSets.AngelIslandRules() ? 56.0 : 80.0; } }
+        public override double DispelDifficulty { get { return Core.RuleSets.AngelIslandRules() ? 56.0 : 110.0; } }
         public override double DispelFocus { get { return Core.RuleSets.AngelIslandRules() ? 45.0 : 20; } }
 
         [Constructable]
@@ -103,7 +103,7 @@ namespace Server.Mobiles
             // The spells Blade Spirits and Energy Vortex have been weakened significantly
             //  https://www.uoguide.com/Siege_Perilous
             //  Don't know what the value should be, here's a guess
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
                 SetDamage(Decrease(number: 14, percentage: 10), Decrease(number: 17, percentage: 10));
             else
                 // standard OSI
@@ -131,7 +131,7 @@ namespace Server.Mobiles
                 return Core.RuleSets.AngelIslandRules() ? null :
                     // The spells Blade Spirits and Energy Vortex have been weakened significantly
                     //  https://www.uoguide.com/Siege_Perilous
-                    Core.RuleSets.SiegeStyleRules() ? Poison.Greater : Poison.Deadly;
+                    Core.RuleSets.SiegeRules() ? Poison.Greater : Poison.Deadly;
             }
         }
         public override bool SpeedOverrideOK { get { return true; } }

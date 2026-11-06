@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -345,8 +345,20 @@ namespace Server.Multis
                         {
                             m_Structure.Owner = m;
 
-                            if (m_Structure.Public == false)
-                                m_Structure.ChangeLocks(m);
+                            // 2/8/2026, Adam: when assuming an inheritance, change locks, but don't distinguish between public/private
+
+                            //if (m_Structure.Public == false)
+                            //{
+                            m_Structure.RemoveKeys(m);
+                            m_Structure.ChangeLocks(m);
+                            m.SendLocalizedMessage(501306); // The locks on your front door have been changed, and new master keys have been placed in your bank and your backpack.
+                            //}
+                            //else
+                            //    // old code allowed locked public houses, revert that here
+                            //    m_Structure.RemoveLocks();
+
+                            // Clear Pending Inheritance
+                            BaseHouse.OnAfterInheritance(m);
                         }
                     }
 
@@ -357,7 +369,7 @@ namespace Server.Multis
                 {
                     m.SendLocalizedMessage(501293); // Welcome back to the house, friend!
 
-                    if (Core.RuleSets.SiegeStyleRules()) //refresh house
+                    if (Core.RuleSets.SiegeRules()) //refresh house
                     {
                         double dms = m_Structure.DecayMinutesStored;
                         m_Structure.Refresh();
@@ -414,7 +426,7 @@ namespace Server.Multis
 
     public class StaticHouseSign : Item
     {
-        private Mobile m_Owner;
+        private Mobile? m_Owner;
         private DateTime m_BuiltOn;
 
         [Constructable]
@@ -433,7 +445,7 @@ namespace Server.Multis
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Mobile Owner
+        public Mobile? Owner
         {
             get { return m_Owner; }
             set { m_Owner = value; }

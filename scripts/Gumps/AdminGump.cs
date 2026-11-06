@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -92,6 +92,8 @@ using Server.Accounting;
 using Server.Commands;
 using Server.Diagnostics;
 using Server.Items;
+using Server.Misc;
+using Server.Mobiles;
 using Server.Network;
 using Server.Prompts;
 using System;
@@ -139,9 +141,9 @@ namespace Server.Gumps
     {
         private Mobile m_From;
         private AdminGumpPage m_PageType;
-        private ArrayList m_List;
+        private ArrayList? m_List;
         private int m_ListPage;
-        private object m_State;
+        private object? m_State;
 
         private const int LabelColor = 0x7FFF;
         private const int SelectedColor = 0x421F;
@@ -260,7 +262,7 @@ namespace Server.Gumps
 
         public static string FormatAccessLevel(AccessLevel level)
         {
-            string name = Enum.GetName(typeof(AccessLevel), level);
+            string? name = Enum.GetName(typeof(AccessLevel), level);
             if (name != null)
             {
                 return Utility.SplitCamelCase(name);
@@ -269,7 +271,7 @@ namespace Server.Gumps
             return "Unknown";
         }
 
-        public AdminGump(Mobile from, AdminGumpPage pageType, int listPage, ArrayList list, string notice, object state)
+        public AdminGump(Mobile from, AdminGumpPage pageType, int listPage, ArrayList? list, string? notice, object? state)
             : base(50, 40)
         {
             // 3/14/06 - safeguard put in against unknown crash
@@ -558,14 +560,14 @@ namespace Server.Gumps
 
                             for (int i = 0, index = (listPage * 12); i < 12 && index >= 0 && index < m_List.Count; ++i, ++index)
                             {
-                                NetState ns = m_List[index] as NetState;
+                                NetState? ns = m_List[index] as NetState;
 
                                 if (ns == null)
                                     continue;
 
                                 Mobile m = ns.Mobile;
 
-                                Account a = ns.Account as Account;
+                                Account? a = ns.Account as Account;
                                 int offset = 140 + (i * 20);
 
                                 if (m == null)
@@ -590,10 +592,11 @@ namespace Server.Gumps
 
                             break;
                         }
+
                     case AdminGumpPage.ClientInfo:
                         {
 
-                            Mobile m = state as Mobile;
+                            Mobile? m = state as Mobile;
 
                             if (m == null)
                                 break;
@@ -608,7 +611,7 @@ namespace Server.Gumps
                             AddLabel(200, y, m.GetHueForNameInList(), m.Name);
                             y += 20;
 
-                            Account a = m.Account as Account;
+                            Account? a = m.Account as Account;
 
                             AddLabel(20, y, LabelHue, "Account:");
                             AddLabel(200, y, (a != null && a.Banned) ? RedHue : LabelHue, a == null ? "(no account)" : a.Username);
@@ -676,6 +679,7 @@ namespace Server.Gumps
 
                             break;
                         }
+
                     case AdminGumpPage.Accounts_Shared:
                         {
 
@@ -707,7 +711,7 @@ namespace Server.Gumps
                                 DictionaryEntry de = (DictionaryEntry)m_List[index];
 
                                 IPAddress ipAddr = (IPAddress)de.Key;
-                                ArrayList accts = (ArrayList)de.Value;
+                                ArrayList? accts = (ArrayList?)de.Value;
 
                                 int offset = 140 + (i * 20);
 
@@ -724,7 +728,7 @@ namespace Server.Gumps
 
                                     if (j < 4)
                                     {
-                                        Account acct = (Account)accts[j];
+                                        Account? acct = (Account?)accts[j];
 
                                         sb.Append(acct.Username);
                                     }
@@ -753,7 +757,7 @@ namespace Server.Gumps
                                 m_List.Sort(Utility.AccountComparer.Instance);
                             }
 
-                            ArrayList rads = (state as ArrayList);
+                            ArrayList? rads = (state as ArrayList);
 
                             AddAccountHeader();
 
@@ -789,7 +793,7 @@ namespace Server.Gumps
                             for (int i = 0, index = (listPage * 12); i < 12 && index >= 0 && index < m_List.Count; ++i, ++index)
                             {
 
-                                Account a = m_List[index] as Account;
+                                Account? a = m_List[index] as Account;
 
                                 if (a == null)
                                     continue;
@@ -840,7 +844,7 @@ namespace Server.Gumps
                     case AdminGumpPage.AccountDetails_Activation:
                         {
 
-                            Account a = state as Account;
+                            Account? a = state as Account;
 
                             if (a == null)
                                 break;
@@ -884,7 +888,7 @@ namespace Server.Gumps
                         }
                     case AdminGumpPage.AccountDetails_EmailHistory:
                         {
-                            Account a = state as Account;
+                            Account? a = state as Account;
 
                             if (a == null)
                                 break;
@@ -915,7 +919,7 @@ namespace Server.Gumps
                         }
                     case AdminGumpPage.AccountDetails_ChangePassword:
                         {
-                            Account a = state as Account;
+                            Account? a = state as Account;
 
                             if (a == null)
                                 break;
@@ -937,7 +941,7 @@ namespace Server.Gumps
                         }
                     case AdminGumpPage.AccountDetails_ChangeAccess:
                         {
-                            Account a = state as Account;
+                            Account? a = state as Account;
 
                             if (a == null)
                                 break;
@@ -962,7 +966,7 @@ namespace Server.Gumps
                         }
                     case AdminGumpPage.AccountDetails_Information:
                         {
-                            Account a = state as Account;
+                            Account? a = state as Account;
 
                             if (a == null)
                                 break;
@@ -1050,7 +1054,7 @@ namespace Server.Gumps
                         }
                     case AdminGumpPage.AccountDetails_Access:
                         {
-                            Account a = state as Account;
+                            Account? a = state as Account;
 
                             if (a == null)
                                 break;
@@ -1064,7 +1068,7 @@ namespace Server.Gumps
                         }
                     case AdminGumpPage.AccountDetails_Access_ClientIPs:
                         {
-                            Account a = state as Account;
+                            Account? a = state as Account;
 
                             if (a == null)
                                 break;
@@ -1109,7 +1113,7 @@ namespace Server.Gumps
                         }
                     case AdminGumpPage.AccountDetails_Access_Restrictions:
                         {
-                            Account a = state as Account;
+                            Account? a = state as Account;
 
                             if (a == null)
                                 break;
@@ -1153,7 +1157,7 @@ namespace Server.Gumps
                         }
                     case AdminGumpPage.AccountDetails_Characters:
                         {
-                            Account a = state as Account;
+                            Account? a = state as Account;
 
                             if (a == null)
                                 break;
@@ -1195,7 +1199,7 @@ namespace Server.Gumps
                         }
                     case AdminGumpPage.AccountDetails_Comments:
                         {
-                            Account a = state as Account;
+                            Account? a = state as Account;
 
                             if (a == null)
                                 break;
@@ -1214,7 +1218,7 @@ namespace Server.Gumps
                                 if (i > 0)
                                     sb.Append("<BR><BR>");
 
-                                AccountComment c = (AccountComment)a.Comments[i];
+                                AccountComment? c = (AccountComment?)a.Comments[i];
 
                                 sb.AppendFormat("[{0}]<BR>{1}", c.AddedBy, c.Content);
                             }
@@ -1225,7 +1229,7 @@ namespace Server.Gumps
                         }
                     case AdminGumpPage.AccountDetails_Tags:
                         {
-                            Account a = state as Account;
+                            Account? a = state as Account;
 
                             if (a == null)
                                 break;
@@ -1245,7 +1249,7 @@ namespace Server.Gumps
                                 if (i > 0)
                                     sb.Append("<BR>");
 
-                                AccountTag tag = (AccountTag)a.Tags[i];
+                                AccountTag? tag = (AccountTag?)a.Tags[i];
 
                                 sb.AppendFormat("{0} = {1}", tag.Name, tag.Value);
                             }
@@ -1284,7 +1288,7 @@ namespace Server.Gumps
 
                             for (int i = 0, index = (listPage * 12); i < 12 && index >= 0 && index < m_List.Count; ++i, ++index)
                             {
-                                object obj = m_List[index];
+                                object? obj = m_List[index];
 
                                 if (obj == null)
                                     continue;
@@ -1302,7 +1306,7 @@ namespace Server.Gumps
                             if (state == null)
                                 break;
 
-                            string pattern = state.ToString();
+                            string? pattern = state.ToString();
 
                             if (m_List == null)
                             {
@@ -1347,7 +1351,7 @@ namespace Server.Gumps
 
                             for (int i = 0, index = (listPage * 12); i < 12 && index >= 0 && index < m_List.Count; ++i, ++index)
                             {
-                                Account a = m_List[index] as Account;
+                                Account? a = m_List[index] as Account;
 
                                 if (a == null)
                                     continue;
@@ -1398,7 +1402,7 @@ namespace Server.Gumps
 
                             for (int i = 0, index = (listPage * 12); i < 12 && index >= 0 && index < m_List.Count; ++i, ++index)
                             {
-                                object obj = m_List[index];
+                                object? obj = m_List[index];
 
                                 if (obj == null)
                                     continue;
@@ -1418,7 +1422,7 @@ namespace Server.Gumps
                             if (state == null)
                                 break;
 
-                            string pattern = state.ToString();
+                            string? pattern = state.ToString();
 
                             if (m_List == null)
                             {
@@ -1463,7 +1467,7 @@ namespace Server.Gumps
 
                             for (int i = 0, index = (listPage * 12); i < 12 && index >= 0 && index < m_List.Count; ++i, ++index)
                             {
-                                Account a = m_List[index] as Account;
+                                Account? a = m_List[index] as Account;
 
                                 if (a == null)
                                     continue;
@@ -1580,7 +1584,7 @@ namespace Server.Gumps
                 return;
 
             string notice;
-            ArrayList list = null;
+            ArrayList? list = null;
 
             if (okay)
             {
@@ -1653,7 +1657,7 @@ namespace Server.Gumps
             {
                 for (int i = 0; i < rads.Count; ++i)
                 {
-                    Account acct = (Account)rads[i];
+                    Account? acct = (Account?)rads[i];
 
                     if (ban)
                     {
@@ -1744,13 +1748,13 @@ namespace Server.Gumps
             if (m_PageType == AdminGumpPage.Accounts)
             {
                 ArrayList list = m_List;
-                ArrayList rads = m_State as ArrayList;
+                ArrayList? rads = m_State as ArrayList;
 
                 if (list != null && rads != null)
                 {
                     for (int i = 0, v = m_ListPage * 12; i < 12 && v < list.Count; ++i, ++v)
                     {
-                        object obj = list[v];
+                        object? obj = list[v];
 
                         if (info.IsSwitched(v))
                         {
@@ -1817,10 +1821,10 @@ namespace Server.Gumps
                         {
                             case 0: // add
                                 {
-                                    TextRelay ipRelay = info.GetTextEntry(0);
-                                    TextRelay lmRelay = info.GetTextEntry(1);
+                                    TextRelay? ipRelay = info.GetTextEntry(0);
+                                    TextRelay? lmRelay = info.GetTextEntry(1);
 
-                                    string ip = (ipRelay == null ? null : ipRelay.Text.Trim());
+                                    string? ip = (ipRelay == null ? null : ipRelay.Text.Trim());
                                     int lm = (lmRelay == null ? 0 : Utility.ToInt32(lmRelay.Text.Trim()));
 
                                     if (string.IsNullOrEmpty(ip))
@@ -1843,9 +1847,9 @@ namespace Server.Gumps
                                 }
                             case 1: // remove
                                 {
-                                    TextRelay ipRelay = info.GetTextEntry(0);
+                                    TextRelay? ipRelay = info.GetTextEntry(0);
 
-                                    string ip = (ipRelay == null ? null : ipRelay.Text.Trim());
+                                    string? ip = (ipRelay == null ? null : ipRelay.Text.Trim());
 
                                     if (string.IsNullOrEmpty(ip))
                                     {
@@ -1866,7 +1870,7 @@ namespace Server.Gumps
 
                                     if (m_List != null && index >= 0 && index < m_List.Count)
                                     {
-                                        object obj = m_List[index];
+                                        object? obj = m_List[index];
 
                                         if (obj != null)
                                         {
@@ -1883,7 +1887,7 @@ namespace Server.Gumps
                     }
                 case 3:
                     {
-                        string notice = null;
+                        string? notice = null;
                         AdminGumpPage page = AdminGumpPage.Administer;
 
                         if (index >= 500)
@@ -1939,16 +1943,56 @@ namespace Server.Gumps
                                 }
 
 
-                            case 200: InvokeCommand("Save"); notice = "The world has been saved."; break;
-                            case 201: Shutdown(restart: false, save: true); break;
-                            case 202: Shutdown(restart: false, save: false); break;
-                            case 203: Shutdown(restart: true, save: true); break;
-                            case 204: Shutdown(restart: true, save: false); break;
+                            case 200:
+                                {
+                                    if (BlockDuringMaintenance(from, out notice))
+                                        break;
+
+                                    InvokeCommand("Save");
+                                    notice = "The world has been saved.";
+                                    break;
+                                }
+
+                            case 201:
+                                {
+                                    if (BlockDuringMaintenance(from, out notice))
+                                        break;
+
+                                    Shutdown(restart: false, save: true);
+                                    break;
+                                }
+
+                            case 202:
+                                {
+                                    if (BlockDuringMaintenance(from, out notice))
+                                        break;
+
+                                    Shutdown(restart: false, save: false);
+                                    break;
+                                }
+
+                            case 203:
+                                {
+                                    if (BlockDuringMaintenance(from, out notice))
+                                        break;
+
+                                    Shutdown(restart: true, save: true);
+                                    break;
+                                }
+
+                            case 204:
+                                {
+                                    if (BlockDuringMaintenance(from, out notice))
+                                        break;
+
+                                    Shutdown(restart: true, save: false);
+                                    break;
+                                }
                             case 210:
                             case 211:
                                 {
-                                    TextRelay relay = info.GetTextEntry(0);
-                                    string text = (relay == null ? null : relay.Text.Trim());
+                                    TextRelay? relay = info.GetTextEntry(0);
+                                    string? text = (relay == null ? null : relay.Text.Trim());
 
                                     if (text == null || text.Length == 0)
                                     {
@@ -2027,7 +2071,7 @@ namespace Server.Gumps
                                         for (int i = 0; i < clients.Count; ++i)
                                         {
                                             NetState ns = clients[i];
-                                            Account a = ns.Account as Account;
+                                            Account? a = ns.Account as Account;
 
                                             if (a == null)
                                                 continue;
@@ -2112,9 +2156,9 @@ namespace Server.Gumps
 
                                     ArrayList results = new ArrayList();
 
-                                    TextRelay matchEntry = info.GetTextEntry(0);
-                                    string match = (matchEntry == null ? null : matchEntry.Text.Trim().ToLower());
-                                    string notice = null;
+                                    TextRelay? matchEntry = info.GetTextEntry(0);
+                                    string? match = (matchEntry == null ? null : matchEntry.Text.Trim().ToLower());
+                                    string? notice = null;
 
                                     if (match == null || match.Length == 0)
                                     {
@@ -2138,7 +2182,7 @@ namespace Server.Gumps
                                             if (forName)
                                             {
                                                 Mobile m = ns.Mobile;
-                                                Account a = ns.Account as Account;
+                                                Account? a = ns.Account as Account;
 
                                                 isMatch = (m != null && m.Name.ToLower().IndexOf(match) >= 0)
                                                     || (a != null && a.Username.ToLower().IndexOf(match) >= 0);
@@ -2157,7 +2201,7 @@ namespace Server.Gumps
 
                                     if (results.Count == 1)
                                     {
-                                        NetState ns = (NetState)results[0];
+                                        NetState? ns = (NetState?)results[0];
                                         object state = ns.Mobile;
 
                                         if (state == null)
@@ -2183,13 +2227,13 @@ namespace Server.Gumps
 
                                     if (m_List != null && index >= 0 && index < m_List.Count)
                                     {
-                                        NetState ns = m_List[index] as NetState;
+                                        NetState? ns = m_List[index] as NetState;
 
                                         if (ns == null)
                                             break;
 
                                         Mobile m = ns.Mobile;
-                                        Account a = ns.Account as Account;
+                                        Account? a = ns.Account as Account;
 
                                         if (m != null)
                                             from.SendGump(new AdminGump(from, AdminGumpPage.ClientInfo, 0, null, null, m));
@@ -2221,13 +2265,13 @@ namespace Server.Gumps
                             case 35: from.Prompt = new RemoveTagPrompt(m_State as Account); from.SendMessage("Enter the tag name to delete."); break;
                             case 6:
                                 {
-                                    TextRelay unEntry = info.GetTextEntry(0);
-                                    TextRelay pwEntry = info.GetTextEntry(1);
+                                    TextRelay? unEntry = info.GetTextEntry(0);
+                                    TextRelay? pwEntry = info.GetTextEntry(1);
 
-                                    string un = (unEntry == null ? null : unEntry.Text.Trim());
-                                    string pw = (pwEntry == null ? null : pwEntry.Text.Trim());
+                                    string? un = (unEntry == null ? null : unEntry.Text.Trim());
+                                    string? pw = (pwEntry == null ? null : pwEntry.Text.Trim());
 
-                                    Account dispAccount = null;
+                                    Account? dispAccount = null;
                                     string notice;
 
                                     if (un == null || un.Length == 0)
@@ -2263,19 +2307,19 @@ namespace Server.Gumps
 
                                     ArrayList results = new ArrayList();
 
-                                    TextRelay matchEntry = info.GetTextEntry(2);
+                                    TextRelay? matchEntry = info.GetTextEntry(2);
 
-                                    string match = (matchEntry == null ? null : matchEntry.Text.Trim().ToLower());
-                                    string notice = null;
+                                    string? match = (matchEntry == null ? null : matchEntry.Text.Trim().ToLower());
+                                    string? notice = null;
 
                                     if (match == null || match.Length == 0)
                                     {
                                         try
                                         {
                                             //notice = "You must enter a username to search.";
-                                            TextRelay emailEntry = info.GetTextEntry(3);
+                                            TextRelay? emailEntry = info.GetTextEntry(3);
 
-                                            string emailmatch = (emailEntry == null ? null : emailEntry.Text.Trim().ToLower());
+                                            string? emailmatch = (emailEntry == null ? null : emailEntry.Text.Trim().ToLower());
                                             if (emailmatch == null || emailmatch.Length == 0)
                                             {
                                                 notice = "You must enter a username or email to search.";
@@ -2330,7 +2374,7 @@ namespace Server.Gumps
                             case 10:
                             case 11:
                                 {
-                                    Account a = m_State as Account;
+                                    Account? a = m_State as Account;
 
                                     if (a == null)
                                         break;
@@ -2347,16 +2391,16 @@ namespace Server.Gumps
                                 }
                             case 12:
                                 {
-                                    Account a = m_State as Account;
+                                    Account? a = m_State as Account;
 
                                     if (a == null)
                                         break;
 
-                                    TextRelay passwordEntry = info.GetTextEntry(0);
-                                    TextRelay confirmEntry = info.GetTextEntry(1);
+                                    TextRelay? passwordEntry = info.GetTextEntry(0);
+                                    TextRelay? confirmEntry = info.GetTextEntry(1);
 
-                                    string password = (passwordEntry == null ? null : passwordEntry.Text.Trim());
-                                    string confirm = (confirmEntry == null ? null : confirmEntry.Text.Trim());
+                                    string? password = (passwordEntry == null ? null : passwordEntry.Text.Trim());
+                                    string? confirm = (confirmEntry == null ? null : confirmEntry.Text.Trim());
 
                                     string notice;
                                     AdminGumpPage page = AdminGumpPage.AccountDetails_ChangePassword;
@@ -2383,7 +2427,7 @@ namespace Server.Gumps
                                 }
                             case 16: // view shared
                                 {
-                                    Account a = m_State as Account;
+                                    Account? a = m_State as Account;
 
                                     if (a == null)
                                         break;
@@ -2407,7 +2451,7 @@ namespace Server.Gumps
                                 }
                             case 17: // ban shared
                                 {
-                                    Account a = m_State as Account;
+                                    Account? a = m_State as Account;
 
                                     if (a == null)
                                         break;
@@ -2438,7 +2482,7 @@ namespace Server.Gumps
                                 }
                             case 18: // firewall all
                                 {
-                                    Account a = m_State as Account;
+                                    Account? a = m_State as Account;
 
                                     if (a == null)
                                         break;
@@ -2456,13 +2500,13 @@ namespace Server.Gumps
                                 }
                             case 19: // add
                                 {
-                                    Account a = m_State as Account;
+                                    Account? a = m_State as Account;
 
                                     if (a == null)
                                         break;
 
-                                    TextRelay entry = info.GetTextEntry(0);
-                                    string ip = (entry == null ? null : entry.Text.Trim());
+                                    TextRelay? entry = info.GetTextEntry(0);
+                                    string? ip = (entry == null ? null : entry.Text.Trim());
 
                                     string notice;
 
@@ -2509,7 +2553,7 @@ namespace Server.Gumps
                             case 25:
                             case 26:
                                 {
-                                    Account a = m_State as Account;
+                                    Account? a = m_State as Account;
 
                                     if (a == null)
                                         break;
@@ -2537,7 +2581,7 @@ namespace Server.Gumps
                                 }
                             case 27:
                                 {
-                                    Account a = m_State as Account;
+                                    Account? a = m_State as Account;
 
                                     if (a == null)
                                         break;
@@ -2553,7 +2597,7 @@ namespace Server.Gumps
                             case 29: // Ban marked
                                 {
                                     ArrayList list = m_List;
-                                    ArrayList rads = m_State as ArrayList;
+                                    ArrayList? rads = m_State as ArrayList;
 
                                     if (list == null || rads == null)
                                         break;
@@ -2568,7 +2612,7 @@ namespace Server.Gumps
                             case 30: // Delete marked
                                 {
                                     ArrayList list = m_List;
-                                    ArrayList rads = m_State as ArrayList;
+                                    ArrayList? rads = m_State as ArrayList;
 
                                     if (list == null || rads == null)
                                         break;
@@ -2583,7 +2627,7 @@ namespace Server.Gumps
                             case 31: // Mark all
                                 {
                                     ArrayList list = m_List;
-                                    ArrayList rads = m_State as ArrayList;
+                                    ArrayList? rads = m_State as ArrayList;
 
                                     if (list == null || rads == null)
                                         break;
@@ -2649,7 +2693,7 @@ namespace Server.Gumps
                                 }
                             case 38: //reset activation
                                 {
-                                    Account a = m_State as Account;
+                                    Account? a = m_State as Account;
 
                                     if (a == null)
                                         break;
@@ -2664,7 +2708,7 @@ namespace Server.Gumps
                                 }
                             case 39: //resend activation
                                 {
-                                    Account a = m_State as Account;
+                                    Account? a = m_State as Account;
 
                                     if (a == null)
                                     {
@@ -2704,10 +2748,10 @@ namespace Server.Gumps
                                 {
                                     ArrayList results = new ArrayList();
 
-                                    TextRelay matchEntry = info.GetTextEntry(4);
+                                    TextRelay? matchEntry = info.GetTextEntry(4);
 
-                                    string match = (matchEntry == null ? null : matchEntry.Text.Trim().ToLower());
-                                    string notice = null;
+                                    string? match = (matchEntry == null ? null : matchEntry.Text.Trim().ToLower());
+                                    string? notice = null;
 
                                     if (match == null || match.Length == 0)
                                     {
@@ -2752,7 +2796,7 @@ namespace Server.Gumps
                                 }
                             case 41: //Toggle Notification Emails
                                 {
-                                    Account a = m_State as Account;
+                                    Account? a = m_State as Account;
 
                                     if (a == null)
                                     {
@@ -2779,7 +2823,7 @@ namespace Server.Gumps
 
                                     if (index >= 0 && index < 5)
                                     {
-                                        Account a = m_State as Account;
+                                        Account? a = m_State as Account;
 
                                         if (a == null)
                                             break;
@@ -2814,9 +2858,9 @@ namespace Server.Gumps
                         {
                             case 0: // add (text)
                                 {
-                                    TextRelay ipRelay = info.GetTextEntry(0);
+                                    TextRelay? ipRelay = info.GetTextEntry(0);
 
-                                    string ip = (ipRelay == null ? null : ipRelay.Text.Trim());
+                                    string? ip = (ipRelay == null ? null : ipRelay.Text.Trim());
 
                                     if (string.IsNullOrEmpty(ip))
                                     {
@@ -2840,9 +2884,9 @@ namespace Server.Gumps
                                 }
                             case 2: // remove
                                 {
-                                    TextRelay ipRelay = info.GetTextEntry(0);
+                                    TextRelay? ipRelay = info.GetTextEntry(0);
 
-                                    string ip = (ipRelay == null ? null : ipRelay.Text.Trim());
+                                    string? ip = (ipRelay == null ? null : ipRelay.Text.Trim());
 
                                     if (string.IsNullOrEmpty(ip))
                                     {
@@ -2863,7 +2907,7 @@ namespace Server.Gumps
 
                                     if (m_List != null && index >= 0 && index < m_List.Count)
                                     {
-                                        object obj = m_List[index];
+                                        object? obj = m_List[index];
 
                                         if (obj != null)
                                         {
@@ -2880,12 +2924,12 @@ namespace Server.Gumps
                     }
                 case 7:
                     {
-                        Mobile m = m_State as Mobile;
+                        Mobile? m = m_State as Mobile;
 
                         if (m == null)
                             break;
 
-                        string notice = null;
+                        string? notice = null;
                         bool sendGump = true;
 
                         switch (index)
@@ -2934,7 +2978,7 @@ namespace Server.Gumps
                                 }
                             case 3:
                                 {
-                                    Account a = m.Account as Account;
+                                    Account? a = m.Account as Account;
 
                                     if (a != null)
                                     {
@@ -2953,14 +2997,33 @@ namespace Server.Gumps
                                 }
                             case 6:
                                 {
-                                    Properties.SetValue(from, m, "Blessed", "False");
-                                    notice = "They are now mortal.";
+                                    if (m is PlayerMobile pm)
+                                    {
+                                        pm.Mortal = true;
+                                        notice = "They are now mortal.";
+                                    }
+                                    else
+                                    {
+                                        Properties.SetValue(from, m, "Blessed", "False");
+                                        notice = "They are now mortal.";
+                                    }
+
                                     break;
                                 }
+
                             case 7:
                                 {
-                                    Properties.SetValue(from, m, "Blessed", "True");
-                                    notice = "They are now immortal.";
+                                    if (m is PlayerMobile pm)
+                                    {
+                                        pm.Mortal = false;
+                                        notice = "They are now immortal.";
+                                    }
+                                    else
+                                    {
+                                        Properties.SetValue(from, m, "Blessed", "True");
+                                        notice = "They are now immortal.";
+                                    }
+
                                     break;
                                 }
                             case 8:
@@ -3024,7 +3087,7 @@ namespace Server.Gumps
                         {
                             case 3:
                                 {
-                                    Account a = m.Account as Account;
+                                    Account? a = m.Account as Account;
 
                                     if (a != null)
                                         from.SendGump(new BanDurationGump(a));
@@ -3049,7 +3112,7 @@ namespace Server.Gumps
                     {
                         if (m_List != null && index >= 0 && index < m_List.Count)
                         {
-                            Account a = m_State as Account;
+                            Account? a = m_State as Account;
 
                             if (a == null)
                                 break;
@@ -3078,12 +3141,12 @@ namespace Server.Gumps
                         {
                             if (m_PageType == AdminGumpPage.AccountDetails_Access_ClientIPs)
                             {
-                                object obj = m_List[index];
+                                object? obj = m_List[index];
 
                                 if (!(obj is IPAddress))
                                     break;
 
-                                Account a = m_State as Account;
+                                Account? a = m_State as Account;
 
                                 if (a == null)
                                     break;
@@ -3101,12 +3164,24 @@ namespace Server.Gumps
                     }
             }
         }
+        private bool BlockDuringMaintenance(Mobile from, out string notice)
+        {
+            if (Maintenance.Scheduled)
+            {
+                notice = "This action cannot be performed while maintenance is scheduled or Server Wars are in progress. Cancel maintenance first, or wait until it completes.";
+                from.SendMessage(notice);
+                return true;
+            }
 
+            notice = null;
+            return false;
+        }
         private void Shutdown(bool restart, bool save)
         {
             CommandLogging.WriteLine(m_From, "{0} {1} shutting down server (Restart: {2}) (Save: {3})", m_From.AccessLevel, CommandLogging.Format(m_From), restart, save);
 
             if (save == true)
+                // broadcasts 'shutting down' message if we're not in server wars
                 Server.Misc.AutoSave.FinalSave = true;
 
             if (save)
@@ -3137,9 +3212,9 @@ namespace Server.Gumps
 
         private class AddCommentPrompt : Prompt
         {
-            private Account m_Account;
+            private Account? m_Account;
 
-            public AddCommentPrompt(Account acct)
+            public AddCommentPrompt(Account? acct)
             {
                 m_Account = acct;
             }
@@ -3212,9 +3287,9 @@ namespace Server.Gumps
 
         private class RemoveTagPrompt : Prompt
         {
-            private Account m_Account;
+            private Account? m_Account;
 
-            public RemoveTagPrompt(Account acct)
+            public RemoveTagPrompt(Account? acct)
             {
                 m_Account = acct;
             }
@@ -3246,7 +3321,7 @@ namespace Server.Gumps
             {
             }
 
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
                 if (x == null && y == null)
                     return 0;
@@ -3255,8 +3330,8 @@ namespace Server.Gumps
                 else if (y == null)
                     return 1;
 
-                NetState a = x as NetState;
-                NetState b = y as NetState;
+                NetState? a = x as NetState;
+                NetState? b = y as NetState;
 
                 if (a == null || b == null)
                     throw new ArgumentException();

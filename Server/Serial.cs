@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -104,7 +104,7 @@ namespace Server
             return m_Serial;
         }
 
-        public int CompareTo(object o)
+        public int CompareTo(object? o)
         {
             if (o == null) return 1;
             else if (!(o is Serial)) throw new ArgumentException();
@@ -116,7 +116,7 @@ namespace Server
             else return 0;
         }
 
-        public override bool Equals(object o)
+        public override bool Equals(object? o)
         {
             if (o == null || !(o is Serial)) return false;
 

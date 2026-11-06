@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -160,7 +160,7 @@ namespace Server.Engines.Craft
             CraftSubResCol res = (m_CraftItem.UseSubRes2 ? m_CraftSystem.CraftSubRes2 : m_CraftSystem.CraftSubRes);
             int resIndex = -1;
 
-            CraftContext context = m_CraftSystem.GetContext(m_From);
+            CraftContext? context = m_CraftSystem.GetContext(m_From);
 
             if (context != null)
                 resIndex = (m_CraftItem.UseSubRes2 ? context.LastResourceIndex2 : context.LastResourceIndex);
@@ -189,7 +189,7 @@ namespace Server.Engines.Craft
                 AddLabel(430, 100, LabelHue, string.Format("{0:F1}%", excepChance * 100));
             }
 
-            EnchantedScroll enchantedScroll = EnchantedScroll.Find(m_From, m_CraftItem.ItemType);
+            EnchantedScroll? enchantedScroll = EnchantedScroll.Find(m_From, m_CraftItem.ItemType);
 
             if (m_CraftSystem.SupportsEnchantedScrolls && enchantedScroll != null)
             {
@@ -200,7 +200,7 @@ namespace Server.Engines.Craft
             }
             else
             {
-                EventResourceSystem ecs = EventResourceSystem.Find(EventCraftAttribute.Find(m_CraftSystem.GetType()));
+                EventResourceSystem? ecs = EventResourceSystem.Find(EventCraftAttribute.Find(m_CraftSystem.GetType()));
 
                 if (ecs != null)
                 {
@@ -216,7 +216,7 @@ namespace Server.Engines.Craft
         {
             bool retainedColor = false;
 
-            CraftContext context = m_CraftSystem.GetContext(m_From);
+            CraftContext? context = m_CraftSystem.GetContext(m_From);
 
             CraftSubResCol res = (m_CraftItem.UseSubRes2 ? m_CraftSystem.CraftSubRes2 : m_CraftSystem.CraftSubRes);
             int resIndex = -1;
@@ -286,9 +286,9 @@ namespace Server.Engines.Craft
                 }
                 else
                 {
-                    Type type = null;
+                    Type? type = null;
 
-                    CraftContext context = m_CraftSystem.GetContext(m_From);
+                    CraftContext? context = m_CraftSystem.GetContext(m_From);
 
                     if (context != null)
                     {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -104,7 +104,7 @@ namespace Server.Engines
         public static int ViewingDODGroupPage;
 
 
-        public static DODInstance ViewingDOD
+        public static DODInstance? ViewingDOD
         {
             get
             {   // adam: redesign the following to be failsafe
@@ -114,7 +114,7 @@ namespace Server.Engines
                 if (ViewingDODGroupIndex > m_DODGroup.Count - 1)
                     ViewingDODGroupIndex = m_DODGroup.Count - 1;
 
-                DODGroup dg = m_DODGroup[ViewingDODGroupIndex] as DODGroup;
+                DODGroup? dg = m_DODGroup[ViewingDODGroupIndex] as DODGroup;
                 if (dg == null)
                     return null;
 
@@ -134,7 +134,7 @@ namespace Server.Engines
             }
         }
 
-        public static DODGroup ViewingDODGroup
+        public static DODGroup? ViewingDODGroup
         {
             get
             {
@@ -249,7 +249,11 @@ namespace Server.Engines
             m_DODInst = new ArrayList();
             m_DODGroup = new ArrayList();
 
-            string filePath = Path.Combine("Saves/AngelIsland", "RareFactory.dat");
+            string filePath = Path.Combine(
+                Core.SavesDirectory,
+                Core.Server,
+                "RareFactory.dat");
+
             if (!File.Exists(filePath))
             {
                 Console.WriteLine("FactoryLoad() : RareFactory.dat does not exist, assuming new factory");
@@ -311,7 +315,6 @@ namespace Server.Engines
 
         private static short FactorySave()
         {
-
             if (RareFactory.InUse)
             {
                 Console.WriteLine("FactorySave() : Rare Factory busy, cannot save");
@@ -322,10 +325,12 @@ namespace Server.Engines
 
             Console.WriteLine("FactorySave() : Saving DOD instance definitions");
 
-            if (!Directory.Exists("Saves/AngelIsland"))
-                Directory.CreateDirectory("Saves/AngelIsland");
+            string saveDirectory = Path.Combine(Core.SavesDirectory, Core.Server);
 
-            string filePath = Path.Combine("Saves/AngelIsland", "RareFactory.dat");
+            if (!Directory.Exists(saveDirectory))
+                Directory.CreateDirectory(saveDirectory);
+
+            string filePath = Path.Combine(saveDirectory, "RareFactory.dat");
 
             BinaryFileWriter bfw = new BinaryFileWriter(filePath, true);
 
@@ -430,7 +435,7 @@ namespace Server.Engines
 
                     for (int i = 0; i < m_DODGroup.Count; i++)
                     {
-                        DODGroup dg = (DODGroup)m_DODGroup[i];
+                        DODGroup? dg = (DODGroup?)m_DODGroup[i];
 
                         // Validate group name
 
@@ -461,7 +466,7 @@ namespace Server.Engines
 
                         for (int di = 0; di < dg.DODInst.Count; di++)
                         {
-                            DODInstance dinst = (DODInstance)dg.DODInst[di];
+                            DODInstance? dinst = (DODInstance?)dg.DODInst[di];
                             if (dinst.Valid)
                             {
                                 if (dg.Rarity == iRarity)
@@ -530,7 +535,7 @@ namespace Server.Engines
         public static Item DupeItem(Item src)
         {
             Item copy = src;
-            Item new_item = null;
+            Item? new_item = null;
 
             Type t = copy.GetType();
             ConstructorInfo[] cinfo = t.GetConstructors();

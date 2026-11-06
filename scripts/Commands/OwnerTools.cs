@@ -1,11 +1,11 @@
-/***************************************************************************
+﻿/***************************************************************************
  *
  *   RunUO                   : May 1, 2002
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,28 @@
 
 /* Scripts/Commands/OwnerTools.cs
  * CHANGELOG:
+ *  10/21/26, Adam ([LoadJump treasure)
+ *      [LoadJump treasure loads the jump list with every treasure map location (TreasureMap.Locations, the
+ *      Angel Island Treasure.json database loaded at world load) in a new random order, each location once. Entries
+ *      are Felucca WorldLocations at GetAverageZ, where treasure chests and overland encounters use them. Nothing is
+ *      regenerated. [LoadJump without arguments still targets a spawner, champ engine, region control or runebook.
+ *      LoadTreasureJump is the one treasure jump-list loader: [JumpTreasureMapLocations and [GenTreasureMapLocations
+ *      (TreasureMap.Locations.cs) delegate to it.
+ *  10/18/26, Adam ([RecalcBankBoxes)
+ *      Add [RecalcBankBoxes (Administrator): recalculates the cached totals (items, weight, gold) of every player's
+ *      bank box, online and offline, with the recursive Item.UpdateTotals, and reports the boxes processed and
+ *      corrected. Also reports, per box, when the capacity slots in use (potions count one slot each, at any depth)
+ *      differ from the item count players see, and which boxes are full. Bank contents are never changed; the
+ *      LastAccessed stamps UpdateTotals sets are restored. Refused while freeze dry is enabled. RecalcBankBoxes.log.
+ *  10/15/26, Adam ([RepriceHousingVendors)
+ *      Add [RepriceHousingVendors (Owner): synchronizes the custom house deeds (StaticDeed) on every staff-owned
+ *      player vendor with their blueprints and reports the vendors scanned, deeds examined, listings repriced, and
+ *      invalid deeds deleted. RepriceCustomHousingDeeds (also run by [PreLaunch and PatchV251) no longer requires the
+ *      vendor to be on Felucca, and every run is written to HousingVendorSync.log with a summary.
+ *  10/13/26, Adam ([ClearContainer)
+ *      Add [ClearContainer <newer than minutes> (GameMaster): deletes items in the targeted container created less
+ *      than the given number of minutes ago (Item.Created). Recurses into older nested containers; a newer container
+ *      is deleted with all of its contents. The targeted container itself is never deleted.
  *  3/16/23, Adam ([PreLaunch)
  *      Add 'Initialize the ResourcePool' to steps.
  *      We don't want resources from another shard appearing on a new shard.
@@ -56,14 +78,18 @@
 //using NAudio.Wave;
 using Server.Accounting;
 using Server.Diagnostics;
+using Server.Engines;
+using Server.Engines.BulkOrders;
 using Server.Engines.ChampionSpawn;
-using Server.Engines.ResourcePool;
+using Server.Engines.Craft;
+using Server.Engines.DataRecorder;
 using Server.Gumps;
 using Server.Items;
 using Server.Items.Triggers;
+using Server.Misc;
 using Server.Mobiles;
-using Server.Multis;
-using Server.Network;
+using Server.Prompts;
+using Server.SkillHandlers;
 using Server.Targeting;
 using System;
 using System.Collections;
@@ -73,28 +99,43 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using TextCopy;
+using static Server.Core;
 using static Server.Utility;
 
 namespace Server.Commands
 {
-    public class OwnerTools
+    public partial class OwnerTools
     {
         public static void Initialize()
         {
-            CommandSystem.Register("RemoveBackpackHue", AccessLevel.Player, new CommandEventHandler(RemoveBackpackHue_OnCommand));
-            CommandSystem.Register("SaveBackpack", AccessLevel.Player, new CommandEventHandler(SaveBackpack_OnCommand));
-            CommandSystem.Register("RestoreBackpack", AccessLevel.Player, new CommandEventHandler(RestoreBackpack_OnCommand));
+            // Ensure all players reflect the currently active RuleSet.
+            // 
+            // On startup, this aligns loaded world data with the configured shard.
+            // On dynamic reconfiguration (e.g., SetConfig), this must be called explicitly
+            // to reapply shard semantics (such as Mortality) to existing PlayerMobiles.
+            ShardInit();
+
+            if (!Core.RuleSets.MortalisStyleRules())
+            {
+                CommandSystem.Register("RemoveBackpackHue", AccessLevel.Player, new CommandEventHandler(RemoveBackpackHue_OnCommand));
+                CommandSystem.Register("SaveBackpack", AccessLevel.Player, new CommandEventHandler(SaveBackpack_OnCommand));
+                CommandSystem.Register("RestoreBackpack", AccessLevel.Player, new CommandEventHandler(RestoreBackpack_OnCommand));
+            }
+            CommandSystem.Register("Trammel", AccessLevel.GameMaster, new CommandEventHandler(GoTrammel_OnCommand));
+            CommandSystem.Register("Felucca", AccessLevel.GameMaster, new CommandEventHandler(GoFelucca_OnCommand));
             CommandSystem.Register("RefreshBankBox", AccessLevel.Owner, new CommandEventHandler(RefreshBankBox_OnCommand));
+            CommandSystem.Register("RecalcBankBoxes", AccessLevel.Administrator, new CommandEventHandler(RecalcBankBoxes_OnCommand));
             CommandSystem.Register("DistanceToSqrt", AccessLevel.GameMaster, new CommandEventHandler(DistanceToSqrt_OnCommand));
             CommandSystem.Register("LoadJump", AccessLevel.GameMaster, new CommandEventHandler(LoadJump_OnCommand));
             CommandSystem.Register("LoadMEOPJump", AccessLevel.GameMaster, new CommandEventHandler(LoadMEOPJump_OnCommand));
             CommandSystem.Register("PreLaunch", AccessLevel.Owner, new CommandEventHandler(PreLaunch_OnCommand));
-            CommandSystem.Register("RecycleBin", AccessLevel.Owner, new CommandEventHandler(RecycleBin_OnCommand));
+            CommandSystem.Register("RepriceHousingVendors", AccessLevel.Owner, new CommandEventHandler(RepriceHousingVendors_OnCommand));
             CommandSystem.Register("Clobber", AccessLevel.Owner, new CommandEventHandler(Clobber_OnCommand));
             CommandSystem.Register("Monitor", AccessLevel.Owner, new CommandEventHandler(Monitor_OnCommand));
             CommandSystem.Register("ItemProfiler", AccessLevel.Owner, new CommandEventHandler(ItemProfiler_OnCommand));
             CommandSystem.Register("TileOverload", AccessLevel.Owner, new CommandEventHandler(TileOverload_OnCommand));
             CommandSystem.Register("SeedAccounts", AccessLevel.Owner, new CommandEventHandler(SeedAccounts_OnCommand));
+            CommandSystem.Register("CanSpawnMobile", AccessLevel.Administrator, new CommandEventHandler(CanSpawnMobile_OnCommand));
             CommandSystem.Register("CanSpawnMobileZ", AccessLevel.Administrator, new CommandEventHandler(CanSpawnMobileZ_OnCommand));
             CommandSystem.Register("CanSpawnMobileT", AccessLevel.Owner, new CommandEventHandler(CanSpawnMobileT_OnCommand));
             CommandSystem.Register("FindBuggedMap", AccessLevel.Owner, new CommandEventHandler(FindBuggedMap_OnCommand));
@@ -122,12 +163,1214 @@ namespace Server.Commands
             CommandSystem.Register("CompileSpawnablePoints", AccessLevel.GameMaster, new CommandEventHandler(CompileSpawnablePoints_OnCommand));
             CommandSystem.Register("SwapStatics", AccessLevel.Seer, new CommandEventHandler(SwapStatics_OnCommand));
             CommandSystem.Register("AddRare", AccessLevel.Seer, new CommandEventHandler(AddRare_OnCommand));
+            CommandSystem.Register("SetConfig", AccessLevel.Owner, new CommandEventHandler(SetConfig_OnCommand));
+
+            TargetCommands.Register(new YankCommand());
+            TargetCommands.Register(new PutCommand());
+
+            CommandSystem.Register("RefactorSPDForConsistency", AccessLevel.Administrator,
+                new CommandEventHandler(RefactorSPDForConsistency.RefactorSPDForConsistency_OnCommand));
+            if (BulkOrderSystem.Enabled)
+            {
+                TargetCommands.Register(new TestBODValueCommand());
+                CommandSystem.Register("TestBODValueAll", AccessLevel.Administrator, new CommandEventHandler(TestBODValueAll.TestBODValueAll_OnCommand));
+                CommandSystem.Register("CheckSPDConsistency", AccessLevel.Administrator,
+                    new CommandEventHandler(CheckSPDConsistency.CheckSPDConsistency_OnCommand));
+            }
+
+            CommandSystem.Register("ResolveReservedName", AccessLevel.Administrator, new CommandEventHandler(ResolveReservedName_OnCommand));
+
+            CommandSystem.Register("AddInventory", AccessLevel.GameMaster, new CommandEventHandler(AddInventory_OnCommand));
+            CommandSystem.Register("ClearContainer", AccessLevel.GameMaster, new CommandEventHandler(ClearContainer_OnCommand));
+            CommandSystem.Register("RespawnMobileType", AccessLevel.GameMaster, new CommandEventHandler(RespawnMobileType_OnCommand));
+            TargetCommands.Register(new ForensicEvaluationCommand());
+            CommandSystem.Register("PeekRecorder", AccessLevel.Administrator, new CommandEventHandler(PeekRecorder_OnCommand));
+            CommandSystem.Register("PatchDataRecorder", AccessLevel.Administrator, new CommandEventHandler(PatchDataRecorder_OnCommand));
+
+            // we need a cross shard communication to make this work :/
+            //CommandSystem.Register("GoLive", AccessLevel.Owner, new CommandEventHandler(GoLive_OnCommand));
         }
+
+        #region GO LIVE
+        //[Usage("GoLive [<shard name>]")]
+        //[Description("Displays shard launch status or makes the specified shard live.")]
+        //public static void GoLive_OnCommand(CommandEventArgs e)
+        //{
+        //    if (e.Arguments.Length == 0)
+        //    {
+        //        Server.Commands.CommandHandlers.DisplayShardList(e.Mobile);
+
+        //        e.Mobile.SendMessage(
+        //            "Lockdown: {0}",
+        //            AccountHandler.LockdownLevel);
+
+        //        e.Mobile.SendMessage("Usage: [GoLive <shard name>");
+        //        return;
+        //    }
+
+        //    string shardName = string.Join(" ", e.Arguments);
+
+        //    Server.Misc.ServerList.ShardEntry shard =
+        //        Server.Misc.ServerList.FindShard(shardName);
+
+        //    if (shard == null)
+        //    {
+        //        e.Mobile.SendMessage(
+        //            "Unknown shard '{0}'. Use [GoLive for valid shard names.",
+        //            shardName);
+
+        //        return;
+        //    }
+
+        //    e.Mobile.SendMessage("GoLive: {0}", shard.Name);
+
+        //    e.Mobile.SendMessage(
+        //        "Visibility: {0}",
+        //        shard.Visible ? "visible" : "hidden");
+
+        //    e.Mobile.SendMessage(
+        //        "Lockdown: {0}",
+        //        AccountHandler.LockdownLevel);
+        //}
+        #endregion GO LIVE
+
         public static void Configure()
         {
             EventSink.WorldLoad += new Server.WorldLoadEventHandler(Load);
             EventSink.WorldSave += new Server.WorldSaveEventHandler(Save);
         }
+
+        #region Data Recorder
+        [Usage("PatchDataRecorder <player> <account> <domain> <amount> <Add|Subtract|Set>")]
+        [Description("Patches a player's DataRecorder entry.")]
+        public static void PatchDataRecorder_OnCommand(CommandEventArgs e)
+        {
+            string[] args = e.Arguments;
+
+            if (args.Length != 5)
+            {
+                e.Mobile.SendMessage("Usage: PatchDataRecorder <player> <account> <domain> <amount> <Add|Subtract|Set>");
+                return;
+            }
+
+            string playerName = args[0];
+            string accountName = args[1];
+            string domainName = args[2];
+            string operation = args[4];
+
+            if (!double.TryParse(args[3], out double amount))
+            {
+                e.Mobile.SendMessage("Invalid amount: {0}", args[3]);
+                return;
+            }
+
+            if (!Enum.TryParse(domainName, true, out RecorderDomain domain))
+            {
+                e.Mobile.SendMessage("Unknown RecorderDomain: {0}", domainName);
+                return;
+            }
+
+            PlayerMobile? player = null;
+
+            foreach (PlayerMobile pm in PlayerMobile.Instances)
+            {
+                if (pm == null || pm.Deleted)
+                    continue;
+
+                if (!string.Equals(pm.Name, playerName, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (pm.Account is not Account acct)
+                    continue;
+
+                if (!string.Equals(acct.Username, accountName, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                player = pm;
+                break;
+            }
+
+            if (player == null)
+            {
+                e.Mobile.SendMessage("Cannot find player '{0}' on account '{1}'.", playerName, accountName);
+                return;
+            }
+
+            double oldValue = DataRecorder.Get(player, domain);
+            double newValue = oldValue;
+
+            switch (operation.ToLowerInvariant())
+            {
+                case "add":
+                    DataRecorder.Add(player, domain, amount);
+                    newValue = DataRecorder.Get(player, domain);
+                    break;
+
+                case "subtract":
+                    DataRecorder.Add(player, domain, -amount);
+                    newValue = DataRecorder.Get(player, domain);
+                    break;
+
+                case "set":
+                    {
+                        double delta = amount - oldValue;
+
+                        if (delta != 0)
+                            DataRecorder.Add(player, domain, delta);
+
+                        newValue = DataRecorder.Get(player, domain);
+                        break;
+                    }
+
+                default:
+                    e.Mobile.SendMessage("Operation must be Add, Subtract, or Set.");
+                    return;
+            }
+
+            e.Mobile.SendMessage(
+                "Patched {0} ({1}) Domain={2} Operation={3} Old={4:N0} New={5:N0}",
+                player.Name,
+                accountName,
+                domain,
+                operation,
+                oldValue,
+                newValue);
+        }
+
+        [Usage("PeekRecorder <player name>")]
+        [Description("Displays DataRecorder values for matching players.")]
+        public static void PeekRecorder_OnCommand(CommandEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(e.ArgString))
+            {
+                e.Mobile.SendMessage("Usage: PeekRecorder <player name>");
+                return;
+            }
+
+            string name = e.ArgString.Trim();
+            List<PlayerMobile> matches = new List<PlayerMobile>();
+
+            foreach (PlayerMobile pm in PlayerMobile.Instances)
+            {
+                if (pm == null || pm.Deleted || pm.Name == null)
+                    continue;
+
+                if (pm.Name.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0)
+                    matches.Add(pm);
+            }
+
+            if (matches.Count == 0)
+            {
+                e.Mobile.SendMessage("No matching players found for '{0}'.", name);
+                return;
+            }
+
+            foreach (PlayerMobile pm in matches)
+                DumpRecorderData(e.Mobile, pm);
+        }
+
+        private static void DumpRecorderData(Mobile from, PlayerMobile pm)
+        {
+            string acctName = "(no account)";
+
+            if (pm.Account is Account acct)
+                acctName = acct.Username;
+
+            double lootGold = DataRecorder.Get(pm, RecorderDomain.PvMLootGold);
+            double chestGold = DataRecorder.Get(pm, RecorderDomain.ChestGold);
+            double theftGold = DataRecorder.Get(pm, RecorderDomain.TheftGold);
+            double goldTotal = lootGold + chestGold + theftGold;
+
+            double pvmPoints = DataRecorder.Get(pm, RecorderDomain.PvMPoints);
+
+            from.SendMessage("Recorder data for {0}, account {1}:", pm.Name, acctName);
+            from.SendMessage("  PvMLootGold: {0}", lootGold);
+            from.SendMessage("  ChestGold: {0}", chestGold);
+            from.SendMessage("  TheftGold: {0}", theftGold);
+            from.SendMessage("  Gold Earned Total: {0}", goldTotal);
+            from.SendMessage("  PvMPoints: {0}", pvmPoints);
+        }
+        #endregion Recorder
+
+        #region Inventory Management
+        private static readonly string VendorInventoryPath = Path.Combine("Data", "Seasons", "VendorInventory.json");
+
+        [Usage("AddInventory <type>")]
+        [Description("Adds an item type entry to Data\\Seasons\\VendorInventory.json if it is not already present.")]
+        public static void AddInventory_OnCommand(CommandEventArgs e)
+        {
+            if (e.Mobile == null)
+                return;
+
+            string? entry = e.ArgString != null ? e.ArgString.Trim() : null;
+
+            string reason;
+            if (AddVendorInventoryEntry(entry, out reason))
+                e.Mobile.SendMessage("Inventory entry added: {0}", entry);
+            else
+                e.Mobile.SendMessage(reason);
+        }
+
+        [Usage("RespawnMobileType <type>")]
+        [Description("Respawns all running spawners on your current map that spawn the specified mobile type.")]
+        public static void RespawnMobileType_OnCommand(CommandEventArgs e)
+        {
+            if (e.Mobile == null)
+                return;
+
+            string? typeName = e.ArgString != null ? e.ArgString.Trim() : null;
+
+            Type? type = FindType(typeName);
+
+            if (type == null)
+            {
+                e.Mobile.SendMessage("Unknown type: {0}", typeName);
+                return;
+            }
+
+            if (!typeof(Mobile).IsAssignableFrom(type))
+            {
+                e.Mobile.SendMessage("{0} is not a Mobile type.", type.Name);
+                return;
+            }
+
+            int count = RespawnMobileType(type, e.Mobile.Map);
+
+            e.Mobile.SendMessage("Respawned {0} spawner{1} that spawn {2}.",
+                count,
+                count == 1 ? "" : "s",
+                type.Name);
+        }
+
+        public static bool AddVendorInventoryEntry(string? entry, out string reason)
+        {
+            reason = null;
+
+            if (string.IsNullOrWhiteSpace(entry))
+            {
+                reason = "Usage: AddInventory <type>";
+                return false;
+            }
+
+            string typeName = GetEntryTypeName(entry);
+            Type? type = FindType(typeName);
+
+            if (type == null)
+            {
+                reason = string.Format("Unknown type: {0}", typeName);
+                return false;
+            }
+
+            // get the proper case
+            entry = type.Name;
+
+            if (!typeof(Item).IsAssignableFrom(type))
+            {
+                reason = string.Format("{0} is not an Item type.", type.Name);
+                return false;
+            }
+
+            List<string> entries = ReadSimpleJsonStringArray(VendorInventoryPath);
+
+            if (entries.Any(s => string.Equals(s, entry, StringComparison.OrdinalIgnoreCase)))
+            {
+                reason = string.Format("Inventory entry already exists: {0}", entry);
+                return false;
+            }
+
+            entries.Add(entry);
+            entries.Sort(StringComparer.OrdinalIgnoreCase);
+
+            WriteSimpleJsonStringArray(VendorInventoryPath, entries);
+
+            reason = string.Format("Inventory entry added: {0}", entry);
+            return true;
+        }
+
+        public static int RespawnMobileType(Type mobileType, Map map)
+        {
+            if (mobileType == null || map == null || map == Map.Internal)
+                return 0;
+
+            int respawned = 0;
+
+            foreach (Spawner sp in World.Items.Values.OfType<Spawner>())
+            {
+                if (sp == null || sp.Deleted || sp.Map != map || !sp.Running)
+                    continue;
+
+                if (!Utility.SpawnerSpawns(sp, mobileType))
+                    continue;
+
+                sp.RemoveObjects();
+                sp.Respawn();
+
+                respawned++;
+            }
+
+            return respawned;
+        }
+
+        private static string GetEntryTypeName(string entry)
+        {
+            int index = entry.IndexOf(' ');
+
+            if (index < 0)
+                return entry;
+
+            return entry.Substring(0, index).Trim();
+        }
+
+        private static Type? FindType(string? typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName))
+                return null;
+
+            Type? type = ScriptCompiler.FindTypeByName(typeName, ignoreCase: true);
+
+            if (type != null)
+                return type;
+
+            return Type.GetType(typeName, false);
+        }
+
+        private static List<string> ReadSimpleJsonStringArray(string path)
+        {
+            List<string> list = new List<string>();
+
+            if (!File.Exists(path))
+                return list;
+
+            string text = File.ReadAllText(path).Trim();
+
+            if (text.Length == 0)
+                return list;
+
+            bool inString = false;
+            bool escape = false;
+            string current = "";
+
+            foreach (char c in text)
+            {
+                if (!inString)
+                {
+                    if (c == '"')
+                        inString = true;
+
+                    continue;
+                }
+
+                if (escape)
+                {
+                    current += c;
+                    escape = false;
+                    continue;
+                }
+
+                if (c == '\\')
+                {
+                    escape = true;
+                    continue;
+                }
+
+                if (c == '"')
+                {
+                    list.Add(current);
+                    current = "";
+                    inString = false;
+                    continue;
+                }
+
+                current += c;
+            }
+
+            return list;
+        }
+
+        private static void WriteSimpleJsonStringArray(string path, List<string> entries)
+        {
+            string? directory = Path.GetDirectoryName(path);
+
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+
+            using (StreamWriter writer = new StreamWriter(path, false))
+            {
+                writer.WriteLine("[");
+
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    writer.Write("  \"");
+                    writer.Write(EscapeJsonString(entries[i]));
+                    writer.Write("\"");
+
+                    if (i + 1 < entries.Count)
+                        writer.Write(",");
+
+                    writer.WriteLine();
+                }
+
+                writer.WriteLine("]");
+            }
+        }
+
+        private static string EscapeJsonString(string value)
+        {
+            return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+        #endregion Inventory Management
+
+        #region ResolveReservedName
+
+        [Usage("ResolveReservedName <name> <fromAccount|auto> <toAccount>")]
+        [Description("Transfers a reserved name from one Seasons account to another. Specify 'auto' to resolve the current owner from the reserved-name database. Repairs live holders of that name and issues rename deeds where needed.")]
+        public static void ResolveReservedName_OnCommand(CommandEventArgs e)
+        {
+            if (e.Mobile == null)
+                return;
+
+            if (e.Length != 3)
+            {
+                e.Mobile.SendMessage("Usage: ResolveReservedName <name> <fromAccount> <toAccount>");
+                return;
+            }
+
+            string? reservedName = e.GetString(0)?.Trim();
+            string? fromUsername = e.GetString(1)?.Trim();
+            string? toUsername = e.GetString(2)?.Trim();
+
+            if (string.IsNullOrWhiteSpace(reservedName))
+            {
+                e.Mobile.SendMessage("Name is required.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(fromUsername))
+            {
+                e.Mobile.SendMessage("fromAccount is required.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(toUsername))
+            {
+                e.Mobile.SendMessage("toAccount is required.");
+                return;
+            }
+
+            if (string.Equals(reservedName, CharacterCreation.DefaultName, StringComparison.OrdinalIgnoreCase))
+            {
+                e.Mobile.SendMessage("You may not transfer the default character name.");
+                return;
+            }
+
+            if (string.Equals(fromUsername, toUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                e.Mobile.SendMessage("fromAccount and toAccount must be different.");
+                return;
+            }
+
+            if (fromUsername.Equals("auto", StringComparison.OrdinalIgnoreCase))
+            {
+                fromUsername = ReservedNames.LookupOwner(reservedName);
+
+                if (string.IsNullOrWhiteSpace(fromUsername))
+                {
+                    e.Mobile.SendMessage("Name '{0}' is not currently reserved.", reservedName);
+                    return;
+                }
+
+                e.Mobile.SendMessage("Resolved current owner to '{0}'.", fromUsername);
+            }
+
+            Account? fromAcct = Accounts.FindAccount(fromUsername);
+            bool sourceAccountExists = (fromAcct != null);
+
+            if (!sourceAccountExists)
+            {
+                e.Mobile.SendMessage("Warning: Source account '{0}' was not found. Continuing using the reserved-name database as authority.", fromUsername);
+            }
+
+            Account? toAcct = Accounts.FindAccount(toUsername);
+            if (toAcct == null)
+            {
+                e.Mobile.SendMessage("Target account '{0}' was not found.", toUsername);
+                return;
+            }
+
+            string? owner = ReservedNames.LookupOwner(reservedName);
+            if (string.IsNullOrWhiteSpace(owner))
+            {
+                e.Mobile.SendMessage("Name '{0}' is not currently reserved.", reservedName);
+                return;
+            }
+
+            if (!string.Equals(owner, fromUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                e.Mobile.SendMessage("Name '{0}' is currently reserved by '{1}', not '{2}'.", reservedName, owner, fromUsername);
+                return;
+            }
+
+            try
+            {
+                // Remove the right from the losing account and add it to the winning account.
+                // The source account may no longer exist; the ReservedNames database is the authority here.
+                RemoveReservedName(fromUsername, reservedName);
+                ReservedNames.Add(toUsername, reservedName);
+
+                int renamed = 0;
+                int deedsIssued = 0;
+                int deedFailures = 0;
+                int displayNamesReset = 0;
+                int displayNamesAwarded = 0;
+
+                LogHelper logger = new LogHelper("reserved name manual reassignment.log", overwrite: false, sline: true);
+
+                if (!sourceAccountExists)
+                {
+                    logger.Log(LogType.Text,
+                        $"ResolveReservedName: source account '{fromUsername}' was not found; proceeding using ReservedNames database ownership.");
+                }
+
+                foreach (PlayerMobile pm in PlayerMobile.Instances)
+                {
+                    if (pm == null || pm.Deleted)
+                        continue;
+
+                    Account? acct = pm.Account as Account;
+                    if (acct == null)
+                        continue;
+
+                    SeasonalAccount? sa = null;
+                    if (Core.RuleSets.SeasonsRules())
+                        sa = SeasonalAccounts.GetAccount(acct);
+
+                    bool isLosingAccount = string.Equals(acct.Username, fromUsername, StringComparison.OrdinalIgnoreCase);
+                    bool isWinningAccount = string.Equals(acct.Username, toUsername, StringComparison.OrdinalIgnoreCase);
+
+                    // If a live character on the losing account currently holds the disputed name,
+                    // force it to the default name and issue a deed.
+                    if (isLosingAccount && string.Equals(pm.Name, reservedName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        string oldName = pm.Name;
+                        pm.Name = CharacterCreation.DefaultName;
+                        renamed++;
+
+                        PersonalNameChangeDeed deed = new PersonalNameChangeDeed();
+                        deed.OwnerSerial = pm.Serial;
+
+                        if (pm.Backpack != null && pm.Backpack.TryDropItem(pm, deed, false))
+                        {
+                            deedsIssued++;
+                        }
+                        else if (pm.BankBox != null && pm.BankBox.TryDropItem(pm, deed, false))
+                        {
+                            deedsIssued++;
+                        }
+                        else
+                        {
+                            deed.Delete();
+                            deedFailures++;
+                        }
+
+                        logger.Log(LogType.Text,
+                            $"ResolveReservedName: renamed '{oldName}' ({pm.Serial}) on losing account '{fromUsername}' to '{CharacterCreation.DefaultName}'.");
+                    }
+
+                    // If the losing account's DisplayName is the disputed name, clear it.
+                    if (isLosingAccount && sa != null &&
+                        string.Equals(sa.DisplayName, reservedName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        sa.DisplayName = CharacterCreation.DefaultName;
+                        displayNamesReset++;
+
+                        logger.Log(LogType.Text,
+                            $"ResolveReservedName: reset DisplayName '{reservedName}' on losing account '{fromUsername}' to '{CharacterCreation.DefaultName}'.");
+                    }
+
+                    // If the winning account's DisplayName is blank/default, award the disputed name.
+                    if (isWinningAccount && sa != null &&
+                        (string.IsNullOrWhiteSpace(sa.DisplayName) ||
+                         string.Equals(sa.DisplayName, CharacterCreation.DefaultName, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        sa.DisplayName = reservedName;
+                        displayNamesAwarded++;
+
+                        logger.Log(LogType.Text,
+                            $"ResolveReservedName: awarded DisplayName '{reservedName}' to winning account '{toUsername}'.");
+                    }
+                }
+
+                ReservedNames.Save(null);
+                logger.Finish();
+
+                e.Mobile.SendMessage("Reserved name '{0}' transferred from '{1}' to '{2}'.", reservedName, fromUsername, toUsername);
+                e.Mobile.SendMessage("Renamed: {0}, Deeds issued: {1}, Deed failures: {2}, DisplayNames reset: {3}, DisplayNames awarded: {4}.",
+                    renamed, deedsIssued, deedFailures, displayNamesReset, displayNamesAwarded);
+            }
+            catch (Exception ex)
+            {
+                e.Mobile.SendMessage("ResolveReservedName failed: {0}", ex.Message);
+            }
+        }
+
+        private static void RemoveReservedName(string username, string name)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                throw new ArgumentException("username is required");
+
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("name is required");
+
+            if (!ReservedNames.Database.TryGetValue(username, out List<string>? names) || names == null)
+                throw new InvalidOperationException($"Account '{username}' does not own any reserved names.");
+
+            string normalized = ReservedNames.Normalize(name);
+
+            int index = -1;
+
+            for (int i = 0; i < names.Count; i++)
+            {
+                if (ReservedNames.Normalize(names[i]) == normalized)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index < 0)
+                throw new InvalidOperationException($"Account '{username}' does not own reserved name '{name}'.");
+
+            names.RemoveAt(index);
+
+            if (names.Count == 0)
+                ReservedNames.Database.Remove(username);
+
+            ReservedNames.Rebuild();
+        }
+
+        #endregion ResolveReservedName
+
+        #region TestBODValueCommand
+        public class TestBODValueCommand : BaseCommand
+        {
+            public TestBODValueCommand()
+            {
+                AccessLevel = AccessLevel.Administrator;
+                Supports = CommandSupport.Simple;
+                Commands = new string[] { "TestBODValue" };
+                ObjectTypes = ObjectTypes.Mobiles;
+                Usage = "TestBODValue <count>";
+                Description = "Simulates <count> random SmallBODs from a targeted BOD vendor and reports accurate gold values using current system logic.";
+            }
+
+            public override void Execute(CommandEventArgs e, object obj)
+            {
+                if (obj is not BaseVendor vendor)
+                {
+                    LogFailure("That is not a vendor.");
+                    return;
+                }
+
+                BulkOrderSystem system = vendor.BulkOrderSystem;
+                if (system == null)
+                {
+                    LogFailure("This vendor does not support bulk orders.");
+                    return;
+                }
+
+                if (e.Arguments.Length == 0 || !int.TryParse(e.Arguments[0], out int count) || count < 1 || count > 5000)
+                {
+                    LogFailure("Usage: TestBODValue <count> (1 - 5000 recommended)");
+                    return;
+                }
+
+                e.Mobile.SendMessage($"Simulating {count} random SmallBODs from {vendor.Name}...");
+
+                long totalRaw = 0;
+                long totalFinal = 0;
+                int validBODs = 0;
+
+                for (int i = 0; i < count; i++)
+                {
+                    SmallBOD sbod = system.ConstructSBOD();
+                    if (sbod == null)
+                        continue;
+
+                    sbod.Randomize(e.Mobile);
+
+                    int points = system.ComputePoints(sbod);
+                    int rawGold = system.ComputeGold(sbod, points);
+
+                    double systemScalar = system.GoldScalar;
+                    int finalGold = Math.Max(1, (int)Math.Round(rawGold * BulkOrderSystem.GlobalGoldScalar * systemScalar));
+
+                    // Record Points (generic)
+                    DataRecorder.Add(e.Mobile, RecorderDomain.BODPoints, points);
+
+                    // Record Gold into correct profession bucket
+                    RecorderDomain? bodGoldDomain = sbod switch
+                    {
+                        SmallSmithBOD => RecorderDomain.SmithBODGold,
+                        SmallTailorBOD => RecorderDomain.TailorBODGold,
+                        SmallCarpenterBOD => RecorderDomain.CarpenterBODGold,
+                        _ => null
+                    };
+
+                    if (Core.Debug && bodGoldDomain == null)
+                    {
+                        string bodType = sbod?.GetType().Name ?? "null";
+                        Utility.Monitor.WriteLine($"[TestBODValue] Unknown BOD type: {bodType} - gold NOT recorded", ConsoleColor.Red);
+                        // Debug.Assert(false, $"Unknown BOD type: {bodType}");   // optional
+                    }
+
+                    if (bodGoldDomain != null)
+                    {
+                        DataRecorder.Add(e.Mobile, bodGoldDomain.Value, finalGold);
+                    }
+
+                    totalRaw += rawGold;
+                    totalFinal += finalGold;
+                    validBODs++;
+
+                    sbod.Delete();
+                }
+
+                if (validBODs == 0)
+                {
+                    LogFailure("Failed to generate any valid BODs.");
+                    return;
+                }
+
+                double avgRaw = (double)totalRaw / validBODs;
+                double avgFinal = (double)totalFinal / validBODs;
+
+                AddResponse($"Test completed: {validBODs} SmallBODs generated.");
+                AddResponse($"Raw Average (pre-scalar) : {avgRaw:N2} gp");
+                AddResponse($"Final Average (with scalars): {avgFinal:N2} gp");
+                AddResponse($"GlobalGoldScalar = {BulkOrderSystem.GlobalGoldScalar:F3} | System Scalar = {system.GoldScalar:F3}");
+
+                Console.WriteLine($"[TestBODValue] Vendor: {vendor.Name} | Count: {validBODs} | RawAvg: {avgRaw:F2} | FinalAvg: {avgFinal:F2}");
+            }
+        }
+        public class TestBODValueAll
+        {
+            public static void TestBODValueAll_OnCommand(CommandEventArgs e)
+            {
+                if (e.Arguments.Length == 0 || !int.TryParse(e.Arguments[0], out int count) || count < 1 || count > 2000)
+                {
+                    e.Mobile.SendMessage("Usage: TestBODValueAll <count> (1 - 2000 recommended)");
+                    return;
+                }
+
+                e.Mobile.SendMessage($"Testing {count} random SmallBODs for each available vendor...");
+
+                // Find one vendor of each craft type
+                BaseVendor? blacksmith = FindVendor(typeof(Blacksmith));
+                BaseVendor? carpenter = FindVendor(typeof(Carpenter));
+                BaseVendor? tailor = FindVendor(typeof(Tailor));
+
+                if (blacksmith == null) e.Mobile.SendMessage("Warning: No Blacksmith vendor found.");
+                if (carpenter == null) e.Mobile.SendMessage("Warning: No Carpenter vendor found.");
+                if (tailor == null) e.Mobile.SendMessage("Warning: No Tailor vendor found.");
+
+                if (blacksmith == null && carpenter == null && tailor == null)
+                {
+                    e.Mobile.SendMessage("Error: No relevant BOD vendors found in the world.");
+                    return;
+                }
+
+                TestVendor(e.Mobile, blacksmith, "Blacksmith", count);
+                TestVendor(e.Mobile, carpenter, "Carpenter", count);
+                TestVendor(e.Mobile, tailor, "Tailor", count);
+            }
+
+            private static void TestVendor(Mobile from, BaseVendor? vendor, string name, int count)
+            {
+                if (vendor == null)
+                    return;
+
+                BulkOrderSystem system = vendor.BulkOrderSystem;
+                if (system == null)
+                    return;
+
+                long totalRaw = 0;
+                long totalFinal = 0;
+                int validBODs = 0;
+
+                for (int i = 0; i < count; i++)
+                {
+                    SmallBOD sbod = system.ConstructSBOD();
+                    if (sbod == null) continue;
+
+                    sbod.Randomize(from);
+
+                    int points = system.ComputePoints(sbod);
+                    int rawGold = system.ComputeGold(sbod, points);
+
+                    double systemScalar = system.GoldScalar;
+                    int finalGold = Math.Max(1, (int)Math.Round(rawGold * BulkOrderSystem.GlobalGoldScalar * systemScalar));
+
+                    totalRaw += rawGold;
+                    totalFinal += finalGold;
+                    validBODs++;
+
+                    sbod.Delete();
+                }
+
+                if (validBODs == 0)
+                {
+                    from.SendMessage($"{name}: Failed to generate any valid BODs.");
+                    return;
+                }
+
+                double avgRaw = (double)totalRaw / validBODs;
+                double avgFinal = (double)totalFinal / validBODs;
+
+                from.SendMessage($"{name}:");
+                from.SendMessage($"  Raw gold:    {avgRaw:N2} gp");
+                from.SendMessage($"  Scaled gold: {avgFinal:N2} gp");
+            }
+
+            /// <summary>
+            /// Finds the first vendor of the specified type in the world.
+            /// </summary>
+            private static BaseVendor? FindVendor(Type vendorType)
+            {
+                foreach (Mobile m in World.Mobiles.Values)
+                {
+                    if (m.GetType() == vendorType && m is BaseVendor vendor)
+                        return vendor;
+                }
+                return null;
+            }
+        }
+        #endregion TestBODValueCommand
+
+        #region Refactor Standard Pricing Disctionary For Consistency
+        public class CheckSPDConsistency
+        {
+            public static void CheckSPDConsistency_OnCommand(CommandEventArgs e)
+            {
+                string logFile = "Logs/SPD_Consistency_Errors.log";
+
+                e.Mobile.SendMessage("Running SPD consistency check...");
+                e.Mobile.SendMessage($"Results will be logged to: {logFile}");
+
+                int totalChecked = 0;
+                int problemsFound = 0;
+                const double WarningRatio = 1.75;   // Adjust as needed (1.75x = 75% markup)
+
+                using (StreamWriter log = new StreamWriter(logFile, false))
+                {
+                    log.WriteLine("=== SPD Consistency Check ===");
+                    log.WriteLine($"Run at: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+                    log.WriteLine($"Warning if Sell Price > {WarningRatio:F2}x material cost");
+                    log.WriteLine("============================================================");
+                    log.WriteLine();
+
+                    foreach (var kvp in BaseVendor.StandardPricingDictionary)
+                    {
+                        Type itemType = kvp.Key;
+
+                        int vendorPays = GetPricing(itemType, StandardPricingType.Sell);
+                        if (vendorPays <= 0)
+                            continue;
+
+                        totalChecked++;
+
+                        if (!IsCraftable(itemType))
+                            continue;
+
+                        double calculatedCost = CalculateComponentCost(itemType);
+
+                        if (calculatedCost <= 0)
+                            continue;
+
+                        double ratio = vendorPays / calculatedCost;
+
+                        if (ratio > WarningRatio)
+                        {
+                            problemsFound++;
+
+                            string line = $"[WARNING] {itemType.Name}: Sell = {vendorPays} | Material Cost ≈ {calculatedCost:F1} | Ratio = {ratio:F2}x";
+
+                            e.Mobile.SendMessage(0x25, line);
+                            log.WriteLine(line);
+
+                            // Extra detail for fixing
+                            log.WriteLine($"   → ItemType: {itemType.FullName}");
+                            log.WriteLine($"   → VendorPays (Sell): {vendorPays}");
+                            log.WriteLine($"   → Calculated Material Cost: {calculatedCost:F1}");
+                            log.WriteLine("   ---");
+                        }
+                    }
+
+                    log.WriteLine();
+                    log.WriteLine($"Summary: Checked {totalChecked} items | Problems found: {problemsFound}");
+                }
+
+                e.Mobile.SendMessage("Check complete.");
+                e.Mobile.SendMessage($"{problemsFound} potential arbitrage issues logged to {logFile}");
+            }
+
+            private static int GetPricing(Type type, StandardPricingType pricingType)
+            {
+                if (BaseVendor.StandardPricingDictionary.TryGetValue(type, out var list))
+                {
+                    foreach (var entry in list)
+                    {
+                        if (entry.Key == pricingType)
+                            return entry.Value;
+                    }
+                }
+                return 0;
+            }
+
+            private static bool IsCraftable(Type itemType)
+            {
+                foreach (CraftSystem cs in CraftSystem.Instances)
+                {
+                    if (cs.CraftItems.SearchFor(itemType) != null)
+                        return true;
+                }
+                return false;
+            }
+
+            /// <summary>
+            /// Recursively calculates total material cost using VendorPays (Sell prices).
+            /// Pure component cost — no labor or exceptional bonuses.
+            /// </summary>
+            private static double CalculateComponentCost(Type itemType)
+            {
+                CraftItem? craftItem = null;
+
+                foreach (CraftSystem cs in CraftSystem.Instances)
+                {
+                    craftItem = cs.CraftItems.SearchFor(itemType);
+                    if (craftItem != null)
+                        break;
+                }
+
+                if (craftItem == null)
+                    return 0.0;
+
+                double totalCost = 0.0;
+                HashSet<Type> visited = new HashSet<Type>();
+
+                foreach (CraftRes res in craftItem.Resources)
+                {
+                    Type resType = res.ItemType;
+
+                    int unitCost = GetPricing(resType, StandardPricingType.Sell);
+
+                    if (unitCost > 0)
+                    {
+                        totalCost += unitCost * res.Amount;
+                    }
+                    else if (IsCraftable(resType) && !visited.Contains(resType))
+                    {
+                        visited.Add(resType);
+                        totalCost += CalculateComponentCost(resType) * res.Amount;
+                        visited.Remove(resType);
+                    }
+                }
+
+                return totalCost;
+            }
+        }
+        public class RefactorSPDForConsistency
+        {
+            public static void RefactorSPDForConsistency_OnCommand(CommandEventArgs e)
+            {
+                string filePath = Path.Combine(Core.ExeDirectory, "data", "vendor pricing.txt");
+                string backupPath = Path.Combine(Core.ExeDirectory, "data", "vendor pricing.bak");
+
+                if (!File.Exists(filePath))
+                {
+                    e.Mobile.SendMessage(0x25, $"Error: File not found: {filePath}");
+                    return;
+                }
+
+                e.Mobile.SendMessage("Analyzing SPD for consistency (max 1.4x markup)...");
+
+                const double MaxRatio = 1.4;
+                List<string> newLines = new List<string>();
+                int changesMade = 0;
+
+                try
+                {
+                    string[] lines = File.ReadAllLines(filePath);
+
+                    foreach (string originalLine in lines)
+                    {
+                        string trimmed = originalLine.Trim();
+
+                        if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#"))
+                        {
+                            newLines.Add(originalLine);
+                            continue;
+                        }
+
+                        if (!trimmed.Contains(": sell:"))
+                        {
+                            newLines.Add(originalLine);
+                            continue;
+                        }
+
+                        int colonIndex = trimmed.IndexOf(':');
+                        string typeStr = trimmed.Substring(0, colonIndex).Trim();
+                        string sellPart = trimmed.Substring(colonIndex + 1).Trim();
+
+                        if (!typeStr.StartsWith("Server.Items."))
+                        {
+                            newLines.Add(originalLine);
+                            continue;
+                        }
+
+                        Type itemType = ScriptCompiler.FindTypeByFullName(typeStr);
+                        if (itemType == null)
+                        {
+                            newLines.Add(originalLine);
+                            continue;
+                        }
+
+                        int currentSell = Utility.ToInt32(sellPart.Replace("sell:", "").Trim());
+
+                        if (currentSell <= 0 || currentSell == BaseVendor.VendorPaysFailsafe)
+                        {
+                            newLines.Add(originalLine);
+                            continue;
+                        }
+
+                        if (!HasMeaningfulCraftRecipe(itemType))
+                        {
+                            newLines.Add(originalLine);
+                            continue;
+                        }
+
+                        double materialCost = CalculateComponentCost(itemType);
+
+                        if (materialCost < 1.0)
+                        {
+                            newLines.Add(originalLine);
+                            continue;
+                        }
+
+                        double ratio = currentSell / materialCost;
+
+                        if (ratio > MaxRatio)
+                        {
+                            int newSell = (int)Math.Max(1, Math.Round(materialCost * MaxRatio));
+
+                            // NEW CHECK: Only reprice if the new value is actually different
+                            if (newSell != currentSell)
+                            {
+                                string newLine = $"{typeStr}: sell: {newSell}";
+                                string comment = $"# Repriced from {currentSell} to {newSell} (1.4x material cost) to prevent arbitrage - {DateTime.UtcNow:yyyy-MM-dd}";
+
+                                newLines.Add(comment);
+                                newLines.Add(newLine);
+
+                                changesMade++;
+                                e.Mobile.SendMessage(0x35, $"Updated {itemType.Name}: {currentSell} → {newSell}");
+                            }
+                            else
+                            {
+                                newLines.Add(originalLine);
+                            }
+                        }
+                        else
+                        {
+                            newLines.Add(originalLine);
+                        }
+                    }
+
+                    if (changesMade > 0)
+                    {
+                        if (File.Exists(backupPath))
+                            File.Delete(backupPath);
+
+                        File.Move(filePath, backupPath);
+                        File.WriteAllLines(filePath, newLines);
+
+                        e.Mobile.SendMessage(0x3B2, $"Success: {changesMade} items were actually repriced.");
+                        e.Mobile.SendMessage("Original file backed up as 'vendor pricing.bak'.");
+                    }
+                    else
+                    {
+                        e.Mobile.SendMessage(0x3B2, "No changes needed. SPD is consistent within 1.4x ratio.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogHelper.LogException(ex);
+                    e.Mobile.SendMessage(0x25, "Error during SPD refactor.");
+                }
+            }
+
+            private static bool HasMeaningfulCraftRecipe(Type itemType)
+            {
+                foreach (CraftSystem cs in CraftSystem.Instances)
+                {
+                    CraftItem? ci = cs.CraftItems.SearchFor(itemType);
+                    if (ci != null && ci.Resources != null && ci.Resources.Count > 0)
+                        return true;
+                }
+                return false;
+            }
+
+            private static double CalculateComponentCost(Type itemType)
+            {
+                CraftItem? craftItem = null;
+
+                foreach (CraftSystem cs in CraftSystem.Instances)
+                {
+                    craftItem = cs.CraftItems.SearchFor(itemType);
+                    if (craftItem != null)
+                        break;
+                }
+
+                if (craftItem == null || craftItem.Resources == null)
+                    return 0.0;
+
+                double totalCost = 0.0;
+                HashSet<Type> visited = new HashSet<Type>();
+
+                foreach (CraftRes res in craftItem.Resources)
+                {
+                    Type resType = res.ItemType;
+                    int unitCost = GetPricing(resType, StandardPricingType.Sell);
+
+                    if (unitCost > 0)
+                    {
+                        totalCost += unitCost * res.Amount;
+                    }
+                    else if (HasMeaningfulCraftRecipe(resType) && !visited.Contains(resType))
+                    {
+                        visited.Add(resType);
+                        totalCost += CalculateComponentCost(resType) * res.Amount;
+                        visited.Remove(resType);
+                    }
+                }
+
+                return totalCost;
+            }
+
+            private static int GetPricing(Type type, StandardPricingType pricingType)
+            {
+                if (BaseVendor.StandardPricingDictionary.TryGetValue(type, out var list))
+                {
+                    foreach (var entry in list)
+                    {
+                        if (entry.Key == pricingType)
+                            return entry.Value;
+                    }
+                }
+                return BaseVendor.VendorPaysFailsafe;
+            }
+        }
+        #endregion Refactor Standard Pricing Disctionary For Consistency
+
         #region Add Rare
         private static void AddRare_OnCommand(CommandEventArgs e)
         {
@@ -136,7 +1379,7 @@ namespace Server.Commands
         }
         public class AddRareTarget : Target
         {
-            public AddRareTarget(string command)
+            public AddRareTarget(string? command)
                 : base(17, true, TargetFlags.None)
             {
             }
@@ -174,7 +1417,7 @@ namespace Server.Commands
         }
         public class SwapStaticsTarget : Target
         {
-            public SwapStaticsTarget(string command)
+            public SwapStaticsTarget(string? command)
                 : base(17, true, TargetFlags.None)
             {
             }
@@ -183,7 +1426,7 @@ namespace Server.Commands
             {
                 if (target is Static || target is Mobile)
                 {
-                    IEntity top = target as IEntity;
+                    IEntity? top = target as IEntity;
                     List<Item> items = new();
                     OwnerTools.GetStack(top.X, top.Y, top.Map, items: items);
                     items.RemoveAll(x => Math.Abs(x.Z - top.Z) > 1);
@@ -196,8 +1439,8 @@ namespace Server.Commands
 
                         if (items[0].Serial > items[1].Serial)
                         {
-                            Utility.CopyProperties(lower, items[0]);
-                            Utility.CopyProperties(higher, items[1]);
+                            Utility.CopyProperties(items[0], lower);
+                            Utility.CopyProperties(items[1], higher);
                             lower.MoveToWorld(items[0].Location);
                             higher.MoveToWorld(items[1].Location);
                             items[0].Delete();
@@ -205,8 +1448,8 @@ namespace Server.Commands
                         }
                         else
                         {
-                            Utility.CopyProperties(higher, items[0]);
-                            Utility.CopyProperties(lower, items[1]);
+                            Utility.CopyProperties(items[0], higher);
+                            Utility.CopyProperties(items[1], lower);
                             higher.MoveToWorld(items[0].Location);
                             lower.MoveToWorld(items[1].Location);
                             items[0].MoveToIntStorage();
@@ -229,6 +1472,72 @@ namespace Server.Commands
             }
         }
         #endregion Swap Statics
+        #region Clear Container
+        [Usage("ClearContainer <newer than minutes>")]
+        [Description("Deletes the items in a targeted container that were created less than the given number of minutes ago.")]
+        private static void ClearContainer_OnCommand(CommandEventArgs e)
+        {
+            if (e.Arguments.Length != 1 || !int.TryParse(e.Arguments[0], out int minutes) || minutes < 0)
+            {
+                e.Mobile.SendMessage("Usage: ClearContainer <newer than minutes>");
+                return;
+            }
+
+            e.Mobile.SendMessage("Target the container you would like to clear of items newer than {0} minutes...", minutes);
+            e.Mobile.Target = new ClearContainerTarget(minutes);
+        }
+        public class ClearContainerTarget : Target
+        {
+            private int m_Minutes;
+            public ClearContainerTarget(int minutes)
+                : base(-1, false, TargetFlags.None)
+            {
+                m_Minutes = minutes;
+            }
+
+            protected override void OnTarget(Mobile from, object target)
+            {
+                if (target is not Container container)
+                {
+                    from.SendMessage("That is not a container.");
+                    return;
+                }
+
+                // newer than the cutoff: created less than m_Minutes ago. Items created exactly at the cutoff, or
+                //  with no creation time (DateTime.MinValue), are kept.
+                DateTime cutoff = DateTime.UtcNow - TimeSpan.FromMinutes(m_Minutes);
+                int deleted = ClearNewerThan(container, cutoff);
+                container.UpdateAllTotals();
+
+                CommandLogging.WriteLine(from, "{0} {1} cleared {2} items newer than {3} minutes from {4}", from.AccessLevel, CommandLogging.Format(from), deleted, m_Minutes, CommandLogging.Format(container));
+                from.SendMessage("Deleted {0} item{1} newer than {2} minutes.", deleted, deleted == 1 ? "" : "s", m_Minutes);
+            }
+
+            private static int ClearNewerThan(Container container, DateTime cutoff)
+            {
+                int deleted = 0;
+
+                // snapshot: deleting an item removes it from container.Items
+                foreach (Item item in new List<Item>(container.Items))
+                {
+                    if (item.Deleted)
+                        continue;
+
+                    if (item.Created > cutoff)
+                    {   // a new container goes with everything in it (Delete() cascades), old contents included
+                        List<Item> doomed = new() { item };
+                        if (item is Container) doomed.AddRange(item.GetDeepItems().Cast<Item>());
+                        item.Delete();
+                        deleted += doomed.Count(i => i.Deleted);
+                    }
+                    else if (item is Container child)
+                        deleted += ClearNewerThan(child, cutoff);
+                }
+
+                return deleted;
+            }
+        }
+        #endregion Clear Container
         #region Compile Spawnable Points
         [Usage("CompileSpawnablePoints")]
         [Description("CompileSpawnablePoints")]
@@ -239,7 +1548,7 @@ namespace Server.Commands
         }
         public class CompileSpawnablePointsTarget : Target
         {
-            public CompileSpawnablePointsTarget(object o)
+            public CompileSpawnablePointsTarget(object? o)
                 : base(12, true, TargetFlags.None)
             {
 
@@ -314,17 +1623,17 @@ namespace Server.Commands
         }
         public class StretchRectTarget : Target
         {
-            public StretchRectTarget(object o)
+            public StretchRectTarget(object? o)
                 : base(12, true, TargetFlags.None)
             {
 
             }
             protected override void OnTarget(Mobile from, object targeted)
             {
-                LandTarget tl = targeted as LandTarget;
-                Item it = targeted as Item;
-                Mobile mt = targeted as Mobile;
-                StaticTarget st = targeted as StaticTarget;
+                LandTarget? tl = targeted as LandTarget;
+                Item? it = targeted as Item;
+                Mobile? mt = targeted as Mobile;
+                StaticTarget? st = targeted as StaticTarget;
                 Point3D loc = (tl != null) ? tl.Location : (mt != null) ? mt.Location : (it != null) ? it.Location : (st != null) ? st.Location : Point3D.Zero;
 
                 int landZ = 0, landAvg = 0, landTop = 0;
@@ -360,7 +1669,7 @@ namespace Server.Commands
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                Teleporter transport = targeted as Teleporter;
+                Teleporter? transport = targeted as Teleporter;
 
                 if (transport == null)
                 {
@@ -386,7 +1695,7 @@ namespace Server.Commands
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                IPoint3D px = targeted as IPoint3D;
+                IPoint3D? px = targeted as IPoint3D;
 
                 if (px == null)
                 {
@@ -471,7 +1780,7 @@ namespace Server.Commands
                     if (obj is ITrigger || obj is TriggerRelay)
                     {
                         CDParms parms = new CDParms(CDCommands.None, 0);
-                        Item trigger = obj as Item;
+                        Item? trigger = obj as Item;
 
                         string argString;
                         if (e.HasCommand("-link", out argString))
@@ -505,7 +1814,7 @@ namespace Server.Commands
                         if (parms.Command == CDCommands.None)
                             throw new ArgumentException(usage);
 
-                        object[] args = null;
+                        object[]? args = null;
                         if (parms.Command.HasFlag(CDCommands.Depth))
                             args = new object[1] { parms.Depth };
 
@@ -623,7 +1932,7 @@ namespace Server.Commands
                 }
                 else
                 {
-                    string name = null;
+                    string? name = null;
                     if (command.HasFlag(CDCommands.Link))
                         name = "Link";
                     else if (command.HasFlag(CDCommands.Else))
@@ -637,7 +1946,7 @@ namespace Server.Commands
                 if (depth++ > 100)
                     throw new ApplicationException("Too complex or self-referential controls not supported");
 
-                string name = null;
+                string? name = null;
                 if (command.HasFlag(CDCommands.Link))
                     name = "Link";
                 else if (command.HasFlag(CDCommands.Else))
@@ -656,7 +1965,7 @@ namespace Server.Commands
                 }
                 else
                 {
-                    Item temp = null;
+                    Item? temp = null;
                     Item new_trigger = trigger;
                     while ((temp = GetLink(new_trigger, name)) != null)
                     {
@@ -676,15 +1985,15 @@ namespace Server.Commands
                 string name = "Link1;Link2;Link3;Link4;Link5;Link6;";
                 string[] prop_names = name.Split(';', StringSplitOptions.RemoveEmptyEntries);
                 List<Item> list = new();
-                Item temp = null;
+                Item? temp = null;
                 foreach (string prop_name in prop_names)
                     if ((temp = GetLink(trigger, prop_name)) != null)
                         list.Add(temp);
                 return list;
             }
-            private static Item GetLink(Item trigger, string prop_name)
+            private static Item? GetLink(Item trigger, string prop_name)
             {
-                string result = null;
+                string? result = null;
                 result = Server.Commands.Properties.GetValue(World.GetSystemAcct(), trigger, name: prop_name);
                 if (result.Contains(Properties.PropNull) || result.Contains("not found"))
                     return null;
@@ -724,6 +2033,92 @@ namespace Server.Commands
                     LogFailure("That is not a mobile or an item");
             }
         }
+
+        // === Forensic Evaluation Test Command ===
+        private class ForensicEvaluationCommand : BaseCommand
+        {
+            public ForensicEvaluationCommand()
+            {
+                AccessLevel = AccessLevel.GameMaster;
+                Supports = CommandSupport.Simple;
+                Commands = new string[] { "ForensicEvaluation", "FE" };
+                ObjectTypes = ObjectTypes.Both;
+                Usage = "ForensicEvaluation <target>";
+                Description = "Tests the new ForensicEvaluation API on a target. Shows detailed results.";
+            }
+
+            public override void Execute(CommandEventArgs e, object obj)
+            {
+                Mobile from = e.Mobile;
+
+                if (obj == null)
+                {
+                    LogFailure("No target selected.");
+                    return;
+                }
+
+                ForensicEvaluation.ForensicResult result =
+                    ForensicEvaluation.GetForensicInformation(from, obj, out ForensicEvaluation.ForensicInfo info);
+
+                from.SendMessage("=== Forensic Evaluation Results ===");
+                from.SendMessage($"Result: {result}");
+
+                // Show all player-facing messages
+                if (info.Messages.Count > 0)
+                {
+                    from.SendMessage("--- Messages ---");
+                    foreach (string msg in info.Messages)
+                    {
+                        from.SendMessage(msg);
+                    }
+                }
+
+                // Detailed API breakdown for GMs
+                from.SendMessage("--- Detailed Info ---");
+
+                if (info.HasBounty)
+                {
+                    from.SendMessage($"Wanted: Yes - {info.WhoWants} for {info.BountyAmount} GP");
+                    if (info.HasLordBritishBonus)
+                        from.SendMessage("   → Lord British Bonus Applied");
+                }
+                else if (result == ForensicEvaluation.ForensicResult.Success)
+                {
+                    from.SendMessage("Wanted: No");
+                }
+
+                if (info.IsThief)
+                    from.SendMessage("Thieves Guild Member: Yes");
+
+                if (info.IsCriminal)
+                    from.SendMessage("Criminal Status: PERMA GREY (Criminal)");
+                else if (info.IsThief || info.HasBounty) // Show clean only if we checked
+                    from.SendMessage("Criminal Status: Clean");
+
+                if (info.Killer != null)
+                    from.SendMessage($"Killer: {info.Killer.Name}");
+
+                if (info.Looters.Count > 0)
+                {
+                    from.SendMessage("Looters:");
+                    foreach (Mobile looter in info.Looters)
+                    {
+                        if (looter != null && looter.AccessLevel <= from.AccessLevel)
+                            from.SendMessage($"   • {looter.Name}");
+                    }
+                }
+                else if (obj is Corpse)
+                {
+                    from.SendMessage("Looters: None");
+                }
+
+                if (info.LockPicker != null)
+                    from.SendMessage($"Lock picked by: {info.LockPicker.Name}");
+
+                // Final status
+                from.SendMessage($"Forensic Evaluation: {(result == ForensicEvaluation.ForensicResult.Success ? "SUCCESS" : result.ToString())}");
+            }
+        }
         [Usage("WipeIPAddresses <account>")]
         [Description("WipeIPAddresses for the player account.")]
         public static void WipeIPAddresses_OnCommand(CommandEventArgs e)
@@ -734,7 +2129,7 @@ namespace Server.Commands
                 return;
             }
 
-            Account acct = FindAccount(e.ArgString);
+            Account? acct = Accounts.FindAccount(e.ArgString);
             if (acct == null)
             {
                 e.Mobile.SendMessage("Cannot find account {0}", e.ArgString);
@@ -756,7 +2151,7 @@ namespace Server.Commands
                 return;
             }
 
-            Account acct = FindAccount(e.ArgString);
+            Account? acct = Accounts.FindAccount(e.ArgString);
             if (acct == null)
             {
                 e.Mobile.SendMessage("Cannot find account {0}", e.ArgString);
@@ -767,13 +2162,7 @@ namespace Server.Commands
             acct.ClearMachines();
             e.Mobile.SendMessage("All machines cleared.");
         }
-        private static Accounting.Account FindAccount(string username)
-        {
-            foreach (Accounting.Account a in Accounting.Accounts.Table.Values)
-                if (a.Username.Equals(username, StringComparison.OrdinalIgnoreCase))
-                    return a;
-            return null;
-        }
+
         [Usage("SetAccess <AccessLevel>")]
         [Description("Allow staff to downgrade their SccessLevel.")]
         public static void SetAccess_OnCommand(CommandEventArgs e)
@@ -819,14 +2208,308 @@ namespace Server.Commands
         usage:
             e.Mobile.SendMessage("SetAccess <Accesslevel>");
         }
-        [Usage("TimeToDie")]
-        [Description("Kills all BaseCreatures in the world.")]
+
+        #region Time To Die
+
+        [Usage("TimeToDie <all | spawners>")]
+        [Description("Kills BaseCreatures. Use -all (with confirmation) or -spawners (spawned creatures only).")]
         public static void TimeToDie_OnCommand(CommandEventArgs e)
         {
-            foreach (Mobile m in World.Mobiles.Values)
-                if (m is BaseCreature bc)
-                    bc.TimeToDie(TimeSpan.FromMilliseconds(Utility.Random(1, 5000)));
+            if (e?.Mobile == null)
+                return;
+
+            string? arg = e.ArgString?.Trim().ToLower();
+
+            if (arg == "all" || arg == "-all")
+            {
+                // Strong warning + confirmation prompt
+                e.Mobile.SendMessage(0x25, "WARNING: This will kill ALL BaseCreatures in the world, including non-spawned entities.");
+                e.Mobile.SendMessage(0x25, "This action is NOT limited to spawners and cannot be undone.");
+                e.Mobile.SendMessage(0x3B2, "Type 'yes' to continue.");
+                e.Mobile.Prompt = new TimeToDiePrompt();
+            }
+            else if (arg == "spawners" || arg == "-spawners")
+            {
+                // Safe mode - only kill creatures spawned from spawners or champion engines,
+                // plus BaseOverland creatures.
+                var creaturesToKill = new HashSet<Mobile>();
+
+                // 1. Standard Spawners
+                foreach (Spawner spawner in Spawner.Instances)
+                {
+                    if (spawner == null || spawner.Deleted)
+                        continue;
+
+                    var mobiles = spawner.GetMobiles();
+                    if (mobiles != null)
+                    {
+                        foreach (Mobile m in mobiles)
+                        {
+                            if (m is BaseCreature bc && !bc.Deleted)
+                                creaturesToKill.Add(bc);
+                        }
+                    }
+                }
+
+                // 2. Champion Engines
+                foreach (ChampEngine engine in ChampEngine.Instances)
+                {
+                    if (engine == null || engine.Deleted)
+                        continue;
+
+                    var mobiles = engine.GetMobiles();
+                    if (mobiles != null)
+                    {
+                        foreach (Mobile m in mobiles)
+                        {
+                            if (m is BaseCreature bc && !bc.Deleted)
+                                creaturesToKill.Add(bc);
+                        }
+                    }
+                }
+
+                // 3. BaseOverland creatures (wandering uniques / events)
+                foreach (Mobile m in World.Mobiles.Values)
+                {
+                    if (m is BaseOverland bo && !bo.Deleted)
+                        creaturesToKill.Add(bo);
+                }
+
+                // Schedule death with small random delay
+                int count = 0;
+                foreach (Mobile m in creaturesToKill)
+                {
+                    if (m is BaseCreature bc)
+                    {
+                        bc.TimeToDie(TimeSpan.FromMilliseconds(Utility.Random(1, 5000)));
+                        count++;
+                    }
+                }
+
+                e.Mobile.SendMessage(0x3B2,
+                    $"TimeToDie (spawners + champions + overland) scheduled for {count} creatures.");
+            }
+            else
+            {
+                // Invalid usage
+                e.Mobile.SendMessage(0x25, "Usage: [TimeToDie <all | spawners>");
+                e.Mobile.SendMessage(0x3B2, "-all       : Kills everything (requires confirmation)");
+                e.Mobile.SendMessage(0x3B2, "-spawners  : Kills only creatures spawned from spawners (no confirmation)");
+            }
         }
+
+        private class TimeToDiePrompt : Prompt
+        {
+            public override void OnResponse(Mobile from, string text)
+            {
+                if (!string.Equals(text?.Trim(), "yes", StringComparison.OrdinalIgnoreCase))
+                {
+                    from.SendMessage("TimeToDie cancelled.");
+                    return;
+                }
+
+                int count = 0;
+                foreach (Mobile m in World.Mobiles.Values.ToArray())
+                {
+                    if (m is BaseCreature bc && !bc.Deleted)
+                    {
+                        bc.TimeToDie(TimeSpan.FromMilliseconds(Utility.Random(1, 5000)));
+                        count++;
+                    }
+                }
+
+                from.SendMessage(0x25, $"TimeToDie executed on {count} BaseCreatures.");
+            }
+        }
+
+        #endregion Time To Die
+
+        #region Set Config
+        [Usage("SetConfig <flag> [on|off|true|false|1|0]")]
+        //[Usage("SetConfig status")]
+        [Description("Dynamically switch server configuration. Enabling one auto-disables all others.")]
+        public static void SetConfig_OnCommand(CommandEventArgs e)
+        {
+            Mobile m = e.Mobile;
+
+            if (e.Arguments.Length == 0 || Insensitive.Equals(e.Arguments[0], "status"))
+            {
+                ShowCurrentConfig(m);
+                return;
+            }
+
+            if (e.Arguments.Length < 2)
+            {
+                m.SendMessage("Usage: setconfig <flag> [on|off|true|false|1|0]");
+                m.SendMessage("Example: setconfig -uomo on");
+                return;
+            }
+
+            string flag = e.Arguments[0].TrimStart('-').ToLower();
+            string valueStr = e.Arguments[1].ToLower();
+
+            bool enable;
+            if (valueStr == "on" || valueStr == "true" || valueStr == "1")
+                enable = true;
+            else if (valueStr == "off" || valueStr == "false" || valueStr == "0")
+                enable = false;
+            else
+            {
+                m.SendMessage("Invalid value. Use on/off, true/false, or 1/0.");
+                return;
+            }
+
+            bool changed = ApplyServerFlag(flag, enable, out string enabledServer, out string disabledServers);
+
+            if (changed)
+            {
+                string action = enable ? "enabled" : "disabled";
+                m.SendMessage($"Server flag '{flag}' {action}.");
+                if (enable)
+                    m.SendMessage($"Active server is now: {enabledServer}");
+                else
+                    m.SendMessage($"No server is active after disabling {flag}.");
+
+                if (!string.IsNullOrEmpty(disabledServers))
+                    m.SendMessage($"Auto-disabled: {disabledServers}");
+
+                // Ensure all players reflect the currently active RuleSet.
+                // 
+                // On startup, this aligns loaded world data with the configured shard.
+                // On dynamic reconfiguration (e.g., SetConfig), this must be called explicitly
+                // to reapply shard semantics (such as Mortality) to existing PlayerMobiles.
+                ShardInit();
+
+                ShowCurrentConfig(m);
+            }
+            else
+            {
+                m.SendMessage($"Unknown or unsupported server flag: {flag}");
+            }
+        }
+
+        private static bool ApplyServerFlag(string flag, bool enable, out string enabledServer, out string disabledServers)
+        {
+            enabledServer = null;
+            disabledServers = null;
+
+            // Reset all server flags first (enforce exactly one active)
+            bool anyChanged = false;
+
+            if (enable)
+            {
+                // Disable all others
+                if (RuleSets.GMNAI_SVR) { RuleSets.GMNAI_SVR = false; anyChanged = true; }
+                if (RuleSets.GMNSP_SVR) { RuleSets.GMNSP_SVR = false; anyChanged = true; }
+                if (RuleSets.GMNMO_SVR) { RuleSets.GMNMO_SVR = false; anyChanged = true; }
+                if (RuleSets.GMNSE_SVR) { RuleSets.GMNSE_SVR = false; anyChanged = true; }
+                // Add others if you have more
+            }
+
+            switch (flag.ToLower())
+            {
+                case "uosp":
+                case "gmsp":
+                case "siege":
+                    RuleSets.GMNSP_SVR = enable;
+                    enabledServer = enable ? "Siege Perilous" : null;
+                    anyChanged |= true;
+                    break;
+
+                case "uoai":
+                case "gmnai":
+                case "angelisland":
+                    RuleSets.GMNAI_SVR = enable;
+                    enabledServer = enable ? "Angel Island" : null;
+                    anyChanged |= true;
+                    break;
+
+                case "uomo":
+                case "gmnmo":
+                case "mortalis":
+                    RuleSets.GMNMO_SVR = enable;
+                    enabledServer = enable ? "Mortalis" : null;
+                    anyChanged |= true;
+                    break;
+
+                case "uose":
+                case "gmnse":
+                case "seasons":
+                    RuleSets.GMNSE_SVR = enable;
+                    enabledServer = enable ? "Seasons" : null;
+                    anyChanged |= true;
+                    break;
+
+                // Add any other server flags here...
+
+                default:
+                    return false;
+            }
+
+            if (anyChanged && enable)
+            {
+                // Optional: refresh dependent systems (publish, expansion, etc.)
+                RefreshRuleSets();
+            }
+
+            // Build list of what was disabled (for feedback)
+            var disabledList = new List<string>();
+            if (!RuleSets.GMNAI_SVR && flag != "uoai" && flag != "gmnai") disabledList.Add("Angel Island");
+            if (!RuleSets.GMNSP_SVR && flag != "uosp" && flag != "gmsp") disabledList.Add("Siege");
+            if (!RuleSets.GMNMO_SVR && flag != "uomo" && flag != "gmnmo") disabledList.Add("Mortalis");
+            if (!RuleSets.GMNSE_SVR && flag != "uose" && flag != "gmnse") disabledList.Add("Seasons");
+            disabledServers = disabledList.Any() ? string.Join(", ", disabledList) : null;
+
+            return anyChanged;
+        }
+
+        private static void RefreshRuleSets()
+        {
+            // Re-apply publish / era logic based on the now-active server
+            if (RuleSets.GMNSP_SVR)
+            {
+                // Publish 13.6 (Siege Perilous Shards Only) - October 25, 2001
+                PublishInfo.Publish = 13.6;
+            }
+            else if (RuleSets.GMNAI_SVR || RuleSets.GMNMO_SVR || RuleSets.GMNSE_SVR)
+            {
+                // Resource/Crafting changes, Felucca Champion Spawns and Powerscrolls, Barding/Taming changes,
+                // Felucca enhancements/changes, House Ownership changes, the GGS system,
+                // the Justice Virtue, Siege Perilous ruleset changes
+                PublishInfo.Publish = 15.0;
+            }
+            else
+            {
+                // Default/fallback — adjust as needed
+                PublishInfo.Publish = 15.0;
+            }
+
+            // You can also force-refresh other cached values here if needed
+            // e.g. ExpansionInfo.Refresh();
+            // or call any Configure() methods that depend on ruleset
+        }
+
+        private static void ShowCurrentConfig(Mobile m)
+        {
+            string active = "None";
+
+            if (RuleSets.GMNAI_SVR) active = "Angel Island (-uoai)";
+            else if (RuleSets.GMNSP_SVR) active = "Siege Perilous (-uosp)";
+            else if (RuleSets.GMNMO_SVR) active = "Mortalis (-uomo)";
+            else if (RuleSets.GMNSE_SVR) active = "Seasons (-uose)";
+
+            m.SendMessage("Current server configuration:");
+            m.SendMessage($"Active server: {active}");
+            m.SendMessage("Flags:");
+            m.SendMessage($" - Angel Island (-uoai):   {(RuleSets.GMNAI_SVR ? "ON" : "OFF")}");
+            m.SendMessage($" - Siege (-uosp):          {(RuleSets.GMNSP_SVR ? "ON" : "OFF")}");
+            m.SendMessage($" - Mortalis (-uomo):       {(RuleSets.GMNMO_SVR ? "ON" : "OFF")}");
+            m.SendMessage($" - Seasons (-uose):        {(RuleSets.GMNSE_SVR ? "ON" : "OFF")}");
+            m.SendMessage("");
+            m.SendMessage("Note: Enabling one server automatically disables all others.");
+            m.SendMessage("Some changes may require world save/restart for full effect.");
+        }
+        #endregion Set Config
         #region Location Recorder
         [Usage("ConstructRect")]
         [Description("Build a rect from data collected by LocationRecorder.")]
@@ -852,8 +2535,8 @@ namespace Server.Commands
                 e.Mobile.SendMessage("LocationRecorder.log file missing or corrupt.");
             }
         }
-        private static LogHelper LocationRecorder = null;
-        private static Server.Timer LRTimer = null;
+        private static LogHelper? LocationRecorder = null;
+        private static Server.Timer? LRTimer = null;
         private static Rectangle2D LRRect = new Rectangle2D();
         [Usage("LocationRecorder <on/off/record/clear>")]
         [Description("Records the mobiles location to a log file.")]
@@ -922,7 +2605,7 @@ namespace Server.Commands
         }
         private static void LocationTick(object state)
         {
-            Mobile m = state as Mobile;
+            Mobile? m = state as Mobile;
             LRRect.MakeHold(new Point2D(m.Location));
             string text = string.Format("({0} {1}, {2}, {3})", LRRect.Start.X, LRRect.Start.Y, LRRect.End.X, LRRect.End.Y);
             m.SendMessage(text);
@@ -933,11 +2616,11 @@ namespace Server.Commands
             public LocationRecorderTarget() : base(12, true, TargetFlags.None) {; }
             protected override void OnTarget(Mobile from, object targeted)
             {
-                LandTarget tl = targeted as LandTarget;
-                Item it = targeted as Item;
-                Mobile mt = targeted as Mobile;
-                StaticTarget st = targeted as StaticTarget;
-                IPoint3D point = targeted as IPoint3D;
+                LandTarget? tl = targeted as LandTarget;
+                Item? it = targeted as Item;
+                Mobile? mt = targeted as Mobile;
+                StaticTarget? st = targeted as StaticTarget;
+                IPoint3D? point = targeted as IPoint3D;
                 string text = string.Format("{0}", new Point2D(point.X, point.Y));
                 from.SendMessage("Logging:" + text);
                 LocationRecorder.Log(text);
@@ -957,10 +2640,10 @@ namespace Server.Commands
             public GetMobileTarget(object o) : base(12, true, TargetFlags.None) { m_copy = (bool)o; }
             protected override void OnTarget(Mobile from, object targeted)
             {
-                LandTarget tl = targeted as LandTarget;
-                Item it = targeted as Item;
-                Mobile mt = targeted as Mobile;
-                StaticTarget st = targeted as StaticTarget;
+                LandTarget? tl = targeted as LandTarget;
+                Item? it = targeted as Item;
+                Mobile? mt = targeted as Mobile;
+                StaticTarget? st = targeted as StaticTarget;
                 string clipboard = string.Empty;
                 if (mt == null)
                 {
@@ -1018,10 +2701,10 @@ namespace Server.Commands
             public GetItemsTarget(object o) : base(12, true, TargetFlags.None) { m_copy = (bool)o; }
             protected override void OnTarget(Mobile from, object targeted)
             {
-                LandTarget tl = targeted as LandTarget;
-                Item it = targeted as Item;
-                Mobile mt = targeted as Mobile;
-                StaticTarget st = targeted as StaticTarget;
+                LandTarget? tl = targeted as LandTarget;
+                Item? it = targeted as Item;
+                Mobile? mt = targeted as Mobile;
+                StaticTarget? st = targeted as StaticTarget;
                 string clipboard = string.Empty;
                 if (mt != null)
                 {
@@ -1068,7 +2751,7 @@ namespace Server.Commands
                 e.Mobile.SendMessage("Usage [Colorize <true|false>");
                 return;
             }
-            if (Core.UOTC_CFG == false)
+            if (Core.GMNTC_CFG == false)
             {
                 e.Mobile.SendMessage("This command may only be run on test center");
                 return;
@@ -1144,17 +2827,17 @@ namespace Server.Commands
         }
         public class GetSurfaceTopTarget : Target
         {
-            public GetSurfaceTopTarget(object o)
+            public GetSurfaceTopTarget(object? o)
                 : base(12, true, TargetFlags.None)
             {
 
             }
             protected override void OnTarget(Mobile from, object targeted)
             {
-                LandTarget tl = targeted as LandTarget;
-                Item it = targeted as Item;
-                Mobile mt = targeted as Mobile;
-                StaticTarget st = targeted as StaticTarget;
+                LandTarget? tl = targeted as LandTarget;
+                Item? it = targeted as Item;
+                Mobile? mt = targeted as Mobile;
+                StaticTarget? st = targeted as StaticTarget;
                 IPoint3D loc = (tl != null) ? tl.Location : (mt != null) ? mt.Location : (it != null) ? it.Location : (st != null) ? st.Location : Point3D.Zero;
                 Spells.SpellHelper.GetSurfaceTop(ref loc);
                 from.SendMessage(string.Format("GetSurfaceTop: Z:{0}", loc.Z));
@@ -1169,17 +2852,17 @@ namespace Server.Commands
         }
         public class GetAverageZTarget : Target
         {
-            public GetAverageZTarget(object o)
+            public GetAverageZTarget(object? o)
                 : base(12, true, TargetFlags.None)
             {
 
             }
             protected override void OnTarget(Mobile from, object targeted)
             {
-                LandTarget tl = targeted as LandTarget;
-                Item it = targeted as Item;
-                Mobile mt = targeted as Mobile;
-                StaticTarget st = targeted as StaticTarget;
+                LandTarget? tl = targeted as LandTarget;
+                Item? it = targeted as Item;
+                Mobile? mt = targeted as Mobile;
+                StaticTarget? st = targeted as StaticTarget;
                 Point3D loc = (tl != null) ? tl.Location : (mt != null) ? mt.Location : (it != null) ? it.Location : (st != null) ? st.Location : Point3D.Zero;
 
                 int landZ = 0, landAvg = 0, landTop = 0;
@@ -1209,7 +2892,7 @@ namespace Server.Commands
         }
         private static void Tick(object state)
         {
-            CommandEventArgs e = state as CommandEventArgs;
+            CommandEventArgs? e = state as CommandEventArgs;
             FindBuggedMap(e);
         }
         public static void FindBuggedMap(CommandEventArgs e)
@@ -1227,7 +2910,7 @@ namespace Server.Commands
                 Console.WriteLine("This will take 3-5 minutes...");
                 DateTime dt = DateTime.UtcNow;
                 Point2D last = new Point2D(0, 0);               // last point seen
-                Rectangle2D fel = Utility.World.BritWrap[0];    // our world
+                Rectangle2D fel = Utility.WorldMap.BritWrap[0];    // our world
                 List<int[]> records = new();                    // X, Y, X (depth of hole)
                 int slop = 5;                                   // how far two holes are from one another to be considered unique
                 int[] Ztab = new int[4];                        // storage for our 4 discovered Zs
@@ -1239,24 +2922,6 @@ namespace Server.Commands
                         // check at end of map
                         if (x + 4 >= Map.Felucca.Width) continue;
 
-#if false
-                        // experimental star pattern
-                        int Z = 0;
-                        int X = x;
-                        int Y = y;
-                        int index = 0;
-
-                        for (int jx = 0; jx < 4; jx++)
-                        {   // check a star pattern around x/y
-                            if (Utility.CanSpawnMobile(Map.Felucca, NextX(jx,  X), NextY(jx,  Y), ref Z))
-                                Ztab[index++] = Z;
-                            else break;
-
-                            if (jx + 1 == 4)
-                                goto Success;   // we got all 4 spawn positions
-                        }
-                        continue;
-#else
                         int Z = 0;
                         int X = x;
                         int index = 0;
@@ -1271,7 +2936,6 @@ namespace Server.Commands
                                 goto Success;   // we got all 4 spawn positions
                         }
                         continue;
-#endif
                     Success:
                         // okay, we were able to spawn 4 consecutive mobiles This should not be possible if there was some blocking tile in the way,
                         // like a wall, bounder, tree, etc.
@@ -1427,16 +3091,16 @@ namespace Server.Commands
         }
         public class StackDepthTarget : Target
         {
-            public StackDepthTarget(object o)
+            public StackDepthTarget(object? o)
                 : base(12, false, TargetFlags.None)
             {
 
             }
             protected override void OnTarget(Mobile from, object targeted)
             {
-                LandTarget tl = targeted as LandTarget;
-                Item it = targeted as Item;
-                Mobile mt = targeted as Mobile;
+                LandTarget? tl = targeted as LandTarget;
+                Item? it = targeted as Item;
+                Mobile? mt = targeted as Mobile;
                 Point3D loc = (tl != null) ? tl.Location : (mt != null) ? mt.Location : (it != null) ? it.Location : Point3D.Zero;
                 List<int> Zs = new();
                 int count = StackDepth(loc.X, loc.Y, from.Map, Zs);
@@ -1515,7 +3179,7 @@ namespace Server.Commands
         }
         public class CanSpawnMobileTargetZ : Target
         {
-            public CanSpawnMobileTargetZ(object o)
+            public CanSpawnMobileTargetZ(object? o)
                 : base(12, true, TargetFlags.None)
             {
 
@@ -1523,16 +3187,44 @@ namespace Server.Commands
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                LandTarget tl = targeted as LandTarget;
-                Item it = targeted as Item;
-                Mobile mt = targeted as Mobile;
-                StaticTarget st = targeted as StaticTarget;
+                LandTarget? tl = targeted as LandTarget;
+                Item? it = targeted as Item;
+                Mobile? mt = targeted as Mobile;
+                StaticTarget? st = targeted as StaticTarget;
                 Point3D loc = (tl != null) ? tl.Location : (mt != null) ? mt.Location : (it != null) ? it.Location : (st != null) ? st.Location : Point3D.Zero;
                 int Z = -1;
                 if (loc != Point3D.Zero && Utility.CanSpawnMobile(from.Map, loc.X, loc.Y, ref Z))
                     from.SendMessage("A mobile can be spawned at {0}, Z = {1}", new Point2D(loc.X, loc.Y), Z);
                 else
                     from.SendMessage("A mobile cannot be spawned at {0}, Z=?", new Point2D(loc.X, loc.Y));
+            }
+        }
+        [Usage("CanSpawnMobile")]
+        [Description("Can we spawn a mobile at this location?")]
+        public static void CanSpawnMobile_OnCommand(CommandEventArgs e)
+        {
+            e.Mobile.SendMessage("Target the location you wish to check.");
+            e.Mobile.Target = new CanSpawnMobileTarget(null);
+        }
+        public class CanSpawnMobileTarget : Target
+        {
+            public CanSpawnMobileTarget(object? o)
+                : base(12, true, TargetFlags.None)
+            {
+
+            }
+
+            protected override void OnTarget(Mobile from, object targeted)
+            {
+                LandTarget? tl = targeted as LandTarget;
+                Item? it = targeted as Item;
+                Mobile? mt = targeted as Mobile;
+                StaticTarget? st = targeted as StaticTarget;
+                Point3D loc = (tl != null) ? tl.Location : (mt != null) ? mt.Location : (it != null) ? it.Location : (st != null) ? st.Location : Point3D.Zero;
+                if (loc != Point3D.Zero && Utility.CanSpawnLandMobile(from.Map, new Point2D(loc.X, loc.Y), loc.Z, flags: CanFitFlags.requireSurface | CanFitFlags.canSwim))
+                    from.SendMessage($"A mobile can be spawned at {loc}");
+                else
+                    from.SendMessage($"A mobile cannot be spawned at {loc}");
             }
         }
         [Usage("SeedAccounts")]
@@ -1553,7 +3245,7 @@ namespace Server.Commands
         {
             return (
                 /*Yoar ip.Equals(System.Net.IPAddress.Parse("83.87.255.92"))*/
-                /*Adam*/   ip.Equals(System.Net.IPAddress.Parse("192.168.1.67"))    // me logging into production from home
+                /*Adam*/   ip.Equals(System.Net.IPAddress.Parse(CoreAI.OwnerIP))    // me logging into production from home
                 /*Adam*/|| ip.Equals(System.Net.IPAddress.Parse("127.0.0.1"))       // me logging into localhost from home
                 );
         }
@@ -1752,8 +3444,8 @@ namespace Server.Commands
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                Item item = (targeted as Item);
-                Mobile mobile = (targeted as Mobile);
+                Item? item = (targeted as Item);
+                Mobile? mobile = (targeted as Mobile);
                 if (item != null)
                 {
                     if (m_e.ArgString != null && m_e.ArgString.Equals("clear", StringComparison.OrdinalIgnoreCase))
@@ -1876,352 +3568,17 @@ namespace Server.Commands
                 }
             }
         }
-        public enum operation
-        {
-            INFO,
-            RECOVER
-        }
-        [Usage("RecycleBin info|recover")]
-        [Description("Dumps info about a containers overload items and optionally recovers them.")]
-        public static void RecycleBin_OnCommand(CommandEventArgs e)
-        {
-            try
-            {
-                if (e.Arguments == null || e.Length != 1 || (!e.ArgString.ToLower().Contains("recover") && !e.ArgString.ToLower().Contains("info")))
-                {
-                    e.Mobile.SendMessage("Usage: RecycleBin [recover|info]");
-                    return;
-                }
-                e.Mobile.SendMessage("Target the container you wish to process.");
-                e.Mobile.Target = new ContainerTarget(e.ArgString.ToLower().Contains("recover") ? operation.RECOVER : operation.INFO);
-            }
-            catch (Exception ex)
-            {
-                LogHelper.LogException(ex);
-            }
-        }
-        public class ContainerTarget : Target
-        {
-            operation m_op;
-            public ContainerTarget(operation op)
-                : base(12, false, TargetFlags.None)
-            {
-                m_op = op;
-            }
 
-            protected override void OnTarget(Mobile from, object targeted)
-            {
-                Container container = (targeted as Container);
-                List<Container> units = new List<Container>();
-                if (container != null)
-                {
-                    if (Engines.RecycleBin.RecycleBin.Database.ContainsKey(container.Serial))
-                        // found a matching RecycleBin
-                        units.Add(Engines.RecycleBin.RecycleBin.Database[container.Serial]);
-                }
-                else
-                    from.SendMessage("That is not a container.");
-
-                // okay, we lave a list of matching Recycle bins for this container
-                //  (we currently only support one.)
-                int archived = 0;
-                List<Container> bins = new List<Container>();
-                if (units.Count != 0)
-                {
-                    foreach (Container unit in units)
-                    {
-                        if (m_op == operation.INFO)
-                            from.SendMessage(string.Format("Recycle bin: {0} with: {1} items archived.", unit.Serial, unit.Items.Count));
-                        bins.Add(unit);
-                        archived += unit.Items.Count;
-                    }
-                    if (m_op == operation.INFO)
-                    {
-                        from.SendMessage(string.Format("There are {0} matching recycle bins.", units.Count));
-                        from.SendMessage(string.Format("{0} total items archived.", archived));
-                    }
-                    else if (m_op == operation.RECOVER)
-                    {
-                        if (bins.Count > 0)
-                        {
-                            foreach (Container cx in bins)
-                            {
-                                cx.MoveToWorld(from.Location, from.Map);
-                                cx.Visible = true;
-                                cx.Movable = true;
-                                Engines.RecycleBin.RecycleBin.Database.Remove(container.Serial);
-                            }
-                            from.SendMessage(string.Format("Done."));
-                        }
-                        else
-                            from.SendMessage(string.Format("There are no archived items to recover."));
-                    }
-                }
-                else
-                    from.SendMessage("No RecycleBin units found for this container.");
-            }
-        }
-        [Usage("PreLaunch")]
-        [Description("Wipe Shard - Pre-Launch.")]
-        public static void PreLaunch_OnCommand(CommandEventArgs e)
-        {
-            try
-            {
-
-                if (e.Mobile != null) e.Mobile.SendMessage("Begin Wipe.");
-#if false
-                // first rehydrate world
-                RehydrateWorld.RehydrateWorld_OnCommand(e);
-#endif
-                // delete accounts 
-                int count = DeleteAccounts(e);
-                if (e.Mobile != null) e.Mobile.SendMessage("{0} Accounts deleted.", count);
-
-                // delete contents of all containers
-                count = EmptyContainers(e);
-                if (e.Mobile != null) e.Mobile.SendMessage("{0} Items deleted.", count);
-
-                // replace all things like library books.
-                if (e.Mobile != null) e.Mobile.SendMessage("Respawning world...");
-                TotalRespondCommand.TotalRespawn_OnCommand(e);
-
-                // deactivate all quest givers
-                count = DeactivateQuestGivers();
-                if (e.Mobile != null) e.Mobile.SendMessage("{0} QuestGivers deactivated.", count);
-
-                // Initialize the ResourcePool
-                count = InitializeResourcePool();
-                if (e.Mobile != null) e.Mobile.SendMessage(string.Format("{0} resource pool consignments deleted.", count));
-
-                // all done
-                if (e.Mobile != null) e.Mobile.SendMessage("Wipe Complete.");
-            }
-            catch (Exception ex)
-            {
-                LogHelper.LogException(ex);
-                if (e.Mobile != null)
-                    e.Mobile.SendMessage("** Wipe Failed **");
-            }
-        }
-
-        public static int InitializeResourcePool()
-        {
-            // Initialize the ResourcePool
-            int count = 0;
-            string saves = Path.Combine(Core.BaseDirectory, "Saves");
-            string resourcePool = Path.Combine(Core.BaseDirectory, "Saves", "ResourcePool");
-            string transactionHistories = Path.Combine(Core.BaseDirectory, "Saves", "TransactionHistories");
-            if (Directory.Exists(resourcePool))
-            {
-                DirectoryInfo di = new DirectoryInfo(resourcePool);
-                RecursiveDelete(di);
-            }
-            if (!Directory.Exists(resourcePool))
-                Directory.CreateDirectory(resourcePool);
-            if (!Directory.Exists(transactionHistories))
-                Directory.CreateDirectory(transactionHistories);
-            if (ResourcePool.Consignments != null)
-            {
-                count = ResourcePool.Consignments.Count;
-                //EchoOut(string.Format("{0} resource pool consignments detected.", rpc), ConsoleColor.Magenta);
-                ResourcePool.Consignments.Clear();
-                //EchoOut(string.Format("{0} resource pool consignments deleted.", rpc), ConsoleColor.Magenta);
-            }
-            //else
-            //EchoOut(string.Format("No resource pool consignments to deleted."), ConsoleColor.Magenta);
-            return count;
-        }
-        public static void RecursiveDelete(DirectoryInfo baseDir)
-        {
-            if (!baseDir.Exists)
-                return;
-
-            foreach (var dir in baseDir.EnumerateDirectories())
-            {
-                RecursiveDelete(dir);
-            }
-            baseDir.Delete(true);
-        }
-        public static int DeactivateQuestGivers()
-        {
-            int count = 0;
-            foreach (Mobile m in World.Mobiles.Values)
-            {
-                if (m is null) continue;
-                if (m is QuestGiver qg)
-                {
-                    count++;
-                    qg.NeedsReview = true;
-                }
-            }
-            return count;
-        }
-        public static int EmptyContainers(CommandEventArgs e)
-        {
-            #region Get Loot Packs
-            List<Container> lootPacks = new List<Container>();
-            foreach (Item item in World.Items.Values)
-            {
-                if (item == null || item.Deleted == true)
-                    continue;
-
-                if (item is Spawner || item is ChestItemSpawner)
-                {
-                    Spawner s = item as Spawner;
-                    ChestItemSpawner cis = item as ChestItemSpawner;
-                    if (s != null)
-                    {
-                        if (s.LootPack is Container sl)
-                            lootPacks.Add(sl);
-                        if (s.ArtifactPack is Container sap)
-                            lootPacks.Add(sap);
-                        if (s.CarvePack is Container scp)
-                            lootPacks.Add(scp);
-                    }
-                    else if (cis != null && cis.LootPack is Container cislp)
-                        lootPacks.Add(cislp);
-                }
-            }
-            #endregion Get Loot Packs
-
-            int total_items = 0;
-            #region Empty containers
-            {
-                List<Container> containers = new List<Container>();
-                foreach (Item item in World.Items.Values)
-                {
-                    if (item == null || item.Deleted == true || !(item is Container))
-                        continue;
-
-                    if (Owner(e, item) != null && Owner(e, item).AccessLevel == AccessLevel.Owner)
-                        continue;
-
-                    if (lootPacks.Contains(item))
-                        continue;
-
-                    containers.Add(item as Container);
-                }
-
-                ArrayList toDelete = new ArrayList();
-                foreach (Container container in containers)
-                {
-                    List<Item> items = container.Items;
-                    total_items += items.Count;
-                    foreach (object o in items)
-                    {
-                        Item item = o as Item;
-                        if (item == null || item.Deleted == true)
-                            continue;
-
-                        toDelete.Add(new object[] { container, item });
-                    }
-                }
-                foreach (object o in toDelete)
-                {
-                    object[] pair = o as object[];
-                    Container cont = pair[0] as Container;
-                    Item item = pair[1] as Item;
-                    cont.RemoveItem(item);
-                    item.Delete();
-                }
-            }
-            #endregion Empty containers
-            return total_items;
-        }
-        public static Account Owner(CommandEventArgs e, Item item)
-        {
-            // first, check the backpack and bankbox of the item
-            if (item.RootParent != null && (item.RootParent is PlayerMobile) && (item.RootParent as PlayerMobile).Account != null)
-                return (item.RootParent as PlayerMobile).Account as Account;
-            // now check for items in nested containers on the ground of a house.
-            else if (item.RootParent != null && (item.RootParent is Item) && BaseHouse.FindHouseAt((item.RootParent as Item)) != null)
-            {
-                BaseHouse house = BaseHouse.FindHouseAt((item.RootParent as Item));
-                if (house.Owner != null && (house.Owner is PlayerMobile) && (house.Owner as PlayerMobile).Account != null)
-                    return (house.Owner as PlayerMobile).Account as Account;
-                else
-                    return null;
-            }
-            // now check for items in a container on the ground of a house
-            else if (item.RootParent == null && BaseHouse.FindHouseAt((item)) != null)
-            {
-                BaseHouse house = BaseHouse.FindHouseAt((item));
-                if (house.Owner != null && (house.Owner is PlayerMobile) && (house.Owner as PlayerMobile).Account != null)
-                    return (house.Owner as PlayerMobile).Account as Account;
-                else
-                    return null;
-            }
-            // now look for PlayerVendors in a house (maybe adam's house (custom homes), and adam's NPC's that sell these houses.
-            //  their backpacks are full of these deeds, don't delete.
-            else if (item.RootParent != null && item.RootParent is PlayerVendor && BaseHouse.FindHouseAt((item)) != null)
-            {
-                // now check for items in a container on the ground of a house
-                BaseHouse house = BaseHouse.FindHouseAt(item.RootParent as Mobile);
-                if (house.Owner != null && (house.Owner is PlayerMobile) && (house.Owner as PlayerMobile).Account != null)
-                {   // okay, probably one of my custom homes in the custom housing area.
-                    //  Use this opportunity to patch the NPC Owner
-                    if (item.RootParent is PlayerVendor && house.Owner.Serial == e.Mobile.Serial && e.Mobile.Serial == Server.World.GetAdminAcct().Serial)
-                    {   // patch and return
-                        if ((item.RootParent as PlayerVendor).Owner == null)
-                            (item.RootParent as PlayerVendor).Owner = Server.World.GetAdminAcct();
-                    }
-
-                    return (house.Owner as PlayerMobile).Account as Account;
-                }
-                else
-                    return null;
-            }
-            // find other BaseVendors belonging to Adam. These include the QuestGiver NPC
-            else if (item.RootParent != null && item.RootParent is BaseVendor && BaseHouse.FindHouseAt((item)) != null)
-            {
-                // now check for items in a container on the ground of a house
-                BaseHouse house = BaseHouse.FindHouseAt(item.RootParent as Mobile);
-                if (house.Owner != null && (house.Owner is PlayerMobile) && (house.Owner as PlayerMobile).Account != null)
-                    return (house.Owner as PlayerMobile).Account as Account;
-                else
-                    return null;
-            }
-            else
-                return null;
-        }
-        public static int DeleteAccounts(CommandEventArgs e, bool include_owner = false)
-        {
-            List<Account> clients = new List<Account>();
-            foreach (Account check in Accounts.Table.Values)
-            {
-                if (check == null)
-                    continue;
-
-                if (check.AccessLevel == AccessLevel.Owner && include_owner == false)
-                    continue;
-
-                clients.Add(check);
-            }
-
-            // kick everyone
-            foreach (NetState ns in NetState.Instances)
-                if (ns != null && ns.Running)
-                    if (ns.Account != null && (ns.Account as Accounting.Account).AccessLevel == AccessLevel.Owner)
-                    {
-                        if (include_owner)
-                            ns.Dispose();
-                        else
-                            continue;
-                    }
-                    else
-                        ns.Dispose();
-
-            foreach (Account check in clients)
-            {
-                check.Delete();
-            }
-
-            return clients.Count;
-        }
-        [Usage("LoadJump")]
-        [Description("Load our 'jump' table with the creatures on this spawner.")]
+        [Usage("LoadJump [treasure]")]
+        [Description("Load our 'jump' table with the creatures on this spawner, or with every treasure map location in random order.")]
         public static void LoadJump_OnCommand(CommandEventArgs e)
         {
+
+            if (e.Arguments.Length > 0 && e.Arguments[0].Equals("treasure", StringComparison.OrdinalIgnoreCase))
+            {
+                LoadTreasureJump(e.Mobile);
+                return;
+            }
 
             try
             {
@@ -2234,6 +3591,35 @@ namespace Server.Commands
             }
 
         }
+        // The treasure jump-list loader shared by [LoadJump treasure, [JumpTreasureMapLocations and [GenTreasureMapLocations.
+        //  Every treasure map location once, in a new random order. Reads the loaded database (TreasureMap.Locations);
+        //  never regenerates it. Felucca WorldLocations at GetAverageZ, the Z treasure chests and overland encounters use.
+        //  Returns the number of locations loaded (0: nothing loaded, the jump list is unchanged).
+        public static int LoadTreasureJump(Mobile from)
+        {
+            if (from is not PlayerMobile pm)
+                return 0;
+
+            Point2D[] locations = TreasureMap.Locations;
+            if (locations == null || locations.Length == 0)
+            {
+                from.SendMessage("No treasure map locations are loaded.");
+                return 0;
+            }
+
+            Map map = Map.Felucca;
+            List<Item.WorldLocation> list = new List<Item.WorldLocation>(locations.Length);
+            foreach (Point2D p in locations)
+                list.Add(new Item.WorldLocation(p.X, p.Y, map.GetAverageZ(p.X, p.Y), map));
+
+            Utility.Shuffle(list);
+
+            pm.JumpIndex = 0;
+            pm.JumpList = new ArrayList(list);
+
+            from.SendMessage("Your jump list has been loaded with {0} treasure map locations in random order.", list.Count);
+            return list.Count;
+        }
         public class LoadTarget : Target
         {
             public LoadTarget()
@@ -2245,7 +3631,7 @@ namespace Server.Commands
             protected override void OnTarget(Mobile from, object targeted)
             {
                 // reset jump table
-                PlayerMobile pm = from as PlayerMobile;
+                PlayerMobile? pm = from as PlayerMobile;
                 pm.JumpIndex = 0;
                 pm.JumpList = new ArrayList();
                 if (pm != null)
@@ -2310,7 +3696,7 @@ namespace Server.Commands
                     {
                         foreach (var o in rb.Entries)
                         {
-                            RunebookEntry entry = o as RunebookEntry;
+                            RunebookEntry? entry = o as RunebookEntry;
                             Apple dummy = new Apple();
                             dummy.Location = entry.Location;
                             dummy.Map = entry.Map;
@@ -2337,7 +3723,7 @@ namespace Server.Commands
 
             try
             {
-                PlayerMobile pm = e.Mobile as PlayerMobile;
+                PlayerMobile? pm = e.Mobile as PlayerMobile;
                 pm.JumpIndex = 0;
                 pm.JumpList = new ArrayList();
 
@@ -2386,16 +3772,17 @@ namespace Server.Commands
         {
             return new Point3D(px.X, px.Y, map.GetAverageZ(px.X, px.Y));
         }
-        [Usage("DistanceToSqrt")]
-        [Description("Calculate the distance from point X/Y to here.")]
+        [Usage("DistanceToSqrt [X Y X Y]")]
+        [Description("Calculate the distance between two points.")]
         public static void DistanceToSqrt_OnCommand(CommandEventArgs e)
         {
             try
             {
+                // No arguments: interactive double-target mode
                 if (e.Arguments.Length == 0)
                 {
-                    e.Mobile.SendMessage("Target the location you wish to calculate the distance to.");
-                    e.Mobile.Target = new GetDistanceToSqrtTarget(e.Mobile, e.Mobile.Location);
+                    e.Mobile.SendMessage("Target the first location.");
+                    e.Mobile.Target = new DistanceFirstTarget();
                     return;
                 }
 
@@ -2404,27 +3791,71 @@ namespace Server.Commands
                 try { points = GetPoints(e.ArgString); }
                 catch
                 {
-                    e.Mobile.Say("Usage GetDistanceToSqrt [X Y [X Y]]");
+                    e.Mobile.Say("Usage DistanceToSqrt [X Y X Y]");
                     return;
                 }
 
-                if (points.Length == 1)
+                if (points.Length == 2)
                 {
-                    e.Mobile.Say(string.Format("GetDistanceToSqrt returned: {0:0.00}", e.Mobile.GetDistanceToSqrt(points[0])));
-                }
-                else if (points.Length == 2)
-                {
-                    e.Mobile.Say(string.Format("GetDistanceToSqrt returned: {0:0.00}", Utility.GetDistanceToSqrt(points[0], points[1])));
+                    double result = Utility.GetDistanceToSqrt(points[0], points[1]);
+                    e.Mobile.Say(string.Format("DistanceToSqrt returned: {0:0.00}", result));
                 }
                 else
-                    e.Mobile.Say("Usage GetDistanceToSqrt [X Y [X Y]]");
+                {
+                    e.Mobile.Say("Usage DistanceToSqrt [X Y X Y]");
+                }
             }
             catch
             {
-                e.Mobile.Say("Usage GetDistanceToSqrt [X Y [X Y]]");
-                return;
+                e.Mobile.Say("Usage DistanceToSqrt [X Y X Y]");
+            }
+        }
+        public class DistanceFirstTarget : Target
+        {
+            public DistanceFirstTarget()
+                : base(32, true, TargetFlags.None)
+            {
             }
 
+            protected override void OnTarget(Mobile from, object targeted)
+            {
+                Point3D loc = GetLocation(targeted);
+
+                from.SendMessage("Target the second location.");
+                from.Target = new DistanceSecondTarget(loc);
+            }
+        }
+        public class DistanceSecondTarget : Target
+        {
+            private readonly Point3D _first;
+
+            public DistanceSecondTarget(Point3D first)
+                : base(32, true, TargetFlags.None)
+            {
+                _first = first;
+            }
+
+            protected override void OnTarget(Mobile from, object targeted)
+            {
+                Point3D second = GetLocation(targeted);
+
+                double result = Utility.GetDistanceToSqrt(_first, second);
+
+                from.Say(string.Format("DistanceToSqrt returned: {0:0.00}", result));
+            }
+        }
+        private static Point3D GetLocation(object targeted)
+        {
+            if (targeted is LandTarget lt)
+                return lt.Location;
+
+            if (targeted is Item item)
+                return item.Location;
+
+            if (targeted is Mobile mob)
+                return mob.Location;
+
+            return Point3D.Zero;
         }
         private static Point2D[] GetPoints(string input)
         {
@@ -2443,25 +3874,23 @@ namespace Server.Commands
             }
             return points.ToArray();
         }
-        public class GetDistanceToSqrtTarget : Target
+        [Usage("GoTrammel")]
+        [Description("Moves you to Trammel at your current location.")]
+        public static void GoTrammel_OnCommand(CommandEventArgs e)
         {
-            Mobile m_moble;
-            Point3D m_Location;
-            public GetDistanceToSqrtTarget(Mobile m, Point3D location)
-                : base(32, true, TargetFlags.None)
-            {
-                m_moble = m;
-                m_Location = location;
-            }
+            if (e.Mobile == null)
+                return;
 
-            protected override void OnTarget(Mobile from, object targeted)
-            {
-                LandTarget tl = targeted as LandTarget;
-                Item it = targeted as Item;
-                Mobile mt = targeted as Mobile;
-                Point3D loc = (tl != null) ? tl.Location : (mt != null) ? mt.Location : (it != null) ? it.Location : Point3D.Zero;
-                m_moble.Say(string.Format("GetDistanceToSqrt returned: {0}", Utility.GetDistanceToSqrt(loc, m_Location)));
-            }
+            e.Mobile.MoveToWorld(e.Mobile.Location, Map.Trammel);
+        }
+        [Usage("GoFelucca")]
+        [Description("Moves you to Felucca at your current location.")]
+        public static void GoFelucca_OnCommand(CommandEventArgs e)
+        {
+            if (e.Mobile == null)
+                return;
+
+            e.Mobile.MoveToWorld(e.Mobile.Location, Map.Felucca);
         }
         [Usage("RemoveBackpackHue")]
         [Description("Removed any hue associated with your backpack.")]
@@ -2478,8 +3907,8 @@ namespace Server.Commands
         [Description("Backs up your backpack.")]
         public static void SaveBackpack_OnCommand(CommandEventArgs e)
         {
-            bool shard_allow = Core.Debug || Core.UOTC_CFG;
-            PlayerMobile pm = e.Mobile as PlayerMobile;
+            bool shard_allow = Core.Debug || Core.GMNTC_CFG;
+            PlayerMobile? pm = e.Mobile as PlayerMobile;
             try
             {
                 if (shard_allow || e.Mobile.AccessLevel >= AccessLevel.GameMaster)
@@ -2518,8 +3947,8 @@ namespace Server.Commands
         [Description("Restores your backpack to its saved state. Any extra items will be deleted.")]
         public static void RestoreBackpack_OnCommand(CommandEventArgs e)
         {
-            bool shard_allow = Core.Debug || Core.UOTC_CFG;
-            PlayerMobile pm = e.Mobile as PlayerMobile;
+            bool shard_allow = Core.Debug || Core.GMNTC_CFG;
+            PlayerMobile? pm = e.Mobile as PlayerMobile;
             try
             {
                 if (shard_allow || e.Mobile.AccessLevel >= AccessLevel.GameMaster)
@@ -2583,6 +4012,112 @@ namespace Server.Commands
                 e.Mobile.SendMessage("Bank box refreshed.");
             }
         }
+
+        #region RecalcBankBoxes
+        [Usage("RecalcBankBoxes")]
+        [Description("Recalculates the cached item, weight and gold totals of every player's bank box (online and offline) " +
+            "from its actual contents, and reports each box's capacity slot usage. Bank contents are never changed.")]
+        public static void RecalcBankBoxes_OnCommand(CommandEventArgs e)
+        {
+            Mobile from = e.Mobile;
+
+            int boxes = 0, changed = 0, differs = 0, full = 0, failed = 0;
+            LogHelper logger = new LogHelper("RecalcBankBoxes.log", false, true);
+            try
+            {
+                logger.Log(LogType.Text, string.Format("RecalcBankBoxes by {0}", from));
+
+                // a snapshot: nothing here adds or removes mobiles, but the live collection must never be enumerated
+                //  while other code could change it
+                foreach (Mobile m in new List<Mobile>(World.Mobiles.Values))
+                {
+                    if (m is not PlayerMobile || m.Deleted)
+                        continue;
+
+                    BankBox? box = m.FindBankNoCreate();    // never creates a bank box
+                    if (box == null || box.Deleted)
+                        continue;
+
+                    try
+                    {
+                        boxes++;
+                        int items = box.TotalItems, weight = box.TotalWeight, gold = box.TotalGold;
+
+                        RecalcTotals(box);
+
+                        if (box.TotalItems != items || box.TotalWeight != weight || box.TotalGold != gold)
+                        {
+                            changed++;
+                            box.InvalidateProperties();
+                            logger.Log(LogType.Mobile, m, string.Format("totals corrected: items {0} -> {1}, weight {2} -> {3}, gold {4} -> {5}",
+                                items, box.TotalItems, weight, box.TotalWeight, gold, box.TotalGold));
+                        }
+
+                        // what the capacity check counts (Container.CheckHold): a potion costs one slot per potion, at
+                        //  any depth, while TotalItems (the number players see) counts a potion stack once
+                        int slots = SlotUsage(box);
+                        if (slots != box.TotalItems)
+                        {
+                            differs++;
+                            logger.Log(LogType.Mobile, m, string.Format("shows {0} items but uses {1} of {2} slots ({3} extra slots from potion stacks)",
+                                box.TotalItems, slots, box.MaxItems, slots - box.TotalItems));
+                        }
+                        if (box.MaxItems > 0 && slots >= box.MaxItems)
+                        {
+                            full++;
+                            logger.Log(LogType.Mobile, m, string.Format("bank box full: {0} of {1} slots", slots, box.MaxItems));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        failed++;
+                        LogHelper.LogException(ex);
+                        logger.Log(LogType.Mobile, m, "recalculation failed: " + ex.Message);
+                    }
+                }
+            }
+            finally
+            {
+                string summary = string.Format("RecalcBankBoxes: {0} bank boxes processed, {1} totals corrected, {2} using more slots than they show, {3} full, {4} failed.",
+                    boxes, changed, differs, full, failed);
+                logger.Log(LogType.Text, summary);
+                logger.Finish();
+                from.SendMessage(summary);
+                from.SendMessage("Details are in RecalcBankBoxes.log.");
+            }
+        }
+
+        // Item.UpdateTotals is the authoritative, recursive recount (each nested item first, then the sums). It also
+        //  stamps LastAccessed on every item it visits, which other code reads (TrashChest, instrument selection); this recount restores those stamps so it
+        //  changes nothing but the cached totals.
+        private static void RecalcTotals(BankBox box)
+        {
+            List<(Item item, DateTime accessed)> stamps = new();
+            CollectStamps(box, stamps);
+
+            box.UpdateTotals();
+
+            foreach ((Item item, DateTime accessed) in stamps)
+                item.LastAccessed = accessed;
+        }
+
+        private static void CollectStamps(Item item, List<(Item item, DateTime accessed)> stamps)
+        {
+            stamps.Add((item, item.LastAccessed));
+            foreach (Item child in item.Items)
+                CollectStamps(child, stamps);
+        }
+
+        // the slots the box's contents occupy, as Container.CheckHold computes them (ComputeContainerSlotUsage)
+        private static int SlotUsage(BankBox box)
+        {
+            int slots = 0;
+            foreach (Item item in box.Items)
+                if (item != null && !item.Deleted)
+                    slots += Container.GetSlotCost(item);   // 0 for virtual items
+            return slots;
+        }
+        #endregion RecalcBankBoxes
 
         public class SetZRegionControl : CustomRegionControl
         {
@@ -2649,7 +4184,129 @@ namespace Server.Commands
 
             }
         }
+        // Re-evaluates and applies shard-dependent player state across all active PlayerMobiles.
+        // 
+        // The Mortal flag is not treated as persisted truth; it is derived from the current RuleSet.
+        // This method normalizes all players to match the active shard configuration (e.g., Mortalis vs others).
+        //
+        // Safe to call multiple times (idempotent). Used both at startup and during live configuration changes.
+        public static void ShardInit()
+        {
+            if (Core.RuleSets.AllShards)
+                // throw away movement packets as we are trying to teleport
+                CoreAI.PostTeleportMoveLockMs = 0.0;
 
+            /* New Server */
+            // Even those thses settings can be set in game, we enforce these settings here on startup.
+            // these settings aren't something that should be tweakable in-game.
+            // You will be able to tweak them in the current run-session, but next restart they will reset to these values.
+            //  If you really want to change these core properties, do it here.
+            switch (Core.ServerID)
+            {
+                case ServerID.AngelIsland:
+                    CoreAI.MaxAccountsPerIP = 3;
+                    CoreAI.MaxAccountsPerMachine = 3;
+                    CoreAI.MaxConcurrentAddresses = 3;
+                    CoreAI.MaxCharactersPerAccount = 5;
+                    CoreAI.SetDynamicFeature(CoreAI.FeatureBits.NewPlayerGuild);
+                    CoreAI.SetDynamicFeature(CoreAI.FeatureBits.NewPlayerStartingArea);
+                    break;
+                case ServerID.SiegePerilous:
+                    CoreAI.MaxAccountsPerIP = 1;
+                    CoreAI.MaxAccountsPerMachine = 1;
+                    CoreAI.MaxConcurrentAddresses = 1;
+                    CoreAI.MaxCharactersPerAccount = 1;
+                    CoreAI.SetDynamicFeature(CoreAI.FeatureBits.NewPlayerGuild);
+                    CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerStartingArea);
+                    break;
+                case ServerID.Mortalis:
+                    CoreAI.MaxAccountsPerIP = 1;
+                    CoreAI.MaxAccountsPerMachine = 1;
+                    CoreAI.MaxConcurrentAddresses = 1;
+                    CoreAI.MaxCharactersPerAccount = 1;
+                    CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerGuild);
+                    CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerStartingArea);
+                    break;
+                case ServerID.Seasons:
+                    if (Core.SeasonVariant == 2)
+                    {
+                        CoreAI.MaxAccountsPerIP = 1;
+                        CoreAI.MaxAccountsPerMachine = 1;
+                        CoreAI.MaxConcurrentAddresses = 1;
+                        CoreAI.MaxCharactersPerAccount = 5; // changed from 3 to 5 (Curt, 6/14/2926)
+                        CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerGuild);
+                        CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerStartingArea);
+                    }
+                    else if (Core.SeasonVariant == 3)
+                    {
+                        CoreAI.MaxAccountsPerIP = 1;
+                        CoreAI.MaxAccountsPerMachine = 1;
+                        CoreAI.MaxConcurrentAddresses = 1;
+                        CoreAI.MaxCharactersPerAccount = 5;
+                        CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerGuild);
+                        CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerStartingArea);
+                    }
+                    else
+                    {   // Default: Season 1
+                        CoreAI.MaxAccountsPerIP = 3;
+                        CoreAI.MaxAccountsPerMachine = 3;
+                        CoreAI.MaxConcurrentAddresses = 3;
+                        CoreAI.MaxCharactersPerAccount = 5;
+                        CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerGuild);
+                        CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerStartingArea);
+                    }
+                    break;
+                case ServerID.Upheaval:
+                    CoreAI.MaxAccountsPerIP = 1;
+                    CoreAI.MaxAccountsPerMachine = 1;
+                    CoreAI.MaxConcurrentAddresses = 1;
+                    CoreAI.MaxCharactersPerAccount = 1;
+                    CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerGuild);
+                    CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerStartingArea);
+                    break;
+                default:
+                    CoreAI.MaxAccountsPerIP = 1;
+                    CoreAI.MaxAccountsPerMachine = 1;
+                    CoreAI.MaxConcurrentAddresses = 1;
+                    CoreAI.MaxCharactersPerAccount = 5;
+                    CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerGuild);
+                    CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerStartingArea);
+                    break;
+            }
+            // During development testing, we want actual configuration
+            if (Core.RuleSets.TestCenterRules() && !Core.Debug)
+            {
+                CoreAI.MaxAccountsPerIP = 8;
+                CoreAI.MaxAccountsPerMachine = 8;
+                CoreAI.MaxConcurrentAddresses = 8;
+                CoreAI.MaxCharactersPerAccount = 5;
+                CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerGuild);
+                CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerStartingArea);
+            }
+
+            // set mortal status && congigure owner's look/title, etc
+            foreach (var pm in PlayerMobile.Instances)
+            {
+                if (pm is null || pm.Deleted)
+                    continue;
+
+                if (pm.Account is not Account acct)
+                    continue;
+
+                if (pm.AccessLevel == AccessLevel.Player)
+                    if (RuleSets.MortalisRules())
+                        pm.Mortal = true;
+                    else
+                        pm.Mortal = false;
+
+                // Refresh GodlyRobe effects (title, fame/karma, robe color) on login
+                // This ensures everything is correct even if server config changed or robe was already equipped.
+                if (pm.FindItemOnLayer(Layer.OuterTorso) is GodlyRobe robe)
+                {   // nothing works. need to close character gump and reopen
+                    GodlyRobe.RefreshGodlyEffects(pm);
+                }
+            }
+        }
         #region Serialization
         private static Dictionary<PlayerMobile, List<Item>> BackpackRecovery = new();
         public static void Save(WorldSaveEventArgs e)
@@ -2710,11 +4367,11 @@ namespace Server.Commands
                             for (int ix = 0; ix < record_count; ix++)
                             {
                                 List<Item> items = new();
-                                Mobile m = reader.ReadMobile();             // the mobile
+                                Mobile? m = reader.ReadMobile();             // the mobile
                                 int item_count = reader.ReadInt();          // number of items
                                 for (int jx = 0; jx < item_count; jx++)
                                 {
-                                    Item item = reader.ReadItem();
+                                    Item? item = reader.ReadItem();
                                     if (item != null)
                                         items.Add(item);
                                 }

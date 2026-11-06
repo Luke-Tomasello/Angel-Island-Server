@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -72,7 +72,7 @@ namespace Server.Factions
 
             bool isMerchantQualified = MerchantTitles.HasMerchantQualifications(from);
 
-            PlayerState pl = PlayerState.Find(from);
+            PlayerState? pl = PlayerState.Find(from);
 
             if (pl != null && pl.MerchantTitle != MerchantTitle.None)
             {
@@ -124,7 +124,7 @@ namespace Server.Factions
                 {
                     AddHtmlLocalized(200, 55 + (i * 30), 150, 20, town.Owner.Definition.OwnerLabel, false, false);
 
-                    BaseMonolith monolith = town.Monolith;
+                    BaseMonolith? monolith = town.Monolith;
 
                     AddImage(20, 60 + (i * 30), (monolith != null && monolith.Sigil != null && monolith.Sigil.IsPurifying) ? 0x938 : 0x939);
                 }
@@ -332,9 +332,9 @@ namespace Server.Factions
 
         public static void SetMerchantTitle(Mobile from, MerchantTitle newTitle)
         {
-            PlayerState pl = PlayerState.Find(from);
+            PlayerState? pl = PlayerState.Find(from);
 
-            MerchantTitleInfo mti = MerchantTitles.GetInfo(newTitle);
+            MerchantTitleInfo? mti = MerchantTitles.GetInfo(newTitle);
 
             if (mti == null)
             {

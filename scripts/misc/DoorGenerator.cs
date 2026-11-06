@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -375,7 +375,7 @@ namespace Server
         private static Map m_Map;
         private static int m_Count;
 
-        public static void Generate(List<Rectangle2D> rects = null, Map[] maps = null)
+        public static void Generate(List<Rectangle2D>? rects = null, Map[]? maps = null)
         {
             World.Broadcast(0x35, true, "Generating doors, please wait.");
 
@@ -507,7 +507,7 @@ namespace Server
             return false;
         }
 
-        public static BaseDoor AddDoor(int x, int y, int z, DoorFacing facing)
+        public static BaseDoor? AddDoor(int x, int y, int z, DoorFacing facing)
         {
             int doorZ = z;
             int doorTop = doorZ + 20;
@@ -551,7 +551,7 @@ namespace Server
 
             return false;
         }
-        public static void Generate(Rectangle2D region, List<Rectangle2D> rects = null)
+        public static void Generate(Rectangle2D region, List<Rectangle2D>? rects = null)
         {
             for (int rx = 0; rx < region.Width; ++rx)
             {
@@ -580,8 +580,8 @@ namespace Server
                             }
                             else if (IsEastFrame(vx + 3, vy, z))
                             {
-                                BaseDoor first = AddDoor(vx + 1, vy, z, DoorFacing.WestCW);
-                                BaseDoor second = AddDoor(vx + 2, vy, z, DoorFacing.EastCCW);
+                                BaseDoor? first = AddDoor(vx + 1, vy, z, DoorFacing.WestCW);
+                                BaseDoor? second = AddDoor(vx + 2, vy, z, DoorFacing.EastCCW);
 
                                 if (first != null && second != null)
                                 {
@@ -606,8 +606,8 @@ namespace Server
                             }
                             else if (IsSouthFrame(vx, vy + 3, z))
                             {
-                                BaseDoor first = AddDoor(vx, vy + 1, z, DoorFacing.NorthCCW);
-                                BaseDoor second = AddDoor(vx, vy + 2, z, DoorFacing.SouthCW);
+                                BaseDoor? first = AddDoor(vx, vy + 1, z, DoorFacing.NorthCCW);
+                                BaseDoor? second = AddDoor(vx, vy + 2, z, DoorFacing.SouthCW);
 
                                 if (first != null && second != null)
                                 {

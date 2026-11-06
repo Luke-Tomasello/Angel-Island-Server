@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -220,7 +220,7 @@ namespace Server.Misc
 				 * Members of the Thieves Guild do not display professional titles on the paperdoll to anyone except themselves, regardless of skill level or fame.
 				 * http://www.uoguide.com/Publish_-_February_24,_1999#Stealing
 				 */
-                if ((beheld is PlayerMobile && beholder is PlayerMobile) && beholder != beheld && (beheld as PlayerMobile).NpcGuild == NpcGuild.ThievesGuild && !(Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()))
+                if ((beheld is PlayerMobile && beholder is PlayerMobile) && beholder != beheld && (beheld as PlayerMobile).NpcGuild == NpcGuild.ThievesGuild && !(Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()))
                 {   // no titles unless looking at self
                     showFameTitle = showSkillTitle = false;
                 }
@@ -317,7 +317,7 @@ namespace Server.Misc
                     #region Alignment
                     if (AlignmentSystem.Enabled && AlignmentSystem.GetTitleDisplay(beheld).HasFlag(TitleDisplay.Paperdoll))
                     {
-                        string alignmentTitle = AlignmentSystem.GetTitle(beheld);
+                        string? alignmentTitle = AlignmentSystem.GetTitle(beheld);
 
                         if (alignmentTitle != null)
                             title.AppendFormat(" {0}", alignmentTitle);
@@ -413,7 +413,7 @@ namespace Server.Misc
         {   // [21:44] Akarius Alexios: She said 480-680, with the top end being fully stocked.
             if (m is PlayerMobile && (m as PlayerMobile).Shopkeeper == true)
             {
-                PlayerMobile pm = m as PlayerMobile;
+                PlayerMobile? pm = m as PlayerMobile;
                 if (pm.ShopkeeperPoints < 375000)
                     return 300;
 
@@ -423,7 +423,7 @@ namespace Server.Misc
                 return 0;
         }
 
-        private static Skill ShopkeeperSkill(Mobile m)
+        private static Skill? ShopkeeperSkill(Mobile m)
         {
             try
             {
@@ -458,7 +458,7 @@ namespace Server.Misc
                 return 0;
         }
 
-        private static Skill ComposerSkill(Mobile m)
+        private static Skill? ComposerSkill(Mobile m)
         {
             try
             {
@@ -491,7 +491,7 @@ namespace Server.Misc
             //if ( !Core.AOS )
             //return skills.Highest;
 
-            Skill highest = null;
+            Skill? highest = null;
 
             for (int i = 0; i < m.Skills.Length; ++i)
             {
@@ -593,6 +593,18 @@ namespace Server.Misc
                     new KarmaEntry( 10000, "The Glorious {1} {0}" )
                 } )
             };
+
+        public static int GetNextLowerFameCap(int fame)
+        {
+            for (int i = 0; i < m_FameEntries.Length; i++)
+            {
+                if (fame <= m_FameEntries[i].m_Fame)
+                    return (i > 0) ? m_FameEntries[i - 1].m_Fame : m_FameEntries[0].m_Fame;
+            }
+
+            // fame above highest cap
+            return (m_FameEntries.Length >= 2) ? m_FameEntries[m_FameEntries.Length - 2].m_Fame : 0;
+        }
     }
 
     public class FameEntry

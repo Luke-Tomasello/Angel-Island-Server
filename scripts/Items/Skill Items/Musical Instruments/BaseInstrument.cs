@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -89,6 +89,7 @@
 	it was more about provoke than peace
  */
 
+using Scripts.Misc;
 using Server.Engines.Craft;
 using Server.Mobiles;
 using Server.Network;
@@ -227,7 +228,7 @@ namespace Server.Items
                     suitableInstruments.Add(kvp.Key as BaseInstrument);
 
             // pick the most recently used
-            BaseInstrument selected = null;
+            BaseInstrument? selected = null;
             foreach (var temp in suitableInstruments)
                 if (selected == null)
                     selected = temp;
@@ -266,7 +267,7 @@ namespace Server.Items
 
         public static void OnPickedInstrument(Mobile from, object targeted, object state)
         {
-            BaseInstrument instrument = targeted as BaseInstrument;
+            BaseInstrument? instrument = targeted as BaseInstrument;
 
             if (instrument == null || instrument is RazorInstrument)
             {
@@ -276,9 +277,16 @@ namespace Server.Items
             {
                 if (instrument.IsChildOf(from.Backpack))
                 {
+                    // Ownership check first
+                    if (targeted is Item it && !StartingLootMonitor.CanUse(from, it))
+                    {
+                        from.SendMessage("This insrument is bound to another soul.");
+                        return;
+                    }
+
                     SetInstrument(from, instrument);
 
-                    InstrumentPickedCallback callback = state as InstrumentPickedCallback;
+                    InstrumentPickedCallback? callback = state as InstrumentPickedCallback;
 
                     if (callback != null)
                         callback(from, instrument);
@@ -333,7 +341,7 @@ namespace Server.Items
 
             val += bc.SkillsTotal / 10;
 
-            if (bc.Paragon == true)
+            if (bc.Paragon == true || bc is BaseChampion)
                 val = val > 2800 ? val : 2800;      // paragon's are ALL hard and result in like a 10% chance to bard
 
             if (IsMageryCreature(bc))
@@ -399,7 +407,7 @@ namespace Server.Items
         {
             if (slayer != SlayerName.None)
             {
-                SlayerEntry entry = SlayerGroup.GetEntryByName(slayer);
+                SlayerEntry? entry = SlayerGroup.GetEntryByName(slayer);
 
                 if (entry != null)
                 {
@@ -608,6 +616,12 @@ namespace Server.Items
             {
                 from.SendLocalizedMessage(500446); // That is too far away.
             }
+            // Ownership check first
+            else if (this is Item it && !StartingLootMonitor.CanUse(from, it))
+            {
+                from.SendMessage("This insrument is bound to another soul.");
+                return;
+            }
             else if (from.BeginAction(typeof(BaseInstrument)))
             {
                 SetInstrument(from, this);
@@ -720,7 +734,7 @@ namespace Server.Items
                         if (music > 100.0)
                             diff -= (music - 100.0) * 0.5;
 
-                        if (!from.CheckTargetSkill(SkillName.Peacemaking, targ, diff - 25.0, diff + 25.0, new object[2] { targ, null } /*contextObj*/))
+                        if (!from.CheckTargetSkill(SkillName.Peacemaking, targ, diff - 25.0, diff + 25.0, new object?[2] { targ, null } /*contextObj*/))
                             fail++;
                         else
                             success++;
@@ -747,7 +761,7 @@ namespace Server.Items
 
             Resource = CraftResources.GetFromType(resourceType);
 
-            CraftContext context = craftSystem.GetContext(from);
+            CraftContext? context = craftSystem.GetContext(from);
 
             if (context != null && context.DoNotColor)
                 Hue = 0;

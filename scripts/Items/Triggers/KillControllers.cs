@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -55,7 +55,7 @@ namespace Server.Items.Triggers
             get { return m_Link; }
             set { m_Link = value; }
         }
-        private StateController m_Controller;
+        private StateController? m_Controller;
         //[CommandProperty(AccessLevel.GameMaster)]
         //public StateController StateController
         //{
@@ -69,7 +69,7 @@ namespace Server.Items.Triggers
             if (value is Spawner || value is ChampEngine || value is null)
                 Monitors[index] = value;
             else
-                SendSystemMessage("You may only monitor spawners and champ engines.");
+                SendMessageNearby("You may only monitor spawners and champ engines.");
         }
         private Item GetMonitor(int index)
         {
@@ -154,7 +154,7 @@ namespace Server.Items.Triggers
             {
                 Defrag();
                 foreach (var kvp in Memory)
-                    SendSystemMessage(string.Format("{0}: {1} kills, {2} points, {3} time remains",
+                    SendMessageNearby(string.Format("{0}: {1} kills, {2} points, {3} time remains",
                         kvp.Key.Name, kvp.Value.Kills, kvp.Value.Points, kvp.Value.DateTime - DateTime.UtcNow
                         ));
 
@@ -266,7 +266,7 @@ namespace Server.Items.Triggers
         public PlayerUnit GetPlayerTallies(Mobile m)
         {
             Defrag();
-            PlayerUnit pu = null;
+            PlayerUnit? pu = null;
             if (Memory.ContainsKey(m))
                 pu = Memory[m];
             return pu;
@@ -320,7 +320,7 @@ namespace Server.Items.Triggers
                 case 1:
                     {
                         int count = reader.ReadInt();
-                        Mobile m = null;
+                        Mobile? m = null;
                         DateTime dt;
                         uint kills;
                         uint points;
@@ -369,7 +369,7 @@ namespace Server.Items.Triggers
                         if (!m_Controller.HasState(kvp.Key))    // if they associate a StateController, we will condition our trigger on that
                             continue;                           // if the StateController doesn't know about this player, no trigger, no credit
 
-                    PlayerUnit pu = Memory.ContainsKey(kvp.Key) ? Memory[kvp.Key] : null;
+                    PlayerUnit? pu = Memory.ContainsKey(kvp.Key) ? Memory[kvp.Key] : null;
                     if (pu == null)
                         pu = new PlayerUnit(DateTime.UtcNow + Remember, kills: 0, points: 0);
                     else
@@ -440,9 +440,9 @@ namespace Server.Items.Triggers
                         m_Thresholds = NormalizeString(tab);
                     else
                     {
-                        SendSystemMessage("Invalid threshold specified. Max 6");
-                        SendSystemMessage("Example: 1, 5, 9, 10");
-                        SendSystemMessage("In this example: 10 would be the trigger threshold.");
+                        SendMessageNearby("Invalid threshold specified. Max 6");
+                        SendMessageNearby("Example: 1, 5, 9, 10");
+                        SendMessageNearby("In this example: 10 would be the trigger threshold.");
                     }
                 }
                 else
@@ -627,12 +627,12 @@ namespace Server.Items.Triggers
             result = false;
             if (GetPlayerTallies(from) == -1)
             {
-                SendSystemMessage("this player is not being tracked");
+                SendMessageNearby("this player is not being tracked");
                 return false;
             }
             if (GetThresholdValue() == -1)
             {
-                SendSystemMessage("no threshold values configured");
+                SendMessageNearby("no threshold values configured");
                 return false;
             }
 

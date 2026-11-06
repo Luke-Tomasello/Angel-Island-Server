@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -99,9 +99,9 @@ namespace Server.Gumps
         private const int NextLabelOffsetX = -29;
         private const int NextLabelOffsetY = 0;
 
-        protected object[] m_Values;
+        protected object?[] m_Values;
 
-        public SetListOptionGump(PropertyInfo prop, Mobile mobile, object o, Stack stack, int propspage, ArrayList list, string[] names, object[] values)
+        public SetListOptionGump(PropertyInfo prop, Mobile mobile, object o, Stack stack, int propspage, ArrayList list, string[] names, object?[] values)
             : base(GumpOffsetX, GumpOffsetY)
         {
             m_Property = prop;
@@ -197,7 +197,7 @@ namespace Server.Gumps
             {
                 try
                 {
-                    object toSet = m_Values[index];
+                    object? toSet = m_Values[index];
                     Server.Commands.CommandLogging.LogChangeProperty(m_Mobile, m_Object, m_Property.Name, (toSet == null ? Properties.PropNull : toSet.ToString()));
                     m_Property.SetValue(m_Object, toSet, null);
                     PropertiesGump.OnValueChanged(m_Object, m_Property, m_Stack);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,13 +52,13 @@ namespace Server.Items
                     return;
                 }
             ;
-                Type t = ScriptCompiler.FindTypeByName(e.GetString(0));
+                Type? t = ScriptCompiler.FindTypeByName(e.GetString(0));
                 if (t == null)
                 {
                     e.Mobile.SendMessage("Item type was not found");
                     return;
                 }
-                object o = Activator.CreateInstance(t);
+                object? o = Activator.CreateInstance(t);
                 if (o is Item item)
                 {
                     item.Delete();
@@ -123,56 +123,127 @@ namespace Server.Items
 
         public override void OnDoubleClick(Mobile from)
         {
+            #region Sanity
+            if (!TestCenterEnvironment())
+            {
+                from.SendMessage("Not today friend!");
+                this.Delete();
+                return;
+            }
+
+            if (this.Movable)
+            {
+                from.SendMessage("This must be locked down to use.");
+                return;
+            }
+            #endregion Sanity
             from.SendMessage("Just tell me what you want:");
             from.SendMessage("Example: Bag of reagents");
             from.SendMessage("Example: 100 boards");
             from.SendMessage("Example: 100 golden ingots");
         }
-        private void ParseText(string text, ref string thing, ref uint amount)
+        private void ParseText(string? text, ref string thing, ref uint amount)
         {
             thing = null;
             amount = 1;
+
             try
-            {   // [100] "thing"
+            {
+                if (string.IsNullOrWhiteSpace(text))
+                    return;
+
+                // [100] "thing"
                 //  -or-
-                // thing [100]
-                string[] chunks = text.Split();
-                uint temp = 0;
+                // "thing" [100]
+                string[] chunks = text.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
                 if (chunks.Length == 2)
                 {
-                    bool numberFirst = uint.TryParse(chunks[0], out temp);
-                    bool numberSecond = uint.TryParse(chunks[1], out temp);
-                    if (numberFirst)
+                    uint first;
+                    uint second;
+
+                    bool numberFirst = uint.TryParse(chunks[0], out first);
+                    bool numberSecond = uint.TryParse(chunks[1], out second);
+
+                    // If both are numbers ("100 200"), treat as invalid "thing" and keep defaults.
+                    // If neither are numbers ("boards wood"), treat as whole thing and keep amount=1.
+                    if (numberFirst && !numberSecond)
                     {
+                        amount = first;
                         thing = chunks[1];
-                        amount = temp;
                     }
-                    else if (numberSecond)
+                    else if (!numberFirst && numberSecond)
                     {
+                        amount = second;
                         thing = chunks[0];
-                        amount = temp;
                     }
+                    else if (!numberFirst && !numberSecond)
+                    {
+                        amount = 1;
+                        thing = text;
+                    }
+                    // else: both numeric -> leave thing null, amount 1 (or set thing=text if you prefer)
                 }
                 else
                 {
-                    // else, amount is 1
+                    // No explicit quantity, keep amount=1
                     thing = text;
                 }
-
-                return;
             }
             catch
             {
-
+                // swallow; leave defaults
             }
-            return;
         }
+
+
         private List<string> ItemNames = new();
         public override bool HandlesOnSpeech => true;
+
+        private static readonly string[] NoiseWords = new[]
+        {
+            "buy", "sell", "bank", "vendor", "guards", "guards!", "balance",
+            "withdraw", "deposit", "stable" , "claim", "train",
+        };
+
+        private bool TestCenterEnvironment()
+        {   // test center server or test center map
+            return Core.RuleSets.TestCenterRules() || this.Map == Map.TestCenter;
+        }
         public override void OnSpeech(SpeechEventArgs e)
         {
             base.OnSpeech(e);
+
+            if (e.Handled)
+                return;
+
+            #region Sanity
+            if (!TestCenterEnvironment())
+            {
+                e.Mobile.SendMessage("Not today friend!");
+                this.Delete();
+                return;
+            }
+            if (this.IsChildOf(e.Mobile.Backpack))
+                return;// stay slient
+            if (this.Movable)
+            {
+                e.Mobile.SendMessage("This must be locked down to use.");
+                return;
+            }
+            #endregion Sanity
+
+            // Ignore common NPC noise commands
+            string? speech = e.Speech?.Trim().ToLower();
+
+            if (!string.IsNullOrEmpty(speech))
+            {
+                foreach (string noise in NoiseWords)
+                {
+                    if (speech == noise)
+                        return;
+                }
+            }
 
             double distance = this.GetDistanceToSqrt(e.Mobile);
             if (distance > 3)
@@ -209,10 +280,17 @@ namespace Server.Items
             {
                 uint amount = 0;
                 uint worth = 0;
-                string thing = null;
+                string? thing = null;
+
                 #region Parse Text
                 ParseText(e.Speech, ref thing, ref amount);
-                bool isBankCheck = thing.Equals("bankcheck", StringComparison.OrdinalIgnoreCase);
+
+                // resolve aliases
+                thing = ResolveThingAlias(thing);
+
+                // null-safe and case-insensitive
+                bool isBankCheck = thing != null && thing.Equals("bankcheck", StringComparison.OrdinalIgnoreCase);
+
                 if (thing == null || amount == 0)
                 {
                     e.Mobile.SendMessage("Usage: 100 boards");
@@ -239,16 +317,38 @@ namespace Server.Items
 
                 if (ItemFlter(real_name))
                 {
-                    Type t = ScriptCompiler.FindTypeByName(real_name);
+                    Type? t = ScriptCompiler.FindTypeByName(real_name);
                     if (t == null)
                     {
                         DontHave(e.Mobile, thing);
                         return;
                     }
-                    object o = Activator.CreateInstance(t);
+                    // Normalize spellbooks: always give exactly one full spellbook on Test Center.
+                    bool isSpellbookType = typeof(Spellbook).IsAssignableFrom(t);
+                    if (isSpellbookType)
+                    {
+                        amount = 1;
+                    }
+                    object? o = Activator.CreateInstance(t);
                     if (o is Item item)
                     {
                         e.Mobile.SendMessage("I found {0}", item.GetType().Name);
+
+                        // they are asking for a testCenterStone. Sure, why not?
+                        if (item.GetType() == this.GetType())
+                        {   // make it movable
+                            item.Movable = true;
+                            item.Weight = 1;
+                        }
+
+                        // Special-case: full spellbook support
+                        if (item is Spellbook spellbook)
+                        {
+                            // Uses your our Spellbook.Fill() helper:
+                            // - 64-spell books => Content = ulong.MaxValue
+                            // - others => lower bits set based on BookCount
+                            spellbook.Fill();
+                        }
 
                         if (item is BankCheck check)
                             check.Worth = (int)worth;
@@ -262,10 +362,17 @@ namespace Server.Items
                             bag.AddItem(item);
                             for (int ix = 1; ix < amount; ix++)
                             {
-                                item = (Item)Activator.CreateInstance(t);
-                                if (item != null)
-                                    if (!bag.TryDropItem(e.Mobile, item, false))
-                                        break;
+                                Item? extra = Activator.CreateInstance(t) as Item;
+
+                                if (extra == null)
+                                    break;
+
+                                // Apply the same full-spellbook rule to each extra instance, just in case
+                                if (isSpellbookType && extra is Spellbook extraBook)
+                                    extraBook.Fill();
+
+                                if (!bag.TryDropItem(e.Mobile, extra, false))
+                                    break;
                             }
                             item = bag;
                         }
@@ -293,7 +400,21 @@ namespace Server.Items
                 return;
             }
         }
-        private void DontHave(Mobile m, string thing)
+        private static string ResolveThingAlias(string thing)
+        {
+            if (string.IsNullOrWhiteSpace(thing))
+                return thing;
+
+            switch (thing.Replace(" ", "").ToLowerInvariant())
+            {
+                case "givingstone":
+                    return "testcenterstone";
+
+                default:
+                    return thing;
+            }
+        }
+        private void DontHave(Mobile m, string? thing)
         {
             m.SendMessage("I don't seem to have {0}", thing);
         }
@@ -326,14 +447,16 @@ namespace Server.Items
         {
             if (typeName.Contains("console", StringComparison.OrdinalIgnoreCase))
                 return false;
-            Type t = ScriptCompiler.FindTypeByName(typeName);
+            Type? t = ScriptCompiler.FindTypeByName(typeName);
             if (t == null)
                 return false;
-            object o = Activator.CreateInstance(t);
+            object? o = Activator.CreateInstance(t);
             if (o is Item item)
             {
-                if (item.Movable == false || item.Visible == false)
-                    return false;
+                // allow players to get TestCenterStones for their very own!
+                if (item.GetType() != this.GetType())
+                    if (item.Movable == false || item.Visible == false)
+                        return false;
 
                 item.Delete();
                 return true;

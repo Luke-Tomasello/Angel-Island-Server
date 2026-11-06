@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,7 +48,6 @@ using Server.Gumps;
 using Server.Items;
 using Server.Multis;
 using Server.Network;
-using System;
 using System.Collections;
 
 namespace Server.Mobiles
@@ -77,8 +76,14 @@ namespace Server.Mobiles
         [CommandProperty(AccessLevel.GameMaster)]
         public PlayerMobile Owner
         {
-            get { return (PlayerMobile)m_Owner; }
-            set { m_Owner = value; }
+            get => (PlayerMobile)m_Owner;
+            set
+            {
+                m_Owner = value;
+
+                // Estate ownership: this vendor “belongs to” the player’s GUID.
+                base.OwnerGUID = value != null ? value.AcctGUID : 0;
+            }
         }
 
         public int NumberOfRefreshes
@@ -119,7 +124,7 @@ namespace Server.Mobiles
 
         public override void AddCustomContextEntries(Mobile from, ArrayList list)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
             bool bIsHouseOwner = false;
             if (house != null)
             {
@@ -149,7 +154,7 @@ namespace Server.Mobiles
 
             public override void OnClick()
             {
-                BaseHouse house = BaseHouse.FindHouseAt(m_Sitter);
+                BaseHouse? house = BaseHouse.FindHouseAt(m_Sitter);
                 bool bIsHouseOwner = false;
                 if (house != null)
                 {
@@ -177,7 +182,7 @@ namespace Server.Mobiles
 
             public override void OnClick()
             {
-                BaseHouse house = BaseHouse.FindHouseAt(m_Sitter);
+                BaseHouse? house = BaseHouse.FindHouseAt(m_Sitter);
                 bool bIsHouseOwner = false;
                 if (house != null)
                 {
@@ -329,7 +334,7 @@ namespace Server.Mobiles
             if (e.Handled)
                 return;
 
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
             bool bIsHouseOwner = false;
             if (house != null)
             {
@@ -368,10 +373,10 @@ namespace Server.Mobiles
             {
                 int gold = cont.GetAmount(typeof(Gold), true);
 
-                BaseHouse house = BaseHouse.FindHouseAt(this);
+                BaseHouse? house = BaseHouse.FindHouseAt(this);
                 if (house != null)
                 {
-                    int costperday = house.MaxSecures * CHARGEPERSECURE;
+                    int costperday = house.MaxSecureContainers * CHARGEPERSECURE;
                     int availabledays = gold / costperday;
 
                     if (availabledays > MAXNUMBEROFREFRESHES - m_NumberOfRefreshes)

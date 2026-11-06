@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Server/World.cs
  * CHANGELOG
+ *  10/7/26, Claude (InvokePreWorldLoad)
+ *      Fire PreWorldLoad before World.Load sets m_Loaded and m_Loading, so subscribers run against a
+ *      genuinely cold world (World.Loading, World.Loaded and World.Saving are all false).
  *  8/18/22, Adam (InvokePreWorldLoad)
  *      Add EventSink.InvokePreWorldLoad();
  *      This event is fired in WorldLoad BEFORE the world loads (mobiles, items, etc.)
@@ -108,6 +111,8 @@ namespace Server
 
         public static SaveOption SaveType = SaveOption.Normal;
 
+        // Retired: FreezeDry is off on every shard and nothing reads this flag at runtime. Kept because
+        //  PatchV8 (Patches001_100\PatchLibrary.cs) reads and writes it.
         private static bool m_FreezeDryEnabled = false;
 
         public static bool FreezeDryEnabled
@@ -440,9 +445,9 @@ namespace Server
             }
         }
 
-        private static string m_LoadingType;
+        private static string? m_LoadingType;
 
-        public static string LoadingType
+        public static string? LoadingType
         {
             get { return m_LoadingType; }
         }
@@ -451,6 +456,8 @@ namespace Server
         {
             if (m_Loaded)
                 return;
+
+            EventSink.InvokePreWorldLoad();
 
             m_Loaded = true;
             m_LoadingType = null;
@@ -474,8 +481,6 @@ namespace Server
             ArrayList mobiles = new ArrayList();
             ArrayList guilds = new ArrayList();
             ArrayList regions = new ArrayList();
-
-            EventSink.InvokePreWorldLoad();
 
             if (File.Exists(mobIdxPath) && File.Exists(mobTdbPath))
             {
@@ -514,11 +519,11 @@ namespace Server
                                 throw new Exception(string.Format("Bad type '{0}'", typeName));
                             }
 
-                            ConstructorInfo ctor = t.GetConstructor(ctorTypes);
+                            ConstructorInfo? ctor = t.GetConstructor(ctorTypes);
 
                             if (ctor != null)
                             {
-                                types.Add(new object[] { ctor, null });
+                                types.Add(new object?[] { ctor, null });
                             }
                             else
                             {
@@ -537,12 +542,12 @@ namespace Server
                             long pos = idxReader.ReadInt64();
                             int length = idxReader.ReadInt32();
 
-                            object[] objs = (object[])types[typeID];
+                            object[]? objs = (object[]?)types[typeID];
 
                             if (objs == null)
                                 continue;
 
-                            Mobile m = null;
+                            Mobile? m = null;
                             ConstructorInfo ctor = (ConstructorInfo)objs[0];
                             string typeName = (string)objs[1];
 
@@ -608,7 +613,7 @@ namespace Server
                                 throw new Exception(string.Format("Bad type '{0}'", typeName));
                             }
 
-                            ConstructorInfo ctor = t.GetConstructor(ctorTypes);
+                            ConstructorInfo? ctor = t.GetConstructor(ctorTypes);
 
                             if (ctor != null)
                             {
@@ -631,12 +636,12 @@ namespace Server
                             long pos = idxReader.ReadInt64();
                             int length = idxReader.ReadInt32();
 
-                            object[] objs = (object[])types[typeID];
+                            object[]? objs = (object[]?)types[typeID];
 
                             if (objs == null)
                                 continue;
 
-                            Item item = null;
+                            Item? item = null;
                             ConstructorInfo ctor = (ConstructorInfo)objs[0];
                             string typeName = (string)objs[1];
 
@@ -682,7 +687,7 @@ namespace Server
                         int length = idxReader.ReadInt32();
 
                         createEventArgs.Id = id;
-                        BaseGuild guild = EventSink.InvokeCreateGuild(createEventArgs);//new Guild( id );
+                        BaseGuild? guild = EventSink.InvokeCreateGuild(createEventArgs);//new Guild( id );
                         if (guild != null)
                             guilds.Add(new GuildEntry(guild, pos, length));
                     }
@@ -706,7 +711,7 @@ namespace Server
                         long pos = idxReader.ReadInt64();
                         int length = idxReader.ReadInt32();
 
-                        Region r = Region.FindByUId(serial);
+                        Region? r = Region.FindByUId(serial);
 
                         if (r != null)
                         {
@@ -721,9 +726,9 @@ namespace Server
             }
 
             bool failedMobiles = false, failedItems = false, failedGuilds = false, failedRegions = false;
-            Type failedType = null;
+            Type? failedType = null;
             Serial failedSerial = Serial.Zero;
-            Exception failed = null;
+            Exception? failed = null;
             int failedTypeID = 0;
 
             if (File.Exists(mobBinPath))
@@ -734,7 +739,7 @@ namespace Server
 
                     for (int i = 0; i < mobiles.Count; ++i)
                     {
-                        MobileEntry entry = (MobileEntry)mobiles[i];
+                        MobileEntry? entry = (MobileEntry?)mobiles[i];
                         Mobile m = (Mobile)entry.Object;
 
                         if (m != null)
@@ -776,7 +781,7 @@ namespace Server
 
                     for (int i = 0; i < items.Count; ++i)
                     {
-                        ItemEntry entry = (ItemEntry)items[i];
+                        ItemEntry? entry = (ItemEntry?)items[i];
                         Item item = (Item)entry.Object;
 
                         if (item != null)
@@ -820,7 +825,7 @@ namespace Server
 
                     for (int i = 0; i < guilds.Count; ++i)
                     {
-                        GuildEntry entry = (GuildEntry)guilds[i];
+                        GuildEntry? entry = (GuildEntry?)guilds[i];
                         BaseGuild g = (BaseGuild)entry.Object;
 
                         if (g != null)
@@ -861,7 +866,7 @@ namespace Server
 
                     for (int i = 0; i < regions.Count; ++i)
                     {
-                        RegionEntry entry = (RegionEntry)regions[i];
+                        RegionEntry? entry = (RegionEntry?)regions[i];
                         Region r = (Region)entry.Object;
 
                         if (r != null)
@@ -952,7 +957,7 @@ namespace Server
 
             for (int i = 0; i < m_DeleteList.Count; ++i)
             {
-                object o = m_DeleteList[i];
+                object? o = m_DeleteList[i];
 
                 if (o is Item)
                     ((Item)o).Delete();
@@ -970,9 +975,7 @@ namespace Server
                 item.ClearProperties();
             }
 
-            //ArrayList list = new ArrayList(m_Mobiles.Values);
             List<Mobile> list = new List<Mobile>(World.Mobiles.Values);
-
 
             foreach (Mobile m in list)
             {
@@ -982,40 +985,10 @@ namespace Server
                 m.ClearProperties();
             }
 
-            // adam: not currently used 
-            //DateTime copy = DateTime.UtcNow;
-            // make sure we take the snapshotted Temp and move it out into working data
-            //if (Directory.Exists("Temp"))
-            //Directory.Delete("Temp", true);
-            //if (Directory.Exists("Saves/Temp"))
-            //CopyDirectory("Saves/Temp", "Temp");
-            //Console.WriteLine("Copying Temp/ took {0}ms.", (DateTime.UtcNow - copy).TotalMilliseconds);
-
             Console.WriteLine("done ({1} items, {2} mobiles) ({0:F1} seconds)", (DateTime.UtcNow - start).TotalSeconds, m_Items.Count, m_Mobiles.Count);
 
         }
-        /*
-		private static bool CopyDirectory(string source, string dest)
-		{
-			if (dest[dest.Length - 1] != Path.DirectorySeparatorChar)
-				dest += Path.DirectorySeparatorChar;
 
-			if (!Directory.Exists(source))
-				return false;
-			if (!Directory.Exists(dest))
-				Directory.CreateDirectory(dest);
-
-			foreach (string file in Directory.GetFileSystemEntries(source))
-			{
-				if (Directory.Exists(file))
-					CopyDirectory(file, dest + Path.GetFileName(file));
-				else
-					File.Copy(file, dest + Path.GetFileName(file));
-			}
-
-			return true;
-		}
-		*/
         public static void SaveIndex(ArrayList list, string path)
         {
             if (!Directory.Exists("Saves/Mobiles/"))
@@ -1038,7 +1011,7 @@ namespace Server
 
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    IEntityEntry e = (IEntityEntry)list[i];
+                    IEntityEntry? e = (IEntityEntry?)list[i];
 
                     idxWriter.Write(e.TypeID);
                     idxWriter.Write(e.Serial);
@@ -1342,7 +1315,7 @@ namespace Server
             memIdx.Close();
         }
 
-        public static IEntity FindEntity(Serial serial)
+        public static IEntity? FindEntity(Serial serial)
         {
             if (serial.IsItem)
             {
@@ -1357,7 +1330,7 @@ namespace Server
                 return null;
             }
         }
-        public static IEntity FindEntity(object o)
+        public static IEntity? FindEntity(object o)
         {
             if (o is Mobile m)
             {
@@ -1376,7 +1349,7 @@ namespace Server
         public static Mobile GetAdminAcct()
         {   // Admin account does things like owns houses (Custom Housing Area)
             Serial Admin = CoreAI.AdminAccount;
-            Mobile admin = FindMobile(Admin);
+            Mobile? admin = FindMobile(Admin);
             if (admin == null)
             {
                 Utility.Monitor.WriteLine("Warning: No admin account specified in World.GetAdminAcct(). Creating...", ConsoleColor.Red);
@@ -1388,7 +1361,7 @@ namespace Server
         public static Mobile GetSystemAcct()
         {   // System account does things like execute commands in-game that need a mobile
             Serial System = CoreAI.SystemAccount;
-            Mobile admin = FindMobile(System);
+            Mobile? admin = FindMobile(System);
             if (admin == null)
             {
                 Utility.Monitor.WriteLine("Warning: No system account specified in World.GetSystemAcct(). Creating...", ConsoleColor.Red);
@@ -1415,23 +1388,57 @@ namespace Server
             if (IPAddress.IsLoopback(ip))
                 return true;
             // Adam's local Server
-            if (ip.ToString() == "192.168.1.67")
+            if (ip.ToString() == CoreAI.OwnerIP)
                 return true;
 
             return false;
         }
-        public static Mobile FindMobile(Serial serial)
+        public static Mobile? GetLordBritishAcct()
+        {   // Lord British represents world authority / crown-administered actions
+            Serial lb = CoreAI.LordBritishAccount;
+            Mobile? admin = FindMobile(lb);
+            if (admin == null)
+            {
+                Utility.Monitor.WriteLine(
+                    "Warning: No Lord British account specified in World.GetLordBritishAcct(). Creating...",
+                    ConsoleColor.Red);
+
+                admin = CreateLordBritishAccount();
+                if (admin != null)
+                    admin.AccessLevelInternal = AccessLevel.System;
+
+                CoreAI.LordBritishAccount = admin != null ? admin.Serial : Serial.MinusOne;
+            }
+            else
+            {
+                admin.AccessLevelInternal = AccessLevel.System;
+            }
+
+            return admin;
+        }
+
+        public static Mobile CreateLordBritishAccount()
+        {
+            PlayerMobile lb = new PlayerMobile();
+            lb.Name = "Lord British";                       // RP-canonical authority
+            lb.AccessLevel = AccessLevel.Administrator;    // prevents cleanup
+            lb.IsIntMapStorage = true;                     // prevents cleanup
+            lb.MoveToWorld(new Point3D(), Map.Internal);
+            return lb;
+        }
+
+        public static Mobile? FindMobile(Serial serial)
         {
             //return (Mobile)m_Mobiles[serial];
-            Mobile temp = null;
+            Mobile? temp = null;
             if (serial != -1)   // optimization
                 m_Mobiles.TryGetValue(serial, out temp);
             return temp;
         }
-        public static Item FindItem(Serial serial)
+        public static Item? FindItem(Serial serial)
         {
             // return (Item)m_Items[serial];
-            Item temp = null;
+            Item? temp = null;
             if (serial != -1)   // optimization
                 m_Items.TryGetValue(serial, out temp);
             return temp;
@@ -1472,7 +1479,7 @@ namespace Server
             //m_Mobiles.Remove(m.Serial, out m_Mobiles[m.Serial]);
             if (m_Mobiles.ContainsKey(mobile.Serial))
             {
-                Mobile m = m_Mobiles[mobile.Serial];
+                Mobile? m = m_Mobiles[mobile.Serial];
                 if (m_Mobiles.TryRemove(mobile.Serial, out m))
                 {
 
@@ -1489,7 +1496,7 @@ namespace Server
             //m_Items.Remove(item.Serial, out i);
             if (m_Items.ContainsKey(item.Serial))
             {
-                Item i = m_Items[item.Serial];
+                Item? i = m_Items[item.Serial];
                 if (m_Items.TryRemove(item.Serial, out i))
                 {
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -102,7 +102,7 @@ namespace Server.SkillHandlers
                     else
                         body = 22;
 
-                    if (from.CheckTargetSkill(SkillName.EvalInt, targ, 0.0, 100.0, new object[2] { targ, null }/*contextObj*/))
+                    if (from.CheckTargetSkill(SkillName.EvalInt, targ, 0.0, 100.0, new object?[2] { targ, null }/*contextObj*/))
                     {
                         targ.PrivateOverheadMessage(MessageType.Regular, 0x3B2, 1038169 + intMod + body, from.NetState); // He/She/It looks [slighly less intelligent than a rock.]  [Of Average intellect] [etc...]
 

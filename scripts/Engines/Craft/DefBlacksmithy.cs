@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -54,7 +54,7 @@ namespace Server.Engines.Craft
             get { return 1044002; } // <CENTER>BLACKSMITHY MENU</CENTER>
         }
 
-        private static CraftSystem m_CraftSystem;
+        private static CraftSystem? m_CraftSystem;
 
         public static CraftSystem CraftSystem
         {
@@ -108,11 +108,6 @@ namespace Server.Engines.Craft
             return HasAnvilAndForge(from, range, true, false);
         }
 
-        public static bool HasForge(Mobile from, int range)
-        {
-            return HasAnvilAndForge(from, range, false, true);
-        }
-
         public static bool HasAnvilAndForge(Mobile from, int range)
         {
             return HasAnvilAndForge(from, range, true, true);
@@ -142,7 +137,7 @@ namespace Server.Engines.Craft
             foreach (Item item in eable)
             {
                 #region Cooperatives
-                Multis.BaseHouse house = Multis.BaseHouse.FindHouseAt(item);
+                Multis.BaseHouse? house = Multis.BaseHouse.FindHouseAt(item);
 
                 if (house != null && house.MembershipOnly && !house.IsMember(from))
                     continue; // cannot use an anvil or forge of a members-only mining cooperative
@@ -199,7 +194,7 @@ namespace Server.Engines.Craft
                 return 0;
         }
 
-        public override void PlayCraftEffect(Mobile from, object obj = null)
+        public override void PlayCraftEffect(Mobile from, object? obj = null)
         {
             if (Core.RuleSets.StandardShardRules())
             {
@@ -393,23 +388,6 @@ namespace Server.Engines.Craft
 
             if (BaseScales.Enabled)
             {
-#if false
-                // Dragon Scale Armor
-                int index = AddCraft(typeof(DragonGloves), 1053114, 1029795, 68.9, 118.9, typeof(RedScales), 1060883, 16, 1060884);
-                SetUseSubRes2(index, true);
-
-                index = AddCraft(typeof(DragonHelm), 1053114, 1029797, 72.6, 122.6, typeof(RedScales), 1060883, 20, 1060884);
-                SetUseSubRes2(index, true);
-
-                index = AddCraft(typeof(DragonLegs), 1053114, 1029799, 78.8, 128.8, typeof(RedScales), 1060883, 28, 1060884);
-                SetUseSubRes2(index, true);
-
-                index = AddCraft(typeof(DragonArms), 1053114, 1029815, 76.3, 126.3, typeof(RedScales), 1060883, 24, 1060884);
-                SetUseSubRes2(index, true);
-
-                index = AddCraft(typeof(DragonChest), 1053114, 1029793, 85.0, 135.0, typeof(RedScales), 1060883, 36, 1060884);
-                SetUseSubRes2(index, true);
-#else
                 const string dragonPlateArmor = "Dragon Plate Armor";
 
                 int index = AddCraft(typeof(DragonPlateArms), dragonPlateArmor, "dragon plate arms", 76.3, 126.3, typeof(RedScales), 1060883, 24, 1060884);
@@ -429,7 +407,6 @@ namespace Server.Engines.Craft
 
                 index = AddCraft(typeof(DragonPlateChest), dragonPlateArmor, "dragon plate chest", 85.0, 135.0, typeof(RedScales), 1060883, 36, 1060884);
                 SetUseSubRes2(index, true);
-#endif
             }
 
             // Set the overidable material

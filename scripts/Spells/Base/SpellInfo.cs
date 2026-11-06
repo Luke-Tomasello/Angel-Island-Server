@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,7 +26,7 @@ namespace Server.Spells
     public class SpellInfo
     {
         private string m_Name;
-        private string m_Mantra;
+        private string? m_Mantra;
         private SpellCircle m_Circle;
         private Type[] m_Reagents;
         private int[] m_Amounts;
@@ -59,12 +59,12 @@ namespace Server.Spells
         {
         }
 
-        public SpellInfo(string name, string mantra, SpellCircle circle, int action, int handEffect, bool allowTown, params Type[] regs)
+        public SpellInfo(string name, string? mantra, SpellCircle circle, int action, int handEffect, bool allowTown, params Type[] regs)
             : this(name, mantra, circle, action, handEffect, handEffect, allowTown, regs)
         {
         }
 
-        public SpellInfo(string name, string mantra, SpellCircle circle, int action, int leftHandEffect, int rightHandEffect, bool allowTown, params Type[] regs)
+        public SpellInfo(string name, string? mantra, SpellCircle circle, int action, int leftHandEffect, int rightHandEffect, bool allowTown, params Type[] regs)
         {
             m_Name = name;
             m_Mantra = mantra;
@@ -86,7 +86,7 @@ namespace Server.Spells
         public bool AllowTown { get { return m_AllowTown; } set { m_AllowTown = value; } }
         public int[] Amounts { get { return m_Amounts; } set { m_Amounts = value; } }
         public SpellCircle Circle { get { return m_Circle; } set { m_Circle = value; } }
-        public string Mantra { get { return m_Mantra; } set { m_Mantra = value; } }
+        public string? Mantra { get { return m_Mantra; } set { m_Mantra = value; } }
         public string Name { get { return m_Name; } set { m_Name = value; } }
         public Type[] Reagents { get { return m_Reagents; } set { m_Reagents = value; } }
         public int LeftHandEffect { get { return m_LeftHandEffect; } set { m_LeftHandEffect = value; } }

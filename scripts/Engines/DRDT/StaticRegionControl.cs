@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -51,6 +51,17 @@ namespace Server.Items
 
     public class StaticRegionControl : Item, IRegionControl
     {
+        public override Item Dupe(int amount)
+        {
+            StaticRegionControl new_src = new();
+            Utility.CopyProperties(this, new_src);
+            if (Region != null)
+            {
+                Utility.CopyProperties(new_src.StaticRegion, Region);
+                new_src.StaticRegion.Coords = new(Region.Coords);
+            }
+            return base.Dupe(new_src, amount);
+        }
         public static readonly List<StaticRegionControl> m_Instances = new List<StaticRegionControl>();
 
         public static List<StaticRegionControl> Instances { get { return m_Instances; } }
@@ -73,7 +84,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public string RegionName
+        public string? RegionName
         {
             get { return (m_StaticRegion == null ? null : m_StaticRegion.Name); }
             set
@@ -295,7 +306,7 @@ namespace Server.Items
 
             foreach (ControllerFix fix in m_FixerTable)
             {
-                StaticRegionControl src = null;
+                StaticRegionControl? src = null;
 
                 foreach (Item item in fix.ControllerMap.GetItemsInRange(fix.ControllerLoc, 0))
                 {

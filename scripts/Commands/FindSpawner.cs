@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,7 +71,7 @@ namespace Server.Commands
             public bool Item;
             public object Sp;
 
-            public Int32 CompareTo(Object obj)
+            public Int32 CompareTo(Object? obj)
             {
                 SpawnerMatch tmpObj = (SpawnerMatch)obj;
                 return (-this.Distance.CompareTo(tmpObj.Distance));
@@ -91,14 +91,14 @@ namespace Server.Commands
         private static void FindTemplateSpawners_OnCommand(CommandEventArgs arg)
         {
             Mobile from = arg.Mobile;
-            PlayerMobile pm = arg.Mobile as PlayerMobile;
+            PlayerMobile? pm = arg.Mobile as PlayerMobile;
 
             // Perform search and retrieve list of spawner matches
             LogHelper Logger = new LogHelper("FindTemplateSpawners.log", from, true);
             // reset jump table
             pm.JumpIndex = 0;
             pm.JumpList = new ArrayList();
-            foreach (Spawner sp in SpawnerCache.Spawners)
+            foreach (Spawner sp in Spawner.Instances)
             {
                 if (sp == null) continue;
                 if (sp.TemplateEnabled != true) continue;
@@ -115,13 +115,13 @@ namespace Server.Commands
         private static void FindBrokenTemplateSpawners_OnCommand(CommandEventArgs arg)
         {   // Find all the broken template spawners and log them
             Mobile from = arg.Mobile;
-            PlayerMobile pm = arg.Mobile as PlayerMobile;
+            PlayerMobile? pm = arg.Mobile as PlayerMobile;
 
             // Perform search and retrieve list of spawner matches
             // reset jump table
             pm.JumpIndex = 0;
             pm.JumpList = new ArrayList();
-            foreach (Spawner sp in SpawnerCache.Spawners)
+            foreach (Spawner sp in Spawner.Instances)
             {
                 if (sp == null) continue;
                 if (sp.TemplateEnabled != true) continue;
@@ -129,7 +129,7 @@ namespace Server.Commands
                 foreach (string thing in sp.ObjectNames)
                 {
                     // Check if item type
-                    Type TestType = SpawnerType.GetType(thing);
+                    Type? TestType = SpawnerType.GetType(thing);
                     if (TestType.Namespace == "Server.Items")
                     {
                         if (sp.TemplateItem == null || sp.TemplateMobile != null)
@@ -162,7 +162,7 @@ namespace Server.Commands
         {   // Find all the broken template spawners and log them
 
             int count = 0;
-            foreach (Spawner sp in SpawnerCache.Spawners)
+            foreach (Spawner sp in Spawner.Instances)
             {
                 if (sp == null) continue;
                 if (sp.TemplateEnabled != true) continue;
@@ -170,8 +170,13 @@ namespace Server.Commands
                 foreach (string thing in sp.ObjectNames)
                 {
                     // Check if item type
-                    Type TestType = SpawnerType.GetType(thing);
-                    if (TestType.Namespace == "Server.Items")
+                    Type? TestType = SpawnerType.GetType(thing);
+                    if (TestType == null)
+                    {   // if it looks like a serial it's probably a loot pack
+                        if (sp.TemplateItem == null || sp.TemplateMobile != null)
+                        { broken = true; count++; }
+                    }
+                    else if (TestType.Namespace == "Server.Items")
                     {
                         if (sp.TemplateItem == null || sp.TemplateMobile != null)
                         { broken = true; count++; }
@@ -179,11 +184,6 @@ namespace Server.Commands
                     else if (TestType.Namespace == "Server.Mobiles")
                     {
                         if (sp.TemplateMobile == null || sp.TemplateItem != null)
-                        { broken = true; count++; }
-                    }
-                    else if (TestType == null)
-                    {   // if it looks like a serial it's probably a loot pack
-                        if (sp.TemplateItem == null || sp.TemplateMobile != null)
                         { broken = true; count++; }
                     }
                 }
@@ -211,7 +211,7 @@ namespace Server.Commands
 
             string SearchText = e.GetString(0);
             int TileRange = e.GetInt32(1);
-            Region region = null;
+            Region? region = null;
             if (e.Length > 1)
                 region = Region.FindByName(e.GetString(1), e.Mobile.Map);
 
@@ -240,7 +240,7 @@ namespace Server.Commands
 
             if (SpawnerList.Count > 0)
             {
-                PlayerMobile pm = e.Mobile as PlayerMobile;
+                PlayerMobile? pm = e.Mobile as PlayerMobile;
 
                 // Have results so sort, loop and display message for each match
                 SpawnerList.Sort();
@@ -339,7 +339,7 @@ namespace Server.Commands
 
                                 // Check if item type
 
-                                Type TestType = SpawnerType.GetType(CreatureName);
+                                Type? TestType = SpawnerType.GetType(CreatureName);
                                 if (TestType == null)
                                     continue;    // if it looks like a serial it's probably a loot pack
 
@@ -391,7 +391,7 @@ namespace Server.Commands
                         // Loop through spawners' creature list and match
                         // against search text
 
-                        foreach (string ItemName in sp.ItemsName)
+                        foreach (string ItemName in sp.MyItemNames)
                         {
 
                             if (SearchPattern.IsMatch(ItemName.ToLower()))
@@ -404,7 +404,7 @@ namespace Server.Commands
 
                                 // Check if item type
 
-                                Type TestType = SpawnerType.GetType(ItemName);
+                                Type? TestType = SpawnerType.GetType(ItemName);
                                 if (TestType == null) // if it looks like a serial it's probably a loot pack
                                     continue;
 
@@ -479,7 +479,7 @@ namespace Server.Commands
 
             if (SpawnerList.Count > 0)
             {
-                PlayerMobile pm = arg.Mobile as PlayerMobile;
+                PlayerMobile? pm = arg.Mobile as PlayerMobile;
 
                 // Have results so sort, loop and display message for each match
                 SpawnerList.Sort();
@@ -549,7 +549,7 @@ namespace Server.Commands
 
                                 // Check if item type
 
-                                Type TestType = SpawnerType.GetType(CreatureName);
+                                Type? TestType = SpawnerType.GetType(CreatureName);
                                 if (TestType == null)
                                     continue;
                                 string strTest = TestType.ToString();
@@ -603,7 +603,7 @@ namespace Server.Commands
                         // Loop through spawners' creature list and match
                         // against search text
 
-                        foreach (string ItemName in sp.ItemsName)
+                        foreach (string ItemName in sp.MyItemNames)
                         {
 
                             if (true /*SearchPattern.IsMatch(ItemName.ToLower())*/)
@@ -616,7 +616,7 @@ namespace Server.Commands
 
                                 // Check if item type
 
-                                Type TestType = SpawnerType.GetType(ItemName);
+                                Type? TestType = SpawnerType.GetType(ItemName);
                                 if (TestType == null)
                                     continue;
                                 string strTest = TestType.ToString();

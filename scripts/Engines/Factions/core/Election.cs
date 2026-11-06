@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -164,7 +164,7 @@ namespace Server.Factions
 
         public void RemoveCandidate(Mobile mob)
         {
-            Candidate cd = FindCandidate(mob);
+            Candidate? cd = FindCandidate(mob);
 
             if (cd == null)
                 return;
@@ -181,7 +181,7 @@ namespace Server.Factions
                     Candidate winner = m_Candidates[0];
 
                     Mobile winMob = winner.Mobile;
-                    PlayerState pl = PlayerState.Find(winMob);
+                    PlayerState? pl = PlayerState.Find(winMob);
 
                     if (pl == null || pl.Faction != m_Faction || winMob == m_Faction.Commander)
                     {
@@ -216,7 +216,7 @@ namespace Server.Factions
             if (m_State != ElectionState.Election)
                 return false;
 
-            if (Core.RuleSets.MLRules() && mob.Account != null)
+            if (Core.RuleSets.MondainsLegacyRules() && mob.Account != null)
             {
                 for (int i = 0; i < mob.Account.Length; ++i)
                 {
@@ -237,7 +237,7 @@ namespace Server.Factions
             return (FindVoter(mob) != null);
         }
 
-        public Candidate FindCandidate(Mobile mob)
+        public Candidate? FindCandidate(Mobile mob)
         {
             for (int i = 0; i < m_Candidates.Count; ++i)
             {
@@ -248,7 +248,7 @@ namespace Server.Factions
             return null;
         }
 
-        public Candidate FindVoter(Mobile mob)
+        public Candidate? FindVoter(Mobile mob)
         {
             for (int i = 0; i < m_Candidates.Count; ++i)
             {
@@ -268,7 +268,7 @@ namespace Server.Factions
 
         public bool CanBeCandidate(Mobile mob)
         {
-            if (Core.RuleSets.MLRules() && mob.Account != null)
+            if (Core.RuleSets.MondainsLegacyRules() && mob.Account != null)
             {
                 for (int i = 0; i < mob.Account.Length; ++i)
                 {
@@ -287,7 +287,7 @@ namespace Server.Factions
             if (m_State != ElectionState.Campaign)
                 return false; // sanity..
 
-            PlayerState pl = PlayerState.Find(mob);
+            PlayerState? pl = PlayerState.Find(mob);
 
             return (pl != null && pl.Faction == m_Faction && pl.Rank.Rank >= FactionConfig.ElectionCandidateRank);
         }
@@ -325,7 +325,7 @@ namespace Server.Factions
                             Candidate winner = m_Candidates[0];
 
                             Mobile mob = winner.Mobile;
-                            PlayerState pl = PlayerState.Find(mob);
+                            PlayerState? pl = PlayerState.Find(mob);
 
                             if (pl == null || pl.Faction != m_Faction || mob == m_Faction.Commander)
                             {
@@ -355,13 +355,13 @@ namespace Server.Factions
 
                         m_Faction.Broadcast(1038024); // The results for the Faction Commander election are in
 
-                        Candidate winner = null;
+                        Candidate? winner = null;
 
                         for (int i = 0; i < m_Candidates.Count; ++i)
                         {
                             Candidate cd = m_Candidates[i];
 
-                            PlayerState pl = PlayerState.Find(cd.Mobile);
+                            PlayerState? pl = PlayerState.Find(cd.Mobile);
 
                             if (pl == null || pl.Faction != m_Faction)
                                 continue;
@@ -398,7 +398,7 @@ namespace Server.Factions
     public class Voter
     {
         private Mobile m_From;
-        private Mobile m_Candidate;
+        private Mobile? m_Candidate;
 
         private IPAddress m_Address;
         private DateTime m_Time;
@@ -408,7 +408,7 @@ namespace Server.Factions
             get { return m_From; }
         }
 
-        public Mobile Candidate
+        public Mobile? Candidate
         {
             get { return m_Candidate; }
         }
@@ -432,7 +432,7 @@ namespace Server.Factions
 
             int kp = 0;
 
-            PlayerState pl = PlayerState.Find(m_From);
+            PlayerState? pl = PlayerState.Find(m_From);
 
             if (pl != null)
                 kp = pl.KillPoints;
@@ -453,7 +453,7 @@ namespace Server.Factions
             return new object[] { m_From, m_Address, m_Time, totalFactor };
         }
 
-        public Voter(Mobile from, Mobile candidate)
+        public Voter(Mobile from, Mobile? candidate)
         {
             m_From = from;
             m_Candidate = candidate;
@@ -466,7 +466,7 @@ namespace Server.Factions
             m_Time = DateTime.UtcNow;
         }
 
-        public Voter(GenericReader reader, Mobile candidate)
+        public Voter(GenericReader reader, Mobile? candidate)
         {
             m_Candidate = candidate;
 

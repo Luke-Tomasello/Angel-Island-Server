@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -142,9 +142,9 @@ namespace Server.Gumps
             TimeSpan toSet = TimeSpan.Zero;
             bool shouldSet = false, shouldSend = false;
 
-            TextRelay h = info.GetTextEntry(0);
-            TextRelay m = info.GetTextEntry(1);
-            TextRelay s = info.GetTextEntry(2);
+            TextRelay? h = info.GetTextEntry(0);
+            TextRelay? m = info.GetTextEntry(1);
+            TextRelay? s = info.GetTextEntry(2);
 
             switch (info.ButtonID)
             {

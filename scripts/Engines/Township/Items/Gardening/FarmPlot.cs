@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -199,7 +199,7 @@ namespace Server.Items
                 typeof(FarmableWheat),
             };
 
-        public static Type GetItemType(CropType cropType)
+        public static Type? GetItemType(CropType cropType)
         {
             int index = (int)cropType;
 
@@ -209,12 +209,12 @@ namespace Server.Items
             return null;
         }
 
-        private static FarmableCrop ConstructCrop(Type type)
+        private static FarmableCrop? ConstructCrop(Type? type)
         {
             if (!typeof(FarmableCrop).IsAssignableFrom(type))
                 return null;
 
-            FarmableCrop crop;
+            FarmableCrop? crop;
 
             try
             {
@@ -424,7 +424,7 @@ namespace Server.Items
             if (Deleted || !IsChildOf(from.Backpack))
                 return;
 
-            FarmPlot farm = targeted as FarmPlot;
+            FarmPlot? farm = targeted as FarmPlot;
 
             if (farm == null || farm.HasCrop)
             {

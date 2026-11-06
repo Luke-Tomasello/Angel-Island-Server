@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -85,14 +85,14 @@ namespace Server.Items
             return (MoonPhase)(totalMinutes % 8);
         }
 
-        public static void GetTime(Map map, int x, int y, out int hours, out int minutes)
+        public static void GetTime(Map? map, int x, int y, out int hours, out int minutes)
         {
             int totalMinutes;
 
             GetTime(map, x, y, out hours, out minutes, out totalMinutes);
         }
 
-        public static void GetTime(Map map, int x, int y, out int hours, out int minutes, out int totalMinutes)
+        public static void GetTime(Map? map, int x, int y, out int hours, out int minutes, out int totalMinutes)
         {
             TimeSpan timeSpan = DateTime.UtcNow - WorldStart;
 
@@ -118,7 +118,7 @@ namespace Server.Items
             GetTime(from.Map, from.X, from.Y, out generalNumber, out exactTime);
         }
 
-        public static void GetTime(Map map, int x, int y, out int generalNumber, out string exactTime)
+        public static void GetTime(Map? map, int x, int y, out int generalNumber, out string exactTime)
         {
             int hours, minutes;
 

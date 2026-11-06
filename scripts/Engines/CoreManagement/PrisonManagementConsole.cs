@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -23,22 +23,18 @@
  * ChangeLog
  *	8/26/2023, Adam
  *		Created.
- *		Management console for the global values stored in Engines/AngelIsland/CoreAI.cs
- *		This console manages aspects of the prison system.
+ *  3/18/26, Luke
+ *      Refactored to inherit from BaseConsole.
  */
 
-namespace Server.Items
+namespace Server.Engines.Consoles
 {
-    [FlipableAttribute(0x1f14, 0x1f15, 0x1f16, 0x1f17)]
-    public class PrisonManagementConsole : Item
+    public class PrisonManagementConsole : BaseConsole
     {
         [Constructable]
         public PrisonManagementConsole()
-            : base(0x1F14)
+            : base("Prison Management Console")
         {
-            Weight = 1.0;
-            Hue = 0x973;
-            Name = "Prison Management Console";
         }
 
         public PrisonManagementConsole(Serial serial)
@@ -49,119 +45,68 @@ namespace Server.Items
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public int SpiritDepotBandies
         {
-            get
-            {
-                return CoreAI.SpiritDepotBandies;
-            }
-            set
-            {
-                CoreAI.SpiritDepotBandies = value;
-            }
+            get => CoreAI.SpiritDepotBandies;
+            set => CoreAI.SpiritDepotBandies = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public int SpiritDepotGHPots
         {
-            get
-            {
-                return CoreAI.SpiritDepotGHPots;
-            }
-            set
-            {
-                CoreAI.SpiritDepotGHPots = value;
-            }
+            get => CoreAI.SpiritDepotGHPots;
+            set => CoreAI.SpiritDepotGHPots = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public int SpiritDepotReagents
         {
-            get
-            {
-                return CoreAI.SpiritDepotReagents;
-            }
-            set
-            {
-                CoreAI.SpiritDepotReagents = value;
-            }
+            get => CoreAI.SpiritDepotReagents;
+            set => CoreAI.SpiritDepotReagents = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public int SpiritDepotTRPots
         {
-            get
-            {
-                return CoreAI.SpiritDepotTRPots;
-            }
-            set
-            {
-                CoreAI.SpiritDepotTRPots = value;
-            }
+            get => CoreAI.SpiritDepotTRPots;
+            set => CoreAI.SpiritDepotTRPots = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public int SpiritFirstWaveVirtualArmor
         {
-            get
-            {
-                return CoreAI.SpiritFirstWaveVirtualArmor;
-            }
-            set
-            {
-                CoreAI.SpiritFirstWaveVirtualArmor = value;
-            }
+            get => CoreAI.SpiritFirstWaveVirtualArmor;
+            set => CoreAI.SpiritFirstWaveVirtualArmor = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public int SpiritSecondWaveVirtualArmor
         {
-            get
-            {
-                return CoreAI.SpiritSecondWaveVirtualArmor;
-            }
-            set
-            {
-                CoreAI.SpiritSecondWaveVirtualArmor = value;
-            }
+            get => CoreAI.SpiritSecondWaveVirtualArmor;
+            set => CoreAI.SpiritSecondWaveVirtualArmor = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public int SpiritThirdWaveVirtualArmor
         {
-            get
-            {
-                return CoreAI.SpiritThirdWaveVirtualArmor;
-            }
-            set
-            {
-                CoreAI.SpiritThirdWaveVirtualArmor = value;
-            }
+            get => CoreAI.SpiritThirdWaveVirtualArmor;
+            set => CoreAI.SpiritThirdWaveVirtualArmor = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public int SpiritBossVirtualArmor
         {
-            get
-            {
-                return CoreAI.SpiritBossVirtualArmor;
-            }
-            set
-            {
-                CoreAI.SpiritBossVirtualArmor = value;
-            }
+            get => CoreAI.SpiritBossVirtualArmor;
+            set => CoreAI.SpiritBossVirtualArmor = value;
         }
 
         public override void OnDoubleClick(Mobile from)
         {
             if (from.AccessLevel > AccessLevel.Administrator)
-            {
                 from.SendGump(new Server.Gumps.PropertiesGump(from, this));
-            }
         }
-
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((int)1); // version
+            writer.Write((int)0); // version
         }
 
         public override void Deserialize(GenericReader reader)
@@ -170,5 +115,4 @@ namespace Server.Items
             int version = reader.ReadInt();
         }
     }
-
 }

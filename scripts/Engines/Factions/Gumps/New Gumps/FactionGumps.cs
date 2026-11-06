@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -40,8 +40,11 @@ namespace Server.Factions.NewGumps
 
         public static void Initialize()
         {
-            CommandSystem.Register("Faction", AccessLevel.Player, new CommandEventHandler(Faction_OnCommand));
-            CommandSystem.Register("Town", AccessLevel.Player, new CommandEventHandler(Town_OnCommand));
+            if (Core.Factions)
+            {
+                CommandSystem.Register("Faction", AccessLevel.Player, new CommandEventHandler(Faction_OnCommand));
+                CommandSystem.Register("Town", AccessLevel.Player, new CommandEventHandler(Town_OnCommand));
+            }
         }
 
         [Usage("Faction")]
@@ -54,7 +57,7 @@ namespace Server.Factions.NewGumps
                 return;
             }
 
-            PlayerState player = PlayerState.Find(e.Mobile);
+            PlayerState? player = PlayerState.Find(e.Mobile);
 
             if (player == null)
             {
@@ -77,9 +80,9 @@ namespace Server.Factions.NewGumps
                 return;
             }
 
-            PlayerState player = PlayerState.Find(e.Mobile);
+            PlayerState? player = PlayerState.Find(e.Mobile);
 
-            Town town = Town.FromRegion(e.Mobile.Region);
+            Town? town = Town.FromRegion(e.Mobile.Region);
 
             if (player == null)
             {
@@ -142,7 +145,7 @@ namespace Server.Factions.NewGumps
 
             if (ns.Gumps != null)
             {
-                List<Gump> toClose = null;
+                List<Gump>? toClose = null;
 
                 foreach (Gump gump in ns.Gumps)
                 {

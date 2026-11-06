@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -123,7 +123,7 @@ namespace Server.Mobiles
         {
             if (Core.RuleSets.AngelIslandRules())
                 if (0.25 >= Utility.RandomDouble() && target is PlayerMobile)
-                    target.Damage(Utility.RandomMinMax(15, 25), this, this);
+                    target.Damage(Utility.RandomMinMax(15, 25), this, new DamageContext { Source = this });
 
             base.OnGaveMeleeAttack(target);
         }
@@ -148,33 +148,16 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020606054853/uo.stratics.com/hunters/executioner.shtml
+            // 750 - 800 Gold, Magic Items
+            if (Spawning)
             {
-                if (Spawning) { }
-                PackGold(300, 450);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(750, 800);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020606054853/uo.stratics.com/hunters/executioner.shtml
-                    // 750 - 800 Gold, Magic Items
-                    if (Spawning)
-                    {
-                        PackGold(750, 800);
-                    }
-                    else
-                    {
 
-                        PackMagicStuff(1, 1, 0.05);
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.FilthyRich);
-                    AddLoot(LootPack.Meager);
-                }
+                PackMagicStuff(1, 1, 0.05);
             }
         }
 

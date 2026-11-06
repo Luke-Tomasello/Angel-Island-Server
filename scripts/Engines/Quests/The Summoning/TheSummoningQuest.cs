@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -119,21 +119,6 @@ namespace Server.Engines.Quests.Doom
             base.Slice();
         }
 
-        public static int GetDaemonBonesFor(BaseCreature creature)
-        {
-            if (creature == null || creature.Controlled || creature.Summoned)
-                return 0;
-
-            int fame = creature.Fame;
-
-            if (fame < 1500)
-                return Utility.Dice(2, 5, -1);
-            else if (fame < 20000)
-                return Utility.Dice(2, 4, 8);
-            else
-                return 50;
-        }
-
         public TheSummoningQuest(Victoria victoria, PlayerMobile from)
             : base(from)
         {
@@ -148,7 +133,7 @@ namespace Server.Engines.Quests.Doom
         {
             base.Cancel();
 
-            QuestObjective obj = FindObjective(typeof(CollectBonesObjective));
+            QuestObjective? obj = FindObjective(typeof(CollectBonesObjective));
 
             if (obj != null && obj.CurProgress > 0)
             {

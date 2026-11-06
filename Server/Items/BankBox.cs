@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Server\Items\BankBox.cs
  * Changelog
+ *  10/18/2026, Adam
+ *      The "Bank container has ..." message uses Container.ItemCountText: unchanged, or with the capacity slots in use
+ *      appended when potion stacks make them differ from the item count ("109 items (125/125 slots)").
  *  6/7/07, Adam
  *      - I don't think bankbox.m_Open should ever have been saved, but we force a Close() now so that the Freeze Dry system can FD the box if the 
  *          server saved while a player had the box open (can remained orphaned in the open position if the user never logs back in.)
@@ -39,13 +42,12 @@
  */
 
 using Server.Network;
-using System;
 
 namespace Server.Items
 {
     public class BankBox : Container
     {
-        private Mobile m_Owner;
+        private Mobile? m_Owner;
         private bool m_Open;
 
         public override int MaxWeight
@@ -61,7 +63,7 @@ namespace Server.Items
         {
         }
 
-        public Mobile Owner
+        public Mobile? Owner
         {
             get
             {
@@ -83,7 +85,7 @@ namespace Server.Items
 
             if (m_Owner != null)
             {
-                m_Owner.PrivateOverheadMessage(MessageType.Regular, 0x3B2, true, string.Format("Bank container has {0} items, {1} stones", TotalItems, TotalWeight), m_Owner.NetState);
+                m_Owner.PrivateOverheadMessage(MessageType.Regular, 0x3B2, true, string.Format("Bank container has {0}, {1} stones", ItemCountText, TotalWeight), m_Owner.NetState);
                 m_Owner.Send(new EquipUpdate(this));
                 DisplayTo(m_Owner);
             }
@@ -95,7 +97,7 @@ namespace Server.Items
 
             writer.Write((int)0); // version
 
-            writer.Write((Mobile)m_Owner);
+            writer.Write((Mobile?)m_Owner);
             writer.Write((bool)m_Open);
         }
 
@@ -118,7 +120,7 @@ namespace Server.Items
             if (m_Owner == null)
                 Delete();
 
-            // Adam: don't think m_Open should ever have been saved, but we force a close so that the Freeze Dry system can FD the box
+            // Adam: don't think m_Open should ever have been saved, so a box saved open is closed on load
             if (m_Open == true)
                 Close();
         }
@@ -167,9 +169,6 @@ namespace Server.Items
             Layer = Layer.Bank;
             Movable = false;
             m_Owner = owner;
-
-            //m_Freeze = new FreezeTimer(this);
-            //m_Freeze.Start();
         }
 
         public override bool IsAccessibleTo(Mobile check)
@@ -195,19 +194,5 @@ namespace Server.Items
             else
                 return false;
         }
-#if false
-        public override bool CanFreezeDry
-        {
-            get
-            {
-                return true;
-            }
-        }
-
-        public override bool CheckFreezeDry()
-        {
-            return !m_Open;
-        }
-#endif
     }
 }

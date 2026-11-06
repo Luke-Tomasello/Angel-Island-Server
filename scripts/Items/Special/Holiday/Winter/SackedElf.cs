@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,14 +41,14 @@ namespace Server.Items
         private string m_RewardMessage;
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public string RewardItem
+        public string? RewardItem
         {
             get { return m_RewardItem; }
             set { m_RewardItem = value; }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public string RewardMessage
+        public string? RewardMessage
         {
             get { return m_RewardMessage; }
             set { m_RewardMessage = value; }
@@ -67,7 +67,7 @@ namespace Server.Items
         {
             if (target is ElfHelper)
             {
-                Item reward = GetReward();
+                Item? reward = GetReward();
 
                 if (reward != null)
                 {
@@ -91,14 +91,14 @@ namespace Server.Items
             return base.DropToMobile(from, target, p);
         }
 
-        private Item GetReward()
+        private Item? GetReward()
         {
-            Type type = SpawnerType.GetType(m_RewardItem);
+            Type? type = SpawnerType.GetType(m_RewardItem);
 
             if (type == null || !typeof(Item).IsAssignableFrom(type))
                 return null;
 
-            ConstructorInfo ctor = type.GetConstructor(new Type[0]);
+            ConstructorInfo? ctor = type.GetConstructor(new Type[0]);
 
             if (ctor == null || !Add.IsConstructable(ctor))
                 return null;
@@ -113,7 +113,7 @@ namespace Server.Items
             }
         }
 
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         private void StartTimer()
         {
@@ -133,7 +133,7 @@ namespace Server.Items
 
         private void OnTick()
         {
-            Mobile m = RootParent as Mobile;
+            Mobile? m = RootParent as Mobile;
 
             if (m != null && m.Player && Utility.RandomBool())
                 LabelTo(m, m_Messages[Utility.Random(m_Messages.Length)]);
@@ -190,7 +190,7 @@ namespace Server.Items
             protected override bool HasSnowballFights { get { return false; } }
             protected override bool IsEasilyScared { get { return false; } }
 
-            private Timer m_Timer;
+            private Timer? m_Timer;
 
             public RescuedElf()
                 : base()

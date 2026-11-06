@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -51,11 +51,12 @@
 using Server.Items;
 using Server.Mobiles;
 using Server.Targeting;
-using System;
-using System.Collections.Generic;
 
 namespace Server.SkillHandlers
 {
+    using System;
+    using System.Collections.Generic;
+
     public class Peacemaking
     {
         public static void Initialize()
@@ -80,7 +81,7 @@ namespace Server.SkillHandlers
         {
             from.RevealingAction();
 
-            if (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+            if (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
             {
                 from.SendLocalizedMessage(1049525); // Whom do you wish to calm?
                 from.Target = new InternalTarget(from, instrument);
@@ -104,9 +105,26 @@ namespace Server.SkillHandlers
             private bool m_SetSkillTime = true;
 
             public InternalTarget(Mobile from, BaseInstrument instrument)
-                : base(BaseInstrument.GetBardRange(from, SkillName.Peacemaking), false, TargetFlags.None)
+                : base(BaseInstrument.GetBardRange(from, SkillName.Peacemaking), false, GetTargetFlags(from))
             {
                 m_Instrument = instrument;
+            }
+
+            private static TargetFlags GetTargetFlags(Mobile from)
+            {
+                // Only modify behavior for Mortalis
+                if (!Core.RuleSets.MortalisStyleRules())
+                    return TargetFlags.None;
+
+                if (from == null || from.Map == null || from.Region == null)
+                    return TargetFlags.None;
+
+                // If they are standing in a guarded town region,
+                // we want the client to give the standard OSI criminal warning.
+                if (from.Region.IsGuarded)
+                    return TargetFlags.Harmful;
+
+                return TargetFlags.None;
             }
 
             protected override void OnTargetFinish(Mobile from)
@@ -153,7 +171,6 @@ namespace Server.SkillHandlers
                     else
                     {
                         // Target mode : pacify a single target for a longer duration
-
                         PeaceTarget(from, m_Instrument, (Mobile)targeted, ref m_SetSkillTime);
                     }
                 }
@@ -201,34 +218,14 @@ namespace Server.SkillHandlers
 
                         targets.Add(m);
                     }
-                    /*
-                     * CoreAI.AreaPeaceDelayBase = 1.0;
-                     * CoreAI.AreaPeaceDelayBonus = 2.0;
-                     * CoreAI.AreaPeaceCrowdSize = 6;
-                     * CoreAI.AreaPeaceSoloBonus = 1.0;
-                     * 
-                     * 1s delay base - always at least 1s delay
-                     * 2s delay bonus based on skill - at GM this adds up to 3s
-                     * 100% solo bonus which doubles our delay to 6s
-                     * The skill delay of peace is only 5s (on successful peace) 
-                     * Though if you'd like 12s then...
-                     * This?
-                     * CoreAI.AreaPeaceDelayBase = 1.0;
-                     * CoreAI.AreaPeaceDelayBonus = 3.0;
-                     * CoreAI.AreaPeaceCrowdSize = 6;
-                     * CoreAI.AreaPeaceSoloBonus = 2.0;
-                     * 
-                     * 1s delay base - always at least 1s delay
-                     * 3s delay bonus based on skill - at GM this adds up to 4s
-                     * 200% solo bonus which triples our delay to 12s
-                     */
+
                     foreach (Mobile m in targets)
                     {
                         m.SendLocalizedMessage(500616); // You hear lovely music, and forget to continue battling!
                         m.Combatant = null;
                         m.Warmode = false;
 
-                        BaseCreature bc = m as BaseCreature;
+                        BaseCreature? bc = m as BaseCreature;
 
                         if (bc != null && !bc.BardPacified)
                         {
@@ -246,8 +243,18 @@ namespace Server.SkillHandlers
                                 delay *= (1.0 + soloBonus);
                             }
 
+                            // Contest inputs (used for break-on-damage / weakening logic)
+                            // Be careful: match PeaceTarget difficulty math: instrument difficulty - 10, plus music>100 adjustment.
+                            double music = from.Skills[SkillName.Musicianship].Value;
+                            double peace = from.Skills[SkillName.Peacemaking].Value;
+
+                            double diff = instrument.GetDifficultyFor(from, bc) - 10.0;
+
+                            if (music > 100.0)
+                                diff -= (music - 100.0) * 0.5;
+
                             bc.DebugSay(DebugFlags.Barding, "I have been pacified for {0:F2} seconds.", delay);
-                            bc.Pacify(from, DateTime.UtcNow + TimeSpan.FromSeconds(delay));
+                            bc.Pacify(from, DateTime.UtcNow + TimeSpan.FromSeconds(delay), diff, music, peace);
                         }
                     }
 
@@ -297,13 +304,15 @@ namespace Server.SkillHandlers
             }
             else
             {
+                // Difficulty / player skill (Publish 15 targeted peace model)
                 double diff = instrument.GetDifficultyFor(from, targ) - 10.0;
                 double music = from.Skills[SkillName.Musicianship].Value;
+                double peace = from.Skills[SkillName.Peacemaking].Value;
 
                 if (music > 100.0)
                     diff -= (music - 100.0) * 0.5;
 
-                if (!from.CheckTargetSkill(SkillName.Peacemaking, targ, diff - 25.0, diff + 25.0, new object[2] { targ, null }/*contextObj*/))
+                if (!from.CheckTargetSkill(SkillName.Peacemaking, targ, diff - 25.0, diff + 25.0, new object?[2] { targ, null }/*contextObj*/))
                 {
                     from.SendLocalizedMessage(1049531); // You attempt to calm your target, but fail.
                     instrument.PlayInstrumentBadly(from);
@@ -329,7 +338,7 @@ namespace Server.SkillHandlers
                         else if (seconds < 10)
                             seconds = 10;
 
-                        bc.Pacify(from, DateTime.UtcNow + TimeSpan.FromSeconds(seconds));
+                        bc.Pacify(from, DateTime.UtcNow + TimeSpan.FromSeconds(seconds), diff, music, peace);
                     }
                     else
                     {
@@ -343,4 +352,5 @@ namespace Server.SkillHandlers
             }
         }
     }
+
 }

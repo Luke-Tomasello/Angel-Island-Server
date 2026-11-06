@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -89,7 +89,7 @@ namespace Server.Gumps
 
             for (int irule = 0; irule < RuleCount; irule++)
             {
-                Rule CurRule = (Rule)m_TourneyStone.Ruleset[irule];
+                Rule? CurRule = (Rule?)m_TourneyStone.Ruleset[irule];
 
                 string CurDesc = CurRule.DynFill(CurRule.Desc);
 
@@ -161,7 +161,7 @@ namespace Server.Gumps
             m_iRule = irule;
 
             ConfigOptions = new ArrayList();
-            Rule CurRule = (Rule)m_TourneyStone.Ruleset[irule];
+            Rule? CurRule = (Rule?)m_TourneyStone.Ruleset[irule];
 
             // Ascertain which conditions are configurable and add them into array for reference
             foreach (RuleCondition rc in CurRule.Conditions)
@@ -184,7 +184,7 @@ namespace Server.Gumps
 
             for (int icon = 0; icon < CondCount; icon++)
             {
-                RuleCondition CurCon = (RuleCondition)ConfigOptions[icon];
+                RuleCondition? CurCon = (RuleCondition?)ConfigOptions[icon];
 
                 if (CurCon.PropertyVal == "")
                 {
@@ -224,7 +224,7 @@ namespace Server.Gumps
             // (1 + condition number) index in ConfigOptions
 
             // ((RuleCondition) ConfigOptions[ info.ButtonID - 1 ]);
-            RuleCondition rc = (RuleCondition)ConfigOptions[info.ButtonID - 1];
+            RuleCondition? rc = (RuleCondition?)ConfigOptions[info.ButtonID - 1];
 
             from.Prompt = new AlterCondValPrompt(info.ButtonID - 1, m_iRule, ref m_TourneyStone, from);
             //from.SendGump( new TourneyStoneEditGump( from, ref m_TourneyStone, m_iRule ) );
@@ -266,8 +266,8 @@ namespace Server.Gumps
         {
             text = text.Trim();
 
-            Rule EditRule = (Rule)m_TourneyStone.Ruleset[m_iRule];
-            RuleCondition EditCon = (RuleCondition)EditRule.Conditions[m_CondID];
+            Rule? EditRule = (Rule?)m_TourneyStone.Ruleset[m_iRule];
+            RuleCondition? EditCon = (RuleCondition?)EditRule.Conditions[m_CondID];
 
             Regex NumMatch = new Regex("^[0-9]+$");
             Regex AlphNum = new Regex("^[0-9A-Za-z]+$");

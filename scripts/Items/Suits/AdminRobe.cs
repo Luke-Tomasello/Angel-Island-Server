@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -33,8 +33,6 @@
  *	11/07/04, Jade
  *		Changed hue to 0x1.
  */
-
-using System;
 
 namespace Server.Items
 {
@@ -97,52 +95,77 @@ namespace Server.Items
             : base(serial)
         {
         }
-        // production (12)
-        // new ColorInfo( 2213, 6, "Gold" ),            // Gold             2213 - 2218 (6)
-        // development (17)
-        // new ColorInfo( 2119, 6, "Blue" ),            // Blue             2119 - 2124 (6)
-        public override bool OnEquip(Mobile from)
-        {
-            if (base.OnEquip(from) == true)
-            {
-                try
-                {
-                    string sub_server = GetSubserver();
-                    from.Title = "[" + Core.Server + sub_server + "]";
-                    from.Fame = 0;
-                    from.Karma = 0;
-                    Colorize(sub_server);
-                }
-                catch { }
 
-                return true;
+        /// <summary>
+        /// Called after the robe has been added to the Mobile (placed on OuterTorso layer).
+        /// This is a better hook than OnEquip because the item is guaranteed to be on the layer.
+        /// </summary>
+        public override void OnAdded(object parent)
+        {
+            base.OnAdded(parent);
+
+            if (parent is Mobile mob)
+            {
+                RefreshGodlyEffects(mob);
             }
-            else return false;
         }
-        private string GetSubserver()
-        {
-            return Core.UOEV_CFG ? " EV" : Core.UOTC_CFG ? " TC" : "";
-        }
-        private new void Colorize(string sub_server)
-        {
-            bool localHost = false;
-            if (Environment.MachineName.Equals("LUKES-MAIN", StringComparison.OrdinalIgnoreCase))
-                localHost = true;
 
-            if (localHost)
+        /// <summary>
+        /// Refreshes the owner's title, clears fame/karma, and updates robe color 
+        /// based on the current server configuration.
+        /// 
+        /// Safe to call from OnAdded(), OnLogin(), Deserialize(), or InitShard().
+        /// </summary>
+        public static void RefreshGodlyEffects(Mobile from)
+        {
+            if (from == null)
+                return;
+
+            // Set title based on current server (e.g. [Seasons], [Seasons TC], [Seasons EV])
+            string subServer = GetSubserver();
+            from.Title = "[" + Core.Server + subServer + "]";
+
+            // Clear fame and karma so only the server tag is shown
+            from.Fame = 0;
+            from.Karma = 0;
+
+            // Update robe color if the GodlyRobe is currently equipped
+            if (from.FindItemOnLayer(Layer.OuterTorso) is GodlyRobe robe)
             {
-                Hue = Utility.RandomSpecialHue(Utility.ColorSelect.Blue, Utility.GetStableHashCode(Core.Server + sub_server));
+                robe.ApplyGodlyAppearance(subServer);
+            }
+        }
+
+        private static string GetSubserver()
+        {
+            return Core.GMNEV_CFG ? " EV" : Core.GMNTC_CFG ? " TC" : "";
+        }
+
+        /// <summary>
+        /// Applies the correct hue to this GodlyRobe based on server type:
+        /// - Black on main production shard (currently Seasons)
+        /// - Gold on all other production shards
+        /// - Blue on localhost / development
+        /// </summary>
+        private void ApplyGodlyAppearance(string subServer)
+        {
+            bool isLocalHost = Core.Developing;
+
+            if (isLocalHost)
+            {
+                // Development / localhost = Blue tones
+                Hue = Utility.RandomSpecialHue(Utility.ColorSelect.Blue, Utility.GetStableHashCode(Core.Server + subServer));
             }
             else
             {
-                if (Core.Server.Equals("Siege Perilous", StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(sub_server))
-                    Hue = 0x204F;   // main server on production, we have the cool black robe
+                if (Core.ServerID == ServerID.Upheaval && string.IsNullOrEmpty(subServer))
+                    Hue = 0x204F;           // Main Upheaval production = Cool Black
                 else
-                {
-                    Hue = Utility.RandomSpecialHue(Utility.ColorSelect.Gold, Utility.GetStableHashCode(Core.Server + sub_server));
-                }
+                    // All other production shards (EV, etc.) = Gold tones
+                    Hue = Utility.RandomSpecialHue(Utility.ColorSelect.Gold, Utility.GetStableHashCode(Core.Server + subServer));
             }
         }
+
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
@@ -153,7 +176,10 @@ namespace Server.Items
         {
             base.Deserialize(reader);
             int version = reader.ReadInt();
-            Colorize(GetSubserver());
+
+            // Refresh appearance in case server configuration has changed
+            if (RootParent is Mobile m)
+                RefreshGodlyEffects(m);
         }
     }
 }

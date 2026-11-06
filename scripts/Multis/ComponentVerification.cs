@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -156,8 +156,8 @@ namespace Server.Multis
         {
             using (StreamReader ip = new StreamReader(path))
             {
-                string[] types = ReadLine(ip);
-                string[] names = ReadLine(ip);
+                string[]? types = ReadLine(ip);
+                string[]? names = ReadLine(ip);
 
                 m_Columns = new ColumnInfo[types.Length];
 
@@ -198,7 +198,7 @@ namespace Server.Multis
             }
         }
 
-        private string[] ReadLine(StreamReader ip)
+        private string[]? ReadLine(StreamReader ip)
         {
             string line;
 
@@ -246,7 +246,7 @@ namespace Server.Multis
             return 0;
         }
 
-        public string GetString(string name)
+        public string? GetString(string name)
         {
             return this[name] as string;
         }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -35,15 +35,14 @@
 using Server.Multis;
 using Server.Network;
 using System;
-using System.Collections;
 
 namespace Server.Items
 {
     // adam, make lockable
     public class Hold : LockableContainer //BaseContainer
     {
-        private BaseBoat m_Boat;
-        public BaseBoat Boat { get { return m_Boat; } set { m_Boat = value; } }
+        private BaseBoat? m_Boat;
+        public BaseBoat? Boat { get { return m_Boat; } set { m_Boat = value; } }
 
         public override int MaxWeight
         {
@@ -169,48 +168,49 @@ namespace Server.Items
             writer.Write(m_Boat);
         }
 
+        [Obsolete]
         private bool OneTimeBoatUpgrade(GenericReader reader)
         {
             // only do this one time, or for any world reverts prior to 5/29/10
             //	to repatch boat holds start the server with the -BoatHoldUpgrade switch
-            if (Core.BoatHoldUpgrade == true)
-            {
-                OldHold h = new OldHold(new SmallBoat());   // dummy hold
-                h.Deserialize(reader);                      // read the stuffs off disk
-                                                            // patch it!
-                Utility.CopyProperties(this, h);
-                this.Boat = h.Boat;
-                uint keyValue = 0;
-                if (this.Boat != null && h.Boat.PPlank != null)
-                    keyValue = h.Boat.PPlank.KeyValue;
-                else if (this.Boat != null && h.Boat.SPlank != null)
-                    keyValue = h.Boat.SPlank.KeyValue;
-                this.KeyValue = keyValue;
+            //if (Core.BoatHoldUpgrade == true)
+            //{
+            //    OldHold h = new OldHold(new SmallBoat());   // dummy hold
+            //    h.Deserialize(reader);                      // read the stuffs off disk
+            //                                                // patch it!
+            //    Utility.CopyProperties(h, this);
+            //    this.Boat = h.Boat;
+            //    uint keyValue = 0;
+            //    if (this.Boat != null && h.Boat.PPlank != null)
+            //        keyValue = h.Boat.PPlank.KeyValue;
+            //    else if (this.Boat != null && h.Boat.SPlank != null)
+            //        keyValue = h.Boat.SPlank.KeyValue;
+            //    this.KeyValue = keyValue;
 
-                // move items from old hold to new hold
-                if (h.Items != null && h.Items.Count > 0)
-                {
-                    ArrayList list = new ArrayList();
-                    for (int ix = 0; ix < h.Items.Count; ix++)
-                    {
-                        list.Add(h.Items[ix]);
-                    }
+            //    // move items from old hold to new hold
+            //    if (h.Items != null && h.Items.Count > 0)
+            //    {
+            //        ArrayList list = new ArrayList();
+            //        for (int ix = 0; ix < h.Items.Count; ix++)
+            //        {
+            //            list.Add(h.Items[ix]);
+            //        }
 
-                    for (int jx = 0; jx < list.Count; jx++)
-                    {
-                        h.RemoveItem(list[jx] as Item);
-                        this.AddItem(list[jx] as Item);
-                    }
-                }
+            //        for (int jx = 0; jx < list.Count; jx++)
+            //        {
+            //            h.RemoveItem(list[jx] as Item);
+            //            this.AddItem(list[jx] as Item);
+            //        }
+            //    }
 
 
-                // kill old boat hold
-                h.Movable = true;
-                h.Boat = null;
-                h.Delete();
-                h = null;
-                return true;
-            }
+            //    // kill old boat hold
+            //    h.Movable = true;
+            //    h.Boat = null;
+            //    h.Delete();
+            //    h = null;
+            //    return true;
+            //}
 
             return false;
         }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -96,33 +96,16 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020606055038/uo.stratics.com/hunters/stoneharpy.shtml
+            // 400 to 500 Gold, Gems
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGem();
-                PackGem();
-                PackGold(125, 175);
+                PackGold(400, 500);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020606055038/uo.stratics.com/hunters/stoneharpy.shtml
-                    // 400 to 500 Gold, Gems
-                    if (Spawning)
-                    {
-                        PackGold(400, 500);
-                    }
-                    else
-                    {
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    AddLoot(LootPack.Average, 2);
-                    AddLoot(LootPack.Gems, 2);
-                }
+                PackGem(1, .9);
+                PackGem(1, .05);
             }
         }
 

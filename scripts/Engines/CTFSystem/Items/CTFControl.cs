@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -237,10 +237,10 @@ namespace Server.Engines
 
         public void ForceResurrect(Mobile m)
         {
-            bool canRessurect = CustomRegion.CanRessurect; // make sure the system can ressurect the player
-            CustomRegion.CanRessurect = true;
+            bool canRessurect = CustomRegion.CanResurrect; // make sure the system can ressurect the player
+            CustomRegion.CanResurrect = true;
             m.Resurrect();
-            CustomRegion.CanRessurect = canRessurect; // restore the setting
+            CustomRegion.CanResurrect = canRessurect; // restore the setting
         }
 
         public void ResurrectMobile(Mobile m)
@@ -265,7 +265,7 @@ namespace Server.Engines
             if ((m_RedTeam.ContainsKey(m as PlayerMobile) || m_BlueTeam.ContainsKey(m as PlayerMobile)) && pcd != null)
             {
                 // colorize this players deathrobe
-                Item item = m.FindItemOnLayer(Layer.OuterTorso);
+                Item? item = m.FindItemOnLayer(Layer.OuterTorso);
                 if (item != null && item is DeathRobe)
                     (item as BaseClothing).PushHue(TeamColor(GetTeam(m)));
 
@@ -342,7 +342,7 @@ namespace Server.Engines
                 {
                     if (GetTeam(m.LastKiller) != GetTeam(m))
                     {
-                        Dictionary<PlayerMobile, PlayerContextData> team = GetTeam(GetTeam(m.LastKiller));
+                        Dictionary<PlayerMobile, PlayerContextData>? team = GetTeam(GetTeam(m.LastKiller));
                         if (team != null)
                         {
                             team[m.LastKiller as PlayerMobile].Points++;
@@ -542,12 +542,22 @@ namespace Server.Engines
                         // read the blue team and thier context data
                         int bcount = reader.ReadInt();
                         for (int ix = 0; ix < bcount; ix++)
-                            m_BlueTeam[reader.ReadMobile() as PlayerMobile] = new PlayerContextData(reader);
+                        {   // always read the context data to keep the stream aligned; skip members whose mobile no longer exists
+                            PlayerMobile? pm = reader.ReadMobile() as PlayerMobile;
+                            PlayerContextData pcd = new PlayerContextData(reader);
+                            if (pm != null)
+                                m_BlueTeam[pm] = pcd;
+                        }
 
                         // read the blue team and thier context data
                         int rcount = reader.ReadInt();
                         for (int ix = 0; ix < rcount; ix++)
-                            m_RedTeam[reader.ReadMobile() as PlayerMobile] = new PlayerContextData(reader);
+                        {   // always read the context data to keep the stream aligned; skip members whose mobile no longer exists
+                            PlayerMobile? pm = reader.ReadMobile() as PlayerMobile;
+                            PlayerContextData pcd = new PlayerContextData(reader);
+                            if (pm != null)
+                                m_RedTeam[pm] = pcd;
+                        }
 
                         // read the generic integer data
                         int count = reader.ReadInt();
@@ -682,7 +692,7 @@ namespace Server.Engines
         {
             try
             {
-                Item held = m.Holding;
+                Item held = m.Dragging;
                 if (held != null)
                 {
                     held.ClearBounce();
@@ -691,7 +701,7 @@ namespace Server.Engines
                         m.Backpack.DropItem(held);
                     }
                 }
-                m.Holding = null;
+                m.Dragging = null;
             }
             catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
         }
@@ -870,7 +880,7 @@ namespace Server.Engines
         public States CurrentState { get { return (States)m_IntData[(int)IntNdx.CurrentState]; } set { if ((States)m_IntData[(int)IntNdx.CurrentState] != value) DebugSay(string.Format("Entering state {0}", value.ToString())); m_IntData[(int)IntNdx.CurrentState] = (int)value; } }
 
         // state machine timer
-        private Timer m_ActionTimer = null;
+        private Timer? m_ActionTimer = null;
 
         // event handler
         public void OnEvent()
@@ -1295,7 +1305,7 @@ namespace Server.Engines
         {
             // send final score
             SendFinalScore();
-            Dictionary<PlayerMobile, PlayerContextData>[] teams = null;
+            Dictionary<PlayerMobile, PlayerContextData>[]? teams = null;
 
             // it's a tie
             if (DefenseScore == OffenseScore)

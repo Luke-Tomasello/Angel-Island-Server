@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -139,9 +139,6 @@ namespace Server.Mobiles
             ForceAddItem(m, new ThighBoots(RandomClothingHue(!primary))); // stockings
 
             // seems to be a client crash causer
-#if false
-            ForceAddItem(m, SetMovable(false, SetLayer(Layer.OuterLegs, new Shoes(RandomClothingHue(primary))))); // shoes over stockings
-#endif
         }
 
         public static int RandomSkinHue()
@@ -197,7 +194,7 @@ namespace Server.Mobiles
 
         public static void ForceAddItem(Mobile m, Item item)
         {
-            Item existing = m.FindItemOnLayer(item.Layer);
+            Item? existing = m.FindItemOnLayer(item.Layer);
 
             if (existing != null)
                 existing.Delete();

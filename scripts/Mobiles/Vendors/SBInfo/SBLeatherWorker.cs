@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -81,12 +81,6 @@ namespace Server.Mobiles
                     foreach (Type type in BBSTypes)
                         if (ResourcePool.IsPooledResource(type))
                             Add(new GenericBuyInfo(type));
-#if false
-                    Add(new GenericBuyInfo(typeof(Leather)));
-                    Add(new GenericBuyInfo(typeof(SpinedLeather)));
-                    Add(new GenericBuyInfo(typeof(HornedLeather)));
-                    Add(new GenericBuyInfo(typeof(BarbedLeather)));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersSellResourcesRules())
                     Add(new GenericBuyInfo(typeof(Hides), BaseVendor.PlayerPays(typeof(Hides)), 999, 0x1078, 0));
@@ -106,16 +100,6 @@ namespace Server.Mobiles
                 {   // balanced buyback system
                     foreach (Type type in BBSTypes)
                         AddToResourcePool(type);
-#if false
-                    AddToResourcePool(typeof(Leather));
-                    AddToResourcePool(typeof(SpinedLeather));
-                    AddToResourcePool(typeof(HornedLeather));
-                    AddToResourcePool(typeof(BarbedLeather));
-                    AddToResourcePool(typeof(Hides));
-                    AddToResourcePool(typeof(SpinedHides));
-                    AddToResourcePool(typeof(BarbedHides));
-                    AddToResourcePool(typeof(HornedHides));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersBuyResourcesRules())
                 {   // cash buyback

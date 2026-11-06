@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -55,6 +55,7 @@
  */
 
 using Server.Engines.Breeding;
+using Server.Engines.Consoles;
 using Server.Items;
 using System;
 
@@ -63,8 +64,8 @@ namespace Server.Mobiles
     [CorpseName("a white wyrm corpse")]
     public class WhiteWyrm : BaseCreature
     {
-        private static double WyrmActiveSpeed { get { return Server.Items.Consoles.DragonSpeedMCi.WyrmActiveSpeed; } }
-        private static double WyrmPassiveSpeed { get { return Server.Items.Consoles.DragonSpeedMCi.WyrmPassiveSpeed; } }
+        private static double WyrmActiveSpeed { get { return DragonSpeedMCi.WyrmActiveSpeed; } }
+        private static double WyrmPassiveSpeed { get { return DragonSpeedMCi.WyrmPassiveSpeed; } }
 
         private bool m_HasFrostBreath; // only bred WWs have frost breath
 
@@ -535,7 +536,7 @@ namespace Server.Mobiles
 
         public override bool CanBreed()
         {
-            return base.CanBreed() && (Core.UOTC_CFG || this.Region.Name == "Ice");
+            return base.CanBreed() && (Core.GMNTC_CFG || this.Region.Name == "Ice");
         }
 
         private static readonly int[] m_MoanSounds = new int[]
@@ -557,44 +558,16 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020607002613/uo.stratics.com/hunters/whitewyrm.shtml
+            // 1800 to 2100 Gold, Gems, Level 4 Treasure Map, Magic Weapons and Armor, 7 or 10 White Scales, 19 Raw Meat, 20 Hides
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                int gems = Utility.RandomMinMax(1, 5);
-
-                for (int i = 0; i < gems; ++i)
-                    PackGem();
-
-                PackGold(800, 900);
-                PackMagicEquipment(1, 3, 0.50, 0.50);
-                PackMagicEquipment(1, 3, 0.15, 0.15);
-
-                // Category 4 MID
-                PackMagicItem(2, 3, 0.10);
-                PackMagicItem(2, 3, 0.05);
-                PackMagicItem(2, 3, 0.02);
+                PackGold(1800, 2100);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020607002613/uo.stratics.com/hunters/whitewyrm.shtml
-                    // 1800 to 2100 Gold, Gems, Level 4 Treasure Map, Magic Weapons and Armor, 7 or 10 White Scales, 19 Raw Meat, 20 Hides
-                    if (Spawning)
-                    {
-                        PackGold(1800, 2100);
-                    }
-                    else
-                    {
-                        PackGem(Utility.Random(1, 5));
-                        PackMagicEquipment(2, 3);
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    AddLoot(LootPack.FilthyRich, 2);
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Gems, Utility.Random(1, 5));
-                }
+                PackGem(Utility.Random(1, 5));
+                PackMagicEquipment(2, 3);
             }
         }
 

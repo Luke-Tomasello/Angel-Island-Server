@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -90,7 +90,7 @@ namespace Server.Misc
                 m_Modifiers.Add(new SkillGainModifier());
         }
 
-        public static bool AllowGain(PlayerMobile pm, Skill skill, object[] contextObj)
+        public static bool AllowGain(PlayerMobile pm, Skill skill, object?[] contextObj)
         {
             if (/*Core.RuleSets.AOSRules() &&*/ Faction.InSkillLoss(pm))  //Changed some time between the introduction of AoS and SE.
                 return false;
@@ -161,8 +161,8 @@ namespace Server.Misc
                     AwardPoints(pm, skill.SkillName, ref gc);
 
 #if DEBUG
-                if (pm.AccessLevel >= AccessLevel.GameMaster)
-                    pm.SendMessage("Skill gain ({0}): {1:F3}", skill.Name, gc);
+                //if (pm.AccessLevel >= AccessLevel.GameMaster)
+                //    pm.SendMessage("Skill gain ({0}): {1:F3}", skill.Name, gc);
 #endif
             }
         }
@@ -210,20 +210,24 @@ namespace Server.Misc
 
         #region Anti-Macro
 
-        public static bool AntiMacroCheck(PlayerMobile pm, Skill skill, object[] contextObj)
+        public static bool AntiMacroCheck(PlayerMobile pm, Skill skill, object?[] contextObj)
         {
             if (!AntiMacroCode || (UseAntiMacro & skill.SkillName.GetFlag()) == 0)
                 return true;
 
-            if (contextObj == null || contextObj[1] == null || pm.AntiMacroTable == null /*|| pm.AccessLevel != AccessLevel.Player*/)
+            if (contextObj == null)
                 return true;
 
-            Hashtable t = (Hashtable)pm.AntiMacroTable[skill];
+            object? key = contextObj[1];
+            if (key == null || pm.AntiMacroTable == null /*|| pm.AccessLevel != AccessLevel.Player*/)
+                return true;
+
+            Hashtable? t = (Hashtable?)pm.AntiMacroTable[skill];
 
             if (t == null)
                 pm.AntiMacroTable[skill] = t = new Hashtable();
 
-            CountAndTimeStamp count = (CountAndTimeStamp)t[contextObj[1]];
+            CountAndTimeStamp? count = (CountAndTimeStamp?)t[key];
 
             if (count != null)
             {
@@ -236,7 +240,7 @@ namespace Server.Misc
                 return ++count.Count <= AntiMacroAllowance;
             }
 
-            t[contextObj[1]] = count = new CountAndTimeStamp();
+            t[key] = count = new CountAndTimeStamp();
 
             count.Count = 1;
             return true;
@@ -987,7 +991,7 @@ namespace Server.Misc
             set { SkillGainSystem.AntiMacroLocationSize = value; }
         }
 
-        private static SkillGainModifier GetModifier(int index)
+        private static SkillGainModifier? GetModifier(int index)
         {
             if (index >= 0 && index < SkillGainSystem.Modifiers.Count)
                 return SkillGainSystem.Modifiers[index];
@@ -996,84 +1000,84 @@ namespace Server.Misc
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier1
+        public SkillGainModifier? Modifier1
         {
             get { return GetModifier(0); }
             set { }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier2
+        public SkillGainModifier? Modifier2
         {
             get { return GetModifier(1); }
             set { }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier3
+        public SkillGainModifier? Modifier3
         {
             get { return GetModifier(2); }
             set { }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier4
+        public SkillGainModifier? Modifier4
         {
             get { return GetModifier(3); }
             set { }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier5
+        public SkillGainModifier? Modifier5
         {
             get { return GetModifier(4); }
             set { }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier6
+        public SkillGainModifier? Modifier6
         {
             get { return GetModifier(5); }
             set { }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier7
+        public SkillGainModifier? Modifier7
         {
             get { return GetModifier(6); }
             set { }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier8
+        public SkillGainModifier? Modifier8
         {
             get { return GetModifier(7); }
             set { }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier9
+        public SkillGainModifier? Modifier9
         {
             get { return GetModifier(8); }
             set { }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier10
+        public SkillGainModifier? Modifier10
         {
             get { return GetModifier(9); }
             set { }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier11
+        public SkillGainModifier? Modifier11
         {
             get { return GetModifier(10); }
             set { }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public SkillGainModifier Modifier12
+        public SkillGainModifier? Modifier12
         {
             get { return GetModifier(11); }
             set { }

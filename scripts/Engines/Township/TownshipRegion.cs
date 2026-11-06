@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,12 +30,13 @@
  */
 
 using Server.Items;
+using Server.Mobiles;
 
 namespace Server.Regions
 {
     public class TownshipRegion : CustomRegion
     {
-        public static TownshipRegion GetTownshipAt(Mobile m)
+        public static TownshipRegion? GetTownshipAt(Mobile? m)
         {
             if (m == null || m.Deleted)
                 return null;
@@ -43,7 +44,7 @@ namespace Server.Regions
             return GetTownshipAt(m.Location, m.Map);
         }
 
-        public static TownshipRegion GetTownshipAt(Item item)
+        public static TownshipRegion? GetTownshipAt(Item item)
         {
             if (item == null || item.Deleted)
                 return null;
@@ -62,7 +63,7 @@ namespace Server.Regions
         }
 
         public TownshipRegion(CustomRegionControl rc)
-            : base(rc)
+            : base(rc, typeof(TownshipGuard))
         {
             Setup();
         }
@@ -82,7 +83,7 @@ namespace Server.Regions
 
         public override bool CheckAccessibility(Item item, Mobile from)
         {
-            TownshipRegion tsr = GetTownshipAt(item);
+            TownshipRegion? tsr = GetTownshipAt(item);
 
             if (tsr != null && tsr.TStone != null && (tsr.TStone.ItemRegistry.Table.ContainsKey(item) || tsr.TStone.IsLockedDown(item)))
                 return tsr.TStone.CheckAccessibility(item, from);
@@ -96,7 +97,7 @@ namespace Server.Regions
             {
                 Item item = (Item)o;
 
-                TownshipRegion tsr = GetTownshipAt(item);
+                TownshipRegion? tsr = GetTownshipAt(item);
 
                 if (tsr != null && tsr.TStone != null && tsr.TStone.IsLockedDown(item))
                 {
@@ -125,7 +126,21 @@ namespace Server.Regions
 
             base.OnExit(m);
         }
+        public bool HasEnemyNotoriety(Mobile source, Mobile target)
+        {
+            if (source == null || target == null || source == target)
+                return false;
 
+            // Target must be inside this township.
+            if (!Contains(target.Location))
+                return false;
+
+            // Source does not need to be inside; they only need township member access.
+            if (!TStone.HasAccess(source, Township.TownshipAccess.Member))
+                return false;
+
+            return TStone.IsEnemy(target);
+        }
         public override bool IsNoMurderZone
         {
             get

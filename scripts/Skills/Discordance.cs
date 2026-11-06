@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -63,7 +63,7 @@ namespace Server.SkillHandlers
         {
             from.RevealingAction();
 
-            if (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+            if (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules())
             {
                 from.SendLocalizedMessage(1049541); // Choose the target for your song of discordance.
                 from.Target = new DiscordanceTarget(from, instrument);
@@ -80,7 +80,7 @@ namespace Server.SkillHandlers
             public Mobile m_From;
             public Mobile m_Creature;
             public DateTime m_EndTime;
-            public Timer m_Timer;
+            public Timer? m_Timer;
             public double m_Scalar;
             public ArrayList m_Mods;
 
@@ -99,7 +99,7 @@ namespace Server.SkillHandlers
             {
                 for (int i = 0; i < m_Mods.Count; ++i)
                 {
-                    object mod = m_Mods[i];
+                    object? mod = m_Mods[i];
 
                     /*if ( mod is ResistanceMod )
 						m_Creature.AddResistanceMod( (ResistanceMod) mod );
@@ -115,7 +115,7 @@ namespace Server.SkillHandlers
             {
                 for (int i = 0; i < m_Mods.Count; ++i)
                 {
-                    object mod = m_Mods[i];
+                    object? mod = m_Mods[i];
 
                     /*if ( mod is ResistanceMod )
 						m_Creature.RemoveResistanceMod( (ResistanceMod) mod );
@@ -134,7 +134,7 @@ namespace Server.SkillHandlers
 
         public static bool GetScalar(Mobile targ, ref double scalar)
         {
-            DiscordanceInfo info = m_Table[targ] as DiscordanceInfo;
+            DiscordanceInfo? info = m_Table[targ] as DiscordanceInfo;
 
             if (info == null)
                 return false;
@@ -204,7 +204,7 @@ namespace Server.SkillHandlers
                             m_Instrument.PlayInstrumentBadly(from);
                             m_Instrument.ConsumeUse(from);
                         }
-                        else if (from.CheckTargetSkill(SkillName.Discordance, target, diff - 25.0, diff + 25.0, new object[2] { target, null } /*contextObj*/))
+                        else if (from.CheckTargetSkill(SkillName.Discordance, target, diff - 25.0, diff + 25.0, new object?[2] { target, null } /*contextObj*/))
                         {
                             if (!m_Table.Contains(targ))
                             {
@@ -307,7 +307,7 @@ namespace Server.SkillHandlers
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                Mobile targ = targeted as Mobile;
+                Mobile? targ = targeted as Mobile;
 
                 if (targ == null || targ.IsInvulnerable || (targ is BaseCreature && (((BaseCreature)targ).BardImmune || ((BaseCreature)targ).IsDeadPet)))
                 {
@@ -342,24 +342,13 @@ namespace Server.SkillHandlers
                         bool success;
 
                         // all bard skills are difficulty-based, let's not make an exception here
-#if false
-                        double totalSkill = 0.0;
-
-                        totalSkill += Math.Min(100.0, from.Skills[SkillName.Musicianship].Value);
-                        totalSkill += Math.Min(100.0, from.Skills[SkillName.Discordance].Value);
-
-                        double chance = totalSkill / 200.0;
-
-                        success = from.CheckTargetSkill(SkillName.Discordance, targ, chance);
-#else
                         double diff = m_Instrument.GetDifficultyFor(from, targ) - 10.0;
                         double music = from.Skills[SkillName.Musicianship].Value;
 
                         if (music > 100.0)
                             diff -= (music - 100.0) * 0.5;
 
-                        success = from.CheckTargetSkill(SkillName.Discordance, targ, diff - 25.0, diff + 25.0, new object[2] { targ, null } /*contextObj*/);
-#endif
+                        success = from.CheckTargetSkill(SkillName.Discordance, targ, diff - 25.0, diff + 25.0, new object?[2] { targ, null } /*contextObj*/);
 
                         if (!success)
                         {

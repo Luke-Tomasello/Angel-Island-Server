@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,17 @@
 
 /* Scripts\Items\Containers\FillableContainers.cs
  * CHANGELOG:
+ *  12/18/25, Adam
+ *      Updated FillableContainer respawn semantics, with special handling for Rare content.
+ *   
+ *   - Enforced curated Rare behavior: respawn only when no rare items remain.
+ *   - Rare containers now always re-arm traps on respawn.
+ *   - Rare respawn clears leftover contents before regenerating.
+ *   - Respawn logic no longer relies on SpawnThreshold for Rare content.
+ *   - Adjusted respawn scheduling to avoid dead containers when delays are modified.
+ *   - Container gumps are closed on respawn to prevent previewing newly spawned items.
+ *   
+ *   Improves fairness, consistency, and administrative control over rare containers.
  *  7/16/2023, Adam
  *      rework system to be more consistent with spawners
  *      1. Add ContentType.Rare
@@ -41,12 +52,6 @@ namespace Server.Items
 {
     public abstract class FillableContainer : LockableContainer
     {
-#if false
-        #region FreezeDry
-        [CommandProperty(AccessLevel.GameMaster)]
-        public override bool CanFreezeDry { get { return false; } } // will continue to refill if allowed to freezedry
-        #endregion
-#endif
         // We generate our own items on dupe, therefore DeepDupe need not dupe our items
         public override bool AutoFills { get { return true; } }
 
@@ -60,14 +65,28 @@ namespace Server.Items
 
         protected FillableContent m_Content = null;
         protected DateTime m_NextRespawnTime = DateTime.MinValue;
-        protected Timer m_RespawnTimer = null;
+        protected Timer? m_RespawnTimer = null;
         private TimeSpan m_MinDelay = TimeSpan.FromMinutes(60);
         private TimeSpan m_MaxDelay = TimeSpan.FromMinutes(90);
         private bool m_mustSteal = false;
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Seer)]
         public virtual bool MustSteal { get { return m_mustSteal; } set { m_mustSteal = value; InvalidateProperties(); } }
+        private void RescheduleRespawnTimer()
+        {
+            if (m_RespawnTimer == null)
+                return; // nothing pending; normal CheckRespawn rules apply elsewhere
 
+            // Cancel current pending respawn and restart with new delay
+            m_RespawnTimer.Stop();
+            m_RespawnTimer = null;
+
+            int mins = Utility.RandomMinMax((int)MinDelay.TotalMinutes, (int)MaxDelay.TotalMinutes);
+            TimeSpan delay = TimeSpan.FromMinutes(mins);
+
+            m_NextRespawnTime = DateTime.UtcNow + delay;
+            m_RespawnTimer = Timer.DelayCall(delay, new TimerCallback(Respawn));
+        }
         [CommandProperty(AccessLevel.GameMaster)]
         public virtual TimeSpan MinDelay
         {
@@ -75,7 +94,14 @@ namespace Server.Items
             set
             {
                 m_MinDelay = value;
-                CheckRespawn();
+
+                // If a respawn was already scheduled, reschedule it with the new delay.
+                // Otherwise, use normal eligibility-based scheduling.
+                if (m_RespawnTimer != null)
+                    RescheduleRespawnTimer();
+                else
+                    CheckRespawn();
+
                 InvalidateProperties();
             }
         }
@@ -86,7 +112,12 @@ namespace Server.Items
             set
             {
                 m_MaxDelay = value;
-                CheckRespawn();
+
+                if (m_RespawnTimer != null)
+                    RescheduleRespawnTimer();
+                else
+                    CheckRespawn();
+
                 InvalidateProperties();
             }
         }
@@ -134,14 +165,6 @@ namespace Server.Items
 
                 Respawn();
             }
-        }
-
-        public override bool AutoResetTrap
-        {
-            /* 5/21/23, Yoar: Treasure chest traps auto-reset on AI/MO
-             * Remove trap is necessary to open these chests
-             */
-            get { return SkillHandlers.RemoveTrap.EraAI; }
         }
 
         public FillableContainer(int itemID)
@@ -210,23 +233,77 @@ namespace Server.Items
                 return count;
             }
         }
-
         public void CheckRespawn()
         {
-            bool canSpawn = (m_Content != null && !Deleted && GetItemsCount() <= SpawnThreshold && !Movable && Parent == null && !IsLockedDown && !IsSecure);
+            if (Deleted || Movable || Parent != null || IsLockedDown || IsSecure || m_Content == null)
+            {
+                StopRespawnTimer();
+                return;
+            }
 
-            if (canSpawn)
+            int count = GetItemsCount();
+
+            bool underThreshold;
+
+            if (ContentType == FillableContentType.Rare)
+            {
+                // Rare containers are "curated": only respawn when NO rare items remain.
+                // This bypasses SpawnThreshold so overrides can't break Rare behavior.
+                underThreshold = (count == 0);
+            }
+            else
+            {
+                underThreshold = (count <= SpawnThreshold);
+            }
+
+            if (underThreshold)
             {
                 if (m_RespawnTimer == null)
                 {
-                    int mins = Utility.RandomMinMax((int)this.MinDelay.TotalMinutes, (int)this.MaxDelay.TotalMinutes);
+                    int mins = Utility.RandomMinMax((int)MinDelay.TotalMinutes, (int)MaxDelay.TotalMinutes);
                     TimeSpan delay = TimeSpan.FromMinutes(mins);
 
                     m_NextRespawnTime = DateTime.UtcNow + delay;
                     m_RespawnTimer = Timer.DelayCall(delay, new TimerCallback(Respawn));
                 }
             }
-            else if (m_RespawnTimer != null)
+            else
+            {
+                StopRespawnTimer();
+            }
+        }
+        /// <summary>
+        /// Allows Seasons-specific remapping of items generated in fillable containers.
+        /// Called after Construct() but before the item is added to the container.
+        /// </summary>
+        protected virtual Item? RemapGeneratedItem(Item item)
+        {
+            if (item == null)
+                return null;
+
+            // Season 2: No magic items in mage fillable containers
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+            {
+                if (item is Spellbook || item is SpellScroll)
+                {
+                    item.Delete();
+
+                    // Replace with something appropriate for Season 2 (no magic)
+                    switch (Utility.Random(4))
+                    {
+                        case 0: return new BlankScroll();
+                        case 1: return Loot.RandomReagent();
+                        case 2: return new Bandage(Utility.RandomMinMax(5, 15));
+                        default: return new LesserHealPotion();
+                    }
+                }
+            }
+
+            return item;
+        }
+        private void StopRespawnTimer()
+        {
+            if (m_RespawnTimer != null)
             {
                 m_RespawnTimer.Stop();
                 m_RespawnTimer = null;
@@ -244,9 +321,27 @@ namespace Server.Items
 
             return list.Count;
         }
+        private void CloseAllOpeners()
+        {
+            // Container openers are usually tracked by the base Container class
+            // (exact property name varies by codebase, but this is the common RunUO model).
+            if (this is Container c)
+            {
+                // ns.Gumps is currenty empty (bug)
+                //CloseContainerGumpsForOpeners();
+                // Until we get this fixed, we will hack it.
+                Map map = this.Map;
+                Point3D location = this.Location;
+                this.MoveToIntStorage(PreserveLocation: true);
+                this.RetrieveItemFromIntStorage(location, map);
+            }
+
+        }
 
         public void Respawn()
         {
+            CloseAllOpeners(); // prevent “previewing” respawned rares
+
             if (m_RespawnTimer != null)
             {
                 m_RespawnTimer.Stop();
@@ -255,6 +350,12 @@ namespace Server.Items
 
             if (m_Content == null || Deleted)
                 return;
+
+            if (this.ContentType == FillableContentType.Rare)
+            {
+                // Rare chests are curated: wipe any leftover items on respawn
+                RemoveObjects();
+            }
 
             GenerateContent();
 
@@ -269,8 +370,11 @@ namespace Server.Items
                 RequiredSkill = difficulty;
             }
 
-            if (IsTrapable && (m_Content.Level > 1 || 4 > Utility.Random(5)))
+            bool forceTrap = (this.ContentType == FillableContentType.Rare);
+
+            if (IsTrapable && (forceTrap || (m_Content.Level > 1 || 4 > Utility.Random(5))))
             {
+                // choose trap type however you want; key point is: never none for Rare
                 if (m_Content.Level > Utility.Random(5))
                     TrapType = TrapType.PoisonTrap;
                 else
@@ -319,28 +423,31 @@ namespace Server.Items
 
             for (int i = 0; i < toSpawn; ++i)
             {
-                Item item = null;
+                Item? item = null;
+
                 if (this.ContentType != FillableContentType.Rare)
                 {
                     item = m_Content.Construct();
                     if (MustSteal)
-                        item.SetItemBool(ItemBoolTable.MustSteal, true);
+                        item?.SetItemBool(ItemBoolTable.MustSteal, true);
                 }
                 else
                 {
                     item = Loot.RareFactoryItem(1.0);
                     if (MustSteal)
-                        item.SetItemBool(ItemBoolTable.MustSteal, true);
+                        item?.SetItemBool(ItemBoolTable.MustSteal, true);
                 }
 
-                if (item != null)
-                {
-                    List<Item> list = this.Items;
+                // Remap spell scrolls for Season 2
+                item = RemapGeneratedItem(item);
 
+                if (item != null && !item.Deleted)
+                {
+                    // existing stacking logic...
+                    List<Item> list = this.Items;
                     for (int j = 0; j < list.Count; ++j)
                     {
                         Item subItem = list[j] as Item;
-
                         if (subItem == null)
                             continue;
 
@@ -774,7 +881,7 @@ namespace Server.Items
 
         public virtual Item Construct()
         {
-            Item item = Loot.Construct(m_Types);
+            Item? item = Loot.Construct(m_Types);
 
             if (item is Key)
                 ((Key)item).ItemID = Utility.RandomList((int)KeyType.Copper, (int)KeyType.Gold, (int)KeyType.Iron, (int)KeyType.Rusty);
@@ -878,7 +985,7 @@ namespace Server.Items
                 m_Weight += entries[i].Weight;
         }
 
-        public virtual Item Construct()
+        public virtual Item? Construct()
         {
             int index = Utility.Random(m_Weight);
 
@@ -1287,7 +1394,7 @@ namespace Server.Items
             {
                 if (LibraryBookCache.LibraryDropRate > 0.0 && Utility.RandomDouble() < LibraryBookCache.LibraryDropRate)
                 {
-                    BaseBook book = LibraryBookCache.Generate();
+                    BaseBook? book = LibraryBookCache.Generate();
 
                     if (book != null)
                         return book;
@@ -1647,7 +1754,7 @@ namespace Server.Items
                 new FillableEntry( 1, typeof( Arrow ) )
             });
 
-        public static FillableContent Lookup(FillableContentType type)
+        public static FillableContent? Lookup(FillableContentType type)
         {
             int v = (int)type;
 
@@ -1665,7 +1772,7 @@ namespace Server.Items
             return (FillableContentType)Array.IndexOf(m_ContentTypes, content);
         }
 
-        private static Hashtable m_AcquireTable;
+        private static Hashtable? m_AcquireTable;
 
         private static FillableContent[] m_ContentTypes = new FillableContent[]
             {
@@ -1683,7 +1790,7 @@ namespace Server.Items
                 Tinker,         Veterinarian,   Rare
             };
 
-        public static FillableContent Acquire(Point3D loc, Map map)
+        public static FillableContent? Acquire(Point3D loc, Map map)
         {
             if (map == null || map == Map.Internal)
                 return null;
@@ -1701,15 +1808,15 @@ namespace Server.Items
                 }
             }
 
-            Mobile nearest = null;
-            FillableContent content = null;
+            Mobile? nearest = null;
+            FillableContent? content = null;
 
             foreach (Mobile mob in map.GetMobilesInRange(loc, 20))
             {
                 if (nearest != null && mob.GetDistanceToSqrt(loc) > nearest.GetDistanceToSqrt(loc) && !(nearest is Cobbler && mob is Provisioner))
                     continue;
 
-                FillableContent check = m_AcquireTable[mob.GetType()] as FillableContent;
+                FillableContent? check = m_AcquireTable[mob.GetType()] as FillableContent;
 
                 if (check != null)
                 {

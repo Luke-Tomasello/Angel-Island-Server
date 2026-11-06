@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -40,6 +40,7 @@
  * 	3/18/04 code changes by smerX:
  * 		Added 0.3 second DamageDelay
  */
+using Server.Engines.Consoles;
 using Server.Targeting;
 using System;
 
@@ -117,11 +118,11 @@ namespace Server.Spells.First
                 TimeSpan delay = TimeSpan.Zero;
 
                 #region Tuning Console
-                if (Server.Items.Consoles.TuningConsole.Enabled)
-                    delay = TimeSpan.FromSeconds(Server.Items.Consoles.MagicArrowMCi.DamageDelay);
+                if (TuningConsole.Enabled)
+                    delay = TimeSpan.FromSeconds(MagicArrowMCi.DamageDelay);
                 #endregion
 
-                SpellHelper.Damage(delay, m, Caster, damage, 0, 100, 0, 0, 0);
+                SpellHelper.Damage(delay, m, Caster, damage, new DamageContext { Source = this });
             }
 
             FinishSequence();

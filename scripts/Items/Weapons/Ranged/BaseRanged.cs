@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -110,9 +110,15 @@ namespace Server.Items
         /// <summary>
         /// StandingDelay: denotes the minimum time (in seconds) an archer must stand still
         /// before being able to fire.
+        /// Net effect (summary)
+        /// Era Required standstill
+        /// Pre-AOS(Publish 15 era)    1.0 second
+        /// AOS	0.5 seconds
+        /// SE	0.25 seconds
+        /// AOS + Moving Shot	0 seconds
         /// </summary>
-        //private double StandingDelay = 0.5;
-
+        // 1/17/2026, Adam: we have been using AoS numbers of .5, but we had a guy lastnight testing it out 
+        // felt it was 'too slow', maybe the next move is to 0.375 seconds (375 ms)
         public override TimeSpan OnSwing(Mobile attacker, Mobile defender)
         {
             Container pack = attacker.Backpack;
@@ -146,18 +152,14 @@ namespace Server.Items
                         if (pack != null)
                         {
                             // check for arrows/bolts
-                            Item Ammo;
+                            Item? Ammo;
                             Ammo = (Item)pack.FindItemByType(AmmoType, true);
                             if (Ammo != null)
                             {
-                                if (Core.RuleSets.StandardShardRules())
-                                {
-                                    // no poisoned arrows on standard shards
-                                }
-                                else
+                                if (Core.RuleSets.PoisonedArrowsRules())
                                 {
                                     // check for poisoned cloth in backpack
-                                    PoisonCloth PCloth = (PoisonCloth)pack.FindItemByType(typeof(PoisonCloth), false);
+                                    PoisonCloth? PCloth = (PoisonCloth?)pack.FindItemByType(typeof(PoisonCloth), false);
                                     if (PCloth != null)
                                     {
                                         // cloth found
@@ -165,7 +167,7 @@ namespace Server.Items
                                         if (PCloth.PoisonCharges > 0)
                                         {
                                             //Pix: 5/13/06 - make sure they don't have a spell ready
-                                            Spell s = attacker.Spell as Spell;
+                                            Spell? s = attacker.Spell as Spell;
                                             if (s != null && s.State == SpellState.Sequencing)
                                             {
                                                 s.Disturb(DisturbType.EquipRequest, true, false);
@@ -213,7 +215,7 @@ namespace Server.Items
                         }
                     }
 
-                    attacker.DisruptiveAction();
+                    attacker.DisruptiveAction(null);
                     attacker.Send(new Swing(0, attacker, defender));
                     if (OnFired(attacker, defender))
                     {
@@ -226,7 +228,7 @@ namespace Server.Items
                             parent.Notify(notification: Notification.AmmoStatus, this);
                     }
 
-                    if (Core.RuleSets.AngelIslandRules())
+                    if (Core.RuleSets.PoisonedArrowsRules())
                     {   // set weapon to be unpoisoned since ranged weapons on AI can only apply one
                         //  dose of poison at a time. 
                         Poison = null;
@@ -276,9 +278,9 @@ namespace Server.Items
                     ISpell i = from.Spell;
                     Spell s = (Spell)i;
 
-                    if (!Core.RuleSets.StandardShardRules()) //don't bother checking if we're Siege etc.
+                    if (Core.RuleSets.PoisonedArrowsRules())
                     {
-                        PoisonCloth pCloth = (PoisonCloth)from.Backpack.FindItemByType(typeof(Server.Items.PoisonCloth), false);
+                        PoisonCloth? pCloth = (PoisonCloth?)from.Backpack.FindItemByType(typeof(Server.Items.PoisonCloth), false);
                         if (pCloth != null && pCloth.PoisonCharges > 0)
                             if (i != null && s.State == SpellState.Sequencing)
                                 cancelSpell = true;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,7 +41,7 @@ namespace Server.Engines.ResourcePool
     [PropertyObject]
     public class RPProps
     {
-        private static RPProps m_Instance;
+        private static RPProps? m_Instance;
 
         public static RPProps Instance
         {
@@ -55,79 +55,79 @@ namespace Server.Engines.ResourcePool
         }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Arrows { get { return ResourcePool.GetResource(typeof(Arrow)); } set { } }
+        public static ResourceData? Arrows { get { return ResourcePool.GetResource(typeof(Arrow)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Bolts { get { return ResourcePool.GetResource(typeof(Bolt)); } set { } }
+        public static ResourceData? Bolts { get { return ResourcePool.GetResource(typeof(Bolt)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Shafts { get { return ResourcePool.GetResource(typeof(Shaft)); } set { } }
+        public static ResourceData? Shafts { get { return ResourcePool.GetResource(typeof(Shaft)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Feathers { get { return ResourcePool.GetResource(typeof(Feather)); } set { } }
+        public static ResourceData? Feathers { get { return ResourcePool.GetResource(typeof(Feather)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Iron { get { return ResourcePool.GetResource(typeof(IronIngot)); } set { } }
+        public static ResourceData? Iron { get { return ResourcePool.GetResource(typeof(IronIngot)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData DullCopper { get { return ResourcePool.GetResource(typeof(DullCopperIngot)); } set { } }
+        public static ResourceData? DullCopper { get { return ResourcePool.GetResource(typeof(DullCopperIngot)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData ShadowIron { get { return ResourcePool.GetResource(typeof(ShadowIronIngot)); } set { } }
+        public static ResourceData? ShadowIron { get { return ResourcePool.GetResource(typeof(ShadowIronIngot)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Copper { get { return ResourcePool.GetResource(typeof(CopperIngot)); } set { } }
+        public static ResourceData? Copper { get { return ResourcePool.GetResource(typeof(CopperIngot)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Bronze { get { return ResourcePool.GetResource(typeof(BronzeIngot)); } set { } }
+        public static ResourceData? Bronze { get { return ResourcePool.GetResource(typeof(BronzeIngot)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Gold { get { return ResourcePool.GetResource(typeof(GoldIngot)); } set { } }
+        public static ResourceData? Gold { get { return ResourcePool.GetResource(typeof(GoldIngot)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Agapite { get { return ResourcePool.GetResource(typeof(AgapiteIngot)); } set { } }
+        public static ResourceData? Agapite { get { return ResourcePool.GetResource(typeof(AgapiteIngot)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Verite { get { return ResourcePool.GetResource(typeof(VeriteIngot)); } set { } }
+        public static ResourceData? Verite { get { return ResourcePool.GetResource(typeof(VeriteIngot)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Valorite { get { return ResourcePool.GetResource(typeof(ValoriteIngot)); } set { } }
+        public static ResourceData? Valorite { get { return ResourcePool.GetResource(typeof(ValoriteIngot)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Cloth { get { return ResourcePool.GetResource(typeof(Cloth)); } set { } }
+        public static ResourceData? Cloth { get { return ResourcePool.GetResource(typeof(Cloth)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Leather { get { return ResourcePool.GetResource(typeof(Leather)); } set { } }
+        public static ResourceData? Leather { get { return ResourcePool.GetResource(typeof(Leather)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData SpinedLeather { get { return ResourcePool.GetResource(typeof(SpinedLeather)); } set { } }
+        public static ResourceData? SpinedLeather { get { return ResourcePool.GetResource(typeof(SpinedLeather)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData HornedLeather { get { return ResourcePool.GetResource(typeof(HornedLeather)); } set { } }
+        public static ResourceData? HornedLeather { get { return ResourcePool.GetResource(typeof(HornedLeather)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData BarbedLeather { get { return ResourcePool.GetResource(typeof(BarbedLeather)); } set { } }
+        public static ResourceData? BarbedLeather { get { return ResourcePool.GetResource(typeof(BarbedLeather)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData Boards { get { return ResourcePool.GetResource(typeof(Board)); } set { } }
+        public static ResourceData? Boards { get { return ResourcePool.GetResource(typeof(Board)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData OakBoards { get { return ResourcePool.GetResource(typeof(OakBoard)); } set { } }
+        public static ResourceData? OakBoards { get { return ResourcePool.GetResource(typeof(OakBoard)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData AshBoards { get { return ResourcePool.GetResource(typeof(AshBoard)); } set { } }
+        public static ResourceData? AshBoards { get { return ResourcePool.GetResource(typeof(AshBoard)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData YewBoards { get { return ResourcePool.GetResource(typeof(YewBoard)); } set { } }
+        public static ResourceData? YewBoards { get { return ResourcePool.GetResource(typeof(YewBoard)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData HeartwoodBoards { get { return ResourcePool.GetResource(typeof(HeartwoodBoard)); } set { } }
+        public static ResourceData? HeartwoodBoards { get { return ResourcePool.GetResource(typeof(HeartwoodBoard)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData BloodwoodBoards { get { return ResourcePool.GetResource(typeof(BloodwoodBoard)); } set { } }
+        public static ResourceData? BloodwoodBoards { get { return ResourcePool.GetResource(typeof(BloodwoodBoard)); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public static ResourceData FrostwoodBoards { get { return ResourcePool.GetResource(typeof(FrostwoodBoard)); } set { } }
+        public static ResourceData? FrostwoodBoards { get { return ResourcePool.GetResource(typeof(FrostwoodBoard)); } set { } }
 
         private RPProps()
         {

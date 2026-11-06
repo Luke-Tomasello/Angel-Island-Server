@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,7 +41,7 @@ namespace Server.Multis
 
         public override void AddComponents()
         {
-            AddonData AddonData = XmlAddonSystem.GetData(Path.Combine(Core.DataDirectory, "XmlAddon/Camps"), "GolumCamp");
+            AddonData? AddonData = XmlAddonSystem.GetData(Path.Combine(Core.DataDirectory, "XmlAddon/Camps"), "GolumCamp");
 
             // build the basic structure from the XML
             //  with a tweak here or there

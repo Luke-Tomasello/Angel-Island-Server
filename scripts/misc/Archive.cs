@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -175,7 +175,7 @@ namespace Server.Items
             // result
             Rectangle2D rect = new Rectangle2D(start.X, start.Y, end.X - start.X + 1, end.Y - start.Y + 1);
             IPooledEnumerable eable = map.GetObjectsInBounds(rect);
-            Archive archive = state as Archive;
+            Archive? archive = state as Archive;
 
             if (archive == null || archive.Deleted)
                 return;
@@ -186,8 +186,8 @@ namespace Server.Items
             // Loop through and add objects returned
             foreach (object obj in eable)
             {
-                Item item = obj as Item;
-                Mobile mobile = obj as Mobile;
+                Item? item = obj as Item;
+                Mobile? mobile = obj as Mobile;
                 if (item == null && mobile == null)
                     continue;
 
@@ -209,8 +209,8 @@ namespace Server.Items
 
             foreach (object obj in temp)
             {
-                Item item = obj as Item;
-                Mobile mobile = obj as Mobile;
+                Item? item = obj as Item;
+                Mobile? mobile = obj as Mobile;
 
                 if (item != null)
                 {   // move the item to the internal map at the original location
@@ -285,7 +285,7 @@ namespace Server.Items
                 int mCount = 0, iCount = 0;
                 if (target is Archive)
                 {
-                    Archive archive = target as Archive;
+                    Archive? archive = target as Archive;
                     if (archive == null || archive.Deleted)
                         return;
 
@@ -353,7 +353,7 @@ namespace Server.Items
                 int mCount = 0, iCount = 0;
                 if (target is Archive)
                 {
-                    Archive archive = target as Archive;
+                    Archive? archive = target as Archive;
                     if (archive == null || archive.Deleted)
                         return;
 
@@ -406,7 +406,7 @@ namespace Server.Items
                 int mCount = 0, iCount = 0;
                 if (target is Archive)
                 {
-                    Archive archive = target as Archive;
+                    Archive? archive = target as Archive;
                     if (archive == null || archive.Deleted)
                         return;
 

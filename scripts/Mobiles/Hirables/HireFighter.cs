@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -201,7 +201,7 @@ namespace Server.Mobiles
                     return true;
             return false;
         }
-        private Type FindItemType(Type type)
+        private Type? FindItemType(Type type)
         {
             Item item;
             if ((item = FindItemByType(type)) != null)
@@ -452,8 +452,8 @@ namespace Server.Mobiles
             Container pack = Backpack;
             if (pack != null)
             {
-                Item equipedTwoHanded = FindItemOnLayer(Layer.TwoHanded);
-                Item packGear = null;
+                Item? equipedTwoHanded = FindItemOnLayer(Layer.TwoHanded);
+                Item? packGear = null;
 
                 // see if we got one
                 foreach (Type t in types)
@@ -588,7 +588,7 @@ namespace Server.Mobiles
             else
                 pay = 10;
 
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
                 pay *= 3;
 
             return pay;

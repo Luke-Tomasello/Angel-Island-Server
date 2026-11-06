@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -33,6 +33,7 @@
  *		Created.
  */
 
+using Server.Engines;
 using Server.Items;
 using System;
 using System.Collections;
@@ -76,7 +77,7 @@ namespace Server.Mobiles
         {
             CommandSystem.Register("OracleGen", AccessLevel.Administrator, new CommandEventHandler(OracleGen_OnCommand));
 
-            // moongates
+            // moongates - We will override the map as needed
             RegisterDestination("Britain", new Point3D(1336, 1997, 5), Map.Felucca, OracleFlag.Moongate);
             RegisterDestination("Moonglow", new Point3D(4467, 1283, 5), Map.Felucca, OracleFlag.Moongate);
             RegisterDestination("Magincia", new Point3D(3563, 2139, 34), Map.Felucca, OracleFlag.Moongate);
@@ -110,10 +111,10 @@ namespace Server.Mobiles
 
         private bool m_TwoWay;
 
-        private Timer m_CastTimer;      // our current cast timer
-        private Timer m_GateTimer;      // our current gate timer
-        private Moongate m_GateSource;  // our temporary moongate (source)
-        private Moongate m_GateTarget;  // our temporary moongate (target)
+        private Timer? m_CastTimer;      // our current cast timer
+        private Timer? m_GateTimer;      // our current gate timer
+        private Moongate? m_GateSource;  // our temporary moongate (source)
+        private Moongate? m_GateTarget;  // our temporary moongate (target)
 
         public override bool CanHearGhosts { get => true; set => base.CanHearGhosts = value; }
         public override bool CallsGuards { get { return false; } }
@@ -172,14 +173,14 @@ namespace Server.Mobiles
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Moongate GateSource
+        public Moongate? GateSource
         {
             get { return m_GateSource; }
             set { m_GateSource = value; }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Moongate GateTarget
+        public Moongate? GateTarget
         {
             get { return m_GateTarget; }
             set { m_GateTarget = value; }
@@ -372,7 +373,7 @@ namespace Server.Mobiles
             Say(sb.ToString());
         }
 
-        private static IOracleDestination Find(List<IOracleDestination> list, SpeechEventArgs e)
+        private static IOracleDestination? Find(List<IOracleDestination> list, SpeechEventArgs e)
         {
             foreach (IOracleDestination dest in list)
             {
@@ -429,7 +430,7 @@ namespace Server.Mobiles
 
             SayTo(m, string.Format("I have withdrawn {0} gp from your account.", cost));
 
-            BountySystem.BountyKeeper.LBFund += cost;
+            BountyKeeper.LBFund += cost;
 
             cost -= UnemploymentCheck.ConsumeUpTo(m, cost);
 
@@ -444,7 +445,7 @@ namespace Server.Mobiles
 
         private void DoGate(IOracleDestination dest)
         {
-            PublicMoongate pm = null;
+            PublicMoongate? pm = null;
 
             if (m_UsePublicMoongates)
             {
@@ -461,7 +462,8 @@ namespace Server.Mobiles
             FakeCast(dest, pm);
         }
 
-        private void FakeCast(IOracleDestination dest, PublicMoongate pm)
+
+        private void FakeCast(IOracleDestination dest, PublicMoongate? pm)
         {
             if (pm != null)
                 Direction = GetDirectionTo(pm);           // face the moongate
@@ -488,23 +490,35 @@ namespace Server.Mobiles
             EndCast();
             ClearGates();
 
-            Point3D loc = (pm == null ? this.Location : pm.Location);
+            Point3D sourceLoc = (pm == null ? this.Location : pm.Location);
+            Map sourceMap = this.Map;
 
-            TogglePublicMoongate(loc, this.Map, false);
-            m_GateSource = new Moongate(dest.DestLoc, dest.DestMap);
+            Point3D destLoc = dest.DestLoc;
+            Map destMap = dest.DestMap;
+
+            // Test Center mirrors Felucca. If this wizard is operating in Test Center,
+            // keep Felucca destinations inside Test Center instead of exporting clones
+            // back to the live Felucca world.
+            if (sourceMap == Map.TestCenter && destMap == Map.Felucca)
+                destMap = Map.TestCenter;
+
+            TogglePublicMoongate(sourceLoc, sourceMap, false);
+
+            m_GateSource = new Moongate(destLoc, destMap);
             m_GateSource.Hue = GetHue(dest);
-            m_GateSource.MoveToWorld(loc, this.Map);
+            m_GateSource.MoveToWorld(sourceLoc, sourceMap);
 
-            Effects.PlaySound(loc, this.Map, 0x20E);
+            Effects.PlaySound(sourceLoc, sourceMap, 0x20E);
 
             if (m_TwoWay)
             {
-                TogglePublicMoongate(dest.DestLoc, dest.DestMap, false);
-                m_GateTarget = new Moongate(loc, this.Map);
-                m_GateTarget.Hue = GetHue(dest);
-                m_GateTarget.MoveToWorld(dest.DestLoc, dest.DestMap);
+                TogglePublicMoongate(destLoc, destMap, false);
 
-                Effects.PlaySound(dest.DestLoc, dest.DestMap, 0x20E);
+                m_GateTarget = new Moongate(sourceLoc, sourceMap);
+                m_GateTarget.Hue = GetHue(dest);
+                m_GateTarget.MoveToWorld(destLoc, destMap);
+
+                Effects.PlaySound(destLoc, destMap, 0x20E);
             }
 
             Say("Safe travels my friend.");
@@ -749,7 +763,7 @@ namespace Server.Mobiles
                 {
                     if (m is MoonGateWizard)
                     {
-                        MoonGateWizard mgw = m as MoonGateWizard;
+                        MoonGateWizard? mgw = m as MoonGateWizard;
                         mobiles.Add(mgw);
                         if (mgw.Spawner != null)
                             spawners.Add(mgw.Spawner);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Items/Deeds/LockboxBuildingPermit.cs
  * ChangeLog:
+ *	10/15/26, Adam
+ *	    Also count the permit in BaseHouse.PermitLockboxes, so storage upgrade contracts applied later
+ *	    no longer swallow it. Permits now stack on top of the storage tier.
  *	11/5/21, Yoar
  *	    Redid the data structure of lockboxes in BaseHouse. Instead of storing:
  *	    1. MaxLockboxes    : what is our current lockbox cap, including upgrades?
@@ -97,7 +100,7 @@ namespace Server.Items
 
             protected override void OnTarget(Mobile from, object target) // Override the protected OnTarget() for our feature
             {
-                HouseSign sign = target as HouseSign;
+                HouseSign? sign = target as HouseSign;
 
                 if (!m_Deed.IsChildOf(from.Backpack))
                 {
@@ -126,6 +129,7 @@ namespace Server.Items
                         sign.Structure.StorageTaxCredits += toAdd;
 
                     sign.Structure.BonusLockboxes++;
+                    sign.Structure.PermitLockboxes++; // stacks on top of any storage upgrade
                     from.SendMessage("This house now allows {0} lockboxes.", sign.Structure.MaxLockboxes);
                     m_Deed.Delete();
                 }

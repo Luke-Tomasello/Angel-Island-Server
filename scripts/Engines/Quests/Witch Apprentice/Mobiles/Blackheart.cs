@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,13 +77,13 @@ namespace Server.Engines.Quests.Hag
 
             if (qs is WitchApprenticeQuest)
             {
-                FindIngredientObjective obj = qs.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
+                FindIngredientObjective? obj = qs.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
 
                 if (obj != null && !obj.Completed && obj.Ingredient == Ingredient.Whiskey)
                 {
                     PlaySound(Utility.RandomBool() ? 0x42E : 0x43F);
 
-                    Item hat = player.FindItemOnLayer(Layer.Helm);
+                    Item? hat = player.FindItemOnLayer(Layer.Helm);
                     bool tricorne = hat is TricorneHat;
 
                     if (tricorne && player.BAC >= 20)

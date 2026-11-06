@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,10 +71,10 @@ namespace Server.Items
         }
         public override void OnDoubleClick(Mobile from)
         {
-            PlayerMobile pm = (from as PlayerMobile);
+            PlayerMobile? pm = (from as PlayerMobile);
             if (pm != null && pm.InRange(this.Location, 2))
             {
-                Item weapon = pm.Weapon as Item;
+                Item? weapon = pm.Weapon as Item;
                 if (weapon == null || weapon is Fists || weapon is not BaseWeapon)
                 {
                     from.SendMessage("You must equip the weapon you wish to imbue.");
@@ -82,7 +82,7 @@ namespace Server.Items
                 else
                 {
                     ;
-                    BaseWeapon bw = weapon as BaseWeapon;
+                    BaseWeapon? bw = weapon as BaseWeapon;
                     if (bw.Slayer == SlayerName.Silver)
                     {
                         from.SendMessage("That weapon is already silver and cannot be imbued.");

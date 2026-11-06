@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -39,7 +39,7 @@ namespace Arya.Misc
         /// 
         /// private static string m_CustomOutputDirector = @"C:\Program Files\RunUO\Scripts\Custom\Addons";
         /// </summary>
-        private static string m_CustomOutputDirectory = null;
+        private static string? m_CustomOutputDirectory = null;
 
         #region Template
 
@@ -173,7 +173,7 @@ namespace {namespace}
 
         private static void PickerCallback(Mobile from, Map map, Point3D start, Point3D end, object state)
         {
-            object[] args = state as object[];
+            object[]? args = state as object[];
 
             if (start.X > end.X)
             {
@@ -191,8 +191,8 @@ namespace {namespace}
 
             Rectangle2D bounds = new Rectangle2D(start, end);
 
-            string name = args[0] as string;
-            string ns = args[1] as string;
+            string? name = args[0] as string;
+            string? ns = args[1] as string;
 
             bool items = (bool)args[2];
             bool statics = (bool)args[3];
@@ -254,7 +254,7 @@ namespace {namespace}
             {
                 foreach (object o in en)
                 {
-                    Static s = o as Static;
+                    Static? s = o as Static;
 
                     if (s == null)
                         continue;
@@ -311,7 +311,7 @@ namespace {namespace}
 
             foreach (Point2D p in tiles.Keys)
             {
-                ArrayList list = tiles[p] as ArrayList;
+                ArrayList? list = tiles[p] as ArrayList;
 
                 foreach (object o in list)
                 {
@@ -336,7 +336,7 @@ namespace {namespace}
             // Statics
             foreach (Point2D p in tiles.Keys)
             {
-                ArrayList list = tiles[p] as ArrayList;
+                ArrayList? list = tiles[p] as ArrayList;
 
                 int xOffset = p.X - center.X;
                 int yOffset = p.Y - center.Y;
@@ -378,19 +378,19 @@ namespace {namespace}
             output = output.Replace("{namespace}", ns);
             output = output.Replace("{components}", sb.ToString());
 
-            StreamWriter writer = null;
-            string path = null;
+            StreamWriter? writer = null;
+            string? path = null;
 
             if (m_CustomOutputDirectory != null)
                 path = Path.Combine(m_CustomOutputDirectory, string.Format(@"TheBox\{0}Addon.cs", name));
             else
-                path = Path.Combine(Core.BaseDirectory, string.Format(@"TheBox\{0}Addon.cs", name));
+                path = Path.Combine(Core.ExeDirectory, string.Format(@"TheBox\{0}Addon.cs", name));
 
             fail = false;
 
             try
             {
-                string folder = Path.GetDirectoryName(path);
+                string? folder = Path.GetDirectoryName(path);
 
                 if (!Directory.Exists(folder))
                 {

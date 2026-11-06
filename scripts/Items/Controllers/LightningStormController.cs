@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -284,7 +284,7 @@ namespace Server.Items
 
             public static Mobile PlaceAt(Point3D loc, Map map, TimeSpan duration)
             {
-                Dummy dummy = null;
+                Dummy? dummy = null;
 
                 for (int i = 0; i < m_Cache.Length; i++)
                 {
@@ -316,7 +316,7 @@ namespace Server.Items
             public override bool IsDeadBondedPet { get { return true; } }
 
             private bool m_Cached;
-            private Timer m_Timer;
+            private Timer? m_Timer;
 
             private bool InUse { get { return (m_Timer != null); } }
 

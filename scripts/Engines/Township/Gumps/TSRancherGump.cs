@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,7 +77,7 @@ namespace Server.Township
         {
             Mobile from = sender.Mobile;
 
-            if (!m_Stone.HasNPC(typeof(Mobiles.TSRancher)))
+            if (!m_Stone.HasActiveNPC(typeof(Mobiles.TSRancher)))
                 return;
 
             if (!from.CheckAlive() || !m_Stone.CheckView(from) || !m_Stone.CheckAccess(from, TownshipAccess.Ally))
@@ -148,13 +148,13 @@ namespace Server.Township
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                if (!m_Stone.HasNPC(typeof(Mobiles.TSRancher)))
+                if (!m_Stone.HasActiveNPC(typeof(Mobiles.TSRancher)))
                     return;
 
                 if (!from.CheckAlive() || !m_Stone.CheckView(from) || !m_Stone.CheckAccess(from, TownshipAccess.Ally))
                     return;
 
-                BaseCreature bc = targeted as BaseCreature;
+                BaseCreature? bc = targeted as BaseCreature;
 
                 if (bc == null)
                     return;
@@ -167,7 +167,7 @@ namespace Server.Township
 
             protected override void OnTargetCancel(Mobile from, TargetCancelType cancelType)
             {
-                if (!m_Stone.HasNPC(typeof(Mobiles.TSRancher)))
+                if (!m_Stone.HasActiveNPC(typeof(Mobiles.TSRancher)))
                     return;
 
                 if (!from.CheckAlive() || !m_Stone.CheckView(from) || !m_Stone.CheckAccess(from, TownshipAccess.Ally))

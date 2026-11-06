@@ -4,7 +4,7 @@
  *   implementation          : (C) 2007-2023 Tara McGrew
  *   repository url          : https://foss.heptapod.net/zilf/zlr
  *   
- *   Angel Island UO Shard   : March 25, 2004
+ *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
@@ -19,13 +19,13 @@
  *
  ***************************************************************************/
 
+using JetBrains.Annotations;
+using Nito.AsyncEx;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
-using Nito.AsyncEx;
 
 namespace ZLR.VM.Debugging
 {
@@ -45,7 +45,7 @@ namespace ZLR.VM.Debugging
     public static class DebuggerStateExtensions
     {
         public static bool IsRunning(this DebuggerState state) => state == DebuggerState.Running;
-        
+
         public static bool IsTerminated(this DebuggerState state) => state == DebuggerState.Terminated;
 
         public static bool IsPaused(this DebuggerState state)
@@ -243,9 +243,9 @@ namespace ZLR.VM.Debugging
             var offset = attr >> 3;
 
             if (set)
-                attrs[offset] |= (byte) bit;
+                attrs[offset] |= (byte)bit;
             else
-                attrs[offset] &= (byte) ~bit;
+                attrs[offset] &= (byte)~bit;
 
             dbg.UpdateObject(objAddr, attrs, null, null, null, null);
         }
@@ -496,7 +496,7 @@ namespace ZLR.VM
 
             public byte ReadByte(int address) => zm.zmem[address];
 
-            public short ReadWord(int address) => (short) ((zm.zmem[address] << 8) | zm.zmem[address + 1]);
+            public short ReadWord(int address) => (short)((zm.zmem[address] << 8) | zm.zmem[address + 1]);
 
             public void WriteByte(int address, byte value)
             {
@@ -505,8 +505,8 @@ namespace ZLR.VM
 
             public void WriteWord(int address, short value)
             {
-                zm.zmem[address] = (byte) (value >> 8);
-                zm.zmem[address + 1] = (byte) value;
+                zm.zmem[address] = (byte)(value >> 8);
+                zm.zmem[address + 1] = (byte)value;
             }
 
             public short ReadVariable(byte number)
@@ -565,7 +565,7 @@ namespace ZLR.VM
                     parent = zm.GetByte(address + 4);
                     sibling = zm.GetByte(address + 5);
                     child = zm.GetByte(address + 6);
-                    propertyTable = (ushort) zm.GetWord(address + 7);
+                    propertyTable = (ushort)zm.GetWord(address + 7);
                 }
                 else
                 {
@@ -578,10 +578,10 @@ namespace ZLR.VM
                         zm.GetByte(address + 4),
                         zm.GetByte(address + 5),
                     };
-                    parent = (ushort) zm.GetWord(address + 6);
-                    sibling = (ushort) zm.GetWord(address + 8);
-                    child = (ushort) zm.GetWord(address + 10);
-                    propertyTable = (ushort) zm.GetWord(address + 12);
+                    parent = (ushort)zm.GetWord(address + 6);
+                    sibling = (ushort)zm.GetWord(address + 8);
+                    child = (ushort)zm.GetWord(address + 10);
+                    propertyTable = (ushort)zm.GetWord(address + 12);
                 }
             }
 
@@ -602,16 +602,16 @@ namespace ZLR.VM
                     }
 
                     if (parent != null)
-                        zm.SetByte(address + 4, (byte) parent);
+                        zm.SetByte(address + 4, (byte)parent);
 
                     if (sibling != null)
-                        zm.SetByte(address + 5, (byte) sibling);
+                        zm.SetByte(address + 5, (byte)sibling);
 
                     if (child != null)
-                        zm.SetByte(address + 6, (byte) child);
+                        zm.SetByte(address + 6, (byte)child);
 
                     if (propertyTable != null)
-                        zm.SetWord(address + 7, (short) propertyTable);
+                        zm.SetWord(address + 7, (short)propertyTable);
                 }
                 else
                 {
@@ -629,16 +629,16 @@ namespace ZLR.VM
                     }
 
                     if (parent != null)
-                        zm.SetWord(address + 6, (short) parent);
+                        zm.SetWord(address + 6, (short)parent);
 
                     if (sibling != null)
-                        zm.SetWord(address + 8, (short) sibling);
+                        zm.SetWord(address + 8, (short)sibling);
 
                     if (child != null)
-                        zm.SetWord(address + 10, (short) child);
+                        zm.SetWord(address + 10, (short)child);
 
                     if (propertyTable != null)
-                        zm.SetWord(address + 12, (short) propertyTable);
+                        zm.SetWord(address + 12, (short)propertyTable);
                 }
             }
 
@@ -647,7 +647,7 @@ namespace ZLR.VM
             public void ParseProperty(ushort address, out short number, out short length)
             {
                 length = zm.GetPropLength(address);
-                number = (short) (zm.GetByte(address) & (zm.zversion <= 3 ? 31 : 63));
+                number = (short)(zm.GetByte(address) & (zm.zversion <= 3 ? 31 : 63));
             }
 
             public ushort GetPropAddress(ushort obj, short prop) => zm.GetPropAddr(obj, prop);
@@ -683,8 +683,8 @@ namespace ZLR.VM
                         if (varnum < 16)
                             return "local_" + varnum;
 
-                        if (zm.DebugInfo != null && zm.DebugInfo.Globals.Contains((byte) (varnum - 16)))
-                            return "global_" + varnum + "(" + zm.DebugInfo.Globals[(byte) (varnum - 16)] + ")";
+                        if (zm.DebugInfo != null && zm.DebugInfo.Globals.Contains((byte)(varnum - 16)))
+                            return "global_" + varnum + "(" + zm.DebugInfo.Globals[(byte)(varnum - 16)] + ")";
 
                         return "global_" + varnum;
                     });
@@ -710,21 +710,21 @@ namespace ZLR.VM
                     case 1:
                     case 2:
                     case 3:
-                        return (short) (address / 2);
+                        return (short)(address / 2);
 
                     case 4:
                     case 5:
-                        return (short) (address / 4);
+                        return (short)(address / 4);
 
                     case 6:
                     case 7:
                         const int HDR_CODE_OFFSET = 0x28;
                         const int HDR_STR_OFFSET = 0x2A;
                         var offset = ReadWord(forString ? HDR_STR_OFFSET : HDR_CODE_OFFSET) * 8;
-                        return (short) ((address - offset) / 4);
+                        return (short)((address - offset) / 4);
 
                     case 8:
-                        return (short) (address / 8);
+                        return (short)(address / 8);
 
                     default:
                         throw new NotImplementedException();

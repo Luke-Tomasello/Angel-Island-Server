@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -118,7 +118,7 @@ namespace Server.Items
                 }
                 else if (targeted is NewPlayerTicket)
                 {
-                    NewPlayerTicket theirTicket = targeted as NewPlayerTicket;
+                    NewPlayerTicket? theirTicket = targeted as NewPlayerTicket;
                     Mobile them = theirTicket.m_Owner;
 
                     if (them == null || them.Deleted)
@@ -186,8 +186,8 @@ namespace Server.Items
 
                 int number = 0;
 
-                Item item = null;
-                Item item2 = null;
+                Item? item = null;
+                Item? item2 = null;
 
                 switch (info.ButtonID)
                 {

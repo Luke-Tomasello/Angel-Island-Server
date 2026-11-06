@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,7 +62,7 @@ namespace Server.Engines.Craft
             if (CraftResources.IsStandard(resource))
                 return EnhanceResult.BadResource;
 
-            CraftItem craftItem = craftSystem.CraftItems.SearchFor(item.GetType());
+            CraftItem? craftItem = craftSystem.CraftItems.SearchFor(item.GetType());
 
             if (craftItem == null || craftItem.Resources.Count == 0)
                 return EnhanceResult.BadItem;
@@ -73,7 +73,7 @@ namespace Server.Engines.Craft
             if (!craftItem.CheckSkills(from, resType, craftSystem, tool, ref quality, ref allRequiredSkills, false))
                 return EnhanceResult.NoSkill;
 
-            CraftResourceInfo info = CraftResources.GetInfo(resource);
+            CraftResourceInfo? info = CraftResources.GetInfo(resource);
 
             if (info == null || info.ResourceTypes.Length == 0)
                 return EnhanceResult.BadResource;
@@ -237,7 +237,7 @@ namespace Server.Engines.Craft
 
         public static void BeginTarget(Mobile from, CraftSystem craftSystem, BaseTool tool)
         {
-            CraftContext context = craftSystem.GetContext(from);
+            CraftContext? context = craftSystem.GetContext(from);
 
             if (context == null)
                 return;
@@ -295,7 +295,7 @@ namespace Server.Engines.Craft
             {
                 if (targeted is Item)
                 {
-                    TextDefinition message = null;
+                    TextDefinition? message = null;
                     EnhanceResult res = Enhance.Invoke(from, m_CraftSystem, m_Tool, (Item)targeted, m_Resource, m_ResourceType, ref message);
 
                     switch (res)

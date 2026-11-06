@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -115,6 +115,7 @@
 
 using Server.Items;
 using Server.Mobiles;
+using System;
 
 namespace Server.Regions
 {
@@ -133,7 +134,12 @@ namespace Server.Regions
         }
 
         public CustomRegion(CustomRegionControl rc)
-            : base("", "Custom Region", null, typeof(WarriorGuard))
+            : this(rc, typeof(WarriorGuard))
+        {
+        }
+
+        public CustomRegion(CustomRegionControl rc, Type guardType)
+            : base("", "Custom Region", null, guardType)
         {
             m_Controller = rc;
         }

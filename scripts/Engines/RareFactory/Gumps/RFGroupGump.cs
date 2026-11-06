@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -94,7 +94,7 @@ namespace Server.Gumps
 
             for (int i = startidx; (i < startidx + 5) && (i < RareFactory.DODGroup.Count); i++)
             {
-                DODGroup dg = (DODGroup)RareFactory.DODGroup[i];
+                DODGroup? dg = (DODGroup?)RareFactory.DODGroup[i];
 
                 int ypos = ((i - startidx) * 30) + 170;
 
@@ -206,11 +206,11 @@ namespace Server.Gumps
                 if (text.ToLower() == "y")
                 {
                     // Delete all the DOD instances first
-                    DODGroup dg = (DODGroup)RareFactory.DODGroup[m_idg];
+                    DODGroup? dg = (DODGroup?)RareFactory.DODGroup[m_idg];
 
                     for (int i = 0; i < dg.DODInst.Count; i++)
                     {
-                        string sName = "";
+                        string? sName = "";
 
                         if (dg.DODInst[i] is DODInstance)
                             sName = ((DODInstance)dg.DODInst[i]).Name;

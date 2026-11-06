@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -107,9 +107,9 @@ namespace Server.Mobiles
         }
 
         //paralyze pets
-        public virtual Spell DoParalyze(Mobile toParalyze)
+        public virtual Spell? DoParalyze(Mobile toParalyze)
         {
-            Spell spell = null;
+            Spell? spell = null;
 
             BaseCreature c = (BaseCreature)toParalyze;
 
@@ -127,7 +127,7 @@ namespace Server.Mobiles
         {
 
             Mobile com = m_Mobile.Combatant;
-            Spell spell = null;
+            Spell? spell = null;
 
             int healChance = (m_Mobile.Hits == 0 ? m_Mobile.HitsMax : (m_Mobile.HitsMax / m_Mobile.Hits));
 
@@ -179,7 +179,7 @@ namespace Server.Mobiles
 
         public override Spell DoCombo(Mobile c)
         {
-            Spell spell = null;
+            Spell? spell = null;
 
             if (Combo == 0)
             {
@@ -295,7 +295,7 @@ namespace Server.Mobiles
 
         public override bool DoActionCombat(MobileInfo info)
         {
-            Mobile combatant = info.target;
+            Mobile? combatant = info.target;
             m_Mobile.Warmode = true;
 
             if (combatant == null || info.gone || info.dead || info.hidden || info.fled)
@@ -403,12 +403,12 @@ namespace Server.Mobiles
             if (m_Mobile.Spell == null && DateTime.UtcNow > m_NextCastTime && m_Mobile.InRange(combatant, 12))
             {
                 // We are ready to cast a spell
-                Spell spell = null;
-                Mobile toDispel = FindDispelTarget(true);
-                Mobile toParalyze = FindParalyzeTarget(true);
+                Spell? spell = null;
+                Mobile? toDispel = FindDispelTarget(true);
+                Mobile? toParalyze = FindParalyzeTarget(true);
 
                 //try an cure with a pot first if the poison is serious or where in the middle of dumping
-                if (UsesPotions && (m_Mobile.Poisoned && m_Mobile.Poison.Level >= 3) || m_Mobile.Poisoned && Combo != -1)
+                if (UsesPotions && ((m_Mobile.Poisoned && m_Mobile.Poison.Level >= 3) || m_Mobile.Poisoned && Combo != -1))
                 {
                     DrinkCure(m_Mobile);
                 }
@@ -496,7 +496,7 @@ namespace Server.Mobiles
             return true;
         }
 
-        public Mobile FindParalyzeTarget(bool activeOnly)
+        public Mobile? FindParalyzeTarget(bool activeOnly)
         {
             if (m_Mobile.Deleted || m_Mobile.Int < 95 || CanDispel(m_Mobile))
                 return null;
@@ -506,7 +506,7 @@ namespace Server.Mobiles
                 List<AggressorInfo> aggressed = m_Mobile.Aggressed;
                 List<AggressorInfo> aggressors = m_Mobile.Aggressors;
 
-                Mobile active = null;
+                Mobile? active = null;
                 double activePrio = 0.0;
 
                 Mobile comb = m_Mobile.Combatant;
@@ -568,7 +568,7 @@ namespace Server.Mobiles
 
                 if (map != null)
                 {
-                    Mobile active = null, inactive = null;
+                    Mobile? active = null, inactive = null;
                     double actPrio = 0.0, inactPrio = 0.0;
 
                     Mobile comb = m_Mobile.Combatant;
@@ -621,7 +621,7 @@ namespace Server.Mobiles
             bool teleportAway = false;
             bool isPet = (targ is ParalyzePetSpell.InternalTarget);
 
-            Mobile toTarget;
+            Mobile? toTarget;
             if (isDispel)
             {
                 toTarget = FindDispelTarget(false);

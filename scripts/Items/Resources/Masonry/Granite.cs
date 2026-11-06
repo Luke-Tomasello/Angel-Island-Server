@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -18,8 +18,6 @@
  *   (at your option) any later version.
  *
  ***************************************************************************/
-
-using System;
 
 namespace Server.Items
 {
@@ -68,11 +66,20 @@ namespace Server.Items
         }
 
         public BaseGranite(CraftResource resource)
-            : base(0x1779)
+            //: base(0x1779)    // OSI Granite graphic, cannot be split because the client has no stacked graphic
+            : base(0x19B8)      // medium ore graphic - make stackable! 
         {
             Weight = 10.0;
-            Hue = CraftResources.GetHue(resource);
+            //if (resource == CraftResource.Iron)
+            //    Hue = 0x835; // Soft neutral gray
+            //else
+            //    Hue = CraftResources.GetHue(resource) + 3;
 
+            // we cannot use the color offsets, as they get percolated to the deed color (for addons,)
+            // and that color gets pushed to the addon.
+            // Implication: Granite will have the same hues as the ore (different graphic)
+            Hue = CraftResources.GetHue(resource);
+            Stackable = true; // make stackable!
             m_Resource = resource;
         }
 
@@ -81,7 +88,27 @@ namespace Server.Items
         {
         }
 
-        public override int LabelNumber { get { return 1044607; } } // high quality granite
+
+        public override string DefaultName
+        {
+            get
+            {
+                if (m_Resource == CraftResource.Iron)
+                    return "granite";
+                else
+                    return $"{CraftResources.GetName(m_Resource)} granite";
+            }
+        }
+
+        //public override int LabelNumber { get { return 1044607; } } // high quality granite
+
+        public override void AddNameProperty(ObjectPropertyList list)
+        {
+            if (m_Resource == CraftResource.Iron)
+                list.Add("granite");
+            else
+                list.Add("{0} granite", CraftResources.GetName(m_Resource));
+        }
 
         public override void GetProperties(ObjectPropertyList list)
         {

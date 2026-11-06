@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -114,12 +114,12 @@ namespace Server.Accounting
                 new IPLogTimer(e.Mobile.NetState.Address).Start();
         }
 
-        public static string GetIPMask(System.Net.IPAddress ax)
+        public static string? GetIPMask(System.Net.IPAddress ax)
         {
             if (ax == null)
                 return null;
 
-            string left = null;
+            string? left = null;
             Byte[] bytes = ax.GetAddressBytes();
             if (bytes.Length != 4)
             {
@@ -154,12 +154,33 @@ namespace Server.Accounting
                 return m_Accounts.ToArray();
             }
         }
+        public static Account? FindAccount(string username)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+                return null;
 
+            foreach (Account acct in Accounts.Table.Values)
+            {
+                if (acct != null && string.Equals(acct.Username, username, StringComparison.OrdinalIgnoreCase))
+                    return acct;
+            }
+
+            return null;
+        }
         public static Account GetAccount(string username)
         {
             return m_Accounts[0][username] as Account;
         }
+        public static Account? GetAccount(uint guid)
+        {
+            foreach (object o in m_Accounts[0].Values)
+            {
+                if (o is Account a && a.GUID == guid)
+                    return a;
+            }
 
+            return null;
+        }
         public static bool IsSystemAccount(Account acct)
         {
             if (acct == null) return false;
@@ -167,7 +188,7 @@ namespace Server.Accounting
                 return true;
             return false;
         }
-        public static Account AddAccount(string user, string pass)
+        public static Account? AddAccount(string user, string pass)
         {
             Account acct = Accounts.GetAccount(user);
             if (acct == null)
@@ -248,7 +269,7 @@ namespace Server.Accounting
 
             try
             {
-                if (CoreAI.IsDynamicPatchSet(CoreAI.PatchIndex.HasPatchedTime) == false)
+                if (CoreAI.IsDynamicPatchSet(CoreAI.PatchIndex.PatchV237) == false)
                     return XmlConvert.ToDateTime(dateTimeString);
                 else
                     return XmlConvert.ToDateTime(dateTimeString, XmlDateTimeSerializationMode.Utc);
@@ -271,12 +292,12 @@ namespace Server.Accounting
             return GetAttribute(node, attributeName, null);
         }
 
-        public static string GetAttribute(XmlElement node, string attributeName, string defaultValue)
+        public static string GetAttribute(XmlElement? node, string attributeName, string defaultValue)
         {
             if (node == null)
                 return defaultValue;
 
-            XmlAttribute attr = node.Attributes[attributeName];
+            XmlAttribute? attr = node.Attributes[attributeName];
 
             if (attr == null)
                 return defaultValue;
@@ -284,7 +305,7 @@ namespace Server.Accounting
             return attr.Value;
         }
 
-        public static string GetText(XmlElement node, string defaultValue)
+        public static string GetText(XmlElement? node, string? defaultValue)
         {
             if (node == null)
                 return defaultValue;
@@ -292,7 +313,7 @@ namespace Server.Accounting
             return node.InnerText;
         }
 
-        public static bool GetBool(XmlElement node, bool defaultValue)
+        public static bool GetBool(XmlElement? node, bool defaultValue)
         {
             if (node == null)
                 return defaultValue;
@@ -362,7 +383,7 @@ namespace Server.Accounting
             if (ip == null || m_IPDatabase == null || m_IPDatabase.Count == 0)
                 return false;
 
-            string ipx = GetIPMask(ip);
+            string? ipx = GetIPMask(ip);
 
             if (ipx == null)
                 return false;
@@ -449,7 +470,7 @@ namespace Server.Accounting
             XmlDocument doc = new XmlDocument();
             doc.Load(filePath);
 
-            XmlElement root = doc["accounts"];
+            XmlElement? root = doc["accounts"];
 
             foreach (XmlElement account in root.GetElementsByTagName("account"))
             {
@@ -464,7 +485,7 @@ namespace Server.Accounting
                     foreach (System.Net.IPAddress ax in acct.LoginIPs)
                     {
                         ips++;
-                        string ipx = GetIPMask(ax);
+                        string? ipx = GetIPMask(ax);
                         if (ipx != null && !ipDatabase.Contains(ipx))
                             ipDatabase.Add(ipx);
                     }
@@ -496,7 +517,7 @@ namespace Server.Accounting
         {
             try
             {   // add the recently logged in ip address to our default (this server) ip database
-                string ipx = Accounts.GetIPMask(m_IPAddress);
+                string? ipx = Accounts.GetIPMask(m_IPAddress);
                 if (ipx != null && Accounts.IPDatabase.Count > 0)
                     if (!Accounts.IPDatabase[0].Contains(ipx))
                         Accounts.IPDatabase[0].Add(ipx);

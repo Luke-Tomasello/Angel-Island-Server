@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -632,7 +632,7 @@ namespace Server.Mobiles
 
         public override bool CanBreed()
         {
-            return base.CanBreed() && (Core.UOTC_CFG || this.Region.Name == "Fire");
+            return base.CanBreed() && (Core.GMNTC_CFG || this.Region.Name == "Fire");
         }
 
         private static readonly int[] m_MoanSounds = new int[]
@@ -649,7 +649,7 @@ namespace Server.Mobiles
         public override Characteristics MyCharacteristics { get { return Characteristics.Run | Characteristics.Fly; } }
         public override bool HasBreath { get { return true; } } // fire breath enabled
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 4 : 0; } }
         public override int Scales { get { return 7; } }
         public override ScaleType ScaleType { get { return (Body == 12 ? ScaleType.Yellow : ScaleType.Red); } }
@@ -663,44 +663,19 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020213035855/uo.stratics.com/hunters/dragon.shtml
+            // 1200 to 1400 Gold, Gems, Magic items, 19 Raw Ribs (carved), 20 Hides (carved)
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                for (int i = 0; i < 8; ++i)
-                    PackGem();
-
-                PackGold(800, 900);
-                PackMagicEquipment(1, 3, 0.50, 0.50);
-                PackMagicEquipment(1, 3, 0.15, 0.15);
-
-                // Category 4 MID
-                PackMagicItem(2, 3, 0.10);
-                PackMagicItem(2, 3, 0.05);
-                PackMagicItem(2, 3, 0.02);
+                PackGold(1200, 1400);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020213035855/uo.stratics.com/hunters/dragon.shtml
-                    // 1200 to 1400 Gold, Gems, Magic items, 19 Raw Ribs (carved), 20 Hides (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(1200, 1400);
-                    }
-                    else
-                    {
-                        PackGem(1, .9);
-                        PackGem(1, .5);
-                        PackMagicStuff(1, 2, 0.05); // 8/1/2023, Adam: changed from 0.40
-                        PackMagicStuff(1, 2, 0.05);
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.FilthyRich, 2);
-                    AddLoot(LootPack.Gems, 8);
-                }
+                PackGem(1, .9);
+                PackGem(1, .5);
+                PackMagicStuff(1, 2, 0.40);
+                PackMagicStuff(1, 2, 0.05);
             }
         }
 
@@ -858,21 +833,13 @@ namespace Server.Mobiles
             if (version == 5)
             {
                 // don't screw players; no random init. of genes during version update
-#if false
-                Genetics.InitGenes(this, "Claw Accuracy");
-#else
                 m_ClawAccuracy = 1.10;
-#endif
             }
 
             if (version < 7)
             {
                 // don't screw players; no random init. of genes during version update
-#if false
-                Genetics.InitGenes(this, "Fire Breath");
-#else
                 m_BreathScaler = 1.0;
-#endif
             }
         }
     }

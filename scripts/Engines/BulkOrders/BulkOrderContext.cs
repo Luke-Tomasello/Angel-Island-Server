@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -38,7 +38,7 @@ namespace Server.Engines.BulkOrders
     [PropertyObject]
     public class BulkOrderContext
     {
-        private Mobile m_Owner;
+        private Mobile? m_Owner;
         private DateTime m_NextBOD;
         private double m_Banked;
         private PendingReward m_Pending;
@@ -47,7 +47,7 @@ namespace Server.Engines.BulkOrders
         private BankingSetting m_BankingSetting;
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Mobile Owner
+        public Mobile? Owner
         {
             get { return m_Owner; }
             set { }
@@ -95,7 +95,7 @@ namespace Server.Engines.BulkOrders
             set { m_BankingSetting = value; }
         }
 
-        public BulkOrderContext(Mobile owner)
+        public BulkOrderContext(Mobile? owner)
         {
             m_Owner = owner;
         }
@@ -119,7 +119,7 @@ namespace Server.Engines.BulkOrders
             m_NextBOD = reader.ReadDeltaTime();
             m_Banked = reader.ReadDouble();
             m_Pending = new PendingReward(reader);
-            Item currentOffer = reader.ReadItem();
+            Item? currentOffer = reader.ReadItem();
             m_NextTurnIn = reader.ReadDeltaTime();
             m_BankingSetting = (BankingSetting)reader.ReadByte();
 

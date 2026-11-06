@@ -1,0 +1,30 @@
+{
+  "Type": "Pirate",
+  "SavedLocal": "2026-03-05 17:39:21",
+  "Stats": {
+    "Str": 262,
+    "Dex": 138,
+    "Int": 207,
+    "Hits": 460,
+    "VirtualArmor": 48,
+    "Damage": 21
+  },
+  "Behavior": {
+    "UsesHumanWeapons": false,
+    "UsesBandages": true,
+    "UsesPotions": true,
+    "CanRun": true,
+    "CanReveal": false
+  },
+  "Skills": {
+    "EvalInt": 88.0,
+    "Magery": 85.0,
+    "Meditation": 61.5,
+    "MagicResist": 84.0,
+    "Healing": 34.5,
+    "Swords": 87.0,
+    "Tactics": 89.0,
+    "Wrestling": 93.0,
+    "Anatomy": 84.0
+  }
+}

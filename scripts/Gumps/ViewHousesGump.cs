@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,7 +30,6 @@
 using Server.Items;
 using Server.Multis;
 using Server.Targeting;
-using System;
 using System.Collections;
 
 namespace Server.Gumps
@@ -59,7 +58,7 @@ namespace Server.Gumps
         {
             public static readonly IComparer Instance = new HouseComparer();
 
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
                 return ((BaseHouse)x).BuiltOn.CompareTo(((BaseHouse)y).BuiltOn);
             }
@@ -76,9 +75,9 @@ namespace Server.Gumps
 
         private Mobile m_From;
         private ArrayList m_List;
-        private BaseHouse m_Selection;
+        private BaseHouse? m_Selection;
 
-        public ViewHousesGump(Mobile from, ArrayList list, BaseHouse sel)
+        public ViewHousesGump(Mobile from, ArrayList list, BaseHouse? sel)
             : base(50, 40)
         {
             m_From = from;
@@ -119,7 +118,7 @@ namespace Server.Gumps
                             AddButton(190, 17, 0x15E3, 0x15E7, 0, GumpButtonType.Page, page - 1);
                     }
 
-                    object name = FindHouseName((BaseHouse)list[i]);
+                    object? name = FindHouseName((BaseHouse)list[i]);
 
                     AddHtml(15, 40 + ((i % 15) * 20), 20, 20, Color(string.Format("{0}.", i + 1), White), false, false);
 

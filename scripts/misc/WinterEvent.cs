@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,10 @@
 
 /* scripts\Misc\WinterEventSystem.cs
  * CHANGELOG:
+ *  10/7/26, Claude
+ *      Remove the Wild Hunt coupling (Wild Hunt was retired): the WildHuntArmyScalar and
+ *      WildHuntHitsScalar settings, their console properties, and their XML persistence.
+ *      XML version 4 no longer writes them; version 3 files are still read (values discarded).
  *  4/14/23, Yoar
  *      Initial commit.
  */
@@ -41,10 +45,10 @@ namespace Server.Misc
     {
         private static readonly Rectangle2D m_DaggerIsland = new Rectangle2D(3720, 0, 680, 860);
 
-        private static Timer m_Timer;
+        private static Timer? m_Timer;
         private static readonly Dictionary<Mobile, WinterEventContext> m_Contexts = new Dictionary<Mobile, WinterEventContext>();
 
-        public static Timer Timer { get { return m_Timer; } }
+        public static Timer? Timer { get { return m_Timer; } }
         public static Dictionary<Mobile, WinterEventContext> Contexts { get { return m_Contexts; } }
 
         public static bool Enabled = false;
@@ -56,8 +60,6 @@ namespace Server.Misc
         public static int HeatTick = 25;
         public static Rectangle2D TownBounds = new Rectangle2D(4010, 522, 79, 73);
         public static int AlcoholHeat = 5;
-        public static int WildHuntArmyScalar = 100;
-        public static int WildHuntHitsScalar = 100;
 
         public static void Configure()
         {
@@ -102,7 +104,7 @@ namespace Server.Misc
 
             public override void Execute(CommandEventArgs e, object obj)
             {
-                Mobile m = obj as Mobile;
+                Mobile? m = obj as Mobile;
 
                 if (m == null)
                     return; // sanity
@@ -378,7 +380,7 @@ namespace Server.Misc
             return (warmth + 1) / (MaxWarmth / m_Warnings.Length);
         }
 
-        private static string GetWarning(int index)
+        private static string? GetWarning(int index)
         {
             if (index >= 0 && index < m_Warnings.Length)
                 return m_Warnings[index];
@@ -388,7 +390,7 @@ namespace Server.Misc
 
         public static WinterEventContext GetContext(Mobile m, bool create)
         {
-            WinterEventContext context;
+            WinterEventContext? context;
 
             if (!m_Contexts.TryGetValue(m, out context) && create)
                 m_Contexts[m] = context = new WinterEventContext(m);
@@ -398,7 +400,7 @@ namespace Server.Misc
 
         private static void Defrag()
         {
-            List<Mobile> toRemove = null;
+            List<Mobile>? toRemove = null;
 
             foreach (KeyValuePair<Mobile, WinterEventContext> kvp in m_Contexts)
             {
@@ -460,7 +462,7 @@ namespace Server.Misc
             {
                 Console.WriteLine("WinterEventSystem Saving...");
 
-                string directoryName = Path.GetDirectoryName(FilePath);
+                string? directoryName = Path.GetDirectoryName(FilePath);
 
                 if (!string.IsNullOrEmpty(directoryName) && !Directory.Exists(directoryName))
                     Directory.CreateDirectory(directoryName);
@@ -470,14 +472,11 @@ namespace Server.Misc
 
                 writer.WriteStartDocument(true);
                 writer.WriteStartElement("WinterEventSystem");
-                writer.WriteAttributeString("version", "3");
+                writer.WriteAttributeString("version", "4");
 
                 try
                 {
-                    // version 3
-
-                    writer.WriteElementString("WildHuntArmyScalar", WildHuntArmyScalar.ToString());
-                    writer.WriteElementString("WildHuntHitsScalar", WildHuntHitsScalar.ToString());
+                    // version 4: removed the version 3 Wild Hunt elements
 
                     // version 2
 
@@ -530,10 +529,15 @@ namespace Server.Misc
 
                 switch (version)
                 {
+                    case 4:
+                        {
+                            goto case 2;
+                        }
                     case 3:
                         {
-                            WildHuntArmyScalar = Int32.Parse(reader.ReadElementString("WildHuntArmyScalar"));
-                            WildHuntHitsScalar = Int32.Parse(reader.ReadElementString("WildHuntHitsScalar"));
+                            // obsolete Wild Hunt settings (removed in version 4): read and discard
+                            reader.ReadElementString("WildHuntArmyScalar");
+                            reader.ReadElementString("WildHuntHitsScalar");
 
                             goto case 2;
                         }
@@ -724,7 +728,7 @@ namespace Server.Misc
 
             for (int i = 0; i < count; i++)
             {
-                Mobile m = reader.ReadMobile();
+                Mobile? m = reader.ReadMobile();
 
                 WinterEventContext context = new WinterEventContext(m);
 
@@ -801,30 +805,6 @@ namespace Server.Misc
         {
             get { return WinterEventSystem.TownBounds; }
             set { WinterEventSystem.TownBounds = value; }
-        }
-
-        [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
-        public int WildHuntArmyScalar
-        {
-            get { return WinterEventSystem.WildHuntArmyScalar; }
-            set { WinterEventSystem.WildHuntArmyScalar = value; }
-        }
-
-        [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
-        public int WildHuntHitsScalar
-        {
-            get { return WinterEventSystem.WildHuntHitsScalar; }
-            set
-            {
-                if (value != WinterEventSystem.WildHuntHitsScalar)
-                {
-                    Mobiles.WildHunt.WildHunt.UnscaleHits();
-
-                    WinterEventSystem.WildHuntHitsScalar = value;
-
-                    Mobiles.WildHunt.WildHunt.ScaleHits();
-                }
-            }
         }
 
         [Constructable]

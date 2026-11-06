@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -35,14 +35,14 @@ namespace Server.Engines.ConPVP
     {
         private DuelContext m_Context;
         private DuelPlayer[] m_Players;
-        private TournyParticipant m_TournyPart;
+        private TournyParticipant? m_TournyPart;
 
         public int Count { get { return m_Players.Length; } }
         public DuelPlayer[] Players { get { return m_Players; } }
         public DuelContext Context { get { return m_Context; } }
-        public TournyParticipant TournyPart { get { return m_TournyPart; } set { m_TournyPart = value; } }
+        public TournyParticipant? TournyPart { get { return m_TournyPart; } set { m_TournyPart = value; } }
 
-        public DuelPlayer Find(Mobile mob)
+        public DuelPlayer? Find(Mobile? mob)
         {
             if (mob is PlayerMobile)
             {
@@ -63,12 +63,12 @@ namespace Server.Engines.ConPVP
             return null;
         }
 
-        public bool Contains(Mobile mob)
+        public bool Contains(Mobile? mob)
         {
             return (Find(mob) != null);
         }
 
-        public void Broadcast(int hue, string message, string nonLocalOverhead, string localOverhead)
+        public void Broadcast(int hue, string? message, string nonLocalOverhead, string localOverhead)
         {
             for (int i = 0; i < m_Players.Length; ++i)
             {
@@ -169,7 +169,7 @@ namespace Server.Engines.ConPVP
             m_Players[index] = null;
         }
 
-        public void Remove(DuelPlayer player)
+        public void Remove(DuelPlayer? player)
         {
             if (player == null)
                 return;

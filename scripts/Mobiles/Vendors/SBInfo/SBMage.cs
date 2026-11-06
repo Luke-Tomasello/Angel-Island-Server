@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -130,7 +130,7 @@ namespace Server.Mobiles
 
                 Add(new GenericBuyInfo(typeof(RecallRune), BaseVendor.PlayerPays(typeof(RecallRune)), 10, 0x1F14, 0));
 
-                if (Core.RuleSets.AngelIslandRules())
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.UpheavalRules())
                 {
                     // the text "An Unmarked Moonstone" does not show. Figure out how Taran did the BBS Types (see GetBunchType in BaseVendor.cs)
                     Add(new GenericBuyInfo("An Unmarked Moonstone", typeof(Moonstone), BaseVendor.PlayerPays(typeof(Moonstone)), 100, 0xF8B, 0));

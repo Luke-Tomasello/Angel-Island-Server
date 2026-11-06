@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -53,6 +53,7 @@ namespace Server.Items
             : base(serial)
         {
         }
+
         public new void SetRandomMagicEffect(int MinLevel, int MaxLevel)
         {
             if (MinLevel < 1 || MaxLevel > 3)
@@ -60,7 +61,18 @@ namespace Server.Items
 
             MagicEffect = Loot.WandEnchantments[Utility.Random(Loot.WandEnchantments.Length)];
 
+            if (Core.RuleSets.SeasonsRules(2) &&
+                MagicEffect != MagicItemEffect.None &&
+                !Loot.IsAllowedMagicEffect(MagicEffect))
+            {
+                MagicEffect = MagicItemEffect.None;
+                MagicCharges = 0;
+                this.Delete();  // dud wands are worthless, delete them
+                return;
+            }
+
             int NewLevel = Utility.RandomMinMax(MinLevel, MaxLevel);
+
             switch (NewLevel)
             {
                 case 1:
@@ -79,6 +91,8 @@ namespace Server.Items
             }
             Identified = false;
         }
+
+
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);

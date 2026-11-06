@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -154,7 +154,7 @@ namespace Server.Gumps
 
             for (int i = 0; i < 16; ++i)
             {
-                string desc;
+                string? desc;
                 int hue;
 
                 if (i < entries.Count)
@@ -189,7 +189,7 @@ namespace Server.Gumps
 
             if (index < m_Book.Entries.Count)
             {
-                RunebookEntry e = (RunebookEntry)m_Book.Entries[index];
+                RunebookEntry? e = (RunebookEntry?)m_Book.Entries[index];
 
                 desc = GetName(e.Description);
                 hue = GetMapHue(e.Map);
@@ -283,7 +283,7 @@ namespace Server.Gumps
 
         public static bool HasSpell(Mobile from, int spellID)
         {
-            Spellbook book = Spellbook.Find(from, spellID);
+            Spellbook? book = Spellbook.Find(from, spellID);
 
             return (book != null && book.HasSpell(spellID));
         }
@@ -377,7 +377,7 @@ namespace Server.Gumps
 
                 if (index >= 0 && index < m_Book.Entries.Count)
                 {
-                    RunebookEntry e = (RunebookEntry)m_Book.Entries[index];
+                    RunebookEntry? e = (RunebookEntry?)m_Book.Entries[index];
 
                     switch (group)
                     {
@@ -525,7 +525,7 @@ namespace Server.Gumps
         {
             if (a >= 0 && a < list.Count && b >= 0 && b < list.Count)
             {
-                object temp = list[a];
+                object? temp = list[a];
 
                 list[a] = list[b];
                 list[b] = temp;

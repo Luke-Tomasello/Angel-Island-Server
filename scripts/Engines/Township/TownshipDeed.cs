@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -119,7 +119,7 @@ namespace Server.Items
 
         private void UseDeedInternal(Mobile from, Point3D loc, Map map, bool hasConfirmed)
         {
-            Guild guild = from.Guild as Guild;
+            Guild? guild = from.Guild as Guild;
 
             if (!IsChildOf(from.Backpack))
             {
@@ -206,7 +206,7 @@ namespace Server.Items
             OwnedHouseOrOutside,
         }
 
-        public static PlacementResult CheckPlacement(Point3D loc, Map map, Guild guild, int radius, HouseRequirementType houseRequirement = HouseRequirementType.Guildhouse)
+        public static PlacementResult CheckPlacement(Point3D loc, Map map, Guild? guild, int radius, HouseRequirementType houseRequirement = HouseRequirementType.Guildhouse)
         {
             if (loc == Point3D.Zero)
                 return PlacementResult.InvalidLocation;
@@ -221,7 +221,7 @@ namespace Server.Items
             {
                 case HouseRequirementType.Guildhouse:
                     {
-                        BaseHouse house = BaseHouse.FindHouseAt(loc, map, 16);
+                        BaseHouse? house = BaseHouse.FindHouseAt(loc, map, 16);
 
                         if (house == null || !house.Contains(guild.Guildstone))
                             return PlacementResult.NotInsideGuildhouse;
@@ -230,7 +230,7 @@ namespace Server.Items
                     }
                 case HouseRequirementType.OwnedHouse:
                     {
-                        BaseHouse house = BaseHouse.FindHouseAt(loc, map, 16);
+                        BaseHouse? house = BaseHouse.FindHouseAt(loc, map, 16);
 
                         if (house == null || house.Owner == null || !guild.IsMember(house.Owner))
                             return PlacementResult.NotInsideOwnedHouse;
@@ -239,7 +239,7 @@ namespace Server.Items
                     }
                 case HouseRequirementType.OwnedHouseOrOutside:
                     {
-                        BaseHouse house = BaseHouse.FindHouseAt(loc, map, 16);
+                        BaseHouse? house = BaseHouse.FindHouseAt(loc, map, 16);
 
                         if (house != null && (house.Owner == null || !guild.IsMember(house.Owner)))
                             return PlacementResult.InsideUnownedHouse;
@@ -248,7 +248,7 @@ namespace Server.Items
                     }
             }
 
-            Region ignore = null;
+            Region? ignore = null;
 
             // if we already have a township, ignore our current township region
             if (guild.TownshipStone != null && !guild.TownshipStone.Deleted && guild.TownshipStone is TownshipStone)
@@ -305,7 +305,7 @@ namespace Server.Items
                     if (h is SiegeTent || h.Owner == null)
                         continue; // ignore completely
 
-                    Guild houseGuild = h.Owner.Guild as Guild;
+                    Guild? houseGuild = h.Owner.Guild as Guild;
 
                     if (houseGuild != null && (guild == houseGuild || (allied && guild.IsAlly(houseGuild))))
                         ownedCount++;
@@ -326,7 +326,7 @@ namespace Server.Items
             return 0.0;
         }
 
-        public static bool HasConflictingRegion(Point3D loc, Map map, int radius, Region ignore)
+        public static bool HasConflictingRegion(Point3D loc, Map map, int radius, Region? ignore)
         {
             try
             {
@@ -357,7 +357,7 @@ namespace Server.Items
             {
                 for (int y = rect.Start.Y; y < rect.End.Y; y++)
                 {
-                    HouseRegion r = Region.Find(new Point3D(x, y, loc.Z), map) as HouseRegion;
+                    HouseRegion? r = Region.Find(new Point3D(x, y, loc.Z), map) as HouseRegion;
 
                     if (r != null && r.House != null && !list.Contains(r.House))
                         list.Add(r.House);

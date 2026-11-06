@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,7 +66,7 @@ namespace Server.Engines.Plants
 
     public class PlantItem : Item, ISecurable
     {
-        private PlantSystem m_PlantSystem;
+        private PlantSystem? m_PlantSystem;
 
         private PlantStatus m_PlantStatus;
         private PlantType m_PlantType;
@@ -201,7 +201,7 @@ namespace Server.Engines.Plants
         {
             get
             {
-                Mobile owner = RootParent as Mobile;
+                Mobile? owner = RootParent as Mobile;
 
                 if (owner != null && IsChildOf(owner.Backpack))
                     return true;
@@ -212,7 +212,7 @@ namespace Server.Engines.Plants
                 if (IsLockedDown && Parent == null)
                     return true;
 
-                Regions.TownshipRegion tsr = Regions.TownshipRegion.GetTownshipAt(this);
+                Regions.TownshipRegion? tsr = Regions.TownshipRegion.GetTownshipAt(this);
 
                 if (tsr != null && tsr.TStone != null && tsr.TStone.IsLockedDown(this) && Parent == null)
                     return true;
@@ -358,12 +358,12 @@ namespace Server.Engines.Plants
             if (IsLockedDown && IsAccessibleTo(from))
                 return true;
 
-            Item root = RootParent as Item;
+            Item? root = RootParent as Item;
 
             if (root != null && root.IsSecure && root.IsAccessibleTo(from))
                 return true;
 
-            Regions.TownshipRegion tsr = Regions.TownshipRegion.GetTownshipAt(this);
+            Regions.TownshipRegion? tsr = Regions.TownshipRegion.GetTownshipAt(this);
 
             if (tsr != null && tsr.TStone != null && tsr.TStone.IsLockedDown(this) && IsAccessibleTo(from))
                 return true;
@@ -455,7 +455,7 @@ namespace Server.Engines.Plants
             {
                 #region Bleaching
 
-                BaseBeverage beverage = item as BaseBeverage;
+                BaseBeverage? beverage = item as BaseBeverage;
 
                 if (beverage != null && !beverage.IsEmpty && beverage.Pourable && beverage.Content == BeverageType.Liquor && beverage.ValidateUse(from, true))
                 {

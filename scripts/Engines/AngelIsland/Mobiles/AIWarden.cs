@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -67,7 +67,7 @@ namespace Server.Mobiles
 
             PackItem(new Bandage(Utility.RandomMinMax(1, 15)), lootType: LootType.UnStealable);
 
-            Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(LookAround), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(LookAround), new object?[] { null });
         }
         public override bool ClickTitle { get { return false; } }
         public override bool AlwaysMurderer { get { return false; } }
@@ -86,7 +86,7 @@ namespace Server.Mobiles
         public AIWarden(Serial serial)
             : base(serial)
         {
-            Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(LookAround), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(LookAround), new object?[] { null });
         }
         public override void InitBody()
         {
@@ -128,7 +128,7 @@ namespace Server.Mobiles
         {
             if (Map == null || Map == Map.Internal)
             {
-                Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(LookAround), new object[] { null });
+                Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(LookAround), new object?[] { null });
                 return;
             }
 
@@ -140,7 +140,7 @@ namespace Server.Mobiles
             }
             eable.Free();
 
-            Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(LookAround), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(LookAround), new object?[] { null });
         }
         public void FoundPlayer(Mobile m)
         {
@@ -191,63 +191,71 @@ namespace Server.Mobiles
                 LogHelper.LogException(ex);
             }
         }
-        private Mobile ConvoMob = null;
+        private Mobile? ConvoMob = null;
         private List<Mobile> ConvoQueue = new List<Mobile>();
         private void Welcome(object state)
         {
             object[] aState = (object[])state;
             int message = (int)aState[0];
-            PlayerMobile pm = ConvoMob as PlayerMobile;
+            PlayerMobile? pm = ConvoMob as PlayerMobile;
             double delay = 2.5;
             try
             {
-                if (Combatant == null && !Unavailable(pm))
+                if (Combatant == null && !Unavailable(pm) && pm.AccessLevel <= AccessLevel.Player)
                 {
-                    Accounting.Account acct = pm.Account as Accounting.Account;
-                    if (acct != null && acct.InfractionStatus != Accounting.Account.AccountInfraction.none)
+                    Accounting.Account? acct = pm.Account as Accounting.Account;
+                    if (acct != null && acct.InfractionStatus != Accounting.Account.AccountInfraction.None)
                     {
-                        int max_accounts = acct.InfractionStatus == Accounting.Account.AccountInfraction.totalIPLimiter ? CoreAI.MaxAccountsPerIP : CoreAI.MaxAccountsPerMachine;
+                        int max_accounts = acct.InfractionStatus == Accounting.Account.AccountInfraction.TotalIpLimiter ? CoreAI.MaxAccountsPerIP : CoreAI.MaxAccountsPerMachine;
                         switch (acct.InfractionStatus)
                         {
                             default:
                                 // we won't see these, handled elsewhere
                                 ConvoMob = null;
                                 break;
-#if false
-                            case Accounting.Account.AccountInfraction.fastwalk:
+                            case Accounting.Account.AccountInfraction.TooManyCharacters:
                                 switch (message)
                                 {
                                     default:
-                                        //  we're done
+                                        // we're done
                                         ConvoMob = null;
                                         return;
+
                                     case 0:
                                         Say("Welcome to Angel Island Prison {0}.", pm.Name);
                                         break;
+
                                     case 1:
-                                        Say("You were caught 'fastwalking' on this server.");
+                                        Say("This account has exceeded the maximum number of allowed characters.");
                                         break;
+
                                     case 2:
-                                        if (Core.RuleSets.TestCenterRules())
-                                            Say("Luckily, this is test center, see the parole officer to exit.");
+                                        Say("This shard permits no more than {0} character(s) per account.", CoreAI.MaxCharactersPerAccount);
                                         break;
+
                                     case 3:
-                                        TimeSpan delta = pm.MinimumSentence - DateTime.UtcNow;
-                                        int days = delta.Days; int hours = delta.Hours; int minutes = delta.Minutes;
-                                        days = Math.Max(0, days); hours = Math.Max(0, hours); minutes = Math.Max(0, minutes);
-                                        Say("Your sentence will be {0} days, {1} hours, and {2} minutes.", days, hours, minutes);
+                                        Say("Unfortunately, the game client does not allow us to prevent this character from being created.");
                                         break;
+
                                     case 4:
-                                        Say("While you're here, look around. You'll find some interesting books to read.");
+                                        Say("As a result, this character has been placed here for review and will be deleted in approximately five minutes.");
                                         break;
+
                                     case 5:
-                                        Say("Stay out of trouble and have a nice day.");
+                                        Say("No action is required if you created this character by mistake.");
+                                        break;
+
+                                    case 6:
+                                        Say("If you wish to create a different character, you must first delete one of your existing characters.");
+                                        break;
+
+                                    case 7:
+                                        Say("Thank you for your understanding.");
                                         break;
                                 }
                                 break;
-#endif
-                            case Accounting.Account.AccountInfraction.totalIPLimiter:
-                            case Accounting.Account.AccountInfraction.totalHardwareLimiter:
+                            case Accounting.Account.AccountInfraction.TotalIpLimiter:
+                            case Accounting.Account.AccountInfraction.TotalHardwareLimiter:
                                 switch (message)
                                 {
                                     default:
@@ -283,7 +291,7 @@ namespace Server.Mobiles
                                         break;
                                 }
                                 break;
-                            case Accounting.Account.AccountInfraction.concurrentIPLimiter:
+                            case Accounting.Account.AccountInfraction.ConcurrentIpLimiter:
                                 switch (message)
                                 {
                                     default:
@@ -446,7 +454,7 @@ namespace Server.Mobiles
         }
         private Memory m_aggressionMemory = new Memory();       // memory used to remember if we a saw a player in the area
         const int AggressionMemoryTime = 120;                    // how long (seconds) we remember this player
-        public override void OnHarmfulAction(Mobile aggressor, bool isCriminal, object source = null)
+        public override void OnHarmfulAction(Mobile aggressor, bool isCriminal, object? source = null)
         {   // call for reinforcements!
             base.OnHarmfulAction(aggressor, isCriminal, source);
             if (m_aggressionMemory.Recall(aggressor) == false)

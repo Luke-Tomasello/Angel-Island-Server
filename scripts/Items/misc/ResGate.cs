@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -59,7 +59,7 @@ namespace Server.Items
                 // Adam: when using this gate, we turn off statloss
                 if (m != null && m is PlayerMobile)
                 {
-                    PlayerMobile pm = m as PlayerMobile;
+                    PlayerMobile? pm = m as PlayerMobile;
                     m.SendGump(new ResurrectGump(pm, false));
                 }
             }

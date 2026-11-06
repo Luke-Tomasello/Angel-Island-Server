@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,8 +26,6 @@
  *	7/26/05, erlein
  *		Automated removal of AoS resistance related function calls. 6 lines removed.
 */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -86,34 +84,16 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020221204551/uo.stratics.com/hunters/eagle.shtml
+            // 1 Raw bird (carved), 36 Feathers (carved)
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(25, 50);
-                PackItem(new BlackPearl(4));
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020221204551/uo.stratics.com/hunters/eagle.shtml
-                    // 1 Raw bird (carved), 36 Feathers (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    // no loot in RunUO 2.0
-                }
             }
         }
-
-
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);

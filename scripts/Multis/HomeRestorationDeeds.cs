@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,15 +52,15 @@ namespace Server.Multis
         public Item Item { get { return m_Item; } set { m_Item = value; } }
         private LockdownType m_Type = LockdownType.None;
         public LockdownType Type { get { return m_Type; } set { m_Type = value; } }
-        private BaseHouse m_House;
+        private BaseHouse? m_House;
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
-        public BaseHouse House { get => m_House; set => m_House = value; }
+        public BaseHouse? House { get => m_House; set => m_House = value; }
         public override string DefaultName { get { return "a home item restoration deed"; } }
         private static bool UseDeedGraphic(Item item)
         { return item is BaseAddon || item is PlantItem; }
         private static bool IsAddon(Item item)
         { return UseDeedGraphic(item); }
-        public HomeItemRestorationDeed(BaseHouse house, Item item, LockdownType type)
+        public HomeItemRestorationDeed(BaseHouse? house, Item item, LockdownType type)
             // assume the look if the item we are placing unless it's an addon
             : base(UseDeedGraphic(item) ? 0x14F0 : item.ItemID)
         {
@@ -92,12 +92,14 @@ namespace Server.Multis
             else
                 SingleClickSay(from, null);
         }
-        private void SingleClickSay(Mobile from, BaseHouse house)
+        private void SingleClickSay(Mobile from, BaseHouse? house)
         {
             try
             {
                 if (m_Item != null && !m_Item.Deleted && m_Item is PlantItem plant)
-                    LabelTo(from, string.Format("{0} {1} for [{2}] (deed)", plant.PlantHue, Utility.SplitCamelCase(plant.PlantType.ToString()), house.Sign.Name));
+                    LabelTo(from, string.Format("{0} {1} for [{2}] (deed)", plant.PlantHue, Utility.SplitCamelCase(plant.PlantType.ToString()),
+                        (house != null && house.Sign != null && house.Sign.Name != null) ? house.Sign.Name :
+                            "your next house"));
                 else
                     LabelTo(from, string.Format("{0} for [{1}] (deed)",
                         (m_Item != null && !m_Item.Deleted) ? m_Item.SafeName :
@@ -153,7 +155,7 @@ namespace Server.Multis
         }
         public class MoveItemTarget : Target
         {
-            public static void BeginMoveItem(BaseHouse house, Mobile from, HomeItemRestorationDeed package)
+            public static void BeginMoveItem(BaseHouse? house, Mobile from, HomeItemRestorationDeed package)
             {
                 bool IsAddon = package.Item is BaseAddon;
                 if (house != null && house.Owner != null && house.IsOwner(from) && house.IsStaffOwned == false)
@@ -195,7 +197,7 @@ namespace Server.Multis
             private static bool ValidTarget(object targeted, out Point3D loc)
             {
                 loc = Point3D.Zero;
-                IPoint3D p = targeted as IPoint3D;
+                IPoint3D? p = targeted as IPoint3D;
 
                 if (p == null)
                     return false;
@@ -242,7 +244,7 @@ namespace Server.Multis
                         }
                         else
                         {
-                            if (m_House.SecureCount < m_House.MaxSecures)
+                            if (m_House.SecureCount < m_House.MaxSecureContainers)
                             {
                                 m_House.AddSecure(from, m_Item); // secure it 
                                 logger.Log(LogType.Item, m_Item, string.Format("{0} secured item", from));
@@ -326,7 +328,7 @@ namespace Server.Multis
         public override string DefaultName { get { return "a house NPC restoration deed"; } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Mobile Owner
+        public Mobile? Owner
         {
             get { return m_House.Owner ?? null; }
         }
@@ -355,7 +357,7 @@ namespace Server.Multis
             else
                 SingleClickSay(from, null);
         }
-        private void SingleClickSay(Mobile from, BaseHouse house)
+        private void SingleClickSay(Mobile from, BaseHouse? house)
         {
             try
             {
@@ -402,7 +404,7 @@ namespace Server.Multis
         }
         public class MoveItemTarget : Target
         {
-            public static void BeginMoveItem(BaseHouse house, Mobile from, HouseNPCRestorationDeed package)
+            public static void BeginMoveItem(BaseHouse? house, Mobile from, HouseNPCRestorationDeed package)
             {
                 if ((house != null && house.Owner != null && house.IsStaffOwned == false))
                 {
@@ -430,7 +432,7 @@ namespace Server.Multis
                     return;
 
                 Point3D loc = new Point3D(targeted as IPoint3D);
-                BaseHouse bh = null;
+                BaseHouse? bh = null;
                 if ((bh = BaseHouse.Find(from.Location, from.Map)) != null && bh.Owner == from)
                 {
                     m_Mobile.MoveToWorld(loc, from.Map);
@@ -448,7 +450,7 @@ namespace Server.Multis
         }
         public override void OnDelete()
         {
-            if (this.Mobile.IsIntMapStorage)  // not ever been moved to world, delete it
+            if (this.Mobile != null && this.Mobile.IsIntMapStorage)  // not ever been moved to world, delete it
             {
                 this.Mobile.IsIntMapStorage = false;
                 this.Mobile.Delete();
@@ -549,7 +551,7 @@ namespace Server.Multis
         }
         public class MoveItemTarget : Target
         {
-            public static void BeginMoveItem(BaseHouse house, Mobile from, HouseRestorationDeed package)
+            public static void BeginMoveItem(BaseHouse? house, Mobile from, HouseRestorationDeed package)
             {
                 if ((house != null && house.Owner != null && house.IsStaffOwned == false))
                 {

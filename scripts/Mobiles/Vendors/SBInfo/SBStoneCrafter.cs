@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -81,7 +81,7 @@ namespace Server.Mobiles
                 Add(new GenericBuyInfo("1044515", typeof(MalletAndChisel), BaseVendor.PlayerPays(typeof(MalletAndChisel)), 50, 0x12B3, 0));
 
                 // 6/16/23, Yoar: In case we don't have context menus nor bulk orders, simply sell a rock hammer so that we can mine for granite
-                if (PublishInfo.Publish < 14.0)
+                if (PublishInfo.Publish < 14.0 || (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
                     Add(new GenericBuyInfo("Rock Hammer", typeof(RockHammer), BaseVendor.PlayerPays(typeof(RockHammer)), 20, 0xFB5, 0x973));
 
                 // 8/22/23, Yoar: Enabled for townships

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -200,7 +200,7 @@ namespace Server.Factions
         [CommandProperty(AccessLevel.GameMaster)]
         public bool IsActive { get { return m_IsActive; } set { m_IsActive = value; } }
 
-        public bool CanGiveSilverTo(Mobile mob)
+        public bool CanGiveSilverTo(Mobile? mob)
         {
             if (m_SilverGiven == null)
                 return true;
@@ -298,7 +298,7 @@ namespace Server.Factions
             writer.Write((DateTime)m_LeaveBegin);
         }
 
-        public static PlayerState Find(Mobile mob)
+        public static PlayerState? Find(Mobile? mob)
         {
             if (mob is PlayerMobile)
                 return ((PlayerMobile)mob).FactionPlayerState;
@@ -306,7 +306,7 @@ namespace Server.Factions
             return null;
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             return ((PlayerState)obj).m_KillPoints - m_KillPoints;
         }

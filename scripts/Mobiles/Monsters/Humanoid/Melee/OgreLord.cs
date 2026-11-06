@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -80,46 +80,20 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020202091246/uo.stratics.com/hunters/ogrelord.shtml
+            // 200 to 250 Gold, Magic items, Weapon Carried, 2 Raw Ribs (carved)
+            // https://web.archive.org/web/20010414040605/http://uo.stratics.com/hunters/
+            // 200 to 250 gold, Magic items, Weapon Carried, 2 Raw Ribs (carved)
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
-
-                PackItem(new Club());
-                PackItem(new Arrow(10));
-                PackGold(550, 700);
-                PackMagicEquipment(2, 3, 0.40, 0.40);
-                PackMagicEquipment(2, 3, 0.15, 0.15);
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
+                PackGold(200, 250);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020202091246/uo.stratics.com/hunters/ogrelord.shtml
-                    // 200 to 250 Gold, Magic items, Weapon Carried, 2 Raw Ribs (carved)
-                    // https://web.archive.org/web/20010414040605/http://uo.stratics.com/hunters/
-                    // 200 to 250 gold, Magic items, Weapon Carried, 2 Raw Ribs (carved)
-                    if (Spawning)
-                    {
-                        PackGold(200, 250);
-                    }
-                    else
-                    {
-                        PackMagicEquipment(2, 3);
-                        PackMagicItem(1, 2, 0.05);
-                        // stratics says "Weapon Carried", I think they mean a club as the ogre lord doesn't carry a weapon
-                        PackItem(new Club());
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new Club());
-
-                    AddLoot(LootPack.Rich, 2);
-                }
+                PackMagicEquipment(2, 3);
+                PackMagicItem(1, 2, 0.05);
+                // stratics says "Weapon Carried", I think they mean a club as the ogre lord doesn't carry a weapon
+                PackItem(new Club());
             }
         }
 

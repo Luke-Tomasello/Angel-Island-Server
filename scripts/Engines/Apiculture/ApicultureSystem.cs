@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -103,21 +103,6 @@ namespace Server.Engines.Apiculture
         }
 
         // 11/26/23, Yoar: Check hives on a Cron schedule instead
-#if false
-        public static void Initialize()
-        {
-            if (!Enabled)
-                return;
-
-            new UpdateTimer().Start();
-        }
-#endif
-
-        public static void CheckAll()
-        {
-            foreach (Beehive hive in m_Hives)
-                CheckGrowth(hive);
-        }
 
         public static void CheckGrowth(Beehive hive)
         {
@@ -180,20 +165,6 @@ namespace Server.Engines.Apiculture
             return (hasHive && Utility.Random(100) < PlantDoubleGrowChance);
         }
 
-#if false
-        private class UpdateTimer : Timer
-        {
-            public UpdateTimer()
-                : base(TimeSpan.FromMinutes(5.0), TimeSpan.FromMinutes(5.0))
-            {
-            }
-
-            protected override void OnTick()
-            {
-                CheckAll();
-            }
-        }
-#endif
 
         #region Save/Load
 
@@ -205,7 +176,7 @@ namespace Server.Engines.Apiculture
             {
                 Console.WriteLine("ApicultureConfig Saving...");
 
-                string directoryName = Path.GetDirectoryName(FilePath);
+                string? directoryName = Path.GetDirectoryName(FilePath);
 
                 if (!string.IsNullOrEmpty(directoryName) && !Directory.Exists(directoryName))
                     Directory.CreateDirectory(directoryName);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -240,7 +240,7 @@ namespace Server.Mobiles
             {
                 m_NextResurrect = DateTime.UtcNow + ResurrectDelay;
 
-                BaseHouse house = BaseHouse.FindHouseAt(m);
+                BaseHouse? house = BaseHouse.FindHouseAt(m);
 
                 if (m.Map == null || !Utility.CanFit(m.Map, m.Location, 16, Utility.CanFitFlags.requireSurface) || house != null)
                 {

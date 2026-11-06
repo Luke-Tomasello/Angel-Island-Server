@@ -62079,7 +62079,7 @@
         <y>-2</y>
         <z>27</z>
         <doorType>MetalDoor</doorType>
-        <facing>SouthCW</facing>
+        <facing>SouthCCW</facing>
       </Door>
     </Doors>
   </HouseID>

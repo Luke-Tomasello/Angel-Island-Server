@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -248,7 +248,7 @@ namespace Server.Misc
             return rating / 4;
         }
 
-        private static double GetArmorMeditationValue(BaseArmor ar)
+        private static double GetArmorMeditationValue(BaseArmor? ar)
         {
             if (ar == null /*|| 
 				ar.ArmorAttributes == null ||

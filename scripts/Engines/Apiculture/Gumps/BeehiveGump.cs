@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -379,7 +379,7 @@ namespace Server.Engines.Apiculture
 
         private void PourPotion(Mobile from, PotionEffect[] effects)
         {
-            Item item = FindPotion(from, effects);
+            Item? item = FindPotion(from, effects);
 
             if (item == null)
             {
@@ -397,7 +397,7 @@ namespace Server.Engines.Apiculture
             }
         }
 
-        private static Item FindPotion(Mobile from, PotionEffect[] effects)
+        private static Item? FindPotion(Mobile from, PotionEffect[] effects)
         {
             if (from.Backpack == null)
                 return null;
@@ -430,7 +430,7 @@ namespace Server.Engines.Apiculture
             if (pack == null)
                 return;
 
-            Item tool = pack.FindItemByType(typeof(HiveTool));
+            Item? tool = pack.FindItemByType(typeof(HiveTool));
 
             if (tool == null)
             {
@@ -475,7 +475,7 @@ namespace Server.Engines.Apiculture
             if (pack == null)
                 return;
 
-            Item tool = pack.FindItemByType(typeof(HiveTool));
+            Item? tool = pack.FindItemByType(typeof(HiveTool));
 
             if (tool == null)
             {

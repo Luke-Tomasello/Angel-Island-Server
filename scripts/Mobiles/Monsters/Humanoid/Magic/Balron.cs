@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -89,7 +89,7 @@ namespace Server.Mobiles
         public override Poison PoisonImmune { get { return Poison.Deadly; } }
         public override int Meat { get { return 1; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 0 : 5; } }
 
         public Balron(Serial serial)
@@ -99,19 +99,52 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            if (SpawnerEngine != null)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
+                GenerateMiniBossLoot();
+                return;
+            }
+
+            // http://web.archive.org/web/20021014234137/uo.stratics.com/hunters/balron.shtml
+            // 800 to 1200 Gold, Magic items, Scrolls, Reagents, Level 5 treasure maps, 1 Raw Ribs (carved)
+            // https://web.archive.org/web/20010804025848fw_/http://uo.stratics.com/hunters/balron.shtml
+            // 800 to 1200 gold, Magic items, Scrolls, Reagents, Level 5 treasure maps, 1 Raw Ribs (carved)
+
+            if (Spawning)
+            {
+                PackGold(800, 1200);
+            }
+            else
+            {
+                PackMagicStuff(2, 3, 0.05); // TODO: no idea the level, but we'll guess the highest level
+                PackMagicStuff(2, 3, 0.05);
+                PackScroll(1, 6, .9);
+                PackScroll(1, 6, .5);
+                PackReg(1, .9);
+                PackReg(2, .5);
+
+                // standard runuo and classic OSI
+                PackItem(new Longsword());
+            }
+        }
+
+        private void GenerateMiniBossLoot()
+        {
+            if (Spawning)
+            {
+                PackGold(2500, 3500);
+            }
+            else
+            {
                 PackReg(3);
                 PackItem(new Longsword());
-                PackGold(2500, 3500);
+
                 PackScroll(6, 8);
                 PackScroll(6, 8);
-                //PackMagicEquipment( 2, 3, 0.80, 0.80 );
-                //PackMagicEquipment( 2, 3, 0.20, 0.20 );
 
                 // adam: add 25% chance to get a Random Slayer Instrument
-                PackSlayerInstrument(.25);
+                if (Core.RuleSets.SlayerInstruments())
+                    PackSlayerInstrument(.25);
 
                 // Pigpen: Add the hellish (rare) armor to this mini-boss.
                 if (Core.RuleSets.MiniBossArmor())
@@ -121,45 +154,6 @@ namespace Server.Mobiles
                 Item item;
                 item = Loot.RandomArmorOrShieldOrWeapon();
                 PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6 /*6*/, 0, false));
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021014234137/uo.stratics.com/hunters/balron.shtml
-                    // 800 to 1200 Gold, Magic items, Scrolls, Reagents, Level 5 treasure maps, 1 Raw Ribs (carved)
-                    // https://web.archive.org/web/20010804025848fw_/http://uo.stratics.com/hunters/balron.shtml
-                    // 800 to 1200 gold, Magic items, Scrolls, Reagents, Level 5 treasure maps, 1 Raw Ribs (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(800, 1200);
-                    }
-                    else
-                    {
-                        // Add the hellish (rare) armor to this mini-boss.
-                        if (Core.RuleSets.MiniBossArmor())
-                            DoMiniBossArmor();
-
-                        PackMagicStuff(2, 3, 0.05); // TODO: no idea the level, but we'll guess the highest level
-                        PackMagicStuff(2, 3, 0.05);
-                        PackScroll(1, 6, .9);
-                        PackScroll(1, 6, .5);
-                        PackReg(1, .9);
-                        PackReg(2, .5);
-
-                        // standard runuo and classic OSI
-                        PackItem(new Longsword());
-                    }
-                }
-                else
-                {   // standard runuo
-                    if (Spawning)
-                        PackItem(new Longsword());
-
-                    AddLoot(LootPack.FilthyRich, 2);
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.MedScrolls, 2);
-                }
             }
         }
         private void DoMiniBossArmor()

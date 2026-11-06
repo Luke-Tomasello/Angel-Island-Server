@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -67,7 +67,7 @@ namespace Server.Township
             get { return "<CENTER>TOWNSHIP BUILDER MENU</CENTER>"; }
         }
 
-        private static CraftSystem m_CraftSystem;
+        private static CraftSystem? m_CraftSystem;
 
         public static CraftSystem CraftSystem
         {
@@ -177,7 +177,7 @@ namespace Server.Township
             return false;
         }
 
-        public override void PlayCraftEffect(Mobile from, object obj = null)
+        public override void PlayCraftEffect(Mobile from, object? obj = null)
         {
             if (obj != null && obj is CraftItem ci && (ci.GroupName == "Gardening" || ci.ItemType == typeof(GrassCraft)))
             {
@@ -299,11 +299,6 @@ namespace Server.Township
             AddCraft(typeof(TownshipFarmPlot), gardening, "farm plot", reqSkillGardening, reqSkillGardening, typeof(FertileDirt), 1023969, 10, 1042081);
 
             // 8/21/23, Yoar: Do these work? Either way, we don't need them since we can grow hedges using the plant system
-#if false
-            index = AddCraft(typeof(BoxwoodHedge), gardening, "boxwood hedge", reqSkillGardening, reqSkillGardening, typeof(FertileDirt), 1023969, 10, 1042081, Boxwood.YoungBoxwood);
-            AddRes(index, typeof(BaseBeverage), "Measures of water", 2, 1042081, item => ((BaseBeverage)item).Content == BeverageType.Water);
-            AddRes(index, typeof(Boxwood), "Boxwood", 1, 1042081);
-#endif
 
             AddCraft(typeof(Basalt), gardening, "basalt", reqSkillGardening, reqSkillGardening, typeof(BasaltDeed), "Basalt", 1, 1042081, 0x1363);
             AddCraft(typeof(Dacite), gardening, "dacite", reqSkillGardening, reqSkillGardening, typeof(DaciteDeed), "Dacite", 1, 1042081, 0x1364);
@@ -836,7 +831,7 @@ namespace Server.Township
 
             public override void EndCraftAction()
             {
-                Item found = null;
+                Item? found = null;
 
                 if (From.Backpack != null)
                 {
@@ -927,7 +922,7 @@ namespace Server.Township
 
             private bool Acquire(object targeted, out TextDefinition message)
             {
-                Item target = targeted as Item;
+                Item? target = targeted as Item;
 
                 message = Verify(target);
 
@@ -939,9 +934,9 @@ namespace Server.Township
                 return true;
             }
 
-            private TextDefinition Verify(Item item)
+            private TextDefinition? Verify(Item item)
             {
-                Seed seed = item as Seed;
+                Seed? seed = item as Seed;
 
                 if (seed == null)
                     return "That is not a seed.";
@@ -1023,7 +1018,7 @@ namespace Server.Township
                 StaticPlantItem oldPlant = (StaticPlantItem)targeted;
 
                 PlantItem newPlant = new PlantItem();
-                Utility.CopyProperties(newPlant, oldPlant);
+                Utility.CopyProperties(oldPlant, newPlant);
                 newPlant.Movable = true;
                 From.AddToBackpack(newPlant);
 
@@ -1103,16 +1098,16 @@ namespace Server.Township
 
         #region Repair
 
-        public static TimeSpan RepairDelay { get { return Core.UOTC_CFG ? TimeSpan.FromMinutes(1.0) : TownshipSettings.WallRepairDelay; } }
+        public static TimeSpan RepairDelay { get { return Core.GMNTC_CFG ? TimeSpan.FromMinutes(1.0) : TownshipSettings.WallRepairDelay; } }
 
         public static TextDefinition ProcessRepair(Mobile m, object targeted, bool usingDeed, ref bool toDelete) // TODO: Skill check? Repair contracts?
         {
-            ITownshipItem tsi = targeted as ITownshipItem;
+            ITownshipItem? tsi = targeted as ITownshipItem;
 
             if (tsi == null || tsi.HitsMax <= 0)
                 return usingDeed ? 1061136 : 1044277; // You cannot repair that item with this type of repair contract. | That item cannot be repaired.
 
-            CraftRes res = LookupPrimaryResource(targeted);
+            CraftRes? res = LookupPrimaryResource(targeted);
 
             if (res == null)
                 return usingDeed ? 1061136 : 1044277; // You cannot repair that item with this type of repair contract. | That item cannot be repaired.
@@ -1250,7 +1245,7 @@ namespace Server.Township
 
         #endregion
 
-        public static CraftRes LookupPrimaryResource(object obj)
+        public static CraftRes? LookupPrimaryResource(object obj)
         {
             Type type = obj.GetType();
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -107,10 +107,7 @@ namespace Server.Mobiles
         {
             if (Core.RuleSets.AllShards)
             {
-                if (Spawning)
-                {
-                    PackGold(0);
-                }
+                if (Spawning) { }
                 else
                 {
                     // set this so we don't generate all that crazy champ loot
@@ -147,7 +144,7 @@ namespace Server.Mobiles
                 {   // ai special
                     if (Spawning)
                     {
-                        PackGold(0);
+
                     }
                     else
                     {
@@ -168,11 +165,11 @@ namespace Server.Mobiles
         public override Poison PoisonImmune { get { return Poison.Lethal; } }
         //public override Poison HitPoison{ get{ return Poison.Lethal; } }
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
 
-            Mobile m = VerifyValidMobile(from, 9);
+            Mobile? m = VerifyValidMobile(from, 9);
 
             if (m != null)
             {
@@ -181,7 +178,7 @@ namespace Server.Mobiles
             }
         }
 
-        public Mobile VerifyValidMobile(Mobile m, int tileRange)
+        public Mobile? VerifyValidMobile(Mobile m, int tileRange)
         {
             if (m != null && m is PlayerMobile && m.AccessLevel == AccessLevel.Player || m != null && m is BaseCreature && ((BaseCreature)m).Controlled)
             {
@@ -194,7 +191,7 @@ namespace Server.Mobiles
 
         private void ThrowYarn(Mobile target, int range)
         {
-            Mobile m = VerifyValidMobile(target, range);
+            Mobile? m = VerifyValidMobile(target, range);
 
             if (m != null && !(m is BaseCreature))
             {

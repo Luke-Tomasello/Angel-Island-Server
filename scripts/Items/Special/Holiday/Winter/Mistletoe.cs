@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -101,7 +101,7 @@ namespace Server.Items
 
         public override void OnDoubleClick(Mobile from)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             if (house != null && house.IsCoOwner(from))
             {
@@ -122,7 +122,7 @@ namespace Server.Items
             if (Deleted)
                 return false;
 
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             if (house != null && house.IsCoOwner(from))
             {
@@ -220,7 +220,7 @@ namespace Server.Items
         {
             if (IsChildOf(from.Backpack))
             {
-                BaseHouse house = BaseHouse.FindHouseAt(from);
+                BaseHouse? house = BaseHouse.FindHouseAt(from);
 
                 if (house != null && house.IsCoOwner(from))
                 {

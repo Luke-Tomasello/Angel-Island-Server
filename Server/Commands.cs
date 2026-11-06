@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,7 +30,7 @@ namespace Server
     public class CommandEventArgs : EventArgs
     {
         private Mobile m_Mobile;
-        private object m_Target;
+        private object? m_Target;
         private string m_Command, m_ArgString;
         private string[] m_Arguments;
         public bool HasCommand(string command, out string argString)
@@ -55,7 +55,7 @@ namespace Server
             }
         }
 
-        public object Target
+        public object? Target
         {
             get
             {
@@ -146,7 +146,7 @@ namespace Server
 
         }
 
-        public CommandEventArgs(Mobile mobile, object target, string command, string argString, string[] arguments)
+        public CommandEventArgs(Mobile mobile, object? target, string command, string argString, string[] arguments)
         {
             m_Mobile = mobile;
             m_Target = target;
@@ -193,14 +193,14 @@ namespace Server
             m_AccessLevel = accessLevel;
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             if (obj == this)
                 return 0;
             else if (obj == null)
                 return 1;
 
-            CommandEntry e = obj as CommandEntry;
+            CommandEntry? e = obj as CommandEntry;
 
             if (e == null)
                 throw new ArgumentException();
@@ -213,7 +213,7 @@ namespace Server
     {
         public static bool CheckAccess(string command, AccessLevel al)
         {
-            CommandEntry entry = (CommandEntry)m_Entries[command];
+            CommandEntry? entry = (CommandEntry?)m_Entries[command];
 
             if (entry != null)
                 if (al >= entry.AccessLevel)
@@ -312,7 +312,7 @@ namespace Server
                 myComparer = new CaseInsensitiveComparer(myCulture);
             }
 
-            public new bool Equals(object x, object y)
+            public new bool Equals(object? x, object? y)
             {
                 if (myComparer.Compare(x, y) == 0)
                 {
@@ -351,7 +351,7 @@ namespace Server
             return Handle(from, null, text);
         }
 
-        public static bool Handle(Mobile from, object target, string text)
+        public static bool Handle(Mobile from, object? target, string text)
         {
             if (text.StartsWith(m_CommandPrefix))
             {
@@ -377,7 +377,7 @@ namespace Server
                     args = new string[0];
                 }
 
-                CommandEntry entry = (CommandEntry)m_Entries[command];
+                CommandEntry? entry = (CommandEntry?)m_Entries[command];
 
                 if (entry != null)
                 {

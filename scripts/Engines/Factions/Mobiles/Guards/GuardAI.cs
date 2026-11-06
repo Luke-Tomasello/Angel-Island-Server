@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -105,7 +105,7 @@ namespace Server.Factions
             new ComboEntry(typeof(EnergyBoltSpell))
         );
 
-        public static Spell Process(Mobile mob, Mobile targ, ref SpellCombo combo, ref int index, ref DateTime releaseTime)
+        public static Spell? Process(Mobile mob, Mobile targ, ref SpellCombo combo, ref int index, ref DateTime releaseTime)
         {
             while (++index < combo.m_Entries.Length)
             {
@@ -117,7 +117,7 @@ namespace Server.Factions
                 if (entry.Chance > Utility.Random(100))
                 {
                     releaseTime = DateTime.UtcNow + entry.Hold;
-                    return (Spell)Activator.CreateInstance(entry.Spell, new object[] { mob, null });
+                    return (Spell)Activator.CreateInstance(entry.Spell, new object?[] { mob, null });
                 }
             }
 
@@ -131,10 +131,10 @@ namespace Server.Factions
     {
         private BaseFactionGuard m_Guard;
 
-        private BandageContext m_Bandage;
+        private BandageContext? m_Bandage;
         private DateTime m_BandageStart;
 
-        private SpellCombo m_Combo;
+        private SpellCombo? m_Combo;
         private int m_ComboIndex = -1;
         private DateTime m_ReleaseTarget;
 
@@ -187,7 +187,7 @@ namespace Server.Factions
             if (pack == null)
                 return false;
 
-            Item weapon = m_Guard.Weapon as Item;
+            Item? weapon = m_Guard.Weapon as Item;
 
             if (weapon != null && weapon.Parent == m_Guard && !(weapon is Fists))
             {
@@ -205,7 +205,7 @@ namespace Server.Factions
             if (pack == null)
                 return false;
 
-            Item weapon = pack.FindItemByType(typeof(BaseWeapon));
+            Item? weapon = pack.FindItemByType(typeof(BaseWeapon));
 
             if (weapon == null)
                 return false;
@@ -222,7 +222,7 @@ namespace Server.Factions
             if (pack == null)
                 return false;
 
-            Item bandage = pack.FindItemByType(typeof(Bandage));
+            Item? bandage = pack.FindItemByType(typeof(Bandage));
 
             if (bandage == null)
                 return false;
@@ -239,7 +239,7 @@ namespace Server.Factions
             if (pack == null)
                 return false;
 
-            Item item = pack.FindItemByType(type);
+            Item? item = pack.FindItemByType(type);
 
             if (item == null)
                 return false;
@@ -256,7 +256,7 @@ namespace Server.Factions
 
         public int GetStatMod(Mobile mob, StatType type)
         {
-            StatMod mod = mob.GetStatMod(string.Format("[Magic] {0} Offset", type));
+            StatMod? mod = mob.GetStatMod(string.Format("[Magic] {0} Offset", type));
 
             if (mod == null)
                 return 0;
@@ -289,7 +289,7 @@ namespace Server.Factions
             }
         }
 
-        public Mobile FindDispelTarget(bool activeOnly)
+        public Mobile? FindDispelTarget(bool activeOnly)
         {
             if (m_Mobile.Deleted || m_Mobile.Int < 95 || CanDispel(m_Mobile) || m_Mobile.AutoDispel)
                 return null;
@@ -299,7 +299,7 @@ namespace Server.Factions
                 List<AggressorInfo> aggressed = m_Mobile.Aggressed;
                 List<AggressorInfo> aggressors = m_Mobile.Aggressors;
 
-                Mobile active = null;
+                Mobile? active = null;
                 double activePrio = 0.0;
 
                 Mobile comb = m_Mobile.Combatant;
@@ -369,7 +369,7 @@ namespace Server.Factions
 
                 if (map != null)
                 {
-                    Mobile active = null, inactive = null;
+                    Mobile? active = null, inactive = null;
                     double actPrio = 0.0, inactPrio = 0.0;
 
                     Mobile comb = m_Mobile.Combatant;
@@ -519,7 +519,7 @@ namespace Server.Factions
                 }
             }
 
-            Mobile dispelTarget = FindDispelTarget(true);
+            Mobile? dispelTarget = FindDispelTarget(true);
 
             if (m_Guard.Target != null && m_ReleaseTarget == DateTime.MinValue)
                 m_ReleaseTarget = DateTime.UtcNow + TimeSpan.FromSeconds(10.0);
@@ -528,7 +528,7 @@ namespace Server.Factions
             {
                 Target targ = m_Guard.Target;
 
-                Mobile toHarm = (dispelTarget == null ? combatant : dispelTarget);
+                Mobile? toHarm = (dispelTarget == null ? combatant : dispelTarget);
 
                 if ((targ.Flags & TargetFlags.Harmful) != 0 && toHarm != null)
                 {
@@ -569,7 +569,7 @@ namespace Server.Factions
             }
             else if (m_Guard.Orders.Movement != MovementType.Stand)
             {
-                Mobile toFollow = null;
+                Mobile? toFollow = null;
 
                 if (m_Guard.Town != null && m_Guard.Orders.Movement == MovementType.Follow)
                 {
@@ -622,7 +622,7 @@ namespace Server.Factions
 
             if (m_Mobile.Spell == null && DateTime.UtcNow >= m_Mobile.NextSpellTime)
             {
-                Spell spell = null;
+                Spell? spell = null;
 
                 DateTime toRelease = DateTime.MinValue;
 
@@ -725,7 +725,7 @@ namespace Server.Factions
                             if (types.Count > 1)
                                 spell = new BlessSpell(m_Guard, null);
                             else if (types.Count == 1)
-                                spell = (Spell)Activator.CreateInstance((Type)types[0], new object[] { m_Guard, null });
+                                spell = (Spell)Activator.CreateInstance((Type)types[0], new object?[] { m_Guard, null });
                         }
                         else if (types.Count > 0)
                         {
@@ -762,14 +762,14 @@ namespace Server.Factions
                             if (types.Count > 1)
                                 spell = new CurseSpell(m_Guard, null);
                             else if (types.Count == 1)
-                                spell = (Spell)Activator.CreateInstance((Type)types[0], new object[] { m_Guard, null });
+                                spell = (Spell)Activator.CreateInstance((Type)types[0], new object?[] { m_Guard, null });
                         }
                     }
                 }
 
                 if (spell != null && (m_Guard.HitsMax - m_Guard.Hits + 10) > Utility.Random(100))
                 {
-                    Type type = null;
+                    Type? type = null;
 
                     if (spell is GreaterHealSpell)
                         type = typeof(BaseHealPotion);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -84,7 +84,7 @@ namespace Server.Items
             string sFilled = sFilltp;
             for (int cpos = 0; cpos < Conditions.Count; cpos++)
             {
-                RuleCondition RuleCon = (RuleCondition)Conditions[cpos];
+                RuleCondition? RuleCon = (RuleCondition?)Conditions[cpos];
 
                 sFilled = sFilled.Replace("%Condition" + (cpos + 1) + "_Quantity%", RuleCon.Quantity.ToString());
                 sFilled = sFilled.Replace("%Condition" + (cpos + 1) + "_Property%", RuleCon.Property);

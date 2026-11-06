@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,6 +41,7 @@
 		Added toggler for weapon abilities.
 */
 
+using Server.Engines.Consoles;
 using Server.Network;
 using Server.Spells;
 using System;
@@ -98,7 +99,7 @@ namespace Server.Items
             double incrValue = 0;
 
             // 5/6/23, Yoar: Conditioned defensive wrestling for Pub16
-            if (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+            if (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
             {
                 double anatValue = defender.Skills[SkillName.Anatomy].Value;
                 double evalValue = defender.Skills[SkillName.EvalInt].Value;
@@ -116,11 +117,11 @@ namespace Server.Items
         }
 
         // default: 15
-        private int StamCost { get { return Server.Items.Consoles.StunPunchMCi.StamCost; } }
+        private int StamCost { get { return StunPunchMCi.StamCost; } }
         // default: true
-        private bool StamCostAlways { get { return Server.Items.Consoles.StunPunchMCi.StamCostAlways; } }
+        private bool StamCostAlways { get { return StunPunchMCi.StamCostAlways; } }
         // default: 4.0
-        private double FreezeTime { get { return Server.Items.Consoles.StunPunchMCi.FreezeTime; } }
+        private double FreezeTime { get { return StunPunchMCi.FreezeTime; } }
 
         public override TimeSpan OnSwing(Mobile attacker, Mobile defender)
         {
@@ -178,7 +179,7 @@ namespace Server.Items
                         {
                             if (attacker.Stam >= 15)
                             {
-                                Item toDisarm = defender.FindItemOnLayer(Layer.OneHanded);
+                                Item? toDisarm = defender.FindItemOnLayer(Layer.OneHanded);
 
                                 if (toDisarm == null || !toDisarm.Movable)
                                     toDisarm = defender.FindItemOnLayer(Layer.TwoHanded);
@@ -269,7 +270,7 @@ namespace Server.Items
 
         public static bool HasFreeHands(Mobile m)
         {
-            Item item = m.FindItemOnLayer(Layer.OneHanded);
+            Item? item = m.FindItemOnLayer(Layer.OneHanded);
 
             if (item != null && !(item is Spellbook))
                 return false;
@@ -281,7 +282,7 @@ namespace Server.Items
         {
 
             Mobile m = e.Mobile;
-            Item weapon = m.FindItemOnLayer(Layer.TwoHanded);
+            Item? weapon = m.FindItemOnLayer(Layer.TwoHanded);
             double anat = m.Skills[SkillName.Anatomy].Value;
             double weapSkill = 0;
 
@@ -297,7 +298,7 @@ namespace Server.Items
 
                 if (armsValue >= 80.0 && wresValue >= 80.0)
                 {
-                    m.DisruptiveAction();
+                    m.DisruptiveAction(null);
                     m.DisarmReady = !m.DisarmReady;
                     m.SendLocalizedMessage(m.DisarmReady ? 1019013 : 1019014);
                 }
@@ -402,7 +403,7 @@ namespace Server.Items
             }
             else if (anatValue >= 80.0 && wresValue >= 80.0)
             {
-                m.DisruptiveAction();
+                m.DisruptiveAction(null);
                 m.StunReady = !m.StunReady;
                 m.SendLocalizedMessage(m.StunReady ? 1019011 : 1019012);
             }

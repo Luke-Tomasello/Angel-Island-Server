@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,6 +52,8 @@ using Server.Items;
 using Server.Mobiles;
 using Server.Multis.Deeds;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Server.Multis
 {
@@ -91,7 +93,7 @@ namespace Server.Multis
         {
             m_RoofHue = Hue;
 
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {   // assume normal decay times for tents on Siege
                 m_TimeBankMax = BaseHouse.MaxHouseDecayTime;
                 DecayMinutesStored = BaseHouse.HouseDecayDelay.TotalMinutes;
@@ -112,7 +114,7 @@ namespace Server.Multis
 
         // Disabled until further understood.
         //	see rule #7 in 
-        public void Annex(BaseHouse house)
+        public void Annex(BaseHouse? house)
         {
             // because we were annexed, the owner of the new house cannot Demolish it for 7 days
             if (house != null)
@@ -120,7 +122,7 @@ namespace Server.Multis
                 house.SetBaseHouseBool(BaseHouseBoolTable.ManagedDemolition, true);
 
                 if (house.Owner != null)
-                    if (Core.UOBETA_CFG == true)
+                    if (Core.GMNBETA_CFG == true)
                         house.Owner.SendMessage("Annexation of another property requires that you keep this house here for at least 1 hour.");
                     else
                         house.Owner.SendMessage("Annexation of another property requires that you keep this house here for at least 7 days.");
@@ -147,7 +149,7 @@ namespace Server.Multis
                         {
                             if (obj is PlayerVendor && (obj as PlayerVendor).Deleted == false && toDelete.Contains(obj) == false)
                             {
-                                PlayerVendor pv = obj as PlayerVendor;
+                                PlayerVendor? pv = obj as PlayerVendor;
 
                                 // give them back the vendor contract
                                 pack.AddItem(new ContractOfEmployment());
@@ -241,7 +243,15 @@ namespace Server.Multis
             m_TentPack.Hue = m_RoofHue;
 
             if (this.Owner != null)
-                Timer.DelayCall(TimeSpan.FromSeconds(1.5), new TimerStateCallback(WarnTick), new object[] { this.Owner, null });
+                Timer.DelayCall(TimeSpan.FromSeconds(1.5), new TimerStateCallback(WarnTick), new object?[] { this.Owner, null });
+        }
+        public List<Item> GetItems()
+        {
+            List<Item> list = new();
+            list.AddRange(Addons.OfType<Item>().ToList());
+            list.Add(m_TentBed);
+            list.Add(m_TentPack);
+            return list;
         }
         private void WarnTick(object state)
         {
@@ -254,7 +264,7 @@ namespace Server.Multis
             }
         }
 
-        public override void MoveToWorld(Point3D location, Map map, Mobile responsible = null)
+        public override void MoveToWorld(Point3D location, Map map, Mobile? responsible = null)
         {
             base.MoveToWorld(location, map);
             GenerateTent();
@@ -279,7 +289,7 @@ namespace Server.Multis
 
         public override void Refresh()
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
                 base.Refresh();
             else
             {
@@ -296,7 +306,7 @@ namespace Server.Multis
 
         public override void RefreshHouseOneDay()
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
                 base.RefreshHouseOneDay();
             {
                 if (DecayMinutesStored <= m_TimeBankMax.TotalMinutes)

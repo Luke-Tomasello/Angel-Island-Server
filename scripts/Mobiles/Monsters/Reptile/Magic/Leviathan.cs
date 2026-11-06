@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,9 +36,9 @@ namespace Server.Mobiles
     [CorpseName("a leviathan corpse")]
     public class Leviathan : BaseCreature
     {
-        private Mobile m_Fisher;
+        private Mobile? m_Fisher;
 
-        public Mobile Fisher
+        public Mobile? Fisher
         {
             get { return m_Fisher; }
             set { m_Fisher = value; }
@@ -50,7 +50,7 @@ namespace Server.Mobiles
         }
 
         [Constructable]
-        public Leviathan(Mobile fisher) : base(AIType.AI_Mage, FightMode.All | FightMode.Closest, 10, 1, 0.2, 0.4)
+        public Leviathan(Mobile? fisher) : base(AIType.AI_Mage, FightMode.All | FightMode.Closest, 10, 1, 0.2, 0.4)
         {
             m_Fisher = fisher;
 
@@ -86,9 +86,9 @@ namespace Server.Mobiles
         }
 
         public override bool HasBreath { get { return true; } }
-        public override int BreathPhysicalDamage { get { return 70; } } // TODO: Verify damage type
-        public override int BreathColdDamage { get { return 30; } }
-        public override int BreathFireDamage { get { return 0; } }
+        //public override int BreathPhysicalDamage { get { return 70; } } // TODO: Verify damage type
+        //public override int BreathColdDamage { get { return 30; } }
+        //public override int BreathFireDamage { get { return 0; } }
         public override int BreathEffectHue { get { return 0x1ED; } }
         public override double BreathDamageScalar { get { return 0.05; } }
         public override double BreathMinDelay { get { return 5.0; } }
@@ -97,16 +97,17 @@ namespace Server.Mobiles
         public override double TreasureMapChance { get { return 0.25; } }
         public override int TreasureMapLevel { get { return 5; } }
 
-        // https://uo.stratics.com/database/view.php?db_content=hunters&id=1396
-        // 2600 - 3000 Gold. Magic Items
-        //  Special: 2 Ropes, Message in a Bottle
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=1396
+            // 2600 - 3000 Gold. Magic Items
+            //  Special: 2 Ropes, Message in a Bottle
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
                 PackGold(2600, 3000);
-
+            }
+            else
+            {
                 PackItem(new MessageInABottle());
 
                 Rope rope = new Rope();
@@ -116,47 +117,6 @@ namespace Server.Mobiles
                 rope = new Rope();
                 rope.ItemID = 0x14FA;
                 PackItem(rope);
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {
-                    if (Spawning)
-                    {
-                        PackGold(2600, 3000);
-                    }
-                    else
-                    {
-                        PackItem(new MessageInABottle());
-
-                        Rope rope = new Rope();
-                        rope.ItemID = 0x14F8;
-                        PackItem(rope);
-
-                        rope = new Rope();
-                        rope.ItemID = 0x14FA;
-                        PackItem(rope);
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackGold(2600, 3000);
-                    }
-                    else
-                    {
-                        PackItem(new MessageInABottle());
-
-                        Rope rope = new Rope();
-                        rope.ItemID = 0x14F8;
-                        PackItem(rope);
-
-                        rope = new Rope();
-                        rope.ItemID = 0x14FA;
-                        PackItem(rope);
-                    }
-                }
             }
         }
 
@@ -196,7 +156,7 @@ namespace Server.Mobiles
             // Let's always give an artifacts
             if (c != null /*&& Utility.Random(4) == 0*/)
             {
-                Item rare = Loot.Construct(m_Rares);
+                Item? rare = Loot.Construct(m_Rares);
 
                 if (rare != null)
                 {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -59,7 +59,7 @@ namespace Server.Factions.NewGumps.FactionMenu
             {
             }
 
-            public int Compare(PlayerState x, PlayerState y)
+            public int Compare(PlayerState? x, PlayerState? y)
             {
                 return Insensitive.Compare(x.Mobile.Name, y.Mobile.Name);
             }
@@ -73,7 +73,7 @@ namespace Server.Factions.NewGumps.FactionMenu
             {
             }
 
-            public int Compare(PlayerState x, PlayerState y)
+            public int Compare(PlayerState? x, PlayerState? y)
             {
                 if (x.Mobile.Guild == null && y.Mobile.Guild == null)
                     return 0;
@@ -94,7 +94,7 @@ namespace Server.Factions.NewGumps.FactionMenu
             {
             }
 
-            public int Compare(PlayerState x, PlayerState y)
+            public int Compare(PlayerState? x, PlayerState? y)
             {
                 return Quantify(x).CompareTo(Quantify(y));
             }
@@ -122,7 +122,7 @@ namespace Server.Factions.NewGumps.FactionMenu
             {
             }
 
-            public int Compare(PlayerState x, PlayerState y)
+            public int Compare(PlayerState? x, PlayerState? y)
             {
                 if (x.Mobile.NetState == null && y.Mobile.NetState == null)
                     return GetLastOn(x.Mobile).CompareTo(GetLastOn(y.Mobile));
@@ -148,7 +148,7 @@ namespace Server.Factions.NewGumps.FactionMenu
             {
             }
 
-            public int Compare(PlayerState x, PlayerState y)
+            public int Compare(PlayerState? x, PlayerState? y)
             {
                 return x.KillPoints.CompareTo(y.KillPoints);
             }
@@ -202,7 +202,7 @@ namespace Server.Factions.NewGumps.FactionMenu
                     }
                 case 1:
                     {
-                        Guild guild = player.Mobile.Guild as Guild;
+                        Guild? guild = player.Mobile.Guild as Guild;
 
                         if (guild != null)
                             AddHtmlText(x, y, width, height, string.Format("({0}){1}", guild.Abbreviation, guild.Leader == player.Mobile ? "*" : string.Empty), false, false);

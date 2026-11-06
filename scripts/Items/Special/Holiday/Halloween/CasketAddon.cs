@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -96,16 +96,7 @@ namespace Server.Items
 
         private bool CanOpen()
         {
-#if false
-            if ( Map == null )
-                return true;
-
-            Point3D offset = ( m_East ? new Point3D( -2, 0, 0 ) : new Point3D( 0, -2, 0 ) );
-
-            return Map.CanFit( Location + offset, 16, false, true, false );
-#else
             return true;
-#endif
         }
 
         private void Open()
@@ -136,11 +127,7 @@ namespace Server.Items
                         else
                         {
                             SetComponentID(0, 0x1C39);
-#if false
-                        SetComponentID( 1, 0x1C3A );
-#else
                             SetComponentID(1, 0x1D34);
-#endif
                             SetComponentID(2, 0x1C3B);
                             SetComponentID(3, 0x1C37);
                             SetComponentID(4, 0x1C36);
@@ -183,11 +170,7 @@ namespace Server.Items
                         if (m_East)
                         {
                             SetComponentID(0, 0x1D4F);
-#if false
-                        SetComponentID( 1, 0x1D50 );
-#else
                             SetComponentID(1, 0x1C2D);
-#endif
                             SetComponentID(2, 0x1D51);
                             SetComponentID(3, 0x1D4E);
                             SetComponentID(4, 0x1D4D);
@@ -264,7 +247,7 @@ namespace Server.Items
 
         private void MoveComponent(int index, Point3D offset)
         {
-            AddonComponent c = GetComponent(index);
+            AddonComponent? c = GetComponent(index);
 
             if (c != null)
             {
@@ -276,13 +259,13 @@ namespace Server.Items
 
         private void SetComponentID(int index, int itemID)
         {
-            AddonComponent c = GetComponent(index);
+            AddonComponent? c = GetComponent(index);
 
             if (c != null)
                 c.ItemID = itemID;
         }
 
-        private AddonComponent GetComponent(int index)
+        private AddonComponent? GetComponent(int index)
         {
             if (index >= 0 && index < Components.Count)
                 return Components[index] as AddonComponent;

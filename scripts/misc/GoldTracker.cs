@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -22,6 +22,9 @@
 /* Misc/GoldTracker.cs
  * Created by Pixie.
  * ChangeLog:
+ *  12/3/2025, Adam
+ *      When dealing with BaseUpgradeContract, we no longer look directly at the Price field to calculate value, but instead
+ *          use BaseVendor.PlayerPays() to calculate any markup (like for instance Siege 3x pricing)
  *  9/6/22, Adam
  *  ignore Shard Owner (I own all the static houses in the custom housing area)
  *  For Siege this raises an assert()
@@ -194,17 +197,17 @@ namespace Server.Misc
             }
         }
 
-        private static void OnCalculateAndWrite(Mobile cmdmob)
+        private static void OnCalculateAndWrite(Mobile? cmdmob)
         {
             OnCalculateAndWrite(cmdmob, 100);
         }
 
-        private static void OnCalculateAndWrite(Mobile cmdmob, int maxtoprint)
+        private static void OnCalculateAndWrite(Mobile? cmdmob, int maxtoprint)
         {
             OnCalculateAndWrite(cmdmob, maxtoprint, false, false, false, false);
         }
 
-        private static void OnCalculateAndWrite(Mobile cmdmob, int maxtoprint, bool bSupressNames, bool bSupressStaff, bool bIndicateBanned, bool bUseCharacterName)
+        private static void OnCalculateAndWrite(Mobile? cmdmob, int maxtoprint, bool bSupressNames, bool bSupressStaff, bool bIndicateBanned, bool bUseCharacterName)
         {
             if (bInProcess == true)
             {
@@ -380,9 +383,9 @@ namespace Server.Misc
                             {
                                 if (list[j] is BaseHouse)
                                 {
-                                    BaseHouse house = (BaseHouse)list[j];
+                                    BaseHouse? house = (BaseHouse?)list[j];
                                     housesworth += (int)house.UpgradeCosts;
-                                    HouseDeed hd = house.GetDeed();
+                                    HouseDeed? hd = house.GetDeed();
                                     if (hd != null && hd is SiegeTentBag == false && hd is TentBag == false)
                                     {
                                         housesworth += RealEstateBroker.ComputePriceFor(hd);
@@ -395,7 +398,7 @@ namespace Server.Misc
                                 }
                             }
 
-                            GoldTotaller acctGoldTotaller = table[acct] as GoldTotaller;
+                            GoldTotaller? acctGoldTotaller = table[acct] as GoldTotaller;
 
                             //if the name in acctGoldTotaller is empty or this char's time is larger than the one stored.
                             if (string.IsNullOrWhiteSpace(acctGoldTotaller.CharacterName) || player.GameTime > timeSpan)
@@ -424,10 +427,10 @@ namespace Server.Misc
 
                 if (wm is PlayerVendor)
                 {
-                    PlayerVendor pv = wm as PlayerVendor;
+                    PlayerVendor? pv = wm as PlayerVendor;
                     if (pv != null && pv.Owner != null)
                     {
-                        Account thisacct = pv.Owner.Account as Account;
+                        Account? thisacct = pv.Owner.Account as Account;
                         if (thisacct != null)
                         {
                             if ((bSupressStaff && thisacct.GetAccessLevel() > AccessLevel.Player) == false)
@@ -452,12 +455,12 @@ namespace Server.Misc
                 m_Table = ht;
             }
 
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
                 if (x == y) return 0;
 
-                GoldTotaller xg = m_Table[x] as GoldTotaller;
-                GoldTotaller yg = m_Table[y] as GoldTotaller;
+                GoldTotaller? xg = m_Table[x] as GoldTotaller;
+                GoldTotaller? yg = m_Table[y] as GoldTotaller;
 
                 if (xg == null || yg == null)
                 {
@@ -533,7 +536,7 @@ namespace Server.Misc
             {
                 if (wm is PlayerVendor)
                 {
-                    PlayerVendor pv = wm as PlayerVendor;
+                    PlayerVendor? pv = wm as PlayerVendor;
                     if (pv != null)
                     {
                         if (pv.Owner == m)
@@ -555,7 +558,7 @@ namespace Server.Misc
                 Item[] deeds = c.FindItemsByType(typeof(Server.Multis.Deeds.HouseDeed), true);
                 foreach (Item i in deeds)
                 {
-                    Server.Multis.Deeds.HouseDeed housedeed = i as Server.Multis.Deeds.HouseDeed;
+                    Server.Multis.Deeds.HouseDeed? housedeed = i as Server.Multis.Deeds.HouseDeed;
                     // don't count tents as they cannot be redeemed for cash
                     if (housedeed != null && housedeed is SiegeTentBag == false && housedeed is TentBag == false)
                     {
@@ -567,11 +570,14 @@ namespace Server.Misc
                 Item[] BUCdeeds = c.FindItemsByType(typeof(BaseUpgradeContract), true);
                 foreach (Item i in BUCdeeds)
                 {
-                    BaseUpgradeContract budeed = i as BaseUpgradeContract;
+                    BaseUpgradeContract? budeed = i as BaseUpgradeContract;
                     if (budeed != null)
                     {
                         count++;
-                        iGold += (int)budeed.Price;
+                        iGold += // old code: (int)budeed.Price;
+                                 // We need to calulate what the player actually pays, not the embedded deed price, since siege has 3x pricing.
+                                 // the deed's cost is added to the houses upgrades, which is later refunded.
+                        BaseVendor.PlayerPays(budeed.GetType());
                     }
                 }
             }
@@ -617,7 +623,10 @@ namespace Server.Misc
                 else if (i is BaseUpgradeContract)
                 {
                     count++;
-                    iGold += (int)((BaseUpgradeContract)i).Price;
+                    iGold += // old code: (int)((BaseUpgradeContract)i).Price;
+                             // We need to calulate what the player actually pays, not the embedded deed price, since siege has 3x pricing.
+                             // the deed's cost is added to the houses upgrades, which is later refunded.
+                        BaseVendor.PlayerPays(((BaseUpgradeContract)i).GetType());
                 }
             }
             ArrayList secures = h.Secures;

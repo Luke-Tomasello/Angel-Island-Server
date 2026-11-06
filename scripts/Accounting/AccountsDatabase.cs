@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,7 +76,7 @@ namespace Server.Accounting
 
         public static string GetDatabasePath(ref bool error)
         {
-            string path = Environment.GetEnvironmentVariable("AI.LOGINDB");
+            string? path = Environment.GetEnvironmentVariable("AI.LOGINDB");
 
             if (string.IsNullOrWhiteSpace(path))
                 path = @"C:\AIDB\accounts.db";
@@ -84,8 +84,8 @@ namespace Server.Accounting
             error = false;
             if (!File.Exists(path))
             {   // initialize database
-                string directory = Path.GetDirectoryName(path); 
-                if (!Directory.Exists(directory)) 
+                string? directory = Path.GetDirectoryName(path);
+                if (!Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
                 // this creates a zero-byte file
                 SQLiteConnection.CreateFile(path);
@@ -186,7 +186,7 @@ namespace Server.Accounting
         {
             EnsureTable();
 
-            DataTable table = null;
+            DataTable? table = null;
 
             const string cmdText = "SELECT cryptpassword, plainpassword, resetpassword, hardwarehash FROM Account WHERE username=@un;";
 
@@ -224,9 +224,9 @@ namespace Server.Accounting
             {
                 DataRow row = table.Rows[0];
 
-                string cryptPassword = row.Field<string>(0);
-                string plainPassword = row.Field<string>(1);
-                string resetPassword = row.Field<string>(2);
+                string? cryptPassword = row.Field<string>(0);
+                string? plainPassword = row.Field<string>(1);
+                string? resetPassword = row.Field<string>(2);
 
                 int hardwareHash;
 
@@ -317,7 +317,7 @@ namespace Server.Accounting
         {
             EnsureTable();
 
-            DataTable table = null;
+            DataTable? table = null;
 
             const string cmdText = "SELECT username, cryptpassword, plainpassword, resetpassword, hardwarehash FROM Account;";
 
@@ -350,10 +350,10 @@ namespace Server.Accounting
             {
                 try
                 {
-                    string username = row.Field<string>(0);
-                    string cryptPassword = row.Field<string>(1);
-                    string plainPassword = row.Field<string>(2);
-                    string resetPassword = row.Field<string>(3);
+                    string? username = row.Field<string>(0);
+                    string? cryptPassword = row.Field<string>(1);
+                    string? plainPassword = row.Field<string>(2);
+                    string? resetPassword = row.Field<string>(3);
 
                     int hardwareHash;
 

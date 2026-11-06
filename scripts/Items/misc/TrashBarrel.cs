@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -53,18 +53,6 @@ namespace Server.Items
 
         public override int DefaultGumpID { get { return 0x3E; } }
         public override int DefaultDropSound { get { return 0x42; } }
-#if false
-        public override bool CanFreezeDry
-        {
-            get
-            {
-                // This has the effect of disallowing non-FD'ed (ie, normal) trash barrels from freezedrying, but
-                // still allowing previously-FD'ed (bugged) barrels to rehydrate and restore themselves to a
-                // valid state.
-                return IsFreezeDried;
-            }
-        }
-#endif
         public override Rectangle2D Bounds
         {
             get { return new Rectangle2D(33, 36, 109, 112); }
@@ -188,7 +176,7 @@ namespace Server.Items
 
         public void OnChop(Mobile from)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(from);
+            BaseHouse? house = BaseHouse.FindHouseAt(from);
 
             if (house != null && house.IsCoOwner(from))
             {
@@ -221,7 +209,7 @@ namespace Server.Items
             m_Timer = null;
         }
 
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         private class EmptyTimer : Timer
         {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -86,7 +86,7 @@ namespace Server.Spells.Seventh
 
             BaseCreature to;
 
-            IPoint3D p = target as IPoint3D;
+            IPoint3D? p = target as IPoint3D;
             if (target == null)
                 return;
 
@@ -106,18 +106,9 @@ namespace Server.Spells.Seventh
                     singlemob = true;
                     double dChance;
 
-                    // players don't have trouble dispelling the summons of a summoner (magery+spirit speak)
-                    if (Caster is PlayerMobile || to.ControlMaster == null)
-                        dChance = (108 + ((100 * (Caster.Skills.Magery.Value - to.DispelDifficulty)) / (to.DispelFocus * 2))) / 100;
-                    else
-                    {
-                        double difficulty = to.DispelDifficulty + to.ControlMaster.Skills.SpiritSpeak.Value / 2.0;
-                        if (difficulty > 125) difficulty = 125;
-                        dChance = (108 + ((100 * (Caster.Skills.Magery.Value - difficulty)) / (to.DispelFocus * 2))) / 100;
-                    }
+                    dChance = Spells.Sixth.DispelSpell.GetDispelChance(Caster, to);
 
                     if (dChance > 0.99) dChance = 0.99;
-                    //Console.WriteLine(dChance);
 
                     if (dChance > Utility.RandomDouble())
                     {
@@ -150,24 +141,16 @@ namespace Server.Spells.Seventh
 
                 for (int i = 0; i < targets.Count; ++i)
                 {
-                    Mobile m = (Mobile)targets[i];
+                    Mobile? m = (Mobile?)targets[i];
 
-                    BaseCreature bc = m as BaseCreature;
+                    BaseCreature? bc = m as BaseCreature;
 
                     if (bc == null)
                         continue;
 
                     double dispelChance;
 
-                    // players don't have trouble dispelling the summons of a summoner (magery+spirit speak)
-                    if (Caster is PlayerMobile || bc.ControlMaster == null)
-                        dispelChance = (50.0 + ((100 * (Caster.Skills.Magery.Value - bc.DispelDifficulty)) / (bc.DispelFocus * 2))) / 100;
-                    else
-                    {
-                        double difficulty = bc.DispelDifficulty + bc.ControlMaster.Skills.SpiritSpeak.Value / 2.0;
-                        if (difficulty > 125) difficulty = 125;
-                        dispelChance = (50.0 + ((100 * (Caster.Skills.Magery.Value - difficulty)) / (bc.DispelFocus * 2))) / 100;
-                    }
+                    dispelChance = Spells.Sixth.DispelSpell.GetDispelChance(Caster, bc);
 
                     if (dispelChance > Utility.RandomDouble())
                     {
@@ -200,7 +183,7 @@ namespace Server.Spells.Seventh
 
             protected override void OnTarget(Mobile from, object o)
             {
-                IPoint3D p = o as IPoint3D;
+                IPoint3D? p = o as IPoint3D;
 
                 if (p != null)
                     m_Owner.Target(p);

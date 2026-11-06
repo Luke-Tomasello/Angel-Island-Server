@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -46,8 +46,8 @@ namespace Server.Items
         public override int DefaultDropSound { get { return 0x42; } }
 
         // not serialized
-        private Mobile m_LastPlayer = null;
-        private Timer m_EmptyTimer = null;
+        private Mobile? m_LastPlayer = null;
+        private Timer? m_EmptyTimer = null;
 
         public override Rectangle2D Bounds
         {
@@ -145,7 +145,7 @@ namespace Server.Items
 
         public void DisplayMessage(Mobile from, Item item, DateTime LastAccess)
         {
-            string text = null;
+            string? text = null;
 
             try
             {
@@ -231,7 +231,7 @@ namespace Server.Items
                 // send text to nearby mob
                 if (selected.Count > 0)
                 {
-                    Mobile mx = selected[Utility.Random(selected.Count)] as Mobile;
+                    Mobile? mx = selected[Utility.Random(selected.Count)] as Mobile;
                     mx.Say(text);
                 }
             }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -84,6 +84,11 @@ namespace Server.Mobiles
         public override bool HasBreath { get { return true; } } // fire breath enabled
         public override FoodType FavoriteFood { get { return FoodType.Meat; } }
         public override PackInstinct PackInstinct { get { return PackInstinct.Daemon | PackInstinct.Equine; } }
+        public override int Meat { get { return 19; } }
+        public override MeatType MeatType
+        {
+            get { return MeatType.Ribs; }
+        }
 
         public FireSteed(Serial serial)
             : base(serial)
@@ -92,35 +97,17 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=172&utm_source=chatgpt.com
+            // 150-300 Sulfurous Ash, 15-30 Rubies
+            // Carved: 19 Raw Ribs
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(300);
-                PackItem(new Ruby(Utility.RandomMinMax(10, 30)));
 
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
-
-                PackItem(new SulfurousAsh(Utility.RandomMinMax(10, 20)));
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // non era
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // standard runuo
-                    PackItem(new SulfurousAsh(Utility.RandomMinMax(151, 300)));
-                    PackItem(new Ruby(Utility.RandomMinMax(16, 30)));
-                }
+                PackItem(new SulfurousAsh(Utility.RandomMinMax(150, 300)));
+                PackItem(new Ruby(Utility.RandomMinMax(15, 30)));
             }
         }
 

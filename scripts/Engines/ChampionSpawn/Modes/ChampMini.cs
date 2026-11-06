@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,8 @@
 
 /* Scripts/Engines/ChampionSpawn/Modes/ChampMini.cs
  *	ChangeLog:
+ *	10/27/2026, Adam
+ *		SpawnTypes enum removed: Deceit_Mini / Wrong_Mini are definition names (ChampNames), DefinitionName replaces SpawnType.
  *	11/01/2006, plasma
  *		Added WipeMonsters() back in due to ebb and flow system
  *	10/29/2006, plasma
@@ -47,7 +49,7 @@ namespace Server.Engines.ChampionSpawn
             // and make visible
             Visible = true;
             //assign first mini spawn as default
-            SpawnType = ChampLevelData.SpawnTypes.Deceit_Mini;
+            DefinitionName = ChampNames.Deceit_Mini;
         }
 
         public ChampMini(Serial serial)
@@ -122,7 +124,7 @@ namespace Server.Engines.ChampionSpawn
             WipeMonsters();
             // call base
             base.AdvanceLevel();
-            if (m_Type == ChampLevelData.SpawnTypes.Wrong_Mini)
+            if (m_DefinitionName == ChampNames.Wrong_Mini)
             {
                 // wrong speaks!
                 switch (Level)

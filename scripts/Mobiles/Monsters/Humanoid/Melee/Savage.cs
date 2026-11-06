@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -63,7 +63,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 using System;
 
@@ -160,97 +159,34 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020606081710/uo.stratics.com/hunters/savage.shtml
+            // 20-40 Gold, bandages, bone arms, bone legs, spear, bola balls, savage tribal mask, mask of orcish kin, tribal berry.
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(100, 150);
-
-                // berry or bola
-                if (Female)
-                {
-                    if (Utility.RandomDouble() < 0.30)
-                        PackItem(new TribalBerry());
-                }
-                else
-                {
-                    if (Utility.RandomDouble() < 0.05)
-                        PackItem(new BolaBall());
-                }
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(20, 40);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020606081710/uo.stratics.com/hunters/savage.shtml
-                    // 20-40 Gold, bandages, bone arms, bone legs, spear, bola balls, savage tribal mask, mask of orcish kin, tribal berry.
-                    if (Spawning)
-                    {
-                        PackGold(20, 40);
-                    }
-                    else
-                    {
-                        PackItem(new Bandage(Utility.RandomMinMax(1, 15)));
+                PackItem(new Bandage(Utility.RandomMinMax(1, 15)));
 
-                        // bone arms dropped as part of dress
-                        // bone legs dropped as part of dress
-                        // spear dropped as part of dress
+                // bone arms dropped as part of dress
+                // bone legs dropped as part of dress
+                // spear dropped as part of dress
 
-                        // http://www.uoguide.com/Savage_Empire
-                        // http://uo.stratics.com/secrets/archive/orcsavage.shtml
-                        // Bola balls have appeared as loot on Orc Bombers. Balls on Bombers are rather common, around a 50/50% chance of getting a ball or not. They are only appearing as loot on bombers.
-                        if (PublishInfo.PublishDate >= Core.EraSAVE)
-                        {
-                            if (Female && 0.1 > Utility.RandomDouble())
-                                PackItem(new TribalBerry());
-                            else if (!Female && 0.1 > Utility.RandomDouble())
-                                PackItem(new BolaBall());
-
-                        }
-
-                        // savage tribal mask dropped as part of dress
-                        // mask of orish kin dropped as part of dress
-                    }
-                }
-                else
+                // http://www.uoguide.com/Savage_Empire
+                // http://uo.stratics.com/secrets/archive/orcsavage.shtml
+                // Bola balls have appeared as loot on Orc Bombers. Balls on Bombers are rather common, around a 50/50% chance of getting a ball or not. They are only appearing as loot on bombers.
+                if (PublishInfo.PublishDate >= Core.EraSAVE)
                 {
-                    if (Spawning)
-                    {
-                        // bone arms dropped as part of dress
-                        // bone legs dropped as part of dress
-                        // spear dropped as part of dress
+                    if (Female && 0.1 > Utility.RandomDouble())
+                        PackItem(new TribalBerry());
+                    else if (!Female && 0.1 > Utility.RandomDouble())
+                        PackItem(new BolaBall());
 
-                        // http://www.uoguide.com/Savage_Empire
-                        // http://uo.stratics.com/secrets/archive/orcsavage.shtml
-                        // Bola balls have appeared as loot on Orc Bombers. Balls on Bombers are rather common, around a 50/50% chance of getting a ball or not. They are only appearing as loot on bombers.
-                        if (PublishInfo.PublishDate >= Core.EraSAVE)
-                        {
-                            if (Female && 0.1 > Utility.RandomDouble())
-                                PackItem(new TribalBerry());
-                            else if (!Female && 0.1 > Utility.RandomDouble())
-                                PackItem(new BolaBall());
-
-                        }
-
-                        // savage tribal mask dropped as part of dress
-                        // mask of orish kin dropped as part of dress
-
-                        PackItem(new Bandage(Utility.RandomMinMax(1, 15)));
-                    }
-
-                    AddLoot(LootPack.Meager);
                 }
+
+                // savage tribal mask dropped as part of dress
+                // mask of orish kin dropped as part of dress
             }
         }
 
@@ -264,7 +200,7 @@ namespace Server.Mobiles
             return base.IsEnemy(m, filter);
         }
 
-        public override void AggressiveAction(Mobile aggressor, bool criminal, object source = null)
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
         {
             base.AggressiveAction(aggressor, criminal);
 
@@ -272,7 +208,7 @@ namespace Server.Mobiles
             {   // Ai uses HUE value and not the BodyMod as there is no sitting graphic
                 if ((aggressor.BodyMod == 183 || aggressor.BodyMod == 184) || (aggressor.BodyMod == 0 && aggressor.HueMod == 0))
                 {
-                    AOS.Damage(aggressor, 50, 0, 100, 0, 0, 0, aggressor);
+                    AOS.Damage(aggressor, 50, new DamageContext { Source = this });
                     aggressor.BodyMod = 0;
                     aggressor.HueMod = -1;
                     aggressor.FixedParticles(0x36BD, 20, 10, 5044, EffectLayer.Head);

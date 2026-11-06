@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,8 +77,8 @@ namespace Server.Items.Triggers
             set
             {
                 m_Message = value;
-                SendSystemMessage("Supported macros:");
-                SendSystemMessage("{name} {title} {guild_short} {guild_long}");
+                SendMessageNearby("Supported macros:");
+                SendMessageNearby("{name} {title} {guild_short} {guild_long}");
             }
         }
 
@@ -187,7 +187,7 @@ namespace Server.Items.Triggers
 
             return false;
         }
-        public void Broadcast(Mobile from, string text, int hue, int soundID)
+        public void Broadcast(Mobile? from, string? text, int hue, int soundID)
         {
             if (from != null && text != null)
                 text = Utility.ExpandMacros(from, item: null, text);
@@ -221,7 +221,7 @@ namespace Server.Items.Triggers
                     }
                 case BcMessageType.OverheadPublic:
                     {
-                        IEntity ent = m_Target;
+                        IEntity? ent = m_Target;
 
                         if (ent == null)
                             ent = from;
@@ -307,7 +307,7 @@ namespace Server.Items.Triggers
         }
         private static IEntity GetRootEntity(Item item)
         {
-            IEntity ent = item.RootParent as IEntity;
+            IEntity? ent = item.RootParent as IEntity;
 
             return (ent == null ? item : ent);
         }

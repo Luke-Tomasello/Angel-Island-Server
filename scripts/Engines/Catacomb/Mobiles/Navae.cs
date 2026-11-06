@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -184,7 +184,7 @@ namespace Server.Engines.Catacomb
 
                 m_Source.DoHarmful(m_Target);
 
-                m_Target.Damage(Utility.RandomMinMax(10, 20), m_Source, null);
+                m_Target.Damage(Utility.RandomMinMax(10, 20), m_Source, new DamageContext { Source = m_Source });
 
                 new UnholyBone().MoveToWorld(m_Target.Location, m_Target.Map);
             }
@@ -227,7 +227,7 @@ namespace Server.Engines.Catacomb
             if (spawnLoc == Point3D.Zero)
                 return;
 
-            BaseCreature bc;
+            BaseCreature? bc;
 
             try
             {
@@ -238,7 +238,7 @@ namespace Server.Engines.Catacomb
                 return;
             }
 
-            string taunt = null;
+            string? taunt = null;
 
             switch (Utility.Random(4))
             {

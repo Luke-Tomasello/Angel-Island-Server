@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -118,7 +118,7 @@ namespace Server.Engines.Breeding
         private DateTime m_BeganMating;
         private DateTime m_BeganTheNasty;
         private int m_FightRange;
-        private List<Mobile> m_Ignore;
+        private List<Mobile>? m_Ignore;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public BaseCreature Male { get { return m_Male; } set { } }
@@ -315,7 +315,7 @@ namespace Server.Engines.Breeding
 
             bc.DebugSay(DebugFlags.AI, "Love shack... In the looove shack...");
 
-            BaseCreature closest = null;
+            BaseCreature? closest = null;
             double distMin = double.MaxValue;
 
             foreach (Mobile m in bc.GetMobilesInRange(bc.RangePerception))
@@ -368,7 +368,7 @@ namespace Server.Engines.Breeding
             Utility.BreedingLog(bc, closest, $"DoStageSearching AttemptChance (after sulfurous ash bonus, if any): {attemptChance}");
             bc.DebugSay(DebugFlags.AI, $"Chance (after sulfurous ash bonus, if any): {attemptChance}");
 
-            if (Core.UOTC_CFG || Utility.RandomDouble() < attemptChance)
+            if (Core.GMNTC_CFG || Utility.RandomDouble() < attemptChance)
             {
                 bc.DebugSay(DebugFlags.AI, "Found a mate I like! Trying to mate...");
                 Utility.BreedingLog(bc, closest, $"DoStageSearching AttemptChance Success");
@@ -456,7 +456,7 @@ namespace Server.Engines.Breeding
                 if (m == m_Male || m == m_Female || !m.Alive || m.GetDistanceToSqrt(m_Female) > m_FightRange || m_Ignore.Contains(m)) // TODO: LOS check?
                     continue;
 
-                BaseCreature other = m as BaseCreature;
+                BaseCreature? other = m as BaseCreature;
 
                 if (other == null || other.GetBreedingRole() != BreedingRole.Male || !bc.CompetesWith(other))
                     continue;
@@ -467,7 +467,7 @@ namespace Server.Engines.Breeding
                 fightChance -= bc.Wisdom / 20.0;
                 fightChance -= (other.DamageMin + other.DamageMax) / 20.0;
 
-                if (Core.UOTC_CFG || Utility.RandomDouble() < fightChance)
+                if (Core.GMNTC_CFG || Utility.RandomDouble() < fightChance)
                 {
                     bc.DebugSay(DebugFlags.AI, "Get away from my woman!");
                     bc.Combatant = other;
@@ -514,7 +514,7 @@ namespace Server.Engines.Breeding
             acceptChance += m_Female.Patience / 2000.0;
             acceptChance -= m_Female.Temper * 3.0 / 2000.0;
 
-            if (Core.UOTC_CFG || Utility.RandomDouble() < acceptChance)
+            if (Core.GMNTC_CFG || Utility.RandomDouble() < acceptChance)
             {
                 m_Stage = MatingStage.TheNasty;
                 m_BeganTheNasty = DateTime.UtcNow;
@@ -563,7 +563,7 @@ namespace Server.Engines.Breeding
 
             successChance += bc.Patience / 500.0; // Yoar
 
-            if (Core.UOTC_CFG || Utility.RandomDouble() < successChance)
+            if (Core.GMNTC_CFG || Utility.RandomDouble() < successChance)
             {
                 bc.DebugSay(DebugFlags.AI, "Smokin a cig...");
                 bc.Moan();

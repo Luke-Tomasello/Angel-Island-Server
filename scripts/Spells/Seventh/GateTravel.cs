@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,14 +62,14 @@ namespace Server.Spells.Seventh
                 Reagent.SulfurousAsh
             );
 
-        private RunebookEntry m_Entry;
+        private RunebookEntry? m_Entry;
 
         public GateTravelSpell(Mobile caster, Item scroll)
             : this(caster, scroll, null)
         {
         }
 
-        public GateTravelSpell(Mobile caster, Item scroll, RunebookEntry entry)
+        public GateTravelSpell(Mobile caster, Item scroll, RunebookEntry? entry)
             : base(caster, scroll, m_Info)
         {
             m_Entry = entry;
@@ -95,7 +95,9 @@ namespace Server.Spells.Seventh
                 Caster.SendMessage("You can't do that while carrying the flag.");
                 return false;
             }
-            else if (Caster.Criminal)
+            // NOTE: OSI relied on short criminal timers for travel denial.
+            // Mortalis uses explicit travel restriction logic; Criminal is no longer sufficient.
+            else if (Caster is PlayerMobile pm && !pm.CanCriminalTravel)
             {
                 Caster.SendLocalizedMessage(1005561, "", 0x22); // Thou'rt a criminal and cannot escape so easily.
                 return false;
@@ -134,7 +136,9 @@ namespace Server.Spells.Seventh
             {
                 Caster.SendLocalizedMessage(1019004); // You are not allowed to travel there.
             }
-            else if (Caster.Criminal)
+            // NOTE: OSI relied on short criminal timers for travel denial.
+            // Mortalis uses explicit travel restriction logic; Criminal is no longer sufficient.
+            else if (Caster is PlayerMobile pm && !pm.CanCriminalTravel)
             {
                 Caster.SendLocalizedMessage(1005561, "", 0x22); // Thou'rt a criminal and cannot escape so easily.
             }
@@ -193,7 +197,9 @@ namespace Server.Spells.Seventh
 
             public override bool OnMoveOver(Mobile m)
             {
-                if (m.Player && m.Criminal)
+                // NOTE: OSI relied on short criminal timers for travel denial.
+                // Mortalis uses explicit travel restriction logic; Criminal is no longer sufficient.
+                if (m is PlayerMobile pm && !pm.CanCriminalTravel)
                 {
                     m.SendLocalizedMessage(1005561, "", 0x22); // Thou'rt a criminal and cannot escape so easily.
                     return true;
@@ -285,7 +291,7 @@ namespace Server.Spells.Seventh
                 }
                 else if (o is Runebook)
                 {
-                    RunebookEntry e = ((Runebook)o).Default;
+                    RunebookEntry? e = ((Runebook)o).Default;
 
                     if (e != null)
                         m_Owner.Effect(e.Location, e.Map, true);

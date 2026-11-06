@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -40,11 +40,11 @@ namespace Server.Items
     [FlipableAttribute(0x1f14, 0x1f15, 0x1f16, 0x1f17)]
     public class RecallRune : Item
     {
-        private string m_Description;
+        private string? m_Description;
         private bool m_Marked;
         private Point3D m_Target;
         private Map m_TargetMap;
-        private BaseHouse m_House;
+        private BaseHouse? m_House;
 
         public override void Serialize(GenericWriter writer)
         {
@@ -196,7 +196,7 @@ namespace Server.Items
                     if (regions[ix] is Regions.HouseRegion == false)
                         continue;
 
-                    Regions.HouseRegion hr = regions[ix] as Regions.HouseRegion;
+                    Regions.HouseRegion? hr = regions[ix] as Regions.HouseRegion;
                     BaseHouse bh = hr.House;
 
                     if (bh != null)
@@ -218,54 +218,33 @@ namespace Server.Items
         {
             m_Marked = true;
 
-            // log non frineds marking in a house
-            LogMark(m);
+            m_House = BaseHouse.FindHouseAt(m, parcel: true);
 
-            bool setDesc = false;
-            if (Core.RuleSets.AOSRules())
+            if (m_House != null && !m_House.IsFriend(m))
             {
-                m_House = BaseHouse.FindHouseAt(m);
+                m.SendLocalizedMessage(501942); // That location is blocked.
+                return;
+            }
 
-                if (m_House == null)
-                {
-                    m_Target = m.Location;
-                    m_TargetMap = m.Map;
-                }
-                else
-                {
-                    HouseSign sign = m_House.Sign;
+            m_Target = m.Location;
+            m_TargetMap = m.Map;
 
-                    if (sign != null)
-                        m_Description = sign.Name;
-                    else
-                        m_Description = null;
+            m_Description = null;
 
-                    if (m_Description == null || (m_Description = m_Description.Trim()).Length == 0)
-                        m_Description = "an unnamed house";
+            if (m_House != null)
+            {
+                HouseSign sign = m_House.Sign;
 
-                    setDesc = true;
+                if (sign != null)
+                    m_Description = sign.Name;
 
-                    int x = m_House.BanLocation.X;
-                    int y = m_House.BanLocation.Y + 2;
-                    int z = m_House.BanLocation.Z;
+                if (m_Description != null)
+                    m_Description = m_Description.Trim();
 
-                    Map map = m_House.Map;
-
-                    if (map != null && !Utility.CanFit(map, x, y, z, 16, Utility.CanFitFlags.requireSurface))
-                        z = map.GetAverageZ(x, y);
-
-                    m_Target = new Point3D(x, y, z);
-                    m_TargetMap = map;
-                }
+                if (string.IsNullOrEmpty(m_Description))
+                    m_Description = "an unnamed house";
             }
             else
-            {
-                m_House = null;
-                m_Target = m.Location;
-                m_TargetMap = m.Map;
-            }
-
-            if (!setDesc)
             {
                 Region region = Region.Find(m_Target, m_TargetMap);
 

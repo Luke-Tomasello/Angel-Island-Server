@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,8 @@
 
 /* Scripts/Misc/CharacterCreation.cs
  * ChangeLog
+ *  10/29/2026, Adam (MusicLibrary)
+ *      MusicLibrary.ReconnectPlayer (the music library moved out of MusicBox).
  *  7/29/2024, Adam
  *      1. Make the first administrator account AccessLevel.Owner
  *      2. Add a CoreManagementConsole and ClientManagementConsole to accounts >= AccessLevel.Administrator
@@ -149,18 +151,542 @@
  *		added lines 55-342 added various items
  */
 
+using Scripts.Misc;
 using Server.Accounting;
+using Server.Commands;
 using Server.Diagnostics;
+using Server.Engines;
+using Server.Engines.Consoles;
+using Server.Engines.DataRecorder;
+using Server.Engines.Seasons;
+using Server.Gumps;
 using Server.Items;
 using Server.Mobiles;
 using Server.Multis.Deeds;
+using Server.Network;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace Server.Misc
 {
-    public class CharacterCreation
+    public partial class CharacterCreation
     {
+        private static TimerStateCallback OnDeleteCharacter_Callback = new TimerStateCallback(OnDeleteCharacter);
+        public enum Profession
+        {
+            None = 0,           // no template (error?)
+            Warrior = 1,        // Core
+            Magician = 2,       // Core
+            Blacksmith = 3,     // Core
+            Necromancer = 4,    // AOS+
+            Paladin = 5,        // AOS+
+            Samurai = 6,        // SE+
+            Ninja = 7,          // SE+
+            Custom = 255        // Custom
+        }
+
+        public static void Initialize()
+        {
+            // Register our event handler
+            EventSink.CharacterCreated += new CharacterCreatedEventHandler(EventSink_CharacterCreated);
+        }
+
+        private static void EventSink_CharacterCreated(CharacterCreatedEventArgs args)
+        {
+            Mobile? newChar = CreateMobile(args.Account as Account);
+            if (newChar == null)
+            {
+                Utility.Monitor.WriteLine("Login: {0}: Character creation failed, account full", ConsoleColor.Yellow,
+                    args.State);
+                return;
+            }
+
+            args.Mobile = newChar;
+            m_Mobile = newChar;
+
+            // Resolve Account and PlayerMobile once at the top
+            Account? acct = args.Account as Account;
+            PlayerMobile? player = newChar as PlayerMobile;
+
+            if (acct == null || player == null)
+            {
+                Utility.Monitor.WriteLine(
+                    $"Login: {args.State}: Character creation failed - missing account or PlayerMobile",
+                    ConsoleColor.Red);
+                return;
+            }
+
+            // create a special role for Login Server administrator
+            bool LoginAdmin = Core.RuleSets.LoginServerRules() && args.State?.Address != null &&
+                              Server.Commands.OwnerTools.IsOwnerIP(args.State.Address);
+
+            if (LoginAdmin)
+            {
+                Utility.Monitor.WriteLine("Administrative account ({0}) logging into Login Server", ConsoleColor.Red,
+                    args.State.Address);
+                // exempt this account from infractions like total IP limiter
+                acct.InfractionStatus = Account.AccountInfraction.None;
+            }
+
+            player.Player = true;
+
+            // Setup owner / access level. First admin account created.
+            player.AccessLevelInternal = LoginAdmin ? AccessLevel.Owner : acct.AccessLevel;
+
+            player.Female = args.Female;
+            player.Body = player.Female ? 0x191 : 0x190;
+            player.Hue = Utility.ClipSkinHue(args.Hue & 0x3FFF) | 0x8000;
+            player.Hunger = 20;
+
+            // Adam: Mortalis - dangerous world
+            if (Core.RuleSets.MortalisRules() && player.AccessLevel == AccessLevel.Player)
+            {
+                player.Mortal = true;
+                player.Hidden = true;
+            }
+
+            player.Profession = args.Profession;
+
+            // Pre-AOS shards do not support newer profession templates
+            if (player.Profession > (int)Profession.Blacksmith && player.Profession < (int)Profession.Custom)
+            {
+                player.Profession = (int)Profession.Warrior;
+                QueueWelcomeMessage(player,
+                    "Your selected profession is not available on this shard and has been changed to Warrior.");
+            }
+            // Season 2 disables player magic
+            else if (Core.RuleSets.SeasonsRules(2) && player.Profession == (int)Profession.Magician)
+            {
+                player.Profession = (int)Profession.Warrior;
+                QueueWelcomeMessage(player,
+                    "Player magic is disabled for this season. Your profession has been changed to Warrior.");
+            }
+
+            SetName(newChar, args.Name);
+            Utility.AddBackpack(newChar);
+
+            if (newChar.Name == DefaultName)
+            {
+                PersonalNameChangeDeed deed = new PersonalNameChangeDeed();
+                deed.OwnerSerial = newChar.Serial;
+                PackItem(deed, unique: true);
+            }
+
+            SetStats(newChar, args.Str, args.Dex, args.Int);
+            SetSkills(newChar, args.Skills, args.Profession);
+            AddStartingLoot(newChar);
+
+            // Make all character items unique (prefer equipped over backpack)
+            CleanupDuplicateItems(newChar, orEquivalent: true);
+
+            AddHair(newChar, args.HairID, Utility.ClipHairHue(args.HairHue & 0x3FFF));
+            AddBeard(newChar, args.BeardID, Utility.ClipHairHue(args.BeardHue & 0x3FFF));
+
+            if (!Core.RuleSets.AOSRules() || (args.Profession != 4 && args.Profession != 5))
+            {
+                AddShirt(newChar, args.ShirtHue);
+                AddPants(newChar, args.PantsHue);
+                AddShoes(newChar);
+            }
+
+            #region Mortalis
+
+            if (Core.RuleSets.MortalisRules())
+            {
+                #region BANKBOX
+
+                // Mortalis carryover bankbox retrieval (GUID/OwnerGUID model)
+                StrongBackpack? bbox = null;
+                uint guid = Utility.MakeGuid(acct.Username, acct.Username);
+                if (guid != 0)
+                {
+                    foreach (Item item in World.Items.Values)
+                    {
+                        if (item is StrongBackpack candidate && !candidate.Deleted && candidate.OwnerGUID == guid)
+                        {
+                            bbox = candidate;
+                            break;
+                        }
+                    }
+                }
+
+                if (bbox != null)
+                {
+                    int fails = 0;
+                    if (player.BankBox != null)
+                    {
+                        List<Item> list = new List<Item>(bbox.Items);
+                        foreach (Item thing in list)
+                        {
+                            bbox.RemoveItem(thing);
+                            if (!player.BankBox.TryDropItem(player, thing, sendFullMessage: false))
+                            {
+                                thing.Delete();
+                                fails++;
+                            }
+                        }
+
+                        if (fails > 0)
+                        {
+                            WelcomeTimer.ReplaceFor(player, new[]
+                            {
+                                "Your bank box is full and could not hold your carryover items."
+                            });
+                        }
+                    }
+
+                    bbox.Delete();
+                }
+
+                #endregion BANKBOX
+
+                #region Guild
+
+                if (acct.GuildStone != Serial.MinusOne)
+                {
+                    Guildstone? stone = World.FindItem(acct.GuildStone) as Guildstone;
+                    if (stone != null)
+                    {
+                        if (stone.Guild.Leader == World.GetSystemAcct())
+                        {
+                            stone.Guild.AddMember(player);
+                            stone.Guild.Leader = player;
+                            stone.Guild.RemoveMember(World.GetSystemAcct());
+                        }
+                        else
+                        {
+                            stone.Guild.AddMember(player);
+                        }
+                    }
+
+                    acct.GuildStone = Serial.MinusOne;
+                }
+
+                #endregion
+
+                #region Notoriety
+
+                // Mortalis carries soul’s reputation forward
+                player.LongTermMurders = acct.LongTermMurders;
+                player.ShortTermMurders = acct.ShortTermMurders;
+                player.Karma = acct.Karma;
+                player.Fame = acct.Fame;
+
+                #endregion
+
+                #region Music
+
+                MusicLibrary.ReconnectPlayer(player);
+
+                #endregion
+
+                #region Relink Bounty Board and Restore Player Legacy Records
+
+                Substitute? match = Substitute.Find(player.AcctGUID);
+
+                if (match != null)
+                {
+                    Debug.Assert(match.Alive);
+
+                    BountyKeeper.ReplaceAllPlacer(oldPlacer: match, newPlacer: player);
+                    BountyKeeper.ReplaceAllWanted(oldWanted: match, newWanted: player);
+
+                    DataRecorder.Replace(match, player);
+
+                    Debug.Assert(!Substitute.InUseFor(player).Any());
+
+                    if (!match.Deleted)
+                        match.Delete();
+                }
+
+                #endregion
+
+                #region Hair
+
+                if (acct.HairHue != 0)
+                {
+                    Item? hair = newChar.FindItemOnLayer(Layer.Hair);
+                    if (hair is Hair)
+                        hair.Hue = acct.HairHue & 0x3FFF;
+                }
+
+                if (acct.BeardHue != 0)
+                {
+                    Item? beard = newChar.FindItemOnLayer(Layer.FacialHair);
+                    if (beard is Beard)
+                        beard.Hue = acct.BeardHue & 0x3FFF;
+                }
+
+                #endregion
+
+                #region Backpack
+
+                if (acct.BackpackHue != 0 && newChar.Backpack != null)
+                    newChar.Backpack.Hue = acct.BackpackHue;
+
+                #endregion
+            }
+
+            #endregion Mortalis
+
+            // Fill bank box
+            if (TestCenterServer.Enabled && !Core.GMNBETA_CFG)
+            {
+                if (Core.RuleSets.MortalisRules())
+                {
+                    if (newChar.BankBox == null || newChar.BankBox.Empty)
+                        FillBankbox(newChar);
+                }
+                else
+                {
+                    FillBankbox(newChar);
+                }
+            }
+
+            #region Reward Hue
+
+            player.RewardHue = Utility.RewardHue(player);
+
+            #endregion
+
+            #region Mortalis style shards - starting weapon
+
+            if (Core.RuleSets.MortalisStyleRules())
+            {
+                List<Item> equipped = Utility.GetEquippedItems(newChar);
+                List<Item> backpackContents = Utility.GetContainerItems(newChar.Backpack, true);
+                List<Item> allItems = new List<Item>(equipped.Count + backpackContents.Count);
+                allItems.AddRange(equipped);
+                allItems.AddRange(backpackContents);
+
+                allItems.RemoveAll(i => i == null || i.Deleted);
+                allItems = allItems.GroupBy(i => i.Serial).Select(g => g.First()).ToList();
+
+                bool hasNonDaggerWeapon = allItems.OfType<BaseWeapon>().Any(w => !(w is Dagger));
+
+                if (!hasNonDaggerWeapon)
+                {
+                    Item starterWeapon = newChar.Skills[SkillName.Swords].Base > newChar.Skills[SkillName.Fencing].Base
+                        ? new Katana()
+                        : new Kryss();
+
+                    PackItem(starterWeapon, unique: false);
+                }
+            }
+
+            #endregion
+
+            #region Flag starting loot (Mortalis)
+
+            if (Core.RuleSets.MortalisStyleRules())
+            {
+                List<Item> equipped = Utility.GetEquippedItems(newChar);
+                List<Item> backpackContents = Utility.GetContainerItems(newChar.Backpack, true);
+                List<Item> allItems = new List<Item>(equipped.Count + backpackContents.Count);
+                allItems.AddRange(equipped);
+                allItems.AddRange(backpackContents);
+
+                allItems.RemoveAll(i => i == null || i.Deleted);
+                allItems = allItems.GroupBy(i => i.Serial).Select(g => g.First()).ToList();
+
+                foreach (Item item in allItems)
+                {
+                    item.FamilyID = KeyGenerator.Alloc();
+                    acct.AddStarterFamilyId(item.FamilyID);
+                }
+            }
+
+            #endregion
+
+            #region Seasons 2 / Upheaval - finalize character
+
+            if (Core.RuleSets.SeasonsRules() || Core.RuleSets.UpheavalRules())
+            {
+                List<Item> equipped = Utility.GetEquippedItems(newChar);
+                List<Item> backpackContents = Utility.GetContainerItems(newChar.Backpack, true);
+
+                List<Item> allItems = new List<Item>(equipped.Count + backpackContents.Count);
+                allItems.AddRange(equipped);
+                allItems.AddRange(backpackContents);
+
+                allItems.RemoveAll(item => item == null || item.Deleted);
+
+                allItems = allItems
+                    .GroupBy(item => item.Serial)
+                    .Select(group => group.First())
+                    .ToList();
+
+                int patched = 0;
+
+                // Common seasonal startup:
+                // reinforce starting equipment and top up bandages.
+                foreach (Item item in allItems)
+                {
+                    if (BoostStartingDurability(item, 10))
+                        patched++;
+                }
+
+                int existingBandages = Utility
+                    .GetContainerItems(newChar.Backpack, true)
+                    .OfType<Bandage>()
+                    .Sum(bandage => bandage.Amount);
+
+                if (existingBandages < 200)
+                    PackItem(new Bandage(200 - existingBandages), unique: false);
+
+                if (patched > 0)
+                {
+                    QueueWelcomeMessage(
+                        player,
+                        "Your starting equipment has been reinforced to last longer.");
+                }
+
+                // Season 2 only:
+                // player magic is disabled.
+                if (Core.RuleSets.SeasonsRules(2))
+                {
+                    int removed = 0;
+
+                    foreach (Item item in allItems)
+                    {
+                        if (item.Deleted)
+                            continue;
+
+                        if (item is Spellbook || item is SpellScroll || item is ScribesPen)
+                        {
+                            item.Delete();
+                            removed++;
+                        }
+                    }
+
+                    if (removed > 0)
+                    {
+                        QueueWelcomeMessage(
+                            player,
+                            "Player magic is disabled for this season. Spellbooks and scrolls have been removed from your starting equipment.");
+                    }
+                }
+
+                // provide and enforce the OrcishKinMask.
+                if ((Core.RuleSets.SeasonsRules(2) || Core.RuleSets.UpheavalRules()))
+                {
+                    Item? helm = newChar.FindItemOnLayer(Layer.Helm);
+
+                    if (helm is BaseHat && helm is not OrcishKinMask)
+                        newChar.Backpack?.DropItem(helm);
+
+                    if (newChar.FindItemOnLayer(Layer.Helm) is not OrcishKinMask)
+                    {
+                        OrcishKinMask mask = new OrcishKinMask
+                        {
+                            LootType = LootType.Newbied
+                        };
+
+                        // Upheaval: the mask is created after the starting equipment
+                        // was reinforced above, so reinforce it the same way.
+                        if (Core.RuleSets.UpheavalRules())
+                            BoostStartingDurability(mask, 10);
+
+                        if (!newChar.EquipItem(mask))
+                        {
+                            newChar.Backpack?.DropItem(mask);
+
+                            if (acct.IsOrcEnemy)
+                            {
+                                QueueWelcomeMessage(
+                                    player,
+                                    $"The occupation forces know your face. Your disguise will not fool them for another {Account.FormatOrcEnemyDuration(acct)}.");
+                            }
+                            else
+                            {
+                                QueueWelcomeMessage(
+                                    player,
+                                    "You were given an orcish mask, but it could not be equipped. Please contact staff.");
+                            }
+                        }
+                    }
+                }
+            }
+
+            #endregion Seasons 2 / Upheaval - finalize character
+
+            #region Starting Area
+            string spawnTag = String.Empty;
+            Point3D spawnLoc = Point3D.Zero;
+            Map? spawnMap = null;
+            if (CharacterCreationExceededAccountLimit(acct, player))
+            {
+                spawnTag = "Prison";
+                spawnLoc = new Point3D(354, 836, 20);
+                spawnMap = Map.Felucca;
+                if (player.AccessLevel <= AccessLevel.Player)
+                {
+                    acct.InfractionStatus = Account.AccountInfraction.TooManyCharacters;
+                    var aip = new Prison.PrisonPlayer(from: (PlayerMobile)World.GetAdminAcct(),
+                        player,
+                        Point3D.Zero, "Character imprisoned on login (too many characters)",
+                        sentence: 3);
+                    aip.GoToPrison();
+                    Timer.DelayCall(TimeSpan.FromMinutes(5), OnDeleteCharacter_Callback, player);
+                }
+            }
+            else
+            {
+                // Default spawn logic
+                bool doDefaultSpawn = true;
+
+                if (Core.RuleSets.MortalisRules() && IsJailOrPrison(newChar))
+                    doDefaultSpawn = false;
+
+                if (doDefaultSpawn)
+                {
+                    if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.NewPlayerStartingArea))
+                    {
+                        spawnTag = "New Player Starting Area";
+                        spawnLoc = new Point3D(5731, 953, 0);
+                        spawnMap = Map.Trammel;
+                    }
+                    else
+                    {
+                        NewCharacterSpawnLocation(args, newChar, out spawnTag, out spawnLoc, out spawnMap);
+                    }
+                }
+
+                if (Core.RuleSets.MortalisRules())
+                {
+                    if (acct.HarmfulOffenses > 0)
+                        GrieferEscalation(newChar);
+
+                    RemoveDuplicateFromBackpackIfBanked<BaseBook>(newChar);
+                    ApplyAccountHouseBans(player);
+                    ApplyJailOrPrison(newChar);
+                }
+
+                if (doDefaultSpawn)
+                    newChar.MoveToWorld(spawnLoc, spawnMap);
+            }
+
+            #endregion
+
+            Utility.Monitor.WriteLine($"Login: {args.State}: New character being created (account={acct.Username})", ConsoleColor.Yellow);
+            Utility.Monitor.WriteLine($" - Character: {newChar.Name} (serial={newChar.Serial})", ConsoleColor.Yellow);
+            Utility.Monitor.WriteLine($" - Started: {spawnTag} {spawnLoc} {spawnMap}", ConsoleColor.Yellow);
+
+            WelcomeTimer.SendGreeting(newChar, WelcomeTimer.GreetingType.NewPlayer);
+
+            #region Test Center Gump
+            if (Core.RuleSets.TestCenterRules())
+                Timer.DelayCall(TimeSpan.FromSeconds(5), new TimerStateCallback(LaunchTestCenterGump), player);
+            #endregion Test Center Gump
+
+        }
+        private static void LaunchTestCenterGump(object state)
+        {
+            if (state is PlayerMobile pm)
+                pm.SendGump(new TestCenterGump(pm));
+        }
         // 5/5/23, Yoar: Siege starter gear customization. New characters always start with pre-Pub13 skill gear.
         public static bool CustomSiegeGear { get { return Core.RuleSets.SiegeRules(); } }
 
@@ -197,24 +723,6 @@ namespace Server.Misc
             }
         }
 
-        public static void Initialize()
-        {
-            // Register our event handler
-            EventSink.CharacterCreated += new CharacterCreatedEventHandler(EventSink_CharacterCreated);
-        }
-
-        private static void AddBackpack(Mobile m)
-        {
-            Container pack = m.Backpack;
-
-            if (pack == null)
-            {
-                pack = new Backpack();
-                pack.Movable = false;
-
-                m.AddItem(pack);
-            }
-        }
         public static Item MakeNewbie(Item item) //started editing here
         {
             item.LootType = LootType.Newbied;
@@ -236,8 +744,8 @@ namespace Server.Misc
 
             return MakeNewbie(keg);
         }
-        private static void FillBankbox(Mobile m)
-        {// adam: not called for production servers
+        public static void FillBankbox(Mobile m)
+        {   // adam: only called for test center characters
             BankBox bank = m.BankBox;
 
             if (bank == null)
@@ -458,448 +966,15 @@ namespace Server.Misc
 
             m.AddItem(item);
         }
-        public static Mobile CreateMobile(Account a)
+        public static Mobile? CreateMobile(Account a)
         {
             for (int i = 0; i < 5; ++i)
-                if (a[i] == null)
-                    return (a[i] = new PlayerMobile());
+                if (a[i] == null || a[i].Deleted)
+                    return (a[i] = new PlayerMobile(a.GUID));
 
             return null;
         }
-        #region Mortalis
-        private static void SetMortalStats(Mobile newChar)
-        {
-            const int wantTotal = 225;
-            const int strCap = 100;
-            const int dexCap = 100;
-            const int intCap = 50;
 
-            int hasTotal = newChar.RawStr + newChar.RawDex + newChar.RawInt;
-
-            if (hasTotal >= wantTotal)
-                return;
-
-            int setStr, setDex, setInt;
-
-            if (hasTotal > 0)
-            {
-                double factor = (double)wantTotal / hasTotal;
-
-                // scale the chosen stats to meet the desired total stat points
-                // round down to units of 5 for nicer numbers
-                setStr = Math.Max(10, Math.Min(strCap, (int)(factor * newChar.RawStr) / 5 * 5));
-                setDex = Math.Max(10, Math.Min(dexCap, (int)(factor * newChar.RawDex) / 5 * 5));
-                setInt = Math.Max(10, Math.Min(intCap, (int)(factor * newChar.RawInt) / 5 * 5));
-            }
-            else
-            {
-                setStr = setDex = setInt = 0;
-            }
-
-            int remaining = wantTotal - setStr - setDex - setInt;
-
-            StatEntry[] statEntries = new StatEntry[3]
-                {
-                    // note: the ordering denotes stat prioritization
-                    new StatEntry(StatType.Str, setStr),
-                    new StatEntry(StatType.Dex, setDex),
-                    new StatEntry(StatType.Int, setInt),
-                };
-
-            // sort in descending order by stat value
-            Array.Sort(statEntries);
-
-            // distribute any remaining stat points
-            for (int i = 0; i < 3 && remaining > 0; i++)
-            {
-                StatEntry e = statEntries[i];
-
-                switch (e.Stat)
-                {
-                    case StatType.Str: Distribute(ref setStr, ref remaining, strCap); break;
-                    case StatType.Dex: Distribute(ref setDex, ref remaining, dexCap); break;
-                    case StatType.Int: Distribute(ref setInt, ref remaining, intCap); break;
-                }
-            }
-
-            // set the stats
-            newChar.Hits = newChar.RawStr = setStr;
-            newChar.Stam = newChar.RawDex = setDex;
-            newChar.Mana = newChar.RawInt = setInt;
-        }
-        private struct StatEntry : IComparable<StatEntry>
-        {
-            public readonly StatType Stat;
-            public readonly int Value;
-
-            public StatEntry(StatType stat, int value)
-            {
-                Stat = stat;
-                Value = value;
-            }
-
-            int IComparable<StatEntry>.CompareTo(StatEntry other)
-            {
-                return other.Value.CompareTo(this.Value);
-            }
-        }
-        private static void SetMortalSkills(Mobile newChar)
-        {
-            const int wantTotal = 5000;
-
-            Skills skills = newChar.Skills;
-
-            int hasTotal = 0;
-
-            SkillName weaponSkill = SkillName.Swords;
-            int weaponFixed = 0;
-
-            for (int i = 0; i < skills.Length; i++)
-            {
-                Skill skill = skills[i];
-
-                if (skill.SkillName == SkillName.Meditation && skill.BaseFixedPoint < 10)
-                    continue; // ignore any meditation we may have gained during character creation
-
-                hasTotal += skill.BaseFixedPoint;
-
-                if (Array.IndexOf(m_WeaponSkills, skill.SkillName) != -1 && skill.BaseFixedPoint > weaponFixed)
-                {
-                    weaponSkill = skill.SkillName;
-                    weaponFixed = skill.BaseFixedPoint;
-                }
-            }
-
-            int remaining = wantTotal - hasTotal;
-
-            // distribute the remaining skill points over the standard mortal skills
-            for (int i = 0; i < m_MortalSkills.Length && remaining > 0; i++)
-            {
-                MortalSkill entry = m_MortalSkills[i];
-
-                SkillName skillName = entry.Skill;
-
-                // replace swords with the favored weapon skill
-                if (skillName == SkillName.Swords)
-                    skillName = weaponSkill;
-
-                Skill skill = skills[skillName];
-
-                int baseFixed = skill.BaseFixedPoint;
-
-                Distribute(ref baseFixed, ref remaining, entry.CapFixed);
-
-                skill.BaseFixedPoint = baseFixed;
-            }
-        }
-        private static readonly MortalSkill[] m_MortalSkills = new MortalSkill[]
-            {
-                // 5x warrior
-                // note: the ordering denotes skill prioritization
-                new MortalSkill(SkillName.Swords, 1000), // placeholder for favorite weapon skill
-                new MortalSkill(SkillName.Healing, 1000),
-                new MortalSkill(SkillName.Anatomy, 1000),
-                new MortalSkill(SkillName.Tactics, 1000),
-                new MortalSkill(SkillName.Wrestling, 1000),
-            };
-        private struct MortalSkill
-        {
-            public readonly SkillName Skill;
-            public readonly int CapFixed;
-
-            public MortalSkill(SkillName skill, int capFixed)
-            {
-                Skill = skill;
-                CapFixed = capFixed;
-            }
-        }
-        private static void Distribute(ref int cur, ref int pts, int max)
-        {
-            int add = max - cur;
-
-            if (add > pts)
-                add = pts;
-
-            if (add > 0)
-            {
-                cur += add;
-                pts -= add;
-            }
-        }
-
-        private static void AddMortalItems(Mobile newChar)
-        {
-            Container pack = newChar.Backpack;
-
-            if (pack == null)
-                return; // sanity
-
-            SkillName weaponSkill = SkillName.Swords;
-            int weaponFixed = 0;
-
-            for (int i = 0; i < newChar.Skills.Length; i++)
-            {
-                Skill skill = newChar.Skills[i];
-
-                if (Array.IndexOf(m_WeaponSkills, skill.SkillName) != -1 && skill.BaseFixedPoint > weaponFixed)
-                {
-                    weaponSkill = skill.SkillName;
-                    weaponFixed = skill.BaseFixedPoint;
-                }
-            }
-
-            List<Item> gear = new List<Item>();
-
-            switch (weaponSkill)
-            {
-                case SkillName.Archery: gear.Add(MakeMortallWeapon(new Bow())); break;
-                case SkillName.Swords:
-                    {
-                        if (newChar.Skills[SkillName.Lumberjacking].BaseFixedPoint >= 500)
-                        {
-                            gear.Add(MakeMortallWeapon(new BattleAxe()));
-                        }
-                        else
-                        {
-                            gear.Add(MakeMortallWeapon(new Katana()));
-
-                            if (newChar.Skills[SkillName.Parry].BaseFixedPoint >= 500)
-                                gear.Add(MakeMortallArmor(new BronzeShield()));
-                        }
-
-                        break;
-                    }
-                case SkillName.Macing:
-                    {
-                        if (newChar.Skills[SkillName.Parry].BaseFixedPoint >= 500)
-                        {
-                            gear.Add(MakeMortallWeapon(new WarMace()));
-                            gear.Add(MakeMortallArmor(new BronzeShield()));
-                        }
-                        else
-                        {
-                            gear.Add(MakeMortallWeapon(new WarHammer()));
-                        }
-
-                        break;
-                    }
-                case SkillName.Fencing:
-                    {
-                        if (newChar.Skills[SkillName.Parry].BaseFixedPoint >= 500)
-                        {
-                            gear.Add(MakeMortallWeapon(new Kryss()));
-                            gear.Add(MakeMortallArmor(new BronzeShield()));
-                        }
-                        else
-                        {
-                            gear.Add(MakeMortallWeapon(new WarFork()));
-                        }
-
-                        break;
-                    }
-            }
-
-            if (newChar.RawInt >= 50)
-            {
-                gear.Add(MakeMortallArmor(new LeatherLegs()));
-                gear.Add(MakeMortallArmor(new LeatherChest()));
-                gear.Add(MakeMortallArmor(new LeatherArms()));
-                gear.Add(MakeMortallArmor(new LeatherGorget()));
-                gear.Add(MakeMortallArmor(new LeatherCap()));
-            }
-            else
-            {
-                gear.Add(MakeMortallArmor(new RingmailLegs()));
-                gear.Add(MakeMortallArmor(new RingmailChest()));
-                gear.Add(MakeMortallArmor(new RingmailArms()));
-                gear.Add(MakeMortallArmor(new LeatherGorget()));
-                gear.Add(MakeMortallArmor(new ChainCoif()));
-            }
-
-            foreach (Item item in gear)
-            {
-                Item existing = newChar.FindItemOnLayer(item.Layer);
-
-                if (existing != null && existing.Movable)
-                {
-                    pack.DropItem(existing);
-                    existing = null;
-                }
-
-                bool equipped = false;
-
-                if (existing == null)
-                    equipped = newChar.EquipItem(item);
-
-                if (!equipped)
-                    pack.DropItem(item);
-            }
-        }
-
-        private static Item MakeMortallWeapon(BaseWeapon weapon)
-        {
-            weapon.Quality = WeaponQuality.Exceptional;
-            return weapon;
-        }
-
-        private static Item MakeMortallArmor(BaseArmor armor)
-        {
-            armor.Quality = ArmorQuality.Exceptional;
-            return armor;
-        }
-
-        private static readonly SkillName[] m_WeaponSkills = new SkillName[]
-            {
-                SkillName.Archery,
-                SkillName.Swords,
-                SkillName.Macing,
-                SkillName.Fencing,
-            };
-
-        #endregion
-        //private static bool MakeOwner(Account acct, bool adminChar)
-        //{
-        //    if (adminChar || 
-        //        (Accounting.Accounts.Table.Values.Count == 1 &&
-        //        acct.AccessLevel >= AccessLevel.Administrator))
-        //        return true;
-        //    else
-        //        return false;
-        //}
-        private static void EventSink_CharacterCreated(CharacterCreatedEventArgs args)
-        {
-            Mobile newChar = CreateMobile(args.Account as Account);
-
-            if (newChar == null)
-            {
-                Utility.Monitor.WriteLine("Login: {0}: Character creation failed, account full", ConsoleColor.Yellow, args.State);
-                return;
-            }
-
-            args.Mobile = newChar;
-            Account acct = (Account)args.Account;
-            m_Mobile = newChar;
-
-            // create a special role for Login Server administrator
-            bool LoginAdmin = Core.RuleSets.LoginServerRules() && args.State != null && args.State.Address != null && 
-                Server.Commands.OwnerTools.IsOwnerIP(args.State.Address);
-            if (LoginAdmin == true)
-                Utility.Monitor.WriteLine("Administrative account ({0}) logging into Login Server", ConsoleColor.Red, args.State.Address);
-
-            newChar.Player = true;
-            
-            //// setup the owner. First admin account created
-            newChar.AccessLevelInternal = LoginAdmin ? AccessLevel.Owner : ((Account)args.Account).AccessLevel;
-            newChar.Female = args.Female;
-            newChar.Body = newChar.Female ? 0x191 : 0x190;
-            newChar.Hue = Utility.ClipSkinHue(args.Hue & 0x3FFF) | 0x8000;
-            newChar.Hunger = 20;
-
-            // Adam: Mortalis
-            if (Core.RuleSets.MortalisRules() && newChar is PlayerMobile && newChar.AccessLevel == AccessLevel.Player)
-            {   // UO Mortalis is a dangerous place
-                (newChar as PlayerMobile).Mortal = true;
-                (newChar as PlayerMobile).Hidden = true;
-            }
-
-            if (newChar is PlayerMobile)
-                ((PlayerMobile)newChar).Profession = args.Profession;
-
-            //Pix: default to warrior if chosen is paladin, necro, etc.
-            //adam: default to warrior if Mortalis
-            if (((PlayerMobile)newChar).Profession > 3 || Core.RuleSets.MortalisRules())
-                ((PlayerMobile)newChar).Profession = 1;
-
-            SetName(newChar, args.Name);
-
-            AddBackpack(newChar);
-
-            SetStats(newChar, args.Str, args.Dex, args.Int);
-            SetSkills(newChar, args.Skills, args.Profession);
-
-            if (((PlayerMobile)newChar).Mortal)
-            {
-                SetMortalStats(newChar);
-                SetMortalSkills(newChar);
-                AddMortalItems(newChar);
-            }
-
-            AddStartingLoot(newChar);
-
-            //Adam: make all character items unique. That is, only one sword, etc.
-            //  prefer equipped over backpack
-            // All Shards
-            CleanupDuplicateItems(newChar, orEquivalent: true);
-
-            AddHair(newChar, args.HairID, Utility.ClipHairHue(args.HairHue & 0x3FFF));
-            AddBeard(newChar, args.BeardID, Utility.ClipHairHue(args.BeardHue & 0x3FFF));
-
-            if (!Core.RuleSets.AOSRules() || (args.Profession != 4 && args.Profession != 5))
-            {
-                AddShirt(newChar, args.ShirtHue);
-                AddPants(newChar, args.PantsHue);
-                AddShoes(newChar);
-            }
-
-            // final mortal character gear management.
-            //  here we recycle existing gear in an effort to prevent character farming.
-            if (Core.RuleSets.MortalisRules())
-                try
-                {
-                    MortalisGear.MortalCharacterFinalize(args, newChar);
-                }
-                catch (Exception ex)
-                {
-                    // Log an exception
-                    EventSink.InvokeLogException(new LogExceptionEventArgs(ex));
-                }
-
-
-            if (TestCenter.Enabled && !Core.UOBETA_CFG)
-                FillBankbox(newChar);
-
-            #region Reward Hue
-            if (newChar is PlayerMobile pm)
-                pm.RewardHue = Utility.RewardHue(pm);
-            #endregion Reward Hue
-
-            #region Starting Area
-
-            // default spawn location
-            string spawnTag;
-            Point3D spawnLoc;
-            Map spawnMap;
-
-            if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.NewPlayerStartingArea))
-            {
-                /*
-				 * Our numbers have been so low lately (< 50), it's once again important
-				 * to concentrate players so that they do not log into what seems to be an empty shard.
-				 * We can stem the griefing by:
-				 * 1. Changing the look of starting players (remove noob look)
-				 * 2. Have a wider entry area
-				 * 3. Have them 'Recall in' so they look like they've been here for a while
-				 * 4. Give them a 1 minute 'young' status?
-				 */
-
-                // this NewPlayerStartingArea probably needs to be based on IP address and account age etc.
-                spawnTag = "Starting Area";
-                spawnLoc = new Point3D(5731, 953, 0);
-                spawnMap = Map.Trammel;
-            }
-            else
-                NewCharacterSpawnLocation(out spawnTag, out spawnLoc, out spawnMap);
-
-            newChar.MoveToWorld(spawnLoc, spawnMap);
-
-            #endregion
-
-            Utility.Monitor.WriteLine(string.Format("Login: {0}: New character being created (account={1})", args.State, ((Account)args.Account).Username), ConsoleColor.Yellow);
-            Utility.Monitor.WriteLine(string.Format(" - Character: {0} (serial={1})", newChar.Name, newChar.Serial), ConsoleColor.Yellow);
-            Utility.Monitor.WriteLine(string.Format(" - Started: {0} {1} {2}", spawnTag, spawnLoc, spawnMap), ConsoleColor.Yellow);
-
-            new WelcomeTimer(newChar).Start();
-        }
         private static void _StandardLoot(Mobile newChar)
         {
             PackItem(new RedBook("a book", newChar.Name, 20, true), unique: true);
@@ -926,9 +1001,8 @@ namespace Server.Misc
                 //  We should probably just limit new account creation to one a week or something. (Family member issue?)
                 RemoveGold(newChar);
 
-                // ai special loot
-                UnemploymentCheck check = new UnemploymentCheck(1000);
-                check.OwnerSerial = newChar.Serial;
+                // Can only be cached by assignee in most shops
+                CivicBond check = new CivicBond(newChar.Serial, 1000, CivicBondKeys.UnemploymentCheck, 0x4CC, "unemployment check");
                 PackItem(check, unique: true);
 
                 #region [NEW] Tower
@@ -970,12 +1044,22 @@ namespace Server.Misc
                 PackItem(new BagOfReagents(10), unique: true);
                 PackItem(new Katana(), unique: true);
             }
-            else if (Core.RuleSets.MortalisRules())
+            else if (Core.RuleSets.MortalisStyleRules())
             {
                 _StandardLoot(newChar);
 
-                // you don't need stinking gold on Mortalis, you're already a GM Warrior!
-                RemoveGold(newChar);
+                if (Core.RuleSets.MortalisRules())
+                    // character farming for gold mitigation. 
+                    RemoveGold(newChar);
+
+                // add a CivicBond. Can only be cached by assignee for training
+                if (!(Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+                {
+                    CivicBond voucher = new CivicBond(newChar.Serial, 1000, CivicBondKeys.TrainingVoucher, 0x4CC,
+                        "training voucher");
+                    voucher.OwnerSerial = newChar.Serial;
+                    PackItem(voucher, unique: true);
+                }
 
                 // ai special loot
 
@@ -1014,72 +1098,127 @@ namespace Server.Misc
                     item1.Delete();
             }
         }
-        private static void CleanupDuplicateItems(Mobile newChar, bool orEquivalent)
-        {
-            List<Item> BackPacklist = Utility.GetBackpackItems(newChar);
-            List<Item> Equipedlist = Utility.GetEquippedItems(newChar);
 
-            // first, remove 'same items' from backpack that may equipped.
-            foreach (Item eitem in Equipedlist)
-            {
-                if (eitem == null || eitem.Deleted) continue;
-                foreach (Item bitem in BackPacklist)
-                {
-                    if (bitem == null || bitem.Deleted) continue;
-                    // allow a dagger along with another weapon
-                    bool oneIsDagger = bitem.GetType() == typeof(Dagger) || eitem.GetType() == typeof(Dagger);
-                    if (MortalisGear.SameItem(eitem, bitem, orEquivalent: oneIsDagger ? false : true))
-                    {
-                        newChar.Backpack.RemoveItem(bitem);
-                        // example: They selected Arms Lore and got a club. They also selected Mace Fighting and got another club
-                        bitem.Delete();
-                    }
-                }
-            }
-            // next remove duplicate items from backpack
-            foreach (Item item1 in BackPacklist)
-            {
-                if (item1 == null || item1.Deleted) continue;
-                foreach (Item item2 in BackPacklist)
-                {
-                    if (item2 == null || item2.Deleted) continue;
-                    if (item1 == item2) continue;
-                    // allow a dagger along with another weapon
-                    bool oneIsDagger = item1.GetType() == typeof(Dagger) || item2.GetType() == typeof(Dagger);
-                    if (MortalisGear.SameItem(item1, item2, orEquivalent: oneIsDagger ? false : true))
-                    {
-                        newChar.Backpack.RemoveItem(item2);
-                        item2.Delete();
-                    }
-                }
-            }
-        }
-
-        public static void NewCharacterSpawnLocation(out string spawnTag, out Point3D spawnLoc, out Map spawnMap)
+        public static void NewCharacterSpawnLocation(CharacterCreatedEventArgs? args, Mobile m, out string spawnTag, out Point3D spawnLoc, out Map spawnMap)
         {
+            // Default: normal spawn at West Britain Bank
             spawnTag = "West Britain Bank";
-            spawnLoc = new Point3D(1420, 1698, 0);
             spawnMap = Map.Felucca;
+            var acct = m.Account as Server.Accounting.Account;
+            bool grifer = Core.RuleSets.MortalisRules() ? (acct != null && acct.HarmfulOffenses > 0) : false;
 
-            Rectangle2D spawnRect = new Rectangle2D(new Point2D(1417, 1693), new Point2D(1442, 1700)); // WBB
+            // WBB rectangle
+            Rectangle2D spawnRect = new Rectangle2D(
+                new Point2D(1417, 1693),
+                new Point2D(1442, 1700)); // WBB
 
-            for (int i = 0; i < 20; i++)
+            // Default to WBB center; loop below may refine this
+            spawnLoc = new Point3D(1420, 1698, 0);
+
+            // If not Mortalis or Seasons, or args is null, or not a PlayerMobile, or player is a murderer,
+            // keep the existing behavior (WBB / Mortalis murderer spawn).
+            bool selectStartingCity = Core.RuleSets.MortalisRules() || Core.RuleSets.SeasonsRules() || Core.RuleSets.UpheavalRules();
+            PlayerMobile? pm = m as PlayerMobile;
+
+            if (!selectStartingCity || args == null || pm == null || (pm.IsMurderer || grifer))
             {
-                int x = spawnRect.X + Utility.Random(spawnRect.Width);
-                int y = spawnRect.Y + Utility.Random(spawnRect.Height);
-
-                if (spawnMap.CanSpawnLandMobile(x, y, 0))
+                // Mortalis murderer special case
+                if (selectStartingCity && pm != null && (pm.IsMurderer || grifer))
                 {
-                    spawnLoc = new Point3D(x, y, 0);
-                    break;
+                    // Centered at (2727, 2133, 5), roughly same footprint as WBB rect
+                    spawnTag = "Mortalis Murderer Spawn";
+                    spawnMap = Map.Felucca;
+
+                    spawnRect = new Rectangle2D(
+                        new Point2D(2714, 2129),  // 2727 - 13, 2133 - 4
+                        new Point2D(2740, 2137)); // 2727 + 13, 2133 + 4
+
+                    spawnLoc = new Point3D(2727, 2133, 5);
                 }
 
-                int z = spawnMap.GetAverageZ(x, y);
-
-                if (spawnMap.CanSpawnLandMobile(x, y, z))
+                // Try to find a valid spawn point inside the chosen rectangle
+                for (int i = 0; i < 20; i++)
                 {
-                    spawnLoc = new Point3D(x, y, z);
-                    break;
+                    int x = spawnRect.X + Utility.Random(spawnRect.Width);
+                    int y = spawnRect.Y + Utility.Random(spawnRect.Height);
+
+                    if (spawnMap.CanSpawnLandMobile(x, y, 0))
+                    {
+                        spawnLoc = new Point3D(x, y, 0);
+                        break;
+                    }
+
+                    int z = spawnMap.GetAverageZ(x, y);
+
+                    if (spawnMap.CanSpawnLandMobile(x, y, z))
+                    {
+                        spawnLoc = new Point3D(x, y, z);
+                        break;
+                    }
+                }
+
+                return;
+            }
+
+            // Mortalis, args not null, non-murderer: spawn at the selected starting city.
+            CityInfo city = args.City;
+
+            if (city != null)
+            {
+                // Use city data directly
+                spawnMap = city.Map ?? Map.Felucca;
+                spawnLoc = city.Location;
+                spawnTag = city.Building; // or City?
+
+                // Small radius around the city location so players do not stack on a single tile.
+                const int radiusX = 4;
+                const int radiusY = 4;
+
+                spawnRect = new Rectangle2D(
+                    new Point2D(spawnLoc.X - radiusX, spawnLoc.Y - radiusY),
+                    new Point2D(spawnLoc.X + radiusX, spawnLoc.Y + radiusY));
+
+                for (int i = 0; i < 20; i++)
+                {
+                    int x = spawnRect.X + Utility.Random(spawnRect.Width);
+                    int y = spawnRect.Y + Utility.Random(spawnRect.Height);
+
+                    if (spawnMap.CanSpawnLandMobile(x, y, 0))
+                    {
+                        spawnLoc = new Point3D(x, y, 0);
+                        break;
+                    }
+
+                    int z = spawnMap.GetAverageZ(x, y);
+
+                    if (spawnMap.CanSpawnLandMobile(x, y, z))
+                    {
+                        spawnLoc = new Point3D(x, y, z);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // Fallback: no city info for some reason, use existing WBB behavior.
+                for (int i = 0; i < 20; i++)
+                {
+                    int x = spawnRect.X + Utility.Random(spawnRect.Width);
+                    int y = spawnRect.Y + Utility.Random(spawnRect.Height);
+
+                    if (spawnMap.CanSpawnLandMobile(x, y, 0))
+                    {
+                        spawnLoc = new Point3D(x, y, 0);
+                        break;
+                    }
+
+                    int z = spawnMap.GetAverageZ(x, y);
+
+                    if (spawnMap.CanSpawnLandMobile(x, y, z))
+                    {
+                        spawnLoc = new Point3D(x, y, z);
+                        break;
+                    }
                 }
             }
         }
@@ -1142,13 +1281,52 @@ namespace Server.Misc
 
             m.InitStats(str, dex, intel);
         }
-
+        public const string DefaultName = "Generic Player";
         private static void SetName(Mobile m, string name)
         {
-            name = name.Trim();
+            if (m == null)
+                return;
 
-            if (!NameVerification.Validate(name, 2, 16, true, true, true, 1, NameVerification.SpaceDashPeriodQuote))
-                name = "Generic Player";
+            name = (name ?? string.Empty).Trim();
+
+            bool allowDigits = !Core.RuleSets.MortalisStyleRules();
+            if (!NameVerification.Validate(name, 2, 16, true, allowDigits, true, 1,
+                    NameVerification.SpaceDashPeriodQuote))
+            {
+                name = DefaultName;
+            }
+
+            // Mortalis/Seasons
+            if (Core.RuleSets.MortalisStyleRules())
+            {
+                var acct = m.Account as Server.Accounting.Account;
+                if (acct == null)
+                {
+                    name = DefaultName;
+                }
+                else if (name != DefaultName && NameVerification.IsNameConflict(m, name, out var self))
+                {
+                    string requestedName = name;
+
+                    if (self)
+                        QueueWelcomeMessage(m, $"The name '{requestedName}' is already in use by another character on your account.");
+                    else
+                        QueueWelcomeMessage(m, $"The name '{requestedName}' is already reserved by another account.");
+
+                    name = DefaultName;
+                }
+                else if (name != DefaultName && !string.IsNullOrEmpty(name))
+                {
+                    // Assign or reaffirm reservation in the shared reserved-name registry.
+                    ReservedNames.Add(acct.Username, name);
+                }
+            }
+
+            // Ensure this account has a valid seasonal leaderboard identity.
+            // If the seasonal account already exists, this will populate DisplayName
+            // once the player has chosen a real name.
+            if (Core.RuleSets.SeasonsRules())
+                SeasonManager.EnsureSeasonalAccount(m.AcctGUID, name);
 
             m.Name = name;
         }
@@ -1178,218 +1356,123 @@ namespace Server.Misc
 
         private static void SetSkills(Mobile m, SkillNameValue[] skills, int prof)
         {
-            switch (prof)
+            Profession profession = (Profession)prof;
+
+            switch (profession)
             {
-                case 5: // Paladin - 11/29/21, Adam: default Paladin ==> Warrior
-                    goto case 1;
-                case 1: // Warrior
+                case Profession.Warrior:
+                case Profession.Paladin:        // defaults to Warrior on non-AOS
+                    skills = new SkillNameValue[]
                     {
-                        skills = new SkillNameValue[]
-                        {
-                            new SkillNameValue( SkillName.Anatomy, 30 ),
-                            new SkillNameValue( SkillName.Healing, 45 ),
-                            new SkillNameValue( SkillName.Swords, 35 ),
-                            new SkillNameValue( SkillName.Tactics, 50 )
-                        };
+                new SkillNameValue(SkillName.Anatomy, 30),
+                new SkillNameValue(SkillName.Healing, 45),
+                new SkillNameValue(SkillName.Swords, 35),
+                new SkillNameValue(SkillName.Tactics, 50)
+                    };
+                    break;
 
-                        break;
-                    }
-                case 4: // Necromancer - 11/29/21, Adam: default Necromancer ==> Magician
-                    goto case 2;
-                case 2: // Magician
+                case Profession.Magician:
+                case Profession.Necromancer:    // defaults to Magician on non-AOS
+                    skills = new SkillNameValue[]
                     {
-                        skills = new SkillNameValue[]
-                        {
-                            new SkillNameValue( SkillName.EvalInt, 30 ),
-                            new SkillNameValue( SkillName.Wrestling, 30 ),
-                            new SkillNameValue( SkillName.Magery, 50 ),
-                            new SkillNameValue( SkillName.Meditation, 50 )
-                        };
+                new SkillNameValue(SkillName.EvalInt, 30),
+                new SkillNameValue(SkillName.Wrestling, 30),
+                new SkillNameValue(SkillName.Magery, 50),
+                new SkillNameValue(SkillName.Meditation, 50)
+                    };
+                    break;
 
-                        break;
-                    }
-                case 3: // Blacksmith
+                case Profession.Blacksmith:
+                    skills = new SkillNameValue[]
                     {
-                        skills = new SkillNameValue[]
-                        {
-                            new SkillNameValue( SkillName.Mining, 30 ),
-                            new SkillNameValue( SkillName.ArmsLore, 30 ),
-                            new SkillNameValue( SkillName.Blacksmith, 50 ),
-                            new SkillNameValue( SkillName.Tinkering, 50 )
-                        };
+                new SkillNameValue(SkillName.Mining, 30),
+                new SkillNameValue(SkillName.ArmsLore, 30),
+                new SkillNameValue(SkillName.Blacksmith, 50),
+                new SkillNameValue(SkillName.Tinkering, 50)
+                    };
+                    break;
 
-                        break;
-                    }
-                #region unsupported professions
-                //				case 4: // Necromancer
-                //				{
-                //					if ( !Core.AOS )
-                //						goto default;
-                //
-                //					skills = new SkillNameValue[]
-                //						{
-                //							new SkillNameValue( SkillName.Necromancy, 50 ),
-                //							new SkillNameValue( SkillName.Focus, 30 ),
-                //							new SkillNameValue( SkillName.SpiritSpeak, 30 ),
-                //							new SkillNameValue( SkillName.Swords, 30 ),
-                //							new SkillNameValue( SkillName.Tactics, 20 )
-                //						};
-                //
-                //					break;
-                //				}
-                //				case 5: // Paladin
-                //				{
-                //					if ( !Core.AOS )
-                //						goto default;
-                //
-                //					skills = new SkillNameValue[]
-                //						{
-                //							new SkillNameValue( SkillName.Chivalry, 51 ),
-                //							new SkillNameValue( SkillName.Swords, 49 ),
-                //							new SkillNameValue( SkillName.Focus, 30 ),
-                //							new SkillNameValue( SkillName.Tactics, 30 )
-                //						};
-                //
-                //					break;
-                //				}
-                #endregion unsupported professions
                 default:
-                    {
-                        if (!ValidSkills(skills))
-                            return;
-
-                        break;
-                    }
+                    if (!ValidSkills(skills))
+                        return;
+                    break;
             }
 
             bool addSkillItems = true;
 
-            switch (prof)
+            // Apply profession-specific starting gear
+            switch (profession)
             {
-                case 1: // Warrior
-                    {
-                        if (!StandardSiegeGear)
-                            EquipItem(new LeatherChest());
-
-                        break;
-                    }
-                    #region unsupported professions
-                    //				case 4: // Necromancer
-                    //				{
-                    //					Container regs = new BagOfNecroReagents( 50 );
-                    //
-                    //					if ( !Core.AOS )
-                    //					{
-                    //						foreach ( Item item in regs.Items )
-                    //							item.LootType = LootType.Newbied;
-                    //					}
-                    //
-                    //					PackItem( regs );
-                    //
-                    //					regs.LootType = LootType.Regular;
-                    //
-                    //					EquipItem( new BoneHarvester() );
-                    //					EquipItem( new BoneHelm() );
-                    //
-                    //					EquipItem( NecroHue( new LeatherChest() ) );
-                    //					EquipItem( NecroHue( new LeatherArms() ) );
-                    //					EquipItem( NecroHue( new LeatherGloves() ) );
-                    //					EquipItem( NecroHue( new LeatherGorget() ) );
-                    //					EquipItem( NecroHue( new LeatherLegs() ) );
-                    //					EquipItem( NecroHue( new Skirt() ) );
-                    //					EquipItem( new Sandals( 0x8FD ) );
-                    //
-                    //					Spellbook book = new NecromancerSpellbook( (ulong)0x8981 ); // animate dead, evil omen, pain spike, summon familiar, wraith form
-                    //
-                    //					PackItem( book );
-                    //
-                    //					book.LootType = LootType.Blessed;
-                    //
-                    //					addSkillItems = false;
-                    //
-                    //					break;
-                    //				}
-                    //				case 5: // Paladin
-                    //				{
-                    //					EquipItem( new Broadsword() );
-                    //					EquipItem( new Helmet() );
-                    //					EquipItem( new PlateGorget() );
-                    //					EquipItem( new RingmailArms() );
-                    //					EquipItem( new RingmailChest() );
-                    //					EquipItem( new RingmailLegs() );
-                    //					EquipItem( new ThighBoots( 0x748 ) );
-                    //					EquipItem( new Cloak( 0xCF ) );
-                    //					EquipItem( new BodySash( 0xCF ) );
-                    //
-                    //					Spellbook book = new BookOfChivalry( (ulong)0x3FF );
-                    //
-                    //					PackItem( book );
-                    //
-                    //					book.LootType = LootType.Blessed;
-                    //
-                    //					break;
-                    //				}
-                    #endregion unsupported professions
+                case Profession.Warrior:
+                    if (!StandardSiegeGear)
+                        EquipItem(new LeatherChest());
+                    break;
             }
 
-            bool m_badSkill = false;
+            // === Skill Validation & Application ===
+            bool hasBadSkill = false;
+            var badSkills = new HashSet<SkillName>
+            {
+                SkillName.RemoveTrap,
+                SkillName.Stealth,
+                SkillName.Fletching
+            };
+
+            if (Core.RuleSets.SeasonsRules(2))
+                badSkills.Add(SkillName.Inscribe);
+
             for (int i = 0; i < skills.Length; ++i)
             {
                 SkillNameValue snv = skills[i];
 
-                // stop players from creating templates we do not support
-                if (Enum.IsDefined(typeof(SkillName), snv.Name)/* && snv.Name != SkillName.Null*/)
+                if (!Enum.IsDefined(typeof(SkillName), snv.Name))
                 {
-                    if (snv.Value > 0)
-                    {
-                        Skill skill = m.Skills[snv.Name];
-
-                        if (skill.SkillName == SkillName.RemoveTrap || skill.SkillName == SkillName.Stealth || skill.SkillName == SkillName.Fletching)
-                        {   // log skill choices that cannot be fulfilled so that we can reimburse them points later.
-                            LogHelper logger = new LogHelper("New Player Skill Unavailable.log", false);
-                            logger.Log(LogType.Mobile, m, skill.SkillName.ToString());
-                            logger.Finish();
-                            m_badSkill = true;
-                            continue;
-                        }
-
-                        if (skill != null)
-                        {
-                            skill.BaseFixedPoint = snv.Value * 10;
-
-                            if (!StandardSiegeGear && addSkillItems)
-                            {
-                                if (Pub13SkillItems)
-                                    AddSkillItems(snv.Name);
-                                else
-                                    AddSkillItemsPrePub13(snv.Name);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // log skill choices that cannot be fulfilled so that we can reimburse them points later.
-                    LogHelper logger = new LogHelper("New Player Skill Unavailable.log", false);
-                    logger.Log(LogType.Mobile, m, snv.Name.ToString());
-                    logger.Finish();
-                    m_badSkill = true;
+                    LogBadSkill(m, snv.Name.ToString());
+                    hasBadSkill = true;
                     continue;
+                }
+
+                if (snv.Value <= 0)
+                    continue;
+
+                Skill skill = m.Skills[snv.Name];
+
+                if (badSkills.Contains(skill.SkillName))
+                {
+                    LogBadSkill(m, skill.SkillName.ToString());
+                    hasBadSkill = true;
+                    continue;
+                }
+
+                // Apply valid skill
+                skill.BaseFixedPoint = snv.Value * 10;
+
+                if (!StandardSiegeGear && addSkillItems)
+                {
+                    if (Pub13SkillItems)
+                        AddSkillItems(snv.Name, skills);
+                    else
+                        AddSkillItemsPrePub13(snv.Name);
                 }
             }
 
-            if (m_badSkill)
-                Timer.DelayCall(TimeSpan.FromSeconds(25), new TimerStateCallback(Tick), new object[] { m, null });
+            if (hasBadSkill)
+            {
+                QueueWelcomeMessage(m, "You selected one or more skills not supported on this server.");
+                QueueWelcomeMessage(m, "Please contact a GM and we will reimburse you those skill points.");
+            }
         }
 
-        private static void Tick(object state)
+        private static void LogBadSkill(Mobile m, string skillName)
         {
-            object[] aState = (object[])state;
-
-            if (aState[0] != null && aState[0] is Mobile m && (aState[0] as Mobile).Deleted == false)
+            LogHelper logger = new LogHelper("New Player Skill Unavailable.log", false);
+            try
             {
-                m.SendMessage(0x35, "You selected one or more skills not supported on this server.");
-                m.SendMessage(0x35, "Please contact a GM and we will reimburse you those skill points.");
+                logger.Log(LogType.Mobile, m, skillName);
+            }
+            finally
+            {
+                logger.Finish();
             }
         }
 
@@ -1418,7 +1501,7 @@ namespace Server.Misc
             else
                 item.Delete();
         }
-        private static bool Newbieable(Item item)
+        private static bool Newbieable(Item? item)
         {
             if (item == null || item.Deleted)
                 return false;
@@ -1548,7 +1631,7 @@ namespace Server.Misc
         {
             List<Item> best = new() { new Kryss(), new Katana(), new Club(), new Longsword() };
             best.Sort((p, q) => q.Weight.CompareTo(p.Weight));
-            Item selected = null;
+            Item? selected = null;
             foreach (Item item in best)
                 if (item.CanEquip(m_Mobile))
                 {
@@ -1634,7 +1717,7 @@ namespace Server.Misc
                 case 6: PackItem(new Hinge(), unique: true); break;
             }
         }
-        private static void AddSkillItems(SkillName skill)
+        private static void AddSkillItems(SkillName skill, SkillNameValue[] skills)
         {
             switch (skill)
             {
@@ -1858,7 +1941,22 @@ namespace Server.Misc
                     }
                 case SkillName.Tactics:
                     {
-                        EquipItem(new Katana());
+                        switch (GetHighestWeaponSkill(skills))
+                        {
+                            case SkillName.Swords:
+                                EquipItem(new Katana());
+                                break;
+                            case SkillName.Macing:
+                                EquipItem(new Mace());
+                                break;
+                            case SkillName.Archery:
+                                EquipItem(new Bow());
+                                break;
+                            case SkillName.Fencing:
+                                EquipItem(new Kryss());
+                                break;
+                        }
+                        // no weapon for no weapon skill
                         break;
                     }
                 case SkillName.Tailoring:
@@ -1877,7 +1975,7 @@ namespace Server.Misc
                     {
                         if (m_Mobile != null)
                         {
-                            Item shoes = m_Mobile.FindItemOnLayer(Layer.Shoes);
+                            Item? shoes = m_Mobile.FindItemOnLayer(Layer.Shoes);
 
                             if (shoes != null)
                                 shoes.Delete();
@@ -1900,6 +1998,33 @@ namespace Server.Misc
                     }
             }
         }
+
+        private static SkillName GetHighestWeaponSkill(SkillNameValue[] skills)
+        {
+            // Define which are considered weapon skills
+            var weaponSkills = new[]
+            {
+                SkillName.Macing,
+                SkillName.Fencing,
+                SkillName.Archery,
+                SkillName.Swords
+            };
+
+            SkillName best = SkillName.Swords; // default fallback
+            int bestVal = -1;
+
+            foreach (var snv in skills)
+            {
+                if (weaponSkills.Contains(snv.Name) && snv.Value > bestVal)
+                {
+                    bestVal = snv.Value;
+                    best = snv.Name;
+                }
+            }
+
+            return best;
+        }
+
         // 5/1/23, Yoar: Added pre-Pub13 skill items
         // https://web.archive.org/web/20000308061402fw_/http://uo.stratics.com/skills.htm
         private static void AddSkillItemsPrePub13(SkillName skill)
@@ -2139,7 +2264,7 @@ namespace Server.Misc
                     {
                         if (m_Mobile != null)
                         {
-                            Item shoes = m_Mobile.FindItemOnLayer(Layer.Shoes);
+                            Item? shoes = m_Mobile.FindItemOnLayer(Layer.Shoes);
 
                             if (shoes != null)
                                 shoes.Delete();

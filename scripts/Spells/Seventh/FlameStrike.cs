@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -111,7 +111,7 @@ namespace Server.Spells.Seventh
 
                 //Pixie: 7/4/04: added caster to this so corpse wouldn't stay blue to this caster
                 //Lib: 8/29/21: moved damage delay to console
-                SpellHelper.Damage(TimeSpan.FromSeconds(CoreAI.SpellFsDmgDelay), m, Caster, damage, 0, 100, 0, 0, 0);
+                SpellHelper.Damage(TimeSpan.FromSeconds(CoreAI.SpellFsDmgDelay), m, Caster, damage, new DamageContext { Source = this });
             }
 
             FinishSequence();

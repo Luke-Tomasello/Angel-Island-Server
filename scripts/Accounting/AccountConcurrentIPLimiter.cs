@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,6 +48,7 @@
  */
 
 
+using Server.Accounting;
 using Server.Mobiles;
 using Server.Network;
 using System;
@@ -67,12 +68,12 @@ namespace Server.Misc
         {
             private DateTime m_DateTime;
             public DateTime Limit { get { return m_DateTime; } }
-            private Server.Accounting.Account m_Account;
-            public Server.Accounting.Account Account { get { return m_Account; } }
+            private Account m_Account;
+            public Account Account { get { return m_Account; } }
             public WatchDog(Mobile m)
             {
                 m_DateTime = DateTime.UtcNow + m.GetLogoutDelay();
-                m_Account = m.Account as Server.Accounting.Account;
+                m_Account = m.Account as Account;
             }
         }
 
@@ -90,16 +91,17 @@ namespace Server.Misc
             {
                 if (e.Mobile != null && e.Mobile.Account != null)
                 {
-                    if ((e.Mobile.Account as Server.Accounting.Account).LoginIPs != null)
-                    {
-                        if ((e.Mobile.Account as Server.Accounting.Account).LoginIPs[0] != null)
-                        {   // delete an old record
-                            if (m_IPMRU.ContainsKey((e.Mobile.Account as Server.Accounting.Account).LoginIPs[0]))
-                                m_IPMRU.Remove((e.Mobile.Account as Server.Accounting.Account).LoginIPs[0]);
-                            // create a new record
-                            m_IPMRU[(e.Mobile.Account as Server.Accounting.Account).LoginIPs[0]] = new WatchDog(e.Mobile);
+                    if ((e.Mobile.Account as Account).LoginIPs != null)
+                        if ((e.Mobile.Account as Account).LoginIPs.Length > 0)
+                        {
+                            if ((e.Mobile.Account as Account).LoginIPs[0] != null)
+                            {   // delete an old record
+                                if (m_IPMRU.ContainsKey((e.Mobile.Account as Account).LoginIPs[0]))
+                                    m_IPMRU.Remove((e.Mobile.Account as Account).LoginIPs[0]);
+                                // create a new record
+                                m_IPMRU[(e.Mobile.Account as Account).LoginIPs[0]] = new WatchDog(e.Mobile);
+                            }
                         }
-                    }
                 }
             }
             catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
@@ -151,43 +153,55 @@ namespace Server.Misc
 
         public static bool IsOk(Server.Accounting.Account cacct, IPAddress ourAddress, bool filter_mortal_inmates = false)
         {
-            if (Enabled)
+            if (!Enabled)
+                return true;
+
+            // Staff accounts are always allowed.
+            if (cacct.AccessLevel > AccessLevel.Player)
+                return true;
+
+            List<NetState> netStates = NetState.Instances;
+
+            // Pass 1:
+            // If any logged-in account on this IP is staff, exempt the entire IP.
+            for (int i = 0; i < netStates.Count; ++i)
             {
+                NetState compState = netStates[i];
 
-                // don't count staff accounts
-                if (cacct.AccessLevel > AccessLevel.Player)
-                    return true;
+                if (!ourAddress.Equals(compState.Address))
+                    continue;
 
-                // see if there is another logged in account with this IP address
-                List<NetState> netStates = NetState.Instances;
-                int count = 0;
-                for (int i = 0; i < netStates.Count; ++i)
+                if (compState.Mobile?.Account is Server.Accounting.Account acct)
                 {
-                    NetState compState = netStates[i];
+                    if (acct.GetAccessLevel() > AccessLevel.Player)
+                        return true;
+                }
+            }
 
-                    if (compState.Mobile != null && compState.Mobile.Account != null)
+            // Pass 2:
+            // No staff on this IP, so count applicable connections normally.
+            int count = 0;
+
+            for (int i = 0; i < netStates.Count; ++i)
+            {
+                NetState compState = netStates[i];
+
+                if (!ourAddress.Equals(compState.Address))
+                    continue;
+
+                if (compState.Mobile != null)
+                {
+                    if (filter_mortal_inmates)
                     {
-                        Server.Accounting.Account acct = compState.Mobile.Account as Server.Accounting.Account;
-
-                        // don't count staff against your total
-                        if (acct.GetAccessLevel() > AccessLevel.Player)
+                        if (compState.Mobile is PlayerMobile pm && pm.PrisonInmate && pm.Mortal)
                             continue;
-
-                        // don't count mortal inmates against your total
-                        if (filter_mortal_inmates)
-                            if (compState.Mobile is PlayerMobile pm && pm.PrisonInmate && pm.Mortal)
-                                continue;
-                    }
-
-                    // add up matching accounts (connections to this IP address)
-                    if (ourAddress.Equals(compState.Address))
-                    {
-                        ++count;
-
-                        if (count > MaxConcurrentAddresses /*&& totalAccounts > 0*/)
-                            return false;
                     }
                 }
+
+                ++count;
+
+                if (count > MaxConcurrentAddresses)
+                    return false;
             }
 
             return true;

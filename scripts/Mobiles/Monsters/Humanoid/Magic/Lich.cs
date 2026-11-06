@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -65,7 +65,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -116,82 +115,32 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020207053311/uo.stratics.com/hunters/lich.shtml
+            // 200 to 250 Gold, Gems, Scrolls (circle 4-7), Reagents, Magic Wand or Staff, Magic items
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
-                PackReg(8, 12);
-                PackItem(new GnarledStaff());
-                PackScroll(2, 7);
-                PackScroll(2, 7);
-                PackMagicEquipment(1, 2, 0.25, 0.25);
-                PackMagicEquipment(1, 2, 0.05, 0.05);
-
-                // pack the gold
-                PackGold(170, 220);
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-
-                    if (Utility.RandomDouble() < 0.10)
-                        PackItem(Loot.IDWand());
-                }
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(200, 250);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020207053311/uo.stratics.com/hunters/lich.shtml
-                    // 200 to 250 Gold, Gems, Scrolls (circle 4-7), Reagents, Magic Wand or Staff, Magic items
-
-                    if (Spawning)
-                    {
-                        PackGold(200, 250);
-                    }
-                    else
-                    {
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                        PackScroll(4, 7, .9);
-                        PackScroll(4, 7, .05);
-                        PackReg(8, 12);
-                        if (Utility.RandomDouble() < 0.10)
-                            PackItem(Loot.IDWand());
-                        else
-                        {   // Hard to find info, but based on memory -
-                            // imbue gnarled staves with wand like capabilities 
-                            if (Utility.RandomDouble() < 0.10)
-                                PackItem(Loot.GnarledStaff());
-                            else
-                                PackItem(new GnarledStaff());
-                        }
-                        PackMagicEquipment(1, 2);
-                        PackMagicItem(1, 1, 0.05);
-                    }
-                }
+                PackGem(1, .9);
+                PackGem(1, .05);
+                PackScroll(4, 7, .9);
+                PackScroll(4, 7, .05);
+                PackReg(8, 12);
+                if (Utility.RandomDouble() < 0.10)
+                    PackItem(Loot.IDWand());
                 else
-                {
-                    if (Spawning)
-                    {
+                {   // Hard to find info, but based on memory -
+                    // imbue gnarled staves with wand like capabilities 
+                    if (Utility.RandomDouble() < 0.10)
+                        PackItem(Loot.GnarledStaff());
+                    else
                         PackItem(new GnarledStaff());
-                        if (Core.RuleSets.AOSRules())
-                            PackNecroReg(17, 24);
-                    }
-
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.MedScrolls, 2);
                 }
+                PackMagicEquipment(1, 2);
+                PackMagicItem(1, 1, 0.05);
             }
         }
 

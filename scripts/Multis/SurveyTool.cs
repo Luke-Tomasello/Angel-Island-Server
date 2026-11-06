@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -264,7 +264,7 @@ namespace Server.Items
 
             if (index >= 0 && index < m_Entries.Length)
             {
-                if (m_From.AccessLevel < AccessLevel.Player && BaseHouse.HasAccountHouse(m_From))
+                if (m_From.AccessLevel < AccessLevel.Player && BaseHouse.HasAccountHouseDirect(m_From))
                     m_From.SendLocalizedMessage(501271); // You already own a house, you may not place another!
                 else
                 {
@@ -308,7 +308,7 @@ namespace Server.Items
             if (!from.CheckAlive())
                 return;
 
-            IPoint3D ip = o as IPoint3D;
+            IPoint3D? ip = o as IPoint3D;
 
             if (ip != null)
             {
@@ -321,8 +321,6 @@ namespace Server.Items
 
                 if (from.AccessLevel >= AccessLevel.GameMaster || reg.AllowHousing(p))
                     m_Placed = m_Entry.OnPlacement(from, p);
-                else if (reg is TreasureRegion)
-                    from.SendLocalizedMessage(1043287); // The house could not be created here.  Either something is blocking the house, or the house would not be on valid terrain.
                 else
                     from.SendLocalizedMessage(501265); // Housing can not be created in this area.
             }
@@ -371,7 +369,7 @@ namespace Server.Items
             m_MultiID = multiID;
         }
 
-        public BaseHouse ConstructHouse(Mobile from)
+        public BaseHouse? ConstructHouse(Mobile from)
         {
             try
             {
@@ -427,13 +425,13 @@ namespace Server.Items
             {
                 case HousePlacementResult.Valid:
                     {
-                        if (from.AccessLevel < AccessLevel.Player && BaseHouse.HasAccountHouse(from))
+                        if (from.AccessLevel < AccessLevel.Player && BaseHouse.HasAccountHouseDirect(from))
                         {
                             from.SendLocalizedMessage(501271); // You already own a house, you may not place another!
                         }
                         else
                         {
-                            BaseHouse house = ConstructHouse(from);
+                            BaseHouse? house = ConstructHouse(from);
 
                             if (house == null)
                                 return;
@@ -516,7 +514,7 @@ namespace Server.Items
             {
                 case HousePlacementResult.Valid:
                     {
-                        if (from.AccessLevel < AccessLevel.Player && BaseHouse.HasAccountHouse(from))
+                        if (from.AccessLevel < AccessLevel.Player && BaseHouse.HasAccountHouseDirect(from))
                         {
                             from.SendLocalizedMessage(501271); // You already own a house, you may not place another!
                         }
@@ -617,9 +615,9 @@ namespace Server.Items
             FillTable(m_ThreeStoryFoundations);
         }
 
-        public static SurveyToolEntry Find(BaseHouse house)
+        public static SurveyToolEntry? Find(BaseHouse house)
         {
-            object obj = m_Table[house.GetType()];
+            object? obj = m_Table[house.GetType()];
 
             if (obj is SurveyToolEntry)
             {
@@ -631,7 +629,7 @@ namespace Server.Items
 
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    SurveyToolEntry e = (SurveyToolEntry)list[i];
+                    SurveyToolEntry? e = (SurveyToolEntry?)list[i];
 
                     if (e.m_MultiID == (house.ItemID & 0x3FFF))
                         return e;
@@ -656,7 +654,7 @@ namespace Server.Items
             {
                 SurveyToolEntry e = (SurveyToolEntry)entries[i];
 
-                object obj = m_Table[e.m_Type];
+                object? obj = m_Table[e.m_Type];
 
                 if (obj == null)
                 {

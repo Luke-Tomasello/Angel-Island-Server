@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -33,6 +33,7 @@
 		Merged in 1.0RC0 code.
 */
 
+using Server.Engines.Consoles;
 using Server.Targeting;
 
 namespace Server.Spells.Second
@@ -108,8 +109,8 @@ namespace Server.Spells.Second
                     damage *= 0.50; // 1/2 damage at 2 tile range
 
                 #region Tuning Console
-                if (Server.Items.Consoles.TuningConsole.Enabled && Server.Items.Consoles.HarmMCi.UseNewScale == true)
-                    damage = Utility.RescaleNumber(damage, 1, 15, Server.Items.Consoles.HarmMCi.DamageRangeLow, Server.Items.Consoles.HarmMCi.DamageRangeHigh);
+                if (TuningConsole.Enabled && HarmMCi.UseNewScale == true)
+                    damage = Utility.RescaleNumber(damage, 1, 15, HarmMCi.DamageRangeLow, HarmMCi.DamageRangeHigh);
                 #endregion
 
                 if (Core.RuleSets.AOSRules())
@@ -123,7 +124,7 @@ namespace Server.Spells.Second
                     m.PlaySound(0x1F1);
                 }
 
-                SpellHelper.Damage(this, m, damage, 0, 0, 100, 0, 0);
+                SpellHelper.Damage(this, m, damage, new DamageContext { Source = this });
             }
 
             FinishSequence();

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -275,7 +275,7 @@ namespace Server.Items
 
         public PuzzleChestSolutionAndTime GetLastGuess(Mobile m)
         {
-            PuzzleChestSolutionAndTime pcst = null;
+            PuzzleChestSolutionAndTime? pcst = null;
             m_Guesses.TryGetValue(m, out pcst);
             return pcst;
         }
@@ -320,7 +320,7 @@ namespace Server.Items
                         to.PlaySound(0x54);
                         to.LocalOverheadMessage(MessageType.Regular, 0xEE, 1010524); // Searing heat scorches thy skin.
 
-                        AOS.Damage(to, to, Utility.RandomMinMax(10, 40), 0, 100, 0, 0, 0, this);
+                        AOS.Damage(to, to, Utility.RandomMinMax(10, 40), new DamageContext { Source = this });
 
                         break;
                     }
@@ -329,7 +329,7 @@ namespace Server.Items
                         to.PlaySound(0x223);
                         to.LocalOverheadMessage(MessageType.Regular, 0x62, 1010525); // Pain lances through thee from a sharp metal blade.
 
-                        AOS.Damage(to, to, Utility.RandomMinMax(10, 40), 100, 0, 0, 0, 0, this);
+                        AOS.Damage(to, to, Utility.RandomMinMax(10, 40), new DamageContext { Source = this });
 
                         break;
                     }
@@ -338,7 +338,7 @@ namespace Server.Items
                         to.BoltEffect(0);
                         to.LocalOverheadMessage(MessageType.Regular, 0xDA, 1010526); // Lightning arcs through thy body.
 
-                        AOS.Damage(to, to, Utility.RandomMinMax(10, 40), 0, 0, 0, 0, 100, this);
+                        AOS.Damage(to, to, Utility.RandomMinMax(10, 40), new DamageContext { Source = this });
 
                         break;
                     }
@@ -757,7 +757,7 @@ namespace Server.Items
             int guesses = reader.ReadEncodedInt();
             for (int i = 0; i < guesses; i++)
             {
-                Mobile m = reader.ReadMobile();
+                Mobile? m = reader.ReadMobile();
                 PuzzleChestSolutionAndTime sol = new PuzzleChestSolutionAndTime(reader);
 
                 m_Guesses[m] = sol;

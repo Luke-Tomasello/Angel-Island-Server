@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -84,7 +84,7 @@ namespace Server.Items
 
         private void Execute(Mobile from, string command)
         {
-            if (Core.Debug || Core.UOTC_CFG || from.AccessLevel >= AccessLevel.Administrator)
+            if (Core.Debug || Core.GMNTC_CFG || from.AccessLevel >= AccessLevel.Administrator)
             {   // we need a dummy mobile with elevated access to execute the commands.
                 Mobile m = new Mobile();
                 m.AccessLevel = AccessLevel.Administrator;

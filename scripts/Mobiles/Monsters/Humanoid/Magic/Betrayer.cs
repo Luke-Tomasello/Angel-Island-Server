@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,8 +30,6 @@
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -82,53 +80,15 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // no LBR
+            //http://web.archive.org/web/20020403051743/uo.stratics.com/hunters/betrayer.shtml
+            // 200-300 Gold, Gem, Power Crystal, Level 5 Treasue Map, Blackthorne's "A welcome"
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
-
-                switch (Utility.Random(4))
-                {
-                    case 0: PackItem(new Katana()); break;
-                    case 1: PackItem(new BodySash()); break;
-                    case 2: PackItem(new Halberd()); break;
-                    case 3: PackItem(new LapHarp()); break;
-                }
-
                 PackGold(200, 300);
-
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // no LBR
-                    //http://web.archive.org/web/20020403051743/uo.stratics.com/hunters/betrayer.shtml
-                    // 200-300 Gold, Gem, Power Crystal, Level 5 Treasue Map, Blackthorne's "A welcome"
-                    if (Spawning)
-                    {
-                        PackGold(200, 300);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {   // probably not for siege
-                        //PackItem(new PowerCrystal());
-
-                        //if (0.02 > Utility.RandomDouble())
-                        //PackItem(new BlackthornWelcomeBook());
-                    }
-
-                    AddLoot(LootPack.FilthyRich);
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.Gems, 1);
-                }
             }
         }
 

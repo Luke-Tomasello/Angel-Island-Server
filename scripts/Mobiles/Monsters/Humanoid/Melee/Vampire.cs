@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -102,7 +102,8 @@ namespace Server.Mobiles
     public class Vampire : BaseCreature
     {
 
-
+        [CommandProperty(AccessLevel.GameMaster)]
+        public override DefensiveSlayer SlayersDefensive { get; set; } = DefensiveSlayer.Silver;
         /* for runtime tuning only
 		 * we can delete/hard-code this at some future date
 		 */
@@ -344,7 +345,11 @@ namespace Server.Mobiles
                 m.Combatant = null;
 
                 if (m is BaseCreature && !((BaseCreature)m).BardPacified && !((BaseCreature)m).Uncalmable)
-                    ((BaseCreature)m).Pacify(this, DateTime.UtcNow + TimeSpan.FromSeconds(30.0));
+                    ((BaseCreature)m).Pacify(this, DateTime.UtcNow + TimeSpan.FromSeconds(30.0),
+                        // Tuned, not derived: hand-picked values to make hypnosis feel strong, reliable, and still breakable in play.
+                        diff: 60.0,
+                        music: 95.0,
+                        peace: 95.0);
 
                 m.SendMessage("You feel a calming peace wash over you.");
                 return true;
@@ -358,7 +363,7 @@ namespace Server.Mobiles
         public override void CheckWeaponImmunity(BaseWeapon wep, int damagein, out int damage)
         {
             // BaseCreature now has a mobile override which applies to any weapon wielded
-            bool weaponSilver = Combatant is BaseCreature bc && bc.Slayer == SlayerName.Silver;
+            bool weaponSilver = Combatant is BaseCreature bc && bc.SlayerOffensive == SlayerName.Silver;
             // PlayerMobiles can drink Holy Water which gives them the silver-effect
             weaponSilver |= Combatant is PlayerMobile pm && HolyWater.UnderEffect(pm);
             // basic silver weapon
@@ -370,9 +375,9 @@ namespace Server.Mobiles
                 // silver bonus given as usual slayer bonus in baseWeapon
                 damage = damagein;
         }
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
-            if (source_weapon is HolyHandGrenade)
+            if (context?.Source is HolyHandGrenade)
             {
                 // We will 'confuse' the vamp so it can't do special moves for a few seconds..
                 VampireAI.Confused.Remember(this, 5);
@@ -380,7 +385,7 @@ namespace Server.Mobiles
                 // reduce damage to reasonable amount
                 amount = Math.Min(amount, Utility.RandomMinMax((int)(HitsMax * 0.2), (int)(HitsMax * 0.3)));
             }
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
         }
         public override void OnThink()
         {
@@ -518,50 +523,25 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AllShards)
+            if (Spawning)
             {
-                if (Spawning)
-                {
-                    // No at spawn loot
-                }
-                else
-                {
-                    //PackGold(170, 220); //add gold if its daytime
-                    //PackMagicEquipment(2, 3, 0.60, 0.60);
-                    //PackMagicEquipment(2, 3, 0.25, 0.25);
-                    PackGold(Utility.RandomMinMax(1200, 1400) / 2); // 1/2 dragon gold
-
-                    BaseWeapon weapon = PackSlayerWeapon(CoreAI.SlayerWeaponDropRate);
-                    if (weapon != null)
-                    {
-                        LogHelper Logger = new LogHelper("SlayerWeapon.log", false, true);
-                        Logger.Log(LogType.Item, weapon);
-                        Logger.Finish();
-                    }
-
-                    Item blood = new BloodVial();
-                    blood.Name = "blood of " + this.Name;
-                    PackItem(blood);
-
-                    PackHolyStuff();
-                }
+                PackGold(Utility.RandomMinMax(1200, 1400) / 2); // 1/2 dragon gold
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
+                BaseWeapon? weapon = PackSlayerWeapon(CoreAI.SlayerWeaponDropRate);
+                if (weapon != null)
                 {
-                    // ai special
+                    LogHelper Logger = new LogHelper("SlayerWeapon.log", false, true);
+                    Logger.Log(LogType.Item, weapon);
+                    Logger.Finish();
                 }
+
+                Item blood = new BloodVial();
+                blood.Name = "blood of " + this.Name;
+                PackItem(blood);
+
+                PackHolyStuff();
             }
         }
         public void PackHolyStuff()

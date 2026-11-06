@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -169,7 +169,7 @@ namespace Server.Engines
 
             return false;
         }
-        private static string GetProfessionalsNameByInventoryItem(Point3D location, string item)
+        private static string? GetProfessionalsNameByInventoryItem(Point3D location, string item)
         {
             int range = 20;
 
@@ -197,7 +197,7 @@ namespace Server.Engines
 
             return null;
         }
-        private static string GetProfessionalsName(Point3D location, string title)
+        private static string? GetProfessionalsName(Point3D location, string title)
         {
             int range = 20;
 
@@ -228,7 +228,7 @@ namespace Server.Engines
         private static string GetProfessionalsShop(Point3D location)
         {
             Point3D closest = Point3D.Zero;
-            string ShopName = null;
+            string? ShopName = null;
             foreach (KeyValuePair<string, List<Point3D>> record in CacheFactory.PlacesQuickTable)
                 foreach (Point3D point3D in record.Value)
                     if (Utility.GetDistanceToSqrt(location, point3D) <= 20)
@@ -453,7 +453,7 @@ namespace Server.Engines
 
             LocateType lresult = LocateType.Unknown;
             int bestScore = 0;
-            string bestText = null;
+            string? bestText = null;
             // add up the score card
             foreach (KeyValuePair<LocateType, likelihoodResult> kvp in m_scorecard)
                 if (m_scorecard[kvp.Key].Score > bestScore)
@@ -686,7 +686,7 @@ namespace Server.Engines
 
             ConvoExit(closest, ConvoMob, ConvoPlayer, GetProfessionalsShop(closest), GetProfessionalsNameByInventoryItem(closest, thing));
         }
-        public static void ConvoExit(Point3D closest, Mobile ConvoMob, Mobile ConvoPlayer, string thing, string NPCName)
+        public static void ConvoExit(Point3D closest, Mobile ConvoMob, Mobile ConvoPlayer, string? thing, string? NPCName)
         {
             if (closest == Point3D.Zero)
                 SayTo(ConvoMob, ConvoPlayer, "I'm sorry, I do not know anything about that.");
@@ -887,8 +887,8 @@ namespace Server.Engines
                 //Utility.TimeCheck tc = new Utility.TimeCheck();
                 //tc.Start();
                 // they are asking about X, show them where the X is/are.
-                Spawner closest = null;
-                string thing = null;
+                Spawner? closest = null;
+                string? thing = null;
                 string text = NormalizeQuery(e.Speech);
                 string[] split = text.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 string[] splitCopy = new string[split.Length];  // we will be reversing this array for our stack ops
@@ -938,7 +938,7 @@ namespace Server.Engines
                     int xLong = 0, yLat = 0, xMins = 0, yMins = 0;
                     bool xEast = false, ySouth = false;
                     bool dungeon = !Server.Items.Sextant.Format(closest.Location, closest.Map, ref xLong, ref yLat, ref xMins, ref yMins, ref xEast, ref ySouth);
-                    Type type = ScriptCompiler.FindTypeByName(thing);
+                    Type? type = ScriptCompiler.FindTypeByName(thing);
                     if (type == null)
                     {
                         m.SayTo(e.Mobile, "I'm sorry, I do not know anything about that.");
@@ -974,8 +974,8 @@ namespace Server.Engines
                 //Utility.TimeCheck tc = new Utility.TimeCheck();
                 //tc.Start();
                 // they are asking about X, show them where the X is/are.
-                Spawner closest = null;
-                foreach (Spawner spawner in SpawnerCache.Spawners)
+                Spawner? closest = null;
+                foreach (Spawner spawner in Spawner.Instances)
                 {
                     if (spawner == null || spawner.Running == false || spawner.Map != Map.Felucca)
                         continue;
@@ -1022,7 +1022,7 @@ namespace Server.Engines
          * HELPER FUNCTIONS BELOW
          */
         #region Fuzzy Match Engine
-        private static string MentionsTown(string text, double fuzz)
+        private static string? MentionsTown(string text, double fuzz)
         {
             foreach (string town in CacheFactory.TownsList)
                 if (FindString(town, text, .25) != null)
@@ -1035,7 +1035,7 @@ namespace Server.Engines
 
             foreach (string word in words)
             {
-                List<MatchElement> elements = null;
+                List<MatchElement>? elements = null;
 
                 if ((elements = _FindString(word, text, fuzz)) != null)
                     foreach (MatchElement element in elements)
@@ -1045,7 +1045,7 @@ namespace Server.Engines
             // process elements
 
             // finally
-            string cbm = ComputeBestMatch(return_elements);
+            string? cbm = ComputeBestMatch(return_elements);
             return cbm;
         }
         private static string FindString(Dictionary<string, Point3D>.KeyCollection words, string text, double fuzz)
@@ -1054,7 +1054,7 @@ namespace Server.Engines
 
             foreach (string word in words)
             {
-                List<MatchElement> elements = null;
+                List<MatchElement>? elements = null;
 
                 if ((elements = _FindString(word, text, fuzz)) != null)
                     foreach (MatchElement element in elements)
@@ -1064,7 +1064,7 @@ namespace Server.Engines
             // process elements
 
             // finally
-            string cbm = ComputeBestMatch(return_elements);
+            string? cbm = ComputeBestMatch(return_elements);
             return cbm;
         }
         private static string FindString(string word, string text, double fuzz)
@@ -1074,7 +1074,7 @@ namespace Server.Engines
             // return the best element
 
             // finally
-            string cbm = ComputeBestMatch(return_elements);
+            string? cbm = ComputeBestMatch(return_elements);
             return cbm;
         }
         private static List<MatchElement> _FindString(string word, string text, double fuzz)
@@ -1098,7 +1098,7 @@ namespace Server.Engines
             //  noisy words (looking for the best match)
             List<string> tokens = GetCandidateList(word, text, fuzz);
 
-            string substring = null;
+            string? substring = null;
             foreach (string token in tokens)
             {
                 // build a substring
@@ -1118,7 +1118,7 @@ namespace Server.Engines
         }
         public static List<string> GetCandidateList(string word, string text, double fuzz)
         {
-            MatchElement element = null;
+            MatchElement? element = null;
             List<string> tokens_text = new List<string>(text.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
             List<string> tokens_word = new List<string>(word.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
             List<KeyValuePair<string, int>> tokens_out = new List<KeyValuePair<string, int>>();
@@ -1130,7 +1130,7 @@ namespace Server.Engines
                 foreach (string token_w in tokens_word)
                 {
                     element = MatchString(token_w, token_t, fuzz);
-                    string result = ComputeBestMatch(new List<MatchElement> { element });
+                    string? result = ComputeBestMatch(new List<MatchElement> { element });
                     if (result != null)
                         if (!tokens_out.Contains(new KeyValuePair<string, int>(result, pos)))
                             tokens_out.Add(new KeyValuePair<string, int>(result, pos));
@@ -1150,7 +1150,7 @@ namespace Server.Engines
                     foreach (string token_w in tokens_word)
                     {
                         element = MatchString(token_w, token_t, fuzz);
-                        string result = ComputeBestMatch(new List<MatchElement> { element });
+                        string? result = ComputeBestMatch(new List<MatchElement> { element });
                         if (result != null)
                             if (!tokens_out.Contains(new KeyValuePair<string, int>(result, pos)))
                                 tokens_out.Add(new KeyValuePair<string, int>(result, pos));
@@ -1197,7 +1197,7 @@ namespace Server.Engines
             RollingHash ps = new RollingHash();
             return new MatchElement(word, text, fuzz, StringDistance.LevenshteinDistance(word, text), ps.FindCommonSubstring(word, text, true).Length);
         }
-        private static string ComputeBestMatch(List<MatchElement> elements)
+        private static string? ComputeBestMatch(List<MatchElement> elements)
         {
             List<MatchElement> tiebreaker_elements = new List<MatchElement>();
             if (elements != null && elements.Count > 0)
@@ -1719,26 +1719,6 @@ namespace Server.Engines
         }
         public static class Levenshtein
         {
-            public static string BestEnumMatchPure(Type actualTypes, string what_to_match, out int score)
-            {
-                what_to_match = RemoveWhitespace(what_to_match).ToLower();
-                score = 128;    // just some big number (fail)
-                int distance = score;
-                string found = null;
-
-                // first see if the string matches.
-                foreach (string enum_name in Enum.GetNames(actualTypes))
-                {
-                    distance = StringDistance.LevenshteinDistance(enum_name.ToLower(), what_to_match);
-                    if (distance < score)
-                    {
-                        score = distance;
-                        found = enum_name;
-                    }
-
-                }
-                return found;
-            }
             public static string BestEnumMatch(Type actualTypes, string whatVendorThinks, out int score)
             {   // first remove all whitespace
                 whatVendorThinks = RemoveWhitespace(whatVendorThinks).ToLower();
@@ -1756,7 +1736,7 @@ namespace Server.Engines
                 // we didn't find an exact match, so we will try to figure out the best match.
                 int body = 0;
                 int head = 0;
-                string found = null;
+                string? found = null;
                 foreach (string skill in Enum.GetNames(actualTypes))
                 {
                     int new_body_score = LongestBodyMatch(whatVendorThinks, skill.ToLower());
@@ -1811,7 +1791,7 @@ namespace Server.Engines
                 int body = 0;
                 int head = 0;
                 int wants_len = whatPlayerWants.Length;
-                string found = null;
+                string? found = null;
                 foreach (string temp in itemNames)
                 {
                     int new_body_score = LongestBodyMatch(whatPlayerWants, temp.ToLower());
@@ -1869,7 +1849,7 @@ namespace Server.Engines
             {
                 for (int endOffset = pattern.Length; endOffset >= 1; endOffset--)
                 {
-                    string match = null;
+                    string? match = null;
                     if (source.IndexOf(match = pattern.Substring(0, endOffset)) != -1 || source.IndexOf(match = pattern.Substring(pattern.Length - endOffset + 1)) != -1)
                     {
                         return match.Length;
@@ -1960,7 +1940,7 @@ namespace Server.Engines
                             int count = reader.ReadInt();
                             for (int ix = 0; ix < count; ix++)
                             {
-                                string key = reader.ReadString();
+                                string? key = reader.ReadString();
                                 int nChatter = reader.ReadInt();
                                 List<string> list = new List<string>();
                                 for (int jx = 0; jx < nChatter; jx++)

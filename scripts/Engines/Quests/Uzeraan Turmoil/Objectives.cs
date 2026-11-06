@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -512,9 +512,9 @@ namespace Server.Engines.Quests.Haven
 
     public class GetDaemonBoneObjective : QuestObjective
     {
-        private Container m_CorpseWithBone;
+        private Container? m_CorpseWithBone;
 
-        public Container CorpseWithBone
+        public Container? CorpseWithBone
         {
             get { return m_CorpseWithBone; }
             set { m_CorpseWithBone = value; }

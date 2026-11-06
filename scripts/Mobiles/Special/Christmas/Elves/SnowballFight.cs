@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,7 +41,7 @@ namespace Server.Mobiles
         public static int MaxRange = 5;
         public static int MaxCount = 4;
 
-        private static SnowballFight[] m_Pool;
+        private static SnowballFight[]? m_Pool;
         private static int m_Index;
 
         public static SnowballFight Get()
@@ -72,7 +72,7 @@ namespace Server.Mobiles
 
         public static void Join(Mobile m)
         {
-            ISnowballFight myFight = m as ISnowballFight;
+            ISnowballFight? myFight = m as ISnowballFight;
 
             if (myFight == null)
                 return;
@@ -83,7 +83,7 @@ namespace Server.Mobiles
             int myCount = (myFight.SnowballFight == null ? 0 : myFight.SnowballFight.Count);
 
             int distMin = int.MaxValue;
-            ISnowballFight theirFight = null;
+            ISnowballFight? theirFight = null;
 
             foreach (Mobile checkMobile in m.GetMobilesInRange(MaxRange))
             {
@@ -122,7 +122,7 @@ namespace Server.Mobiles
                 }
                 else if (myCount < theirCount)
                 {
-                    SnowballFight fight = theirFight.SnowballFight;
+                    SnowballFight? fight = theirFight.SnowballFight;
 
                     if (myCount == 0)
                     {
@@ -153,7 +153,7 @@ namespace Server.Mobiles
 
         public static void Quit(Mobile m)
         {
-            ISnowballFight mine = m as ISnowballFight;
+            ISnowballFight? mine = m as ISnowballFight;
 
             if (mine == null || mine.SnowballFight == null)
                 return;
@@ -192,12 +192,12 @@ namespace Server.Mobiles
 
         private static Relation GetRelation(Mobile source, Mobile target)
         {
-            ISnowballFight myFight = source as ISnowballFight;
+            ISnowballFight? myFight = source as ISnowballFight;
 
             if (myFight == null || myFight.SnowballFight == null)
                 return Relation.Unrelated;
 
-            ISnowballFight theirFight = target as ISnowballFight;
+            ISnowballFight? theirFight = target as ISnowballFight;
 
             if (theirFight == null || theirFight.SnowballFight == null)
                 return Relation.Unrelated;

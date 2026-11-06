@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -95,7 +95,7 @@ namespace Server.Items
                 if (m_Material.Deleted)
                     return;
 
-                ILoom loom = targeted as ILoom;
+                ILoom? loom = targeted as ILoom;
 
                 if (loom == null && targeted is AddonComponent)
                     loom = ((AddonComponent)targeted).Addon as ILoom;
@@ -108,6 +108,11 @@ namespace Server.Items
                     }
                     else if (loom.Phase < 4)
                     {
+                        // a merchant-bought yarn or thread on the loom marks the bolt it becomes: the loom's own
+                        //  StoreBought flag (saved with it) holds that until the bolt is made (see ArbitrageTable)
+                        if (m_Material.StoreBought && loom is Item onLoom)
+                            onLoom.StoreBought = true;
+
                         m_Material.Consume();
 
                         if (targeted is Item)
@@ -117,6 +122,9 @@ namespace Server.Items
                     {
                         Item create = new BoltOfCloth();
                         create.Hue = m_Material.Hue;
+                        Server.Engines.Economy.Provenance.Inherit(m_Material.StoreBought || (loom is Item marked && marked.StoreBought), create);
+                        if (loom is Item done)
+                            done.StoreBought = false;
 
                         m_Material.Consume();
                         loom.Phase = 0;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,7 +62,7 @@
  *		- set all houses to insecure
  *	05/30/06, Adam
  *		Unnewbie all reagents around the world.
- *		Note: You must use [RehydrateWorld immediatly before using this command.
+ *		Note: while FreezeDry was active, [RehydrateWorld had to be run first (FreezeDry is retired; no longer needed).
  *  05/15/06, Kit
  *		New warhead wipe the world of dead bonded pets that have been released but didnt delete because of B1 bug.
  *  05/14/06, Kit

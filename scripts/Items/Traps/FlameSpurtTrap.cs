@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,8 +34,8 @@ namespace Server.Items
 {
     public class FlameSpurtTrap : BaseTrap
     {
-        private Item m_Spurt;
-        private Timer m_Timer;
+        private Item? m_Spurt;
+        private Timer? m_Timer;
 
         [Constructable]
         public FlameSpurtTrap()
@@ -148,7 +148,7 @@ namespace Server.Items
             {
                 CheckTimer();
 
-                Spells.SpellHelper.Damage(TimeSpan.FromTicks(1), m, m, Utility.RandomMinMax(1, 30));
+                Spells.SpellHelper.Damage(TimeSpan.FromTicks(1), m, m, Utility.RandomMinMax(1, 30), new DamageContext { Source = this }, true);
                 m.PlaySound(m.GetHurtSound());
             }
 
@@ -166,7 +166,7 @@ namespace Server.Items
             {
                 CheckTimer();
 
-                Spells.SpellHelper.Damage(TimeSpan.FromTicks(1), m, m, Utility.RandomMinMax(1, 10));
+                Spells.SpellHelper.Damage(TimeSpan.FromTicks(1), m, m, Utility.RandomMinMax(1, 10), new DamageContext { Source = this }, true);
                 m.PlaySound(m.GetHurtSound());
 
                 if (m.Body.IsHuman)
@@ -198,7 +198,7 @@ namespace Server.Items
             {
                 case 0:
                     {
-                        Item item = reader.ReadItem();
+                        Item? item = reader.ReadItem();
 
                         if (item != null)
                             item.Delete();

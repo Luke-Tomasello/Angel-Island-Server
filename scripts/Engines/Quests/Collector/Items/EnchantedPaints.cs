@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -42,7 +42,7 @@ namespace Server.Engines.Quests.Collector
 
         public override bool CanDrop(PlayerMobile player)
         {
-            CollectorQuest qs = player.Quest as CollectorQuest;
+            CollectorQuest? qs = player.Quest as CollectorQuest;
 
             if (qs == null)
                 return true;
@@ -53,7 +53,7 @@ namespace Server.Engines.Quests.Collector
 
         public override void OnDoubleClick(Mobile from)
         {
-            PlayerMobile player = from as PlayerMobile;
+            PlayerMobile? player = from as PlayerMobile;
 
             if (player != null)
             {
@@ -90,7 +90,7 @@ namespace Server.Engines.Quests.Collector
                 if (m_Paints.Deleted || !m_Paints.IsChildOf(from.Backpack))
                     return;
 
-                PlayerMobile player = from as PlayerMobile;
+                PlayerMobile? player = from as PlayerMobile;
 
                 if (player != null)
                 {
@@ -98,7 +98,7 @@ namespace Server.Engines.Quests.Collector
 
                     if (qs is CollectorQuest)
                     {
-                        CaptureImagesObjective obj = qs.FindObjective(typeof(CaptureImagesObjective)) as CaptureImagesObjective;
+                        CaptureImagesObjective? obj = qs.FindObjective(typeof(CaptureImagesObjective)) as CaptureImagesObjective;
 
                         if (obj != null && !obj.Completed)
                         {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,10 @@
 
 /* Gumps/ReportMurderer.cs
  * ChangeLog
+ *  12/16/2025, Adam
+ *      On Mortalis, victims are deleted and never see the report gump.
+ *      Auto-report all killers so murder counts and notoriety still work.
+ *      AutoReportMurder(m, killers);
  *  4/12/23, Yoar
  *      Added 60k bounty cap.
  *  4/11/23, Yoar
@@ -61,6 +65,7 @@
  */
 
 using Server.BountySystem;
+using Server.Engines;
 using Server.Misc;
 using Server.Mobiles;
 using Server.Network;
@@ -73,7 +78,7 @@ namespace Server.Gumps
     {
         public static bool NewMurdererGump
         {
-            get { return (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()); }
+            get { return (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()); }
         }
 
         public static int BountyCap = 60000;
@@ -150,7 +155,7 @@ namespace Server.Gumps
                             }
 
                             bool bFound = false;
-                            KillerTime kt = null;
+                            KillerTime? kt = null;
                             foreach (KillerTime k in pm.KillerTimes)
                             {
                                 if (k.Killer == ai.Attacker)
@@ -226,9 +231,63 @@ namespace Server.Gumps
                 return;
 
             if (killers.Count > 0)
-                new GumpTimer(m, killers).Start();
+            {
+                if (Core.RuleSets.MortalisRules())
+                {
+                    // On Mortalis, victims are deleted and never see the report gump.
+                    // Auto-report all killers so murder counts and notoriety still work.
+                    AutoReportMurder(m, killers);
+                }
+                else
+                {
+                    new GumpTimer(m, killers).Start();
+                }
+            }
 
             //((PlayerMobile)m).NextMurderCountTime = DateTime.UtcNow + TimeSpan.FromMinutes(2.0);
+        }
+        public static void AutoReportMurder(Mobile victim, ArrayList killers)
+        {
+            if (victim == null || killers == null || killers.Count == 0)
+                return;
+
+            // On Mortalis we treat every killer as if the victim clicked "Yes" on the report gump.
+            foreach (object obj in killers)
+            {
+                Mobile? killer = obj as Mobile;
+                if (killer == null || killer.Deleted)
+                    continue;
+
+                // Mirror the "Yes" branch from ReportMurdererGump.OnResponse
+                killer.LongTermMurders++;
+                killer.ShortTermMurders++;
+
+                if (killer is PlayerMobile pk)
+                    pk.ResetKillTime();
+
+                // Clean up aggression link from the victim's side
+                victim.RemoveAggressor(killer);
+
+                // "You have been reported for murder!"
+                killer.SendLocalizedMessage(1049067);
+
+                if (killer.LongTermMurders == 5)
+                {
+                    // "You are now known as a murderer!"
+                    killer.SendLocalizedMessage(502134);
+                }
+                else if (SkillHandlers.Stealing.SuspendOnMurder &&
+                         killer.LongTermMurders == 1 &&
+                         killer is PlayerMobile thief &&
+                         thief.NpcGuild == NpcGuild.ThievesGuild)
+                {
+                    // "You have been suspended by the Thieves Guild."
+                    killer.SendLocalizedMessage(501562);
+                }
+
+                // No bounty gump on Mortalis. Victim is going away; this is just notoriety.
+                killer.OnReportedForMurder(victim);
+            }
         }
 
         private class GumpTimer : Timer
@@ -249,7 +308,7 @@ namespace Server.Gumps
                 {
                     if (m_Victim.Guild != null)
                     {
-                        Server.Guilds.Guild g = m_Victim.Guild as Server.Guilds.Guild;
+                        Server.Guilds.Guild? g = m_Victim.Guild as Server.Guilds.Guild;
                         if (g != null)
                         {
                             if (g.IsNoCountingGuild)
@@ -344,7 +403,7 @@ namespace Server.Gumps
 
                 int x = 265, y = 205;
 
-                Mobile killer = (Mobile)m_Killers[m_Idx];
+                Mobile? killer = (Mobile?)m_Killers[m_Idx];
 
                 m_iRandomNumberYesResponse = Utility.Random(10, 1000);
 
@@ -389,7 +448,7 @@ namespace Server.Gumps
             {
                 case 1:
                     {
-                        Mobile killer = (Mobile)m_Killers[m_Idx];
+                        Mobile? killer = (Mobile?)m_Killers[m_Idx];
 
                         if (killer != null && !killer.Deleted)
                         {
@@ -426,7 +485,7 @@ namespace Server.Gumps
                             else if (SkillHandlers.Stealing.SuspendOnMurder && killer.LongTermMurders == 1 && killer is PlayerMobile && ((PlayerMobile)killer).NpcGuild == NpcGuild.ThievesGuild)
                                 killer.SendLocalizedMessage(501562); // You have been suspended by the Thieves Guild.
 
-                            if (NewMurdererGump && (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()))
+                            if (NewMurdererGump && (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()))
                                 from.SendGump(new BountyGump(from, killer));
 
                             killer.OnReportedForMurder(from);
@@ -454,7 +513,7 @@ namespace Server.Gumps
         {
             amount = 0;
 
-            TextRelay relay = info.GetTextEntry(0);
+            TextRelay? relay = info.GetTextEntry(0);
 
             if (relay == null || string.IsNullOrEmpty(relay.Text))
                 return true;

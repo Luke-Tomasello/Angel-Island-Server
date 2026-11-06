@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,7 +71,7 @@ namespace Server.Gumps
     public class ProfileGump : Gump
     {
         private Mobile m_From;
-        private Account m_Account;
+        private Account? m_Account;
 
         private const int LabelHue = 0x480;
         private const int LabelColor32 = 0xFFFFFF;
@@ -239,7 +239,7 @@ namespace Server.Gumps
 
         public static bool SendActivationEmail(string emailaddress, string activationKey, bool resend)
         {
-            string subject = "Account Activation Information for Angel Island";
+            string subject = $"Account Activation Information for {Core.Server}";
 
             if (resend) subject += " (resent)";
 
@@ -267,8 +267,8 @@ namespace Server.Gumps
 
             try
             {
-                TextRelay tr = info.GetTextEntry(0);
-                string oldpassword = (tr == null ? null : tr.Text.Trim());
+                TextRelay? tr = info.GetTextEntry(0);
+                string? oldpassword = (tr == null ? null : tr.Text.Trim());
 
                 if (oldpassword != null && oldpassword.Length != 0 && m_Account.CheckPassword(oldpassword))
                 {
@@ -277,11 +277,11 @@ namespace Server.Gumps
                     {
                         case SET_EMAIL_BUTTON: //set email address
                             {
-                                TextRelay tr1 = info.GetTextEntry(1);
-                                TextRelay tr2 = info.GetTextEntry(2);
+                                TextRelay? tr1 = info.GetTextEntry(1);
+                                TextRelay? tr2 = info.GetTextEntry(2);
 
-                                string newemail = (tr1 == null ? null : tr1.Text.Trim());
-                                string confirmnewemail = (tr2 == null ? null : tr2.Text.Trim());
+                                string? newemail = (tr1 == null ? null : tr1.Text.Trim());
+                                string? confirmnewemail = (tr2 == null ? null : tr2.Text.Trim());
 
                                 if (newemail == null || confirmnewemail == null ||
                                     newemail.Length == 0 || confirmnewemail.Length == 0)
@@ -322,7 +322,7 @@ namespace Server.Gumps
                                         string regBody = "Email address change made.\n";
                                         if (m_Account.AccountActivated == false)
                                         {
-                                            regSubject = "Account Activation request";
+                                            regSubject = $"Account activation request for {Core.Server}";
                                             regBody = "Account Activation: Email address change made.\n";
                                         }
                                         regBody += "Info of from: \n";
@@ -411,9 +411,9 @@ namespace Server.Gumps
                             }
                         case ENTER_ACTIVATION_KEY:
                             {
-                                TextRelay tr1 = info.GetTextEntry(1);
+                                TextRelay? tr1 = info.GetTextEntry(1);
 
-                                string activationEntry = (tr1 == null ? null : tr1.Text.Trim());
+                                string? activationEntry = (tr1 == null ? null : tr1.Text.Trim());
 
                                 if (activationEntry == m_Account.ActivationKey)
                                 {
@@ -443,11 +443,11 @@ namespace Server.Gumps
                             }
                         case SET_PASSWORD: //set password
                             {
-                                TextRelay tr3 = info.GetTextEntry(3);
-                                TextRelay tr4 = info.GetTextEntry(4);
+                                TextRelay? tr3 = info.GetTextEntry(3);
+                                TextRelay? tr4 = info.GetTextEntry(4);
 
-                                string newpassword = (tr3 == null ? null : tr3.Text.Trim());
-                                string confirmnewpassword = (tr4 == null ? null : tr4.Text.Trim());
+                                string? newpassword = (tr3 == null ? null : tr3.Text.Trim());
+                                string? confirmnewpassword = (tr4 == null ? null : tr4.Text.Trim());
 
                                 if (newpassword == null || confirmnewpassword == null ||
                                     newpassword.Length == 0 || confirmnewpassword.Length == 0)
@@ -506,7 +506,7 @@ namespace Server.Gumps
                                         Emailer mail = new Emailer();
                                         if (mail.SendEmail(m_Account.EmailAddress, subject, body, false))
                                         {
-                                            string regSubject = "Password change";
+                                            string regSubject = $"Password change for {Core.Server}";
                                             string regBody = "Password change made.\n";
                                             regBody += "Info of from: \n";
                                             regBody += "\n";

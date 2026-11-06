@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,14 @@
 
 /* Scripts/Misc/Notoriety.cs
  * ChangeLog
+ *  7/29/2026, Adam
+ *      Refactored MobileNotoriety() into an ordered rule pipeline using
+ *      focused Try...Notoriety() helpers while preserving behavior.
+ *      Introduced NotorietyContext to centralize shared relationship state
+ *      (principals, guilds, etc.) and establish a common foundation for
+ *      notoriety and combat policy. Began extracting canonical relationship
+ *      predicates (e.g., AreGuildEnemies(), AreTownshipEnemies()) to separate
+ *      relationship facts from policy decisions.
  *  4/14/23, Yoar
  *      Added support for new Alignment system.
  * 12/18/22, Adam (MobileNotoriety)
@@ -79,6 +87,7 @@ using Server.Guilds;
 using Server.Items;
 using Server.Mobiles;
 using Server.Multis;
+using Server.Regions;
 using Server.Spells;
 using System;
 using System.Collections;
@@ -105,11 +114,866 @@ namespace Server.Misc
             Mobile.AllowHarmfulHandler = new AllowHarmfulHandler(Mobile_AllowHarmful);
         }
 
+        public static int MobileNotoriety(Mobile source, Mobile target)
+        {
+            #region Sanity
+
+            System.Diagnostics.Debug.Assert(
+                source != null && target != null,
+                "MobileNotoriety() received a null source or target.");
+
+            if (source == null || target == null)
+            {
+                if (source == null)
+                    Console.WriteLine("(source == null) in Notoriety::MobileNotoriety");
+
+                if (target == null)
+                    Console.WriteLine("(target == null) in Notoriety::MobileNotoriety");
+
+                return Notoriety.Innocent;
+            }
+
+            #endregion
+
+            NotorietyContext context = new NotorietyContext(source, target);
+
+            #region Creature Notoriety Override
+
+            if (TryCreatureNotorietyOverride(
+                    context,
+                    out int overrideNotoriety))
+            {
+                return overrideNotoriety;
+            }
+
+            #endregion
+
+            #region Invulnerability
+
+            if (TryInvulnerableNotoriety(
+                    context,
+                    out int invulnerableNotoriety))
+            {
+                return invulnerableNotoriety;
+            }
+
+            #endregion
+
+            #region Dueling
+
+            if (TryDuelingNotoriety(
+                    context,
+                    out int duelingNotoriety))
+            {
+                return duelingNotoriety;
+            }
+
+            #endregion
+
+            #region Player versus Creature
+
+            if (TryPlayerCreatureNotoriety(
+                    context,
+                    out int playerCreatureNotoriety))
+            {
+                return playerCreatureNotoriety;
+            }
+
+            if (TryPlayerCreatureEthicsNotoriety(
+                    context,
+                    out int playerCreatureEthicsNotoriety))
+            {
+                return playerCreatureEthicsNotoriety;
+            }
+
+            #endregion
+
+            #region Murderer and Criminal
+
+            if (TryMurdererOrCriminalNotoriety(
+                    context,
+                    out int criminalStatusNotoriety))
+            {
+                return criminalStatusNotoriety;
+            }
+
+            #endregion
+
+            #region Alignment Traitor
+
+            if (TryAlignmentTraitorNotoriety(
+                    context,
+                    out int alignmentTraitorNotoriety))
+            {
+                return alignmentTraitorNotoriety;
+            }
+
+            #endregion
+
+            #region Guild Notoriety
+
+            if (TryGuildNotoriety(
+                    context,
+                    out int guildNotoriety))
+            {
+                return guildNotoriety;
+            }
+
+            #endregion
+
+            #region Township Enemies
+
+            if (TryTownshipNotoriety(
+                    context,
+                    out int townshipNotoriety))
+            {
+                return townshipNotoriety;
+            }
+
+            #endregion
+
+            #region FightBroker
+
+            if (TryFightBrokerNotoriety(
+                    context,
+                    out int fightBrokerNotoriety))
+            {
+                return fightBrokerNotoriety;
+            }
+
+            #endregion
+
+            #region Factions
+
+            if (TryFactionNotoriety(
+                    context,
+                    out int factionNotoriety))
+            {
+                return factionNotoriety;
+            }
+
+            #endregion
+
+            #region Ethics
+
+            if (TryEthicsNotoriety(
+                    context,
+                    out int ethicsNotoriety))
+            {
+                return ethicsNotoriety;
+            }
+
+            #endregion
+
+            #region Alignment
+
+            if (TryAlignmentNotoriety(
+                    context,
+                    out int alignmentNotoriety))
+            {
+                return alignmentNotoriety;
+            }
+
+            #endregion
+
+            #region Classic Stealing Permaflag
+
+            if (TryPermaFlagNotoriety(
+                    context,
+                    out int permaFlagNotoriety))
+            {
+                return permaFlagNotoriety;
+            }
+
+            #endregion
+
+            #region Structural Attackability
+
+            if (TryStructuralAttackabilityNotoriety(
+                    context,
+                    out int structuralNotoriety))
+            {
+                return structuralNotoriety;
+            }
+
+            #endregion
+
+            #region Aggression Rights
+
+            if (TryAggressionNotoriety(
+                    context,
+                    out int aggressionNotoriety))
+            {
+                return aggressionNotoriety;
+            }
+
+            #endregion
+
+            return Notoriety.Innocent;
+        }
+        private static bool TryCreatureNotorietyOverride(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            if (context.Source is BaseCreature sourceCreature)
+            {
+                result = sourceCreature.NotorietyOverride(context.Target);
+
+                return result != 0;
+            }
+
+            if (context.Source is PlayerMobile &&
+                context.Target is BaseCreature targetCreature)
+            {
+                result = targetCreature.NotorietyOverride(context.Target);
+
+                return result != 0;
+            }
+
+            return false;
+        }
+        private static bool TryInvulnerableNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            if (!Core.AOS)
+                return false;
+
+            Mobile target = context.Target;
+
+            if (target.Blessed ||
+                (target is BaseVendor vendor && vendor.IsInvulnerable) ||
+                target is PlayerVendor ||
+                target is TownCrier)
+            {
+                result = Notoriety.Invulnerable;
+                return true;
+            }
+
+            return false;
+        }
+        private static bool TryDuelingNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            if (!(context.Source is PlayerMobile sourcePlayer) ||
+                !(context.Target is PlayerMobile targetPlayer))
+            {
+                return false;
+            }
+
+            if (sourcePlayer.DuelContext == null)
+                return false;
+
+            if (!sourcePlayer.DuelContext.StartedBeginCountdown)
+                return false;
+
+            if (sourcePlayer.DuelContext.Finished)
+                return false;
+
+            if (sourcePlayer.DuelContext != targetPlayer.DuelContext)
+                return false;
+
+            result = sourcePlayer.DuelContext.IsAlly(
+                sourcePlayer,
+                targetPlayer)
+                ? Notoriety.Ally
+                : Notoriety.Enemy;
+
+            return true;
+        }
+        private static bool TryPlayerCreatureNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            if (!context.Source.Player ||
+                context.Target.Player ||
+                !(context.Source is PlayerMobile sourcePlayer) ||
+                !(context.Target is BaseCreature targetCreature))
+            {
+                return false;
+            }
+
+            Mobile? master = targetCreature.GetMaster();
+
+            if (master != null &&
+                master.AccessLevel > AccessLevel.Player)
+            {
+                result = Notoriety.CanBeAttacked;
+                return true;
+            }
+
+            if (!targetCreature.Summoned &&
+                !targetCreature.Controlled &&
+                sourcePlayer.EnemyOfOneType == targetCreature.GetType())
+            {
+                result = Notoriety.Enemy;
+                return true;
+            }
+
+            return false;
+        }
+        private static bool TryPlayerCreatureEthicsNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            if (!Core.OldEthics)
+                return false;
+
+            if (!context.Source.Player ||
+                context.Target.Player ||
+                !(context.Source is PlayerMobile) ||
+                !(context.Target is BaseCreature))
+            {
+                return false;
+            }
+
+            Ethics.Ethic sourceEthic =
+                Ethics.Ethic.Find(context.Source);
+
+            Ethics.Ethic targetEthic =
+                Ethics.Ethic.Find(context.Target, true);
+
+            // Outside guarded towns on Felucca, evil targets appear red.
+            if (targetEthic != null &&
+                targetEthic == Ethics.Ethic.Evil &&
+                !context.Target.Region.IsGuarded &&
+                context.Target.Map == Map.Felucca)
+            {
+                result = Notoriety.Murderer;
+                return true;
+            }
+
+            // A fallen hero flags gray rather than enemy.
+            if (sourceEthic == Ethics.Ethic.Evil &&
+                context.Target.CheckState(
+                    Mobile.ExpirationFlagID.FallenHero))
+            {
+                result = Notoriety.CanBeAttacked;
+                return true;
+            }
+
+            // An innocent who attacks an evil remains attackable
+            // by all evil players for two minutes.
+            if (sourceEthic == Ethics.Ethic.Evil &&
+                context.Target.CheckState(
+                    Mobile.ExpirationFlagID.EvilNoto))
+            {
+                result = Notoriety.CanBeAttacked;
+                return true;
+            }
+
+            // Hero and Evil are always at war.
+            if (sourceEthic != null &&
+                targetEthic != null &&
+                sourceEthic != targetEthic)
+            {
+                result = Notoriety.Enemy;
+                return true;
+            }
+
+            return false;
+        }
+
+        #region Predicates
+        private static bool HasGuildCombatRights(NotorietyContext context)
+        {
+            Guild sourceGuild = context.SourceGuild;
+            Guild targetGuild = context.TargetGuild;
+
+            return sourceGuild != null &&
+                   targetGuild != null &&
+                   !sourceGuild.Peaceful &&
+                   !targetGuild.Peaceful &&
+                   (AreSameGuild(context) ||
+                    AreGuildAllies(context) ||
+                    AreGuildEnemies(context));
+        }
+        private static bool AreSameGuild(NotorietyContext context)
+        {
+            return context.SourceGuild != null &&
+                   context.SourceGuild == context.TargetGuild;
+        }
+
+        private static bool AreGuildAllies(NotorietyContext context)
+        {
+            return context.SourceGuild != null &&
+                   context.TargetGuild != null &&
+                   context.SourceGuild.IsAlly(context.TargetGuild);
+        }
+
+        private static bool AreGuildEnemies(NotorietyContext context)
+        {
+            return context.SourceGuild != null &&
+                   context.TargetGuild != null &&
+                   context.SourceGuild.IsEnemy(context.TargetGuild);
+        }
+        private static bool AreTownshipEnemies(NotorietyContext context)
+        {
+            Mobile source = context.SourcePrincipal;
+            Mobile target = context.TargetPrincipal;
+
+            if (source == target)
+                return false;
+
+            TownshipRegion township =
+                TownshipRegion.GetTownshipAt(
+                    context.Target.Location,
+                    context.Target.Map);
+
+            return township != null &&
+                   township.HasEnemyNotoriety(source, target);
+        }
+
+        #endregion Predicates
+
+        private static bool TryMurdererOrCriminalNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            Mobile target = context.Target;
+
+            if (target.Red ||
+                (target.Body.IsMonster &&
+                 IsSummoned(target as BaseCreature) &&
+                 !(target is BaseFamiliar) &&
+                 !(target is Golem)) ||
+                (target is BaseCreature creature &&
+                 (creature.AlwaysMurderer ||
+                  creature.IsAnimatedDead)))
+            {
+                result = Notoriety.Murderer;
+                return true;
+            }
+
+            if (target.Criminal)
+            {
+                result = Notoriety.Criminal;
+                return true;
+            }
+
+            return false;
+        }
+        private static bool TryAlignmentTraitorNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            if (!AlignmentSystem.Enabled)
+                return false;
+
+            if (!AlignmentSystem.IsTraitor(
+                    context.Source,
+                    context.Target,
+                    true))
+            {
+                return false;
+            }
+
+            result = Notoriety.Enemy;
+            return true;
+        }
+        private static bool TryGuildNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            Guild sourceGuild = context.SourceGuild;
+            Guild targetGuild = context.TargetGuild;
+
+            if (sourceGuild == null || targetGuild == null)
+                return false;
+
+            if (sourceGuild.Peaceful || targetGuild.Peaceful)
+                return false;
+
+            if (AreSameGuild(context) ||
+                AreGuildAllies(context))
+            {
+                result = Notoriety.Ally;
+                return true;
+            }
+
+            if (AreGuildEnemies(context))
+            {
+                result = Notoriety.Enemy;
+                return true;
+            }
+
+            return false;
+        }
+        private static bool TryTownshipNotoriety(
+            NotorietyContext context,
+            out int notoriety)
+        {
+            if (AreTownshipEnemies(context))
+            {
+                notoriety = Notoriety.Enemy;
+                return true;
+            }
+
+            notoriety = Notoriety.Innocent;
+            return false;
+        }
+
+        private static bool TryFightBrokerNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            Mobile source = context.Source;
+            Mobile target = context.Target;
+
+            // If both are registered with the FightBroker,
+            // they can attack each other.
+            if (source != target &&
+                FightBroker.IsAlreadyRegistered(source) &&
+                FightBroker.IsAlreadyRegistered(target))
+            {
+                result = Notoriety.Enemy;
+                return true;
+            }
+
+            // If the source is registered and the target is an
+            // interferer, make the target fair game.
+            if (source != target &&
+                FightBroker.IsAlreadyRegistered(source) &&
+                FightBroker.IsHealerInterferer(target))
+            {
+                result = Notoriety.CanBeAttacked;
+                return true;
+            }
+
+            // Handle pets belonging to registered players.
+            if (source is BaseCreature src && target is BaseCreature tgt)
+            {
+                if (src.ControlMaster != null &&
+                    tgt.ControlMaster != null &&
+                    src.ControlMaster != tgt.ControlMaster &&
+                    FightBroker.IsAlreadyRegistered(src.ControlMaster) &&
+                    FightBroker.IsAlreadyRegistered(tgt.ControlMaster))
+                {
+                    result = Notoriety.Enemy;
+                    return true;
+                }
+            }
+            else if (source is PlayerMobile && target is BaseCreature targetCreature)
+            {
+                if (targetCreature.ControlMaster != null &&
+                    source != targetCreature.ControlMaster &&
+                    FightBroker.IsAlreadyRegistered(source) &&
+                    FightBroker.IsAlreadyRegistered(targetCreature.ControlMaster))
+                {
+                    result = Notoriety.Enemy;
+                    return true;
+                }
+            }
+            else if (source is BaseCreature sourceCreature &&
+                     target is PlayerMobile)
+            {
+                if (sourceCreature.ControlMaster != null &&
+                    target != sourceCreature.ControlMaster &&
+                    FightBroker.IsAlreadyRegistered(target) &&
+                    FightBroker.IsAlreadyRegistered(sourceCreature.ControlMaster))
+                {
+                    result = Notoriety.Enemy;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        private static bool TryFactionNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            Faction sourceFaction =
+                Faction.Find(
+                    context.Source,
+                    true,
+                    true);
+
+            Faction targetFaction =
+                Faction.Find(
+                    context.Target,
+                    true,
+                    true);
+
+            if (sourceFaction == null ||
+                targetFaction == null ||
+                sourceFaction == targetFaction)
+            {
+                return false;
+            }
+
+            if (context.Source.Map != Faction.Facet)
+                return false;
+
+            result = Notoriety.Enemy;
+            return true;
+        }
+        private static bool TryEthicsNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            if (!Core.OldEthics)
+                return false;
+
+            Mobile source = context.Source;
+            Mobile target = context.Target;
+
+            Ethics.Ethic sourceEthic =
+                Ethics.Ethic.Find(source);
+
+            Ethics.Ethic targetEthic =
+                Ethics.Ethic.Find(target);
+
+            // Outside guarded towns on Felucca, evil targets appear red.
+            if (targetEthic != null &&
+                targetEthic == Ethics.Ethic.Evil &&
+                !target.Region.IsGuarded &&
+                target.Map == Map.Felucca)
+            {
+                result = Notoriety.Murderer;
+                return true;
+            }
+
+            // A fallen hero flags gray to evil rather than orange.
+            if (sourceEthic == Ethics.Ethic.Evil &&
+                target.CheckState(Mobile.ExpirationFlagID.FallenHero))
+            {
+                result = Notoriety.CanBeAttacked;
+                return true;
+            }
+
+            // An innocent who attacks an evil remains attackable
+            // by all evil players for two minutes.
+            if (sourceEthic == Ethics.Ethic.Evil &&
+                target.CheckState(Mobile.ExpirationFlagID.EvilNoto))
+            {
+                result = Notoriety.CanBeAttacked;
+                return true;
+            }
+
+            // Hero and Evil are always at war.
+            if (sourceEthic != null &&
+                targetEthic != null &&
+                sourceEthic != targetEthic)
+            {
+                result = Notoriety.Enemy;
+                return true;
+            }
+
+            return false;
+        }
+        private static bool TryAlignmentNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            if (!AlignmentSystem.Enabled)
+                return false;
+
+            Mobile source = context.Source;
+            Mobile target = context.Target;
+
+            AlignmentSystem.Allegiance allegiance =
+                AlignmentSystem.ComputeAllegiance(
+                    source,
+                    target,
+                    true,
+                    true);
+
+            if (allegiance == AlignmentSystem.Allegiance.Ally)
+            {
+                result = Notoriety.Ally;
+                return true;
+            }
+
+            if (allegiance == AlignmentSystem.Allegiance.Enemy)
+            {
+                result = Notoriety.Enemy;
+                return true;
+            }
+
+            if (!AlignmentConfig.StrongholdNotoriety)
+                return false;
+
+            AlignmentType sourceAlignment =
+                AlignmentSystem.Find(
+                    source,
+                    true,
+                    true);
+
+            AlignmentType targetAlignment =
+                AlignmentSystem.Find(
+                    target,
+                    true,
+                    true);
+
+            if (sourceAlignment != AlignmentType.None &&
+                targetAlignment == AlignmentType.None &&
+                AlignmentSystem.IsInStronghold(source, sourceAlignment) &&
+                AlignmentSystem.IsInStronghold(target, sourceAlignment))
+            {
+                result = Notoriety.Enemy;
+                return true;
+            }
+
+            return false;
+        }
+        private static bool TryPermaFlagNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            if (!SkillHandlers.Stealing.ClassicMode)
+                return false;
+
+            if (!(context.Target is PlayerMobile targetPlayer))
+                return false;
+
+            if (!targetPlayer.ContainsPermaFlag(context.Source))
+                return false;
+
+            result = Notoriety.CanBeAttacked;
+            return true;
+        }
+        private static bool TryStructuralAttackabilityNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            Mobile source = context.Source;
+            Mobile target = context.Target;
+
+            if (target is BaseCreature alwaysAttackable &&
+                alwaysAttackable.AlwaysAttackable)
+            {
+                result = Notoriety.CanBeAttacked;
+                return true;
+            }
+
+            if (CheckHouseFlag(
+                    source,
+                    target,
+                    target.Location,
+                    target.Map))
+            {
+                result = Notoriety.CanBeAttacked;
+                return true;
+            }
+
+            if (!(target is BaseCreature creature &&
+                  creature.InitialInnocent))
+            {
+                if (!target.Body.IsHuman &&
+                    !target.Body.IsGhost &&
+                    !IsPet(target as BaseCreature) &&
+                    !IsLivestock(target as BaseCreature) &&
+                    !TransformationSpellHelper.UnderTransformation(target))
+                {
+                    result = Notoriety.CanBeAttacked;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        private static bool TryAggressionNotoriety(
+            NotorietyContext context,
+            out int result)
+        {
+            result = 0;
+
+            Mobile source = context.Source;
+            Mobile target = context.Target;
+
+            if (CheckAggressor(source.Aggressors, target))
+            {
+                result = Notoriety.CanBeAttacked;
+                return true;
+            }
+
+            if (CheckAggressed(source.Aggressed, target))
+            {
+                result = Notoriety.CanBeAttacked;
+                return true;
+            }
+
+            if (target is BaseCreature guardedCreature &&
+                guardedCreature.Controlled &&
+                guardedCreature.ControlOrder == OrderType.Guard &&
+                guardedCreature.ControlTarget == source)
+            {
+                result = Notoriety.CanBeAttacked;
+                return true;
+            }
+
+            if (source is BaseCreature sourceCreature)
+            {
+                Mobile? master = sourceCreature.GetMaster();
+
+                if (master != null &&
+                    CheckAggressor(master.Aggressors, target))
+                {
+                    result = Notoriety.CanBeAttacked;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        private sealed class NotorietyContext
+        {
+            public Mobile Source { get; }
+            public Mobile Target { get; }
+
+            public Mobile SourcePrincipal { get; }
+            public Mobile TargetPrincipal { get; }
+
+            public Guild SourceGuild { get; }
+            public Guild TargetGuild { get; }
+
+            public NotorietyContext(Mobile source, Mobile target)
+            {
+                Source = source;
+                Target = target;
+
+                SourcePrincipal = ResolvePrincipal(source);
+                TargetPrincipal = ResolvePrincipal(target);
+
+                SourceGuild = GetGuildFor(source.Guild as Guild, source);
+                TargetGuild = GetGuildFor(target.Guild as Guild, target);
+            }
+        }
         private enum GuildStatus { None, Peaceful, Warring }
 
         private static GuildStatus GetGuildStatus(Mobile m)
         {
-            Guild g = m.Guild as Guild;
+            Guild? g = m.Guild as Guild;
 
             if (g == null)
                 return GuildStatus.None;
@@ -149,8 +1013,8 @@ namespace Server.Misc
                 return true;
 
             #region Dueling
-            PlayerMobile pmFrom = from as PlayerMobile;
-            PlayerMobile pmTarg = target as PlayerMobile;
+            PlayerMobile? pmFrom = from as PlayerMobile;
+            PlayerMobile? pmTarg = target as PlayerMobile;
 
             if (pmFrom == null && from is BaseCreature)
             {
@@ -189,7 +1053,7 @@ namespace Server.Misc
             if ((pmFrom != null && pmFrom.DuelContext != null && pmFrom.DuelContext.Started) || (pmTarg != null && pmTarg.DuelContext != null && pmTarg.DuelContext.Started))
                 return false;
 
-            Engines.ConPVP.SafeZone sz = from.Region.GetRegion(typeof(Engines.ConPVP.SafeZone)) as Engines.ConPVP.SafeZone;
+            Engines.ConPVP.SafeZone? sz = from.Region.GetRegion(typeof(Engines.ConPVP.SafeZone)) as Engines.ConPVP.SafeZone;
 
             if (sz != null /*&& sz.IsDisabled()*/ )
                 return false;
@@ -257,8 +1121,8 @@ namespace Server.Misc
             if (target is BaseCreature && !((BaseCreature)target).Controlled)
                 return false; // Players cannot heal uncontroled mobiles
 
-            Guild fromGuild = from.Guild as Guild;
-            Guild targetGuild = target.Guild as Guild;
+            Guild? fromGuild = from.Guild as Guild;
+            Guild? targetGuild = target.Guild as Guild;
 
             if (fromGuild != null && targetGuild != null && (targetGuild == fromGuild || fromGuild.IsAlly(targetGuild)))
                 return true; // Guild members can be beneficial
@@ -272,8 +1136,8 @@ namespace Server.Misc
                 return true;
 
             #region Dueling
-            PlayerMobile pmFrom = from as PlayerMobile;
-            PlayerMobile pmTarg = target as PlayerMobile;
+            PlayerMobile? pmFrom = from as PlayerMobile;
+            PlayerMobile? pmTarg = target as PlayerMobile;
 
             if (pmFrom == null && from is BaseCreature)
             {
@@ -309,7 +1173,7 @@ namespace Server.Misc
             if ((pmFrom != null && pmFrom.DuelContext != null && pmFrom.DuelContext.Started) || (pmTarg != null && pmTarg.DuelContext != null && pmTarg.DuelContext.Started))
                 return false;
 
-            Engines.ConPVP.SafeZone sz = from.Region.GetRegion(typeof(Engines.ConPVP.SafeZone)) as Engines.ConPVP.SafeZone;
+            Engines.ConPVP.SafeZone? sz = from.Region.GetRegion(typeof(Engines.ConPVP.SafeZone)) as Engines.ConPVP.SafeZone;
 
             if (sz != null /*&& sz.IsDisabled()*/ )
                 return false;
@@ -361,11 +1225,15 @@ namespace Server.Misc
             if (!from.Player && !(from is BaseCreature && (((BaseCreature)from).Controlled || ((BaseCreature)from).Summoned)))
                 return true; // Uncontroled NPCs have no restrictions
 
-            Guild fromGuild = GetGuildFor(from.Guild as Guild, from);
-            Guild targetGuild = GetGuildFor(target.Guild as Guild, target);
+            NotorietyContext context = new NotorietyContext(from, target);
 
-            if (fromGuild != null && targetGuild != null && (fromGuild.Peaceful == false && targetGuild.Peaceful == false) && (fromGuild == targetGuild || fromGuild.IsAlly(targetGuild) || fromGuild.IsEnemy(targetGuild)))
-                return true; // Guild allies or enemies can be harmful
+            Guild fromGuild = context.SourceGuild;
+            Guild targetGuild = context.TargetGuild;
+
+            if (HasGuildCombatRights(context))
+            {
+                return true; // Guild relationships grant combat rights
+            }
 
             if (target is BaseCreature && (((BaseCreature)target).Controlled || (((BaseCreature)target).Summoned && from != ((BaseCreature)target).SummonMaster)))
                 return false; // Cannot harm other controled mobiles
@@ -381,12 +1249,22 @@ namespace Server.Misc
 
             return true;
         }
-
-        public static Guild GetGuildFor(Guild def, Mobile m)
+        private static Mobile ResolvePrincipal(Mobile mobile)
         {
-            Guild g = def;
+            if (mobile is BaseCreature creature &&
+                creature.Controlled &&
+                creature.ControlMaster != null)
+            {
+                return creature.ControlMaster;
+            }
 
-            BaseCreature c = m as BaseCreature;
+            return mobile;
+        }
+        public static Guild GetGuildFor(Guild? def, Mobile m)
+        {
+            Guild? g = def;
+
+            BaseCreature? c = m as BaseCreature;
 
             if (c != null && c.Controlled && c.ControlMaster != null)
             {
@@ -408,7 +1286,7 @@ namespace Server.Misc
 
             Body body = (Body)target.Amount;
 
-            BaseCreature cretOwner = target.Owner as BaseCreature;
+            BaseCreature? cretOwner = target.Owner as BaseCreature;
 
             if (cretOwner != null)
             {
@@ -424,8 +1302,8 @@ namespace Server.Misc
                 }
 
                 #region Factions
-                Faction srcFaction = Faction.Find(source, true, true);
-                Faction trgFaction = Faction.Find(target.Owner, true, true);
+                Faction? srcFaction = Faction.Find(source, true, true);
+                Faction? trgFaction = Faction.Find(target.Owner, true, true);
 
                 if (srcFaction != null && trgFaction != null && srcFaction != trgFaction && source.Map == Faction.Facet)
                     return Notoriety.Enemy;
@@ -479,7 +1357,7 @@ namespace Server.Misc
                 if (DateTime.UtcNow >= (target.TimeOfDeath + Corpse.MonsterLootRightSacrifice))
                     return actual;
 
-                Party sourceParty = Party.Get(source);
+                Party? sourceParty = Party.Get(source);
 
                 ArrayList list = target.Aggressors;
 
@@ -511,8 +1389,8 @@ namespace Server.Misc
                 }
 
                 #region Factions
-                Faction srcFaction = Faction.Find(source, true, true);
-                Faction trgFaction = Faction.Find(target.Owner, true, true);
+                Faction? srcFaction = Faction.Find(source, true, true);
+                Faction? trgFaction = Faction.Find(target.Owner, true, true);
 
                 if (srcFaction != null && trgFaction != null && srcFaction != trgFaction && source.Map == Faction.Facet)
                 {
@@ -520,7 +1398,7 @@ namespace Server.Misc
 
                     for (int i = 0; i < secondList.Count; ++i)
                     {
-                        Mobile mob = secondList[i] as Mobile;
+                        Mobile? mob = secondList[i] as Mobile;
 
                         if (mob == null)
                             continue;
@@ -534,8 +1412,8 @@ namespace Server.Misc
                 #region Ethics
                 if (Core.OldEthics)
                 {
-                    Ethics.Ethic srcEthic = Ethics.Ethic.Find(source, true, true);
-                    Ethics.Ethic trgEthic = Ethics.Ethic.Find(target.Owner, true, true);
+                    Ethics.Ethic? srcEthic = Ethics.Ethic.Find(source, true, true);
+                    Ethics.Ethic? trgEthic = Ethics.Ethic.Find(target.Owner, true, true);
 
                     if (srcEthic != null && trgEthic != null && srcEthic != trgEthic)
                         return Notoriety.Enemy;
@@ -606,387 +1484,12 @@ namespace Server.Misc
             }
             #endregion
 
-            #region kin
-            //Kin - blue kin should hue differently to non-kin.
-            //if (Engines.IOBSystem.KinSystemSettings.KinNameHueEnabled)
-            {
-                if (target is PlayerMobile && source is PlayerMobile)
-                {
-                    PlayerMobile pmsource = source as PlayerMobile;
-                    PlayerMobile pmtarget = target as PlayerMobile;
-
-                    if (pmtarget.IOBAlignment != IOBAlignment.None)
-                    {
-                        if (pmsource.IOBAlignment == IOBAlignment.None)
-                        {
-                            return 0x18;
-                        }
-                    }
-
-                    //if we're looking at ourself and we're a healer, show our name in purple
-                    if (pmsource == pmtarget && pmtarget.IOBAlignment == IOBAlignment.Healer)
-                    {
-                        return 0x18;
-                    }
-                }
-            }
-            #endregion
-
             return 0;
         }
 
-        public static int MobileNotoriety(Mobile source, Mobile target)
+        public static bool CheckHouseFlag(Mobile from, Mobile? m, Point3D p, Map map)
         {
-            #region Sanity
-            // adam: sanity
-            if (source == null || target == null)
-            {
-                if (source == null)
-                    Console.WriteLine("(source == null) in Notoriety::MobileNotoriety");
-                if (target == null)
-                    Console.WriteLine("(target == null) in Notoriety::MobileNotoriety");
-                //return;
-            }
-            #endregion
-
-            if (source is BaseCreature)
-            {
-                int result = ((BaseCreature)source).NotorietyOverride(target);
-
-                if (result != 0)
-                    return result;
-            }
-            else if (source is PlayerMobile && target is BaseCreature)
-            {   // doesn't seem to work in at least the case where the BaseCreature is invulnerable
-                //  We are correctly sending the Innocent flag in the mobile packet. 
-                int result = ((BaseCreature)target).NotorietyOverride(target);
-
-                if (result != 0)
-                    return result;
-            }
-#if false
-            if (target.Blessed || (target is BaseVendor && ((BaseVendor)target).IsInvulnerable) || target is PlayerVendor || target is TownCrier)
-                return Notoriety.Invulnerable;
-#else
-            if (Core.AOS && (target.Blessed || (target is BaseVendor && ((BaseVendor)target).IsInvulnerable) || target is PlayerVendor || target is TownCrier))
-                return Notoriety.Invulnerable;
-#endif
-
-            #region Dueling
-            if (source is PlayerMobile && target is PlayerMobile)
-            {
-                PlayerMobile pmFrom = (PlayerMobile)source;
-                PlayerMobile pmTarg = (PlayerMobile)target;
-
-                if (pmFrom.DuelContext != null && pmFrom.DuelContext.StartedBeginCountdown && !pmFrom.DuelContext.Finished && pmFrom.DuelContext == pmTarg.DuelContext)
-                    return pmFrom.DuelContext.IsAlly(pmFrom, pmTarg) ? Notoriety.Ally : Notoriety.Enemy;
-            }
-            #endregion
-
-            // 12/18/22, Adam: Remove the special dispensation for staff .. if you're not blessed, you can be attacked.
-#if false
-            if (target.AccessLevel > AccessLevel.Player)
-                return Notoriety.CanBeAttacked;
-#endif
-
-            #region Duel
-            /*
-			//Begin Challenge Duel Additions
-			if (target is PlayerMobile && source is PlayerMobile)
-			{
-				bool tc = ((PlayerMobile)target).IsInChallenge;
-				bool sc = (((PlayerMobile)source).IsInChallenge);
-				if (tc && sc) //both in challenge
-				{
-					foreach (Item c in Challenge.Challenge.WorldStones)
-					{
-						ChallengeStone cs = c as ChallengeStone;
-						if (cs.OpponentTeam.Contains(target) || cs.ChallengeTeam.Contains(target))
-						{
-							if (cs.OpponentTeam.Contains(source) || cs.ChallengeTeam.Contains(source))
-							{
-								return Notoriety.CanBeAttacked;
-							}
-						}
-					}
-				}
-			}
-			//End Challenge Duel Additions
-			*/
-            #endregion
-
-            // it's a pet
-            if (source.Player && !target.Player && source is PlayerMobile && target is BaseCreature)
-            {
-                BaseCreature bc = (BaseCreature)target;
-
-                Mobile master = bc.GetMaster();
-
-                if (master != null && master.AccessLevel > AccessLevel.Player)
-                    return Notoriety.CanBeAttacked;
-
-                if (!bc.Summoned && !bc.Controlled && ((PlayerMobile)source).EnemyOfOneType == target.GetType())
-                    return Notoriety.Enemy;
-
-                if (Core.OldEthics)
-                {
-                    Ethics.Ethic srcEthic = Ethics.Ethic.Find(source);
-                    Ethics.Ethic trgEthic = Ethics.Ethic.Find(target, true);
-
-                    // outside of town: evil's the target: evil's are red
-                    if (trgEthic != null && trgEthic == Ethics.Ethic.Evil && !target.Region.IsGuarded && target.Map == Map.Felucca)
-                        return Notoriety.Murderer;
-                    // a fallen hero will flag gray and not enemy � this is per the original docs
-                    else if (srcEthic == Ethics.Ethic.Evil && target.CheckState(Mobile.ExpirationFlagID.FallenHero))
-                        return Notoriety.CanBeAttacked;
-                    // An innocent that attacks an evil (evil noto) will be attackable by all evils for two minutes
-                    else if (srcEthic == Ethics.Ethic.Evil && target.CheckState(Mobile.ExpirationFlagID.EvilNoto))
-                        return Notoriety.CanBeAttacked;
-                    // Hero/Evil always at war
-                    else if (srcEthic != null && trgEthic != null && srcEthic != trgEthic)
-                        return Notoriety.Enemy;
-                }
-            }
-
-            // 8/10/22, Adam: I don't think Core.RedsInTown matters here. Notoriety is Notoriety
-            if (target.Red || (target.Body.IsMonster && IsSummoned(target as BaseCreature) && !(target is BaseFamiliar) && !(target is Golem)) || (target is BaseCreature && (((BaseCreature)target).AlwaysMurderer || ((BaseCreature)target).IsAnimatedDead)))
-                return Notoriety.Murderer;
-
-            if (target.Criminal)
-                return Notoriety.Criminal;
-
-            #region Alignment Traitor
-            if (AlignmentSystem.Enabled && AlignmentSystem.IsTraitor(source, target, true))
-                return Notoriety.Enemy;
-            #endregion
-
-            Guild sourceGuild = GetGuildFor(source.Guild as Guild, source);
-            Guild targetGuild = GetGuildFor(target.Guild as Guild, target);
-
-            if ((sourceGuild != null && targetGuild != null) && (sourceGuild.Peaceful == false && targetGuild.Peaceful == false))
-            {
-                if (sourceGuild == targetGuild || sourceGuild.IsAlly(targetGuild))
-                    return Notoriety.Ally;
-                else if (sourceGuild.IsEnemy(targetGuild))
-                    return Notoriety.Enemy;
-            }
-
-            #region Fightbroker
-            //If both are registered with the fightbroker, they can both attack each other
-            if (FightBroker.IsAlreadyRegistered(source) && FightBroker.IsAlreadyRegistered(target)
-                && (source != target))
-            {
-                return Notoriety.Enemy;
-            }
-            //If the source is registered on the fightbroker and the target is an interferer, make the target fair game
-            if (FightBroker.IsAlreadyRegistered(source) && FightBroker.IsHealerInterferer(target)
-                && (source != target))
-            {
-                return Notoriety.CanBeAttacked;
-            }
-
-            //Now handle pets of the people registered with the fightbroker
-            if (source is BaseCreature && target is BaseCreature)
-            {
-                BaseCreature src = (BaseCreature)source;
-                BaseCreature tgt = (BaseCreature)target;
-                if (src.ControlMaster != null && tgt.ControlMaster != null)
-                {
-                    if (FightBroker.IsAlreadyRegistered(src.ControlMaster) &&
-                        FightBroker.IsAlreadyRegistered(tgt.ControlMaster) &&
-                        (src.ControlMaster != tgt.ControlMaster))
-                    {
-                        return Notoriety.Enemy;
-                    }
-                }
-            }
-            else if (source is PlayerMobile && target is BaseCreature)
-            {
-                BaseCreature tgt = (BaseCreature)target;
-                if (tgt.ControlMaster != null)
-                {
-                    if (FightBroker.IsAlreadyRegistered(source) &&
-                        FightBroker.IsAlreadyRegistered(tgt.ControlMaster) &&
-                        (source != tgt.ControlMaster))
-                    {
-                        return Notoriety.Enemy;
-                    }
-                }
-            }
-            else if (source is BaseCreature && target is PlayerMobile)
-            {
-                BaseCreature src = (BaseCreature)source;
-                if (src.ControlMaster != null)
-                {
-                    if (FightBroker.IsAlreadyRegistered(target) &&
-                        FightBroker.IsAlreadyRegistered(src.ControlMaster) &&
-                        (target != src.ControlMaster))
-                    {
-                        return Notoriety.Enemy;
-                    }
-                }
-            }
-            //done with pets/fightbroker status
-            #endregion
-
-            #region IOB
-            //Now handle IOB status hueing
-            if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.IOBShardWide)
-                || (Server.Engines.IOBSystem.IOBRegions.IsInIOBRegion(source)
-                     && Server.Engines.IOBSystem.IOBRegions.IsInIOBRegion(target)))
-            {
-                IOBAlignment srcIOBAlignment = IOBAlignment.None;
-                IOBAlignment trgIOBAlignment = IOBAlignment.None;
-                if (source is BaseCreature) { srcIOBAlignment = ((BaseCreature)source).IOBAlignment; }
-                else if (source is PlayerMobile) { srcIOBAlignment = ((PlayerMobile)source).IOBAlignment; }
-                if (target is BaseCreature) { trgIOBAlignment = ((BaseCreature)target).IOBAlignment; }
-                else if (target is PlayerMobile) { trgIOBAlignment = ((PlayerMobile)target).IOBAlignment; }
-
-                if (srcIOBAlignment != IOBAlignment.None &&
-                    trgIOBAlignment != IOBAlignment.None &&
-                    srcIOBAlignment != IOBAlignment.Healer
-                    )
-                {
-                    //If they're different alignments OR target is OutCast, then they're an enemy
-                    //Pix 12/3/07: added healer target
-                    //Pix: 12/4/07 - now kin-healers flag canbeattacked to kin instead of enemy
-                    if (trgIOBAlignment == IOBAlignment.Healer)
-                    {
-                        return Notoriety.CanBeAttacked;
-                    }
-                    else if (srcIOBAlignment != trgIOBAlignment ||
-                        trgIOBAlignment == IOBAlignment.OutCast)
-                    {
-                        return Notoriety.Enemy;
-                    }
-                    else
-                    {
-                        if (source is PlayerMobile && target is BaseCreature)
-                        {
-                            return Notoriety.Ally;
-                        }
-                        else
-                        {
-                            //Pix: 4/28/06 - removed Ally notoriety of same-aligned kin -
-                            // this is now handled by guilds via allying
-                            //return Notoriety.Ally;
-                        }
-                    }
-                }
-
-                //if we're looking at ourselves, and we're a KinHealer, show ourself as enemy
-                if (source == target && srcIOBAlignment == IOBAlignment.Healer)
-                {
-                    return Notoriety.Enemy;
-                }
-            }
-            //done with IOB status hueing
-
-            if (target is BaseCreature)
-            {
-                BaseCreature bc = (BaseCreature)target;
-                if (bc.IOBFollower)
-                {
-                    return Notoriety.CanBeAttacked;
-                }
-            }
-            #endregion
-
-            #region Factions
-            Faction srcFaction = Faction.Find(source, true, true);
-            Faction trgFaction = Faction.Find(target, true, true);
-
-            if (srcFaction != null && trgFaction != null && srcFaction != trgFaction && source.Map == Faction.Facet)
-                return Notoriety.Enemy;
-            #endregion
-
-            #region Ethics
-            if (Core.OldEthics)
-            {
-                Ethics.Ethic srcEthic = Ethics.Ethic.Find(source);
-                Ethics.Ethic trgEthic = Ethics.Ethic.Find(target);
-
-                // outside of town: evil's the target: evil's are red
-                if (trgEthic != null && trgEthic == Ethics.Ethic.Evil && !target.Region.IsGuarded && target.Map == Map.Felucca)
-                    return Notoriety.Murderer;
-                // a fallen hero will flag gray and not enemy � this is per the original docs
-                else if (srcEthic == Ethics.Ethic.Evil && target.CheckState(Mobile.ExpirationFlagID.FallenHero))
-                    return Notoriety.CanBeAttacked;
-                // An innocent that attacks an evil (evil noto) will be attackable by all evils for two minutes
-                else if (srcEthic == Ethics.Ethic.Evil && target.CheckState(Mobile.ExpirationFlagID.EvilNoto))
-                    return Notoriety.CanBeAttacked;
-                // Hero/Evil always at war
-                else if (srcEthic != null && trgEthic != null && srcEthic != trgEthic)
-                    return Notoriety.Enemy;
-            }
-            #endregion
-
-            #region Alignment
-            if (AlignmentSystem.Enabled)
-            {
-                AlignmentSystem.Allegiance allegiance = AlignmentSystem.ComputeAllegiance(source, target, true, true);
-
-                if (allegiance == AlignmentSystem.Allegiance.Ally)
-                    return Notoriety.Ally;
-
-                if (allegiance == AlignmentSystem.Allegiance.Enemy)
-                    return Notoriety.Enemy;
-
-                if (AlignmentConfig.StrongholdNotoriety)
-                {
-                    AlignmentType srcAlignment = AlignmentSystem.Find(source, true, true);
-                    AlignmentType trgAlignment = AlignmentSystem.Find(target, true, true);
-
-                    if (srcAlignment != AlignmentType.None && trgAlignment == AlignmentType.None && AlignmentSystem.IsInStronghold(source, srcAlignment) && AlignmentSystem.IsInStronghold(target, srcAlignment))
-                        return Notoriety.Enemy;
-                }
-            }
-            #endregion
-
-            if (SkillHandlers.Stealing.ClassicMode && target is PlayerMobile && ((PlayerMobile)target).PermaFlags.Contains(source))
-                return Notoriety.CanBeAttacked;
-
-            if (target is BaseCreature && ((BaseCreature)target).AlwaysAttackable)
-                return Notoriety.CanBeAttacked;
-
-            if (CheckHouseFlag(source, target, target.Location, target.Map))
-                return Notoriety.CanBeAttacked;
-
-            if (!(target is BaseCreature && ((BaseCreature)target).InitialInnocent))
-            {
-                if (!target.Body.IsHuman && !target.Body.IsGhost && !IsPet(target as BaseCreature) && !IsLivestock(target as BaseCreature) && !TransformationSpellHelper.UnderTransformation(target) /*&& !AnimalForm.UnderTransformation(target) Ninja stuff*/)
-                    return Notoriety.CanBeAttacked;
-            }
-
-            if (CheckAggressor(source.Aggressors, target))
-                return Notoriety.CanBeAttacked;
-
-            if (CheckAggressed(source.Aggressed, target))
-                return Notoriety.CanBeAttacked;
-
-            if (target is BaseCreature)
-            {
-                BaseCreature bc = (BaseCreature)target;
-
-                if (bc.Controlled && bc.ControlOrder == OrderType.Guard && bc.ControlTarget == source)
-                    return Notoriety.CanBeAttacked;
-            }
-
-            if (source is BaseCreature)
-            {
-                BaseCreature bc = (BaseCreature)source;
-
-                Mobile master = bc.GetMaster();
-                if (master != null && CheckAggressor(master.Aggressors, target))
-                    return Notoriety.CanBeAttacked;
-            }
-
-            return Notoriety.Innocent;
-        }
-
-        public static bool CheckHouseFlag(Mobile from, Mobile m, Point3D p, Map map)
-        {
-            BaseHouse house = BaseHouse.FindHouseAt(p, map, 16);
+            BaseHouse? house = BaseHouse.FindHouseAt(p, map, 16);
 
             if (house == null || house.Public || !house.IsFriend(from))
                 return false;
@@ -1002,7 +1505,7 @@ namespace Server.Misc
             if (m is PlayerVendor)
                 return false;
 
-            BaseCreature c = m as BaseCreature;
+            BaseCreature? c = m as BaseCreature;
 
             if (c != null && !c.Deleted && c.Controlled && c.ControlMaster != null)
                 return !house.IsFriend(c.ControlMaster);
@@ -1010,17 +1513,17 @@ namespace Server.Misc
             return true;
         }
 
-        public static bool IsPet(BaseCreature c)
+        public static bool IsPet(BaseCreature? c)
         {
             return (c != null && c.Controlled);
         }
 
-        public static bool IsSummoned(BaseCreature c)
+        public static bool IsSummoned(BaseCreature? c)
         {
             return (c != null && /*c.Controled &&*/ c.Summoned);
         }
 
-        public static bool IsLivestock(BaseCreature c)
+        public static bool IsLivestock(BaseCreature? c)
         {
             return (c != null && c.GetCreatureBool(CreatureBoolTable.IsTownshipLivestock));
         }

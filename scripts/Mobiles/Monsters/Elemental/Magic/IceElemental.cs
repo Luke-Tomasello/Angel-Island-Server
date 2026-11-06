@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -75,50 +75,19 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020403072321/uo.stratics.com/hunters/iceelemental.shtml
+            // 150 to 300 Gold, Arrows, Gems, Reagents
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
-                PackGem();
-
-                PackGold(130, 190);
-                PackMagicEquipment(1, 2, 0.10, 0.10);
-                PackItem(new BlackPearl(2));
-                PackReg(5);
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(150, 300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020403072321/uo.stratics.com/hunters/iceelemental.shtml
-                    // 150 to 300 Gold, Arrows, Gems, Reagents
-                    if (Spawning)
-                    {
-                        PackGold(150, 300);
-                    }
-                    else
-                    {
-                        PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
-                        PackGem(Utility.RandomMinMax(1, 4));
-                        PackItem(new BlackPearl());
-                        PackReg(3);
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackItem(new BlackPearl());
-                        PackReg(3);
-                    }
-
-                    AddLoot(LootPack.Average, 2);
-                    AddLoot(LootPack.Gems, 2);
-                }
+                PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
+                PackGem(Utility.RandomMinMax(1, 4));
+                PackItems(Loot.RandomReagent(1, 4));
+                PackReg(3);
             }
-
         }
 
         public override void Serialize(GenericWriter writer)

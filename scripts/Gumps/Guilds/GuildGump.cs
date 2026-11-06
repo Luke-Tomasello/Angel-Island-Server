@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -88,7 +88,7 @@ namespace Server.Gumps
             AddButton(20, 50, 4005, 4007, 1, GumpButtonType.Reply, 0);
             //AddHtmlLocalized( 55, 50, 100, 20, 1013022, false, false ); // Loyal to
 
-            Mobile fealty = beholder.GuildFealty;
+            Mobile? fealty = beholder.GuildFealty;
 
             //Pix: ensure that GuildFealty if set is a member of the guild - otherwise, null it.
             if (fealty != null)
@@ -201,7 +201,7 @@ namespace Server.Gumps
             }
             else
             {
-                BaseHouse house = BaseHouse.FindHouseAt(beholder);
+                BaseHouse? house = BaseHouse.FindHouseAt(beholder);
 
                 if (house != null && beholder == house.Owner)
                 {
@@ -326,7 +326,7 @@ namespace Server.Gumps
                     }
                 case 9: // Guildmaster functions
                     {
-                        BaseHouse house = BaseHouse.FindHouseAt(m_Mobile);
+                        BaseHouse? house = BaseHouse.FindHouseAt(m_Mobile);
 
                         if (m_Mobile.AccessLevel >= AccessLevel.GameMaster || m_Guild.Leader == m_Mobile)
                         {

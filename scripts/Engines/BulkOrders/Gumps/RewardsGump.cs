@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -43,7 +43,7 @@ namespace Server.Engines.BulkOrders
         private BulkOrderSystem m_System;
         private bool m_Banked;
         private Page m_Page;
-        private RewardOption m_Reward;
+        private RewardOption? m_Reward;
 
         public RewardsGump(BulkOrderSystem system, Mobile from)
             : this(system, from, false, Page.BankPoints, null)
@@ -55,7 +55,7 @@ namespace Server.Engines.BulkOrders
         {
         }
 
-        private RewardsGump(BulkOrderSystem system, Mobile from, bool banked, Page page, RewardOption reward)
+        private RewardsGump(BulkOrderSystem system, Mobile from, bool banked, Page page, RewardOption? reward)
             : base(250, 50)
         {
             m_System = system;
@@ -63,7 +63,7 @@ namespace Server.Engines.BulkOrders
             m_Page = page;
             m_Reward = reward;
 
-            BulkOrderContext context = m_System.GetContext(from, false);
+            BulkOrderContext? context = m_System.GetContext(from, false);
 
             double points;
 
@@ -211,7 +211,7 @@ namespace Server.Engines.BulkOrders
             if (!from.Alive)
                 return;
 
-            BulkOrderContext context = m_System.GetContext(from, false);
+            BulkOrderContext? context = m_System.GetContext(from, false);
 
             switch (m_Page)
             {
@@ -304,7 +304,7 @@ namespace Server.Engines.BulkOrders
         {
             m_System = system;
 
-            BulkOrderContext context = m_System.GetContext(from, true);
+            BulkOrderContext? context = m_System.GetContext(from, true);
 
             if (context == null)
                 return; // sanity
@@ -331,7 +331,7 @@ namespace Server.Engines.BulkOrders
 
             if (info.ButtonID == 1)
             {
-                BulkOrderContext context = m_System.GetContext(from, true);
+                BulkOrderContext? context = m_System.GetContext(from, true);
 
                 if (context == null)
                     return; // sanity

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -140,7 +140,7 @@ namespace Server.Mobiles
                 e.Handled = true;
 
                 Mobile from = e.Mobile;
-                Guild g = from.Guild as Guild;
+                Guild? g = from.Guild as Guild;
 
                 bool valid = (g != null && g.Type == Type);
 
@@ -163,7 +163,7 @@ namespace Server.Mobiles
                 {
                     Container pack = from.Backpack;
                     BaseShield shield = Shield;
-                    Item twoHanded = from.FindItemOnLayer(Layer.TwoHanded);
+                    Item? twoHanded = from.FindItemOnLayer(Layer.TwoHanded);
 
                     if ((pack != null && pack.FindItemByType(shield.GetType()) != null) || (twoHanded != null && shield.GetType().IsAssignableFrom(twoHanded.GetType())))
                     {

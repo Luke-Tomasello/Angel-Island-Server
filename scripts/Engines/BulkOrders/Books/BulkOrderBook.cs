@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -68,15 +68,15 @@ namespace Server.Engines.BulkOrders
         }
         #region Dupe
         public override Item Dupe(int amount)
-        {   
+        {
             BulkOrderBook new_obj = new();
-            
-            Utility.CopyProperties(new_obj, this);
+
+            Utility.CopyProperties(this, new_obj);
             new_obj.BookName = this.BookName;
             new_obj.Level = this.Level;
             new_obj.m_Entries = new ArrayList(this.Entries);
             new_obj.m_Filter = this.Filter;
-            
+
             return base.Dupe(new_obj, amount);
         }
         #endregion Dupe
@@ -183,7 +183,7 @@ namespace Server.Engines.BulkOrders
 
             for (int i = 0; i < m_Entries.Count; ++i)
             {
-                object obj = m_Entries[i];
+                object? obj = m_Entries[i];
 
                 if (obj is BOBLargeEntry)
                 {

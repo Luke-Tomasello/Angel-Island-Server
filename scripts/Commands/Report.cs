@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -103,7 +103,7 @@ namespace Server.Commands
 
                 AddHtml(0, 20, 400, 35, "<center>Report Abusive Player</center>", false, false);
 
-                AddHtml(50, 55, 300, 140, "You are about to report " + player.Name + " to the Angel Island Staff. This is a serious charge, and is not in place for simple trash talking. Use this command to report racism, sexually offensive language and other such activities. All reports will be reviewed by an Administrator. Do you want to continue?", true, false);
+                AddHtml(50, 55, 300, 140, "You are about to report " + player.Name + $" to the {Core.Server} Staff. This is a serious charge, and is not in place for simple trash talking. Use this command to report racism, sexually offensive language and other such activities. All reports will be reviewed by an Administrator. Do you want to continue?", true, false);
 
                 AddButton(200, 227, 4005, 4007, 0, GumpButtonType.Reply, 0);
                 AddHtmlLocalized(235, 230, 110, 35, 1011012, false, false); // CANCEL

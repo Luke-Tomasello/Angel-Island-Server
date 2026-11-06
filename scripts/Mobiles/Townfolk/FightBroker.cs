@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -444,7 +444,7 @@ namespace Server.Mobiles
             }
         }
 
-        private CTFControl FindCTFControl()
+        private CTFControl? FindCTFControl()
         {   // need smart selector logic here
             if (CTFControl.CtfGames != null && CTFControl.CtfGames.Count > 0)
             {
@@ -462,7 +462,7 @@ namespace Server.Mobiles
 
         public override bool OnDragDrop(Mobile from, Item dropped)
         {
-            CTFControl ctfc = FindCTFControl();
+            CTFControl? ctfc = FindCTFControl();
             // we will need to use the SessionId to locate an available session
             if (ctfc != null)
             {   // process it
@@ -476,7 +476,7 @@ namespace Server.Mobiles
 
         public override void OnSpeech(SpeechEventArgs e)
         {
-            CTFControl ctfc = FindCTFControl();
+            CTFControl? ctfc = FindCTFControl();
 
             try
             {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -183,7 +183,7 @@ namespace Server.Mobiles
 
         public static void FixOwner(Mobile m, ref Mobile owner)
         {
-            BaseHouse h = BaseHouse.FindHouseAt(m);
+            BaseHouse? h = BaseHouse.FindHouseAt(m);
 
             if (h != null && h.IsInside(m))
                 owner = h.Owner;
@@ -197,12 +197,12 @@ namespace Server.Mobiles
             return (m is ITownshipNPC);
         }
 
-        public static bool IsOwner(Mobile npc, Mobile m)
+        public static bool IsOwner(Mobile? npc, Mobile m)
         {
             if (m.AccessLevel >= AccessLevel.GameMaster)
                 return true;
 
-            TownshipRegion tsr = TownshipRegion.GetTownshipAt(npc);
+            TownshipRegion? tsr = TownshipRegion.GetTownshipAt(npc);
 
             if (tsr == null || tsr.TStone == null)
                 return false;
@@ -215,12 +215,6 @@ namespace Server.Mobiles
                 if (npc is ITownshipNPC && ((ITownshipNPC)npc).Owner == m)
                     return true;
 
-#if false
-                BaseHouse house = BaseHouse.FindHouseAt(npc.Location, npc.Map, 20);
-
-                if (house != null && house.IsCoOwner(m))
-                    return true;
-#endif
             }
 
             return false;
@@ -228,7 +222,7 @@ namespace Server.Mobiles
 
         public static bool CanInteractWith(Mobile npc, Mobile m, bool message = true)
         {
-            TownshipRegion tsr = TownshipRegion.GetTownshipAt(npc);
+            TownshipRegion? tsr = TownshipRegion.GetTownshipAt(npc);
 
             if (tsr == null || tsr.TStone == null)
                 return false;
@@ -266,7 +260,7 @@ namespace Server.Mobiles
             // 1/8/2024, Adam: hirelings may follow their control masters around
             if (!CanLeaveHouse(npc))
             {
-                BaseHouse house = BaseHouse.FindHouseAt(npc.Location, npc.Map, 20);
+                BaseHouse? house = BaseHouse.FindHouseAt(npc.Location, npc.Map, 20);
 
                 if (house != null && BaseHouse.FindHouseAt(new Point3D(newX, newY, newZ), npc.Map, 20) != house)
                     return false;
@@ -297,7 +291,7 @@ namespace Server.Mobiles
                 if (IsOwner(npc, from))
                 {
                     // 8/29/23, Yoar: Quick fix
-                    TownshipRegion tsr = TownshipRegion.GetTownshipAt(npc);
+                    TownshipRegion? tsr = TownshipRegion.GetTownshipAt(npc);
                     if (tsr == null || tsr.TStone == null)
                     {
                         e.Handled = true;
@@ -348,31 +342,13 @@ namespace Server.Mobiles
                     return;
 
                 // 8/29/23, Yoar: Quick fix
-                TownshipRegion tsr = TownshipRegion.GetTownshipAt(m_NPC);
+                TownshipRegion? tsr = TownshipRegion.GetTownshipAt(m_NPC);
                 if (tsr == null || tsr.TStone == null)
                     return;
 
                 from.CloseGump(typeof(TownshipNPCGump));
                 from.SendGump(new TownshipNPCGump(m_NPC, tsr.TStone));
             }
-        }
-
-        public static void PurchaseNPC(TownshipStone stone, Mobile from, Type type)
-        {
-            int charge = GetNPCCharge(type);
-
-            if (stone.GoldHeld < charge)
-            {
-                from.SendMessage("You lack the necessary funds to purchase this NPC.");
-                return;
-            }
-
-            if (!CheckPlaceNPC(from, type))
-                return;
-
-            stone.GoldHeld -= charge;
-
-            stone.RecordWithdrawal(charge, string.Format("{0} purchased {1} NPC", from.Name, GetNPCName(type)));
         }
 
         public static void PurchaseDeed(TownshipStone stone, Mobile from, Type type)
@@ -385,7 +361,7 @@ namespace Server.Mobiles
                 return;
             }
 
-            Type deedType = GetDeedType(type);
+            Type? deedType = GetDeedType(type);
 
             if (deedType == null)
                 return;
@@ -453,7 +429,7 @@ namespace Server.Mobiles
             if (tsr.TStone.ActivityLevel < activityReq)
                 return PlaceNPCResult.LackActivity;
 
-            BaseHouse house = BaseHouse.FindHouseAt(targetLoc, targetMap, 16);
+            BaseHouse? house = BaseHouse.FindHouseAt(targetLoc, targetMap, 16);
 
             if (house == null)
             {
@@ -473,7 +449,7 @@ namespace Server.Mobiles
 
                 List<Mobile> houseNPCs = GetHouseNPCs(house);
 
-                if (houseNPCs.Count >= house.MaxSecures)
+                if (houseNPCs.Count >= house.MaxSecureContainers)
                     return PlaceNPCResult.TooManyInHouse;
 
                 if ((type == typeof(TSBanker) && houseNPCs.Count != 0) || FindInListByType(houseNPCs, typeof(TSBanker)))
@@ -510,7 +486,7 @@ namespace Server.Mobiles
             return false;
         }
 
-        public static string GetMessage(PlaceNPCResult result)
+        public static string? GetMessage(PlaceNPCResult result)
         {
             switch (result)
             {
@@ -539,7 +515,7 @@ namespace Server.Mobiles
 
         public static bool PlaceNPC(Mobile from, Type type, Serial? doppelganger = null)
         {
-            BaseCreature npc = null;
+            BaseCreature? npc = null;
             if (doppelganger == Serial.Zero)
                 npc = Construct<BaseCreature>(type);
             else
@@ -613,6 +589,12 @@ namespace Server.Mobiles
                 return TownshipSettings.MageCharge;
             else if (type == typeof(TSProvisioner))
                 return TownshipSettings.ProvisionerCharge;
+            else if (type == typeof(TSBlacksmith))
+                return TownshipSettings.BlacksmithCharge;
+            else if (type == typeof(TSTailor))
+                return TownshipSettings.TailorCharge;
+            else if (type == typeof(TSCarpenter))
+                return TownshipSettings.CarpenterCharge;
             else if (type == typeof(TSArmsTrainer))
                 return TownshipSettings.ArmsTrainerCharge;
             else if (type == typeof(TSMageTrainer))
@@ -665,7 +647,7 @@ namespace Server.Mobiles
             return Utility.SplitCamelCase(name);
         }
 
-        public static Type GetDeedType(Type type)
+        public static Type? GetDeedType(Type type)
         {
             if (type == typeof(TSEmissary))
                 return typeof(TSEmissaryDeed);
@@ -685,6 +667,12 @@ namespace Server.Mobiles
                 return typeof(TSMageDeed);
             else if (type == typeof(TSProvisioner))
                 return typeof(TSProvisionerDeed);
+            else if (type == typeof(TSBlacksmith))
+                return typeof(TSBlacksmithDeed);
+            else if (type == typeof(TSTailor))
+                return typeof(TSTailorDeed);
+            else if (type == typeof(TSCarpenter))
+                return typeof(TSCarpenterDeed);
             else if (type == typeof(TSArmsTrainer))
                 return typeof(TSArmsTrainerDeed);
             else if (type == typeof(TSMageTrainer))
@@ -777,6 +765,12 @@ namespace Server.Mobiles
                     List<Type> buyList = new List<Type>();
 
                     buyList.Add(typeof(TSProvisioner));
+                    if (Core.RuleSets.SeasonsRules(2))
+                    {
+                        buyList.Add(typeof(TSBlacksmith));
+                        buyList.Add(typeof(TSTailor));
+                        buyList.Add(typeof(TSCarpenter));
+                    }
                     buyList.Add(typeof(TSFarmer));
                     buyList.Add(typeof(TSRancher));
                     buyList.Add(typeof(TSMage));
@@ -799,7 +793,7 @@ namespace Server.Mobiles
                         buyList.Add(typeof(TSRogueTrainer));
                     }
 
-                    if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+                    if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
                     {
                         buyList.Add(typeof(TSFightBroker));
                     }
@@ -1218,7 +1212,7 @@ namespace Server.Mobiles
         {
             foreach (TownshipStone ts in TownshipStone.AllTownshipStones)
             {
-                if (ts.IsMember(m) && ts.HasNPC(typeof(TSAnimalTrainer)))
+                if (ts.IsMember(m) && ts.HasActiveNPC(typeof(TSAnimalTrainer)))
                     return true;
             }
 
@@ -1343,7 +1337,7 @@ namespace Server.Mobiles
         {
             foreach (TownshipStone ts in TownshipStone.AllTownshipStones)
             {
-                if (ts.IsMember(m) && ts.HasNPC(typeof(TSStableMaster)))
+                if (ts.IsMember(m) && ts.HasActiveNPC(typeof(TSStableMaster)))
                     return true;
             }
 
@@ -1836,6 +1830,376 @@ namespace Server.Mobiles
         }
     }
 
+    public class TSBlacksmith : Blacksmith, ITownshipNPC
+    {
+        public int WanderRange { get; set; } = 4;
+
+        public void HandleTryTownshipExit() {; }
+
+        public override bool CanOpenDoors { get { return false; } }
+        public override bool IsInvulnerable { get { return true; } }
+
+        public override void InitSBInfo()
+        {
+            SBInfos.Add(new SBTownshipBlacksmith());
+            base.InitSBInfo();
+        }
+
+        [Constructable]
+        public TSBlacksmith() : base() { }
+
+        #region Serialization
+        public TSBlacksmith(Serial serial) : base(serial) { }
+
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+            writer.Write((int)1); // version
+            writer.Write((Mobile)m_Owner);
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+            int version = reader.ReadInt();
+            switch (version)
+            {
+                case 1:
+                    m_Owner = reader.ReadMobile();
+                    break;
+            }
+            if (version < 1)
+                ValidationQueue<TSBlacksmith>.Enqueue(this);
+        }
+
+        public void Validate(object state)
+        {
+            BaseTownshipNPC.FixOwner(this, ref m_Owner);
+        }
+        #endregion
+
+        #region Township NPC
+        private Mobile m_Owner;
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Mobile Owner
+        {
+            get { return m_Owner; }
+            set { m_Owner = value; }
+        }
+
+        public override bool CheckNonlocalLift(Mobile from, Item item)
+        {
+            return (base.CheckNonlocalLift(from, item) || TownshipNPCHelper.IsOwner(this, from));
+        }
+
+        public override bool AllowEquipFrom(Mobile from)
+        {
+            return (base.AllowEquipFrom(from) || TownshipNPCHelper.IsOwner(this, from));
+        }
+
+        public override bool HandlesOnSpeech(Mobile from)
+        {
+            return (base.HandlesOnSpeech(from) && TownshipNPCHelper.CanInteractWith(this, from));
+        }
+
+        public override bool CheckMovement(Direction d, out int newZ)
+        {
+            return (TownshipNPCHelper.CheckMovement(this, d, out newZ) && base.CheckMovement(d, out newZ));
+        }
+
+        public override void OnSpeech(SpeechEventArgs e)
+        {
+            TownshipNPCHelper.HandleSpeech(this, e);
+            base.OnSpeech(e);
+        }
+
+        public override void AddCustomContextEntries(Mobile from, ArrayList list)
+        {
+            if (TownshipNPCHelper.CanInteractWith(this, from, false))
+                base.AddCustomContextEntries(from, list);
+
+            if (TownshipNPCHelper.IsOwner(this, from))
+                list.Add(new TownshipNPCHelper.OptionsCME(this));
+        }
+
+        public virtual void OnPlacement(Mobile from)
+        {
+            RangeHome = CantWalkLand ? 0 : WanderRange;
+        }
+        #endregion
+
+        private class SBTownshipBlacksmith : SBInfo
+        {
+            private ArrayList m_BuyInfo = new InternalBuyInfo();
+            private IShopSellInfo m_SellInfo = new InternalSellInfo();
+
+            public override ArrayList BuyInfo { get { return m_BuyInfo; } }
+            public override IShopSellInfo SellInfo { get { return m_SellInfo; } }
+
+            public SBTownshipBlacksmith() { }
+
+            public class InternalBuyInfo : ArrayList
+            {
+                public InternalBuyInfo()
+                {
+
+                }
+            }
+
+            public class InternalSellInfo : GenericSellInfo
+            {
+                public InternalSellInfo() { }
+            }
+        }
+    }
+
+    public class TSTailor : Tailor, ITownshipNPC
+    {
+        public int WanderRange { get; set; } = 4;
+
+        public void HandleTryTownshipExit() {; }
+
+        public override bool CanOpenDoors { get { return false; } }
+        public override bool IsInvulnerable { get { return true; } }
+
+        public override void InitSBInfo()
+        {
+            SBInfos.Add(new SBTownshipTailor());
+            base.InitSBInfo();
+        }
+
+        [Constructable]
+        public TSTailor() : base() { }
+
+        #region Serialization
+        public TSTailor(Serial serial) : base(serial) { }
+
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+            writer.Write((int)1); // version
+            writer.Write((Mobile)m_Owner);
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+            int version = reader.ReadInt();
+            switch (version)
+            {
+                case 1:
+                    m_Owner = reader.ReadMobile();
+                    break;
+            }
+            if (version < 1)
+                ValidationQueue<TSTailor>.Enqueue(this);
+        }
+
+        public void Validate(object state)
+        {
+            BaseTownshipNPC.FixOwner(this, ref m_Owner);
+        }
+        #endregion
+
+        #region Township NPC
+        private Mobile m_Owner;
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Mobile Owner
+        {
+            get { return m_Owner; }
+            set { m_Owner = value; }
+        }
+
+        public override bool CheckNonlocalLift(Mobile from, Item item)
+        {
+            return (base.CheckNonlocalLift(from, item) || TownshipNPCHelper.IsOwner(this, from));
+        }
+
+        public override bool AllowEquipFrom(Mobile from)
+        {
+            return (base.AllowEquipFrom(from) || TownshipNPCHelper.IsOwner(this, from));
+        }
+
+        public override bool HandlesOnSpeech(Mobile from)
+        {
+            return (base.HandlesOnSpeech(from) && TownshipNPCHelper.CanInteractWith(this, from));
+        }
+
+        public override bool CheckMovement(Direction d, out int newZ)
+        {
+            return (TownshipNPCHelper.CheckMovement(this, d, out newZ) && base.CheckMovement(d, out newZ));
+        }
+
+        public override void OnSpeech(SpeechEventArgs e)
+        {
+            TownshipNPCHelper.HandleSpeech(this, e);
+            base.OnSpeech(e);
+        }
+
+        public override void AddCustomContextEntries(Mobile from, ArrayList list)
+        {
+            if (TownshipNPCHelper.CanInteractWith(this, from, false))
+                base.AddCustomContextEntries(from, list);
+
+            if (TownshipNPCHelper.IsOwner(this, from))
+                list.Add(new TownshipNPCHelper.OptionsCME(this));
+        }
+
+        public virtual void OnPlacement(Mobile from)
+        {
+            RangeHome = CantWalkLand ? 0 : WanderRange;
+        }
+        #endregion
+
+        private class SBTownshipTailor : SBInfo
+        {
+            private ArrayList m_BuyInfo = new InternalBuyInfo();
+            private IShopSellInfo m_SellInfo = new InternalSellInfo();
+
+            public override ArrayList BuyInfo { get { return m_BuyInfo; } }
+            public override IShopSellInfo SellInfo { get { return m_SellInfo; } }
+
+            public SBTownshipTailor() { }
+
+            public class InternalBuyInfo : ArrayList
+            {
+                public InternalBuyInfo()
+                {
+                }
+            }
+
+            public class InternalSellInfo : GenericSellInfo
+            {
+                public InternalSellInfo() { }
+            }
+        }
+    }
+
+    public class TSCarpenter : Carpenter, ITownshipNPC
+    {
+        public int WanderRange { get; set; } = 4;
+
+        public void HandleTryTownshipExit() {; }
+
+        public override bool CanOpenDoors { get { return false; } }
+        public override bool IsInvulnerable { get { return true; } }
+
+        public override void InitSBInfo()
+        {
+            SBInfos.Add(new SBTownshipCarpenter());
+            base.InitSBInfo();
+        }
+
+        [Constructable]
+        public TSCarpenter() : base() { }
+
+        #region Serialization
+        public TSCarpenter(Serial serial) : base(serial) { }
+
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+            writer.Write((int)1); // version
+            writer.Write((Mobile)m_Owner);
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+            int version = reader.ReadInt();
+            switch (version)
+            {
+                case 1:
+                    m_Owner = reader.ReadMobile();
+                    break;
+            }
+            if (version < 1)
+                ValidationQueue<TSCarpenter>.Enqueue(this);
+        }
+
+        public void Validate(object state)
+        {
+            BaseTownshipNPC.FixOwner(this, ref m_Owner);
+        }
+        #endregion
+
+        #region Township NPC
+        private Mobile m_Owner;
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Mobile Owner
+        {
+            get { return m_Owner; }
+            set { m_Owner = value; }
+        }
+
+        public override bool CheckNonlocalLift(Mobile from, Item item)
+        {
+            return (base.CheckNonlocalLift(from, item) || TownshipNPCHelper.IsOwner(this, from));
+        }
+
+        public override bool AllowEquipFrom(Mobile from)
+        {
+            return (base.AllowEquipFrom(from) || TownshipNPCHelper.IsOwner(this, from));
+        }
+
+        public override bool HandlesOnSpeech(Mobile from)
+        {
+            return (base.HandlesOnSpeech(from) && TownshipNPCHelper.CanInteractWith(this, from));
+        }
+
+        public override bool CheckMovement(Direction d, out int newZ)
+        {
+            return (TownshipNPCHelper.CheckMovement(this, d, out newZ) && base.CheckMovement(d, out newZ));
+        }
+
+        public override void OnSpeech(SpeechEventArgs e)
+        {
+            TownshipNPCHelper.HandleSpeech(this, e);
+            base.OnSpeech(e);
+        }
+
+        public override void AddCustomContextEntries(Mobile from, ArrayList list)
+        {
+            if (TownshipNPCHelper.CanInteractWith(this, from, false))
+                base.AddCustomContextEntries(from, list);
+
+            if (TownshipNPCHelper.IsOwner(this, from))
+                list.Add(new TownshipNPCHelper.OptionsCME(this));
+        }
+
+        public virtual void OnPlacement(Mobile from)
+        {
+            RangeHome = CantWalkLand ? 0 : WanderRange;
+        }
+        #endregion
+
+        private class SBTownshipCarpenter : SBInfo
+        {
+            private ArrayList m_BuyInfo = new InternalBuyInfo();
+            private IShopSellInfo m_SellInfo = new InternalSellInfo();
+
+            public override ArrayList BuyInfo { get { return m_BuyInfo; } }
+            public override IShopSellInfo SellInfo { get { return m_SellInfo; } }
+
+            public SBTownshipCarpenter() { }
+
+            public class InternalBuyInfo : ArrayList
+            {
+                public InternalBuyInfo()
+                {
+                }
+            }
+
+            public class InternalSellInfo : GenericSellInfo
+            {
+                public InternalSellInfo() { }
+            }
+        }
+    }
+
     public class TSInnKeeper : InnKeeper, ITownshipNPC
     {
         public int WanderRange { get; set; } = 4;
@@ -1845,12 +2209,12 @@ namespace Server.Mobiles
             return IsInsideTownshipInn(m, BaseHouse.FindHouseAt(m));
         }
 
-        public static bool IsInsideTownshipInn(Mobile m, BaseHouse house)
+        public static bool IsInsideTownshipInn(Mobile m, BaseHouse? house)
         {
             if (house == null)
                 return false;
 
-            TownshipRegion tsr = TownshipRegion.GetTownshipAt(m);
+            TownshipRegion? tsr = TownshipRegion.GetTownshipAt(m);
 
             if (tsr == null || tsr.TStone == null || tsr.TStone.IsEnemy(m))
                 return false;
@@ -2139,7 +2503,7 @@ namespace Server.Mobiles
             if (!m.Player || !InRange(m, LOOKOUT_RANGE) || !CanSee(m) || !InLOS(m))
                 return;
 
-            TownshipRegion tsr = TownshipRegion.GetTownshipAt(this);
+            TownshipRegion? tsr = TownshipRegion.GetTownshipAt(this);
 
             if (tsr == null || tsr.TStone == null || !tsr.TStone.IsEnemy(m))
                 return;
@@ -2386,9 +2750,9 @@ namespace Server.Mobiles
                     }
             return true;
         }
-        private Plank FindPlankAt(IPoint3D px)
+        private Plank? FindPlankAt(IPoint3D px)
         {
-            Plank plank = (Plank)Utility.FindOneItemAt((Point3D)px, Map.Felucca, typeof(Plank), 2, false);
+            Plank? plank = (Plank?)Utility.FindOneItemAt((Point3D)px, Map.Felucca, typeof(Plank), 2, false);
             if (plank != null)
                 return plank;
             return null;
@@ -2431,7 +2795,7 @@ namespace Server.Mobiles
 
         public override void OnPlacement(Mobile from)
         {
-            TownshipRegion tsr = TownshipRegion.GetTownshipAt(this);
+            TownshipRegion? tsr = TownshipRegion.GetTownshipAt(this);
 
             if (tsr != null)
                 tsr.Season = SeasonType.Desolation;

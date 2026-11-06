@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -72,7 +72,7 @@ namespace Server.Engines.Craft
             get { return 1044004; } // <CENTER>CARPENTRY MENU</CENTER>
         }
 
-        private static CraftSystem m_CraftSystem;
+        private static CraftSystem? m_CraftSystem;
 
         public static CraftSystem CraftSystem
         {
@@ -111,7 +111,7 @@ namespace Server.Engines.Craft
             return 0;
         }
 
-        public override void PlayCraftEffect(Mobile from, object obj = null)
+        public override void PlayCraftEffect(Mobile from, object? obj = null)
         {
             // no animation
             //if ( from.Body.Type == BodyType.Human && !from.Mounted )
@@ -158,6 +158,66 @@ namespace Server.Engines.Craft
             AddCraft(typeof(ShortMusicStand), 1044294, 1044313, 78.9, 103.9, typeof(Log), 1044041, 15, 1044351);
             AddCraft(typeof(TallMusicStand), 1044294, 1044315, 81.5, 106.5, typeof(Log), 1044041, 20, 1044351);
             AddCraft(typeof(Easle), 1044294, 1044317, 86.8, 111.8, typeof(Log), 1044041, 20, 1044351);
+
+            #region Shipbuilding
+            TextDefinition shipbuildingGroup = "Shipbuilding";
+            index = AddCraft(typeof(SmallBoatHullCraft), shipbuildingGroup, "small boat hull",
+                ShipPlans.GetMinSkill(BoatType.SmallBoat, ShipAssemblyParts.Hull),
+                ShipPlans.GetMaxSkill(BoatType.SmallBoat, ShipAssemblyParts.Hull),
+                typeof(Board), 1044041,
+                ShipPlans.GetRequiredAmount(BoatType.SmallBoat, ShipAssemblyParts.Hull, typeof(Board)),
+            1044351);
+            SetNeedShipPlans(index, BoatType.SmallBoat, ShipAssemblyParts.Hull);
+
+            index = AddCraft(typeof(SmallDragonBoatHullCraft), shipbuildingGroup, "small dragon boat hull",
+                ShipPlans.GetMinSkill(BoatType.SmallDragonBoat, ShipAssemblyParts.Hull),
+                ShipPlans.GetMaxSkill(BoatType.SmallDragonBoat, ShipAssemblyParts.Hull),
+                typeof(Board), 1044041,
+                ShipPlans.GetRequiredAmount(BoatType.SmallDragonBoat, ShipAssemblyParts.Hull, typeof(Board)),
+                1044351);
+            SetNeedShipPlans(index, BoatType.SmallDragonBoat, ShipAssemblyParts.Hull);
+
+            index = AddCraft(typeof(MediumBoatHullCraft), shipbuildingGroup, "medium boat hull",
+                ShipPlans.GetMinSkill(BoatType.MediumBoat, ShipAssemblyParts.Hull),
+                ShipPlans.GetMaxSkill(BoatType.MediumBoat, ShipAssemblyParts.Hull),
+                typeof(Board), 1044041,
+                ShipPlans.GetRequiredAmount(BoatType.MediumBoat, ShipAssemblyParts.Hull, typeof(Board)),
+                1044351);
+            SetNeedShipPlans(index, BoatType.MediumBoat, ShipAssemblyParts.Hull);
+
+            index = AddCraft(typeof(MediumDragonBoatHullCraft), shipbuildingGroup, "medium dragon boat hull",
+                ShipPlans.GetMinSkill(BoatType.MediumDragonBoat, ShipAssemblyParts.Hull),
+                ShipPlans.GetMaxSkill(BoatType.MediumDragonBoat, ShipAssemblyParts.Hull),
+                typeof(Board), 1044041,
+                ShipPlans.GetRequiredAmount(BoatType.MediumDragonBoat, ShipAssemblyParts.Hull, typeof(Board)),
+                1044351);
+            SetNeedShipPlans(index, BoatType.MediumDragonBoat, ShipAssemblyParts.Hull);
+
+            index = AddCraft(typeof(LargeBoatHullCraft), shipbuildingGroup, "large boat hull",
+                ShipPlans.GetMinSkill(BoatType.LargeBoat, ShipAssemblyParts.Hull),
+                ShipPlans.GetMaxSkill(BoatType.LargeBoat, ShipAssemblyParts.Hull),
+                typeof(Board), 1044041,
+                ShipPlans.GetRequiredAmount(BoatType.LargeBoat, ShipAssemblyParts.Hull, typeof(Board)),
+                1044351);
+            SetNeedShipPlans(index, BoatType.LargeBoat, ShipAssemblyParts.Hull);
+
+            index = AddCraft(typeof(LargeDragonBoatHullCraft), shipbuildingGroup, "large dragon boat hull",
+                ShipPlans.GetMinSkill(BoatType.LargeDragonBoat, ShipAssemblyParts.Hull),
+                ShipPlans.GetMaxSkill(BoatType.LargeDragonBoat, ShipAssemblyParts.Hull),
+                typeof(Board), 1044041,
+                ShipPlans.GetRequiredAmount(BoatType.LargeDragonBoat, ShipAssemblyParts.Hull, typeof(Board)),
+                1044351);
+            SetNeedShipPlans(index, BoatType.LargeDragonBoat, ShipAssemblyParts.Hull);
+
+            index = AddCraft(typeof(AssembledShipCraft), shipbuildingGroup, "assemble ship",
+                95.0, 120.0,
+                typeof(Board), 1044041,
+                25,
+                1044351);
+
+            SetNeedCompletedShipPlans(index);
+
+            #endregion Shipbuilding
 
             // Furniture
             AddCraft(typeof(FootStool), 1044291, 1022910, 11.0, 36.0, typeof(Log), 1044041, 9, 1044351);
@@ -289,7 +349,8 @@ namespace Server.Engines.Craft
 
                 AddCraft(typeof(FortLadderDeed), groupName, "fort ladder", 90.0, 115.0, typeof(Log), 1044041, 300, 1044351);
 
-                AddCraft(typeof(ChickenCoopDeed), groupName, "chicken coop", 70.0, 95.0, typeof(Log), 1044041, 1200, 1044351);
+                if (!Core.RuleSets.MortalisStyleRules())
+                    AddCraft(typeof(ChickenCoopDeed), groupName, "chicken coop", 70.0, 95.0, typeof(Log), 1044041, 1200, 1044351);
 
                 // lights
                 index = AddCraft(typeof(LampPostSquareAddonDeed), groupName, "lamp post (square)", 90.0, 115.0, typeof(IronIngot), 1044036, 200, 1044037);
@@ -432,12 +493,16 @@ namespace Server.Engines.Craft
             }
 
             MarkOption = true;
-            Repair = Core.RuleSets.AOSRules();
+            /*
+             * Enable carpenter repair eligibility for supported items, but retain existing shard repair behavior,
+             * including skill-based weakening. Do not enable AOS repair leniency or AOS item support.
+             */
+            Repair = Core.RuleSets.AOSRules() || Core.RuleSets.MortalisStyleRules();
 
             if (Core.RuleSets.AngelIslandRules())
                 Recycle = Recycle.Lumber;
 
-            if (Core.RuleSets.MLRules() || BaseLog.NewWoodTypes)
+            if (Core.RuleSets.MondainsLegacyRules() || BaseLog.NewWoodTypes)
             {
                 SetSubRes(typeof(Log), 1072643);
 

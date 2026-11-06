@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -120,7 +120,7 @@ namespace Server.Mobiles
 
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    Mobile m = (Mobile)list[i];
+                    Mobile? m = (Mobile?)list[i];
 
                     DoBeneficial(m);
 
@@ -145,60 +145,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://www.uoguide.com/Meer_Captain
+            // Post-era creature (Mondain's Legacy). No Stratics-era entry.
+            // 400 - 600 Gold
+            // Special: 3-6 Gems, Magic Weapons/Armor
+            // Note: Excludes ML systems (artifacts, faction/quest items, etc.)
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                Container pack = new Backpack();
-
-                pack.DropItem(new Bolt(Utility.RandomMinMax(10, 20)));
-                pack.DropItem(new Bolt(Utility.RandomMinMax(10, 20)));
-
-                switch (Utility.Random(6))
-                {
-                    case 0: pack.DropItem(new Broadsword()); break;
-                    case 1: pack.DropItem(new Cutlass()); break;
-                    case 2: pack.DropItem(new Katana()); break;
-                    case 3: pack.DropItem(new Longsword()); break;
-                    case 4: pack.DropItem(new Scimitar()); break;
-                    case 5: pack.DropItem(new VikingSword()); break;
-                }
-
-                Container bag = new Bag();
-
-                int count = Utility.RandomMinMax(10, 20);
-
-                for (int i = 0; i < count; ++i)
-                {
-                    Item item = Loot.RandomReagent();
-
-                    if (item == null)
-                        continue;
-
-                    if (!bag.TryDropItem(this, item, false))
-                        item.Delete();
-                }
-
-                pack.DropItem(bag);
-
-                PackGold(25, 50);
-                PackItem(pack);
+                PackGold(400, 600);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // no LBR
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    // TODO: standard runuo
-                }
+                PackGem(3, 6);
+
+                PackMagicEquipment(3, 4, 1.0, 1.0);
+                PackMagicEquipment(3, 4, 0.50, 0.50);
             }
         }
 

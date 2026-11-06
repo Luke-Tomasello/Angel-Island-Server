@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -55,10 +55,13 @@ namespace Server.Misc
 {
     public static class StatGainSystem
     {
-        public static bool Enabled { get { return Core.RuleSets.AngelIslandRules(); } } // exclusive to AI
+        public static bool Enabled { get { return Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules(); } } // exclusive to AI style shards
 
         public static bool PointSystem = true; // enable/disable stat gain point system
-        public static double GainFactor = 1.0;
+        public static double GainFactor
+        {
+            get { return CoreAI.StatGainFactor; }
+        }
 
         public static void Configure()
         {
@@ -132,10 +135,6 @@ namespace Server.Misc
                  * within a certain time span. Therefore we can't factor in the old
                  * AI stat gain waits.
                  */
-#if false
-                // factor in gain waits, assuming a 10s stat check delay
-                gc /= (Mobile.StatGainDelay.TotalSeconds / 10.0);
-#endif
 
                 int val = 0, cap = 0;
 
@@ -254,7 +253,8 @@ namespace Server.Misc
                 try
                 {
                     writer.WriteElementString("PointSystem", PointSystem.ToString());
-                    writer.WriteElementString("GainFactor", GainFactor.ToString());
+                    // Adam: 1/19/2016: Changed to use CoreAI.StatGainFactor
+                    //writer.WriteElementString("GainFactor", GainFactor.ToString());
                 }
                 finally { writer.WriteEndDocument(); }
 
@@ -287,7 +287,8 @@ namespace Server.Misc
                     case 0:
                         {
                             PointSystem = Boolean.Parse(reader.ReadElementString("PointSystem"));
-                            GainFactor = Double.Parse(reader.ReadElementString("GainFactor"));
+                            // Adam: 1/19/2016: Changed to use CoreAI.StatGainFactor
+                            /*GainFactor = Double.Parse(reader.ReadElementString("GainFactor"));*/
 
                             break;
                         }
@@ -322,7 +323,8 @@ namespace Server.Misc
         public double GainFactor
         {
             get { return StatGainSystem.GainFactor; }
-            set { StatGainSystem.GainFactor = value; }
+            // Adam: 1/19/2016: Chhanged to use CoreAI.StatGainFactor
+            //set { StatGainSystem.GainFactor = value; }
         }
 
         [Constructable]

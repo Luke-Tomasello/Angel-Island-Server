@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -42,7 +42,7 @@ namespace Server.Gumps
         private DateTime m_MaxResponseTime;
 
         public static void Initialize()
-        {
+        {//CreatureGenerateLoot
             EventSink.PlayerDeath += new PlayerDeathEventHandler(EventSink_PlayerDeath);
         }
 
@@ -50,10 +50,10 @@ namespace Server.Gumps
         {
             Mobile m = e.Mobile;
 
-            // only on AI
-            if (Core.RuleSets.AngelIslandRules())
-                // Adam: not during Server Wars
-                if (m.Player && m.AccessLevel == AccessLevel.Player && m.ShortTermMurders >= 5 && !Server.Misc.TestCenter.ServerWars())
+            // only on AI and seasons (and Upheaval?)
+            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SeasonsRules() || Core.RuleSets.UpheavalRules())
+                // Adam: not in prison, not during Server Wars
+                if (m.Player && m.AccessLevel == AccessLevel.Player && m.ShortTermMurders >= 5 && !Server.Engines.TestCenterServer.ServerWars())
                     if (!((PlayerMobile)m).PrisonInmate)
                         new GumpTimer(m).Start();
         }
@@ -145,7 +145,7 @@ namespace Server.Gumps
             {
                 case 1:
                     {
-                        Item aiEntrance = new AIEntrance();
+                        Item aiEntrance = new AIEntrance(checkMurders: false, context: AIEntrance.Context.PrisonCommand);
                         aiEntrance.OnMoveOver(from);
                         aiEntrance.Delete();
 

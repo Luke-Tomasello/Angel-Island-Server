@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -59,7 +59,7 @@ namespace Server.Items
         }
 
         [Constructable]
-        public Property(Use type, string text)
+        public Property(Use type, string? text)
             : base(0x1F14)
         {
             Weight = 0.0;                   // properties have no weight
@@ -102,7 +102,7 @@ namespace Server.Items
 
     public class TimedProperty : Property
     {
-        public TimedProperty(Use type, string text, TimeSpan duration)
+        public TimedProperty(Use type, string? text, TimeSpan duration)
             : base(type, text)
         {
             Timer.DelayCall(duration, new TimerCallback(Delete));
@@ -130,7 +130,7 @@ namespace Server.Items
 
     public class TimedSet : Property
     {
-        private Item m_item;
+        private Item? m_item;
         private DateTime m_SetTime;
         private ArrayList m_lines;
         private Timer m_Timer;
@@ -154,10 +154,10 @@ namespace Server.Items
         private class SetTimer : Timer
         {
             TimedSet m_Owner;          // owns this timer
-            private Item m_Item;        // item we will set values on
+            private Item? m_Item;        // item we will set values on
             private ArrayList m_lines;  // properties and values
 
-            public SetTimer(TimedSet owner, Item item, ArrayList lines, DateTime time)
+            public SetTimer(TimedSet owner, Item? item, ArrayList lines, DateTime time)
                 : base(time - DateTime.UtcNow)
             {
                 m_Owner = owner;
@@ -197,7 +197,7 @@ namespace Server.Items
                                 if (prop is PropertyInfo)
                                     if (prop.Name.ToLower() == lSide.ToLower())
                                     {
-                                        object toSet = null;
+                                        object? toSet = null;
                                         Properties.ConstructFromString(prop.PropertyType, m_Item, rSide, ref toSet);
                                         prop.SetValue(m_Item, toSet, null);
                                     }

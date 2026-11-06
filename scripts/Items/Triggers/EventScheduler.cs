@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -61,9 +61,9 @@ namespace Server.Items.Triggers
 
         public override string DefaultName { get { return "Event Scheduler"; } }
 
-        private string m_Event;
+        private string? m_Event;
         [CommandProperty(AccessLevel.GameMaster)]
-        public string Event
+        public string? Event
         {
             get
             {
@@ -75,11 +75,11 @@ namespace Server.Items.Triggers
                 {
                     value = value.ToLower();
                     if (ScheduleExists(value))
-                        this.SendSystemMessage(string.Format("{0} already defines the '{1}' event.", EventSchedulerDatabase[value], value));
+                        this.SendMessageNearby(string.Format("{0} already defines the '{1}' event.", EventSchedulerDatabase[value], value));
                     else
                     {
                         AddSchedule(m_Event = value);
-                        this.SendSystemMessage(string.Format("Now scheduling for the '{0}' event.", value));
+                        this.SendMessageNearby(string.Format("Now scheduling for the '{0}' event.", value));
                     }
                 }
                 else
@@ -87,7 +87,7 @@ namespace Server.Items.Triggers
                     if (ScheduleExists(m_Event))
                     {
                         RemoveSchedule(m_Event);
-                        this.SendSystemMessage(string.Format("De-scheduling the '{0}' event.", m_Event));
+                        this.SendMessageNearby(string.Format("De-scheduling the '{0}' event.", m_Event));
                         m_Event = value;
                     }
                 }
@@ -104,7 +104,7 @@ namespace Server.Items.Triggers
             foreach (string key in toDelete)
                 EventSchedulerDatabase.Remove(key);
         }
-        public static bool ScheduleExists(string name)
+        public static bool ScheduleExists(string? name)
         {
             if (!string.IsNullOrEmpty(name))
             {
@@ -119,7 +119,7 @@ namespace Server.Items.Triggers
             if (!string.IsNullOrEmpty(name) && !ScheduleExists(name))
                 EventSchedulerDatabase.Add(name, this);
         }
-        private void RemoveSchedule(string name)
+        private void RemoveSchedule(string? name)
         {
             if (!string.IsNullOrEmpty(name) && ScheduleExists(name))
                 EventSchedulerDatabase.Remove(name);
@@ -194,12 +194,35 @@ namespace Server.Items.Triggers
             }
         }
         #region Time Tools 
+        // A configured GMTOffset is the standard UTC offset of the civil time zone the event is scheduled in.
+        //  The US zones this system was intended for are resolved explicitly by Windows time zone Id, because the
+        //  first zone with a given BaseUtcOffset may not observe daylight saving time (e.g. -7 Arizona, -6 Central
+        //  America). Other offsets use the first system zone with that BaseUtcOffset. Returns null if there is none.
+        private static TimeZoneInfo? ResolveTimeZone(int offset)
+        {
+            string? id = null;
+            switch (offset)
+            {
+                case -8: id = "Pacific Standard Time"; break;
+                case -7: id = "Mountain Standard Time"; break;
+                case -6: id = "Central Standard Time"; break;
+                case -5: id = "Eastern Standard Time"; break;
+            }
+
+            if (id != null && TimeZoneInfo.TryFindSystemTimeZoneById(id, out TimeZoneInfo? named))
+                return named;
+
+            return TimeZoneInfo.GetSystemTimeZones().FirstOrDefault(x => x.BaseUtcOffset == new TimeSpan(offset, 0, 0));
+        }
         private static int GetDSTOffset(int offset)
         {
             if (offset != 0)
             {
-                DateTime theirTime = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, Timezone(offset));
-                TimeZoneInfo tst = TimeZoneInfo.FindSystemTimeZoneById(Timezone(offset));
+                TimeZoneInfo? tst = ResolveTimeZone(offset);
+                if (tst == null)
+                    return 0;   // no system time zone has this offset
+
+                DateTime theirTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tst);
                 if (tst.IsDaylightSavingTime(theirTime))
                     return 1;
             }
@@ -207,10 +230,11 @@ namespace Server.Items.Triggers
         }
         public static string Timezone(int offset)
         {
-            var allTimeZones = TimeZoneInfo.GetSystemTimeZones();
-            var newTimeZone = allTimeZones.FirstOrDefault(x => x.BaseUtcOffset == new TimeSpan(offset, 0, 0));
-            var actual = newTimeZone.StandardName;
-            return actual;
+            TimeZoneInfo? zone = ResolveTimeZone(offset);
+            if (zone == null)
+                return string.Format("(no time zone for offset {0})", offset);
+
+            return zone.StandardName;
         }
         #endregion Time Tools 
 

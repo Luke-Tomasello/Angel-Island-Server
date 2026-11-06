@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -67,6 +67,7 @@ namespace Server.Mobiles
 
         public override int Hides { get { return 6; } }
         public override int Meat { get { return 1; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
 
         public Bogling(Serial serial)
             : base(serial)
@@ -75,42 +76,19 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020207055120/http://uo.stratics.com/hunters/ore_elementals.shtml
+            // unknown
+            // http://web.archive.org/web/20020806163656/uo.stratics.com/hunters/bogling.shtml
+            // 40 - 60 Gold, 4 Logs, 1 Seed, 1 Rib, 6 Leather
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(25, 50);
-                PackItem(new Log(4));
-                PackItem(new Engines.Plants.Seed());
+                PackGold(40, 60);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020207055120/http://uo.stratics.com/hunters/ore_elementals.shtml
-                    // unknown
-                    // http://web.archive.org/web/20020806163656/uo.stratics.com/hunters/bogling.shtml
-                    // 40 - 60 Gold, 4 Logs, 1 Seed, 1 Rib, 6 Leather
-                    if (Spawning)
-                    {
-                        PackGold(40, 60);
-                    }
-                    else
-                    {
-                        PackItem(new Log(4));
-                        if (Engines.Plants.PlantSystem.Enabled)
-                            PackItem(new Engines.Plants.Seed());
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                    {
-                        PackItem(new Log(4));
-                        if (Engines.Plants.PlantSystem.Enabled)
-                            PackItem(new Engines.Plants.Seed());
-                    }
-
-                    AddLoot(LootPack.Meager);
-                }
+                PackItem(new Log(4));
+                if (Engines.Plants.PlantSystem.Enabled)
+                    PackItem(new Engines.Plants.Seed());
             }
         }
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -101,114 +101,47 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021013185154/uo.stratics.com/hunters/antlion.shtml
+            // 100-150 Gold, Gems, 1-10 Large Colored Ore (Dull Copper to Bronze), 1-5 Fertile Dirt, Bones, An Unknown Adventurer's Skeleton
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem(2);
-                PackItem(new Bone());
                 PackGold(100, 150);
-
-                int amount = Utility.RandomMinMax(8, 12);
-
-                switch (Utility.Random(4))
-                {
-                    case 0: PackItem(new DullCopperOre(amount)); break;
-                    case 1: PackItem(new ShadowIronOre(amount)); break;
-                    case 2: PackItem(new CopperOre(amount)); break;
-                    case 3: PackItem(new BronzeOre(amount)); break;
-                }
-
-                // TODO: 1-5 fertile dirt
-                // TODO: skeleton
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021013185154/uo.stratics.com/hunters/antlion.shtml
-                    // 100-150 Gold, Gems, 1-10 Large Colored Ore (Dull Copper to Bronze), 1-5 Fertile Dirt, Bones, An Unknown Adventurer's Skeleton
-                    if (Spawning)
-                    {
-                        PackGold(100, 150);
-                    }
-                    else
-                    {
-                        PackGem(2);
-                        switch (Utility.Random(4))
-                        {
-                            case 0: PackItem(new DullCopperOre(Utility.RandomMinMax(1, 10))); break;
-                            case 1: PackItem(new ShadowIronOre(Utility.RandomMinMax(1, 10))); break;
-                            case 2: PackItem(new CopperOre(Utility.RandomMinMax(1, 10))); break;
-                            case 3: PackItem(new BronzeOre(Utility.RandomMinMax(1, 10))); break;
-                        }
-                        PackItem(new FertileDirt(Utility.RandomMinMax(1, 5)));
-                        PackItem(new Bone(3));
+                PackGem(2);
+                switch (Utility.Random(4))
+                {
+                    case 0: PackItem(new DullCopperOre(Utility.RandomMinMax(1, 10))); break;
+                    case 1: PackItem(new ShadowIronOre(Utility.RandomMinMax(1, 10))); break;
+                    case 2: PackItem(new CopperOre(Utility.RandomMinMax(1, 10))); break;
+                    case 3: PackItem(new BronzeOre(Utility.RandomMinMax(1, 10))); break;
+                }
+                PackItem(new FertileDirt(Utility.RandomMinMax(1, 5)));
+                PackItem(new Bone(3));
 
-                        // http://www.google.com/codesearch/p?hl=en#biPgqLK3B_w/trunk/Scripts/Mobiles/Monsters/Ants/AntLion.cs&q=antlion%20package:http://runuomondains%5C.googlecode%5C.com&sa=N&cd=1&ct=rc
-                        // (Bones, An Unknown Adventurer's Skeleton)
-                        for (int i = 0; i < 3; i++)
-                        {
-                            switch (Utility.Random(5))
-                            {
-                                case 0: PackItem(new BoneShards()); break;
-                                case 1: PackItem(new SpineBone()); break;
-                                case 2: PackItem(new RibCage()); break; ;
-                                case 3: PackItem(new PelvisBone()); break;
-                                case 4: PackItem(new Skull()); break;
-                            }
-                        }
-
-                        if (0.07 >= Utility.RandomDouble())
-                        {
-                            switch (Utility.Random(3))
-                            {
-                                case 0: PackItem(new UnknownBardSkeleton()); break;
-                                case 1: PackItem(new UnknownMageSkeleton()); break;
-                                case 2: PackItem(new UnknownRogueSkeleton()); break;
-                            }
-                        }
+                // http://www.google.com/codesearch/p?hl=en#biPgqLK3B_w/trunk/Scripts/Mobiles/Monsters/Ants/AntLion.cs&q=antlion%20package:http://runuomondains%5C.googlecode%5C.com&sa=N&cd=1&ct=rc
+                // (Bones, An Unknown Adventurer's Skeleton)
+                for (int i = 0; i < 3; i++)
+                {
+                    switch (Utility.Random(5))
+                    {
+                        case 0: PackItem(new BoneShards()); break;
+                        case 1: PackItem(new SpineBone()); break;
+                        case 2: PackItem(new RibCage()); break; ;
+                        case 3: PackItem(new PelvisBone()); break;
+                        case 4: PackItem(new Skull()); break;
                     }
                 }
-                else
-                {   // standard runuo loot
-                    if (Spawning)
+
+                if (0.07 >= Utility.RandomDouble())
+                {
+                    switch (Utility.Random(3))
                     {
-                        PackItem(new Bone(3));
-                        PackItem(new FertileDirt(Utility.RandomMinMax(1, 5)));
-
-                        switch (Utility.Random(4))
-                        {
-                            case 0: PackItem(new DullCopperOre(Utility.RandomMinMax(1, 10))); break;
-                            case 1: PackItem(new ShadowIronOre(Utility.RandomMinMax(1, 10))); break;
-                            case 2: PackItem(new CopperOre(Utility.RandomMinMax(1, 10))); break;
-                            case 3: PackItem(new BronzeOre(Utility.RandomMinMax(1, 10))); break;
-                        }
-
-                        // http://www.google.com/codesearch/p?hl=en#biPgqLK3B_w/trunk/Scripts/Mobiles/Monsters/Ants/AntLion.cs&q=antlion%20package:http://runuomondains%5C.googlecode%5C.com&sa=N&cd=1&ct=rc
-                        // (Bones, An Unknown Adventurer's Skeleton)
-                        for (int i = 0; i < 3; i++)
-                        {
-                            switch (Utility.Random(5))
-                            {
-                                case 0: PackItem(new BoneShards()); break;
-                                case 1: PackItem(new SpineBone()); break;
-                                case 2: PackItem(new RibCage()); break; ;
-                                case 3: PackItem(new PelvisBone()); break;
-                                case 4: PackItem(new Skull()); break;
-                            }
-                        }
-
-                        if (0.07 >= Utility.RandomDouble())
-                        {
-                            switch (Utility.Random(3))
-                            {
-                                case 0: PackItem(new UnknownBardSkeleton()); break;
-                                case 1: PackItem(new UnknownMageSkeleton()); break;
-                                case 2: PackItem(new UnknownRogueSkeleton()); break;
-                            }
-                        }
+                        case 0: PackItem(new UnknownBardSkeleton()); break;
+                        case 1: PackItem(new UnknownMageSkeleton()); break;
+                        case 2: PackItem(new UnknownRogueSkeleton()); break;
                     }
-
-                    AddLoot(LootPack.Average, 2);
                 }
             }
         }
@@ -223,7 +156,7 @@ namespace Server.Mobiles
                 BeginTunneling();
         }
 
-        public override void OnDamage(int amount, Mobile from, bool willKill, object source_weapon)
+        public override void OnDamage(int amount, Mobile from, bool willKill, DamageContext context)
         {
             if (m_TunnelTimer != null && m_TunnelTimer.Running)
             {
@@ -236,7 +169,7 @@ namespace Server.Mobiles
             if (0.25 >= Utility.RandomDouble())
                 BeginAcidBreath();
 
-            base.OnDamage(amount, from, willKill, source_weapon);
+            base.OnDamage(amount, from, willKill, context);
         }
 
         #region Acid Breath
@@ -260,20 +193,20 @@ namespace Server.Mobiles
 
         public void EndAcidBreath(object o)
         {
-            Mobile m = o as Mobile;
+            Mobile? m = o as Mobile;
             if (m == null || m.Deleted || !m.Alive || !Alive)
                 return;
 
             if (0.2 >= Utility.RandomDouble())
                 m.ApplyPoison(this, Poison.Greater);
 
-            AOS.Damage(m, Utility.RandomMinMax(20, 40), 0, 0, 0, 100, 0, this);
+            AOS.Damage(m, Utility.RandomMinMax(20, 40), new DamageContext { Source = this });
         }
         #endregion
 
         #region Tunneling
         private DateTime m_NextTunneling;
-        private Timer m_TunnelTimer;
+        private Timer? m_TunnelTimer;
         private Point3D m_NewLocation;
         private Map m_NewMap;
 
@@ -301,7 +234,7 @@ namespace Server.Mobiles
 
         public void EndTunneling(object o)
         {
-            Mobile target = o as Mobile;
+            Mobile? target = o as Mobile;
             Hole hole = new Hole(0x1363);
             hole.MoveToWorld(Location, Map);
 
@@ -310,9 +243,9 @@ namespace Server.Mobiles
             m_TunnelTimer = Timer.DelayCall(TimeSpan.FromSeconds(3), new TimerStateCallback(Reappear), target);
         }
 
-        public void Reappear(object o)
+        public void Reappear(object? o)
         {
-            Mobile target = o as Mobile;
+            Mobile? target = o as Mobile;
             Hits += 50;
             Frozen = false;
 

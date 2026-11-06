@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -146,6 +146,7 @@
  *		* an AddStatBonus routine used by the Bless effect.
  */
 
+using Server.Accounting;
 using Server.Engines.Craft;
 using Server.Factions;
 using Server.Mobiles;
@@ -397,18 +398,23 @@ namespace Server.Items
 
         public override void OnSingleClick(Mobile from)
         {
-            if (this.HideAttributes == true || (Name == null && UseOldNames))
+            if (this.HideAttributes == true || (Name == null && UseOldNames) || Reward)
             {
                 base.OnSingleClick(from);
                 return;
             }
 
             ArrayList attrs = new ArrayList();
-
+            string? additional = null;
             if (DisplayLootType)
             {
                 if (GetFlag(LootType.Blessed))
+                {
+                    //if (Core.RuleSets.MortalisRules())
+                    //    additional = "(charmed)";
+                    //else
                     attrs.Add(new EquipInfoAttribute(1038021)); // blessed
+                }
                 else if (GetFlag(LootType.Cursed))
                     attrs.Add(new EquipInfoAttribute(1049643)); // cursed
             }
@@ -445,11 +451,22 @@ namespace Server.Items
                 number = 1041000;
             }
 
-            if (attrs.Count == 0 && Crafter == null && Name != null)
+            bool hasEquipInfo = (attrs.Count != 0) || (Crafter != null);
+            bool hasAdditional = !string.IsNullOrEmpty(additional);
+
+            if (!hasEquipInfo && Name != null && !hasAdditional)
                 return;
 
-            EquipmentInfo eqInfo = new EquipmentInfo(number, m_Crafter, false, (EquipInfoAttribute[])attrs.ToArray(typeof(EquipInfoAttribute)));
-            from.Send(new DisplayEquipmentInfo(this, eqInfo));
+            if (hasEquipInfo)
+            {
+                EquipmentInfo eqInfo = new EquipmentInfo(number, m_Crafter, false,
+                    (EquipInfoAttribute[])attrs.ToArray(typeof(EquipInfoAttribute)));
+
+                from.Send(new DisplayEquipmentInfo(this, eqInfo));
+            }
+
+            if (hasAdditional)
+                LabelTo(from, additional);
         }
 
         public override string GetOldPrefix(ref Article article)
@@ -501,7 +518,26 @@ namespace Server.Items
 
             return suffix;
         }
+        public override void LabelLootTypeTo(Mobile to)
+        {
+            // Blessed exists on all shards
+            if (GetFlag(LootType.Blessed))
+            {
+                LabelTo(to, 1041362); // (blessed)
+                return;
+            }
 
+            // Mortalis-style extended loot labels
+            if (Core.RuleSets.MortalisRules())
+            {
+                if (GetFlag(LootType.Cursed))
+                    LabelTo(to, "(cursed)");
+                else if (GetFlag(LootType.UnStealable))
+                    LabelTo(to, "(charmed)");
+                else if (GetFlag(LootType.UnLootable))
+                    LabelTo(to, "(soulbound)");
+            }
+        }
         public override void OnDoubleClick(Mobile from)
         {
             if (MagicEquipment.OnUse(from, this))
@@ -543,7 +579,8 @@ namespace Server.Items
         }
 
         // 9/18/23, Yoar: Blessed clothing can no longer be damaged (SP only). Trammies rejoice!
-        public bool Invulnerable { get { return (Core.RuleSets.SiegeRules() && LootType.HasFlag(LootType.Blessed)); } }
+        // 2/8/26, Adam: Mortalis as well!
+        public bool Invulnerable { get { return (Core.RuleSets.SiegeRules() || Core.RuleSets.MortalisStyleRules()) && LootType.HasFlag(LootType.Blessed); } }
 
         // erl: Added to control clothing wear
 
@@ -639,11 +676,11 @@ namespace Server.Items
             if (m.AccessLevel < AccessLevel.GameMaster)
             {
                 #region Kin
-                if ((m != null) && (m is PlayerMobile))
-                {
-                    PlayerMobile pm = (PlayerMobile)m;
 
-                    if (Core.RuleSets.MortalisRules() || Core.RuleSets.AngelIslandRules())
+                if (m is PlayerMobile pm && pm.Account is Account acct)
+                {
+                    if (Core.RuleSets.KinSystemEnabled())
+                    {
                         if (this.IOBAlignment != IOBAlignment.None)
                         {
                             if (pm.IOBEquipped == true)
@@ -651,24 +688,42 @@ namespace Server.Items
                                 pm.SendMessage("You cannot equip more than one item of brethren at a time.");
                                 return false;
                             }
+
                             if (pm.IOBAlignment != this.IOBAlignment)
                             {
                                 if (pm.IOBAlignment == IOBAlignment.None)
                                 {
-                                    pm.SendMessage("You cannot equip a kin item without your guild aligning itself to a kin.");
+                                    pm.SendMessage(
+                                        "You cannot equip a kin item without your guild aligning itself to a kin.");
                                 }
                                 else if (pm.IOBAlignment == IOBAlignment.OutCast)
                                 {
-                                    pm.SendMessage("You cannot equip a kin item while you are outcast from your kin.");
+                                    pm.SendMessage(
+                                        "You cannot equip a kin item while you are outcast from your kin.");
                                 }
                                 else
                                 {
                                     pm.SendMessage("You cannot equip items of another kin.");
                                 }
+
                                 return false;
                             }
                         }
+                    }
+                    else if (this is OrcishKinMask mask)
+                    {
+                        if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()) && acct.IsOrcEnemy)
+                        {
+                            pm.SendMessage(
+                                0x35,
+                                "The occupation forces know your face. You cannot benefit from an Orcish Kin Mask for another {0}.",
+                                Account.FormatOrcEnemyDuration(acct));
+
+                            return false;
+                        }
+                    }
                 }
+
                 #endregion
             }
 
@@ -682,10 +737,25 @@ namespace Server.Items
                 if (MinLevel < 1 || MaxLevel > 3)
                     return;
 
-                m_MagicEffect = (MagicEquipEffect)Utility.RandomList((int)MagicEquipEffect.SpellReflection,
-                    (int)MagicEquipEffect.Invisibility, (int)MagicEquipEffect.Bless,
-                    (int)MagicEquipEffect.Agility, (int)MagicEquipEffect.Cunning,
-                    (int)MagicEquipEffect.Strength, (int)MagicEquipEffect.NightSight);
+                m_MagicEffect = (MagicEquipEffect)Utility.RandomList(
+                    (int)MagicEquipEffect.SpellReflection,
+                    (int)MagicEquipEffect.Invisibility,
+                    (int)MagicEquipEffect.Bless,
+                    (int)MagicEquipEffect.Agility,
+                    (int)MagicEquipEffect.Cunning,
+                    (int)MagicEquipEffect.Strength,
+                    (int)MagicEquipEffect.NightSight);
+
+                /* 6/10/2026, Adam
+                 *  Curt — 6/8/26, 10:23 PM
+                 * I'd keep teleport rings, id wands, no damaging wands, and all stat boost items we have except invis
+                 * So what we have now minus damaging wands and invis items
+                 */
+                if (Core.RuleSets.SeasonsRules(2))
+                {
+                    if (m_MagicEffect == MagicEquipEffect.Invisibility)
+                        m_MagicEffect = MagicEquipEffect.None;
+                }
 
                 int NewLevel = Utility.RandomMinMax(MinLevel, MaxLevel);
                 switch (NewLevel)
@@ -750,17 +820,17 @@ namespace Server.Items
 
             CraftSystem system = DefTailoring.CraftSystem;
 
-            CraftItem item = system.CraftItems.SearchFor(GetType());
+            CraftItem? item = system.CraftItems.SearchFor(GetType());
 
             if (item != null && m_Scissorable && item.Resources.Count == 1 && item.Resources.GetAt(0).Amount >= 2)
             {
                 try
                 {
-                    Type resourceType = null;
+                    Type? resourceType = null;
 
                     if (this is BaseShoes)
                     {
-                        CraftResourceInfo info = CraftResources.GetInfo(((BaseShoes)this).Resource);
+                        CraftResourceInfo? info = CraftResources.GetInfo(((BaseShoes)this).Resource);
 
                         if (info != null && info.ResourceTypes.Length > 0)
                             resourceType = info.ResourceTypes[0];
@@ -777,8 +847,11 @@ namespace Server.Items
                     if (resourceType == null)
                         resourceType = item.Resources.GetAt(0).ItemType;
 
-                    Item res = (Item)Activator.CreateInstance(resourceType);
+                    Item? res = (Item?)Activator.CreateInstance(resourceType);
 
+                    // we track starting loot with the FamilyID.
+                    //  Various restrictions are placed on FamilyID (player does not control this id, vendors don't buy, etc.)
+                    res.FamilyID = this.FamilyID;
 
                     ScissorHelper(scissors, from, res, PlayerCrafted ? (item.Resources.GetAt(0).Amount / 2) : 1);
 
@@ -824,7 +897,7 @@ namespace Server.Items
                 Hue = resHue;
             }
 
-            CraftContext context = craftSystem.GetContext(from);
+            CraftContext? context = craftSystem.GetContext(from);
 
             if (context != null && context.DoNotColor)
                 Hue = 0;
@@ -983,7 +1056,7 @@ namespace Server.Items
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((int)13);                  // version
+            writer.Write((int)14);                  // version (14: retired IOBAlignment no longer written)
             WriteSaveFlags(writer);                 // always follows version
 
             // version 10
@@ -1001,7 +1074,6 @@ namespace Server.Items
             writer.Write((short)m_MaxHitPoints);    // erl - added for clothing wear
             writer.Write((bool)m_Scissorable);      // Adam - Addition for better Scissor control
             writer.Write((bool)m_Dyable);           // Adam - Save the dyable attr
-            writer.Write((int)m_IOBAlignment);      // Pigpen - Addition for IOB System
             writer.Write((sbyte)m_MagicEffect);
             writer.Write((int)m_MagicCharges);
             writer.Write((bool)m_Identified);
@@ -1015,9 +1087,11 @@ namespace Server.Items
             base.Deserialize(reader);
             int version = reader.ReadInt();
             m_SaveFlags = ReadSaveFlags(reader, version);
+            int legacyIOBAlignment = (int)IOBAlignment.None; // used only by the version < 5 dye rule below
 
             switch (version)
             {
+                case 14:
                 case 13:
                 case 12:
                 case 11:
@@ -1057,7 +1131,8 @@ namespace Server.Items
                     }
                 case 4: //Pigpen - Addition for IOB System
                     {
-                        m_IOBAlignment = (IOBAlignment)reader.ReadInt();
+                        if (version < 14)   // Retired IOBAlignment; consume legacy value for save compatibility.
+                            legacyIOBAlignment = reader.ReadInt();
                         goto case 3;
                     }
                 case 3:
@@ -1100,7 +1175,7 @@ namespace Server.Items
 
             if (version < 5)                // Adam - addition for dye control
             {                               // Allow for other non-dyable clothes outside the IOB system
-                if (m_IOBAlignment != IOBAlignment.None)
+                if (legacyIOBAlignment != (int)IOBAlignment.None)
                     m_Dyable = false;
             }
 

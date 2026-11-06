@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,8 @@
 
 /* Scripts\Engines\ChampionSpawn\Champs\BaseChampion.cs
  * ChangeLog:
+ *  10/27/2026, Adam
+ *      SpawnTypes enum removed: the Angel Island reward check compares DefinitionName with ChampNames.AI_Escape / AI_Guard.
  *  4/4/2024, Adam (m_TreatAsChamp)
  *      Allow champ mobs to be used in ways other than as a champion. I.e., no crazy loot
  *	3/15/08, Adam
@@ -72,6 +74,7 @@
 
 using Server.Diagnostics;
 using Server.Engines.ChampionSpawn;
+using Server.Engines.DataRecorder;
 using Server.Items;
 using System;
 using System.Collections;
@@ -118,6 +121,33 @@ namespace Server.Mobiles
         public override bool IgnoreCombatantAccessibility { get { return true; } }
         // Adam; and why the f' can't champs break crates laid on the ground?
         public override bool CanDestroyObstacles { get { return true; } }
+        public override void OnDeathLeaderBoards(List<DamageStore> list)
+        {
+            ChampEngine? ce = SpawnerHandle as ChampEngine;
+
+            if (ce == null || !ce.KillDatabase)
+            {
+                base.OnDeathLeaderBoards(list);
+                return;
+            }
+
+            if (ce.DefinitionName == ChampNames.AI_Escape ||
+                ce.DefinitionName == ChampNames.AI_Guard)
+            {
+                AwardDeathRewards(
+                    list,
+                    awardTownship: true,
+                    RecorderDomain.PvMPoints,
+                    RecorderDomain.PQChamps);
+            }
+            else
+            {
+                AwardDeathRewards(
+                    list,
+                    awardTownship: true,
+                    RecorderDomain.PvMPoints);
+            }
+        }
         public override bool IAIOkToInvestigate(Mobile playerToInvestigate)
         {   // This limits how often we will investigate a player
             // But since we are a champion, we won't be dissuaded
@@ -298,7 +328,7 @@ namespace Server.Mobiles
             LogHelper logger = new LogHelper("ChampLoot.log", false);
             try
             {
-                ArrayList toGive = WhoGetsWhat(champ, logger);
+                ArrayList toGive = GetQualifiedParticipantsAndLog(champ, logger);
 
                 logger.Log(LogType.Text, string.Format("{0} slayed at location {1} on {2} ", champ, champ.Location, DateTime.UtcNow));
 
@@ -308,7 +338,7 @@ namespace Server.Mobiles
                 {
                     for (int i = 0; i < magicItems.Count; ++i)
                     {
-                        Mobile m = (Mobile)toGive[i % toGive.Count];
+                        Mobile? m = (Mobile?)toGive[i % toGive.Count];
 
                         Item reward = magicItems[i];
 
@@ -337,7 +367,7 @@ namespace Server.Mobiles
 
                     for (int i = 0; i < specialRewards.Count; ++i)
                     {
-                        Mobile m = (Mobile)toGive[i % toGive.Count];
+                        Mobile? m = (Mobile?)toGive[i % toGive.Count];
 
                         Item reward = specialRewards[i];
 

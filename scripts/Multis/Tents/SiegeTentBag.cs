@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -126,7 +126,7 @@ public class SiegeTentBag : HouseDeed, IDyable
 
                         for (int i = 0; i < toMove.Count; ++i)
                         {
-                            object o = toMove[i];
+                            object? o = toMove[i];
 
                             if (o is Mobile)
                                 ((Mobile)o).Location = house.BanLocation;
@@ -172,7 +172,7 @@ public class SiegeTentBag : HouseDeed, IDyable
 
     public static bool HasAccountSiegeTent(Mobile m)
     {
-        ArrayList list = BaseHouse.GetAccountHouses(m);
+        ArrayList list = BaseHouse.GetAccountHousesAll(m);
 
         if (list == null)
             return false;
@@ -209,7 +209,7 @@ public class SiegeTentBag : HouseDeed, IDyable
 
         protected override void OnTarget(Mobile from, object o)
         {
-            IPoint3D ip = o as IPoint3D;
+            IPoint3D? ip = o as IPoint3D;
 
             if (ip != null)
             {
@@ -222,8 +222,6 @@ public class SiegeTentBag : HouseDeed, IDyable
 
                 if (from.AccessLevel >= AccessLevel.GameMaster || reg.AllowHousing(p))
                     m_tent.OnPlacement(from, p);
-                else if (reg is TreasureRegion)
-                    from.SendLocalizedMessage(1043287); // The house could not be created here.  Either something is blocking the house, or the house would not be on valid terrain.
                 else
                     from.SendLocalizedMessage(501265); // Housing can not be created in this area.
             }

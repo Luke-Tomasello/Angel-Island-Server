@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,24 +34,11 @@
  */
 
 using Server.Gumps;
-using System;
 
 namespace Server.Items
 {
     public class SOS : Item
     {
-#if false
-        public override int LabelNumber
-        {
-            get
-            {
-                if (IsAncient)
-                    return 1063450; // an ancient SOS
-
-                return 1041081; // a waterstained SOS
-            }
-        }
-#else
         public override int LabelNumber
         {
             get { return 1041081; } // a waterstained SOS
@@ -69,7 +56,6 @@ namespace Server.Items
                     return base.DefaultName;
             }
         }
-#endif
 
         private Map m_TargetMap;
         private Point3D m_TargetLocation;
@@ -113,15 +99,10 @@ namespace Server.Items
 
         public void UpdateHue()
         {
-#if false
-            if (IsAncient)
-                Hue = FabledFishingNet.FabledHue;
-#else
             if (m_level == 5)
                 Hue = 0x670;
             else if (m_level == 4)
                 Hue = 0x5E7;
-#endif
             else
                 Hue = 0;
         }
@@ -300,27 +281,6 @@ namespace Server.Items
             return water;
         }
 
-#if false
-		private class MessageGump : Gump
-		{
-			public MessageGump( MessageEntry entry, Map map, Point3D loc ) : base( (640 - entry.Width) / 2, (480 - entry.Height) / 2 )
-			{
-				int xLong = 0, yLat = 0;
-				int xMins = 0, yMins = 0;
-				bool xEast = false, ySouth = false;
-				string fmt;
-
-				if ( Sextant.Format( loc, map, ref xLong, ref yLat, ref xMins, ref yMins, ref xEast, ref ySouth ) )
-					fmt = string.Format( "{0}°{1}'{2},{3}°{4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W" );
-				else
-					fmt = "?????";
-
-				AddPage( 0 );
-				AddBackground( 0, 0, entry.Width, entry.Height, 2520 );
-				AddHtml( 38, 38, entry.Width - 83, entry.Height - 86, string.Format( entry.Message, fmt ), false, false );
-			}
-		}
-#else
         private class MessageGump : Gump
         {
             public MessageGump(MessageEntry entry, Map map, Point3D loc)
@@ -355,7 +315,6 @@ namespace Server.Items
                 AddHtmlLocalized(70, 265, 100, 20, 1011036, false, false); // OKAY
             }
         }
-#endif
 
         private class MessageEntry
         {

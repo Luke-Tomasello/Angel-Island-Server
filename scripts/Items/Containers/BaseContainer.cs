@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -159,9 +159,9 @@ namespace Server.Items
             {
                 if (targ is BaseContainer cont)
                 {
-                    from.SendMessage(string.Format("Before: ({0} items, {1} stones)", cont.TotalItems, cont.TotalWeight));
+                    from.SendMessage(string.Format($"Before: ({cont.TotalItems} items, {cont.TotalWeight} stones, {cont.TotalGold}, gold)"));
                     cont.UpdateAllTotals();
-                    from.SendMessage(string.Format("After: ({0} items, {1} stones)", cont.TotalItems, cont.TotalWeight));
+                    from.SendMessage(string.Format($"After: ({cont.TotalItems} items, {cont.TotalWeight} stones, {cont.TotalGold}, gold)"));
                 }
                 else
                     from.SendMessage("That is not a container.");
@@ -182,7 +182,7 @@ namespace Server.Items
         {
             try
             {
-                BaseHouse house = BaseHouse.FindHouseAt(item);
+                BaseHouse? house = BaseHouse.FindHouseAt(item);
                 if (house != null)
                 {
                     bool bRecord = (house.IsFriend(from) == false || from.AccessLevel > AccessLevel.Player);
@@ -205,23 +205,7 @@ namespace Server.Items
 
         public override bool PlayerOwned()
         {
-            Item item = this;
-            Mobile mobile = null;
-            if (this.RootParent != null && this.RootParent is Item)
-                item = this.RootParent as Item;
-            else if (this.RootParent != null && this.RootParent is Mobile)
-                mobile = this.RootParent as Mobile;
-
-            if (BaseHouse.FindHouseAt(item) != null)
-                return true;
-
-            if (mobile != null)
-                return true;
-
-            if (BaseBoat.FindBoatAt(item) != null)
-                return true;
-
-            return false;
+            return base.PlayerOwned();
         }
 
         private MakersMark m_Crafter;
@@ -302,47 +286,18 @@ namespace Server.Items
 
         public override bool CheckHold(Mobile m, Item item, bool message, bool checkItems, int plusItems, int plusWeight)
         {
-            // is in a house, check housing rules
+            // If this container is in a house, enforce housing rules first.
+            // Do not reimplement container capacity logic here; delegate to base.
             if (!BaseHouse.CheckHold(m, this, item, message, checkItems))
                 return false;
 
-            //return base.CheckHold( m, item, message, checkItems );
-            int maxItems = this.MaxItems;
-
-            if (checkItems && maxItems != 0 && (this.TotalItems + plusItems + item.TotalItems + (item.IsVirtualItem ? 0 : 1)) > maxItems)
-            {
-                if (message)
-                    SendFullItemsMessage(m, item);
-
-                return false;
-            }
-            else
-            {
-                int maxWeight = this.MaxWeight;
-
-                if (maxWeight != 0 && (this.TotalWeight + plusWeight + item.TotalWeight + item.PileWeight) > maxWeight)
-                {
-                    if (message)
-                        SendFullWeightMessage(m, item);
-
-                    return false;
-                }
-            }
-            object parent = this.Parent;
-
-            while (parent != null)
-            {
-                if (parent is Container)
-                    return ((Container)parent).CheckHold(m, item, message, checkItems, plusItems, plusWeight);
-                else if (parent is Item)
-                    parent = ((Item)parent).Parent;
-                else
-                    break;
-            }
-
+            return base.CheckHold(m, item, message, checkItems, plusItems, plusWeight);
+        }
+        public override bool AllowStore(Mobile m, Item item)
+        {
+            // Restore legacy behavior: do not enforce generic CanStore ownership rule
             return true;
         }
-
         public override void GetContextMenuEntries(Mobile from, ArrayList list)
         {
             base.GetContextMenuEntries(from, list);
@@ -373,7 +328,7 @@ namespace Server.Items
         private static List<Type> IgnoreList = new() { typeof(BaseGameBoard) };
         public override Item OnBeforeItemAdded(Item item, object parent)
         {   // Determine Origin for all newly created magic items
-            Container cont = parent as Container;
+            Container? cont = parent as Container;
             if (item != null && cont != null)
             {
                 // if the item is a 'No Draw' item, delete it
@@ -381,7 +336,7 @@ namespace Server.Items
                     item.Delete();
                 else if (IsMagicLoot(item))
                 {   //Get the Root Parent Item
-                    Item rpi = (cont.RootParent is Item) ? cont.RootParent as Item : cont;
+                    Item? rpi = (cont.RootParent is Item) ? cont.RootParent as Item : cont;
                     // corpses are constructed on the internal map, as are treasure chests.
                     //  things that fall under the township/house rule would be someone dropping something in a house container.
                     if (IsProperContainer(rpi) && !BadScrollRegion(rpi) && !IsIgnoredParent(rpi) && Validate(item))
@@ -413,7 +368,7 @@ namespace Server.Items
             }
             return item;
         }
-        private bool BadScrollRegion(Item item)
+        private bool BadScrollRegion(Item? item)
         {
             Point3D location;
             Map map;
@@ -425,7 +380,7 @@ namespace Server.Items
             {
                 location = m.Location;
                 map = m.Map;
-                bool AngelIsland = Region.Find(location, map) != null && Region.Find(location, map).IsAngelIslandRules;
+                bool AngelIsland = Region.Find(location, map) != null && Region.Find(location, map).IsPrisonRules;
                 bool TownshipOrHouse = Utility.InTownshipOrHouse(m);
                 return AngelIsland || TownshipOrHouse;
             }
@@ -433,7 +388,7 @@ namespace Server.Items
             {
                 location = item.Location;
                 map = item.Map;
-                bool AngelIsland = Region.Find(location, map) != null && Region.Find(location, map).IsAngelIslandRules;
+                bool AngelIsland = Region.Find(location, map) != null && Region.Find(location, map).IsPrisonRules;
                 bool TownshipOrHouse = Utility.InTownshipOrHouse(item);
                 return AngelIsland || TownshipOrHouse;
             }
@@ -465,7 +420,7 @@ namespace Server.Items
             }
             return false;
         }
-        private bool IsProperContainer(Item item)
+        private bool IsProperContainer(Item? item)
         {
             if ((item is Corpse c && c.Owner is not PlayerMobile) || item is LockableContainer lc && lc.Locked)
                 return true;
@@ -685,7 +640,7 @@ namespace Server.Items
 
             Resource = CraftResources.GetFromType(resourceType);
 
-            CraftContext context = craftSystem.GetContext(from);
+            CraftContext? context = craftSystem.GetContext(from);
 
             if (context != null && context.DoNotColor)
                 Hue = 0;
@@ -1029,7 +984,7 @@ namespace Server.Items
         {
         }
         int m_guardWarning = 0;
-        Mobile m_lastBother = null;
+        Mobile? m_lastBother = null;
         public override bool ExecuteTrap(Mobile from, bool bAutoReset)
         {
 
@@ -1774,6 +1729,157 @@ namespace Server.Items
             base.Deserialize(reader);
 
             int version = reader.ReadInt();
+        }
+    }
+    public sealed class RescueChest : MetalChest
+    {
+        // Versioned serialization.
+        private const int CurrentVersion = 0;
+
+        private DateTime m_Expire;
+        private Timer? m_DecayTimer;
+
+        public RescueChest()
+            : this(TimeSpan.FromHours(1.0))
+        {
+        }
+
+        public RescueChest(TimeSpan lifetime)
+        {
+            Name = "Recovery Chest";
+            Movable = false;
+            Locked = true;
+
+            // Mortalis tuning: "Level 4" lock. Few/no GM pickers expected.
+            // RequiredSkill is the gating bar; LockLevel is set slightly below to keep it feasible.
+            RequiredSkill = 92;
+            LockLevel = RequiredSkill - 10;
+            MaxLockLevel = RequiredSkill + 40;
+
+            // Set default decay (caller can override by using ctor with lifetime).
+            m_Expire = DateTime.UtcNow + lifetime;
+            StartDecayTimer();
+        }
+
+        public RescueChest(Serial serial) : base(serial)
+        {
+        }
+
+        public DateTime ExpireTime
+        {
+            get => m_Expire;
+            set
+            {
+                m_Expire = value;
+
+                // If it is already expired, delete now; else restart timer.
+                if (DateTime.UtcNow >= m_Expire)
+                    Delete();
+                else
+                    StartDecayTimer();
+            }
+        }
+
+        public override void OnAfterDelete()
+        {
+            StopDecayTimer();
+            base.OnAfterDelete();
+        }
+
+        private void StartDecayTimer()
+        {
+            StopDecayTimer();
+
+            if (Deleted)
+                return;
+
+            // If already expired, delete immediately.
+            if (DateTime.UtcNow >= m_Expire)
+            {
+                Delete();
+                return;
+            }
+
+            m_DecayTimer = new DecayTimer(this);
+            m_DecayTimer.Start();
+        }
+
+        private void StopDecayTimer()
+        {
+            if (m_DecayTimer != null)
+            {
+                m_DecayTimer.Stop();
+                m_DecayTimer = null;
+            }
+        }
+
+        private sealed class DecayTimer : Timer
+        {
+            private readonly RescueChest m_Chest;
+
+            public DecayTimer(RescueChest chest)
+                : base(TimeSpan.FromSeconds(5.0), TimeSpan.FromSeconds(5.0))
+            {
+                m_Chest = chest;
+                Priority = TimerPriority.OneSecond;
+            }
+
+            protected override void OnTick()
+            {
+                if (m_Chest == null || m_Chest.Deleted)
+                {
+                    Stop();
+                    return;
+                }
+
+                if (DateTime.UtcNow >= m_Chest.m_Expire)
+                {
+                    try
+                    {
+                        if (!m_Chest.Deleted)
+                            m_Chest.Delete();
+                    }
+                    finally
+                    {
+                        Stop();
+                    }
+                }
+            }
+        }
+
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+
+            writer.Write(CurrentVersion);
+
+            // Persist absolute expiry timestamp (UTC).
+            writer.Write(m_Expire);
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+
+            int version = reader.ReadInt();
+
+            switch (version)
+            {
+                case 0:
+                default:
+                    m_Expire = reader.ReadDateTime();
+                    break;
+            }
+
+            // If expired during downtime, delete immediately; otherwise restart timer.
+            if (DateTime.UtcNow >= m_Expire)
+            {
+                Delete();
+            }
+            else
+            {
+                StartDecayTimer();
+            }
         }
     }
 

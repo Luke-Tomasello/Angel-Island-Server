@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -29,7 +29,7 @@ namespace Server.Factions
     {
         private static List<Type> m_Types = new List<Type>();
 
-        private static List<Town> m_Towns;
+        private static List<Town>? m_Towns;
 
         public static List<Town> Towns
         {
@@ -42,7 +42,7 @@ namespace Server.Factions
             }
         }
 
-        private static List<Faction> m_Factions;
+        private static List<Faction>? m_Factions;
 
         public static List<Faction> Factions
         {
@@ -84,7 +84,7 @@ namespace Server.Factions
 
             if (index == 0)
             {
-                string typeName = reader.ReadString();
+                string? typeName = reader.ReadString();
 
                 if (typeName == null)
                     m_Types.Add(null);
@@ -99,7 +99,7 @@ namespace Server.Factions
             }
         }
 
-        private static object Construct(Type type)
+        private static object? Construct(Type type)
         {
             try { return Activator.CreateInstance(type); }
             catch { return null; }
@@ -124,14 +124,14 @@ namespace Server.Factions
 
                     if (type.IsSubclassOf(typeof(Faction)))
                     {
-                        Faction faction = Construct(type) as Faction;
+                        Faction? faction = Construct(type) as Faction;
 
                         if (faction != null)
                             Faction.Factions.Add(faction);
                     }
                     else if (type.IsSubclassOf(typeof(Town)))
                     {
-                        Town town = Construct(type) as Town;
+                        Town? town = Construct(type) as Town;
 
                         if (town != null)
                             Town.Towns.Add(town);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,8 +19,58 @@
  *
  ***************************************************************************/
 
+/*
+ * See: BaseBoat.Movement.cs
+ *
+ * This file contains the boat movement pipeline (forward/back/sideways, turning) and the supporting
+ * spatial machinery used to make movement decisions safely and consistently.
+ *
+ * Key design change:
+ *   All boat spatial queries (occupied footprint, bounds, deck checks) are normalized through a single
+ *   source of truth: BoatGeometry.
+ *
+ * Why BoatGeometry exists:
+ *   Boats can have "holes" in their MultiComponentList where Tiles[x][y].Length == 0.
+ *   These holes are visually empty but still fall inside the multi's bounding box, and legacy code paths
+ *   could disagree on whether such cells were "part of the boat". That disagreement caused asymmetric
+ *   movement behavior, CanFit inconsistencies, and edge/overlap cases where sea creatures could be
+ *   scooped or carried onto the deck.
+ *
+ * BoatGeometry rules:
+ *   - For collision, CanFit, and shove logic, we treat the ENTIRE multi bounds as occupied.
+ *     (Dense footprint: holes are still considered blocked/owned by the boat for spatial reasoning.)
+ *   - Deck detection remains surface-based and can be sparse.
+ *     (OnDeck is about "walkable deck surface", not "within the boat footprint".)
+ *
+ * Shove model (driver for this refactor):
+ *   Prior movement logic could resolve overlaps after the boat moved, allowing mobiles to end up inside
+ *   the hull footprint and be "carried" by overlap resolution (notably sea creatures during sideways motion).
+ *   The new model pre-computes the proposed next boat position, identifies mobiles inside the NEW occupied
+ *   footprint, and proactively shoves eligible non-riders out of the way before committing the move.
+ *
+ * Rider preservation:
+ *   Mobiles already within the OLD occupied footprint that are legitimate riders (players, pets/summons,
+ *   hirelings, and true deck occupants) are never shoved and continue to ride with the boat as expected.
+ *
+ * Net result:
+ *   Symmetric movement/turn behavior across all hull sizes and facings, consistent CanFit/deck semantics,
+ *   and reliable pre-move shove that prevents sea-creature ramming/scooping without breaking passengers.
+ */
+
 /* Scripts/Multis/Boats/BaseBoat.cs
  * ChangeLog
+ *  10/14/2026, Adam (CorpseHasKey)
+ *      A key ring holding a matching key in the mobile's own corpse now counts, as it does in a living player's
+ *      backpack (CarriesKey). Keys on a ring are not in the corpse's contents, so the loose-key search never saw
+ *      them, and a ghost whose key was on a ring could not command its boat. The loose-key search is unchanged.
+ *  10/14/2026, Adam (CanCommand)
+ *      CanCommand's rules are now side-effect-free queries, so other systems (Help Stuck) can ask whether someone
+ *      could command the boat without the tillerman speaking: GetCommandAuthority (staff, key, corpse key, Siege
+ *      closest player), FindTillerObstruction (the item keeping him from taking orders) and DecayDue (CheckDecay's
+ *      condition). CanCommand is built on them; its behavior and messages are unchanged.
+ *      HasKey is split: CarriesKey is the backpack key and key ring search, without the staff rule.
+ *  2/7/2026, Adam
+ *      see above description of the new BaseBoat.Movement.cs
  *  3/23/2024, Adam (CanFit)
  *      Create a list of items that don't block boats (spawners, and all the controllers.)
  *  7/1/23, Yoar
@@ -164,9 +214,21 @@ namespace Server.Multis
         Single
     }
 
-    public abstract class BaseBoat : BaseMulti
+    // BaseBoat.GetCommandAuthority: on what grounds the tillerman takes orders from someone (CanCommand's rules)
+    public enum CommandAuthority
+    {
+        None,           // no claim to command (not Siege: a closest player without a key is refused)
+        StaffBoatOnly,  // a staff boat: GameMaster+ only, and they are not
+        Staff,          // staff: HasKey counts every staff member as a keyholder (a staff boat: GameMaster+)
+        Key,            // a matching key, or a key ring holding one, in their backpack (CarriesKey)
+        CorpseKey,      // not Siege: their own corpse on the boat holds a matching key (CorpseHasKey)
+        ClosestPlayer,  // Siege: no one on deck has a key, and they are the (tied) closest player to the tillerman
+    }
+
+    public abstract partial class BaseBoat : BaseMulti
     {
         private static TimeSpan BoatDecayDelay = TimeSpan.FromDays(7.0);
+        private static bool DebugShove = false; // debug logging for 'shove out of the way' processing
 
         public virtual int Depth { get { return 50; } }
 
@@ -191,8 +253,8 @@ namespace Server.Multis
 
         private DateTime m_DecayTime;
 
-        private Timer m_TurnTimer;
-        private Timer m_MoveTimer;
+        private Timer? m_TurnTimer;
+        private Timer? m_MoveTimer;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public Hold Hold { get { return m_Hold; } set { m_Hold = value; } }
@@ -317,7 +379,7 @@ namespace Server.Multis
                 return WorldZone.ActiveZone.WrapBounds;
             #endregion
             else
-                return Utility.World.GetWrapFor(map);
+                return Utility.WorldMap.GetWrapFor(map);
         }
         // for the generic version, see Utils.World.IsValidLocation()
         // called externally by BaseBoatDeed
@@ -325,7 +387,7 @@ namespace Server.Multis
         {
             // this is our rectangle surrounding Angel Island
             // this check prevents people from placing boats anywhere in the AngelIsland region.
-            if (Core.RuleSets.AnyAIShardRules() && Utility.World.AIRect.Contains(p))
+            if (Core.RuleSets.AnyAIShardRules() && Utility.WorldMap.AngelIsland.Contains(p))
                 return false;
 
             // Zora's Pond (NE Hedge Maze)
@@ -334,51 +396,49 @@ namespace Server.Multis
 
             // Dagger Island Trammel, Event area
             if (map == Map.Trammel)
-                if (Core.RuleSets.AnyAIShardRules() && (Utility.World.DaggerIsland.Contains(p) || Utility.World.DaggerIsland.Contains(placer.Location)))
+                if (Core.RuleSets.AnyAIShardRules() && (Utility.WorldMap.DaggerIsland.Contains(p) || Utility.WorldMap.DaggerIsland.Contains(placer.Location)))
                     return false;
 
-            return Utility.World.IsValidLocation(p, map);
+            return Utility.WorldMap.IsValidLocation(p, map);
         }
-        //public static double DistanceToRect(Rectangle2D rect, Point2D p)
-        //{
-        //    var dx = Math.Max(rect.Start.X - p.X, p.X - rect.End.X);
-        //    var dy = Math.Max(rect.Start.Y - p.Y, p.Y - rect.End.Y);
-        //    return Math.Sqrt(dx * dx + dy * dy);
-        //}
-
-        public Point3D GetRotatedLocation(int x, int y)
-        {
-            Point3D p = new Point3D(X + x, Y + y, Z);
-
-            return Rotate(p, (int)m_Facing / 2);
-        }
-
         public void UpdateComponents()
         {
-            if (m_PPlank != null)
+            // Canonical anchor placement under the new model:
+            // - Planks: GetPlankCellsAt(Location, Facing)
+            // - Tiller: GetTillerCellAt(Location, Facing)
+            // - Hold:   GetHoldCellAt(Location, Facing)
+
+            // Planks
+            if (m_PPlank != null || m_SPlank != null)
             {
-                m_PPlank.MoveToWorld(GetRotatedLocation(PortOffset.X, PortOffset.Y), Map);
-                m_PPlank.SetFacing(m_Facing);
+                GetPlankCellsAt(this.Location, m_Facing, out Point2D portCell, out Point2D starCell);
+
+                if (m_PPlank != null)
+                {
+                    m_PPlank.MoveToWorld(new Point3D(portCell.X, portCell.Y, m_PPlank.Z), Map);
+                    m_PPlank.SetFacing(m_Facing);
+                }
+
+                if (m_SPlank != null)
+                {
+                    m_SPlank.MoveToWorld(new Point3D(starCell.X, starCell.Y, m_SPlank.Z), Map);
+                    m_SPlank.SetFacing(m_Facing);
+                }
             }
 
-            if (m_SPlank != null)
-            {
-                m_SPlank.MoveToWorld(GetRotatedLocation(StarboardOffset.X, StarboardOffset.Y), Map);
-                m_SPlank.SetFacing(m_Facing);
-            }
-
-            int xOffset = 0, yOffset = 0;
-            Movement.Movement.Offset(m_Facing, ref xOffset, ref yOffset);
-
+            // Tiller
             if (m_TillerMan != null)
             {
-                m_TillerMan.Location = new Point3D(X + (xOffset * TillerManDistance) + (m_Facing == Direction.North ? 1 : 0), Y + (yOffset * TillerManDistance), m_TillerMan.Z);
+                Point2D tc = GetTillerCellAt(this.Location, m_Facing);
+                m_TillerMan.Location = new Point3D(tc.X, tc.Y, m_TillerMan.Z);
                 m_TillerMan.SetFacing(m_Facing);
             }
 
+            // Hold
             if (m_Hold != null)
             {
-                m_Hold.Location = new Point3D(X + (xOffset * HoldDistance), Y + (yOffset * HoldDistance), m_Hold.Z);
+                Point2D hc = GetHoldCellAt(this.Location, m_Facing);
+                m_Hold.Location = new Point3D(hc.X, hc.Y, m_Hold.Z);
                 m_Hold.SetFacing(m_Facing);
             }
         }
@@ -577,6 +637,12 @@ namespace Server.Multis
             if (m.AccessLevel > AccessLevel.Player)
                 return true;
 
+            return CarriesKey(m);
+        }
+
+        // HasKey without the staff rule: a matching key, or a key ring holding one, anywhere in their backpack
+        public bool CarriesKey(Mobile m)
+        {
             bool hasKey = false;
 
             Container pack = m.Backpack;
@@ -588,7 +654,7 @@ namespace Server.Multis
 
                     for (int i = 0; !hasKey && i < items.Length; ++i)
                     {
-                        Key key = items[i] as Key;
+                        Key? key = items[i] as Key;
 
                         if (key != null && ((m_SPlank != null && key.KeyValue == m_SPlank.KeyValue) || (m_PPlank != null && key.KeyValue == m_PPlank.KeyValue)))
                             hasKey = true;
@@ -601,7 +667,7 @@ namespace Server.Multis
 
                     for (int i = 0; !hasKey && i < items.Length; ++i)
                     {
-                        KeyRing keyring = items[i] as KeyRing;
+                        KeyRing? keyring = items[i] as KeyRing;
 
                         if (keyring != null && keyring.IsKeyOnRing(m_SPlank.KeyValue) || keyring.IsKeyOnRing(m_PPlank.KeyValue))
                             hasKey = true;
@@ -617,76 +683,11 @@ namespace Server.Multis
         #region Naval Battle
 
         /// <summary>
-        /// Checks if a given mobile is on the deck of this boat
-        /// </summary>
-        /// <param name="m"></param>
-        /// <returns></returns>
-        public bool IsOnDeck(Mobile m)
-        {
-            if (m == null || m.Deleted || m.Map != this.Map)
-                return false;
-            return IsOnDeck(m.Location);
-        }
-
-        /// <summary>
-        /// Checks if a given item is on the deck of this boat
-        /// </summary>
-        /// <param name="item"></param>
-        /// <returns></returns>
-        public bool IsOnDeck(Item item)
-        {
-            if (item == null || item.Deleted || item.Map != this.Map || item.Parent != null)
-                return false;
-            return IsOnDeck(item.Location);
-        }
-
-        /// <summary>
-        /// Checks if a given location is on the deck of this boat
-        /// </summary>
-        /// <param name="loc"></param>
-        /// <param name="height"></param>
-        /// <returns></returns>
-        public bool IsOnDeck(Point3D loc)
-        {
-            if (this.Deleted || this.Map == null || this.Map == Map.Internal)
-                return false;
-
-            ArrayList list = this.Map.GetTilesAt(new Point2D(loc.X, loc.Y), false, false, true);
-
-            foreach (object o in list)
-            {
-                if (o == null)
-                    continue;
-
-                // don't think we want LandTiles here...
-                if (!(o is StaticTile || o is LandTile))
-                    continue;
-
-                StaticTarget st = new StaticTarget(loc, Utility.GetObjectID(o) & 0x3FFF);
-
-                if (st == null)
-                    continue;
-
-                if (st.Name == "deck")
-                    return Contains(loc);
-            }
-
-            //also check for hold as it has no deck tile underneath it
-            foreach (Item item in this.Map.GetItemsInRange(loc, 0))
-            {
-                if (item is Hold)
-                    return Contains(loc); //call this incase its on another boat
-            }
-
-            return false;
-        }
-
-        /// <summary>
         /// Returns the boat at a Mobile's location
         /// </summary>
         /// <param name="m"></param>
         /// <returns></returns>
-        public static BaseBoat FindBoatAt(Mobile m)
+        public static BaseBoat? FindBoatAt(Mobile? m)
         {
             if (m == null || m.Deleted)
                 return null;
@@ -698,7 +699,7 @@ namespace Server.Multis
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        public static BaseBoat FindBoatAt(Item item)
+        public static BaseBoat? FindBoatAt(Item item)
         {
             if (item == null || item.Deleted)
                 return null;
@@ -723,7 +724,7 @@ namespace Server.Multis
         /// <param name="map"></param>
         /// <param name="height"></param>
         /// <returns></returns>
-        public static BaseBoat FindBoatAt(IPoint2D loc, Map map, int height) // note: height parameter is unused
+        public static BaseBoat? FindBoatAt(IPoint2D loc, Map map, int height) // note: height parameter is unused
         {
             foreach (BaseMulti m in FindAll(new Point3D(loc.X, loc.Y, 0), map))
             {
@@ -732,35 +733,6 @@ namespace Server.Multis
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Retuns ArrayList of Moblies currently on the deck
-        /// </summary>
-        /// <returns></returns>
-        public ArrayList GetMobilesOnDeck()
-        {
-            //Results array
-            ArrayList results = new ArrayList();
-
-            if (this.Deleted || this.Map == null || this.Map == Map.Internal)
-                return results;
-
-            //Grab the multi component list
-            MultiComponentList mcl = GetComponents();
-
-            if (mcl == null)
-                return results;
-
-            //Grab all mobiles within bounds, check if mobile is on deck
-            foreach (Mobile m in this.Map.GetMobilesInBounds(new Rectangle2D(X + mcl.Min.X, Y + mcl.Min.Y, mcl.Width, mcl.Height)))
-            {
-                if (IsOnDeck(m))
-                    results.Add(m);
-            }
-
-            //Return ArrayList
-            return results;
         }
 
         /// <summary>
@@ -780,17 +752,17 @@ namespace Server.Multis
                 return result;
 
             //Grab copy of the multi component list
-            MultiComponentList mcl = GetComponents();
-            if (mcl == null)
+            BoatGeometry geo = BuildGeometry(Location, m_Facing);
+            if (geo == null)
                 return result;
 
             //Setup array of possible locations
             ArrayList locations = new ArrayList();
 
             //Add all possible spawn locations to array
-            for (int x = 0; x < mcl.Width; x++)
-                for (int y = 0; y < mcl.Height; y++)
-                    locations.Add(new Point3D(X + mcl.Min.X + x, Y + mcl.Min.Y + y, Z + 3));//Z+3 brings us onto the deck
+            foreach (Point2D p in geo.StrictDeckCellsWorld)
+                locations.Add(new Point3D(p.X, p.Y, Z + 3)); // Z+3 brings us onto the deck
+
 
             //Now pick randomly & remove until a spawn point is found
             while (locations.Count > 0)
@@ -816,7 +788,7 @@ namespace Server.Multis
                 return true;
 
             //Establish if there is a boat here
-            BaseBoat b = FindBoatAt(loc, map, height);
+            BaseBoat? b = FindBoatAt(loc, map, height);
             if (b == null)
                 //Didn't even find a boat. Return true
                 return true;
@@ -865,14 +837,14 @@ namespace Server.Multis
                 return false;
 
             //Grab copy of the multi component list
-            MultiComponentList mcl = GetComponents();
-            if (mcl == null)
+            BoatGeometry geo = BuildGeometry(Location, m_Facing);
+            if (geo == null)
                 return false;
 
             //Grab all mobiles within mcl bounds
-            foreach (Item item in this.Map.GetItemsInBounds(new Rectangle2D(X + mcl.Min.X, Y + mcl.Min.Y, mcl.Width, mcl.Height)))
+            foreach (Item item in this.Map.GetItemsInBounds(geo.BoundsWorld))
             {
-                Corpse c = item as Corpse;
+                Corpse? c = item as Corpse;
 
                 if (c == null || m_PPlank == null || m_SPlank == null)
                     continue;
@@ -881,11 +853,27 @@ namespace Server.Multis
                 Item[] items = c.FindItemsByType(typeof(Key));
                 for (int i = 0; i < items.Length; ++i)
                 {
-                    Key key = items[i] as Key;
+                    Key? key = items[i] as Key;
                     if (key != null && (key.KeyValue == m_SPlank.KeyValue || key.KeyValue == m_PPlank.KeyValue) && c.Owner == m)
                     {
                         CorpseHasKey = true;
                         break;
+                    }
+                }
+
+                // a key ring holding a matching key counts, as it does in a living player's backpack (CarriesKey).
+                //  Keys on a ring are not in the corpse's contents, so the search above never sees them.
+                if (!CorpseHasKey && c.Owner == m)
+                {
+                    Item[] rings = c.FindItemsByType(typeof(KeyRing));
+                    for (int i = 0; i < rings.Length; ++i)
+                    {
+                        KeyRing? keyring = rings[i] as KeyRing;
+                        if (keyring != null && (keyring.IsKeyOnRing(m_SPlank.KeyValue) || keyring.IsKeyOnRing(m_PPlank.KeyValue)))
+                        {
+                            CorpseHasKey = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -895,65 +883,97 @@ namespace Server.Multis
 
         #endregion Naval Battle
 
+        // CanCommand is the gameplay check (it has the tillerman speak). Its rules are answered, without side effects,
+        //  by GetCommandAuthority, FindTillerObstruction and DecayDue, so that other systems (Help Stuck) can ask
+        //  whether someone could command this boat without the tillerman saying anything. CanCommand is built on
+        //  those queries; change the rules there, and CanCommand follows.
         public bool CanCommand(Mobile m)
         {
             //erl: new property to limit vessel command to GM+
             if (StaffBoat)
-                return (m.AccessLevel >= AccessLevel.GameMaster);
+                return GetCommandAuthority(m) == CommandAuthority.Staff;
 
             //pla: If the TillerMan is blocked, no one commands!
-            if (m_TillerMan != null)
+            if (FindTillerObstruction() != null)
             {
-                foreach (Item item in m_TillerMan.GetItemsInRange(1))
-                {
-                    if (item.Movable && !(item is Arrow || item is Bolt))
-                    {
-                        if (Utility.RandomBool())
-                            m_TillerMan.PublicOverheadMessage(0, 0x3B2, false, "Arr! Clear the deck mateys!");
-                        else
-                            m_TillerMan.PublicOverheadMessage(0, 0x3B2, false, "Arr! I be needin' more room!");
+                if (Utility.RandomBool())
+                    m_TillerMan.PublicOverheadMessage(0, 0x3B2, false, "Arr! Clear the deck mateys!");
+                else
+                    m_TillerMan.PublicOverheadMessage(0, 0x3B2, false, "Arr! I be needin' more room!");
 
-                        return false;
-                    }
-                }
+                return false;
             }
 
-            //2010.11.26 - separate out into AI && UOSP for ease of coding/understanding
-            if (Core.RuleSets.SiegeStyleRules())
+            if (GetCommandAuthority(m) != CommandAuthority.None)
+                return true;
+
+            //pla: Changed to display RP message and disallow command (not Siege: the closest player has no
+            //  claim without a key)
+            if (!Core.RuleSets.SiegeRules() && NobodyOnDeckHasKey() && IsClosestToTillerman(m))
             {
-                //if the mobile has the key, they can command!
-                if (HasKey(m))
-                    return true;
-
-                //if nobody has key, then the closest player on board commands
-                if (NobodyOnDeckHasKey() && IsClosestToTillerman(m))
-                    return true;
-            }
-            else
-            {
-                //Keyholders can always command
-                if (HasKey(m))
-                    return true;
-
-                //pla: Only a key holder or a corpse of him with the key can command
-                if (CorpseHasKey(m))
-                    return true;
-
-                if (NobodyOnDeckHasKey() && IsClosestToTillerman(m))
+                switch (Utility.Random(3))
                 {
-                    //pla: Changed to display RP message and disallow command
-                    switch (Utility.Random(3))
-                    {
-                        case 0: m_TillerMan.PublicOverheadMessage(0, 0x3B2, false, "Ar! Ye not be my Cap'n!"); break;
-                        case 1: m_TillerMan.PublicOverheadMessage(0, 0x3B2, false, "Ar! I not be taking orders from ye, matey!"); break;
-                        case 2: m_TillerMan.PublicOverheadMessage(0, 0x3B2, false, "Ar! I not be listenin' to ye, scurvy deckhand!"); break;
-                    }
-
-                    return false;
+                    case 0: m_TillerMan.PublicOverheadMessage(0, 0x3B2, false, "Ar! Ye not be my Cap'n!"); break;
+                    case 1: m_TillerMan.PublicOverheadMessage(0, 0x3B2, false, "Ar! I not be taking orders from ye, matey!"); break;
+                    case 2: m_TillerMan.PublicOverheadMessage(0, 0x3B2, false, "Ar! I not be listenin' to ye, scurvy deckhand!"); break;
                 }
             }
 
             return false;
+        }
+
+        // On what grounds the tillerman takes orders from m (CanCommand's rules), the tiller obstruction and decay
+        //  aside: FindTillerObstruction and DecayDue answer those, for everyone aboard alike. Side-effect free.
+        //  judgeAsPlayer: ignore m's access level (HasKey counts every staff member as a keyholder), as when staff
+        //  test a player's view. Other staff aboard still count as keyholders for NobodyOnDeckHasKey, as in play.
+        public CommandAuthority GetCommandAuthority(Mobile m, bool judgeAsPlayer = false)
+        {
+            //erl: new property to limit vessel command to GM+
+            if (StaffBoat)
+                return !judgeAsPlayer && m.AccessLevel >= AccessLevel.GameMaster ? CommandAuthority.Staff : CommandAuthority.StaffBoatOnly;
+
+            // HasKey: staff hold every key
+            if (!judgeAsPlayer && m.AccessLevel > AccessLevel.Player)
+                return CommandAuthority.Staff;
+
+            //Keyholders can always command
+            if (CarriesKey(m))
+                return CommandAuthority.Key;
+
+            //2010.11.26 - separate out into AI && UOSP for ease of coding/understanding
+            if (Core.RuleSets.SiegeRules())
+            {
+                //if nobody has key, then the closest player on board commands
+                return NobodyOnDeckHasKey() && IsClosestToTillerman(m) ? CommandAuthority.ClosestPlayer : CommandAuthority.None;
+            }
+
+            //pla: Only a key holder or a corpse of him with the key can command
+            return CorpseHasKey(m) ? CommandAuthority.CorpseKey : CommandAuthority.None;
+        }
+
+        // the item that keeps the tillerman from taking orders from anyone (CanCommand: "Clear the deck mateys!"):
+        //  a movable item, other than an arrow or bolt, within one tile of him. Null if there is none. Side-effect free.
+        public Item? FindTillerObstruction()
+        {
+            if (m_TillerMan == null)
+                return null;
+
+            IPooledEnumerable eable = m_TillerMan.GetItemsInRange(1);
+
+            try
+            {
+                foreach (Item item in eable)
+                {
+                    if (item.Movable && !(item is Arrow || item is Bolt))
+                        return item;
+                }
+            }
+            finally
+            {
+                eable.Free();
+            }
+
+            return null;
         }
 
         public Point3D GetMarkedLocation()
@@ -987,9 +1007,11 @@ namespace Server.Multis
             int distCur = int.MaxValue;
             int distMin = int.MaxValue;
 
-            MultiComponentList mcl = GetComponents();
+            BoatGeometry geo = BuildGeometry(Location, m_Facing);
+            if (geo == null)
+                return false;
 
-            foreach (Mobile check in map.GetMobilesInBounds(new Rectangle2D(X + mcl.Min.X, Y + mcl.Min.Y, mcl.Width, mcl.Height)))
+            foreach (Mobile check in map.GetMobilesInBounds(geo.BoundsWorld))
             {
                 if (check.Player && Contains(check))
                 {
@@ -1089,6 +1111,10 @@ namespace Server.Multis
                 }
             }
         }
+
+        // CheckDecay's condition without its side effect (CheckDecay starts the sinking when it is due): true when
+        //  every command, rename and dry dock is refused because the boat is decaying or due to. Keep the two aligned.
+        public bool DecayDue => !m_StaffBoat && (m_Decaying || (!IsMoving && DateTime.UtcNow >= m_DecayTime));
 
         public bool CheckDecay()
         {
@@ -1263,7 +1289,7 @@ namespace Server.Multis
 
                 for (int i = 0; !hasKey && i < items.Length; ++i)
                 {
-                    Key key = items[i] as Key;
+                    Key? key = items[i] as Key;
 
                     if (key != null && ((m_SPlank != null && key.KeyValue == m_SPlank.KeyValue) || (m_PPlank != null && key.KeyValue == m_PPlank.KeyValue)))
                         hasKey = true;
@@ -1284,9 +1310,11 @@ namespace Server.Multis
             if (map == null || map == Map.Internal)
                 return DryDockResult.Items;
 
-            MultiComponentList mcl = GetComponents();
+            BoatGeometry geo = BuildGeometry(Location, m_Facing);
+            if (geo == null)
+                return DryDockResult.Items;
 
-            IPooledEnumerable eable = map.GetObjectsInBounds(new Rectangle2D(X + mcl.Min.X, Y + mcl.Min.Y, mcl.Width, mcl.Height));
+            IPooledEnumerable eable = map.GetObjectsInBounds(geo.BoundsWorld);
 
             foreach (object o in eable)
             {
@@ -1392,7 +1420,7 @@ namespace Server.Multis
 
             if (e.Speech.Length > 8)
             {
-                string newName = e.Speech.Substring(8).Trim();
+                string? newName = e.Speech.Substring(8).Trim();
 
                 if (newName.Length == 0)
                     newName = null;
@@ -1401,7 +1429,7 @@ namespace Server.Multis
             }
         }
 
-        public void Rename(string newName)
+        public void Rename(string? newName)
         {
             if (CheckDecay())
                 return;
@@ -1865,129 +1893,8 @@ namespace Server.Multis
                 // other stuff
                 typeof(Spawner),
                 typeof(EventSpawner),
+                typeof(DoppelgangerCorpse)
             };
-
-        public bool CanFit(Point3D p, Map map)
-        {
-            return CanFit(p, map, m_Facing);
-        }
-
-        public bool CanFit(Point3D p, Map map, Direction facing)
-        {
-            if (map == null || map == Map.Internal || Deleted || CheckDecay())
-                return false;
-
-            MultiComponentList newComponents = GetComponents(facing);
-
-            for (int x = 0; x < newComponents.Width; ++x)
-            {
-                for (int y = 0; y < newComponents.Height; ++y)
-                {
-                    int tx = p.X + newComponents.Min.X + x;
-                    int ty = p.Y + newComponents.Min.Y + y;
-
-                    if (newComponents.Tiles[x][y].Length == 0 || Contains(tx, ty))
-                        continue;
-
-                    #region World Zone
-                    if (WorldZone.IsInside(this.Location, this.Map) && WorldZone.IsOutside(new Point3D(tx, ty, 0), map))
-                        return false;
-                    #endregion
-
-                    LandTile landTile = map.Tiles.GetLandTile(tx, ty);
-                    StaticTile[] tiles = map.Tiles.GetStaticTiles(tx, ty, true);
-
-                    bool hasWater = false;
-
-                    if (landTile.Z == p.Z && ((landTile.ID >= 168 && landTile.ID <= 171) || (landTile.ID >= 310 && landTile.ID <= 311)))
-                        hasWater = true;
-
-                    int z = p.Z;
-
-                    //int landZ = 0, landAvg = 0, landTop = 0;
-
-                    //map.GetAverageZ(tx, ty, ref landZ, ref landAvg, ref landTop);
-
-                    //if ( !landTile.Ignored && top > landZ && landTop > z )
-                    //	return false;
-
-                    for (int i = 0; i < tiles.Length; ++i)
-                    {
-                        StaticTile tile = tiles[i];
-                        // 11/12/22, Adam: RunUO2.6 changed the notion of what a water tile is.
-                        //bool isWater = (tile.ID >= 0x5796 && tile.ID <= 0x57B2);
-                        bool isWater = (tile.ID >= 0x1796 && tile.ID <= 0x17B2);
-
-                        if (tile.Z == p.Z && isWater)
-                            hasWater = true;
-                        else if (tile.Z >= p.Z && tile.Z < p.Z + Depth && !isWater)
-                            return false;
-                    }
-
-                    // 1/16/24, Yoar: Allow boat movement over static water items
-                    foreach (Item item in map.GetItemsInRange(new Point3D(tx, ty, p.Z), 0))
-                    {
-                        if (item.Movable)
-                            continue;
-
-                        // 3/23/2024, Adam: Allow boats to move over these objects (spawners, and controllers)
-                        if (boat_ignore_types.Contains(item.GetType()))
-                            continue;
-
-                        bool isWater = (item.ItemID >= 0x1796 && item.ItemID <= 0x17B2);
-
-                        if (item.Z == p.Z && isWater)
-                            hasWater = true;
-                        else if (item.Z >= p.Z && item.Z < p.Z + Depth && !isWater)
-                            return false;
-                    }
-
-                    if (!hasWater)
-                        return false;
-                }
-            }
-
-            m_Sinkables.Clear();
-
-            IPooledEnumerable eable = map.GetItemsInBounds(new Rectangle2D(p.X + newComponents.Min.X, p.Y + newComponents.Min.Y, newComponents.Width, newComponents.Height));
-
-            foreach (Item item in eable)
-            {
-                if (item.ItemID >= 0x4000 || item.Z + (IsSinkable(item) ? GetClearance(item) - 1 : 0) < p.Z || item.Z >= p.Z + Depth || !item.Visible)
-                    continue;
-
-                // 1/16/24, Yoar: Allow boat movement over static water items
-                if (!item.Movable && item.Z == p.Z && item.ItemID >= 0x1796 && item.ItemID <= 0x17B2)
-                    continue;
-
-                int x = item.X - p.X + newComponents.Min.X;
-                int y = item.Y - p.Y + newComponents.Min.Y;
-
-                if (item is Arrow || item is Bolt || item is Blood)
-                    continue;
-
-                if (x >= 0 && x < newComponents.Width && y >= 0 && y < newComponents.Height && newComponents.Tiles[x][y].Length == 0)
-                    continue;
-                else if (Contains(item))
-                    continue;
-
-                if (IsSinkable(item))
-                {
-                    m_Sinkables.Add(item);
-                    continue;
-                }
-
-                eable.Free();
-                return false;
-            }
-
-            eable.Free();
-
-            if (!CheckSinkables())
-                return false;
-
-            return true;
-        }
 
         #region Sinkables
 
@@ -2116,26 +2023,6 @@ namespace Server.Multis
             return new Point3D(Location.X + rx, Location.Y + ry, p.Z);
         }
 
-        public override bool Contains(int x, int y)
-        {
-            if (base.Contains(x, y))
-                return true;
-
-            if (m_TillerMan != null && x == m_TillerMan.X && y == m_TillerMan.Y)
-                return true;
-
-            if (m_Hold != null && x == m_Hold.X && y == m_Hold.Y)
-                return true;
-
-            if (m_PPlank != null && x == m_PPlank.X && y == m_PPlank.Y)
-                return true;
-
-            if (m_SPlank != null && x == m_SPlank.X && y == m_SPlank.Y)
-                return true;
-
-            return false;
-        }
-
         public Direction GetMovementFor(int x, int y, out int maxSpeed)
         {
             int dx = x - this.X;
@@ -2244,155 +2131,6 @@ namespace Server.Multis
             return move_ok;
         }
 
-        public bool Move(Direction dir, int speed, bool message)
-        {
-            Map map = Map;
-
-            if (map == null || Deleted || CheckDecay())
-                return false;
-
-            if (m_Anchored)
-            {
-                if (message && m_TillerMan != null)
-                    m_TillerMan.Say(501419); // Ar, the anchor is down sir!
-
-                return false;
-            }
-
-            int rx = 0, ry = 0;
-            Movement.Movement.Offset((Direction)(((int)m_Facing + (int)dir) & 0x7), ref rx, ref ry);
-
-            for (int i = 1; i <= speed; ++i)
-            {
-                if (!CanFit(new Point3D(X + (i * rx), Y + (i * ry), Z), Map))
-                {
-                    if (i == 1)
-                    {
-                        ProcessSinkables();
-
-                        if (message && m_TillerMan != null)
-                        {
-                            if (m_Sinkables.Count != 0)
-                                m_TillerMan.Say(false, "Ar, we've hit something cap'n!");
-                            else
-                                m_TillerMan.Say(501424); // Ar, we've stopped sir.
-                        }
-
-                        return false;
-                    }
-
-                    speed = i - 1;
-                    break;
-                }
-            }
-
-            int xOffset = speed * rx;
-            int yOffset = speed * ry;
-
-            int newX = X + xOffset;
-            int newY = Y + yOffset;
-
-            // Figure out what our new location will be as a 2D point.
-            // If that point puts us within the Angel Island perimeter, cancel the movement.
-            // Have tillerman tell us we've stopped.
-            // Adam: have the tillerman tell us about Angel Island
-            if (Core.RuleSets.AnyAIShardRules() && Utility.World.AIRect.Contains(new Point2D(newX, newY)))
-            {
-                if (message && m_TillerMan != null)
-                    m_TillerMan.Say(false, "Ar, I'll not go any nearer to that Angel Island.");
-
-                return false;
-            }
-
-            Rectangle2D[] wrap = BaseBoat.GetWrapFor(this.Location, map);
-
-            for (int i = 0; i < wrap.Length; ++i)
-            {
-                Rectangle2D rect = wrap[i];
-
-                if (rect.Contains(new Point2D(X, Y)) && !rect.Contains(new Point2D(newX, newY)))
-                {
-                    if (newX < rect.X)
-                        newX = rect.X + rect.Width - 1;
-                    else if (newX >= rect.X + rect.Width)
-                        newX = rect.X;
-
-                    if (newY < rect.Y)
-                        newY = rect.Y + rect.Height - 1;
-                    else if (newY >= rect.Y + rect.Height)
-                        newY = rect.Y;
-
-                    for (int j = 1; j <= speed; ++j)
-                    {
-                        if (!CanFit(new Point3D(newX + (j * rx), newY + (j * ry), Z), Map))
-                        {
-                            if (message && m_TillerMan != null)
-                                m_TillerMan.Say(501424); // Ar, we've stopped sir.
-
-                            return false;
-                        }
-                    }
-
-                    xOffset = newX - X;
-                    yOffset = newY - Y;
-                }
-            }
-
-            MultiComponentList mcl = GetComponents();
-
-            ArrayList toMove = new ArrayList();
-
-            IPooledEnumerable eable = map.GetObjectsInBounds(new Rectangle2D(X + mcl.Min.X, Y + mcl.Min.Y, mcl.Width, mcl.Height));
-
-            foreach (object o in eable)
-            {
-                if (o != this && !(o is TillerMan || o is Hold || o is Plank))
-                    toMove.Add(o);
-            }
-
-            eable.Free();
-
-            HashSet<Point3D> stackLocs = new HashSet<Point3D>(); // stack items at these locations
-
-            for (int i = 0; i < toMove.Count; ++i)
-            {
-                object o = toMove[i];
-
-                if (o is Item)
-                {
-                    Item item = (Item)o;
-
-                    // 1/16/24, Yoar: Allow boat movement over static water items
-                    if (!item.Movable && item.Z == Z && item.ItemID >= 0x1796 && item.ItemID <= 0x17B2)
-                        continue;
-
-                    if (Contains(item) && item.Visible && item.Z >= Z && item.Z < Z + Depth)
-                    {
-                        Point3D newLoc = new Point3D(item.X + xOffset, item.Y + yOffset, item.Z);
-
-                        item.Location = newLoc;
-
-                        if (Array.IndexOf(m_AutoStack, item.GetType()) != -1)
-                            stackLocs.Add(newLoc);
-                    }
-                }
-                else if (o is Mobile)
-                {
-                    Mobile m = (Mobile)o;
-
-                    if (Contains(m))
-                        m.Location = new Point3D(m.X + xOffset, m.Y + yOffset, m.Z);
-                }
-            }
-
-            Location = new Point3D(X + xOffset, Y + yOffset, Z);
-
-            foreach (Point3D loc in stackLocs)
-                ItemStacker.StackAt(loc, map, m_AutoStack);
-
-            return true;
-        }
-
         private static readonly Type[] m_AutoStack = new Type[] // these item types are automatically stacked on boat movement
             {
                 typeof( Arrow ),
@@ -2401,11 +2139,13 @@ namespace Server.Multis
 
         public void Teleport(int xOffset, int yOffset, int zOffset)
         {
-            MultiComponentList mcl = GetComponents();
+            BoatGeometry geo = BuildGeometry(Location, m_Facing);
+            if (geo == null)
+                return;
 
             ArrayList toMove = new ArrayList();
 
-            IPooledEnumerable eable = this.Map.GetObjectsInBounds(new Rectangle2D(X + mcl.Min.X, Y + mcl.Min.Y, mcl.Width, mcl.Height));
+            IPooledEnumerable eable = this.Map.GetObjectsInBounds(geo.BoundsWorld);
 
             foreach (object o in eable)
             {
@@ -2417,7 +2157,7 @@ namespace Server.Multis
 
             for (int i = 0; i < toMove.Count; ++i)
             {
-                object o = toMove[i];
+                object? o = toMove[i];
 
                 if (o is Item)
                 {
@@ -2427,129 +2167,55 @@ namespace Server.Multis
                     if (!item.Movable && item.Z == Z && item.ItemID >= 0x1796 && item.ItemID <= 0x17B2)
                         continue;
 
-                    if (Contains(item) && item.Visible && item.Z >= Z && item.Z < Z + Depth)
+                    if (geo.IsOccupiedCell(item.X, item.Y) && item.Visible && item.Z >= Z && item.Z < Z + Depth)
                         item.Location = new Point3D(item.X + xOffset, item.Y + yOffset, item.Z + zOffset);
                 }
                 else if (o is Mobile)
                 {
                     Mobile m = (Mobile)o;
 
-                    if (Contains(m))
-                        m.Location = new Point3D(m.X + xOffset, m.Y + yOffset, m.Z + zOffset);
+                    // Players ride if they are within the boat footprint.
+                    // This prevents "boat leaves without me" even if deck tile flags are imperfect.
+                    if (m.Player)
+                    {
+                        if (geo.IsOccupiedCell(m.X, m.Y))
+                            m.Location = new Point3D(m.X + xOffset, m.Y + yOffset, m.Z);
+
+                        continue;
+                    }
+
+                    // Non-players only ride if truly on deck (prevents sea creatures being carried)
+                    if (geo.IsStrictInteriorDeckCell(m.X, m.Y))
+                        m.Location = new Point3D(m.X + xOffset, m.Y + yOffset, m.Z);
                 }
+
+
             }
 
             Location = new Point3D(X + xOffset, Y + yOffset, Z + zOffset);
         }
 
-        public bool SetFacing(Direction facing)
+        private void GetFacingOffset(Direction facing, out int fx, out int fy)
         {
-            if (CheckDecay())
-                return false;
-
-            if (Map != null && Map != Map.Internal && !CanFit(Location, Map, facing))
-                return false;
-
-            MultiComponentList mcl = GetComponents();
-
-            Direction old = m_Facing;
-
-            m_Facing = facing;
-
-            if (m_TillerMan != null)
-                m_TillerMan.SetFacing(facing);
-
-            if (m_Hold != null)
-                m_Hold.SetFacing(facing);
-
-            if (m_PPlank != null)
-                m_PPlank.SetFacing(facing);
-
-            if (m_SPlank != null)
-                m_SPlank.SetFacing(facing);
-
-            ArrayList toMove = new ArrayList();
-
-            toMove.Add(m_PPlank);
-            toMove.Add(m_SPlank);
-
-            IPooledEnumerable eable = Map.GetObjectsInBounds(new Rectangle2D(X + mcl.Min.X, Y + mcl.Min.Y, mcl.Width, mcl.Height));
-
-            foreach (object o in eable)
-            {
-                if (o == this || o is TillerMan || o is Hold || o is Plank)
-                    continue;
-
-                if (o is Item)
-                {
-                    Item item = (Item)o;
-
-                    // 1/16/24, Yoar: Allow boat movement over static water items
-                    if (!item.Movable && item.Z == Z && item.ItemID >= 0x1796 && item.ItemID <= 0x17B2)
-                        continue;
-
-                    if (Contains(item) && item.Visible && item.Z >= Z && item.Z < Z + Depth)
-                        toMove.Add(item);
-                }
-                else if (o is Mobile && Contains((Mobile)o))
-                {
-                    toMove.Add(o);
-
-                    ((Mobile)o).Direction = (Direction)((int)((Mobile)o).Direction - (int)old + (int)facing);
-                }
-            }
-
-            eable.Free();
-
-            int xOffset = 0, yOffset = 0;
-            Movement.Movement.Offset(facing, ref xOffset, ref yOffset);
-
-            if (m_TillerMan != null)
-                m_TillerMan.Location = new Point3D(X + (xOffset * TillerManDistance) + (facing == Direction.North ? 1 : 0), Y + (yOffset * TillerManDistance), m_TillerMan.Z);
-
-            if (m_Hold != null)
-                m_Hold.Location = new Point3D(X + (xOffset * HoldDistance), Y + (yOffset * HoldDistance), m_Hold.Z);
-
-            int count = (int)(m_Facing - old) & 0x7;
-            count /= 2;
-
-            for (int i = 0; i < toMove.Count; ++i)
-            {
-                object o = toMove[i];
-
-                if (o is Item)
-                    ((Item)o).Location = Rotate(((Item)o).Location, count);
-                else if (o is Mobile)
-                    ((Mobile)o).Location = Rotate(((Mobile)o).Location, count);
-            }
-
-            switch (facing)
-            {
-                case Direction.North: ItemID = NorthID; break;
-                case Direction.East: ItemID = EastID; break;
-                case Direction.South: ItemID = SouthID; break;
-                case Direction.West: ItemID = WestID; break;
-            }
-
-            RefreshComponents();
-
-            OnAfterSetFacing(old);
-
-            return true;
+            fx = fy = 0;
+            Movement.Movement.Offset((Direction)((int)facing & 0x7), ref fx, ref fy);
         }
 
-        public virtual void OnAfterSetFacing(Direction oldFacing)
+        // Rotate a relative offset (dx,dy) by the 90-degree turn count (0..3)
+        private static Point2D RotateOffset(Point2D p, int count)
         {
-        }
+            int x = p.X;
+            int y = p.Y;
 
-        public MultiComponentList GetComponents()
-        {
-            return GetComponents(m_Facing);
-        }
+            // Each count is 90 degrees clockwise (matches your count calc)
+            for (int i = 0; i < count; i++)
+            {
+                int tx = x;
+                x = y;
+                y = -tx;
+            }
 
-        public virtual MultiComponentList GetComponents(Direction facing)
-        {
-            return MultiData.GetComponents(GetItemID(facing));
+            return new Point2D(x, y);
         }
 
         public int GetItemID(Direction facing)
@@ -2588,7 +2254,7 @@ namespace Server.Multis
 
         public static int GoodFishingMinutes = 15;
 
-        private Timer m_FishingTimer;
+        private Timer? m_FishingTimer;
         private int m_GoodFishingLevel;
         private Point2D m_GoodFishingTarget;
 
@@ -2621,7 +2287,7 @@ namespace Server.Multis
 
         private void ProcessSeaChart()
         {
-            SeaChart chart = MapItem as SeaChart;
+            SeaChart? chart = MapItem as SeaChart;
 
             if (chart == null || chart.Deleted || chart.Level == 0)
                 return;
@@ -2687,7 +2353,7 @@ namespace Server.Multis
         public static void Initialize()
         {
             EventSink.WorldSave += new WorldSaveEventHandler(EventSink_WorldSave);
-
+            CommandSystem.Register("UpdateComponents", AccessLevel.GameMaster, new CommandEventHandler(UpdateComponents_OnCommand));
             new UpdateAllTimer().Start();
         }
 
@@ -2714,5 +2380,42 @@ namespace Server.Multis
             for (int i = m_Instances.Count - 1; i >= 0; i--)
                 m_Instances[i].UpdateComponents();
         }
+
+        [Usage("UpdateComponents")]
+        [Description("Force UpdateComponents() on a targeted BaseBoat.")]
+        public static void UpdateComponents_OnCommand(CommandEventArgs e)
+        {
+            try
+            {
+                e.Mobile.SendMessage("Target the boat you wish to update.");
+                e.Mobile.Target = new UpdateComponentsTarget();
+            }
+            catch
+            {
+                e.Mobile.SendMessage("There was a problem starting UpdateComponents.");
+            }
+        }
+
+        public class UpdateComponentsTarget : Target
+        {
+            public UpdateComponentsTarget()
+                : base(12, false, TargetFlags.None)
+            {
+            }
+
+            protected override void OnTarget(Mobile from, object targeted)
+            {
+                if (targeted is BaseBoat boat)
+                {
+                    boat.UpdateComponents();
+                    from.SendMessage("Boat components updated.");
+                }
+                else
+                {
+                    from.SendMessage("That is not a boat.");
+                }
+            }
+        }
+
     }
 }

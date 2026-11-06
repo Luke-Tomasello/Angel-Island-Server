@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -55,7 +55,7 @@ namespace Server.SkillHandlers
         /* AI/MO customizations to RT
          * This makes DH/RT essential for treasure hunters
          */
-        public static bool EraAI { get { return (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()); } }
+        public static bool EraAI { get { return (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()); } }
 
         public static void Initialize()
         {
@@ -202,7 +202,7 @@ namespace Server.SkillHandlers
                     BaseFactionTrap trap = (BaseFactionTrap)targeted;
                     Faction faction = Faction.Find(from);
 
-                    FactionTrapRemovalKit kit = (from.Backpack == null ? null : from.Backpack.FindItemByType(typeof(FactionTrapRemovalKit)) as FactionTrapRemovalKit);
+                    FactionTrapRemovalKit? kit = (from.Backpack == null ? null : from.Backpack.FindItemByType(typeof(FactionTrapRemovalKit)) as FactionTrapRemovalKit);
 
                     bool isOwner = (trap.Placer == from || (trap.Faction != null && trap.Faction.IsCommander(from)));
 
@@ -220,8 +220,8 @@ namespace Server.SkillHandlers
                     }
                     else
                     {
-                        if (from.CheckTargetSkill(SkillName.RemoveTrap, trap, 80.0, 100.0, new object[2] { trap.RootParent, null } /*contextObj*/) &&
-                            from.CheckTargetSkill(SkillName.Tinkering, trap, 80.0, 100.0, new object[2] { trap.RootParent, null } /*contextObj*/))
+                        if (from.CheckTargetSkill(SkillName.RemoveTrap, trap, 80.0, 100.0, new object?[2] { trap.RootParent, null } /*contextObj*/) &&
+                            from.CheckTargetSkill(SkillName.Tinkering, trap, 80.0, 100.0, new object?[2] { trap.RootParent, null } /*contextObj*/))
                         {
                             from.PrivateOverheadMessage(MessageType.Regular, trap.MessageHue, trap.DisarmMessage, from.NetState);
 

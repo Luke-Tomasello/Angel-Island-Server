@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -404,9 +404,9 @@ namespace Server.Spells.Crafting
         }
         public bool IsMagical()
         {
-            Server.Items.BaseWeapon weapon = (Item as Server.Items.BaseWeapon);
-            Server.Items.BaseArmor armor = (Item as Server.Items.BaseArmor);
-            Server.Items.BaseShield shield = (Item as Server.Items.BaseShield);
+            Server.Items.BaseWeapon? weapon = (Item as Server.Items.BaseWeapon);
+            Server.Items.BaseArmor? armor = (Item as Server.Items.BaseArmor);
+            Server.Items.BaseShield? shield = (Item as Server.Items.BaseShield);
 
             if (weapon != null)
             {
@@ -439,7 +439,7 @@ namespace Server.Spells.Crafting
 
         public override void OnCast()
         {
-            Server.Items.BaseWeapon weapon = (Item as Server.Items.BaseWeapon);
+            Server.Items.BaseWeapon? weapon = (Item as Server.Items.BaseWeapon);
             if (DoNotColor)
                 weapon.Hue = 0;
             weapon.Identified = true;
@@ -524,8 +524,8 @@ namespace Server.Spells.Crafting
 
         public override void OnCast()
         {
-            Server.Items.BaseArmor armor = (Item as Server.Items.BaseArmor);
-            Server.Items.BaseShield shield = (Item as Server.Items.BaseShield);
+            Server.Items.BaseArmor? armor = (Item as Server.Items.BaseArmor);
+            Server.Items.BaseShield? shield = (Item as Server.Items.BaseShield);
             if (armor != null)
             {
                 if (DoNotColor)

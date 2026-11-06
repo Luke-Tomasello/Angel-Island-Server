@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -33,6 +33,7 @@
 */
 
 using Server.Items;
+using Server.Mobiles;
 namespace Server.ContextMenus
 {
     public class OpenBankEntry : ContextMenuEntry
@@ -50,7 +51,9 @@ namespace Server.ContextMenus
             if (!Owner.From.CheckAlive())
                 return;
 
-            if (Owner.From.Criminal)
+            // NOTE: OSI relied on short criminal timers to deny NPC services.
+            // Mortalis uses explicit justice restriction windows; Criminal is no longer sufficient.
+            if (Owner.From is PlayerMobile pm && pm.HasActiveJusticeRestriction)
             {
                 m_Banker.Say(500378); // Thou art a criminal and cannot access thy bank box.
             }

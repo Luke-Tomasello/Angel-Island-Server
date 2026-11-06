@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -44,9 +44,9 @@ namespace Server.Engines.BulkOrders
         public int Graphic { get { return m_Graphic; } }
         public int Price { get { return m_Price; } set { m_Price = value; } }
 
-        public Item Reconstruct()
+        public Item? Reconstruct()
         {
-            SmallBOD bod = null;
+            SmallBOD? bod = null;
 
             if (m_DeedType == BODType.Smith)
                 bod = new SmallSmithBOD(m_AmountMax, m_RequireExceptional, m_Material, m_AmountCur, m_ItemType, m_Number, m_Graphic);
@@ -89,7 +89,7 @@ namespace Server.Engines.BulkOrders
             {
                 case 0:
                     {
-                        string type = reader.ReadString();
+                        string? type = reader.ReadString();
 
                         if (type != null)
                             m_ItemType = ScriptCompiler.FindTypeByFullName(type);

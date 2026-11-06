@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -103,7 +103,7 @@ namespace Server.Mobiles
             return 0x2C8;
         }
 
-        private Timer m_SoundTimer;
+        private Timer? m_SoundTimer;
         private bool m_HasTeleportedAway;
 
         public override void OnCombatantChange()
@@ -186,10 +186,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            PackGem();
-            PackGold(700, 1100);
-            PackMagicEquipment(1, 3, 0.80, 0.80);
-            PackMagicEquipment(1, 3, 0.40, 0.40);
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=743
+            // 400 - 500 Gold
+            // Special: 4-8 Gems, Magic Weapons/Armor
+            // Cut Up: None
+
+            if (Spawning)
+            {
+                PackGold(400, 500);
+            }
+            else
+            {
+                PackGem(4, 8);
+
+                PackMagicEquipment(3, 4, 1.0, 1.0);
+                PackMagicEquipment(3, 4, 0.50, 0.50);
+            }
         }
 
         public override OppositionGroup OppositionGroup

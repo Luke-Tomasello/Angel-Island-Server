@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -43,7 +43,7 @@ namespace Server.Items
             {
                 m_Active = value;
 
-                SHTeleporter sourceAddon = Addon as SHTeleporter;
+                SHTeleporter? sourceAddon = Addon as SHTeleporter;
 
                 if (sourceAddon != null)
                     sourceAddon.ChangeActive(value);
@@ -72,7 +72,7 @@ namespace Server.Items
             {
                 m_TeleDest = value;
 
-                SHTeleporter sourceAddon = Addon as SHTeleporter;
+                SHTeleporter? sourceAddon = Addon as SHTeleporter;
 
                 if (sourceAddon != null)
                     sourceAddon.ChangeDest(value);
@@ -187,7 +187,7 @@ namespace Server.Items
                 m_Count = 0;
             }
 
-            public static SHTeleporter FindSHTeleporter(Map map, Point3D p)
+            public static SHTeleporter? FindSHTeleporter(Map map, Point3D p)
             {
                 IPooledEnumerable eable = map.GetItemsInRange(p, 0);
 
@@ -207,7 +207,7 @@ namespace Server.Items
             public SHTeleporter AddSHT(Map map, bool ext, int x, int y, int z)
             {
                 Point3D p = new Point3D(x, y, z);
-                SHTeleporter tele = FindSHTeleporter(map, p);
+                SHTeleporter? tele = FindSHTeleporter(map, p);
 
                 if (tele == null)
                 {

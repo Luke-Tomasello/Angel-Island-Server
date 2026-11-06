@@ -1,0 +1,36 @@
+{
+  "Faction": "Orcs",
+  "Description": "Orc invasion forces - used for friction spawning during TerritoryControl",
+  "Creatures": [
+    {
+      "Type": "Orc",
+      "Power": 59.17,
+      "Tier": "Basic"
+    },
+    {
+      "Type": "OrcCaptain",
+      "Power": 58.76,
+      "Tier": "Basic"
+    },
+    {
+      "Type": "OrcishMage",
+      "Power": 69.88,
+      "Tier": "Mid"
+    },
+    {
+      "Type": "OrcBomber",
+      "Power": 83.17,
+      "Tier": "Mid"
+    },
+    {
+      "Type": "OrcishLord",
+      "Power": 83.92,
+      "Tier": "High"
+    },
+    {
+      "Type": "OrcBrute",
+      "Power": 378.63,
+      "Tier": "Elite"
+    }
+  ]
+}

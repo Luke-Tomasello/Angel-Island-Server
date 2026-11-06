@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -44,7 +44,7 @@ namespace Server.Items
         private bool m_LandlordRenew;
 
         private Mobile m_Offeree;
-        private Timer m_OfferExpireTimer;
+        private Timer? m_OfferExpireTimer;
 
         public VendorRentalDuration Duration
         {
@@ -121,7 +121,7 @@ namespace Server.Items
         {
             if (IsLockedDown)
             {
-                BaseHouse house = BaseHouse.FindHouseAt(this);
+                BaseHouse? house = BaseHouse.FindHouseAt(this);
 
                 if (house != null)
                     return house.IsOwner(m);
@@ -166,7 +166,7 @@ namespace Server.Items
         {
             if (IsLockedDown)
             {
-                BaseHouse house = BaseHouse.FindHouseAt(this);
+                BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             }
         }
@@ -185,7 +185,7 @@ namespace Server.Items
                     return;
                 }
 
-                BaseHouse house = BaseHouse.FindHouseAt(from);
+                BaseHouse? house = BaseHouse.FindHouseAt(from);
 
                 if (house == null || !house.IsOwner(from))
                 {
@@ -264,14 +264,14 @@ namespace Server.Items
                 if (!m_Contract.IsUsableBy(from, false, true, true, true))
                     return;
 
-                IPoint3D location = targeted as IPoint3D;
+                IPoint3D? location = targeted as IPoint3D;
                 if (location == null)
                     return;
 
                 Point3D pLocation = new Point3D(location);
                 Map map = from.Map;
 
-                BaseHouse house = BaseHouse.FindHouseAt(pLocation, map, 0);
+                BaseHouse? house = BaseHouse.FindHouseAt(pLocation, map, 0);
 
                 if (house == null || !house.IsOwner(from))
                 {

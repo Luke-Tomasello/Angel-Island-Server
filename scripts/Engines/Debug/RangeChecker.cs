@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,7 +30,7 @@ namespace Server.Engines
             : base(0x14F5)  // spyglass graphic
         {
             Movable = false;
-            Timer.DelayCall(TimeSpan.FromSeconds(5), new TimerStateCallback(Tick), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromSeconds(5), new TimerStateCallback(Tick), new object?[] { null });
         }
 
         public RangeChecker(Serial serial)
@@ -79,7 +79,7 @@ namespace Server.Engines
                 eable.Free();
             }
 
-            Timer.DelayCall(TimeSpan.FromSeconds(5), new TimerStateCallback(Tick), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromSeconds(5), new TimerStateCallback(Tick), new object?[] { null });
         }
 
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -55,7 +55,7 @@ namespace Server.Items
                 return;
 
             // cannot eat someone's locked down rare
-            Server.Multis.BaseHouse house = Server.Multis.BaseHouse.FindHouseAt(from.Location, from.Map, 16);
+            Server.Multis.BaseHouse? house = Server.Multis.BaseHouse.FindHouseAt(from.Location, from.Map, 16);
             if (house != null && house.IsInside(from) && this.Movable == false)
                 return;
 

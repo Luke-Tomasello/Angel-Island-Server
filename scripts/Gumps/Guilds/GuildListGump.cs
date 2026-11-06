@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -68,7 +68,7 @@ namespace Server.Gumps
                 if (radio)
                     AddRadio(20, 35 + ((i % 11) * 30), 208, 209, false, i);
 
-                Guild g = (Guild)m_List[i];
+                Guild? g = (Guild?)m_List[i];
 
                 string name;
 

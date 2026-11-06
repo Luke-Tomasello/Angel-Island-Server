@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -137,7 +137,7 @@ namespace Server.Multis.StaticHousing
                 else if (targ is AddonComponent)
                 {
                     //ok, we got what we want :)
-                    AddonComponent addon = targ as AddonComponent;
+                    AddonComponent? addon = targ as AddonComponent;
 
                     // use the players location as the addon's location is whacky
                     Point3D location = new Point3D(from.Location.X, from.Location.Y, from.Location.Z);
@@ -149,7 +149,7 @@ namespace Server.Multis.StaticHousing
                         if (item == null || item is AddonComponent == false)
                             continue;
 
-                        AddonComponent ac = item as AddonComponent;
+                        AddonComponent? ac = item as AddonComponent;
 
                         if (!IsFixture((ushort)ac.ItemID))
                         {
@@ -197,7 +197,7 @@ namespace Server.Multis.StaticHousing
                 return false;
             }
 
-            private Item GetFixtureItem(int dItemID)
+            private Item? GetFixtureItem(int dItemID)
             {
                 int itemID = (dItemID & 0x3FFF);
 
@@ -209,7 +209,7 @@ namespace Server.Multis.StaticHousing
                 }
                 else
                 {
-                    BaseDoor door = null;
+                    BaseDoor? door = null;
 
                     if (itemID >= 0x675 && itemID < 0x6F5)
                     {

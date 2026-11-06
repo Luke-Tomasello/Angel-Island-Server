@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -199,7 +199,7 @@ namespace Server.Engines.ResourcePool
 
             foreach (Mobile m in m_History.Keys)
             {
-                ArrayList list = (ArrayList)m_History[m];
+                ArrayList? list = (ArrayList?)m_History[m];
                 writer = new BinaryFileWriter(new FileStream("Saves/ResourcePool/TransactionHistories/" + m.Serial.Value.ToString() + ".dat", FileMode.Create, FileAccess.Write), true);
                 writer.Write((int)list.Count);
                 foreach (ResourceTransaction rt in list)
@@ -249,21 +249,6 @@ namespace Server.Engines.ResourcePool
         {
             m_TransactionStack++;
             return m_TransID;
-        }
-
-        public static ArrayList GetTransactions(string nameFilter)
-        {
-            ArrayList hist = new ArrayList();
-            foreach (ArrayList al in m_History.Values)
-            {
-                foreach (ResourceTransaction rt in al)
-                {
-                    if (rt.ResName == nameFilter || nameFilter == "all")
-                        hist.Add(rt);
-                }
-            }
-
-            return hist;
         }
 
         public static bool Add(ResourceTransaction rt, Mobile player)

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -78,37 +78,16 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020403082709/uo.stratics.com/hunters/phoenix.shtml
+            // 600 - 1000 Gold, Magic Items, 36 feathers, raw bird
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(500, 600);
-                PackScroll(2, 7);
-                PackMagicEquipment(2, 3, 0.50, 0.50);
-                PackMagicEquipment(2, 3, 0.10, 0.10);
-                PackMagicItem(1, 2, 1.0);
-                PackMagicItem(1, 2, 0.70);
+                PackGold(600, 1000);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020403082709/uo.stratics.com/hunters/phoenix.shtml
-                    // 600 - 1000 Gold, Magic Items, 36 feathers, raw bird
-
-                    if (Spawning)
-                    {
-                        PackGold(600, 1000);
-                    }
-                    else
-                    {
-                        PackMagicEquipment(2, 3);
-                        PackMagicItem(1, 2);
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.FilthyRich);
-                    AddLoot(LootPack.Rich);
-                }
+                PackMagicEquipment(2, 3);
+                PackMagicItem(1, 2);
             }
         }
 

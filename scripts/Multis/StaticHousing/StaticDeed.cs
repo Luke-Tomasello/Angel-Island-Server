@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -44,7 +44,6 @@
  */
 
 using Server.Multis.Deeds;
-using System;
 using HouseBlueprint = Server.Multis.StaticHousing.StaticHouseHelper.HouseBlueprint;
 
 namespace Server.Multis.StaticHousing
@@ -77,7 +76,7 @@ namespace Server.Multis.StaticHousing
         private string m_HouseID;
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
-        public string HouseID
+        public string? HouseID
         {
             get { return m_HouseID; }
             set
@@ -105,7 +104,7 @@ namespace Server.Multis.StaticHousing
         }
 
         [Constructable]
-        public StaticDeed(string houseID)
+        public StaticDeed(string? houseID)
             : base(0x14F0, 0x0, new Point3D(0, 4, 0))
         {
             this.HouseID = houseID;
@@ -171,9 +170,9 @@ namespace Server.Multis.StaticHousing
     {
         public override int Price { get { return 0; } } // not applicable
 
-        private HouseBlueprint m_Blueprint;
+        private HouseBlueprint? m_Blueprint;
 
-        public HouseBlueprint Blueprint
+        public HouseBlueprint? Blueprint
         {
             get { return m_Blueprint; }
             set
@@ -237,7 +236,7 @@ namespace Server.Multis.StaticHousing
         {
             if (!IsChildOf(from.Backpack))
                 from.SendLocalizedMessage(1042001); // That must be in your pack for you to use it.
-            else if (!Core.UOTC_CFG)
+            else if (!Core.GMNTC_CFG)
                 from.SendMessage("This can only be used on Test Center.");
             else if (m_Blueprint == null)
                 from.SendMessage("The deed does not contain a static house blueprint.");

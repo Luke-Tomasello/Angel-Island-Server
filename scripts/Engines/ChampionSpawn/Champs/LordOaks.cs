@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -42,7 +42,7 @@ namespace Server.Mobiles
 {
     public class LordOaks : BaseChampion
     {
-        private Mobile m_Queen;
+        private Mobile? m_Queen;
         private bool m_SpawnedQueen;
 
         public override ChampionSkullType SkullType { get { return ChampionSkullType.Enlightenment; } }
@@ -110,7 +110,7 @@ namespace Server.Mobiles
 
         public override Poison PoisonImmune { get { return Poison.Deadly; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
 
         public void SpawnPixies(Mobile target)
         {
@@ -146,6 +146,7 @@ namespace Server.Mobiles
                 }
 
                 pixie.MoveToWorld(loc, map);
+                pixie.OnAfterSpawn();
                 pixie.Combatant = target;
             }
         }
@@ -186,6 +187,7 @@ namespace Server.Mobiles
                 ((BaseCreature)m_Queen).Team = this.Team;
 
                 m_Queen.MoveToWorld(this.Location, this.Map);
+                m_Queen.OnAfterSpawn();
 
                 m_SpawnedQueen = true;
             }
@@ -212,7 +214,7 @@ namespace Server.Mobiles
         {
             base.OnGaveMeleeAttack(defender);
 
-            defender.Damage(Utility.Random(20, 10), this, this);
+            defender.Damage(Utility.Random(20, 10), this, new DamageContext { Source = this });
             defender.Stam -= Utility.Random(20, 10);
             defender.Mana -= Utility.Random(20, 10);
         }
@@ -226,7 +228,7 @@ namespace Server.Mobiles
             if (m_Queen != null && 0.1 >= Utility.RandomDouble())
                 SpawnPixies(attacker);
 
-            attacker.Damage(Utility.Random(20, 10), this, this);
+            attacker.Damage(Utility.Random(20, 10), this, new DamageContext { Source = this });
             attacker.Stam -= Utility.Random(20, 10);
             attacker.Mana -= Utility.Random(20, 10);
         }

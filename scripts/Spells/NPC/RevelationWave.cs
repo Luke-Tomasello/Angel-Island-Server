@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -115,7 +115,7 @@ namespace Server.Spells.NPC
         {
             private Timer m_Timer;
             private DateTime m_End;
-            private Mobile m_Caster;
+            private Mobile? m_Caster;
 
             public override bool BlocksFit { get { return true; } }
 

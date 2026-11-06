@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -60,15 +60,14 @@ namespace Server.Items
             : base(itemID)
         {
             Movable = false;
-
             m_Level = SecureLevel.Anyone;
-
             m_Target = target;
+            TravelObject = true;
         }
 
         public bool CheckAccess(Mobile m)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             if (house != null && (house.Public ? house.IsBanned(m) : !house.HasAccess(m)))
                 return false;

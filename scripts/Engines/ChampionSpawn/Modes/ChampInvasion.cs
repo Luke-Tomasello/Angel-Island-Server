@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,8 @@
 
 /* Scripts/Engines/ChampionSpawn/Modes/ChampInvasion.cs
  *	ChangeLog:
+ *  10/27/2026, Adam
+ *      SpawnTypes enum removed: PickChamp() sets DefinitionName (ChampNames) and returns the name (null if none).
  *  9/21/21, Adam
  *      Add the Adam Ant champ spawn
  *      Add support for in ChampEngine for the special "Doppelganger" spawns. 
@@ -35,10 +37,10 @@ namespace Server.Engines.ChampionSpawn
     public class ChampInvasion : ChampEngine
     {
         // Members
-        private TownInvasionAES m_aesMonitor;                   // external AES spawn monitor
+        private TownInvasionAES? m_aesMonitor;                   // external AES spawn monitor
 
         // props
-        public TownInvasionAES AESMonitor                  // and a prop for it
+        public TownInvasionAES? AESMonitor                  // and a prop for it
         {
             get { return m_aesMonitor; }
             set { m_aesMonitor = value; }
@@ -102,38 +104,38 @@ namespace Server.Engines.ChampionSpawn
         }
         // #endregion
 
-        public ChampLevelData.SpawnTypes PickChamp()
+        public string? PickChamp()
         {
             // Currently the invasions randomly pick one of the 5 main big skull giving champs
             switch (Utility.Random(6))
             {
                 case 0:
                     {
-                        return SpawnType = ChampLevelData.SpawnTypes.Abyss;
+                        return DefinitionName = ChampNames.Abyss;
                     }
                 case 1:
                     {
-                        return SpawnType = ChampLevelData.SpawnTypes.Arachnid;
+                        return DefinitionName = ChampNames.Arachnid;
                     }
                 case 2:
                     {
-                        return SpawnType = ChampLevelData.SpawnTypes.ColdBlood;
+                        return DefinitionName = ChampNames.ColdBlood;
                     }
                 case 3:
                     {
-                        return SpawnType = ChampLevelData.SpawnTypes.UnholyTerror;
+                        return DefinitionName = ChampNames.UnholyTerror;
                     }
                 case 4:
                     {
-                        return SpawnType = ChampLevelData.SpawnTypes.VerminHorde;
+                        return DefinitionName = ChampNames.VerminHorde;
                     }
                 case 5:
                     {
-                        return SpawnType = ChampLevelData.SpawnTypes.Doppelganger;
+                        return DefinitionName = ChampNames.Doppelganger;
                     }
             }
 
-            return ChampLevelData.SpawnTypes.None;
+            return null;
         }
 
         public override void OnSingleClick(Mobile from)

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -89,7 +89,7 @@ namespace Server.Engines.ChampionSpawn
         {
             if (Validate(m_Power) && Validate(m_Enlightenment) && Validate(m_Venom) && Validate(m_Pain) && Validate(m_Greed) && Validate(m_Death))
             {
-                Mobile harrower = Harrower.Spawn(new Point3D(X, Y, Z + 6), this.Map);
+                Mobile? harrower = Harrower.Spawn(new Point3D(X, Y, Z + 6), this.Map);
 
                 if (harrower == null)
                     return;

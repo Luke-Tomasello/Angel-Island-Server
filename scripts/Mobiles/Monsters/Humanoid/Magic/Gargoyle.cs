@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,53 +76,20 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20011205084450/uo.stratics.com/hunters/gargoyle.shtml
+            // 50 to 150 Gold, Potions, Arrows, Scrolls, Gems, "a gargoyle's pickaxe"
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
-                PackGem();
-                PackGem();
-                PackGem();
-                PackGold(60, 100);
-                PackScroll(1, 7);
-
-                if (0.025 > Utility.RandomDouble())
-                    PackItem(new GargoylesPickaxe());
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(50, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20011205084450/uo.stratics.com/hunters/gargoyle.shtml
-                    // 50 to 150 Gold, Potions, Arrows, Scrolls, Gems, "a gargoyle's pickaxe"
-
-                    if (Spawning)
-                    {
-                        PackGold(50, 150);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
-                        PackScroll(1, 6);
-                        PackGem(Utility.RandomMinMax(1, 4));
-                        PackItem(typeof(GargoylesPickaxe), 0.025);
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        if (0.025 > Utility.RandomDouble())
-                            PackItem(new GargoylesPickaxe());
-                    }
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.MedScrolls);
-                    AddLoot(LootPack.Gems, Utility.RandomMinMax(1, 4));
-                }
+                PackPotion();
+                PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
+                PackScroll(1, 6);
+                PackGem(Utility.RandomMinMax(1, 4));
+                PackItem(typeof(GargoylesPickaxe), 0.025);
             }
         }
 

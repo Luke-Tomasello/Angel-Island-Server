@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -131,7 +131,7 @@ namespace Server.Mobiles
                 {
                     if (m_Mobile.Poison != null)
                     {
-                        Spell curespell;
+                        Spell? curespell;
 
                         if ((((m_Mobile.Skills[SkillName.Magery].Value / (m_Mobile.Poison.Level + 1)) - 20) * 7.5) > 50)
                         {
@@ -280,7 +280,7 @@ namespace Server.Mobiles
                 return ChooseSpell(toDispel);
             }
 
-            Spell spell = null;
+            Spell? spell = null;
 
             if (!m_Mobile.Summoned && Utility.Random(0, 4 + (m_Mobile.Hits == 0 ? m_Mobile.HitsMax : (m_Mobile.HitsMax / m_Mobile.Hits))) >= 3)
             {
@@ -316,10 +316,6 @@ namespace Server.Mobiles
             {
                 if (m != null && m is PlayerMobile && m.Alive && m.AccessLevel == AccessLevel.Player && !m.Hidden && m.Poison == null)
                 {
-                    PlayerMobile pm = (PlayerMobile)m;
-                    if (pm.IOBEquipped && pm.IOBAlignment == IOBAlignment.Council)
-                        return false;
-
                     return true;
                 }
             }
@@ -335,10 +331,6 @@ namespace Server.Mobiles
             {
                 if (m != null && m is PlayerMobile && m.Alive && m.AccessLevel == AccessLevel.Player && m.Hidden)
                 {
-                    PlayerMobile pm = (PlayerMobile)m;
-                    if (pm.IOBEquipped && pm.IOBAlignment == IOBAlignment.Council)
-                        return false;
-
                     return true;
                 }
             }
@@ -353,7 +345,7 @@ namespace Server.Mobiles
 
             // tamable solution ---------------
             Mobile com = m_Mobile.Combatant;
-            Spell spell = null;
+            Spell? spell = null;
 
             if (com != null && com is BaseCreature && DateTime.UtcNow >= m_NextCouncilSpell)
             {
@@ -457,9 +449,9 @@ namespace Server.Mobiles
 
         protected int m_Combo = -1;
 
-        public virtual Spell DoCombo(Mobile c)
+        public virtual Spell? DoCombo(Mobile c)
         {
-            Spell spell = null;
+            Spell? spell = null;
 
             if (m_Combo == 0)
             {
@@ -520,7 +512,7 @@ namespace Server.Mobiles
 
         public override bool DoActionCombat(MobileInfo info)
         {
-            Mobile combatant = info.target;
+            Mobile? combatant = info.target;
             m_Mobile.Warmode = true;
 
             if (combatant == null || info.gone || info.dead || info.hidden || info.fled)
@@ -620,8 +612,8 @@ namespace Server.Mobiles
             {
                 // We are ready to cast a spell
 
-                Spell spell = null;
-                Mobile toDispel = FindDispelTarget(true);
+                Spell? spell = null;
+                Mobile? toDispel = FindDispelTarget(true);
 
                 if (m_Mobile.Poisoned) // Top cast priority is cure
                 {
@@ -808,7 +800,7 @@ namespace Server.Mobiles
             return true;
         }
 
-        public Mobile FindDispelTarget(bool activeOnly)
+        public Mobile? FindDispelTarget(bool activeOnly)
         {
             if (m_Mobile.Deleted || m_Mobile.Int < 95 || CanDispel(m_Mobile) || m_Mobile.AutoDispel)
                 return null;
@@ -818,7 +810,7 @@ namespace Server.Mobiles
                 List<AggressorInfo> aggressed = m_Mobile.Aggressed;
                 List<AggressorInfo> aggressors = m_Mobile.Aggressors;
 
-                Mobile active = null;
+                Mobile? active = null;
                 double activePrio = 0.0;
 
                 Mobile comb = m_Mobile.Combatant;
@@ -880,7 +872,7 @@ namespace Server.Mobiles
 
                 if (map != null)
                 {
-                    Mobile active = null, inactive = null;
+                    Mobile? active = null, inactive = null;
                     double actPrio = 0.0, inactPrio = 0.0;
 
                     Mobile comb = m_Mobile.Combatant;
@@ -962,7 +954,7 @@ namespace Server.Mobiles
             bool isTeleport = (targ is TeleportSpell.InternalTarget);
             bool teleportAway = false;
 
-            Mobile toTarget;
+            Mobile? toTarget;
 
             if (isMassDispel)
             {

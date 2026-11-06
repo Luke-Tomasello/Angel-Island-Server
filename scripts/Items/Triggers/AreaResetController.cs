@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,7 +26,6 @@
  */
 
 using Server.Mobiles;
-using Server.Network;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -41,10 +40,10 @@ namespace Server.Items.Triggers
         [Flags]
         public enum ARCBoolTable : byte
         {
-            None=0x00,
-            EjectPlayers=0x01,      // eject players from the area
-            EmptyContainers=0x02,   // empty all containers
-            KillTames=0x04,         // kill all tames
+            None = 0x00,
+            EjectPlayers = 0x01,      // eject players from the area
+            EmptyContainers = 0x02,   // empty all containers
+            KillTames = 0x04,         // kill all tames
         }
         private void SetBool(ARCBoolTable flag, bool value)
         {
@@ -291,7 +290,7 @@ namespace Server.Items.Triggers
                         return;
                     }
         }
-        
+
         public AreaResetController(Serial serial)
             : base(serial)
         {
@@ -334,7 +333,7 @@ namespace Server.Items.Triggers
                         m_EjectMap = reader.ReadMap();
                         break;
                     }
-                
+
             }
         }
     }

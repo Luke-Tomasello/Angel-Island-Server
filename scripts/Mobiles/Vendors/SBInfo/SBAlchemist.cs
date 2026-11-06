@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -99,7 +99,7 @@ namespace Server.Mobiles
                 Add(new GenericBuyInfo(typeof(MortarPestle), BaseVendor.PlayerPays(typeof(MortarPestle)), 10, 0xE9B, 0));
 
                 // Adam: add the appropriate exclusion rule :P
-                if (Core.RuleSets.AngelIslandRules())
+                if (Core.RuleSets.AngelIslandRules() || (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
                 {
                     //Jade: Add potion keg dye tub
                     Add(new GenericBuyInfo("Potion Keg Dye Tub", typeof(PotionKegDyeTub), BaseVendor.PlayerPays(typeof(PotionKegDyeTub)), 20, 0xFAB, 0));

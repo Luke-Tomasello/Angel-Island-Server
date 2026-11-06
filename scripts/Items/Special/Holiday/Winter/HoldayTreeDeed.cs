@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -111,7 +111,7 @@ namespace Server.Items
             if (map == null)
                 return false;
 
-            BaseHouse house = null;
+            BaseHouse? house = null;
             if ((house = BaseHouse.FindHouseAt(loc, map, 20)) != null)
             {
                 if (!house.IsFriend(from))
@@ -120,7 +120,7 @@ namespace Server.Items
                     return false;
                 }
             }
-            TownshipRegion mtsr = null;
+            TownshipRegion? mtsr = null;
             if ((mtsr = TownshipRegion.GetTownshipAt(from.Location, from.Map)) != null)
             {
                 if (!mtsr.TStone.HasAccess(from, Township.TownshipAccess.Member))
@@ -146,7 +146,7 @@ namespace Server.Items
 
         public void Placement_OnTarget(Mobile from, object targeted, object state)
         {
-            IPoint3D p = targeted as IPoint3D;
+            IPoint3D? p = targeted as IPoint3D;
 
             if (p == null)
                 return;
@@ -168,7 +168,7 @@ namespace Server.Items
             this.Delete();
             HolidayTree temp = new HolidayTree(from, type, loc);
 
-            BaseHouse house = BaseHouse.FindHouseAt(loc, from.Map, 20);
+            BaseHouse? house = BaseHouse.FindHouseAt(loc, from.Map, 20);
             if (house != null)
                 house.Addons.Add(temp);
 

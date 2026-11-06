@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,11 +26,11 @@ namespace Server.Engines.BulkOrders
 {
     public class LargeBulkEntry
     {
-        private LargeBOD m_Owner;
+        private LargeBOD? m_Owner;
         private int m_Amount;
         private SmallBulkEntry m_Details;
 
-        public LargeBOD Owner { get { return m_Owner; } set { m_Owner = value; } }
+        public LargeBOD? Owner { get { return m_Owner; } set { m_Owner = value; } }
         public int Amount { get { return m_Amount; } set { m_Amount = value; if (m_Owner != null) m_Owner.InvalidateProperties(); } }
         public SmallBulkEntry Details { get { return m_Details; } }
 
@@ -121,19 +121,19 @@ namespace Server.Engines.BulkOrders
         }
 
 
-        private static Hashtable m_Cache;
+        private static Hashtable? m_Cache;
 
         public static SmallBulkEntry[] GetEntries(string type, string name)
         {
             if (m_Cache == null)
                 m_Cache = new Hashtable();
 
-            Hashtable table = (Hashtable)m_Cache[type];
+            Hashtable? table = (Hashtable?)m_Cache[type];
 
             if (table == null)
                 m_Cache[type] = table = new Hashtable();
 
-            SmallBulkEntry[] entries = (SmallBulkEntry[])table[name];
+            SmallBulkEntry[]? entries = (SmallBulkEntry[]?)table[name];
 
             if (entries == null)
                 table[name] = entries = SmallBulkEntry.LoadEntries(type, name);
@@ -151,7 +151,7 @@ namespace Server.Engines.BulkOrders
             return large;
         }
 
-        public LargeBulkEntry(LargeBOD owner, SmallBulkEntry details)
+        public LargeBulkEntry(LargeBOD? owner, SmallBulkEntry details)
         {
             m_Owner = owner;
             m_Details = details;
@@ -162,9 +162,9 @@ namespace Server.Engines.BulkOrders
             m_Owner = owner;
             m_Amount = reader.ReadInt();
 
-            Type realType = null;
+            Type? realType = null;
 
-            string type = reader.ReadString();
+            string? type = reader.ReadString();
 
             if (type != null)
                 realType = ScriptCompiler.FindTypeByFullName(type);

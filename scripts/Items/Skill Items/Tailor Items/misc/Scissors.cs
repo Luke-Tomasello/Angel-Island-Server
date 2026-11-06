@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -25,6 +25,7 @@
  *	    Add following check: "Items you wish to cut must be in your backpack"
  */
 
+using Scripts.Misc;
 using Server.Targeting;
 
 namespace Server.Items
@@ -45,7 +46,7 @@ namespace Server.Items
             m_usesRemaining = 200;
         }
         #region UsesRemaining
-        public bool WearsOut { get { return Core.RuleSets.SiegeStyleRules(); } }
+        public bool WearsOut { get { return Core.RuleSets.SiegeRules(); } }
         public int ToolBrokeMessage => 1044038; // You have worn out your tool!
         int m_usesRemaining;
         // staff don't need to see this
@@ -108,6 +109,13 @@ namespace Server.Items
 
         public override void OnDoubleClick(Mobile from)
         {
+            // Ownership check first
+            if (this is Item it && !StartingLootMonitor.CanUse(from, it))
+            {
+                from.SendMessage("This tool is bound to another soul.");
+                return;
+            }
+
             from.SendLocalizedMessage(502434); // What should I use these scissors on?
 
             from.Target = new InternalTarget(this);
@@ -135,6 +143,12 @@ namespace Server.Items
                 if (targeted is Item item && !item.IsChildOf(from.Backpack))
                 {
                     from.SendLocalizedMessage(502437); // Items you wish to cut must be in your backpack
+                }
+                // Ownership check first of item cut
+                else if (!StartingLootMonitor.CanUse(from, targeted as Item))
+                {
+                    from.SendMessage("That item is bound to another soul.");
+                    return;
                 }
                 else if (targeted is IScissorable)
                 {

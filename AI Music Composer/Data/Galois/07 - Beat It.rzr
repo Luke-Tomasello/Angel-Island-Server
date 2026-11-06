@@ -1,0 +1,191 @@
+# Song: Beat It
+# Author: Galois
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: True
+# Price: 5000
+say '[play -g -dh -gh 1.24 -g -dh -gh 1.24 -e -b -eh 1.24 -e -b -eh 1.24 -g -dh -gh 1.24 -g -dh -gh 1.24' 
+wait 4500
+say '[play -d -a -dh 0.39 -d 0.39 -d 0.39 -d 0.39 -d 0.39 -d 0.39 -d 0.39 -d 0.19 -ds 0.18' 
+wait 2700
+say '[play 0.18 -fs 0.17 -ds -as 0.18 -fsh 0.18 -ds -dsh 0.38 -as -dsh 0.18 -fh 0.18' 
+wait 1300
+say '[play -ds 0.18 -dsh 0.18 -cs 0.39 -cs 0.18 -ds 0.17 -ds -as 0.18 -ds 0.18' 
+wait 1800
+say '[play 0.18 -fs 0.17 -ds -as 0.18 -fsh 0.18 -ds -dsh 0.38 -as -dsh 0.18 -fh 0.18' 
+wait 1800
+say '[play -ds 0.18 -dsh 0.18 -cs 0.59 -ds 0.17 -as -dsh 0.39' 
+wait 1700
+say '[play -ds 0.18 -fs 0.16 -ds -as fsh 0.18 -fsh 0.16 -ds -dsh fsh 0.18 dsh 0.17 -as -dsh 0.18 -fh 0.17' 
+wait 1400
+say '[play -ds fh 0.18 -dsh 0.17 -cs fh 0.18 cs 0.18 -cs 0.18 -ds 0.17 -ds -as 0.39' 
+wait 1800
+say '[play -ds 0.18 -fs 0.16 -ds -as fsh 0.18 -fsh 0.16 -ds -dsh fsh 0.18 dsh 0.17 -as -dsh 0.18 -fh 0.17' 
+wait 1300
+say '[play -ds fh 0.18 -dsh 0.17 -cs fh 0.18 cs 0.39 -ds 0.17 -as -dsh 0.18 -ds 0.18' 
+wait 1800
+say '[play 0.16 -as -dsh +as 0.17 -ds +as 0.18 +as 0.16 -ds -as +as 0.18 +as 0.17 +ds +gs 0.16 -gs -cs +as 0.17' 
+wait 1700
+say '[play -csl +cs 0.18 +as 0.15 -csl -gs +ds +gs 0.39 +as 0.18 -ds 0.17 -as -dsh 0.39' 
+wait 1700
+say '[play -ds 0.16 -as -dsh +as 0.17 -ds +as 0.18 +as 0.16 -ds -as +as 0.18 +as 0.17 +ds +gs 0.16 -gs -cs +fs 0.17' 
+wait 1700
+say '[play -csl +gs 0.18 +fs 0.16 -csl -gs +as 0.59 -ds 0.17 -as -dsh 0.18 +as 0.18' 
+wait 1700
+say '[play +gs 0.16 -as -dsh +fs 0.17 -ds +ds 0.18 +csl 0.18 -ds -as +ds 0.18 -ds 0.17 +ds 0.16 -gs -cs +ds 0.17' 
+wait 1600
+say '[play -csl +f 0.18 +ds 0.16 -csl -gs +csl 0.39 +csl 0.18 -ds 0.16 -as -dsh +ds 0.39' 
+wait 1700
+say '[play +fs 0.16 -as -dsh +ds 0.18 -ds 0.38 -ds -as 0.18 -ds 0.18 +ds 0.17 -gs -cs 0.17' 
+wait 1700
+say '[play -csl +f 0.18 +csl 0.16 -csl -gs -cs 0.59 -ds 0.16 -as -dsh 0.39' 
+wait 1700
+say '[play -ds 0.16 -as -dsh +as 0.17 -ds +as 0.18 +as 0.16 -ds -as +as 0.18 +as 0.17 +ds +gs 0.16 -gs -cs +as 0.17' 
+wait 1700
+say '[play -csl +cs 0.18 +as 0.15 -csl -gs +ds +gs 0.39 +as 0.18 -ds 0.17 -as -dsh 0.39' 
+wait 1600
+say '[play -ds 0.16 -as -dsh +as 0.17 -ds +as 0.18 +as 0.16 -ds -as +as 0.18 +as 0.17 +ds +gs 0.16 -gs -cs +fs 0.17' 
+wait 1700
+say '[play -csl +gs 0.18 +fs 0.16 -csl -gs +as 0.59 -ds 0.17 -as -dsh 0.18 +as 0.18' 
+wait 1700
+say '[play +gs 0.16 -as -dsh +fs 0.17 -ds +ds 0.39 -ds -as +ds 0.18 -ds 0.17 +ds 0.16 -gs -cs +ds 0.17' 
+wait 1700
+say '[play -csl +f 0.18 +ds 0.16 -csl -gs +csl 0.39 +csl 0.18 -ds 0.16 -as -dsh +ds 0.39' 
+wait 1700
+say '[play +fs 0.16 -as -dsh +ds 0.18 -ds 0.38 -ds -as 0.18 -ds 0.18 +as 0.16 -gs -cs +as 0.17' 
+wait 1600
+say '[play -csl +cs 0.18 +as 0.16 -csl -gs +gs 0.39 +as 0.19 -ds 0.16 -as -dsh +fs 0.18 -ds 0.17' 
+wait 1700
+say '[play +fs +as 0.16 -fs +fs +as 0.17 -ds -as 0.18 -fsh 0.16 -ds -dsh +ds +fs 0.17 +ds +fs 0.17 -as -dsh 0.18 -fh 0.16' 
+wait 1400
+say '[play -ds +fs +as 0.16 -dsh +fs +as 0.18 -cs 0.18 -csl 0.16 -cs +cs +f 0.16 -ds +cs +f 0.17 -ds -as 0.17 +fs +as 0.18' 
+wait 1800
+say '[play -ds 0.16 -fs +fs +as 0.16 -as +fs +as 0.16 -fsh +fs +as 0.16' 
+wait 900
+say '[play -dsh +as +cs 0.18 -ds 0.15 -as -dsh +fs +as 0.16 -fh +as +cs 0.18' 
+wait 800
+say '[play -ds 0.16 -dsh +fs +as 0.18 -cs 0.59 -ds 0.17 -as -dsh 0.17 +ds +gs 0.18' 
+wait 1600
+say '[play -ds 0.17 -fs +fs 0.16 -as +ds +gs 0.18 -fsh 0.15 -ds -dsh +ds +fs 0.18 +gs 0.17 -as -dsh 0.16 -fh +ds +gs 0.18' 
+wait 1400
+say '[play -ds 0.17 -dsh +fs 0.16 -cs +ds +gs 0.37 -cs +ds +fs 0.18 -ds 0.17 -ds -as 0.16 -ds +ds +gs 0.18' 
+wait 1600
+say '[play -ds 0.17 -fs +fs 0.16 -as +ds +gs 0.18 -fsh 0.15 -ds -dsh +ds +fs 0.18 +gs 0.17 -as -dsh 0.16 -fh +ds +gs 0.18' 
+wait 1300
+say '[play -ds 0.17 -dsh +fs 0.16 -cs +ds +gs 0.37 -cs +ds +fs 0.18 -ds 0.15 -ds -as +ds +gs 0.18 -ds 0.18' 
+wait 1400
+say '[play +fs 0.17 -fs +ds 0.16 -ds -as fsh 0.17 -fsh dsh 0.17 -ds -dsh 0.37 -as -dsh +ds 0.18 -fh 0.17' 
+wait 1300
+say '[play -ds +f 0.17 -dsh +csl 0.18 -cs 0.39 -cs 0.18 -ds 0.16 -ds -as +gs 0.18 -ds 0.18' 
+wait 1800
+say '[play +fs 0.17 -fs +ds 0.16 -ds -as fsh 0.17 -fsh dsh 0.17 -ds -dsh 0.37 -as -dsh +ds 0.18 -fh 0.17' 
+wait 1400
+say '[play -ds +f 0.17 -dsh +csl 0.18 -cs fh 0.18 cs 0.18 -cs 0.18 -ds 0.17 -ds -as 0.18 -ds 0.18' 
+wait 1800
+say '[play 0.16 -as -dsh +as 0.17 -ds +as 0.18 +as 0.16 -ds -as +as 0.18 +as 0.17 +ds +gs 0.16 -gs -cs +as 0.17' 
+wait 1700
+say '[play -csl +cs 0.18 +as 0.15 -csl -gs +ds +gs 0.39 +as 0.18 -ds 0.17 -as -dsh 0.39' 
+wait 1700
+say '[play -ds 0.16 -as -dsh +as 0.17 -ds +as 0.18 +as 0.16 -ds -as +as 0.18 +as 0.17 +ds +gs 0.16 -gs -cs +fs 0.17' 
+wait 1700
+say '[play -csl +gs 0.18 +fs 0.16 -csl -gs +as 0.59 -ds 0.17 -as -dsh 0.18 +as 0.18' 
+wait 1600
+say '[play +gs 0.16 -as -dsh +fs 0.17 -ds +ds 0.18 +csl 0.18 -ds -as +ds 0.18 -ds 0.17 +ds 0.16 -gs -cs +ds 0.17' 
+wait 1700
+say '[play -csl +f 0.18 +ds 0.16 -csl -gs +csl 0.39 +csl 0.18 -ds 0.16 -as -dsh +ds 0.39' 
+wait 1700
+say '[play +fs 0.16 -as -dsh +ds 0.18 -ds 0.38 -ds -as 0.18 -ds 0.18 +ds 0.17 -gs -cs 0.17' 
+wait 1700
+say '[play -csl +f 0.18 +csl 0.16 -csl -gs -cs 0.59 -ds 0.16 -as -dsh 0.39' 
+wait 1700
+say '[play -ds 0.16 -as -dsh +as 0.17 -ds +as 0.18 +as 0.16 -ds -as +as 0.18 +as 0.17 +ds +gs 0.16 -gs -cs +as 0.17' 
+wait 1600
+say '[play -csl +cs 0.18 +as 0.15 -csl -gs +ds +gs 0.39 +as 0.18 -ds 0.17 -as -dsh 0.39' 
+wait 1700
+say '[play -ds 0.16 -as -dsh +as 0.17 -ds +as 0.18 +as 0.16 -ds -as +as 0.18 +as 0.17 +ds +gs 0.16 -gs -cs +fs 0.17' 
+wait 1700
+say '[play -csl +gs 0.18 +fs 0.16 -csl -gs +as 0.59 -ds 0.17 -as -dsh 0.18 +as 0.18' 
+wait 1700
+say '[play +gs 0.16 -as -dsh +fs 0.17 -ds +ds 0.39 -ds -as +ds 0.18 -ds 0.17 +ds 0.16 -gs -cs +ds 0.17' 
+wait 1700
+say '[play -csl +f 0.18 +ds 0.16 -csl -gs +csl 0.39 +csl 0.18 -ds 0.16 -as -dsh +ds 0.39' 
+wait 1600
+say '[play +fs 0.16 -as -dsh +ds 0.18 -ds 0.38 -ds -as 0.18 -ds 0.18 +as 0.16 -gs -cs +as 0.17' 
+wait 1700
+say '[play -csl +cs 0.18 +as 0.16 -csl -gs +gs 0.39 +as 0.19 -ds 0.16 -as -dsh +fs 0.18 -ds 0.17' 
+wait 1700
+say '[play +fs +as 0.16 -fs +fs +as 0.17 -ds -as 0.18 -fsh 0.16 -ds -dsh +ds +fs 0.17 +ds +fs 0.17 -as -dsh 0.18 -fh 0.16' 
+wait 1400
+say '[play -ds +fs +as 0.16 -dsh +fs +as 0.18 -cs 0.18 -csl 0.16 -cs +cs +f 0.16 -ds +cs +f 0.17 -ds -as 0.17 +fs +as 0.18' 
+wait 1700
+say '[play -ds 0.16 -fs +fs +as 0.16 -as +fs +as 0.16 -fsh +fs +as 0.16' 
+wait 900
+say '[play -dsh +as +cs 0.18 -ds 0.15 -as -dsh +fs +as 0.16 -fh +as +cs 0.18' 
+wait 900
+say '[play -ds 0.16 -dsh +fs +as 0.18 -cs 0.59 -ds 0.17 -as -dsh 0.17 +ds +gs 0.18' 
+wait 1600
+say '[play -ds 0.17 -fs +fs 0.16 -as +ds +gs 0.18 -fsh 0.15 -ds -dsh +ds +fs 0.18 +gs 0.17 -as -dsh 0.16 -fh +ds +gs 0.18' 
+wait 1400
+say '[play -ds 0.17 -dsh +fs 0.16 -cs +ds +gs 0.37 -cs +ds +fs 0.18 -ds 0.17 -ds -as 0.16 -ds +ds +gs 0.18' 
+wait 1600
+say '[play -ds 0.17 -fs +fs 0.16 -as +ds +gs 0.18 -fsh 0.15 -ds -dsh +ds +fs 0.18 +gs 0.17 -as -dsh 0.16 -fh +ds +gs 0.18' 
+wait 1400
+say '[play -ds 0.17 -dsh +fs 0.16 -cs +ds +gs 0.37 -cs +ds +fs 0.18 -ds 0.15 -ds -as +ds +gs 0.18 -ds 0.18' 
+wait 1400
+say '[play +fs 0.17 -ds +ds 0.17 -ds fsh 0.18 dsh 0.17 -ds -fsh 0.18 -dsh 0.39 -ds 0.18' 
+wait 1400
+say '[play -ds 0.39 -ds 0.39 +fs 0.18 +ds 0.18 +fsh 0.18 +dsh 0.18' 
+wait 1400
+say '[play -fsh 0.17 -ds -dsh 0.18 -ds 0.39 -ds 0.59 -ds 0.18' 
+wait 1300
+say '[play -ds 0.39 -ds 0.37 -csl -cs csl 0.77' 
+wait 1400
+say '[play -ds -dsh ds 0.18 -ds 0.16 +cs +fsh -ds 0.39 -ds +cs +fsh 0.17 +as +dsh 0.39 -ds 0.18' 
+wait 1400
+say '[play -ds +cs +fsh 0.37 -ds +cs +fsh 0.17 +as +dsh 0.16 -csl -cs csl 0.77' 
+wait 1400
+say '[play -ds -dsh ds 0.18 -ds 0.16 +cs +fsh -ds 0.39 -ds +cs +fsh 0.17 +as +dsh 0.39 -ds 0.18' 
+wait 1400
+say '[play -ds +cs +fsh 0.37 -ds +cs +fsh 0.17 +as +dsh 0.16 +gs 0.19 +gs 0.19 +b 0.19 +gs 0.18' 
+say '[play +gs +cs 0.19 -ds 0.19 -ds 0.19 +gs 0.17 -ds +gs +cs 0.39 +gs 0.17 -csl +gs +dsh 0.19' 
+say '[play -csl 0.39 -csl 0.39 +gs 0.17 +gs +dsh +gsh 0.29 b 0.09 cs 0.09 eh 0.08' 
+say '[play +ds +gsh 0.19 -ds 0.19 -ds 0.09 +fsh 0.09 +cs 0.09 +fh 0.08' 
+say '[play -ds +fsh 0.07 +fh 0.07 +dsh 0.07 +cs 0.07 +fh 0.07' 
+say '[play +fsh 0.06 +fh 0.06 +dsh 0.05 -csl +cs 0.05 +fh 0.06 +fsh 0.05' 
+say '[play -csl +fh 0.04 +dsh 0.04 +cs 0.05 +c 0.05 +cs 0.04 +c 0.05 +as 0.04' 
+say '[play -csl +gs 0.04 +c 0.04 +cs 0.05 +c 0.05 +as 0.04 +gs 0.1' 
+say '[play +as 0.19 +b 0.19 +as 0.17 -csl -cs cs 0.17' 
+say '[play -ds -dsh ds 0.19 -ds 0.19 -ds 0.38' 
+say '[play -ds +fs 0.09 +ds 0.09 +cs 0.09 +ds 0.09 +gs 0.09 +fs 0.08 -csl +ds 0.09 +fs 0.08' 
+say '[play -csl +b 0.09 +gs 0.09 +fs 0.09 +gs 0.08' 
+say '[play -csl +cs 0.09 +b 0.09 +gs 0.09 +b 0.09' 
+say '[play +dsh 0.09 +cs 0.09 +gs 0.09 +cs 0.09 +gsh 0.09 +fsh 0.09 +dsh 0.09 +fsh 0.1' 
+say '[play +fs +as 0.16 -fs +fs +as 0.17 -ds -as 0.18 -fsh 0.16 -ds -dsh +ds +fs 0.17 +ds +fs 0.17 -as -dsh 0.18 -fh 0.16' 
+wait 1300
+say '[play -ds +fs +as 0.16 -dsh +fs +as 0.18 -cs 0.18 -csl 0.16 -cs +cs +f 0.16 -ds +cs +f 0.17 -ds -as 0.17 +fs +as 0.18' 
+wait 1800
+say '[play -ds 0.16 -fs +fs +as 0.16 -as +fs +as 0.16 -fsh +fs +as 0.16' 
+wait 800
+say '[play -dsh +as +cs 0.18 -ds 0.15 -as -dsh +fs +as 0.16 -fh +as +cs 0.18' 
+wait 900
+say '[play -ds 0.16 -dsh +fs +as 0.18 -cs 0.59 -ds 0.17 -as -dsh 0.17 +ds +gs 0.18' 
+wait 1600
+say '[play -ds 0.17 -fs +fs 0.16 -as +ds +gs 0.18 -fsh 0.15 -ds -dsh +ds +fs 0.18 +gs 0.17 -as -dsh 0.16 -fh +ds +gs 0.18' 
+wait 1400
+say '[play -ds 0.17 -dsh +fs 0.16 -cs +ds +gs 0.37 -cs +ds +fs 0.18 -ds 0.17 -ds -as 0.16 -ds +ds +gs 0.18' 
+wait 1600
+say '[play -ds 0.17 -fs +fs 0.16 -as +ds +gs 0.18 -fsh 0.15 -ds -dsh +ds +fs 0.18 +gs 0.17 -as -dsh 0.16 -fh +ds +gs 0.18' 
+wait 1400
+say '[play -ds 0.17 -dsh +fs 0.16 -cs +ds +gs 0.37 -cs +ds +fs 0.18 -ds 0.15 -ds -as +ds +gs 0.18 -ds 0.18' 
+wait 1400
+say '[play +fs 0.17 -ds +ds 0.17 -ds fsh 0.18 dsh 0.17 -ds -fsh 0.18 -dsh 0.39 -ds 0.18' 
+wait 1400
+say '[play -ds 0.39 -ds 0.39 +fs 0.18 +ds 0.18 +fsh 0.18 +dsh 0.18' 
+wait 1400
+say '[play -fsh 0.17 -ds -dsh 0.18 -ds 0.39 -ds 0.59 -ds 0.18' 
+wait 1300
+say '[play -ds 0.39 -ds 0.37 -csl -cs csl +cs 0.77' 
+wait 1400
+say '[play -ds -dsh ds +dsh' 

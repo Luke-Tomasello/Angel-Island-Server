@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -72,13 +72,9 @@ namespace Server.Commands
             {
                 if (o is BaseCreature bc)
                 {
-                    if (bc.Spawner != null)
+                    if (bc.SpawnerHandle != null)
                     {
-                        from.MoveToWorld(bc.Spawner.Location, bc.Spawner.Map);
-                    }
-                    else if (bc.ChampEngine != null)
-                    {
-                        from.MoveToWorld(bc.ChampEngine.Location, bc.ChampEngine.Map);
+                        from.MoveToWorld(bc.SpawnerHandle.Location, bc.SpawnerHandle.Map);
                     }
                     else if (bc.SpawnerTempMob)
                     {

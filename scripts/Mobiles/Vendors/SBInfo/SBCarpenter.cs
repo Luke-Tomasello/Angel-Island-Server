@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -101,7 +101,7 @@ namespace Server.Mobiles
         {
             public InternalBuyInfo()
             {
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeIIRules())
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules(2) || (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
                 {
                     // Jade: Add new fountain deeds (currently commented out because they are bugged)
                     // Adam: waiting on the ability to name the library bookcase
@@ -142,15 +142,6 @@ namespace Server.Mobiles
                     foreach (Type type in BBSTypes)
                         if (ResourcePool.IsPooledResource(type))
                             Add(new GenericBuyInfo(type));
-#if false
-                    Add(new GenericBuyInfo(typeof(Board)));
-                    Add(new GenericBuyInfo(typeof(OakBoard)));
-                    Add(new GenericBuyInfo(typeof(AshBoard)));
-                    Add(new GenericBuyInfo(typeof(YewBoard)));
-                    Add(new GenericBuyInfo(typeof(HeartwoodBoard)));
-                    Add(new GenericBuyInfo(typeof(BloodwoodBoard)));
-                    Add(new GenericBuyInfo(typeof(FrostwoodBoard)));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersSellResourcesRules())
                     Add(new GenericBuyInfo(typeof(Board), BaseVendor.PlayerPays(typeof(Board)), 20, 0x1BD7, 0));
@@ -159,7 +150,7 @@ namespace Server.Mobiles
                 Add(new GenericBuyInfo(typeof(Nails), BaseVendor.PlayerPays(typeof(Nails)), 20, 0x102E, 0));
 
 #if old
-                if (Core.RuleSets.AngelIslandRules()  ||Core.RuleSets.SiegeStyleRules())
+                if (Core.RuleSets.AngelIslandRules()  ||Core.RuleSets.SiegeRules())
                 {
                     Add(new GenericBuyInfo(typeof(Server.Township.Sledgehammer), Utility.Random(230, 260), 20, 0x1439, 0));
                     Add(new GenericBuyInfo(typeof(Server.Township.DemolitionAx), Utility.Random(230, 260), 20, 0x13FB, 0));
@@ -176,22 +167,6 @@ namespace Server.Mobiles
                 {   // balanced buyback system
                     foreach (Type type in BBSTypes)
                         AddToResourcePool(type);
-#if false
-                    AddToResourcePool(typeof(Board));
-                    AddToResourcePool(typeof(OakBoard));
-                    AddToResourcePool(typeof(AshBoard));
-                    AddToResourcePool(typeof(YewBoard));
-                    AddToResourcePool(typeof(HeartwoodBoard));
-                    AddToResourcePool(typeof(BloodwoodBoard));
-                    AddToResourcePool(typeof(FrostwoodBoard));
-                    AddToResourcePool(typeof(Log));
-                    AddToResourcePool(typeof(OakLog));
-                    AddToResourcePool(typeof(AshLog));
-                    AddToResourcePool(typeof(YewLog));
-                    AddToResourcePool(typeof(HeartwoodLog));
-                    AddToResourcePool(typeof(BloodwoodLog));
-                    AddToResourcePool(typeof(FrostwoodLog));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersBuyResourcesRules())
                 {

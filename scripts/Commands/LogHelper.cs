@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -78,6 +78,7 @@
  */
 
 using Server.Accounting;
+using Server.Diagnostics;
 using Server.Mobiles;
 using System;
 using System.Collections;
@@ -104,10 +105,18 @@ namespace Server.Commands
             TrackIt(from, text, accomplice);
 
             //Add to watchlist
-            (from as PlayerMobile).WatchList = true;
+            (from as PlayerMobile).Watched = true;
+
+            // Log the watch event
+            LogHelper wlLogger = new LogHelper("Watchlist.log", overwrite: false, sline: true);
+
+            wlLogger.Log(LogType.Mobile, from);
+            wlLogger.Log(LogType.Text, $"Watch added: {text}");
+
+            wlLogger.Finish();
 
             //Add comment to account
-            Account a = (from as PlayerMobile).Account as Account;
+            Account? a = (from as PlayerMobile).Account as Account;
             if (a != null)
             {
                 // We may add lots of these, so only keep the last 5 AUDIT records
@@ -116,7 +125,7 @@ namespace Server.Commands
                 {
                     if (a.Comments[ix] is AccountComment)
                     {
-                        AccountComment temp = a.Comments[ix] as AccountComment;
+                        AccountComment? temp = a.Comments[ix] as AccountComment;
                         // old audit key "System", new audit key "AUDIT"
                         if (temp.AddedBy.StartsWith("System", false, null) || temp.AddedBy.StartsWith("AUDIT", false, null))
                             delete.Add(a.Comments[ix]);

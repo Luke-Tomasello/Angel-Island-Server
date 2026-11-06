@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,7 +52,7 @@ namespace Server.Engines.Mahjong
                 m_Scores[i] = baseScore;
         }
 
-        public Mobile GetPlayer(int index)
+        public Mobile? GetPlayer(int index)
         {
             if (index < 0 || index >= m_Players.Length)
                 return null;
@@ -195,7 +195,7 @@ namespace Server.Engines.Mahjong
 
             for (int i = 0; i < m_Spectators.Count;)
             {
-                Mobile mobile = (Mobile)m_Spectators[i];
+                Mobile? mobile = (Mobile?)m_Spectators[i];
 
                 if (mobile.NetState == null || mobile.Deleted)
                 {
@@ -275,7 +275,7 @@ namespace Server.Engines.Mahjong
 
             if (nextSeat >= 0)
             {
-                Mobile newPlayer = (Mobile)m_Spectators[0];
+                Mobile? newPlayer = (Mobile?)m_Spectators[0];
 
                 m_Spectators.RemoveAt(0);
 
@@ -381,7 +381,7 @@ namespace Server.Engines.Mahjong
         public void TransferScore(Mobile from, int toPosition, int amount)
         {
             int fromPosition = GetPlayerIndex(from);
-            Mobile to = GetPlayer(toPosition);
+            Mobile? to = GetPlayer(toPosition);
 
             if (fromPosition < 0 || to == null || m_Scores[fromPosition] < amount)
                 return;
@@ -404,7 +404,7 @@ namespace Server.Engines.Mahjong
 
         public void OpenSeat(int index)
         {
-            Mobile player = GetPlayer(index);
+            Mobile? player = GetPlayer(index);
             if (player == null)
                 return;
 
@@ -423,7 +423,7 @@ namespace Server.Engines.Mahjong
 
         public void AssignDealer(int index)
         {
-            Mobile to = GetPlayer(index);
+            Mobile? to = GetPlayer(index);
 
             if (to == null || !m_InGame[index])
                 return;

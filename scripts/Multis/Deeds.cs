@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -20,7 +20,13 @@
  ***************************************************************************/
 
 /* Scripts/Multis/Deeds.cs
- * Changelog:
+ * Changelog: 
+ *   12/23/25, Adam
+ *       Mortalis: Account-level house ownership must be enforced during placement.
+ *       Treat Account.House as a real house for placement checks, unless it resolves
+ *       to a SiegeTent (which is explicitly exempt).
+ *       This prevents bypassing placement rules via account-bound house references
+ *       while preserving Siege-era tent behavior.
  *	6/5/22, Yoar
  *		Added a null check after the call to HouseDeed.GetHouse.
  *	2/27/10, Adam
@@ -58,7 +64,7 @@ namespace Server.Multis.Deeds
 
         protected override void OnTarget(Mobile from, object o)
         {
-            IPoint3D ip = o as IPoint3D;
+            IPoint3D? ip = o as IPoint3D;
 
             if (ip != null)
             {
@@ -71,8 +77,6 @@ namespace Server.Multis.Deeds
 
                 if (from.AccessLevel >= AccessLevel.GameMaster || reg.AllowHousing(p))
                     m_Deed.OnPlacement(from, p);
-                else if (reg is TreasureRegion)
-                    from.SendLocalizedMessage(1043287); // The house could not be created here.  Either something is blocking the house, or the house would not be on valid terrain.
                 else
                     from.SendLocalizedMessage(501265); // Housing can not be created in this area.
             }
@@ -213,25 +217,31 @@ namespace Server.Multis.Deeds
                 return;
             }
 
-            if (from.AccessLevel < AccessLevel.GameMaster && BaseHouse.HasAccountHouse(from))
+            // Enter block if: player AND (has account house list OR has account.House set)
+            if (from.AccessLevel < AccessLevel.GameMaster &&
+                (BaseHouse.HasAccountHouseDirect(from) || BaseHouse.HasHousePendingInheritance(from)))
             {
                 // wea: modified to ignore *siege* tents
+                // mortalis: treat Account.House as a house unless it is a SiegeTent
 
                 int i = 0;
-                ArrayList ahouses = new ArrayList();
-                ahouses = BaseHouse.GetAccountHouses(from);
+
+                // 1) Count "account houses" (excluding SiegeTent), includes pending inheritance
+                ArrayList ahouses = BaseHouse.GetAccountHousesAll(from);
 
                 if (ahouses != null)
                 {
                     foreach (object o in ahouses)
+                    {
                         if (!(o is SiegeTent))
                             i++;
-
-                    if (i > 0)
-                    {
-                        from.SendLocalizedMessage(501271); // You already own a house or a regular tent, you may not place another!
-                        return;
                     }
+                }
+
+                if (i > 0)
+                {
+                    from.SendLocalizedMessage(501271); // You already own a house or a regular tent, you may not place another!
+                    return;
                 }
             }
 
@@ -257,7 +267,7 @@ namespace Server.Multis.Deeds
 
                         for (int i = 0; i < toMove.Count; ++i)
                         {
-                            object o = toMove[i];
+                            object? o = toMove[i];
 
                             if (o is Tent)
                                 (o as Tent).Annex(house);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -471,7 +471,7 @@ namespace Server.Items
                     }
                     else
                     {
-                        BaseBook book = targ as BaseBook;
+                        BaseBook? book = targ as BaseBook;
                         LogHelper Logger = new LogHelper("savebook.log", false, false);
                         string sitem = Logger.Format(LogType.Item, book, null);
                         for (int ix = 0; ix < book.PagesCount; ix++)
@@ -499,7 +499,7 @@ namespace Server.Items
         public static void OldHeaderChange(NetState state, PacketReader pvSrc)
         {
             Mobile from = state.Mobile;
-            BaseBook book = World.FindItem(pvSrc.ReadInt32()) as BaseBook;
+            BaseBook? book = World.FindItem(pvSrc.ReadInt32()) as BaseBook;
 
             if (book == null || !book.Writable || !from.InRange(book.GetWorldLocation(), 1))
                 return;
@@ -516,7 +516,7 @@ namespace Server.Items
         public static void HeaderChange(NetState state, PacketReader pvSrc)
         {
             Mobile from = state.Mobile;
-            BaseBook book = World.FindItem(pvSrc.ReadInt32()) as BaseBook;
+            BaseBook? book = World.FindItem(pvSrc.ReadInt32()) as BaseBook;
 
             if (book == null || !book.Writable || !from.InRange(book.GetWorldLocation(), 1))
                 return;
@@ -544,7 +544,7 @@ namespace Server.Items
         public static void ContentChange(NetState state, PacketReader pvSrc)
         {
             Mobile from = state.Mobile;
-            BaseBook book = World.FindItem(pvSrc.ReadInt32()) as BaseBook;
+            BaseBook? book = World.FindItem(pvSrc.ReadInt32()) as BaseBook;
 
             string ParsedContents = "";
 

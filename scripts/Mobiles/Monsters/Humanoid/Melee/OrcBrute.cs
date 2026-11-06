@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,7 +52,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -68,7 +67,7 @@ namespace Server.Mobiles
         {
             Body = 17;
             Hue = 0x8A4;
-            BardImmune = true;
+            BardImmune = (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()) ? false : true;
 
             Name = "an orc brute";
             BaseSoundID = 0x45A;
@@ -104,24 +103,32 @@ namespace Server.Mobiles
 
         public override bool IsEnemy(Mobile m, RelationshipFilter filter)
         {
-            if (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled)
-                if (m.Player && m.FindItemOnLayer(Layer.Helm) is OrcishKinMask)
+            bool useMask = (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules());
+
+            if (useMask ||
+                (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled))
+            {
+                if (m.Player &&
+                    m.FindItemOnLayer(Layer.Helm) is OrcishKinMask)
+                {
                     return false;
+                }
+            }
 
             return base.IsEnemy(m, filter);
         }
 
-        public override void AggressiveAction(Mobile aggressor, bool criminal, object source = null)
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
         {
             base.AggressiveAction(aggressor, criminal);
 
             if (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled)
             {
-                Item item = aggressor.FindItemOnLayer(Layer.Helm);
+                Item? item = aggressor.FindItemOnLayer(Layer.Helm);
 
                 if (item is OrcishKinMask)
                 {
-                    AOS.Damage(aggressor, 50, 0, 100, 0, 0, 0, item);
+                    AOS.Damage(aggressor, 50, new DamageContext { Source = this });
                     item.Delete();
                     aggressor.FixedParticles(0x36BD, 20, 10, 5044, EffectLayer.Head);
                     aggressor.PlaySound(0x307);
@@ -131,7 +138,7 @@ namespace Server.Mobiles
 
         public override bool CanRummageCorpses { get { return Core.RuleSets.AngelIslandRules() ? true : true; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
 
         public override void OnDamagedBySpell(Mobile caster)
         {
@@ -195,93 +202,27 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+
+            // http://web.archive.org/web/20020221205654/uo.stratics.com/hunters/orcbrute.shtml
+            // 50 -120 Gold, 25 shadow ore, 10 ingots, a war mace, orc helm, orc mask, bola ball
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(600, 700);
-                PackItem(new ShadowIronOre(25));
-                PackItem(new IronIngot(10));
-                PackMagicEquipment(1, 3, 0.80, 0.80);
-                PackMagicEquipment(1, 3, 0.10, 0.10);
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (0.2 > Utility.RandomDouble())
-                    PackItem(new BolaBall());
-
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(50, 120);
             }
             else
             {
-                // http://web.archive.org/web/20020221205654/uo.stratics.com/hunters/orcbrute.shtml
-                // 50 -120 Gold, 25 shadow ore, 10 ingots, a war mace, orc helm, orc mask, bola ball
-
-                if (Core.RuleSets.AllShards)
-                {
-                    if (Spawning)
-                    {
-                        PackGold(50, 120);
-                    }
-                    else
-                    {
-                        PackItem(new ShadowIronOre(25));
-                        PackItem(new IronIngot(10));
-                        PackItem(new WarMace());
-                        if (Utility.RandomBool())               // TODO: no idea about the drop rates here
-                            PackItem(new OrcHelm());
-                        else
-                            PackItem(typeof(OrcishMask), .1);
-
-                        // 1. http://www.uoguide.com/Savage_Empire
-                        // 2. http://uo.stratics.com/secrets/archive/orcsavage.shtml
-                        // 3. Bola balls have appeared as loot on Orc Bombers. Balls on Bombers are rather common, around a 50/50% chance of getting a ball or not. They are only appearing as loot on bombers.
-                        // 4. http://web.archive.org/web/20020221205654/uo.stratics.com/hunters/orcbrute.shtml
-                        // 5. 50 -120 Gold, 25 shadow ore, 10 ingots, a war mace, orc helm, orc mask, bola ball
-                        if (PublishInfo.PublishDate >= Core.EraSAVE)   // enable due to above #4&5 above
-                            if (0.2 > Utility.RandomDouble())
-                                PackItem(new BolaBall());
-                    }
-                }
+                PackItem(new ShadowIronOre(25));
+                PackItem(new IronIngot(10));
+                PackItem(new WarMace());
+                if (Utility.RandomBool())               // TODO: no idea about the drop rates here
+                    PackItem(new OrcHelm());
                 else
-                {
-                    if (Spawning)
-                    {
-                        PackItem(new ShadowIronOre(25));
-                        PackItem(new IronIngot(10));
-                        PackItem(new WarMace());
+                    PackItem(typeof(OrcishMask), .1);
 
-                        // http://www.uoguide.com/Savage_Empire
-                        // http://uo.stratics.com/secrets/archive/orcsavage.shtml
-                        if (PublishInfo.PublishDate >= Core.EraSAVE)
-                            if (0.05 > Utility.RandomDouble())
-                                PackItem(new OrcishKinMask());
-
-                        // 1. http://www.uoguide.com/Savage_Empire
-                        // 2. http://uo.stratics.com/secrets/archive/orcsavage.shtml
-                        // 3. Bola balls have appeared as loot on Orc Bombers. Balls on Bombers are rather common, around a 50/50% chance of getting a ball or not. They are only appearing as loot on bombers.
-                        // 4. http://web.archive.org/web/20020221205654/uo.stratics.com/hunters/orcbrute.shtml
-                        // 5. 50 -120 Gold, 25 shadow ore, 10 ingots, a war mace, orc helm, orc mask, bola ball
-                        if (PublishInfo.PublishDate >= Core.EraSAVE)   // enable due to above #4&5 above
-                            if (0.2 > Utility.RandomDouble())
-                                PackItem(new BolaBall());
-                    }
-
-                    AddLoot(LootPack.FilthyRich);
-                    AddLoot(LootPack.Rich);
-                }
+                if (PublishInfo.PublishDate >= Core.EraSAVE)
+                    if (0.2 > Utility.RandomDouble())
+                        PackItem(new BolaBall());
             }
         }
 

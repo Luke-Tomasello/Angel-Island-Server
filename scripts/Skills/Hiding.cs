@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -50,7 +50,7 @@ namespace Server.SkillHandlers
 
             double bonus = 0.0;
 
-            BaseHouse house = BaseHouse.FindHouseAt(m);
+            BaseHouse? house = BaseHouse.FindHouseAt(m);
 
             if (house != null && house.IsFriend(m))
             {
@@ -127,7 +127,7 @@ namespace Server.SkillHandlers
                     // Players who successfully use their hiding skill while under the effects of an invisibility spell
                     //  will no longer be revealed when the invisibility timer expires.
                     // https://www.uoguide.com/Publish_15
-                    if (EraException || PublishInfo.Publish >= 15 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+                    if (EraException || PublishInfo.Publish >= 15 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
                     {   // spell
                         Spells.Sixth.InvisibilitySpell.RemoveTimer(m);
                         // items

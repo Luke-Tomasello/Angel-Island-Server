@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,10 @@
 
 /* Scripts/Comm Crystals/CommunicationCrystal.cs
  * Changelog
+ *  10/20/26, Adam
+ *      SendMessage: looks up connected crystals with World.FindItem; removed the unreachable freeze-dried branch
+ *      (FreezeDry is retired).
+ *      WriteSerialList / ReadSerialList moved here from ItemBroker (removed; this was its only user). Same format.
  *  12/06/07, Adam
  *      Add an explicit replacement for the Item.SendMessage() function
  *	01/03/07, Pix
@@ -181,7 +185,7 @@ namespace Server.Items
             if (m.AccessLevel >= AccessLevel.GameMaster) return true;
             if (!IsLockedDown) return false;
 
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             // Allow access if the player is at least a co-owner of the house.
             return (house != null && house.HasSecureAccess(m, m_Level));
@@ -438,14 +442,9 @@ namespace Server.Items
             ArrayList ToDelete = new ArrayList();
             foreach (Serial commSerial in m_Connected)
             {
-                bool bIsFD = false;
-                CommunicationCrystal comm = ItemBroker.GetItem<CommunicationCrystal>(commSerial, ref bIsFD);
+                CommunicationCrystal? comm = World.FindItem(commSerial) as CommunicationCrystal;
 
-                if (bIsFD)
-                {
-                    //skip, because that Crystal is freezedried
-                }
-                else if (comm == null || comm.Deleted)
+                if (comm == null || comm.Deleted)
                 {
                     //Mark to delete it if we can't find it in the world OR it's been deleted
                     ToDelete.Add(commSerial);
@@ -514,7 +513,7 @@ namespace Server.Items
             writer.Write(m_Multiplier);
             writer.Write(m_Charges);
             //writer.WriteItemList( m_Connected, true );
-            ItemBroker.WriteSerialList(writer, m_Connected);
+            WriteSerialList(writer, m_Connected);
             writer.Write(m_TextHue);
         }
 
@@ -554,7 +553,7 @@ namespace Server.Items
                             m_Connected = new List<Serial>(list.Count);
                             for (int i = 0; i < list.Count; i++)
                             {
-                                CommunicationCrystal cc = list[i] as CommunicationCrystal;
+                                CommunicationCrystal? cc = list[i] as CommunicationCrystal;
                                 if (cc != null)
                                 {
                                     m_Connected.Add(cc.Serial);
@@ -563,13 +562,37 @@ namespace Server.Items
                         }
                         else
                         {
-                            m_Connected = ItemBroker.ReadSerialList(reader);
+                            m_Connected = ReadSerialList(reader);
                         }
                         m_TextHue = reader.ReadInt();
 
                         break;
                     }
             }
+        }
+
+        // connected-crystal list: the count, then each serial as an int (format unchanged from ItemBroker)
+        private static void WriteSerialList(GenericWriter writer, List<Serial> serialList)
+        {
+            writer.Write(serialList.Count);
+            for (int i = 0; i < serialList.Count; i++)
+            {
+                writer.Write((int)serialList[i]);
+            }
+        }
+
+        private static List<Serial> ReadSerialList(GenericReader reader)
+        {
+            int count = reader.ReadInt();
+
+            List<Serial> list = new List<Serial>(count);
+            for (int i = 0; i < count; i++)
+            {
+                int s = reader.ReadInt();
+                list.Add((Serial)s);
+            }
+
+            return list;
         }
 
 

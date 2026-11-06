@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -102,11 +102,6 @@ namespace Server.Network
                 m_PeakProcTime = processTime;
         }
 
-        public void RegConstruct()
-        {
-            ++m_Constructed;
-        }
-
         public PacketProfile(bool outgoing)
         {
             m_Outgoing = outgoing;
@@ -114,32 +109,6 @@ namespace Server.Network
 
         private static PacketProfile[] m_OutgoingProfiles;
         private static PacketProfile[] m_IncomingProfiles;
-
-        public static PacketProfile GetOutgoingProfile(int packetID)
-        {
-            if (!Core.Profiling)
-                return null;
-
-            PacketProfile prof = m_OutgoingProfiles[packetID];
-
-            if (prof == null)
-                m_OutgoingProfiles[packetID] = prof = new PacketProfile(true);
-
-            return prof;
-        }
-
-        public static PacketProfile GetIncomingProfile(int packetID)
-        {
-            if (!Core.Profiling)
-                return null;
-
-            PacketProfile prof = m_IncomingProfiles[packetID];
-
-            if (prof == null)
-                m_IncomingProfiles[packetID] = prof = new PacketProfile(false);
-
-            return prof;
-        }
 
         public static PacketProfile[] OutgoingProfiles
         {

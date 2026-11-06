@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -55,7 +55,7 @@ namespace Server.Engines.Craft
             get { return 1044009; } // <CENTER>INSCRIPTION MENU</CENTER>
         }
 
-        private static CraftSystem m_CraftSystem;
+        private static CraftSystem? m_CraftSystem;
 
         public static CraftSystem CraftSystem
         {
@@ -87,12 +87,12 @@ namespace Server.Engines.Craft
 
             if (typeItem != null)
             {
-                object o = Activator.CreateInstance(typeItem);
+                object? o = Activator.CreateInstance(typeItem);
 
                 if (o is SpellScroll)
                 {
                     SpellScroll scroll = (SpellScroll)o;
-                    Spellbook book = Spellbook.Find(from, scroll.SpellID);
+                    Spellbook? book = Spellbook.Find(from, scroll.SpellID);
 
                     bool hasSpell = (book != null && book.HasSpell(scroll.SpellID));
 
@@ -102,7 +102,7 @@ namespace Server.Engines.Craft
                     if (hasSpell)
                     {
                         //GetCastSkills
-                        Server.Spells.Spell spell = Server.Spells.SpellRegistry.NewSpell(scroll.SpellID, from, null);
+                        Server.Spells.Spell? spell = Server.Spells.SpellRegistry.NewSpell(scroll.SpellID, from, null);
                         if (spell == null)
                         {
                             return 0;
@@ -144,13 +144,17 @@ namespace Server.Engines.Craft
             // http://www.uoguide.com/Publish_15
             // BUG No:	"Players will no longer lose mana when attempting to inscribe a scroll they don�t have the proper materials for."
             // BUG Yes:	"Characters will no longer lose mana when they fail to make a scroll."
-            if ((!Core.RuleSets.MortalisRules() && !Core.RuleSets.AngelIslandRules()) && PublishInfo.Publish < 15)
+            if ((!Core.RuleSets.MortalisRules() &&
+                 !Core.RuleSets.AngelIslandRules() &&
+                 !Core.RuleSets.SeasonsRules() &&
+                !Core.RuleSets.UpheavalRules()) &&
+                PublishInfo.Publish < 15)
                 return true;
             else
                 return false;
         }
 
-        public override void PlayCraftEffect(Mobile from, object obj = null)
+        public override void PlayCraftEffect(Mobile from, object? obj = null)
         {
             from.PlaySound(0x249);
         }
@@ -353,7 +357,7 @@ namespace Server.Engines.Craft
             // Runebook
             // Publish 15
             // Runebooks now only require 8 blank scrolls to make instead of the previous 10.
-            int scrolls = (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || PublishInfo.Publish >= 15) ? 8 : 10;
+            int scrolls = (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules() || PublishInfo.Publish >= 15) ? 8 : 10;
             int index = AddCraft(typeof(Runebook), 1044294, 1041267, 45.0, 95.0, typeof(BlankScroll), 1044377, scrolls, 1044378);
             AddRes(index, typeof(RecallScroll), 1044445, 1, 1044253);
             AddRes(index, typeof(GateTravelScroll), 1044446, 1, 1044253);

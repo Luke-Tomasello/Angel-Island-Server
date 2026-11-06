@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,7 +30,7 @@ namespace Server.Engines.PartySystem
 
         public override void OnAdd(Mobile from)
         {
-            Party p = Party.Get(from);
+            Party? p = Party.Get(from);
 
             if (p != null && p.Leader != from)
                 from.SendLocalizedMessage(1005453); // You may only add members to the party if you are the leader.
@@ -42,7 +42,7 @@ namespace Server.Engines.PartySystem
 
         public override void OnRemove(Mobile from, Mobile target)
         {
-            Party p = Party.Get(from);
+            Party? p = Party.Get(from);
 
             if (p == null)
             {
@@ -66,7 +66,7 @@ namespace Server.Engines.PartySystem
             if (text.Length > 128 || (text = text.Trim()).Length == 0)
                 return;
 
-            Party p = Party.Get(from);
+            Party? p = Party.Get(from);
 
             if (p != null && p.Contains(target))
                 p.SendPrivateMessage(from, target, text);
@@ -79,7 +79,7 @@ namespace Server.Engines.PartySystem
             if (text.Length > 128 || (text = text.Trim()).Length == 0)
                 return;
 
-            Party p = Party.Get(from);
+            Party? p = Party.Get(from);
 
             if (p != null)
                 p.SendPublicMessage(from, text);
@@ -89,7 +89,7 @@ namespace Server.Engines.PartySystem
 
         public override void OnSetCanLoot(Mobile from, bool canLoot)
         {
-            Party p = Party.Get(from);
+            Party? p = Party.Get(from);
 
             if (p == null)
             {
@@ -113,10 +113,10 @@ namespace Server.Engines.PartySystem
 
         public override void OnAccept(Mobile from, Mobile sentLeader)
         {
-            Mobile leader = from.Party as Mobile;
+            Mobile? leader = from.Party as Mobile;
             from.Party = null;
 
-            Party p = Party.Get(leader);
+            Party? p = Party.Get(leader);
 
             if (leader == null || p == null || !p.Candidates.Contains(from))
                 from.SendLocalizedMessage(3000222); // No one has invited you to be in a party.
@@ -126,10 +126,10 @@ namespace Server.Engines.PartySystem
 
         public override void OnDecline(Mobile from, Mobile sentLeader)
         {
-            Mobile leader = from.Party as Mobile;
+            Mobile? leader = from.Party as Mobile;
             from.Party = null;
 
-            Party p = Party.Get(leader);
+            Party? p = Party.Get(leader);
 
             if (leader == null || p == null || !p.Candidates.Contains(from))
                 from.SendLocalizedMessage(3000222); // No one has invited you to be in a party.

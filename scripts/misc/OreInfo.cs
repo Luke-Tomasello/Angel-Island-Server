@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -487,7 +487,7 @@ namespace Server.Items
             return (resource == CraftResource.None || resource == CraftResource.Iron || resource == CraftResource.RegularLeather);
         }
 
-        private static Hashtable m_TypeTable;
+        private static Hashtable? m_TypeTable;
 
         /// <summary>
         /// Registers that '<paramref name="resourceType"/>' uses '<paramref name="resource"/>' so that it can later be queried by <see cref="CraftResources.GetFromType"/>
@@ -503,7 +503,7 @@ namespace Server.Items
         /// <summary>
         /// Returns the <see cref="CraftResource"/> value for which '<paramref name="resourceType"/>' uses -or- CraftResource.None if an unregistered type was specified.
         /// </summary>
-        public static CraftResource GetFromType(Type resourceType)
+        public static CraftResource GetFromType(Type? resourceType)
         {
             if (m_TypeTable == null)
                 return CraftResource.None;
@@ -511,7 +511,7 @@ namespace Server.Items
             if (resourceType == null)
                 return CraftResource.None;
 
-            object obj = m_TypeTable[resourceType];
+            object? obj = m_TypeTable[resourceType];
 
             if (!(obj is CraftResource))
                 return CraftResource.None;
@@ -522,7 +522,7 @@ namespace Server.Items
         /// <summary>
         /// Returns a <see cref="CraftResourceInfo"/> instance describing '<paramref name="resource"/>' -or- null if an invalid resource was specified.
         /// </summary>
-        public static CraftResourceInfo GetInfo(CraftResource resource)
+        public static CraftResourceInfo? GetInfo(CraftResource resource)
         {
             if (resource == CraftResource.Obsidian)
                 return m_ObsidianInfo;
@@ -533,7 +533,7 @@ namespace Server.Items
             if (resource == CraftResource.Dragonglass)
                 return m_DragonGlassInfo;
 
-            CraftResourceInfo[] list = null;
+            CraftResourceInfo[]? list = null;
 
             switch (GetType(resource))
             {
@@ -608,7 +608,7 @@ namespace Server.Items
         /// </summary>
         public static int GetLocalizationNumber(CraftResource resource)
         {
-            CraftResourceInfo info = GetInfo(resource);
+            CraftResourceInfo? info = GetInfo(resource);
 
             return (info == null ? 0 : info.Number);
         }
@@ -618,7 +618,7 @@ namespace Server.Items
         /// </summary>
         public static int GetHue(CraftResource resource)
         {
-            CraftResourceInfo info = GetInfo(resource);
+            CraftResourceInfo? info = GetInfo(resource);
 
             return (info == null ? 0 : info.Hue);
         }
@@ -628,7 +628,7 @@ namespace Server.Items
         /// </summary>
         public static string GetName(CraftResource resource)
         {
-            CraftResourceInfo info = GetInfo(resource);
+            CraftResourceInfo? info = GetInfo(resource);
 
             return (info == null ? string.Empty : info.Name);
         }

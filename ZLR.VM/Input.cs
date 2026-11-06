@@ -4,7 +4,7 @@
  *   implementation          : (C) 2007-2023 Tara McGrew
  *   repository url          : https://foss.heptapod.net/zilf/zlr
  *   
- *   Angel Island UO Shard   : March 25, 2004
+ *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
@@ -19,13 +19,13 @@
  *
  ***************************************************************************/
 
+using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using ZLR.VM.Debugging;
 
 namespace ZLR.VM
@@ -664,6 +664,7 @@ namespace ZLR.VM
         /// <summary>
         /// Encodes a section of text, optionally truncating or padding the output to a fixed size.
         /// </summary>
+        /// <param name="input">The plain text to encode.</param>
         /// <param name="start">The index within <paramref name="input"/> where the
         /// plain text starts.</param>
         /// <param name="length">The length of the plain text.</param>
@@ -812,7 +813,7 @@ namespace ZLR.VM
         [PublicAPI]
         public async Task SetWritingCommandsToFileAsync(bool value)
         {
-            await SetOutputStreamAsync((short) (value ? 4 : -4), 0, PC).ConfigureAwait(false);
+            await SetOutputStreamAsync((short)(value ? 4 : -4), 0, PC).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -839,7 +840,7 @@ namespace ZLR.VM
         [PublicAPI]
         public async Task SetReadingCommandsFromFileAsync(bool value)
         {
-            await SetInputStreamAsync((short) (value ? 1 : 0), PC).ConfigureAwait(false);
+            await SetInputStreamAsync((short)(value ? 1 : 0), PC).ConfigureAwait(false);
         }
 
         private class CommandFileReader : IDisposable

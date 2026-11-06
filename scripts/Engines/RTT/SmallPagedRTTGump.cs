@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -143,7 +143,12 @@ namespace Server.RTT
         {
             //Nothing to do here - SetupGump is called from the base class.
         }
-
+        // New overload: supports RTT callback + state
+        public SmallPagedRTTGump(Mobile from, string strNotify, string strSkill, RTTCallback callback, object state)
+            : base(from, strNotify, strSkill, 10, 10, callback, state)
+        {
+            // Nothing to do here - SetupGump is called from the base class.
+        }
         protected override void SetupGump()
         {
             //make sure they can't move it from this position

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,8 +28,6 @@
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -72,7 +70,8 @@ namespace Server.Mobiles
         public override Poison HitPoison { get { return (0.8 >= Utility.RandomDouble() ? Poison.Greater : Poison.Deadly); } }
 
         public override int Meat { get { return 4; } }
-        public override int Hides { get { return Core.RuleSets.AngelIslandRules() ? 15 : 20; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
+        public override int Hides { get { return 20; } }
         public override HideType HideType { get { return HideType.Spined; } }
 
         public GiantSerpent(Serial serial)
@@ -82,35 +81,14 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020210164600/uo.stratics.com/hunters/giantserpent.shtml
+            // 4 Raw Ribs (carved), 20 Hides (carved)
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(50, 100);
-                PackItem(new Bone());
-                // TODO: Body parts
+
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020210164600/uo.stratics.com/hunters/giantserpent.shtml
-                    // 4 Raw Ribs (carved), 20 Hides (carved)
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    if (this.Spawning)
-                    {
-                        PackItem(new Bone());
-                        // TODO: Body parts
-                    }
-                    AddLoot(LootPack.Average);
-                }
             }
         }
 

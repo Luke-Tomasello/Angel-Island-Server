@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -215,7 +215,7 @@ namespace Server.Spells.Fourth
                         m.SendLocalizedMessage(501783); // You feel yourself resisting magical energy.
                     }
 
-                    AOS.Damage(m, m_Caster, damage, 0, 100, 0, 0, 0, this);
+                    AOS.Damage(m, m_Caster, damage, new DamageContext { Source = this });
                     m.PlaySound(0x208);
                 }
 
@@ -287,7 +287,7 @@ namespace Server.Spells.Fourth
 
                             while (m_Queue.Count > 0)
                             {
-                                Mobile m = (Mobile)m_Queue.Dequeue();
+                                Mobile? m = (Mobile?)m_Queue.Dequeue();
 
                                 caster.DoHarmful(m);
 
@@ -300,7 +300,7 @@ namespace Server.Spells.Fourth
                                     m.SendLocalizedMessage(501783); // You feel yourself resisting magical energy.
                                 }
 
-                                AOS.Damage(m, caster, damage, 0, 100, 0, 0, 0, this);
+                                AOS.Damage(m, caster, damage, new DamageContext { Source = this });
                                 m.PlaySound(0x208);
                             }
                         }

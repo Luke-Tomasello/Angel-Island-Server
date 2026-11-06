@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -129,8 +129,8 @@ namespace Server.Items
     {
         private int m_Level;
         private DateTime m_DeleteTime;
-        private Timer m_Timer;
-        private Mobile m_Owner;
+        private Timer? m_Timer;
+        private Mobile? m_Owner;
         private bool m_IsThemed;
         private ChestThemeType m_ThemeType;
 
@@ -169,7 +169,7 @@ namespace Server.Items
         {
         }
 
-        public TreasureMapChest(Mobile owner, int level, bool themed, ChestThemeType type)
+        public TreasureMapChest(Mobile? owner, int level, bool themed, ChestThemeType type)
             : base(0xE41)
         {
             m_Owner = owner;
@@ -252,8 +252,10 @@ namespace Server.Items
             base.LockPick(from);
 
             // call data recorder here to attribute this picker with the 'earned gold' points
-            DataRecorder.LockPick(from, this);
+            int gold = GetLootGold();
 
+            if (gold > 0)
+                DataRecorder.Add(from, RecorderDomain.ChestGold, gold);
         }
 
         public static void Fill(LockableContainer cont, int level, bool IsThemed, ChestThemeType type)
@@ -275,7 +277,7 @@ namespace Server.Items
                 // 12.5% chance at a rare
                 if (level > 3)
                 {
-                    Item rare = Loot.RareFactoryItem(0.125);
+                    Item? rare = Loot.RareFactoryItem(0.125);
                     if (rare != null)
                         cont.DropItem(rare);
                 }
@@ -299,16 +301,18 @@ namespace Server.Items
                 cont.DropItem(new Gold(level * 1000));
 
                 //if not a undead or pirate chest add scrolls
-                if (type != ChestThemeType.Pirate || type != ChestThemeType.Undead)
+                if (type != ChestThemeType.Pirate && type != ChestThemeType.Undead)
                 {
-                    // adam: Changed to drop scrolls appropriate for the level.
-                    for (int i = 0; i < level * 5; ++i)
+                    int scrollCount = (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()) ? level * 15 : level * 5;
+
+                    // Adam: Drop magic scrolls (or blank scrolls on Seasons) appropriate for the chest level.
+                    for (int i = 0; i < scrollCount; ++i)
                     {
                         int minCircle = level;
-                        int maxCircle = (level + 3);
+                        int maxCircle = level + 3;
+
                         PackScroll(cont, minCircle, maxCircle);
                     }
-
                 }
 
                 // magic armor and weapons
@@ -370,8 +374,9 @@ namespace Server.Items
                     #endregion Gold
 
                     #region Scrolls
-                    for (int i = 0; i < level * 5; ++i)
-                        cont.StackItem(Loot.RandomScroll(0, 63, SpellbookType.Regular));
+
+                    cont.StackItem(Loot.RandomScroll(0, 63, SpellbookType.Regular));
+
                     #endregion Scrolls
 
                     #region Magic Items
@@ -379,14 +384,8 @@ namespace Server.Items
                     int[] minmax = Loot.ImbueLevelToMagicEnchantment(imbueLevel);
                     for (int i = 0; i < level * 6; ++i)
                     {
-                        Item item = null;
+                        Item? item = null;
                         #region Item
-#if false
-                        if (Core.RuleSets.AOSRules())
-                            item = Loot.RandomArmorOrShieldOrWeaponOrJewelry();
-                        else
-                            item = Loot.RandomArmorOrShieldOrWeapon();
-#else
                         #region proof
                         /* THE TREASURE
                         Below is a list of what you can expect to get from a Level 3 map. And keep in mind while reading this list that the treasure from Level 4 and Level 5 maps are that much more gratifying. =)
@@ -466,82 +465,8 @@ namespace Server.Items
 
 
                         }
-#endif
                         #endregion Item
                         #region Obsolete
-#if false
-                        if (item is BaseWeapon)
-                        {
-                            BaseWeapon weapon = (BaseWeapon)item;
-
-                            if (Core.RuleSets.AOSRules())
-                            {
-                                int attributeCount;
-                                int min, max;
-
-                                GetRandomAOSStats(out attributeCount, out min, out max);
-
-                                BaseRunicTool.ApplyAttributesTo(weapon, attributeCount, min, max);
-                            }
-                            else
-                            {
-                                weapon.DamageLevel = Loot.GetGearForLevel<WeaponDamageLevel>(level, upgrade_chance: 0.2);
-                                weapon.AccuracyLevel = Utility.RandomEnumValue<WeaponAccuracyLevel>();
-                                weapon.DurabilityLevel = Utility.RandomEnumValue<WeaponDurabilityLevel>();
-                            }
-
-                            cont.DropItem(item);
-                        }
-                        else if (item is BaseArmor)
-                        {
-                            BaseArmor armor = (BaseArmor)item;
-
-                            if (Core.RuleSets.AOSRules())
-                            {
-                                int attributeCount;
-                                int min, max;
-
-                                GetRandomAOSStats(out attributeCount, out min, out max);
-
-                                BaseRunicTool.ApplyAttributesTo(armor, attributeCount, min, max);
-                            }
-                            else
-                            {
-                                armor.ProtectionLevel = Loot.GetGearForLevel<ArmorProtectionLevel>(level, upgrade_chance: 0.2);
-                                armor.DurabilityLevel = Utility.RandomEnumValue<ArmorDurabilityLevel>();
-                            }
-
-                            cont.DropItem(item);
-                        }
-                        else if (item is BaseHat)
-                        {
-                            BaseHat hat = (BaseHat)item;
-
-                            if (Core.RuleSets.AOSRules())
-                            {
-                                int attributeCount;
-                                int min, max;
-
-                                GetRandomAOSStats(out attributeCount, out min, out max);
-
-                                // Adam: we can add this if we ever decide to enable AOS (lol)
-                                //BaseRunicTool.ApplyAttributesTo(hat, attributeCount, min, max);
-                            }
-
-                            cont.DropItem(item);
-                        }
-                        else if (item is BaseJewel)
-                        {
-                            int attributeCount;
-                            int min, max;
-
-                            GetRandomAOSStats(out attributeCount, out min, out max);
-
-                            BaseRunicTool.ApplyAttributesTo((BaseJewel)item, attributeCount, min, max);
-
-                            cont.DropItem(item);
-                        }
-#endif
                         #endregion Obsolete
                     }
                     #endregion Magic Items
@@ -564,6 +489,9 @@ namespace Server.Items
                 // Adam: we can add this if we ever decide to enable AOS (lol)
                 //if (level == 6 && Core.AOS)
                 //cont.DropItem((Item)Activator.CreateInstance(m_Artifacts[Utility.Random(m_Artifacts.Length)]));
+
+                if (Core.RuleSets.SeasonsRules(2))
+                    ApplySeasons2Loot(cont, level);
 
                 return;
             }
@@ -589,7 +517,7 @@ namespace Server.Items
             typeof( SpidersSilk ), typeof( SulfurousAsh )
         };
 
-        public static void PackGems(LockableContainer cont, int count)
+        public static void PackGems(Container cont, int count)
         {
             ClearAmounts(TreasureMapChest.m_Gems);
 
@@ -599,7 +527,7 @@ namespace Server.Items
             AddItems(cont, TreasureMapChest.m_Gems, TreasureMapChest.m_GemTypes);
         }
 
-        public static void PackRegs(LockableContainer cont, int count)
+        public static void PackRegs(Container cont, int count)
         {
             ClearAmounts(TreasureMapChest.m_Regs);
 
@@ -611,7 +539,7 @@ namespace Server.Items
 
         private static void AddThemeLoot(LockableContainer cont, int level, ChestThemeType type)
         {
-            MonsterStatuette mx = null;
+            MonsterStatuette? mx = null;
 
             //switch to add in theme treasures
             switch (type)
@@ -866,18 +794,6 @@ namespace Server.Items
                 list[i] = 0;
         }
 
-        private static void PackScroll(LockableContainer cont, int minCircle, int maxCircle)
-        {
-            PackScroll(cont, Utility.RandomMinMax(minCircle, maxCircle));
-        }
-
-        private static void PackScroll(LockableContainer cont, int circle)
-        {
-            int min = (circle - 1) * 8;
-
-            cont.DropItem(Loot.RandomScroll(min, min + 7, SpellbookType.Regular));
-        }
-
         private static void AddItems(Container cont, int[] amounts, Type[] types)
         {
             for (int i = 0; i < amounts.Length && i < types.Length; ++i)
@@ -887,7 +803,7 @@ namespace Server.Items
                     try
                     {
                         m_Arguments[0] = amounts[i];
-                        Item item = (Item)Activator.CreateInstance(types[i], m_Arguments);
+                        Item? item = (Item?)Activator.CreateInstance(types[i], m_Arguments);
                         cont.DropItem(item);
                     }
                     catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
@@ -902,7 +818,11 @@ namespace Server.Items
             if (m_Owner == null || m == m_Owner)
                 return true;
 
-            Party p = Party.Get(m_Owner);
+            // no ownership in this era
+            if (PublishInfo.Publish <= 15)
+                return true;
+
+            Party? p = Party.Get(m_Owner);
 
             if (p != null && p.Contains(m))
                 return true;
@@ -987,14 +907,14 @@ namespace Server.Items
                 if (m_IsThemed == true && 0.1 >= Utility.RandomDouble())
                 {
                     // 10% chance to spawn 2 monsters as is a Themed chest
-                    TreasureTheme.Spawn(m_Level, GetWorldLocation(), Map, from, m_IsThemed, m_ThemeType, false, false);
-                    TreasureTheme.Spawn(m_Level, GetWorldLocation(), Map, from, m_IsThemed, m_ThemeType, false, false);
+                    TreasureTheme.Spawn(this, m_Level, GetWorldLocation(), Map, from, m_IsThemed, m_ThemeType, false, false);
+                    TreasureTheme.Spawn(this, m_Level, GetWorldLocation(), Map, from, m_IsThemed, m_ThemeType, false, false);
                 }
                 else if (m_IsThemed == false && chance >= Utility.RandomDouble())
-                    TreasureTheme.Spawn(m_Level, GetWorldLocation(), Map, from, m_IsThemed, m_ThemeType, false, false);
+                    TreasureTheme.Spawn(this, m_Level, GetWorldLocation(), Map, from, m_IsThemed, m_ThemeType, false, false);
 
                 // Adam: Insure IOB wearers are not stealing from their kin
-                BaseCreature witness = null;
+                BaseCreature? witness = null;
                 if (CheckThief(from, out witness))
                 {
                     from.SendMessage("You have been discovered stealing from your kin!");
@@ -1014,6 +934,9 @@ namespace Server.Items
             witness = null;
 
             if (from == null || !(from is PlayerMobile))
+                return false;
+
+            if (!Core.RuleSets.KinSystemEnabled())
                 return false;
 
             PlayerMobile pm = (PlayerMobile)from;
@@ -1203,7 +1126,7 @@ namespace Server.Items
 
         private Item UnderRare()
         {
-            Item item = null;
+            Item? item = null;
             switch (Utility.Random(3))
             {
                 case 0: // 1 in 10
@@ -1330,14 +1253,6 @@ namespace Server.Items
         public override void OnTelekinesis(Mobile from)
         {
             //Do nothing, telekinesis doesn't work on a TMap.
-        }
-
-        public override bool AutoResetTrap
-        {
-            /* 5/21/23, Yoar: Treasure chest traps auto-reset on AI/MO
-             * Remove trap is necessary to open these chests
-             */
-            get { return SkillHandlers.RemoveTrap.EraAI; }
         }
     }
 }

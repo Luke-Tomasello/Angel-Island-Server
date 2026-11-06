@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,7 +52,7 @@ namespace Server
 
         public static T Build<T>(string spawnName, ref string reason) where T : IEntity
         {
-            IEntity spawned = Build(spawnName, ref reason);
+            IEntity? spawned = Build(spawnName, ref reason);
 
             if (spawned is T)
                 return (T)spawned;
@@ -63,12 +63,12 @@ namespace Server
             return default(T);
         }
 
-        public static IEntity Build(string spawnName, ref string reason)
+        public static IEntity? Build(string spawnName, ref string reason)
         {
             return BuildInternal(spawnName, ref reason);
         }
 
-        public static IEntity BuildInternal(string spawnName, ref string reason)
+        public static IEntity? BuildInternal(string spawnName, ref string reason)
         {
             if (string.IsNullOrEmpty(spawnName))
             {
@@ -89,7 +89,7 @@ namespace Server
 
             // 2. Parse and check type name
 
-            Type type = ScriptCompiler.FindTypeByName(typeName);
+            Type? type = ScriptCompiler.FindTypeByName(typeName);
 
             if (!typeof(IEntity).IsAssignableFrom(type))
             {
@@ -128,8 +128,8 @@ namespace Server
 
             // 5. Find matching constructor
 
-            ConstructorInfo ctor = null;
-            ParameterInfo[] paramList = null;
+            ConstructorInfo? ctor = null;
+            ParameterInfo[]? paramList = null;
 
             foreach (ConstructorInfo c in type.GetConstructors())
             {
@@ -163,7 +163,7 @@ namespace Server
                 Array.Copy(args, 0, paramString, 0, paramCount);
             }
 
-            object[] paramValues = Add.ParseValues(paramList, paramString);
+            object[]? paramValues = Add.ParseValues(paramList, paramString);
 
             if (paramValues == null)
             {
@@ -219,7 +219,7 @@ namespace Server
                         if (!prop.CanWrite)
                             continue;
 
-                        CommandPropertyAttribute attr = Properties.GetCPA(prop);
+                        CommandPropertyAttribute? attr = Properties.GetCPA(prop);
 
                         if (attr == null || attr.WriteLevel > m_AccessLevel)
                         {
@@ -227,8 +227,8 @@ namespace Server
                             continue;
                         }
 
-                        object toSet = null;
-                        string result = Properties.ConstructFromString(prop.PropertyType, spawned, value, ref toSet);
+                        object? toSet = null;
+                        string? result = Properties.ConstructFromString(prop.PropertyType, spawned, value, ref toSet);
 
                         if (result != null)
                             continue;
@@ -249,7 +249,7 @@ namespace Server
             return spawned;
         }
 
-        public static Type ParseType(string spawnName)
+        public static Type? ParseType(string spawnName)
         {
             if (string.IsNullOrEmpty(spawnName))
                 return null;

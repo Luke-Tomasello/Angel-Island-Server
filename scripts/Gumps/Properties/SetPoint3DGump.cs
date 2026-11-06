@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -184,7 +184,7 @@ namespace Server.Gumps
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                IPoint3D p = targeted as IPoint3D;
+                IPoint3D? p = targeted as IPoint3D;
 
                 if (p != null)
                 {
@@ -234,9 +234,9 @@ namespace Server.Gumps
                     }
                 case 3: // Use values
                     {
-                        TextRelay x = info.GetTextEntry(0);
-                        TextRelay y = info.GetTextEntry(1);
-                        TextRelay z = info.GetTextEntry(2);
+                        TextRelay? x = info.GetTextEntry(0);
+                        TextRelay? y = info.GetTextEntry(1);
+                        TextRelay? z = info.GetTextEntry(2);
 
                         toSet = new Point3D(x == null ? 0 : Utility.ToInt32(x.Text), y == null ? 0 : Utility.ToInt32(y.Text), z == null ? 0 : Utility.ToInt32(z.Text));
                         shouldSet = true;

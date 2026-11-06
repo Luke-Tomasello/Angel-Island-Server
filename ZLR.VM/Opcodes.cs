@@ -4,7 +4,7 @@
  *   implementation          : (C) 2007-2023 Tara McGrew
  *   repository url          : https://foss.heptapod.net/zilf/zlr
  *   
- *   Angel Island UO Shard   : March 25, 2004
+ *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
@@ -19,13 +19,13 @@
  *
  ***************************************************************************/
 
+using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
-using System.Reflection.Emit;
-using JetBrains.Annotations;
 using System.Diagnostics;
+using System.Reflection;
+using System.Reflection.Emit;
+using System.Text;
 
 namespace ZLR.VM
 {
@@ -128,12 +128,12 @@ namespace ZLR.VM
                         case OperandType.LargeConst:
                         case OperandType.SmallConst:
                             sb.Append('\'');
-                            sb.Append(operandValues[i] == 0 ? "sp" : varNamer((byte) operandValues[i]));
+                            sb.Append(operandValues[i] == 0 ? "sp" : varNamer((byte)operandValues[i]));
                             break;
 
                         case OperandType.Variable:
                             sb.Append('[');
-                            sb.Append(operandValues[i] == 0 ? "sp" : varNamer((byte) operandValues[i]));
+                            sb.Append(operandValues[i] == 0 ? "sp" : varNamer((byte)operandValues[i]));
                             sb.Append(']');
                             break;
                     }
@@ -153,7 +153,7 @@ namespace ZLR.VM
                             break;
 
                         case OperandType.Variable:
-                            sb.Append(operandValues[i] == 0 ? "sp" : varNamer((byte) operandValues[i]));
+                            sb.Append(operandValues[i] == 0 ? "sp" : varNamer((byte)operandValues[i]));
                             break;
                     }
                 }
@@ -175,7 +175,7 @@ namespace ZLR.VM
             if (attribute.Store)
             {
                 sb.Append(" -> ");
-                sb.Append(resultStorage == 0 ? "sp" : varNamer((byte) resultStorage));
+                sb.Append(resultStorage == 0 ? "sp" : varNamer((byte)resultStorage));
             }
 
             if (attribute.Branch)
@@ -257,7 +257,7 @@ namespace ZLR.VM
         private static void InitOpcodeTable()
         {
             var mis = typeof(Opcode).GetMethods(
-                BindingFlags.NonPublic|BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
 
             foreach (var mi in mis)
             {
@@ -430,7 +430,7 @@ namespace ZLR.VM
             if (resultStorage == -1)
                 throw new InvalidOperationException("Storing from a non-store instruction");
 
-            StoreResult(il, (byte) resultStorage);
+            StoreResult(il, (byte)resultStorage);
         }
 
         private void StoreResult([NotNull] ILGenerator il, byte dest)
@@ -443,7 +443,7 @@ namespace ZLR.VM
             {
                 il.Emit(OpCodes.Stloc, zm.TempWordLocal);
                 LoadLocals(il);
-                il.Emit(OpCodes.Ldc_I4_S, (byte) (dest - 1));
+                il.Emit(OpCodes.Ldc_I4_S, (byte)(dest - 1));
                 il.Emit(OpCodes.Ldloc, zm.TempWordLocal);
                 il.Emit(OpCodes.Stelem_I2);
             }
@@ -637,7 +637,7 @@ namespace ZLR.VM
             {
                 case 0:
                 case 1:
-                    LeaveFunctionConst(il, (short) branchOffset);
+                    LeaveFunctionConst(il, (short)branchOffset);
                     break;
                 default:
                     var pcFI = ZMachine.GetFieldInfo(nameof(ZMachine.pc));

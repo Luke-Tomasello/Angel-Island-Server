@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,7 +52,7 @@ namespace Server.Commands
 
             string filename = e.GetString(0);
 
-            string message = null;
+            string? message = null;
 
             LogHelper logger = new LogHelper("StableTransfer.log");
 
@@ -71,8 +71,8 @@ namespace Server.Commands
                     }
             }
 
-            FileStream stbStream = null;
-            GenericWriter stbWriter = null;
+            FileStream? stbStream = null;
+            GenericWriter? stbWriter = null;
 
             try
             {
@@ -128,7 +128,7 @@ namespace Server.Commands
 
             string filename = e.GetString(0);
 
-            string message = null;
+            string? message = null;
 
             LogHelper logger = new LogHelper("StableTransfer.log");
 
@@ -136,9 +136,9 @@ namespace Server.Commands
 
             Dictionary<Serial, Serial> ownership = new Dictionary<Serial, Serial>();
 
-            FileStream stbStream = null;
-            BinaryReader stbFile = null;
-            GenericReader stbReader = null;
+            FileStream? stbStream = null;
+            BinaryReader? stbFile = null;
+            GenericReader? stbReader = null;
 
             try
             {
@@ -186,7 +186,7 @@ namespace Server.Commands
                 Serial ownerSerial;
                 ownership.TryGetValue(res.OldSerial, out ownerSerial);
 
-                Mobile owner = World.FindMobile(ownerSerial);
+                Mobile? owner = World.FindMobile(ownerSerial);
 
                 if (owner == null)
                 {
@@ -202,7 +202,7 @@ namespace Server.Commands
                     continue;
                 }
 
-                BaseCreature pet = res.Entity as BaseCreature;
+                BaseCreature? pet = res.Entity as BaseCreature;
 
                 if (pet == null)
                 {

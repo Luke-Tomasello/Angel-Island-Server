@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -25,21 +25,18 @@
  *      Add a bool to the Vendor Management Console to determine if RestockCharges should apply.
  *	1/19/08, Adam
  *		Created.
- *		Player Vendor Management console for the global values stored in Engines/AngelIsland/CoreAI.cs
+ *  3/18/26, Luke
+ *      Refactored to inherit from BaseConsole.
  */
 
-namespace Server.Items
+namespace Server.Engines.Consoles
 {
-    [FlipableAttribute(0x1f14, 0x1f15, 0x1f16, 0x1f17)]
-    public class VendorManagementConsole : Item
+    public class VendorManagementConsole : BaseConsole
     {
         [Constructable]
         public VendorManagementConsole()
-            : base(0x1F14)
+            : base("Vendor Management Console")
         {
-            Weight = 1.0;
-            Hue = 51;
-            Name = "Vendor Management Console";
         }
 
         public VendorManagementConsole(Serial serial)
@@ -47,55 +44,52 @@ namespace Server.Items
         {
         }
 
+        [CommandProperty(AccessLevel.Owner)]
+        public int BaseVendorFee
+        {
+            get => CoreAI.BaseVendorFee;
+            set
+            {
+                if (value <= 0)
+                    SendMessageNearby("Value may not be zero");
+                else
+                    CoreAI.BaseVendorFee = value;
+            }
+        }
+
+        [CommandProperty(AccessLevel.Owner)]
+        public int DailySellGoldLimit
+        {
+            get => CoreAI.DailySellGoldLimit;
+            set => CoreAI.DailySellGoldLimit = value;
+        }
+
         [CommandProperty(AccessLevel.Administrator)]
         public bool RestockCharges
         {
-            get
-            {
-                return CoreAI.RestockCharges;
-            }
-            set
-            {
-                CoreAI.RestockCharges = value;
-            }
+            get => CoreAI.RestockCharges;
+            set => CoreAI.RestockCharges = value;
         }
+
         [CommandProperty(AccessLevel.Administrator)]
         public int GracePeriod
         {
-            get
-            {
-                return CoreAI.GracePeriod;
-            }
-            set
-            {
-                CoreAI.GracePeriod = value;
-            }
+            get => CoreAI.GracePeriod;
+            set => CoreAI.GracePeriod = value;
         }
 
         [CommandProperty(AccessLevel.Administrator)]
         public int ConnectionFloor
         {
-            get
-            {
-                return CoreAI.ConnectionFloor;
-            }
-            set
-            {
-                CoreAI.ConnectionFloor = value;
-            }
+            get => CoreAI.ConnectionFloor;
+            set => CoreAI.ConnectionFloor = value;
         }
 
         [CommandProperty(AccessLevel.Administrator)]
         public double Commission
         {
-            get
-            {
-                return CoreAI.Commission;
-            }
-            set
-            {
-                CoreAI.Commission = value;
-            }
+            get => CoreAI.Commission;
+            set => CoreAI.Commission = value;
         }
 
         public override void Serialize(GenericWriter writer)
@@ -110,5 +104,4 @@ namespace Server.Items
             int version = reader.ReadInt();
         }
     }
-
 }

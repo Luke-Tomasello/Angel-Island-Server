@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,8 +30,6 @@
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -82,49 +80,19 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20011205104734/uo.stratics.com/hunters/poisonelemental.shtml
+            // 800 to 1100 Gold, Magic Items, Gems
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(250, 325);
-                PackScroll(1, 7);
-                PackItem(new Nightshade(9));
-                PackItem(new DeadlyPoisonPotion());
-                PackItem(new GreaterPoisonPotion());
-                PackMagicEquipment(1, 3, 0.30, 0.30);
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
+                PackGold(800, 1100);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20011205104734/uo.stratics.com/hunters/poisonelemental.shtml
-                    // 800 to 1100 Gold, Magic Items, Gems
-
-                    if (Spawning)
-                    {
-                        PackGold(800, 1100);
-                    }
-                    else
-                    {
-                        PackMagicEquipment(1, 3);
-                        PackMagicItem(1, 2, 0.05);
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackItem(new Nightshade(4));
-                        PackItem(new LesserPoisonPotion());
-                    }
-
-                    AddLoot(LootPack.FilthyRich);
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.MedScrolls);
-                }
+                PackMagicEquipment(1, 3);
+                PackMagicItem(1, 2, 0.05);
+                PackGem(1, .9);
+                PackGem(1, .05);
             }
         }
 

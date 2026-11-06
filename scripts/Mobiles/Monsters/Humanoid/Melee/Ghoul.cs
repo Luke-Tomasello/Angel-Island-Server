@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,7 +36,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -84,62 +83,28 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020221204724/uo.stratics.com/hunters/ghoul.shtml
+            // 50 to 150 Gold, Magic items, Gems, Sometimes Bone Armor
+            // Note: The loot is way different just a few months later
+            // http://web.archive.org/web/20020806210220/uo.stratics.com/hunters/ghoul.shtml
+            // 10 to 50 Gold, A Random Weapon, Bones
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackItem(new Bone());
-                PackGold(10, 50);
-                PackItem(Loot.RandomWeapon());
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(50, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {
-                    // http://web.archive.org/web/20020221204724/uo.stratics.com/hunters/ghoul.shtml
-                    // 50 to 150 Gold, Magic items, Gems, Sometimes Bone Armor
-
-                    if (Spawning)
+                PackMagicItem(1, 1, 0.05);
+                PackGem();
+                if (0.12 > Utility.RandomDouble())
+                    switch (Utility.Random(5))
                     {
-                        PackGold(50, 150);
+                        case 0: PackItem(new BoneArms()); break;
+                        case 1: PackItem(new BoneChest()); break;
+                        case 2: PackItem(new BoneGloves()); break;
+                        case 3: PackItem(new BoneLegs()); break;
+                        case 4: PackItem(new BoneHelm()); break;
                     }
-                    else
-                    {
-                        PackMagicItem(1, 1, 0.05);
-                        PackGem();
-                        if (0.12 > Utility.RandomDouble())
-                            switch (Utility.Random(5))
-                            {
-                                case 0: PackItem(new BoneArms()); break;
-                                case 1: PackItem(new BoneChest()); break;
-                                case 2: PackItem(new BoneGloves()); break;
-                                case 3: PackItem(new BoneLegs()); break;
-                                case 4: PackItem(new BoneHelm()); break;
-                            }
-                    }
-
-                    // Note: The loot is way different just a few months later
-                    // http://web.archive.org/web/20020806210220/uo.stratics.com/hunters/ghoul.shtml
-                    // 10 to 50 Gold, A Random Weapon, Bones
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(Loot.RandomWeapon());
-
-                    AddLoot(LootPack.Meager);
-                }
             }
         }
 

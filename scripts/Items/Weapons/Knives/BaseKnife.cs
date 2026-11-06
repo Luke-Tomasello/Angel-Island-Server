@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -54,7 +54,7 @@ namespace Server.Items
             m_usesRemaining = 200;
         }
         #region UsesRemaining
-        public bool WearsOut { get { return Core.RuleSets.SiegeStyleRules(); } }
+        public bool WearsOut { get { return Core.RuleSets.SiegeRules(); } }
         public int ToolBrokeMessage => -1; // no cliloc
         int m_usesRemaining;
         // staff don't need to see this

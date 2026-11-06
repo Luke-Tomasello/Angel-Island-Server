@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -103,7 +103,7 @@ namespace Server.Mobiles
                 }
                 else
                 {
-                    CardGump g = e.Mobile.FindGump(typeof(CardGump)) as CardGump;
+                    CardGump? g = e.Mobile.FindGump(typeof(CardGump)) as CardGump;
 
                     if (g != null)
                     {
@@ -117,7 +117,7 @@ namespace Server.Mobiles
                             {
                                 e.Handled = true;
 
-                                CardInfo info = GetInfo(c.Type);
+                                CardInfo? info = GetInfo(c.Type);
 
                                 if (info != null)
                                     SayTo(e.Mobile, c.Flipped ? info.FlippedCliloc : info.Cliloc);
@@ -157,7 +157,7 @@ namespace Server.Mobiles
 
             private void AddCard(int x, int y, Card c)
             {
-                CardInfo info = GetInfo(c.Type);
+                CardInfo? info = GetInfo(c.Type);
 
                 if (info != null)
                     AddImageTiled(x, y, 115, 180, c.Flipped ? info.FlippedGumpID : info.GumpID);
@@ -209,7 +209,7 @@ namespace Server.Mobiles
                 new CardInfo(0x772E, 1076066, 0x7738, 1076024),
             };
 
-        private static CardInfo GetInfo(CardType type)
+        private static CardInfo? GetInfo(CardType type)
         {
             int index = (int)type;
 

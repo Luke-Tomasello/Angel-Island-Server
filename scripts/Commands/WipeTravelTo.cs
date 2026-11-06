@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -82,7 +82,7 @@ namespace Server.Commands
         {
             try
             {
-                Region region = null;
+                Region? region = null;
                 if (target is HouseSign)
                 {
                     BaseHouse bh = (target as HouseSign).Structure;
@@ -168,7 +168,7 @@ namespace Server.Commands
 
                         for (int i = 0; i < book.Entries.Count; ++i)
                         {
-                            RunebookEntry entry = (RunebookEntry)book.Entries[i];
+                            RunebookEntry? entry = (RunebookEntry?)book.Entries[i];
 
                             if (entry.Map != null && region.Contains(entry.Location))
                             {

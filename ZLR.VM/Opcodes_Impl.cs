@@ -4,7 +4,7 @@
  *   implementation          : (C) 2007-2023 Tara McGrew
  *   repository url          : https://foss.heptapod.net/zilf/zlr
  *   
- *   Angel Island UO Shard   : March 25, 2004
+ *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
@@ -19,11 +19,10 @@
  *
  ***************************************************************************/
 
-using System;
-using System.Text;
-using System.IO;
-using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
+using System;
+using System.IO;
+using System.Text;
 
 namespace ZLR.VM
 {
@@ -320,12 +319,12 @@ namespace ZLR.VM
 
         internal static short LogShiftImpl(short a, short b)
         {
-            return b < 0 ? (short) ((ushort) a >> -b) : (short) (a << b);
+            return b < 0 ? (short)((ushort)a >> -b) : (short)(a << b);
         }
 
         internal static short ArtShiftImpl(short a, short b)
         {
-            return b < 0 ? (short) (a >> -b) : (short) (a << b);
+            return b < 0 ? (short)(a >> -b) : (short)(a << b);
         }
 
         internal void ThrowImpl(short value, ushort catchingFrame)
@@ -621,7 +620,7 @@ namespace ZLR.VM
             if (zversion > 3)
                 return;
 
-            var locationStr = GetObjectName((ushort) GetWord(GlobalsOffset));
+            var locationStr = GetObjectName((ushort)GetWord(GlobalsOffset));
             var hoursOrScore = GetWord(GlobalsOffset + 2);
             var minsOrTurns = GetWord(GlobalsOffset + 4);
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts/Items/Containers/Strongbox.cs
  * CHANGELOG:
+ *  10/18/2026, Adam
+ *      The strong box and vendor recovery box labels use Container.ItemCountText (capacity slots appended when they
+ *      differ from the item count).
  *  8/18/2023, Adam
  *      Add a timer to delete the box after 48 hours
  *      Click label now correctly reports 'vendor recovery box'
@@ -48,8 +51,8 @@ namespace Server.Items
     [FlipableAttribute(0xe80, 0x9a8)]
     public class StrongBox : BaseContainer, IChopable
     {
-        private Mobile m_Owner;
-        private BaseHouse m_House;
+        private Mobile? m_Owner;
+        private BaseHouse? m_House;
 
         public override int DefaultGumpID { get { return 0x4B; } }
         public override int DefaultDropSound { get { return 0x42; } }
@@ -59,7 +62,7 @@ namespace Server.Items
             get { return new Rectangle2D(16, 51, 168, 73); }
         }
 
-        public StrongBox(Mobile owner, BaseHouse house)
+        public StrongBox(Mobile? owner, BaseHouse? house)
             : base(0xE80)
         {
             m_Owner = owner;
@@ -69,7 +72,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Mobile Owner
+        public Mobile? Owner
         {
             get
             {
@@ -83,7 +86,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public BaseHouse House
+        public BaseHouse? House
         {
             get
             {
@@ -167,7 +170,7 @@ namespace Server.Items
                 LabelTo(from, 1042887, m_Owner.Name); // a strong box owned by ~1_OWNER_NAME~
 
                 if (CheckContentDisplay(from))
-                    LabelTo(from, "({0} items, {1} stones)", TotalItems, TotalWeight);
+                    LabelTo(from, "({0}, {1} stones)", ItemCountText, TotalWeight);
             }
             else
             {
@@ -339,7 +342,7 @@ namespace Server.Items
                 LabelTo(from, 1042887, m_Owner.Name); // a strong box owned by ~1_OWNER_NAME~
 
                 if (CheckContentDisplay(from))
-                    LabelTo(from, "({0} items, {1} stones)", TotalItems, TotalWeight);
+                    LabelTo(from, "({0}, {1} stones)", ItemCountText, TotalWeight);
             }
             else
             {
@@ -435,7 +438,7 @@ namespace Server.Items
 
         private List<MemberStorage> m_database = new List<MemberStorage>();
 
-        public MemberStorage FindMemberStorage(Mobile m)
+        public MemberStorage? FindMemberStorage(Mobile m)
         {
             foreach (MemberStorage s in m_database)
                 if (s.Owner == m)
@@ -467,7 +470,7 @@ namespace Server.Items
         }
         public bool RemoveMemberStorage(Mobile m, BaseHouse h)
         {
-            MemberStorage sb = FindMemberStorage(m);
+            MemberStorage? sb = FindMemberStorage(m);
             if (sb == null)
                 return false;                                   // user has no member storage
             m_database.Remove(sb);                              // remove the player from the list of owned strongboxes (for this house.)
@@ -477,7 +480,7 @@ namespace Server.Items
 
         public override bool TryDropItem(Mobile from, Item dropped, bool sendFullMessage)
         {
-            MemberStorage ms = FindMemberStorage(from);
+            MemberStorage? ms = FindMemberStorage(from);
             if (ms == null) return false;
             else return ms.TryDropItem(from, dropped, sendFullMessage);
         }
@@ -498,7 +501,7 @@ namespace Server.Items
                 from.SendMessage("This MultiUserMemberStorage contains {0} MemberStorage containers", m_database.Count);
             else
             {
-                MemberStorage sb = FindMemberStorage(from);
+                MemberStorage? sb = FindMemberStorage(from);
                 if (sb != null)
                     sb.OnSingleClick(from);
             }
@@ -510,7 +513,7 @@ namespace Server.Items
                 ListMemberStorage(from);
             else
             {
-                MemberStorage sb = FindMemberStorage(from);
+                MemberStorage? sb = FindMemberStorage(from);
                 if (sb != null)
                     sb.OnDoubleClick(from);
             }
@@ -549,7 +552,7 @@ namespace Server.Items
     public class VendorRecoveryBox : StrongBox, IChopable
     {
         private DateTime m_deleteTime = DateTime.MinValue;
-        public VendorRecoveryBox(Mobile owner, BaseHouse house, int maxItems)
+        public VendorRecoveryBox(Mobile? owner, BaseHouse? house, int maxItems)
             : base(owner, house)
         {
             MaxItems = maxItems;
@@ -559,7 +562,7 @@ namespace Server.Items
 #else
                 TimeSpan.FromHours(48.0);
 #endif
-            Timer.DelayCall(TimeSpan.FromMinutes(1), new TimerStateCallback(CheckDeleteTick), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromMinutes(1), new TimerStateCallback(CheckDeleteTick), new object?[] { null });
         }
 
         private void CheckDeleteTick(object state)
@@ -571,7 +574,7 @@ namespace Server.Items
                 Delete();
                 return;
             }
-            Timer.DelayCall(TimeSpan.FromMinutes(1), new TimerStateCallback(CheckDeleteTick), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromMinutes(1), new TimerStateCallback(CheckDeleteTick), new object?[] { null });
         }
 
 
@@ -605,19 +608,11 @@ namespace Server.Items
                 case 0:
                     if (version == 0)
                         m_deleteTime = reader.ReadDateTime();
-#if false
-                        m_deleteTime = DateTime.UtcNow +
-#if DEBUG
-                TimeSpan.FromMinutes(2.0);
-#else
-                TimeSpan.FromHours(48.0);
-#endif
-#endif
                     break;
             }
 
 
-            Timer.DelayCall(TimeSpan.FromMinutes(1), new TimerStateCallback(CheckDeleteTick), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromMinutes(1), new TimerStateCallback(CheckDeleteTick), new object?[] { null });
         }
 
         public override bool Decays { get { return true; } }
@@ -649,7 +644,7 @@ namespace Server.Items
                 LabelTo(from, string.Format("a vendor recovery box owned by {0}", base.Owner.Name));
 
                 if (CheckContentDisplay(from))
-                    LabelTo(from, "({0} items, {1} stones)", TotalItems, TotalWeight);
+                    LabelTo(from, "({0}, {1} stones)", ItemCountText, TotalWeight);
             }
             else
             {

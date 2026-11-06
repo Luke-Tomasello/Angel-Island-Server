@@ -1119,8 +1119,6 @@
 				<object type="Server.Items.Keg" gfx="3711" />
 				<object type="Server.Items.KeyRing" gfx="4113" />
 				<object type="Server.Items.KeyRing" gfx="4113" />
-				<object type="Server.Items.KinRansomChest" gfx="3649" />
-				<object type="Server.Items.KinRansomChest" gfx="3649" />
 				<object type="Server.Engines.Quests.Necro.KronusScrollBox" gfx="3712" />
 				<object type="Server.Engines.Quests.Necro.KronusScrollBox" gfx="3712" />
 				<object type="Server.Items.L0TreasureChest" gfx="3649" />
@@ -3190,8 +3188,6 @@
 			<object type="Server.Items.PublicMoongate" gfx="3948" />
 			<object type="Server.Commands.EmoteCommand+PukeEmote+Puke" gfx="4655" hue="657" />
 			<object type="Server.Commands.EmoteCommand+PukeEmote+Puke" gfx="4652" hue="657" />
-			<object type="Server.Engines.PushBackSpawner" gfx="7955" />
-			<object type="Server.Engines.PushBackSpawner" gfx="7955" />
 			<object type="Server.Township.Quartzite" gfx="6012" />
 			<object type="Server.Township.Quartzite" gfx="6012" />
 			<object type="Server.Township.QuartziteDeed" gfx="5360" />

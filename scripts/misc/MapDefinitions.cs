@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,10 +48,15 @@ namespace Server.Misc
 			 * 4) Changing or removing any predefined maps may cause server instability.
 			 */
 
-            RegisterMap(0, 0, 0, 6144, 4096, 1, "Felucca", MapRules.FeluccaRules);
-            RegisterMap(1, 1, 0, 6144, 4096, 0, "Trammel", MapRules.FeluccaRules); // 12/9/23, Yoar: Change to Felucca rules for the purpose of the xmas event
-            RegisterMap(2, 2, 2, 2304, 1600, 1, "Ilshenar", MapRules.FeluccaRules);
-            RegisterMap(3, 3, 3, 2560, 2048, 1, "Malas", MapRules.FeluccaRules);
+            MapRules defaultRules = Core.RuleSets.SeasonsRules(3)
+                ? MapRules.TrammelRules
+                : MapRules.FeluccaRules;
+
+            RegisterMap(0, 0, 0, 6144, 4096, 1, "Felucca", defaultRules);
+            RegisterMap(1, 1, 0, 6144, 4096, 0, "Trammel", defaultRules);
+            RegisterMap(2, 2, 2, 2304, 1600, 1, "Ilshenar", defaultRules);
+            RegisterMap(3, 3, 3, 2560, 2048, 1, "Malas", defaultRules);
+
             RegisterMap(4, 4, 4, 1448, 1448, 1, "Tokuno", MapRules.TrammelRules);
             RegisterMap(5, 5, 5, 1280, 4096, 1, "TerMur", MapRules.TrammelRules);
 

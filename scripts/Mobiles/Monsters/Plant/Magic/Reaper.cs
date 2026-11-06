@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,41 +77,23 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021014235628/uo.stratics.com/hunters/reaper.shtml
+            // 0 to 150 Gold, 10 Logs
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackItem(new Log(10));
-                PackGold(0, 50);
-                PackItem(new Engines.Plants.TreeSeed());
+                PackGold(0, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021014235628/uo.stratics.com/hunters/reaper.shtml
-                    // 0 to 150 Gold, 10 Logs
-
-                    if (Spawning)
-                    {
-                        PackGold(0, 150);
-                    }
-                    else
-                    {
-                        PackItem(new Log(10));
-                        if (Core.RuleSets.PlantSystem())
-                            PackItem(new Engines.Plants.TreeSeed());
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackItem(new Log(10));
-                        PackItem(new MandrakeRoot(5));
-                    }
-
-                    AddLoot(LootPack.Average);
-                }
+                PackItem(new Log(10));
             }
+        }
+
+        public override void GenerateNonStandardLoot()
+        {
+            if (Core.RuleSets.PlantSystem())
+                PackItem(new Engines.Plants.TreeSeed());
         }
 
         public override void Serialize(GenericWriter writer)

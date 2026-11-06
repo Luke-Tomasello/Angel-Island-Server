@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -53,9 +53,9 @@
  *  Added ability to target onto a player.
  */
 
+using Server.Engines;
 using Server.Engines.Alignment;
 using Server.Items;
-using Server.Misc;
 using Server.Mobiles;
 using Server.Targeting;
 using System;
@@ -73,14 +73,14 @@ namespace Server.SkillHandlers
 
         public static TimeSpan OnUse(Mobile m)
         {
-            PlayerMobile pm = m as PlayerMobile;
+            PlayerMobile? pm = m as PlayerMobile;
 
-            if (bUseRTT && TestCenter.Enabled && pm != null)
+            if (bUseRTT && TestCenterServer.Enabled && pm != null)
             {
                 pm.RTT("Please verify that you're at your computer.  Use of this skill will be disabled if too many failures occur.", false, 2, "Provocation");
             }
 
-            if (bUseRTT && TestCenter.Enabled && pm != null && pm.RTTFailures >= pm.RTTFailureLimit)
+            if (bUseRTT && TestCenterServer.Enabled && pm != null && pm.RTTFailures >= pm.RTTFailureLimit)
             {
                 pm.SendMessage("You cannot use this skill because you have failed the AFK check too many times in a row.");
                 pm.SendMessage("After some time has elapsed, you will be tested again when you use the skill.");
@@ -195,8 +195,13 @@ namespace Server.SkillHandlers
                                 // AND because NOT having them here let's people use IOBs and provoke without risk.
                                 from.DoHarmful(m_Creature);
                                 from.DoHarmful(creature);
+                                bool success = from.CheckTargetSkill(SkillName.Provocation, creature, diff - 25.0,
+                                    diff + 25.0, new object?[2] { creature, null } /*contextObj*/);
 
-                                if (!from.CheckTargetSkill(SkillName.Provocation, creature, diff - 25.0, diff + 25.0, new object[2] { creature, null } /*contextObj*/))
+                                if (!success && CheckSeasonsProvocationFloor(from, m_Creature, creature))
+                                    success = true;
+
+                                if (!success)
                                 {
                                     from.SendLocalizedMessage(501599); // Your music fails to incite enough anger.
                                     m_Instrument.PlayInstrumentBadly(from);
@@ -266,7 +271,7 @@ namespace Server.SkillHandlers
                                 from.DoHarmful(m_Creature);
                                 from.DoHarmful(player);
 
-                                if (!from.CheckTargetSkill(SkillName.Provocation, player, diff - 25.0, diff + 25.0, new object[2] { player, null } /*contextObj*/))
+                                if (!from.CheckTargetSkill(SkillName.Provocation, player, diff - 25.0, diff + 25.0, new object?[2] { player, null } /*contextObj*/))
                                 {
                                     from.SendLocalizedMessage(501599); // Your music fails to incite enough anger.
                                     m_Instrument.PlayInstrumentBadly(from);
@@ -284,6 +289,41 @@ namespace Server.SkillHandlers
                     }
                 }//end of else (target is player)
             }//end of OnTarget()
+        }
+        /// <summary>
+        /// Seasons-only safety floor for Provocation.
+        ///
+        /// Some boss-class creatures are intentionally marked as provokable, but
+        /// their legacy barding difficulty can still reduce the success chance to
+        /// effectively zero. Preserve the original calculation, but if it fails,
+        /// give accomplished bards one final opportunity to succeed.
+        ///
+        /// This does NOT bypass Unprovokable creatures and is only consulted after
+        /// the normal Provocation skill check has already failed.
+        /// </summary>
+        private static bool CheckSeasonsProvocationFloor(Mobile from, BaseCreature first, BaseCreature second)
+        {
+            if (!(Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+                return false;
+
+            if (from == null || first == null || second == null)
+                return false;
+
+            // Do not override hard designer immunity.
+            if (first.Unprovokable || second.Unprovokable)
+                return false;
+
+            double provo = from.Skills[SkillName.Provocation].Value;
+
+            if (provo < 100.0)
+                return false;
+
+            double floor = 0.10;
+
+            if (provo > 100.0)
+                floor += Math.Min(0.05, (provo - 100.0) * 0.0025);
+
+            return Utility.RandomDouble() < floor;
         }
     }
 }

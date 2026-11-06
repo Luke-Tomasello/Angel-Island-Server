@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -84,7 +84,7 @@ namespace Server.Mobiles
 
         public override bool HasBreath { get { return true; } } // fire breath enabled
                                                                 // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override Poison PoisonImmune { get { return Poison.Deadly; } }
         public override Poison HitPoison { get { return Poison.Deadly; } }
         public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 5 : 5; } }
@@ -102,51 +102,23 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // Angel Island family of shards custom. We use the shadow wyrm as our loot template
+            // http://web.archive.org/web/20021014225931/uo.stratics.com/hunters/shadowwyrm.shtml
+            // 1800 to 2400 Gold, Gems, Magic items, 10 Black Scales, 19 Raw Ribs (carved), 20 Barbed Hides (carved), Level 5 treasure maps
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackItem(new Items.GoldOre(Utility.RandomMinMax(7, 13)));
-                PackGem();
-                PackGem();
-                PackGold(2390, 3275);
-                PackScroll(6, 8);
-                PackScroll(6, 8);
-                PackPotion();
-
-                // adam: add 25% chance to get a Random Slayer Instrument
-                PackSlayerInstrument(.25);
-
-                // Use our unevenly weighted table for chance resolution
-                Item item;
-                item = Loot.RandomArmorOrShieldOrWeapon();
-                PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level4, 0, false));
+                PackGold(1800, 2400);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021014225931/uo.stratics.com/hunters/shadowwyrm.shtml
-                    // 1800 to 2400 Gold, Gems, Magic items, 10 Black Scales, 19 Raw Ribs (carved), 20 Barbed Hides (carved), Level 5 treasure maps
+                PackGem(Utility.Random(4, 6), .9);  // TODO: no idea as to the level and rate
+                PackGem(Utility.Random(4, 6), .5);
 
-                    if (Spawning)
-                    {
-                        PackGold(1800, 2400);
-                    }
-                    else
-                    {
-                        PackGem(Utility.Random(4, 6), .9);  // TODO: no idea as to the level and rate
-                        PackGem(Utility.Random(4, 6), .5);
-
-                        PackMagicEquipment(1, 3);           // TODO: no idea as to the level and rate
-                        PackMagicEquipment(1, 3);
-                        PackMagicItem(3, 3);
-                        PackMagicItem(3, 3, 0.10);
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.FilthyRich, 3);
-                    AddLoot(LootPack.Gems, 5);
-                }
+                PackMagicEquipment(1, 3);           // TODO: no idea as to the level and rate
+                PackMagicEquipment(1, 3);
+                PackMagicItem(3, 3);
+                PackMagicItem(3, 3, 0.10);
             }
         }
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -45,7 +45,7 @@ namespace Scripts.Engines.Leaderboard
             }
         }
 
-        public static LeaderboardTab AddTab(string name)
+        public static LeaderboardTab? AddTab(string name)
         {
             if (string.IsNullOrEmpty(name))
                 return null;
@@ -63,35 +63,7 @@ namespace Scripts.Engines.Leaderboard
             }
         }
 
-        public static void DeleteTab(string name)
-        {
-            int toDelete = int.MinValue;
-            foreach (KeyValuePair<int, string> kvp in m_TabIndex)
-            {
-                if (kvp.Value.Equals(name))
-                {
-                    toDelete = kvp.Key;
-                    break;
-                }
-            }
-
-            if (toDelete >= 0)
-            {
-                m_TabIndex.Remove(toDelete);
-                m_Tabs.Remove(name);
-                Dictionary<int, string> temp = new Dictionary<int, string>();
-                foreach (KeyValuePair<int, string> kvp in m_TabIndex)
-                {
-                    if (kvp.Key > toDelete)
-                        temp.Add(kvp.Key - 1, kvp.Value);
-                    else
-                        temp.Add(kvp.Key, kvp.Value);
-                }
-                m_TabIndex = temp;
-            }
-        }
-
-        public static LeaderboardTab GetTab(string name)
+        public static LeaderboardTab? GetTab(string name)
         {
             if (string.IsNullOrEmpty(name))
                 return null;
@@ -102,12 +74,28 @@ namespace Scripts.Engines.Leaderboard
             return null;
         }
 
-        internal static LeaderboardTab GetTab(int tabNumber)
+        internal static LeaderboardTab? GetTab(int tabNumber)
         {
             if (m_TabIndex.ContainsKey(tabNumber))
                 return GetTab(m_TabIndex[tabNumber]);
 
             return null;
         }
+        /// <summary>
+        /// Returns true if the mobile should be included in leaderboards and tracking.
+        /// Staff are excluded in production, but allowed when Core.Developing is true.
+        /// </summary>
+        //public static bool IsValidLeaderboardPlayer(Mobile m)
+        //{
+        //    if (m == null || m.Deleted)
+        //        return false;
+
+        //    // Allow staff/GMs during development and testing
+        //    if (Core.Developing || Core.isTe)
+        //        return true;
+
+        //    // In production, only allow real players
+        //    return m.AccessLevel <= AccessLevel.Player;
+        //}
     }
 }

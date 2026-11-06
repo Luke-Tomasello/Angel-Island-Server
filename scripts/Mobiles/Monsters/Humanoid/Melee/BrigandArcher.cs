@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -42,7 +42,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 using System;
 
@@ -135,49 +134,20 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // AI special creature
+            //  We will use the loot based on a Ratman Archer
+            // https://web.archive.org/web/20020606052613/http://uo.stratics.com/hunters/ratmanarcher.shtml
+            // Loot:	250-300 Gold, Bow and Arrows, low-level Magic Weapons
+            // ai special
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(170, 220);
-
-                PackItem(new Arrow(Utility.RandomMinMax(20, 30)));
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(250, 300);
             }
             else
             {
-                // AI special creature
-                //  We will use the loot based on a Ratman Archer
-                // https://web.archive.org/web/20020606052613/http://uo.stratics.com/hunters/ratmanarcher.shtml
-                // Loot:	250-300 Gold, Bow and Arrows, low-level Magic Weapons
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(250, 300);
-                    }
-                    else
-                    {
-                        // equipped bow already drops
-                        // skip the magics
-                        PackItem(new Arrow(Utility.RandomMinMax(20, 30)));
-                    }
-                }
-                else
-                {
-                    // ai special
-                }
+                // equipped bow already drops
+                // skip the magics
+                PackItem(new Arrow(Utility.RandomMinMax(20, 30)));
             }
         }
 

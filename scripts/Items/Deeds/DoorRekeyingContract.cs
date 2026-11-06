@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -105,8 +105,8 @@ namespace Server.Items
             {
                 BaseDoor door = (BaseDoor)targeted;
 
-                BaseHouse h1 = BaseHouse.FindHouseAt(door);
-                BaseHouse h2 = BaseHouse.FindHouseAt(from);
+                BaseHouse? h1 = BaseHouse.FindHouseAt(door);
+                BaseHouse? h2 = BaseHouse.FindHouseAt(from);
 
                 if (h1 == null || h1 != h2)
                 {

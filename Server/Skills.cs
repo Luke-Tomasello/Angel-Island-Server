@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -419,7 +419,7 @@ namespace Server
 
                 for (int i = 0; i < mods.Count; ++i)
                 {
-                    SkillMod mod = (SkillMod)mods[i];
+                    SkillMod? mod = (SkillMod?)mods[i];
 
                     if (mod.Skill == (SkillName)m_Info.SkillID)
                     {
@@ -468,13 +468,13 @@ namespace Server
         private double m_DexScale;
         private double m_IntScale;
         private double m_StatTotal;
-        private SkillUseCallback m_Callback;
+        private SkillUseCallback? m_Callback;
         private double m_StrGain;
         private double m_DexGain;
         private double m_IntGain;
         private double m_GainFactor;
 
-        public SkillInfo(int skillID, string name, double strScale, double dexScale, double intScale, string title, SkillUseCallback callback, double strGain, double dexGain, double intGain, double gainFactor)
+        public SkillInfo(int skillID, string name, double strScale, double dexScale, double intScale, string title, SkillUseCallback? callback, double strGain, double dexGain, double intGain, double gainFactor)
         {
             m_Name = name;
             m_Title = title;
@@ -491,7 +491,7 @@ namespace Server
             m_StatTotal = strScale + dexScale + intScale;
         }
 
-        public SkillUseCallback Callback
+        public SkillUseCallback? Callback
         {
             get
             {
@@ -709,7 +709,7 @@ namespace Server
         private Mobile m_Owner;
         private Skill[] m_Skills;
         private int m_Total, m_Cap;
-        private Skill m_Highest;
+        private Skill? m_Highest;
 
         #region Skill Getters & Setters
         [CommandProperty(AccessLevel.Counselor)]
@@ -950,7 +950,7 @@ namespace Server
                 {
                     if (Core.TickCount - from.NextSkillTime >= 0 && from.Spell == null)
                     {
-                        from.DisruptiveAction();
+                        from.DisruptiveAction(null);
 
                         from.NextSkillTime = Core.TickCount + (int)(info.Callback(from)).TotalMilliseconds;
 
@@ -972,13 +972,13 @@ namespace Server
             return false;
         }
 
-        public Skill Highest
+        public Skill? Highest
         {
             get
             {
                 if (m_Highest == null)
                 {
-                    Skill highest = null;
+                    Skill? highest = null;
                     int value = int.MinValue;
 
                     for (int i = 0; i < m_Skills.Length; ++i)

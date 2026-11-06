@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -102,7 +102,9 @@ namespace Server.Misc
 
         public static void Initialize()
         {
-            CommandSystem.Register("ServerWars", AccessLevel.GameMaster, new CommandEventHandler(ServerWars_OnCommand));
+            // superseed by SetverWard in Maintenance.cs
+            //CommandSystem.Register("ServerWars", AccessLevel.GameMaster, new CommandEventHandler(ServerWars_OnCommand));
+            CommandSystem.Register("AutoSave", AccessLevel.Administrator, new CommandEventHandler(AutoSave_OnCommand));
             CommandSystem.Register("Restart", AccessLevel.Administrator, new CommandEventHandler(Restart_OnCommand));
             CommandSystem.Register("RestartTime", AccessLevel.Administrator, new CommandEventHandler(RestartTime_OnCommand));
             new AutoRestart().Start();
@@ -121,6 +123,51 @@ namespace Server.Misc
                 e.Mobile.SendMessage("Server wars are not in progress.");
         }
 
+        public static void AutoSave_OnCommand(CommandEventArgs e)
+        {
+            // No arguments: just report state
+            if (e.Length == 0)
+            {
+                e.Mobile.SendMessage(
+                    "Auto saves are {0}.",
+                    AutoSave.SavesEnabled ? "enabled" : "disabled"
+                );
+
+                if (Maintenance.Scheduled)
+                    e.Mobile.SendMessage("Notice: maintenance is scheduled or Server Wars are active; auto-save changes are locked.");
+
+                return;
+            }
+
+            // Lock toggles while maintenance/serverwars is in flight
+            if (Maintenance.Scheduled)
+            {
+                e.Mobile.SendMessage("AutoSave cannot be changed while maintenance is scheduled or Server Wars are in progress. Cancel maintenance first, or wait until it completes.");
+                return;
+            }
+
+            string arg = (e.GetString(0) ?? string.Empty).Trim().ToLowerInvariant();
+
+            bool? newState = null;
+
+            if (arg == "on" || arg == "true" || arg == "1")
+                newState = true;
+            else if (arg == "off" || arg == "false" || arg == "0")
+                newState = false;
+
+            if (newState == null)
+            {
+                e.Mobile.SendMessage("Usage: [AutoSave [on|off]");
+                return;
+            }
+
+            AutoSave.SavesEnabled = newState.Value;
+
+            e.Mobile.SendMessage(
+                "Auto saves are now {0}.",
+                AutoSave.SavesEnabled ? "enabled" : "disabled"
+            );
+        }
         public static void RestartTime_OnCommand(CommandEventArgs e)
         {
             if (m_enabled)

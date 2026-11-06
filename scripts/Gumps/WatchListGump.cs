@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -32,6 +32,7 @@
  */
 
 using Server.Accounting;
+using Server.Diagnostics;
 using Server.Mobiles;
 using Server.Network;
 using Server.Targeting;
@@ -107,7 +108,7 @@ namespace Server.Gumps
             {
             }
 
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
                 if (x == null && y == null)
                     return 0;
@@ -116,8 +117,8 @@ namespace Server.Gumps
                 else if (y == null)
                     return 1;
 
-                Mobile a = x as Mobile;
-                Mobile b = y as Mobile;
+                Mobile? a = x as Mobile;
+                Mobile? b = y as Mobile;
 
                 if (a == null || b == null)
                     throw new ArgumentException();
@@ -157,8 +158,8 @@ namespace Server.Gumps
             for (int i = 0; i < states.Count; ++i)
             {
                 Mobile m = states[i].Mobile;
-                PlayerMobile pm = m as PlayerMobile;
-                Account pmacct = null;
+                PlayerMobile? pm = m as PlayerMobile;
+                Account? pmacct = null;
                 if (pm != null)
                 {
                     pmacct = pm.Account as Account;
@@ -179,7 +180,7 @@ namespace Server.Gumps
 
                 if (m != null && pm != null)
                 {
-                    if (pm.WatchList)
+                    if (pm.Watched)
                     {
                         if (DateTime.UtcNow < pm.WatchExpire)
                         {
@@ -190,7 +191,7 @@ namespace Server.Gumps
                         }
                         else
                         {
-                            pm.WatchList = false;
+                            pm.Watched = false;
                         }
                     }
                 }
@@ -263,8 +264,8 @@ namespace Server.Gumps
                 x = BorderSize + OffsetSize;
                 y += EntryHeight + OffsetSize;
 
-                Mobile m = (Mobile)m_Mobiles[index];
-                Account a = m.Account as Account;
+                Mobile? m = (Mobile?)m_Mobiles[index];
+                Account? a = m.Account as Account;
 
                 AddImageTiled(x, y, EntryWidth, EntryHeight, EntryGumpID);
 
@@ -275,7 +276,7 @@ namespace Server.Gumps
                 }
                 else if (!m.Deleted)
                 {
-                    PlayerMobile pm = m as PlayerMobile;
+                    PlayerMobile? pm = m as PlayerMobile;
                     strLabel = m.Name + " (char) :: ";
                     if (pm != null)
                     {
@@ -329,7 +330,7 @@ namespace Server.Gumps
 
                             if (index >= 0 && index < m_Mobiles.Count)
                             {
-                                Mobile focus = (Mobile)m_Mobiles[index];
+                                Mobile? focus = (Mobile?)m_Mobiles[index];
 
                                 if (focus.Deleted)
                                 {
@@ -365,7 +366,7 @@ namespace Server.Gumps
 
                             if (index >= 0 && index < m_Mobiles.Count)
                             {
-                                Mobile m = (Mobile)m_Mobiles[index];
+                                Mobile? m = (Mobile?)m_Mobiles[index];
 
                                 if (m.Deleted)
                                 {
@@ -499,9 +500,9 @@ namespace Server.Gumps
             if (info.ButtonID == (int)Buttons.Proceed)
             {
                 bool watchaccount = info.IsSwitched((int)Buttons.AccountCheck);
-                string strReason = "";
+                string? strReason = "";
 
-                TextRelay tr = info.GetTextEntry(0);
+                TextRelay? tr = info.GetTextEntry(0);
                 strReason = (tr == null ? null : tr.Text.Trim());
 
                 if (strReason == null || strReason.Length <= 3)
@@ -523,6 +524,14 @@ namespace Server.Gumps
                         {
                             m_AccountTarget.Watched = true;
                             m_AccountTarget.WatchReason = strReason;
+
+                            // Log the watch event
+                            LogHelper logger = new LogHelper("Watchlist.log", overwrite: false, sline: true);
+
+                            logger.Log(LogType.Mobile, m_Target);
+                            logger.Log(LogType.Text, $"Watch added: {strReason}");
+
+                            logger.Finish();
 
                             string duration = "";
                             if (info.IsSwitched(101)) //1 month
@@ -552,7 +561,7 @@ namespace Server.Gumps
                 }
                 else
                 {
-                    PlayerMobile targ = m_Target as PlayerMobile;
+                    PlayerMobile? targ = m_Target as PlayerMobile;
 
                     if (targ != null)
                     {
@@ -560,14 +569,22 @@ namespace Server.Gumps
                         {
                             m_Owner.SendMessage("Character's account is already watched ({0}).", m_AccountTarget.WatchReason);
                         }
-                        else if (targ.WatchList)
+                        else if (targ.Watched)
                         {
                             m_Owner.SendMessage("Character is already watched ({0}).", targ.WatchReason);
                         }
                         else
                         {
-                            targ.WatchList = true;
+                            targ.Watched = true;
                             targ.WatchReason = strReason;
+
+                            // Log the watch event
+                            LogHelper logger = new LogHelper("Watchlist.log", overwrite: false, sline: true);
+
+                            logger.Log(LogType.Mobile, m_Target);
+                            logger.Log(LogType.Text, $"Watch added: {strReason}");
+
+                            logger.Finish();
 
                             //WatchExpire
                             string duration = "";
@@ -621,10 +638,10 @@ namespace Server.Gumps
                     {
                         //unwatch
                         PlayerMobile targ = (PlayerMobile)targeted;
-                        Accounting.Account targaccount = targ.Account as Accounting.Account;
-                        if (targ.WatchList)
+                        Accounting.Account? targaccount = targ.Account as Accounting.Account;
+                        if (targ.Watched)
                         {
-                            targ.WatchList = false;
+                            targ.Watched = false;
                             from.SendMessage("Unwatching character {0}", targ.Name);
                         }
                         else if (targaccount != null && targaccount.Watched)

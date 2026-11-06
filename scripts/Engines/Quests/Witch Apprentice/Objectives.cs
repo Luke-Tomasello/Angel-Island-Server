@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -43,7 +43,7 @@ namespace Server.Engines.Quests.Hag
             return m_CorpseLocations[index];
         }
 
-        private Corpse m_Corpse;
+        private Corpse? m_Corpse;
         private Point3D m_CorpseLocation;
 
         public override object Message
@@ -58,7 +58,7 @@ namespace Server.Engines.Quests.Hag
             }
         }
 
-        public Corpse Corpse { get { return m_Corpse; } }
+        public Corpse? Corpse { get { return m_Corpse; } }
 
         public FindApprenticeObjective(bool init)
         {
@@ -95,7 +95,7 @@ namespace Server.Engines.Quests.Hag
 
         private void DeleteImp(object imp)
         {
-            Mobile m = imp as Mobile;
+            Mobile? m = imp as Mobile;
 
             if (m != null && !m.Deleted)
             {
@@ -281,7 +281,7 @@ namespace Server.Engines.Quests.Hag
 
         private void DeleteImp(object imp)
         {
-            Mobile m = imp as Mobile;
+            Mobile? m = imp as Mobile;
 
             if (m != null && !m.Deleted)
             {

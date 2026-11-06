@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,6 +71,7 @@ namespace Server.Mobiles
         public override bool HasBreath { get { return true; } } // fire breath enabled
         public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 2 : 0; } }
         public override int Meat { get { return 10; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
         public override int Hides { get { return 20; } }
         public override HideType HideType { get { return HideType.Horned; } }
         public override int Scales { get { return 2; } }
@@ -84,50 +85,21 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020214223637/uo.stratics.com/hunters/drake.shtml
+            // 100 to 250 Gold, Gems, Garlic, Scrolls, Magic Weapons, 10 Raw Ribs (carved), 20 Hides (carved)
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGem();
-                PackGem();
-
-                PackScroll(1, 6);
-                PackScroll(1, 6);
-
-                PackReg(3);
-                PackGold(180, 220);
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(100, 250);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020214223637/uo.stratics.com/hunters/drake.shtml
-                    // 100 to 250 Gold, Gems, Garlic, Scrolls, Magic Weapons, 10 Raw Ribs (carved), 20 Hides (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(100, 250);
-                    }
-                    else
-                    {
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                        PackItem(new Garlic(Utility.Random(1, 2)));
-                        PackScroll(1, 6);
-                        PackScroll(1, 6);
-                        PackMagicEquipment(1, 2, 0.00, 0.25);   // no chance at armor, 25% (12.5% actual) at low end magic weapon
-                    }
-                }
-                else
-                {
-                    // standard runuo
-                    if (Spawning)
-                        PackReg(3);
-
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.MedScrolls, 2);
-                }
+                PackGem(1, .9);
+                PackGem(1, .05);
+                PackItem(new Garlic(Utility.Random(1, 2)));
+                PackScroll(1, 6);
+                PackScroll(1, 6);
+                PackMagicEquipment(1, 2, 0.00, 0.25);   // no chance at armor, 25% (12.5% actual) at low end magic weapon
             }
         }
 

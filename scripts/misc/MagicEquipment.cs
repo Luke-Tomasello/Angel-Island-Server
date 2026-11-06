@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -106,7 +106,7 @@ namespace Server.Items
                 new MagicReflectionEffect(),
             };
 
-        private static MagicEffect GetEffect(MagicEquipEffect effect)
+        private static MagicEffect? GetEffect(MagicEquipEffect effect)
         {
             int index = (int)effect;
 
@@ -118,7 +118,7 @@ namespace Server.Items
 
         public static int GetLabel(MagicEquipEffect effect)
         {
-            MagicEffect e = GetEffect(effect);
+            MagicEffect? e = GetEffect(effect);
 
             if (e != null)
                 return e.Label;
@@ -128,12 +128,12 @@ namespace Server.Items
 
         public static string GetOldSuffix(MagicEquipEffect effect, int charges)
         {
-            MagicEffect e = GetEffect(effect);
+            MagicEffect? e = GetEffect(effect);
 
             if (e == null)
                 return string.Empty;
 
-            string name = e.OldName;
+            string? name = e.OldName;
 
             if (name == null && !Server.Text.Cliloc.Lookup.TryGetValue(e.Label, out name))
                 return string.Empty;
@@ -146,12 +146,12 @@ namespace Server.Items
             if (DuelContext.IsActivelyDueling(m))
                 return;
 
-            IMagicEquip equip = item as IMagicEquip;
+            IMagicEquip? equip = item as IMagicEquip;
 
             if (equip == null || equip.MagicCharges <= 0)
                 return;
 
-            MagicEffect e = GetEffect(equip.MagicEffect);
+            MagicEffect? e = GetEffect(equip.MagicEffect);
 
             if (e == null)
                 return;
@@ -180,12 +180,12 @@ namespace Server.Items
             if (DuelContext.IsActivelyDueling(m))
                 return false;
 
-            IMagicEquip equip = item as IMagicEquip;
+            IMagicEquip? equip = item as IMagicEquip;
 
             if (equip == null || equip.MagicCharges <= 0)
                 return false;
 
-            MagicEffect e = GetEffect(equip.MagicEffect);
+            MagicEffect? e = GetEffect(equip.MagicEffect);
 
             if (e == null)
                 return false;
@@ -197,7 +197,7 @@ namespace Server.Items
         {
             foreach (Item item in m.Items)
             {
-                MagicEffectContext context;
+                MagicEffectContext? context;
 
                 if (m_Registry.TryGetValue(item, out context) && context.Effect == effect)
                 {
@@ -552,7 +552,7 @@ namespace Server.Items
                     m.PlaySound(0x1F1);
                 }
 
-                m.Damage(Utility.RandomMinMax(DamageMin, DamageMax), m, null);
+                m.Damage(Utility.RandomMinMax(DamageMin, DamageMax), m, new DamageContext { Source = this });
 
                 return true;
             }
@@ -661,12 +661,12 @@ namespace Server.Items
                     if (m_Item.Parent != from && !m_Item.IsChildOf(from.Backpack))
                         return;
 
-                    IPoint3D p = o as IPoint3D;
+                    IPoint3D? p = o as IPoint3D;
 
                     if (p == null)
                         return;
 
-                    IMagicEquip magicEquip = m_Item as IMagicEquip;
+                    IMagicEquip? magicEquip = m_Item as IMagicEquip;
 
                     if (magicEquip == null || magicEquip.MagicEffect != MagicEquipEffect.Teleport || magicEquip.MagicCharges <= 0)
                         return;
@@ -903,7 +903,7 @@ namespace Server.Items
             {
                 Item item = (Item)state;
 
-                IMagicEquip equip = item as IMagicEquip;
+                IMagicEquip? equip = item as IMagicEquip;
 
                 if (item.Parent != from || equip == null || equip.MagicCharges <= 0)
                     return;
@@ -1006,12 +1006,12 @@ namespace Server.Items
                 if (offset == 0)
                     return false; // sanity
 
-                string name = GetStatModName(type);
+                string? name = GetStatModName(type);
 
                 if (name == null)
                     return false; // sanity
 
-                StatMod mod = m.GetStatMod(name);
+                StatMod? mod = m.GetStatMod(name);
 
                 if (mod == null)
                     return true;
@@ -1021,18 +1021,18 @@ namespace Server.Items
 
             protected static void RemoveStatMod(Mobile m, StatType type, int offset)
             {
-                string name = GetStatModName(type);
+                string? name = GetStatModName(type);
 
                 if (name == null)
                     return; // sanity
 
-                StatMod mod = m.GetStatMod(name);
+                StatMod? mod = m.GetStatMod(name);
 
                 if (mod != null && mod.Offset == offset)
                     m.RemoveStatMod(name);
             }
 
-            private static string GetStatModName(StatType type)
+            private static string? GetStatModName(StatType type)
             {
                 switch (type)
                 {
@@ -1056,7 +1056,7 @@ namespace Server.Items
 
         private static void Unregister(Item item)
         {
-            MagicEffectContext context;
+            MagicEffectContext? context;
 
             if (m_Registry.TryGetValue(item, out context))
             {
@@ -1071,7 +1071,7 @@ namespace Server.Items
             private Mobile m_Mobile;
             private Item m_Item;
             private MagicEquipEffect m_Effect;
-            private Timer m_Timer;
+            private Timer? m_Timer;
 
             public MagicEquipEffect Effect { get { return m_Effect; } }
 
@@ -1088,7 +1088,7 @@ namespace Server.Items
             {
                 StopTimer();
 
-                MagicEffect e = GetEffect(m_Effect);
+                MagicEffect? e = GetEffect(m_Effect);
 
                 if (e != null)
                     e.OnRemoved(m_Mobile, m_Item);
@@ -1120,7 +1120,7 @@ namespace Server.Items
                     return;
                 }
 
-                IMagicEquip equip = m_Item as IMagicEquip;
+                IMagicEquip? equip = m_Item as IMagicEquip;
 
                 if (equip == null || equip.MagicCharges <= 0 || equip.MagicEffect != m_Effect)
                 {
@@ -1128,7 +1128,7 @@ namespace Server.Items
                     return;
                 }
 
-                MagicEffect e = GetEffect(equip.MagicEffect);
+                MagicEffect? e = GetEffect(equip.MagicEffect);
 
                 if (e == null)
                 {

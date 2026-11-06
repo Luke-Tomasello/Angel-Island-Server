@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -107,15 +107,6 @@ using CalcMoves = Server.Movement.Movement;
 
 namespace Server.Mobiles
 {
-    public enum ThreatType
-    {
-        PureMage,
-        TankMage,
-        MedWarrior,
-        EvalWarrior,
-        PureWarrior,
-        Unknown
-    }
 
     public class BaseHybridAI : HumanMageAI
     {
@@ -128,7 +119,7 @@ namespace Server.Mobiles
 
         public int GetStatMod(Mobile mob, StatType type)
         {
-            StatMod mod = mob.GetStatMod(string.Format("[Magic] {0} Offset", type));
+            StatMod? mod = mob.GetStatMod(string.Format("[Magic] {0} Offset", type));
 
             if (mod == null)
                 return 0;
@@ -137,42 +128,12 @@ namespace Server.Mobiles
         }
 
 
-        private ThreatType GetThreatType(Mobile m)
-        {
-            if (m == null)
-                return ThreatType.Unknown;
-
-            bool Magery = (m.Skills.Magery.Value >= 50);
-            bool Eval = (m.Skills.EvalInt.Value >= 50);
-            bool Med = (m.Skills.Meditation.Value >= 50);
-            bool Weapon = (m.Skills.Swords.Value >= 50 || m.Skills.Macing.Value >= 50 || m.Skills.Fencing.Value >= 50
-                || m.Skills.Archery.Value >= 50);
-            bool Tactics = (m.Skills.Tactics.Value >= 50);
-
-            bool HighInt = (m.Int >= 70);
-            bool HighDex = (m.Dex >= 70);
-
-            if (Magery && Eval && Med && !Weapon && HighInt)
-                return ThreatType.PureMage;
-            if (Magery && Eval && Med && Weapon && Tactics && HighInt)
-                return ThreatType.TankMage;
-            if (!Magery && Weapon && Tactics)
-                return ThreatType.PureWarrior;
-            if (Magery && Med && Weapon && Tactics && HighDex)
-                return ThreatType.MedWarrior;
-            if (Magery && Eval && Weapon && Tactics && HighDex)
-                return ThreatType.EvalWarrior;
-
-            return ThreatType.Unknown;
-
-        }
-
         private static bool NeedGHeal(Mobile m)
         {
             return m.Hits < m.HitsMax - 30;
         }
 
-        public Mobile FindHealTarget(bool activeOnly)
+        public Mobile? FindHealTarget(bool activeOnly)
         {
             if (m_Mobile.Deleted || m_Mobile.Int < 75)
                 return null;
@@ -185,7 +146,7 @@ namespace Server.Mobiles
             if (map != null && activeOnly)
             {
                 double prio = 0.0;
-                Mobile found = null;
+                Mobile? found = null;
 
                 IPooledEnumerable eable = m_Mobile.GetMobilesInRange(m_Mobile.RangePerception);
                 foreach (Mobile m in eable)
@@ -217,7 +178,7 @@ namespace Server.Mobiles
         public override Spell DoDispel(Mobile toDispel)
         {
 
-            Spell spell = null;
+            Spell? spell = null;
 
             if (spell == null)
             {
@@ -247,7 +208,7 @@ namespace Server.Mobiles
 
             if (c.Int > 70 && m_Mobile.MagicDamageAbsorb <= 0 && m_Mobile.Mana > 20 && m_Mobile.Hits > 60 && m_Mobile.CanBeginAction(typeof(DefensiveSpell)))
             {
-                Spell temp = c.Spell as Spell;
+                Spell? temp = c.Spell as Spell;
 
                 if (temp == null || (temp != null && temp.IsCasting && (int)temp.Circle <= (int)SpellCircle.Fourth))
                     return new MagicReflectSpell(m_Mobile, null);
@@ -256,7 +217,7 @@ namespace Server.Mobiles
             if (c.Dex > 60 && m_Mobile.MeleeDamageAbsorb <= 0 && m_Mobile.Mana > 20 && m_Mobile.Hits > 30 && m_Mobile.CanBeginAction(typeof(DefensiveSpell)))
                 return new ReactiveArmorSpell(m_Mobile, null);
 
-            Spell spell = null;
+            Spell? spell = null;
 
             int healChance = (m_Mobile.Hits == 0 ? m_Mobile.HitsMax : (m_Mobile.HitsMax / m_Mobile.Hits));
 
@@ -329,11 +290,11 @@ namespace Server.Mobiles
         public override bool DoActionCombat(MobileInfo info)
         {
             m_Mobile.DebugSay(DebugFlags.AI, "doing DoActionCombat");
-            Mobile combatant = info.target;
+            Mobile? combatant = info.target;
             m_Mobile.Warmode = true;
 
             // check to see if our attack priority has changed
-            Mobile newTarget = null;
+            Mobile? newTarget = null;
             if (PriorityTarget(combatant, out newTarget) == true)
             {
                 m_Mobile.DebugSay(DebugFlags.AI, "Higher priority target found switching targets");
@@ -348,7 +309,7 @@ namespace Server.Mobiles
                     //	If we can Recall() a player via FindHiddenTarget, make them our new Combatant.
                     //	Keep in mind, CombatTimer.OnTick() will set the Combatant to null if it sees that the mobile is hidden, 
                     //	for this reason, we make this check in DoActionGuard and again in DoActionCombat if the Combatant is null.
-                    Mobile mx = FindHiddenTarget();
+                    Mobile? mx = FindHiddenTarget();
                     if (mx != null)
                     {
                         m_Mobile.DebugSay(DebugFlags.AI, "C: Ah, I remembered {0}!", mx.Name);
@@ -429,7 +390,7 @@ namespace Server.Mobiles
             if (combatant != null)
             {
                 int strMod = GetStatMod(combatant, StatType.Str);
-                Mobile toDispel = null;
+                Mobile? toDispel = null;
 
                 //dont worry about creatures/pets useing these spells, only players.
                 if (combatant is PlayerMobile && SmartAI && (combatant.Spell is MagicTrapSpell || combatant.Spell is MagicArrowSpell))
@@ -481,7 +442,7 @@ namespace Server.Mobiles
                 {
                     m_Mobile.DebugSay(DebugFlags.AI, "Doing spell selection");
                     // We are ready to cast a spell
-                    Spell spell = null;
+                    Spell? spell = null;
                     toDispel = FindDispelTarget(true);
 
                     //woot weaken block up to lightening!
@@ -713,8 +674,8 @@ namespace Server.Mobiles
             bool teleportAway = false;
             bool isReveal = (targ is RevealSpell.InternalTarget || targ is DetectHidden.InternalTarget);
 
-            Mobile toTarget = null;
-            Mobile toHeal = null;
+            Mobile? toTarget = null;
+            Mobile? toHeal = null;
 
             if (isReveal)
             {
@@ -723,7 +684,7 @@ namespace Server.Mobiles
 
             if (isTrap)
             {
-                Pouch p = FindPouch(m_Mobile);
+                Pouch? p = FindPouch(m_Mobile);
                 if (p != null)
                 {
                     targ.Invoke(m_Mobile, p);

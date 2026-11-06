@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,7 +48,7 @@ namespace Server.Items
         public TownshipStone Stone { get { return m_Stone; } set { m_Stone = value; } }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
-        public Guild Guild
+        public Guild? Guild
         {
             get
             {
@@ -89,7 +89,7 @@ namespace Server.Items
             }
             catch
             {
-                this.SendSystemMessage("This deed is corrupted. Please contact a GM.");
+                this.SendMessageNearby("This deed is corrupted. Please contact a GM.");
                 LogHelper logger = new LogHelper("TownshipItemRestorationDeed.log", overwrite: false, sline: true);
                 logger.Log(string.Format("{0} is corrupt. Check Stone, Guild, and the underlying item.", this));
                 logger.Finish();
@@ -122,7 +122,7 @@ namespace Server.Items
             }
             catch
             {
-                this.SendSystemMessage("This deed is corrupted. Please contact a GM.");
+                this.SendMessageNearby("This deed is corrupted. Please contact a GM.");
                 LogHelper logger = new LogHelper("TownshipItemRestorationDeed.log", overwrite: false, sline: true);
                 logger.Log(string.Format("{0} is corrupt. Check Stone, Guild, and the underlying item.", this));
                 logger.Finish();
@@ -241,7 +241,7 @@ namespace Server.Items
         public override string DefaultName { get { return "a township livestock restoration deed"; } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Guild Guild
+        public Guild? Guild
         {
             get { return m_Stone.Guild ?? null; }
         }
@@ -393,7 +393,7 @@ namespace Server.Items
         [CommandProperty(AccessLevel.GameMaster)]
         public List<MovingCrate> MovingCrates => m_MovingCrates;
         [CommandProperty(AccessLevel.GameMaster)]
-        public Guild Guild { get { return m_TownStone.Guild ?? null; } }
+        public Guild? Guild { get { return m_TownStone.Guild ?? null; } }
         public TownshipRestorationDeed(TownshipStone stone, List<MovingCrate> movingCrates, Key key)
             : base(0x14F0)
         {
@@ -460,7 +460,7 @@ namespace Server.Items
             private static bool ValidTarget(object targeted, out Point3D loc)
             {
                 loc = Point3D.Zero;
-                IPoint3D p = targeted as IPoint3D;
+                IPoint3D? p = targeted as IPoint3D;
 
                 if (p == null)
                     return false;

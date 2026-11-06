@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -29,7 +29,7 @@ namespace Server.Gumps
         private Mobile m_Mobile;
         private Guild m_Guild;
 
-        private const string DefaultWebsite = "http://www.runuo.com/";
+        private const string DefaultWebsite = "https://game-master.net/";
 
         public GuildCharterGump(Mobile from, Guild guild)
             : base(20, 30)

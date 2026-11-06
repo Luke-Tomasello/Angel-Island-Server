@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,10 @@
 
 /* Scripts/Multis/Boats/Strandedness.cs
  * CHANGELOG 
+ *  10/14/26, Adam (Help Stuck)
+ *      Split ProcessStranded into IsStranded (the stranded check) and FindShoreLocation (the shore search), so a
+ *      caller can ask either question without moving anyone. ProcessStranded now returns whether it moved the
+ *      mobile. Behavior is unchanged for every caller.
  *  9/4/22, Yoar (WorldZone)
  *      Added support for world zone strandedness locations.
  *	4/20/10, adam
@@ -150,7 +154,7 @@ namespace Server.Misc
                 //now make sure that it's not in a house
                 if (bLegal)
                 {
-                    BaseHouse house = BaseHouse.FindHouseAt(new Point3D(loc, 0), Map.Felucca, 40);
+                    BaseHouse? house = BaseHouse.FindHouseAt(new Point3D(loc, 0), Map.Felucca, 40);
                     if (house != null)
                     {
                         bLegal = false;
@@ -188,22 +192,46 @@ namespace Server.Misc
 
         /// <summary>
         /// Moves a stranded mobile.  If bCheckStranded == false then a new location is found regardless of the current location
+        /// Returns true if the mobile was moved (false: not stranded, or no shore location was found)
         /// </summary>
         /// <param name="from"></param>
         /// <param name="bCheckCurrentLoc"></param>
-        public static void ProcessStranded(Mobile from, bool bCheckStranded)
+        public static bool ProcessStranded(Mobile from, bool bCheckStranded)
         {
-            ProcessStranded(from, bCheckStranded, from.Map);
+            return ProcessStranded(from, bCheckStranded, from.Map);
         }
-        public static void ProcessStranded(Mobile from, bool bCheckStranded, Map map)
+        public static bool ProcessStranded(Mobile from, bool bCheckStranded, Map map)
         {
             if (map == null)
-                return;
+                return false;
 
             //pla: Change this to allow the code to get a new location even if the current location is good.
             //This is used to auto-kick ghosts from pirated ships!
-            if (bCheckStranded && Utility.CanFit(map, from.X, from.Y, from.Z, 16, Utility.CanFitFlags.requireSurface))
-                return;
+            if (bCheckStranded && !IsStranded(from, map))
+                return false;
+
+            Point3D shore;
+            if (!FindShoreLocation(from, map, out shore))
+                return false;
+
+            if (from.Map == Map.Internal)
+                from.Location = shore;
+            else
+                from.MoveToWorld(shore, map);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Is this mobile stranded where it stands: no surface at its Z, over water. Observes only, moves nothing.
+        /// </summary>
+        public static bool IsStranded(Mobile from, Map map)
+        {
+            if (map == null)
+                return false;
+
+            if (Utility.CanFit(map, from.X, from.Y, from.Z, 16, Utility.CanFitFlags.requireSurface))
+                return false;
 
             bool isStranded = false;
 
@@ -226,17 +254,24 @@ namespace Server.Misc
                 }
             }
 
-            //pla: Force stranded to true for auto-kicks
-            if (bCheckStranded == false)
-                isStranded = true;
+            return isStranded;
+        }
 
-            if (!isStranded)
-                return;
+        /// <summary>
+        /// The shore location a stranded mobile would be moved to: the nearest legal bounce point, or a spot near it
+        /// where a land mobile fits. Searches only, moves nothing. Returns false if there is none.
+        /// </summary>
+        public static bool FindShoreLocation(Mobile from, Map map, out Point3D shore)
+        {
+            shore = Point3D.Zero;
+
+            if (map == null)
+                return false;
 
             Point2D[] list = GetLocations(from);
 
             if (list.Length == 0)
-                return;
+                return false;
 
             Point2D p = Point2D.Zero;
             double pdist = double.MaxValue;
@@ -261,7 +296,7 @@ namespace Server.Misc
             bool canFit = false;
 
             z = map.GetAverageZ(x, y);
-            canFit = map.CanSpawnLandMobile(x, y, z);
+            canFit = map.CanSpawnLandMobile(x, y, z) && !Utility.InHouse(new Point3D(x, y, z), map);
 
             for (int i = 1; !canFit && i <= 40; i += 2)
             {
@@ -275,17 +310,18 @@ namespace Server.Misc
                         x = p.X + (xo * i);
                         y = p.Y + (yo * i);
                         z = map.GetAverageZ(x, y);
-                        canFit = map.CanSpawnLandMobile(x, y, z);
+
+                        Point3D test = new Point3D(x, y, z);
+
+                        canFit = map.CanSpawnLandMobile(x, y, z) && !Utility.InHouse(test, map);
                     }
                 }
             }
 
             if (canFit)
-                if (from.Map == Map.Internal)
-                    from.Location = new Point3D(x, y, z);
-                else
-                    from.MoveToWorld(new Point3D(x, y, z), map);
+                shore = new Point3D(x, y, z);
 
+            return canFit;
         }
 
         public static void EventSink_Login(LoginEventArgs e)
@@ -296,7 +332,7 @@ namespace Server.Misc
             //pla: if this is a capture zone and they are not IOB then boot them
             if (from is PlayerMobile && ((PlayerMobile)from).IOBRealAlignment == IOBAlignment.None && ((PlayerMobile)from).AccessLevel == AccessLevel.Player)
             {
-                Regions.StaticRegion sr = Regions.StaticRegion.FindStaticRegion(from);
+                Regions.StaticRegion? sr = Regions.StaticRegion.FindStaticRegion(from);
                 if (sr != null && sr.CaptureArea)
                 {
                     ProcessStranded(from, false);

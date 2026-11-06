@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -50,12 +50,12 @@ namespace Server.Misc
                         if (Console.ReadLine().StartsWith("y"))
                         {
                             Console.Write("Username: ");
-                            string username = Console.ReadLine();
+                            string? username = Console.ReadLine();
 
                             Console.Write("Password: ");
-                            string password = Console.ReadLine();
+                            string? password = Console.ReadLine();
 
-                            Account a = Accounts.AddAccount(username, password);
+                            Account? a = Accounts.AddAccount(username, password);
 
                             // 8/10/2024: Adam, first account is Owner
                             //a.AccessLevel = AccessLevel.Administrator;

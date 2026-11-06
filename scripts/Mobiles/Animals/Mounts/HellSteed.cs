@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -37,8 +37,6 @@
  *	7/6/04, Adam
  *		1. implement Jade's new Category Based Drop requirements
  */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -75,16 +73,16 @@ namespace Server.Mobiles
 
             VirtualArmor = 46;
 
-            Tamable = true;
+            Tamable = false;    // no evidense these were tamable
             ControlSlots = 2;
             MinTameSkill = 98.9;
         }
 
         public override bool HasBreath { get { return true; } } // fire breath enabled
-        public override int Meat { get { return 5; } }
-        public override int Hides { get { return 10; } }
-        public override HideType HideType { get { return HideType.Barbed; } }
-        public override FoodType FavoriteFood { get { return FoodType.Meat; } }
+        //public override int Meat { get { return 5; } }
+        //public override int Hides { get { return 10; } }
+        //public override HideType HideType { get { return HideType.Barbed; } }
+        //public override FoodType FavoriteFood { get { return FoodType.Meat; } }
         public override Poison PoisonImmune { get { return Poison.Lethal; } }
 
         public HellSteed(Serial serial)
@@ -94,34 +92,13 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // Stratics does not list any gold, items, or resources for Hell Steed.
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
-                PackGold(250, 350);
-                PackItem(new SulfurousAsh(Utility.RandomMinMax(3, 5)));
-                PackScroll(1, 5);
-                PackPotion();
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
+
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    // no loot
-                }
             }
         }
 

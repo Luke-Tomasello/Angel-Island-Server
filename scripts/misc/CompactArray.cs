@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -157,7 +157,7 @@ namespace Server
 
         #region IEquatable
 
-        public bool Equals(CompactArray other)
+        public bool Equals(CompactArray? other)
         {
             if (other == null || m_Flags != other.m_Flags || m_Values.Length != other.m_Values.Length)
                 return false;
@@ -171,7 +171,7 @@ namespace Server
             return true;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is CompactArray && Equals((CompactArray)obj);
         }
@@ -186,7 +186,7 @@ namespace Server
             return hash;
         }
 
-        public static bool operator ==(CompactArray a, CompactArray b)
+        public static bool operator ==(CompactArray? a, CompactArray? b)
         {
             if ((object)a == null || (object)b == null)
                 return Object.Equals(a, b);
@@ -194,7 +194,7 @@ namespace Server
                 return a.Equals(b);
         }
 
-        public static bool operator !=(CompactArray a, CompactArray b)
+        public static bool operator !=(CompactArray? a, CompactArray? b)
         {
             if ((object)a == null || (object)b == null)
                 return !Object.Equals(a, b);
@@ -407,7 +407,7 @@ namespace Server
 
         #region IEquatable
 
-        public bool Equals(CompactArray64 other)
+        public bool Equals(CompactArray64? other)
         {
             if (other == null || m_Flags != other.m_Flags || m_Values.Length != other.m_Values.Length)
                 return false;
@@ -421,7 +421,7 @@ namespace Server
             return true;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return obj is CompactArray64 && Equals((CompactArray64)obj);
         }
@@ -436,7 +436,7 @@ namespace Server
             return hash;
         }
 
-        public static bool operator ==(CompactArray64 a, CompactArray64 b)
+        public static bool operator ==(CompactArray64? a, CompactArray64? b)
         {
             if ((object)a == null || (object)b == null)
                 return Object.Equals(a, b);
@@ -444,7 +444,7 @@ namespace Server
                 return a.Equals(b);
         }
 
-        public static bool operator !=(CompactArray64 a, CompactArray64 b)
+        public static bool operator !=(CompactArray64? a, CompactArray64? b)
         {
             if ((object)a == null || (object)b == null)
                 return !Object.Equals(a, b);

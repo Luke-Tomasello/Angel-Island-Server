@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -90,7 +90,7 @@ namespace Server.Commands
             public bool FindTeleporter(Map map, Point3D p)
             {
 
-                if (Utility.World.InaccessibleMapLoc(p, map) == true)
+                if (Utility.WorldMap.InaccessibleMapLoc(p, map) == true)
                 {   // RunUO 2.6 can access these locations, we cannot.
                     //  we need to upgrade our Map.cs and likely Sector.cs
 
@@ -136,7 +136,7 @@ namespace Server.Commands
 
             public void CreateTeleporter(Point3D pointLocation, Point3D pointDestination, Map mapLocation, Map mapDestination, bool back)
             {
-                if (Utility.World.InaccessibleMapLoc(pointLocation, mapLocation) == true)
+                if (Utility.WorldMap.InaccessibleMapLoc(pointLocation, mapLocation) == true)
                 {   // RunUO 2.6 can access these locations, we cannot.
                     //  we need to upgrade our Map.cs and likely Sector.cs
 
@@ -145,7 +145,7 @@ namespace Server.Commands
                     return;
                 }
 
-                if (back == true && Utility.World.InaccessibleMapLoc(pointDestination, mapDestination) == true)
+                if (back == true && Utility.WorldMap.InaccessibleMapLoc(pointDestination, mapDestination) == true)
                 {   // RunUO 2.6 can access these locations, we cannot.
                     //  we need to upgrade our Map.cs and likely Sector.cs
 
@@ -200,7 +200,7 @@ namespace Server.Commands
 
             public void DestroyTeleporter(int x, int y, int z, Map map)
             {
-                if (Utility.World.InaccessibleMapLoc(new Point3D(x, y, z), map) == true)
+                if (Utility.WorldMap.InaccessibleMapLoc(new Point3D(x, y, z), map) == true)
                 {   // RunUO 2.6 can access these locations, we cannot.
                     //  we need to upgrade our Map.cs and likely Sector.cs
 
@@ -2006,7 +2006,7 @@ namespace Server.Commands
                 DestroyTeleporter(5140, 1773, 0, 5171, 1586, 0, map, false);
             }
 
-            public int CreateTeleporters(bool listOnly = false, Map[] maps = null, Decorate.DecoMode decoMode = Decorate.DecoMode.add)
+            public int CreateTeleporters(bool listOnly = false, Map[]? maps = null, Decorate.DecoMode decoMode = Decorate.DecoMode.add)
             {
                 m_listOnly = listOnly;                      // no creating or deleting, just create a list of toAdd and toDelete
                 if (maps == null)

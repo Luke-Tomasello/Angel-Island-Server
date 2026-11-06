@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -93,7 +93,13 @@ namespace Server.Misc
         {
             get { return m_FinalSave; }
             // gets set when this is the final save before we shutdown
-            set { m_FinalSave = value; if (value == true) EventSink.InvokeShuttingDown(new ShuttingDownEventArgs()); }
+            set
+            {
+                m_FinalSave = value;
+                if (value == true && !Maintenance.ServerWarsScheduled)
+                    // just broadcasts 'shutting down' message. Not appropriate for the beginning of server wars
+                    EventSink.InvokeShuttingDown(new ShuttingDownEventArgs());
+            }
         }
         public static bool SavesEnabled
         {
@@ -198,10 +204,12 @@ namespace Server.Misc
 
         public static void Save()
         {
+
             if (AutoRestart.Restarting)
                 return;
 
-            if (Maintenance.Scheduled)  // final save before shutdown
+            if (Maintenance.FinalSave)  // final save before shutdown
+                // broadcasts 'shutting down' message 
                 Server.Misc.AutoSave.FinalSave = true;
 
             // we split the backup and save into separate catch blocks because we still want to save even if we cannot backup
@@ -236,8 +244,8 @@ namespace Server.Misc
         {
             Console.WriteLine("Backing up...");
 
-            string root = Path.Combine(Core.BaseDirectory, "Backups\\Automatic");
-            string saves = Path.Combine(Core.BaseDirectory, "Saves");
+            string root = Path.Combine(Core.ExeDirectory, "Backups\\Automatic");
+            string saves = Path.Combine(Core.ExeDirectory, "Saves");
 
             m_fileManagerDatabase.Enqueue(filename);        // save/load these for periodic cleanup
             Console.WriteLine("File Manager: Enqueueing {0}", filename);
@@ -261,7 +269,7 @@ namespace Server.Misc
                 while (m_fileManagerDatabase.Count > CoreAI.BackupCount)
                 {
                     string[] existing = Directory.GetDirectories(root);
-                    DirectoryInfo dir;
+                    DirectoryInfo? dir;
                     string toDelete = m_fileManagerDatabase.Dequeue();
                     dir = Match(existing, toDelete);
                     Console.WriteLine("File Manager: Dequeuing {0}", toDelete);
@@ -312,7 +320,7 @@ namespace Server.Misc
             }
         }
 
-        private static DirectoryInfo Match(string[] paths, string match)
+        private static DirectoryInfo? Match(string[] paths, string match)
         {
             for (int i = 0; i < paths.Length; ++i)
             {

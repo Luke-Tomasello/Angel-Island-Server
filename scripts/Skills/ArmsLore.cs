@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -204,7 +204,7 @@ namespace Server.SkillHandlers
                 {
                     SwampDragon pet = (SwampDragon)targeted;
 
-                    if (from.CheckTargetSkill(SkillName.ArmsLore, targeted, 0, 100, new object[2] { targeted, null } /*contextObj*/))
+                    if (from.CheckTargetSkill(SkillName.ArmsLore, targeted, 0, 100, new object?[2] { targeted, null } /*contextObj*/))
                     {
                         int perc = (4 * pet.BardingHP) / pet.BardingMaxHP;
 

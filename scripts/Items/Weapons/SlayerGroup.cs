@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,26 @@
 
 /* Scripts/Items/Weapons/SlayerGroup.cs
  * ChangeLog
+ *
+ * 3/14/2026, Adam
+ *
+ * New Slayer Model:
+ * Creature slayer susceptibility is now defined in the creature itself
+ * via BaseCreature.DefensiveSlayers rather than the static SlayerGroup table.
+ *
+ * The following custom creatures were intentionally removed from the
+ * compile-time SlayerGroup classification:
+ *
+ *     Pirate, PirateWench, PirateDeckHand, PirateChamp, RedBeard
+ *     CouncilElder, CouncilMember, and others
+ *
+ * These creatures now declare their slayer susceptibility directly in their
+ * respective classes (e.g., Pirate -> DefensiveSlayers = Repond).
+ *
+ * This replaces the old compile-time type table with a class-driven model
+ * that supports inheritance and runtime assignment by systems such as
+ * champ engines and scripted events.
+ * 
  *  8/3/2023, Adam
  *      Add typeof(CouncilElder), typeof(CouncilMember) to Repond class
  *  7/27/2023, Adam
@@ -60,7 +80,7 @@ namespace Server.Items
             get { return m_Groups; }
         }
 
-        public static SlayerEntry GetEntryByName(SlayerName name)
+        public static SlayerEntry? GetEntryByName(SlayerName name)
         {
             int v = (int)name;
 
@@ -153,28 +173,26 @@ namespace Server.Items
             humanoid.FoundOn = new Type[] { typeof(BoneKnight), typeof(Lich), typeof(LichLord) };
             humanoid.Super = new SlayerEntry(SlayerName.Repond, typeof(ArcticOgreLord), typeof(Cyclops), typeof(Ettin), typeof(EvilMage), typeof(EvilMageLord),
                 typeof(FrostTroll), typeof(MeerCaptain), typeof(MeerEternal), typeof(MeerMage), typeof(MeerWarrior), typeof(Ogre), typeof(OgreLord),
-                typeof(Khartag), /*orc champion*/ typeof(Orc), typeof(OrcBomber), typeof(OrcBrute), typeof(OrcCaptain), /*typeof( OrcChopper ), typeof( OrcScout ),*/ typeof(OrcishLord), typeof(OrcishMage),
+                typeof(Orc), typeof(OrcBomber), typeof(OrcBrute), typeof(OrcCaptain), /*typeof( OrcChopper ), typeof( OrcScout ),*/ typeof(SpawnedOrcishLord), typeof(OrcishLord), typeof(OrcishMage),
                 typeof(Ratman), typeof(RatmanArcher), typeof(RatmanMage), typeof(SavageRider), typeof(SavageShaman), typeof(Savage), typeof(Titan),
-                /*typeof(Troglodyte),*/ typeof(Troll), typeof(CouncilElder), typeof(CouncilMember));
+                /*typeof(Troglodyte),*/ typeof(Troll)
+                );
             humanoid.Entries = new SlayerEntry[]
                 {
                     new SlayerEntry( SlayerName.OgreTrashing, typeof( Ogre ), typeof( OgreLord ), typeof( ArcticOgreLord ) ),
-                    new SlayerEntry( SlayerName.OrcSlaying, typeof(Khartag), /*orc champion*/typeof( Orc ), typeof( OrcishMage ), typeof( OrcishLord ), typeof( OrcBrute ), typeof( OrcBomber ), typeof( OrcCaptain ) ),
+                    new SlayerEntry( SlayerName.OrcSlaying, typeof( Orc ), typeof( OrcishMage ), typeof( OrcishLord ), typeof( OrcBrute ), typeof( OrcBomber ), typeof( OrcCaptain ) ),
                     new SlayerEntry( SlayerName.TrollSlaughter, typeof( Troll ) )
                 };
 
             undead.Opposition = humanoid;
             undead.Super = new SlayerEntry(SlayerName.Silver,
-                typeof(Vampire), typeof(VampireBat), typeof(VladDracula), typeof(WalkingDead),
+
                 typeof(BoneKnightLord), typeof(BoneMagiLord), typeof(AncientLich), typeof(Bogle),
                 typeof(BoneMagi), typeof(Lich), typeof(LichLord), typeof(Shade), typeof(Spectre),
                 typeof(Wraith), typeof(BoneKnight), typeof(Ghoul), typeof(Mummy), typeof(SkeletalKnight),
-                typeof(Skeleton), typeof(Zombie), typeof(WraithRiderWarrior), typeof(WraithRiderMage),
-                typeof(SkeletalMage), typeof(RottingCorpse), typeof(CorruptedGargoyle),
-                typeof(Engines.Invasion.WraithRiderWarrior), typeof(Engines.Invasion.WraithRiderMage),
-                typeof(Mobiles.WildHunt.Astrid), typeof(Mobiles.WildHunt.Bjorn),
-                typeof(Mobiles.WildHunt.Brynhild), typeof(Mobiles.WildHunt.WildHuntMage),
-                typeof(Mobiles.WildHunt.WildHuntWarrior));
+                typeof(Skeleton), typeof(Zombie),
+                typeof(SkeletalMage), typeof(RottingCorpse)
+                );
             undead.Entries = new SlayerEntry[0];
 
             elemental.Opposition = abyss;

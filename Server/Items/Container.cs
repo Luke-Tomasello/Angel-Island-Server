@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,31 @@
 
 /* Server/Items/Container.cs
  * CHANGELOG:
+ *  10/21/2026, Adam (StoreBought provenance)
+ *      OnDragDrop: a dropped item placed beside a stack it may not join only because of starter binding or merchant
+ *      provenance tells the player why (Item.NotifyStackBlocked). StackItem: the merged stack keeps the StoreBought mark.
+ *  10/18/2026, Adam (DropItem overflow, MaxItems 0)
+ *      DropItem's overflow rule no longer treats MaxItems 0 as full: like CheckHold, CheckHoldStackDelta and the weight
+ *      rule beside it (MaxWeight > 0), 0 means no item limit. Before, Items.Count >= 0 diverted every DropItem into a
+ *      RecycleBin for such a container. Positive limits, the weight rule and the exclusions are unchanged.
+ *  10/18/2026, Adam (ItemCountText)
+ *      Capacity display: ItemCountText reads "109 items" as before, or "109 items (125/125 slots)" when the capacity slots
+ *      in use (SlotUsage, as CheckHold counts them: potions one slot each, at any depth) differ from TotalItems and the
+ *      container has an item limit. Used by the single-click label and the tooltip (which keeps cliloc 1050044 when the
+ *      counts agree). Display only: TotalItems, capacity enforcement and visibility (DisplaysContent,
+ *      CheckContentDisplay) are unchanged.
+ *  10/17/2026, Adam (SlotUsage)
+ *      Public read-only SlotUsage (ComputeContainerSlotUsage), so a capacity check can use the same slot accounting
+ *      CheckHold/TryDropItem enforce. No rule changed.
+ *  10/16/2026, Adam (OnStackAttempt)
+ *      Enforce the virtual slot delta (Item.GetStackingContainerSlotDelta / CheckHoldStackDelta) before StackWith,
+ *      matching TryDropItem. Dropping onto an existing stack no longer bypasses MaxItems for slot-scaled items (potions).
+ *  10/16/2026, Adam (GetSlotCost, ComputeContainerSlotUsage, CheckHold)
+ *      Potions now consume one slot per potion at every ancestor level, regardless of nesting depth.
+ *      GetSlotCost = GetContainerSlotCount() + TotalItems + the extra cost of potions nested at any depth; it is used for
+ *      container usage and for incoming items in both CheckHold overloads. Items holding no potions cost exactly what
+ *      they did before (including TotalItems overrides such as SeedBox).
+ *      Refusals from a container that is already over capacity now say so (SendOverCapacityMessage).
  *  6/4/2024, Adam (OnDragDropInto)
  *      trap and move to world 'no draw tiles'
  *      this happens at least when 'Normalize On Lift' items are set to NODRAW because they are not legal, or an intended drop.
@@ -95,12 +120,16 @@
  *		Push the Deco flag down here to the Container level
  */
 
+using Scripts.Misc;
 using Server.Diagnostics;
+using Server.Mobiles;
+using Server.Multis;
 using Server.Network;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Server.Items
 {
@@ -112,6 +141,19 @@ namespace Server.Items
 
     public class Container : Item
     {
+        public override Item Dupe(int amount)
+        {
+            if (this is DungeonTreasureChest)
+                ;
+            Container? copy = Activator.CreateInstance(GetType()) as Container;
+
+            if (copy == null)
+                return null;
+
+            Utility.CopyProperties(this, copy);
+
+            return base.Dupe(copy, amount);
+        }
         private static ContainerSnoopHandler m_SnoopHandler;
         public virtual bool AutoFills { get { return false; } } // Hint for duping. When we dupe, don't copy the items as this container will auto-fill
         public bool Empty { get { return Items != null && Items.Count == 0; } }
@@ -146,6 +188,37 @@ namespace Server.Items
 
             return Utility.GetStableHashCode(hash).ToString();
         }
+        public void CloseContainerGumpsForOpeners()
+        {
+            List<Mobile> openers = this.Openers;
+
+            if (openers == null || openers.Count == 0)
+                return;
+
+            lock (openers)
+            {
+                for (int i = openers.Count - 1; i >= 0; --i)
+                {
+                    Mobile mob = openers[i];
+
+                    if (mob == null || mob.Deleted || mob.NetState == null)
+                    {
+                        openers.RemoveAt(i);
+                        continue;
+                    }
+
+                    // Close the container UI so players cannot "preview" a newly respawned rare.
+                    // Container windows are gumps (RunUO: ContainerGump).
+                    //mob.CloseGump(typeof(ContainerGump));
+                    mob.CloseGump(this.GetType());
+                }
+
+                if (openers.Count == 0)
+                    this.Openers = null;
+            }
+        }
+
+
         public static ContainerSnoopHandler SnoopHandler
         {
             get { return m_SnoopHandler; }
@@ -272,76 +345,6 @@ namespace Server.Items
                 return maxWeight;
             }
         }
-#if false
-        // overriding Parent causes issues when duping since Custom Attributes don't work on derived properties.
-        //  Since Freeze dry is gone, no need to override these
-        public override bool IsSecure
-        {
-            get
-            {
-                return base.IsSecure;
-            }
-            set
-            {
-                /*if (value && (m_Freeze == null || !m_Freeze.Running))
-                {
-                    m_Freeze = new FreezeTimer(this);
-                    m_Freeze.Start();
-                }
-                else if (!value && m_Freeze != null)
-                {
-                    m_Freeze.Stop();
-                    m_Freeze = null;
-                }*/
-
-                base.IsSecure = value;
-            }
-        }
-
-        public override bool IsLockedDown
-        {
-            get
-            {
-                return base.IsLockedDown;
-            }
-            set
-            {
-                /*if (value && (m_Freeze == null || !m_Freeze.Running))
-                {
-                    m_Freeze = new FreezeTimer(this);
-                    m_Freeze.Start();
-                }
-                else if (!value && m_Freeze != null)
-                {
-                    m_Freeze.Stop();
-                    m_Freeze = null;
-                }*/
-
-                base.IsLockedDown = value;
-            }
-        }
-
-        public override object Parent
-        {
-            get
-            {
-                return base.Parent;
-            }
-            set
-            {
-                base.Parent = value;
-
-                /*if (CanFreezeDry)
-                {
-                    if (m_Freeze != null && m_Freeze.Running)
-                        return;
-
-                    m_Freeze = new FreezeTimer(this);
-                    m_Freeze.Start();
-                }*/
-            }
-        }
-#endif
         public virtual void UpdateContainerData()
         {
             this.ContainerData = ContainerData.GetData(this.ItemID);
@@ -352,6 +355,14 @@ namespace Server.Items
         public virtual int DefaultDropSound { get { return ContainerData.DropSound; } }
         public virtual int DefaultMaxItems { get { return m_GlobalMaxItems; } }
         public virtual int DefaultMaxWeight { get { return m_GlobalMaxWeight; } }
+        /// <summary>
+        /// Policy hook for whether <paramref name="m"/> is allowed to store <paramref name="item"/> in this container.
+        /// Default policy preserves legacy behavior via CanStore().
+        /// </summary>
+        public virtual bool AllowStore(Mobile m, Item item)
+        {
+            return CanStore(m);
+        }
 
         public virtual bool CanStore(Mobile m)
         {
@@ -391,12 +402,12 @@ namespace Server.Items
         {
             return CheckHold(m, item, message, checkItems, 0, 0);
         }
-
         public virtual bool CheckHold(Mobile m, Item item, bool message, bool checkItems, int plusItems, int plusWeight)
         {
+            // lets not allow staff to bypass all the checks, GM+ used to be able to overload containers. Not sure I want that
+            //  But GM+ should be able to store in containers (backpacks) that are not their own
             if (m.AccessLevel < AccessLevel.GameMaster)
-            {
-                if (!CanStore(m))
+                if (!AllowStore(m, item))
                 {
                     if (message)
                         SendCantStoreMessage(m, item);
@@ -404,37 +415,60 @@ namespace Server.Items
                     return false;
                 }
 
-                int maxItems = this.MaxItems;
+            // Item-count capacity (MaxItems) check.
+            // IMPORTANT:
+            // TotalItems is the legacy physical-object count and must not be used as the baseline
+            // for our virtual slot model. Use computed slot usage instead.
+            int maxItems = MaxItems;
 
-                if (checkItems && maxItems != 0 && (this.TotalItems + plusItems + item.TotalItems + (item.IsVirtualItem ? 0 : 1)) > maxItems)
+            if (checkItems && maxItems != 0)
+            {
+                // Own cost plus contents, including potions nested at any depth (0 for virtual items).
+                int incomingSlots = GetSlotCost(item);
+
+                int slotUsage = ComputeContainerSlotUsage();
+                int totalSlots = slotUsage + plusItems + incomingSlots;
+
+                if (totalSlots > maxItems)
                 {
                     if (message)
-                        SendFullItemsMessage(m, item);
+                    {
+                        if (slotUsage > maxItems)
+                            SendOverCapacityMessage(m, slotUsage, maxItems);
+                        else
+                            SendFullItemsMessage(m, item);
+                    }
 
                     return false;
                 }
-                else
+            }
+
+            // Weight capacity (MaxWeight) check.
+            int maxWeight = MaxWeight;
+
+            if (maxWeight != 0)
+            {
+                int totalWeight = TotalWeight + plusWeight + item.TotalWeight + item.PileWeight;
+
+                if (totalWeight > maxWeight)
                 {
-                    int maxWeight = this.MaxWeight;
+                    if (message)
+                        SendFullWeightMessage(m, item);
 
-                    if (maxWeight != 0 && (this.TotalWeight + plusWeight + item.TotalWeight + item.PileWeight) > maxWeight)
-                    {
-                        if (message)
-                            SendFullWeightMessage(m, item);
-
-                        return false;
-                    }
+                    return false;
                 }
             }
 
-            object parent = this.Parent;
+            // Propagate the check up the containment chain (nested containers).
+            object parent = Parent;
 
             while (parent != null)
             {
-                if (parent is Container)
-                    return ((Container)parent).CheckHold(m, item, message, checkItems, plusItems, plusWeight);
-                else if (parent is Item)
-                    parent = ((Item)parent).Parent;
+                if (parent is Container c)
+                    return c.CheckHold(m, item, message, checkItems, plusItems, plusWeight);
+
+                if (parent is Item parentItem)
+                    parent = parentItem.Parent;
                 else
                     break;
             }
@@ -444,47 +478,74 @@ namespace Server.Items
 
         public bool CheckHold(List<Item> itemList)
         {
-            int maxItems = this.MaxItems;
-            int maxWeight = this.MaxWeight;
-            int totalItems = this.TotalItems;
-            int totalWeight = this.TotalWeight;
+            int maxItems = MaxItems;
+            int maxWeight = MaxWeight;
+
+            // Baselines must use virtual slot usage, not TotalItems.
+            int totalSlots = ComputeContainerSlotUsage();
+            int totalWeight = TotalWeight;
+
             foreach (Item item in itemList)
             {
+                // ---- Item-count capacity (MaxItems) ----
                 if (maxItems != 0)
                 {
-                    if ((totalItems + item.TotalItems + (item.IsVirtualItem ? 0 : 1)) > maxItems)
+                    // Own cost plus contents, including potions nested at any depth (0 for virtual items).
+                    int incomingSlots = GetSlotCost(item);
+
+                    if ((totalSlots + incomingSlots) > maxItems)
                         return false;
-                    else
-                    {   // update virtual total items
-                        totalItems += item.TotalItems + (item.IsVirtualItem ? 0 : 1);
-                    }
+
+                    // Update running virtual slot total
+                    totalSlots += incomingSlots;
                 }
 
+                // ---- Weight capacity (MaxWeight) ----
                 if (maxWeight != 0)
                 {
-                    if ((totalWeight + item.TotalWeight + item.PileWeight) > maxWeight)
+                    int incomingWeight = item.TotalWeight + item.PileWeight;
+
+                    if ((totalWeight + incomingWeight) > maxWeight)
                         return false;
-                    else
-                    {   // update virtual total weight
-                        totalWeight += item.TotalWeight + item.PileWeight;
-                    }
+
+                    // Update running virtual total weight
+                    totalWeight += incomingWeight;
                 }
             }
 
-            object parent = this.Parent;
+            // Propagate up containment chain (nested containers)
+            object parent = Parent;
 
             while (parent != null)
             {
-                if (parent is Container cont && cont.CheckHold(itemList) == false)
-                    return false;
-                else if (parent is Item)
-                    parent = ((Item)parent).Parent;
-                else
+                if (parent is Container cont)
+                {
+                    if (!cont.CheckHold(itemList))
+                        return false;
+
                     break;
+                }
+                else if (parent is Item parentItem)
+                {
+                    parent = parentItem.Parent;
+                }
+                else
+                {
+                    break;
+                }
             }
 
             return true;
         }
+
+        public override void AddItem(Item item)
+        {
+            if (item == null || item.Deleted || item.Parent == this)
+            { return; }
+            base.AddItem(item);
+            ScheduleRefresh();
+        }
+
         public virtual void SendFullItemsMessage(Mobile to, Item item)
         {
             to.SendMessage("That container cannot hold more items.");
@@ -529,82 +590,34 @@ namespace Server.Items
 
             return true;
         }
-
-        private class GroupComparer : IComparer
+        public int ConsumeTotal(Type[] types, int[] amounts)
         {
-            private CheckItemGroup m_Grouper;
-
-            public GroupComparer(CheckItemGroup grouper)
-            {
-                m_Grouper = grouper;
-            }
-
-            public int Compare(object x, object y)
-            {
-                Item a = (Item)x;
-                Item b = (Item)y;
-
-                return m_Grouper(a, b);
-            }
+            return ConsumeTotal(types, amounts, true, null);
         }
 
-        public bool ConsumeTotalGrouped(Type type, int amount, bool recurse, OnItemConsumed callback, CheckItemGroup grouper)
+        public int ConsumeTotal(Type[] types, int[] amounts, bool recurse, OnItemConsumed? callback)
         {
-            if (grouper == null)
-                throw new ArgumentNullException();
-
-            Item[] typedItems = FindItemsByType(type, recurse);
-
-            ArrayList groups = new ArrayList();
-            int idx = 0;
-
-            while (idx < typedItems.Length)
+            try
             {
-                Item a = typedItems[idx++];
-                ArrayList group = new ArrayList();
+                if (types.Length != amounts.Length)
+                    throw new ArgumentException();
 
-                group.Add(a);
-
-                while (idx < typedItems.Length)
+                Item[][] items = new Item[types.Length][];
+                int[] totals = new int[types.Length];
+                for (int i = 0; i < types.Length; ++i)
                 {
-                    Item b = typedItems[idx];
-                    int v = grouper(a, b);
+                    items[i] = FindItemsByType(types[i], recurse);
 
-                    if (v == 0)
-                        group.Add(b);
-                    else
-                        break;
+                    for (int j = 0; j < items[i].Length; ++j)
+                        totals[i] += items[i][j].Amount;
 
-                    ++idx;
+                    if (totals[i] < amounts[i])
+                        return i;
                 }
 
-                groups.Add(group);
-            }
-
-            Item[][] items = new Item[groups.Count][];
-            int[] totals = new int[groups.Count];
-
-            bool hasEnough = false;
-
-            for (int i = 0; i < groups.Count; ++i)
-            {
-                items[i] = (Item[])(((ArrayList)groups[i]).ToArray(typeof(Item)));
-
-                for (int j = 0; j < items[i].Length; ++j)
-                    totals[i] += items[i][j].Amount;
-
-                if (totals[i] >= amount)
-                    hasEnough = true;
-            }
-
-            if (!hasEnough)
-                return false;
-
-            for (int i = 0; i < items.Length; ++i)
-            {
-                if (totals[i] >= amount)
+                for (int i = 0; i < types.Length; ++i)
                 {
-                    int need = amount;
+                    int need = amounts[i];
 
                     for (int j = 0; j < items[i].Length; ++j)
                     {
@@ -629,487 +642,139 @@ namespace Server.Items
                             break;
                         }
                     }
-
-                    break;
                 }
             }
+            finally
+            {
+                ScheduleRefresh();
+            }
 
-            return true;
+            return -1;
         }
-
-        public int ConsumeTotalGrouped(Type[] types, int[] amounts, bool recurse, OnItemConsumed callback, CheckItemGroup grouper)
+        public int ConsumeTotal(Type[] types, int[] amounts, bool recurse, OnItemConsumed? callback, Func<Item, bool>? canConsume)
         {
-            if (types.Length != amounts.Length)
-                throw new ArgumentException();
-            else if (grouper == null)
-                throw new ArgumentNullException();
-
-            Item[][][] items = new Item[types.Length][][];
-            int[][] totals = new int[types.Length][];
-
-            for (int i = 0; i < types.Length; ++i)
+            try
             {
-                Item[] typedItems = FindItemsByType(types[i], recurse);
+                if (types.Length != amounts.Length)
+                    throw new ArgumentException();
 
-                ArrayList groups = new ArrayList();
-                int idx = 0;
+                Item[][] items = new Item[types.Length][];
+                int[] totals = new int[types.Length];
 
-                while (idx < typedItems.Length)
+                for (int i = 0; i < types.Length; ++i)
                 {
-                    Item a = typedItems[idx++];
-                    ArrayList group = new ArrayList();
+                    var all = FindItemsByType(types[i], recurse);
+                    items[i] = canConsume == null ? all : all.Where(canConsume).ToArray();
 
-                    group.Add(a);
+                    for (int j = 0; j < items[i].Length; ++j)
+                        totals[i] += items[i][j].Amount;
 
-                    while (idx < typedItems.Length)
-                    {
-                        Item b = typedItems[idx];
-                        int v = grouper(a, b);
-
-                        if (v == 0)
-                            group.Add(b);
-                        else
-                            break;
-
-                        ++idx;
-                    }
-
-                    groups.Add(group);
+                    if (totals[i] < amounts[i])
+                        return i;
                 }
 
-                items[i] = new Item[groups.Count][];
-                totals[i] = new int[groups.Count];
-
-                bool hasEnough = false;
-
-                for (int j = 0; j < groups.Count; ++j)
+                for (int i = 0; i < types.Length; ++i)
                 {
-                    items[i][j] = (Item[])(((ArrayList)groups[j]).ToArray(typeof(Item)));
+                    int need = amounts[i];
 
-                    for (int k = 0; k < items[i][j].Length; ++k)
-                        totals[i][j] += items[i][j][k].Amount;
-
-                    if (totals[i][j] >= amounts[i])
-                        hasEnough = true;
-                }
-
-                if (!hasEnough)
-                    return i;
-            }
-
-            for (int i = 0; i < items.Length; ++i)
-            {
-                for (int j = 0; j < items[i].Length; ++j)
-                {
-                    if (totals[i][j] >= amounts[i])
+                    for (int j = 0; j < items[i].Length; ++j)
                     {
-                        int need = amounts[i];
+                        var it = items[i][j];
+                        int have = it.Amount;
 
-                        for (int k = 0; k < items[i][j].Length; ++k)
+                        if (have < need)
                         {
-                            Item item = items[i][j][k];
-
-                            int theirAmount = item.Amount;
-
-                            if (theirAmount < need)
-                            {
-                                if (callback != null)
-                                    callback(item, theirAmount);
-
-                                item.Delete();
-                                need -= theirAmount;
-                            }
-                            else
-                            {
-                                if (callback != null)
-                                    callback(item, need);
-
-                                item.Consume(need);
-                                break;
-                            }
+                            callback?.Invoke(it, have);
+                            it.Delete();
+                            need -= have;
                         }
-
-                        break;
+                        else
+                        {
+                            callback?.Invoke(it, need);
+                            it.Consume(need);
+                            break;
+                        }
                     }
                 }
+            }
+            finally
+            {
+                ScheduleRefresh();
             }
 
             return -1;
         }
 
-        public int GetBestGroupAmount(Type type, bool recurse, CheckItemGroup grouper)
+        public enum ConsumeCheckStatus
         {
-            if (grouper == null)
-                throw new ArgumentNullException();
+            Error,          // Pack null or someother error
+            Ok,             // sufficient owned items found
+            NotEnough,      // shortfall with no blocked (filtered) items
+            Filtered        // shortfall because some items were blocked by ownership
+        }
 
-            int best = 0;
+        public ConsumeCheckStatus CheckConsumeTotal(
+            Type[] types,
+            int[] amounts,
+            PlayerMobile? actor,              // who we're checking ownership against
+            bool recurse,
+            out int failingIndex,            // index in 'types' that failed, or -1
+            out int missingAmount,           // how many short for that failing type
+            out int filteredCount            // how many items were filtered for that type
+        )
+        {
+            if (types == null || amounts == null || types.Length != amounts.Length)
+                throw new ArgumentException();
 
-            Item[] typedItems = FindItemsByType(type, recurse);
+            failingIndex = -1;
+            missingAmount = 0;
+            filteredCount = 0;
 
-            ArrayList groups = new ArrayList();
-            int idx = 0;
-
-            while (idx < typedItems.Length)
+            for (int i = 0; i < types.Length; ++i)
             {
-                Item a = typedItems[idx++];
-                ArrayList group = new ArrayList();
-
-                group.Add(a);
-
-                while (idx < typedItems.Length)
-                {
-                    Item b = typedItems[idx];
-                    int v = grouper(a, b);
-
-                    if (v == 0)
-                        group.Add(b);
-                    else
-                        break;
-
-                    ++idx;
-                }
-
-                groups.Add(group);
-            }
-
-            for (int i = 0; i < groups.Count; ++i)
-            {
-                Item[] items = (Item[])(((ArrayList)groups[i]).ToArray(typeof(Item)));
-                int total = 0;
-
+                // Ownership-enforced search; we also get how many were filtered out
+                var items = FindItemsByType(types[i], recurse, actor, enforceOwnership: true, out var filtered);
+                var total = 0;
                 for (int j = 0; j < items.Length; ++j)
                     total += items[j].Amount;
 
-                if (total >= best)
-                    best = total;
-            }
-
-            return best;
-        }
-
-        public int GetBestGroupAmount(Type[] types, bool recurse, CheckItemGroup grouper)
-        {
-            if (grouper == null)
-                throw new ArgumentNullException();
-
-            int best = 0;
-
-            Item[] typedItems = FindItemsByType(types, recurse);
-
-            ArrayList groups = new ArrayList();
-            int idx = 0;
-
-            while (idx < typedItems.Length)
-            {
-                Item a = typedItems[idx++];
-                ArrayList group = new ArrayList();
-
-                group.Add(a);
-
-                while (idx < typedItems.Length)
+                if (total < amounts[i])
                 {
-                    Item b = typedItems[idx];
-                    int v = grouper(a, b);
+                    failingIndex = i;
+                    missingAmount = amounts[i] - total;
+                    filteredCount = filtered;
 
-                    if (v == 0)
-                        group.Add(b);
-                    else
-                        break;
-
-                    ++idx;
-                }
-
-                groups.Add(group);
-            }
-
-            for (int j = 0; j < groups.Count; ++j)
-            {
-                Item[] items = (Item[])(((ArrayList)groups[j]).ToArray(typeof(Item)));
-                int total = 0;
-
-                for (int k = 0; k < items.Length; ++k)
-                    total += items[k].Amount;
-
-                if (total >= best)
-                    best = total;
-            }
-
-            return best;
-        }
-
-        public int GetBestGroupAmount(Type[][] types, bool recurse, CheckItemGroup grouper)
-        {
-            if (grouper == null)
-                throw new ArgumentNullException();
-
-            int best = 0;
-
-            for (int i = 0; i < types.Length; ++i)
-            {
-                Item[] typedItems = FindItemsByType(types[i], recurse);
-
-                ArrayList groups = new ArrayList();
-                int idx = 0;
-
-                while (idx < typedItems.Length)
-                {
-                    Item a = typedItems[idx++];
-                    ArrayList group = new ArrayList();
-
-                    group.Add(a);
-
-                    while (idx < typedItems.Length)
-                    {
-                        Item b = typedItems[idx];
-                        int v = grouper(a, b);
-
-                        if (v == 0)
-                            group.Add(b);
-                        else
-                            break;
-
-                        ++idx;
-                    }
-
-                    groups.Add(group);
-                }
-
-                for (int j = 0; j < groups.Count; ++j)
-                {
-                    Item[] items = (Item[])(((ArrayList)groups[j]).ToArray(typeof(Item)));
-                    int total = 0;
-
-                    for (int k = 0; k < items.Length; ++k)
-                        total += items[k].Amount;
-
-                    if (total >= best)
-                        best = total;
+                    return filtered > 0 ? ConsumeCheckStatus.Filtered
+                        : ConsumeCheckStatus.NotEnough;
                 }
             }
 
-            return best;
+            return ConsumeCheckStatus.Ok;
         }
-
-        public int ConsumeTotalGrouped(Type[][] types, int[] amounts, bool recurse, OnItemConsumed callback, CheckItemGroup grouper)
+        public ConsumeCheckStatus CheckConsumeTotal(
+            Type type,
+            int amount,
+            PlayerMobile actor,
+            bool recurse,
+            out int missingAmount,
+            out int filteredCount
+        )
         {
-            if (types.Length != amounts.Length)
-                throw new ArgumentException();
-            else if (grouper == null)
-                throw new ArgumentNullException();
+            var status = CheckConsumeTotal(
+                types: new[] { type },
+                amounts: new[] { amount },
+                actor: actor,
+                recurse: recurse,
+                out var failingIndex,
+                out missingAmount,
+                out filteredCount
+            );
 
-            Item[][][] items = new Item[types.Length][][];
-            int[][] totals = new int[types.Length][];
+            // normalize for single-type call
+            if (status == ConsumeCheckStatus.Ok)
+                missingAmount = 0;
 
-            for (int i = 0; i < types.Length; ++i)
-            {
-                Item[] typedItems = FindItemsByType(types[i], recurse);
-
-                ArrayList groups = new ArrayList();
-                int idx = 0;
-
-                while (idx < typedItems.Length)
-                {
-                    Item a = typedItems[idx++];
-                    ArrayList group = new ArrayList();
-
-                    group.Add(a);
-
-                    while (idx < typedItems.Length)
-                    {
-                        Item b = typedItems[idx];
-                        int v = grouper(a, b);
-
-                        if (v == 0)
-                            group.Add(b);
-                        else
-                            break;
-
-                        ++idx;
-                    }
-
-                    groups.Add(group);
-                }
-
-                items[i] = new Item[groups.Count][];
-                totals[i] = new int[groups.Count];
-
-                bool hasEnough = false;
-
-                for (int j = 0; j < groups.Count; ++j)
-                {
-                    items[i][j] = (Item[])(((ArrayList)groups[j]).ToArray(typeof(Item)));
-
-                    for (int k = 0; k < items[i][j].Length; ++k)
-                        totals[i][j] += items[i][j][k].Amount;
-
-                    if (totals[i][j] >= amounts[i])
-                        hasEnough = true;
-                }
-
-                if (!hasEnough)
-                    return i;
-            }
-
-            for (int i = 0; i < items.Length; ++i)
-            {
-                for (int j = 0; j < items[i].Length; ++j)
-                {
-                    if (totals[i][j] >= amounts[i])
-                    {
-                        int need = amounts[i];
-
-                        for (int k = 0; k < items[i][j].Length; ++k)
-                        {
-                            Item item = items[i][j][k];
-
-                            int theirAmount = item.Amount;
-
-                            if (theirAmount < need)
-                            {
-                                if (callback != null)
-                                    callback(item, theirAmount);
-
-                                item.Delete();
-                                need -= theirAmount;
-                            }
-                            else
-                            {
-                                if (callback != null)
-                                    callback(item, need);
-
-                                item.Consume(need);
-                                break;
-                            }
-                        }
-
-                        break;
-                    }
-                }
-            }
-
-            return -1;
-        }
-
-        public int ConsumeTotal(Type[][] types, int[] amounts)
-        {
-            return ConsumeTotal(types, amounts, true, null);
-        }
-
-        public int ConsumeTotal(Type[][] types, int[] amounts, bool recurse)
-        {
-            return ConsumeTotal(types, amounts, recurse, null);
-        }
-
-        public int ConsumeTotal(Type[][] types, int[] amounts, bool recurse, OnItemConsumed callback)
-        {
-            if (types.Length != amounts.Length)
-                throw new ArgumentException();
-
-            Item[][] items = new Item[types.Length][];
-            int[] totals = new int[types.Length];
-
-            for (int i = 0; i < types.Length; ++i)
-            {
-                items[i] = FindItemsByType(types[i], recurse);
-
-                for (int j = 0; j < items[i].Length; ++j)
-                    totals[i] += items[i][j].Amount;
-
-                if (totals[i] < amounts[i])
-                    return i;
-            }
-
-            for (int i = 0; i < types.Length; ++i)
-            {
-                int need = amounts[i];
-
-                for (int j = 0; j < items[i].Length; ++j)
-                {
-                    Item item = items[i][j];
-
-                    int theirAmount = item.Amount;
-
-                    if (theirAmount < need)
-                    {
-                        if (callback != null)
-                            callback(item, theirAmount);
-
-                        item.Delete();
-                        need -= theirAmount;
-                    }
-                    else
-                    {
-                        if (callback != null)
-                            callback(item, need);
-
-                        item.Consume(need);
-                        break;
-                    }
-                }
-            }
-
-            return -1;
-        }
-
-        public int ConsumeTotal(Type[] types, int[] amounts)
-        {
-            return ConsumeTotal(types, amounts, true, null);
-        }
-
-        public int ConsumeTotal(Type[] types, int[] amounts, bool recurse)
-        {
-            return ConsumeTotal(types, amounts, recurse, null);
-        }
-
-        public int ConsumeTotal(Type[] types, int[] amounts, bool recurse, OnItemConsumed callback)
-        {
-            if (types.Length != amounts.Length)
-                throw new ArgumentException();
-
-            Item[][] items = new Item[types.Length][];
-            int[] totals = new int[types.Length];
-
-            for (int i = 0; i < types.Length; ++i)
-            {
-                items[i] = FindItemsByType(types[i], recurse);
-
-                for (int j = 0; j < items[i].Length; ++j)
-                    totals[i] += items[i][j].Amount;
-
-                if (totals[i] < amounts[i])
-                    return i;
-            }
-
-            for (int i = 0; i < types.Length; ++i)
-            {
-                int need = amounts[i];
-
-                for (int j = 0; j < items[i].Length; ++j)
-                {
-                    Item item = items[i][j];
-
-                    int theirAmount = item.Amount;
-
-                    if (theirAmount < need)
-                    {
-                        if (callback != null)
-                            callback(item, theirAmount);
-
-                        item.Delete();
-                        need -= theirAmount;
-                    }
-                    else
-                    {
-                        if (callback != null)
-                            callback(item, need);
-
-                        item.Consume(need);
-                        break;
-                    }
-                }
-            }
-
-            return -1;
+            return status;
         }
 
         public int GetAmount(Type type)
@@ -1156,45 +821,52 @@ namespace Server.Items
             return ConsumeTotal(type, amount, recurse, null);
         }
 
-        public bool ConsumeTotal(Type type, int amount, bool recurse, OnItemConsumed callback)
+        public bool ConsumeTotal(Type type, int amount, bool recurse, OnItemConsumed? callback)
         {
-            Item[] items = FindItemsByType(type, recurse);
-
-            int total = 0;
-
-            for (int i = 0; i < items.Length; ++i)
-                total += items[i].Amount;
-
-            if (total >= amount)
+            try
             {
-                // We've enough, so consume it
+                Item[] items = FindItemsByType(type, recurse);
 
-                int need = amount;
+                int total = 0;
 
                 for (int i = 0; i < items.Length; ++i)
+                    total += items[i].Amount;
+
+                if (total >= amount)
                 {
-                    Item item = items[i];
+                    // We've enough, so consume it
 
-                    int theirAmount = item.Amount;
+                    int need = amount;
 
-                    if (theirAmount < need)
+                    for (int i = 0; i < items.Length; ++i)
                     {
-                        if (callback != null)
-                            callback(item, theirAmount);
+                        Item item = items[i];
 
-                        item.Delete();
-                        need -= theirAmount;
-                    }
-                    else
-                    {
-                        if (callback != null)
-                            callback(item, need);
+                        int theirAmount = item.Amount;
 
-                        item.Consume(need);
+                        if (theirAmount < need)
+                        {
+                            if (callback != null)
+                                callback(item, theirAmount);
 
-                        return true;
+                            item.Delete();
+                            need -= theirAmount;
+                        }
+                        else
+                        {
+                            if (callback != null)
+                                callback(item, need);
+
+                            item.Consume(need);
+
+                            return true;
+                        }
                     }
                 }
+            }
+            finally
+            {
+                ScheduleRefresh();
             }
 
             return false;
@@ -1207,51 +879,64 @@ namespace Server.Items
 
         public int ConsumeUpTo(Type type, int amount, bool recurse)
         {
-            int consumed = 0;
+            try
+            {
+                int consumed = 0;
 
-            Queue toDelete = new Queue();
+                Queue toDelete = new Queue();
 
-            RecurseConsumeUpTo(this, type, amount, recurse, ref consumed, toDelete);
+                RecurseConsumeUpTo(this, type, amount, recurse, ref consumed, toDelete);
 
-            while (toDelete.Count > 0)
-                ((Item)toDelete.Dequeue()).Delete();
+                while (toDelete.Count > 0)
+                    ((Item)toDelete.Dequeue()).Delete();
 
-            return consumed;
+
+                return consumed;
+            }
+            finally { ScheduleRefresh(); }
         }
 
         private static void RecurseConsumeUpTo(Item current, Type type, int amount, bool recurse, ref int consumed, Queue toDelete)
         {
-            if (current != null && current.Items.Count > 0)
+            try
             {
-                List<Item> list = current.Items;
-
-                for (int i = 0; i < list.Count; ++i)
+                if (current != null && current.Items.Count > 0)
                 {
-                    Item item = (Item)list[i];
+                    List<Item> list = current.Items;
 
-                    if (type.IsAssignableFrom(item.GetType()))
+                    for (int i = 0; i < list.Count; ++i)
                     {
-                        int need = amount - consumed;
-                        int theirAmount = item.Amount;
+                        Item item = (Item)list[i];
 
-                        if (theirAmount <= need)
+                        if (type.IsAssignableFrom(item.GetType()))
                         {
-                            toDelete.Enqueue(item);
-                            consumed += theirAmount;
-                        }
-                        else
-                        {
-                            item.Amount -= need;
-                            consumed += need;
+                            int need = amount - consumed;
+                            int theirAmount = item.Amount;
 
-                            return;
+                            if (theirAmount <= need)
+                            {
+                                toDelete.Enqueue(item);
+                                consumed += theirAmount;
+                            }
+                            else
+                            {
+                                item.Amount -= need;
+                                consumed += need;
+
+                                return;
+                            }
                         }
-                    }
-                    else if (recurse && item is Container)
-                    {
-                        RecurseConsumeUpTo(item, type, amount, recurse, ref consumed, toDelete);
+                        else if (recurse && item is Container)
+                        {
+                            RecurseConsumeUpTo(item, type, amount, recurse, ref consumed, toDelete);
+                        }
                     }
                 }
+            }
+            finally
+            {
+                if (current is Container c)
+                    c.ScheduleRefresh();
             }
         }
 
@@ -1284,401 +969,270 @@ namespace Server.Items
             return;
         }
 
-#if old
-		private static ArrayList m_FindItemsList = new ArrayList();
 
-		public Item[] FindItemsByType(Type type)
-		{
-			return FindItemsByType(type, true);
-		}
+        // ===================== FindItem[s] by Type (Unified, Ownership-aware) =====================
+#nullable enable
 
-		public Item[] FindItemsByType(Type type, bool recurse)
-		{
-			if (m_FindItemsList.Count > 0)
-				m_FindItemsList.Clear();
-
-			RecurseFindItemsByType(this, type, recurse, m_FindItemsList);
-
-			return (Item[])m_FindItemsList.ToArray(typeof(Item));
-		}
-
-		private static void RecurseFindItemsByType(Item current, Type type, bool recurse, ArrayList list)
-		{
-			if (current != null && current.Items.Count > 0)
-			{
-				ArrayList items = current.Items;
-
-				for (int i = 0; i < items.Count; ++i)
-				{
-					Item item = (Item)items[i];
-
-					if (type.IsAssignableFrom(item.GetType()))// item.GetType().IsAssignableFrom( type ) )
-						list.Add(item);
-
-					if (recurse && item is Container)
-						RecurseFindItemsByType(item, type, recurse, list);
-				}
-			}
-		}
-
-		public Item[] FindItemsByType(Type[] types)
-		{
-			return FindItemsByType(types, true);
-		}
-
-		public Item[] FindItemsByType(Type[] types, bool recurse)
-		{
-			if (m_FindItemsList.Count > 0)
-				m_FindItemsList.Clear();
-
-			RecurseFindItemsByType(this, types, recurse, m_FindItemsList);
-
-			return (Item[])m_FindItemsList.ToArray(typeof(Item));
-		}
-
-		private static void RecurseFindItemsByType(Item current, Type[] types, bool recurse, ArrayList list)
-		{
-			if (current != null && current.Items.Count > 0)
-			{
-				ArrayList items = current.Items;
-
-				for (int i = 0; i < items.Count; ++i)
-				{
-					Item item = (Item)items[i];
-
-					if (InTypeList(item, types))
-						list.Add(item);
-
-					if (recurse && item is Container)
-						RecurseFindItemsByType(item, types, recurse, list);
-				}
-			}
-		}
-
-		public Item FindItemByType(Type type)
-		{
-			return FindItemByType(type, true);
-		}
-
-		public Item FindItemByType(Type type, bool recurse)
-		{
-			return RecurseFindItemByType(this, type, recurse);
-		}
-
-		private static Item RecurseFindItemByType(Item current, Type type, bool recurse)
-		{
-			if (current != null && current.Items.Count > 0)
-			{
-				ArrayList list = current.Items;
-
-				for (int i = 0; i < list.Count; ++i)
-				{
-					Item item = (Item)list[i];
-
-					if (type.IsAssignableFrom(item.GetType()))
-					{
-						return item;
-					}
-					else if (recurse && item is Container)
-					{
-						Item check = RecurseFindItemByType(item, type, recurse);
-
-						if (check != null)
-							return check;
-					}
-				}
-			}
-
-			return null;
-		}
-
-		public Item FindItemByType(Type[] types)
-		{
-			return FindItemByType(types, true);
-		}
-
-		public Item FindItemByType(Type[] types, bool recurse)
-		{
-			return RecurseFindItemByType(this, types, recurse);
-		}
-
-		private static Item RecurseFindItemByType(Item current, Type[] types, bool recurse)
-		{
-			if (current != null && current.Items.Count > 0)
-			{
-				ArrayList list = current.Items;
-
-				for (int i = 0; i < list.Count; ++i)
-				{
-					Item item = (Item)list[i];
-
-					if (InTypeList(item, types))
-					{
-						return item;
-					}
-					else if (recurse && item is Container)
-					{
-						Item check = RecurseFindItemByType(item, types, recurse);
-
-						if (check != null)
-							return check;
-					}
-				}
-			}
-
-			return null;
-		}
-#endif
-        private static List<Item> m_FindItemsList = new List<Item>();
-
-        #region Non-Generic FindItem[s] by Type
-        public Item[] FindItemsByType(Type type)
+        [Flags]
+        public enum FindFlags
         {
-            return FindItemsByType(type, true);
+            None = 0,
+            Recurse = 1,
+            EnforceOwnership = 2
         }
+
+        // -------- Core traversal (single source of truth) --------
+        private static IEnumerable<Item> EnumerateItems(Item root, bool recurse)
+        {
+            if (root == null || root.Items.Count == 0)
+                yield break;
+
+            var items = root.Items;
+            for (int i = 0; i < items.Count; i++)
+            {
+                var it = items[i];
+                yield return it;
+
+                if (recurse && it is Container)
+                {
+                    foreach (var sub in EnumerateItems(it, true))
+                        yield return sub;
+                }
+            }
+        }
+
+        private static bool MatchesType(Item it, Type type)
+            => type != null && type.IsAssignableFrom(it.GetType());
+
+        private static bool MatchesAnyType(Item it, Type[]? types)
+        {
+            if (types == null || types.Length == 0)
+                return false;
+
+            var t = it.GetType();
+            for (int i = 0; i < types.Length; i++)
+            {
+                var want = types[i];
+                if (want != null && want.IsAssignableFrom(t))
+                    return true;
+            }
+            return false;
+        }
+
+        // Ownership filter is ONLY applied if actor != null and enforceOwnership == true.
+        private static List<Item> CoreFindItems(
+            Item root,
+            Func<Item, bool> typeMatch,
+            bool recurse,
+            PlayerMobile? actor,
+            bool enforceOwnership,
+            out int filtered)
+        {
+            filtered = 0;
+            var result = new List<Item>();
+
+            foreach (var it in EnumerateItems(root, recurse))
+            {
+                if (!typeMatch(it))
+                    continue;
+
+                if (enforceOwnership && actor != null && !StartingLootMonitor.CanUse(actor, it))
+                {
+                    filtered++;
+                    continue;
+                }
+
+                result.Add(it);
+            }
+
+            return result;
+        }
+
+        // ===================== Non-Generic FindItemsByType (Type) =====================
+        // Legacy: unchanged behavior
+        public Item[] FindItemsByType(Type type) => FindItemsByType(type, true);
 
         public Item[] FindItemsByType(Type type, bool recurse)
         {
-            if (m_FindItemsList.Count > 0)
-                m_FindItemsList.Clear();
-
-            RecurseFindItemsByType(this, type, recurse, m_FindItemsList);
-
-            return m_FindItemsList.ToArray();
+            var list = CoreFindItems(this, it => MatchesType(it, type), recurse, actor: null, enforceOwnership: false, out _);
+            return list.ToArray();
         }
 
-        private static void RecurseFindItemsByType(Item current, Type type, bool recurse, List<Item> list)
+        // New: with ownership filtering (caller ignores count)
+        public Item[] FindItemsByType(Type type, bool recurse, PlayerMobile actor, bool enforceOwnership)
         {
-            if (current != null && current.Items.Count > 0)
-            {
-                List<Item> items = current.Items;
-
-                for (int i = 0; i < items.Count; ++i)
-                {
-                    Item item = items[i];
-
-                    if (type.IsAssignableFrom(item.GetType()))// item.GetType().IsAssignableFrom( type ) )
-                        list.Add(item);
-
-                    if (recurse && item is Container)
-                        RecurseFindItemsByType(item, type, recurse, list);
-                }
-            }
+            var list = CoreFindItems(this, it => MatchesType(it, type), recurse, actor, enforceOwnership, out _);
+            return list.ToArray();
         }
 
-        public Item[] FindItemsByType(Type[] types)
+        // New: with ownership filtering + filtered count
+        public Item[] FindItemsByType(Type type, bool recurse, PlayerMobile? actor, bool enforceOwnership, out int filtered)
         {
-            return FindItemsByType(types, true);
+            var list = CoreFindItems(this, it => MatchesType(it, type), recurse, actor, enforceOwnership, out filtered);
+            return list.ToArray();
         }
+
+        // ===================== Non-Generic FindItemsByType (Type[]) =====================
+        // Legacy: unchanged behavior
+        public Item[] FindItemsByType(Type[] types) => FindItemsByType(types, true);
 
         public Item[] FindItemsByType(Type[] types, bool recurse)
         {
-            if (m_FindItemsList.Count > 0)
-                m_FindItemsList.Clear();
-
-            RecurseFindItemsByType(this, types, recurse, m_FindItemsList);
-
-            return m_FindItemsList.ToArray();
+            var list = CoreFindItems(this, it => MatchesAnyType(it, types), recurse, actor: null, enforceOwnership: false, out _);
+            return list.ToArray();
         }
 
-        private static void RecurseFindItemsByType(Item current, Type[] types, bool recurse, List<Item> list)
+        // New
+        public Item[] FindItemsByType(Type[] types, bool recurse, PlayerMobile actor, bool enforceOwnership)
         {
-            if (current != null && current.Items.Count > 0)
-            {
-                List<Item> items = current.Items;
-
-                for (int i = 0; i < items.Count; ++i)
-                {
-                    Item item = items[i];
-
-                    if (InTypeList(item, types))
-                        list.Add(item);
-
-                    if (recurse && item is Container)
-                        RecurseFindItemsByType(item, types, recurse, list);
-                }
-            }
+            var list = CoreFindItems(this, it => MatchesAnyType(it, types), recurse, actor, enforceOwnership, out _);
+            return list.ToArray();
         }
 
-        public Item FindItemByType(Type type)
+        public Item[] FindItemsByType(Type[] types, bool recurse, PlayerMobile? actor, bool enforceOwnership, out int filtered)
         {
-            return FindItemByType(type, true);
+            var list = CoreFindItems(this, it => MatchesAnyType(it, types), recurse, actor, enforceOwnership, out filtered);
+            return list.ToArray();
         }
 
-        public Item FindItemByType(Type type, bool recurse)
+        // ===================== Non-Generic FindItemByType (single) =====================
+        // Type
+        public Item? FindItemByType(Type type) => FindItemByType(type, true);
+
+        public Item? FindItemByType(Type type, bool recurse)
         {
-            return RecurseFindItemByType(this, type, recurse);
-        }
-
-        private static Item RecurseFindItemByType(Item current, Type type, bool recurse)
-        {
-            if (type != null && current != null && current.Items.Count > 0)
-            {
-                List<Item> list = current.Items;
-
-                for (int i = 0; i < list.Count; ++i)
-                {
-                    Item item = list[i];
-
-                    if (type.IsAssignableFrom(item.GetType()))
-                    {
-                        return item;
-                    }
-                    else if (recurse && item is Container)
-                    {
-                        Item check = RecurseFindItemByType(item, type, recurse);
-
-                        if (check != null)
-                            return check;
-                    }
-                }
-            }
-
+            foreach (var it in EnumerateItems(this, recurse))
+                if (MatchesType(it, type))
+                    return it;
             return null;
         }
 
-        public Item FindItemByType(Type[] types)
+        public Item? FindItemByType(Type type, bool recurse, PlayerMobile actor, bool enforceOwnership)
         {
-            return FindItemByType(types, true);
-        }
-
-        public Item FindItemByType(Type[] types, bool recurse)
-        {
-            return RecurseFindItemByType(this, types, recurse);
-        }
-
-        private static Item RecurseFindItemByType(Item current, Type[] types, bool recurse)
-        {
-            if (current != null && current.Items.Count > 0)
+            foreach (var it in EnumerateItems(this, recurse))
             {
-                List<Item> list = current.Items;
+                if (!MatchesType(it, type))
+                    continue;
 
-                for (int i = 0; i < list.Count; ++i)
-                {
-                    Item item = list[i];
+                if (enforceOwnership && actor != null && !StartingLootMonitor.CanUse(actor, it))
+                    continue;
 
-                    if (InTypeList(item, types))
-                    {
-                        return item;
-                    }
-                    else if (recurse && item is Container)
-                    {
-                        Item check = RecurseFindItemByType(item, types, recurse);
-
-                        if (check != null)
-                            return check;
-                    }
-                }
+                return it;
             }
-
             return null;
         }
 
-        #endregion
+        // Type[]
+        public Item? FindItemByType(Type[] types) => FindItemByType(types, true);
 
-        #region Generic FindItem[s] by Type
-        public List<T> FindItemsByType<T>() where T : Item
+        public Item? FindItemByType(Type[] types, bool recurse)
         {
-            return FindItemsByType<T>(true, null);
+            foreach (var it in EnumerateItems(this, recurse))
+                if (MatchesAnyType(it, types))
+                    return it;
+            return null;
         }
 
-        public List<T> FindItemsByType<T>(bool recurse) where T : Item
+        public Item? FindItemByType(Type[] types, bool recurse, PlayerMobile actor, bool enforceOwnership)
         {
-            return FindItemsByType<T>(recurse, null);
+            foreach (var it in EnumerateItems(this, recurse))
+            {
+                if (!MatchesAnyType(it, types))
+                    continue;
+
+                if (enforceOwnership && actor != null && !StartingLootMonitor.CanUse(actor, it))
+                    continue;
+
+                return it;
+            }
+            return null;
         }
 
-        public List<T> FindItemsByType<T>(Predicate<T> predicate) where T : Item
+        // ===================== Generic FindItemsByType<T> =====================
+        public List<T> FindItemsByType<T>() where T : Item => FindItemsByType<T>(true, null);
+
+        public List<T> FindItemsByType<T>(bool recurse) where T : Item => FindItemsByType<T>(recurse, null);
+
+        public List<T> FindItemsByType<T>(Predicate<T>? predicate) where T : Item => FindItemsByType<T>(true, predicate);
+
+        public List<T> FindItemsByType<T>(bool recurse, Predicate<T>? predicate) where T : Item
         {
-            return FindItemsByType<T>(true, predicate);
-        }
+            var t = typeof(T);
+            var list = new List<T>();
+            foreach (var it in EnumerateItems(this, recurse))
+            {
+                if (!t.IsAssignableFrom(it.GetType()))
+                    continue;
 
-        public List<T> FindItemsByType<T>(bool recurse, Predicate<T> predicate) where T : Item
-        {
-            if (m_FindItemsList.Count > 0)
-                m_FindItemsList.Clear();
-
-            List<T> list = new List<T>();
-
-            RecurseFindItemsByType<T>(this, recurse, list, predicate);
-
+                var typed = (T)it;
+                if (predicate == null || predicate(typed))
+                    list.Add(typed);
+            }
             return list;
         }
 
-        private static void RecurseFindItemsByType<T>(Item current, bool recurse, List<T> list, Predicate<T> predicate) where T : Item
+        // New: Generic with ownership filtering
+        public List<T> FindItemsByType<T>(bool recurse, Predicate<T>? predicate, PlayerMobile actor, bool enforceOwnership) where T : Item
         {
-            if (current != null && current.Items.Count > 0)
+            var t = typeof(T);
+            var list = new List<T>();
+            foreach (var it in EnumerateItems(this, recurse))
             {
-                List<Item> items = current.Items;
+                if (!t.IsAssignableFrom(it.GetType()))
+                    continue;
 
-                for (int i = 0; i < items.Count; ++i)
-                {
-                    Item item = items[i];
+                if (enforceOwnership && actor != null && !StartingLootMonitor.CanUse(actor, it))
+                    continue;
 
-                    if (typeof(T).IsAssignableFrom(item.GetType()))
-                    {
-                        T typedItem = (T)item;
-
-                        if (predicate == null || predicate(typedItem))
-                            list.Add(typedItem);
-                    }
-
-                    if (recurse && item is Container)
-                        RecurseFindItemsByType<T>(item, recurse, list, predicate);
-                }
+                var typed = (T)it;
+                if (predicate == null || predicate(typed))
+                    list.Add(typed);
             }
+            return list;
         }
 
-        public T FindItemByType<T>() where T : Item
-        {
-            return FindItemByType<T>(true);
-        }
+        // ===================== Generic FindItemByType<T> (single) =====================
+        public T? FindItemByType<T>() where T : Item => FindItemByType<T>(true, null);
 
+        public T? FindItemByType<T>(bool recurse) where T : Item => FindItemByType<T>(recurse, null);
 
-        public T FindItemByType<T>(Predicate<T> predicate) where T : Item
-        {
-            return FindItemByType<T>(true, predicate);
-        }
+        public T? FindItemByType<T>(Predicate<T>? predicate) where T : Item => FindItemByType<T>(true, predicate);
 
-        public T FindItemByType<T>(bool recurse) where T : Item
+        public T? FindItemByType<T>(bool recurse, Predicate<T>? predicate) where T : Item
         {
-            return FindItemByType<T>(recurse, null);
-        }
-
-        public T FindItemByType<T>(bool recurse, Predicate<T> predicate) where T : Item
-        {
-            return RecurseFindItemByType<T>(this, recurse, predicate);
-        }
-
-        private static T RecurseFindItemByType<T>(Item current, bool recurse, Predicate<T> predicate) where T : Item
-        {
-            if (current != null && current.Items.Count > 0)
+            var t = typeof(T);
+            foreach (var it in EnumerateItems(this, recurse))
             {
-                List<Item> list = current.Items;
+                if (!t.IsAssignableFrom(it.GetType()))
+                    continue;
 
-                for (int i = 0; i < list.Count; ++i)
-                {
-                    Item item = list[i];
-
-                    if (typeof(T).IsAssignableFrom(item.GetType()))
-                    {
-                        T typedItem = (T)item;
-
-                        if (predicate == null || predicate(typedItem))
-                            return typedItem;
-                    }
-                    else if (recurse && item is Container)
-                    {
-                        T check = RecurseFindItemByType<T>(item, recurse, predicate);
-
-                        if (check != null)
-                            return check;
-                    }
-                }
+                var typed = (T)it;
+                if (predicate == null || predicate(typed))
+                    return typed;
             }
-
             return null;
         }
-        #endregion
+
+        // New: Generic single with ownership filtering
+        public T? FindItemByType<T>(bool recurse, Predicate<T>? predicate, PlayerMobile actor, bool enforceOwnership) where T : Item
+        {
+            var t = typeof(T);
+            foreach (var it in EnumerateItems(this, recurse))
+            {
+                if (!t.IsAssignableFrom(it.GetType()))
+                    continue;
+
+                if (enforceOwnership && actor != null && !StartingLootMonitor.CanUse(actor, it))
+                    continue;
+
+                var typed = (T)it;
+                if (predicate == null || predicate(typed))
+                    return typed;
+            }
+            return null;
+        }
+#nullable disable
+
 
         private static bool InTypeList(Item item, Type[] types)
         {
@@ -1877,14 +1431,19 @@ namespace Server.Items
 
         public Container(Serial serial)
             : base(serial)
-        {   // Adam: no longer forced for all containers. See Deserialize
-            //m_Freeze = new FreezeTimer(this);
-            //m_Freeze.Start();
+        {
         }
 
         public virtual bool OnStackAttempt(Mobile from, Item stack, Item dropped)
         {
             if (!CheckHold(from, dropped, true, false))
+                return false;
+
+            // Stacking may not add an item object, but it can add virtual slots (e.g., potions cost Amount).
+            // Enforce the slot delta BEFORE committing the merge, exactly as TryDropItem does.
+            int deltaSlots = Item.GetStackingContainerSlotDelta(stack, dropped);
+
+            if (deltaSlots > 0 && !CheckHoldStackDelta(from, dropped, true, deltaSlots))
                 return false;
 
             return stack.StackWith(from, dropped);
@@ -1899,6 +1458,15 @@ namespace Server.Items
                     return false;
                 }
 
+                // placed beside a stack it may not join (starter binding, merchant provenance): say why
+                if (!dropped.Deleted && dropped.Parent == this)
+                    foreach (Item item in Items)
+                        if (item != dropped && Item.GetStackBlock(item, dropped) != StackBlock.None)
+                        {
+                            Item.NotifyStackBlocked(from, item, dropped);
+                            break;
+                        }
+
                 from.SendSound(GetDroppedSound(dropped), GetWorldLocation());
 
                 return true;
@@ -1908,42 +1476,206 @@ namespace Server.Items
                 return false;
             }
         }
-        /*public bool CanStackWith(Mobile from, Item dropped)
-        {
-            ArrayList list = this.Items;
-            for (int i = 0; i < list.Count; ++i)
-            {
-                Item item = (Item)list[i];
-
-                if (!(item is Container) && item.CanStackWith(from, dropped))
-                    return true;
-            }
-
-            return false;
-        }*/
+        /// <summary>
+        /// Attempts to drop an item into this container.
+        /// 
+        /// IMPORTANT:
+        /// Container "item count" (TotalItems) reflects physical item objects only.
+        /// It does NOT reflect virtual slot usage introduced by stacking rules
+        /// (e.g., potions consuming slots equal to Amount).
+        ///
+        /// Stacking may not create a new item object, but it can increase the
+        /// container's virtual slot usage. Therefore, stacking operations must
+        /// enforce slot-capacity via GetContainerSlotCount / delta-slot checks,
+        /// rather than relying solely on TotalItems.
+        /// </summary>
         public virtual bool TryDropItem(Mobile from, Item dropped, bool sendFullMessage)
         {
-            if (!CheckHold(from, dropped, sendFullMessage, false)) // do one check ignoring item count, so we can check for stacked items
+            // First pass: ignore item-count limits so we can attempt stacking, but still enforce
+            // "hard" constraints (CanStore, weight, parent-chain rules, etc).
+            if (!CheckHold(from, dropped, sendFullMessage, checkItems: false))
                 return false;
 
-            List<Item> list = this.Items;
+            List<Item> list = Items;
 
             for (int i = 0; i < list.Count; ++i)
             {
-                Item item = (Item)list[i];
+                Item target = list[i];
 
-                if (!(item is Container) && item.StackWith(from, dropped, false))
-                    return true;
+                if (target is Container)
+                    continue;
+
+                // If this would stack, enforce virtual slot delta BEFORE committing the merge.
+                if (Item.StackableRule(target, dropped))
+                {
+                    int deltaSlots = Item.GetStackingContainerSlotDelta(target, dropped);
+
+                    // If stacking would increase virtual slot usage beyond capacity, reject (all-or-nothing).
+                    if (deltaSlots > 0 && !CheckHoldStackDelta(from, dropped, sendFullMessage, deltaSlots))
+                        return false;
+
+                    if (target.StackWith(from, dropped, false))
+                        return true;
+
+                    // If StackableRule said yes but StackWith failed (rare), keep scanning.
+                }
             }
 
-            if (!CheckHold(from, dropped, sendFullMessage)) // if there's nothing to stack with, now we check item count
+            // No stacking target: now enforce item-count limits normally.
+            if (!CheckHold(from, dropped, sendFullMessage))
                 return false;
 
             DropItem(dropped);
-
             return true;
         }
 
+        /// <summary>
+        /// Like CheckHold(..., checkItems:true) but for a stack-merge: the container will not gain a new
+        /// top-level item object; instead it gains "virtual slots" equal to deltaSlots.
+        /// Weight still increases by the dropped item's weight.
+        /// </summary>
+        protected virtual bool CheckHoldStackDelta(Mobile m, Item dropped, bool message, int deltaSlots)
+        {
+            // Treat virtual items as consuming no slots.
+            if (dropped.IsVirtualItem)
+                deltaSlots = 0;
+
+            // Enforce this container's MaxItems using virtual slot usage (not TotalItems).
+            int maxItems = MaxItems;
+
+            if (maxItems != 0)
+            {
+                int slotUsage = ComputeContainerSlotUsage();
+
+                if ((slotUsage + deltaSlots) > maxItems)
+                {
+                    if (message)
+                    {
+                        if (slotUsage > maxItems)
+                            SendOverCapacityMessage(m, slotUsage, maxItems);
+                        else
+                            SendFullItemsMessage(m, dropped);
+                    }
+
+                    return false;
+                }
+            }
+
+            // Enforce weight normally (stacking still adds weight).
+            int maxWeight = MaxWeight;
+
+            if (maxWeight != 0 && (TotalWeight + dropped.TotalWeight + dropped.PileWeight) > maxWeight)
+            {
+                if (message)
+                    SendFullWeightMessage(m, dropped);
+
+                return false;
+            }
+
+            // Propagate the same delta check up the containment chain.
+            object parent = Parent;
+
+            while (parent != null)
+            {
+                if (parent is Container c)
+                    return c.CheckHoldStackDelta(m, dropped, message, deltaSlots);
+
+                if (parent is Item parentItem)
+                    parent = parentItem.Parent;
+                else
+                    break;
+            }
+
+            return true;
+        }
+        // Compute current "virtual slot usage" for this container.
+        // This is intentionally computed on demand (baby step) to validate behavior before caching.
+        /// <summary>Slots in use, as CheckHold and TryDropItem count them (read-only).</summary>
+        public int SlotUsage { get { return ComputeContainerSlotUsage(); } }
+
+        /// <summary>
+        /// The item count as players see it, "109 items". TotalItems counts a potion stack once while capacity (CheckHold)
+        /// counts each potion, at any depth; when the two differ, and the container has an item limit, the slots in use
+        /// are appended: "109 items (125/125 slots)". Display only: nothing is counted or enforced differently.
+        /// </summary>
+        public string ItemCountText
+        {
+            get
+            {
+                int maxItems = MaxItems;    // 0: no item limit, so the slot count does not matter
+                int slots = maxItems == 0 ? TotalItems : SlotUsage;
+                return slots == TotalItems
+                    ? string.Format("{0} items", TotalItems)
+                    : string.Format("{0} items ({1}/{2} slots)", TotalItems, slots, maxItems);
+            }
+        }
+
+        protected int ComputeContainerSlotUsage()
+        {
+            int total = 0;
+
+            List<Item> list = Items;
+
+            for (int i = 0; i < list.Count; ++i)
+            {
+                Item it = list[i];
+
+                if (it == null || it.Deleted)
+                    continue;
+
+                // Virtual items do not consume slots.
+                if (it.IsVirtualItem)
+                    continue;
+
+                total += GetSlotCost(it);
+            }
+
+            return total;
+        }
+
+        /// <summary>
+        /// The slots 'item' occupies in any container that holds it, directly or at any depth:
+        /// its own cost (default 1; potions cost Amount), plus the legacy physical count of its
+        /// contents (TotalItems), plus the extra cost of slot-scaled items (potions) nested inside it.
+        /// For items that contain no potions this is exactly the legacy GetContainerSlotCount() + TotalItems,
+        /// so ordinary items, non-potion stacks, and TotalItems overrides (e.g., SeedBox) are unchanged.
+        /// </summary>
+        public static int GetSlotCost(Item item)
+        {
+            if (item == null || item.Deleted || item.IsVirtualItem)
+                return 0;
+
+            return item.GetContainerSlotCount() + item.TotalItems + NestedSlotSurcharge(item);
+        }
+
+        // TotalItems counts each nested object as one slot. Add what nested slot-scaled items cost beyond that,
+        // so every potion consumes one slot at every ancestor level regardless of nesting depth.
+        private static int NestedSlotSurcharge(Item parent)
+        {
+            int extra = 0;
+
+            List<Item> list = parent.Items;
+
+            for (int i = 0; i < list.Count; ++i)
+            {
+                Item it = list[i];
+
+                if (it == null || it.Deleted || it.IsVirtualItem)
+                    continue;
+
+                extra += Math.Max(0, it.GetContainerSlotCount() - 1);
+
+                if (it.Items.Count > 0)
+                    extra += NestedSlotSurcharge(it);
+            }
+
+            return extra;
+        }
+
+        public virtual void SendOverCapacityMessage(Mobile to, int slotUsage, int maxItems)
+        {
+            to.SendMessage("That container is over capacity ({0} of {1} slots). Remove items before adding to or rearranging it.", slotUsage, maxItems);
+        }
         public virtual void Destroy()
         {
             Point3D loc = GetWorldLocation();
@@ -1964,7 +1696,7 @@ namespace Server.Items
         public void UpdateAllTotals()
         {
             // tell the container to update it's notion of what it has
-
+            UpdateTotals();
             object parent = this;
             while (parent != null)
             {
@@ -1980,15 +1712,56 @@ namespace Server.Items
                 }
             }
         }
+
+        #region Refresh Totals
+        private bool m_PendingRefresh;
+        private static readonly TimeSpan RefreshDelay = TimeSpan.FromMilliseconds(200);  // tune: 100-500ms
+
+        private void ScheduleRefresh()
+        {
+            if (!m_PendingRefresh)
+            {
+                m_PendingRefresh = true;
+                Timer.DelayCall(RefreshDelay, RefreshTotals);
+            }
+        }
+
+        private void RefreshTotals()
+        {
+            m_PendingRefresh = false;
+
+            if (Deleted || RootParent is not Mobile from || from.Deleted || from.NetState == null)
+                return;
+
+            UpdateAllTotals();
+        }
+        #endregion Refresh Totals
         public virtual bool PlayerOwned()
         {
+            Item item = this;
+            Mobile mobile = null;
+            if (this.RootParent != null && this.RootParent is Item)
+                item = this.RootParent as Item;
+            else if (this.RootParent != null && this.RootParent is Mobile)
+                mobile = this.RootParent as Mobile;
+
+            if (item != null)
+                if (BaseHouse.FindHouseAt(item) != null)
+                    return true;
+
+            if (mobile != null)
+                return true;
+
+            if (item != null)
+                if (BaseBoat.FindBoatAt(item) != null)
+                    return true;
+
             return false;
         }
 
         public virtual void DropOverflow(Item dropped, string logdata)
-        {   // the derived class BaseContainer, will call our recycling logic to archive these 
-            //  for 10 days. After that time, they are deleted.
-            // BaseContainer now calls Scripts\Engines\RecycleBin\RecycleBin.cs
+        {
+            Engines.RecycleBin.RecycleBin.Add(dropped, this, logdata);
         }
         private bool SpecialLoot(Item dropped)
         {
@@ -2009,6 +1782,8 @@ namespace Server.Items
                 if (Item.StackableRule(item, dropped))
                 {
                     item.LootType = (item.LootType != dropped.LootType ? LootType.Regular : item.LootType);
+                    if (dropped.StoreBought)
+                        item.StoreBought = true;    // merchant provenance is sticky
                     item.Amount += dropped.Amount;
                     found = true;
                     break;
@@ -2028,41 +1803,93 @@ namespace Server.Items
                 DropItem(dropped);
             }
         }
+        private Memory OverflowMessageGiven = new Memory();
         public virtual void DropItem(Item dropped)
         {
             if (dropped == null)
                 return;
 
             #region DropOverflow
-            // 7/20/21, Adam: Certain functions call this directly bypassing the usual overload checks (weight/items)
-            //  GMs can do this with [dupeinbag, and I believe certain exploits can accomplish this as well.
-            //  We no longer will allow this. Each container now has an expiring RecycleBin. This container stores items that
-            //  would otherwise overload a container which leads to numerous problems, and in extreme cases: client disconnects, lag, etc.
-            //  Our RecycleBin stores these items on the internal map, and in the case of a legitimate player oversight, we can recover these items.
-            //  in the case of a GM goof-up, or an exploit overload exploit, the RecycleBin object will self-destruct after 10 days (all logged.)
-            bool rule1 = this.Items.Count >= this.MaxItems;                                         // overloading items
-            bool rule2 = this.MaxWeight > 0 && this.TotalWeight >= this.MaxWeight;                  // overloading weight
-            bool rule3 = (this.Movable == false && !PlayerOwned()) || this.Map == Map.Internal;     // event containers like ransom chests, treasure chests
-            bool rule4 = SpecialLoot(dropped);                                                      // make sure players keep their special loot
-            if ((rule1 || rule2) && !rule3 && !rule4)
+            // 7/20/21, Adam:
+            // Certain functions can call this path directly, bypassing the usual container overload checks
+            // (weight and item count). GMs can do this with [dupeinbag], and certain exploits have historically
+            // been able to achieve the same result.
+            //
+            // This is no longer allowed. Each container now has an associated, expiring RecycleBin.
+            // Items that would otherwise overload a container are diverted into this RecycleBin instead.
+            // Unchecked overloads can lead to serious problems, including client disconnects, lag, and
+            // general instability.
+            //
+            // RecycleBin contents are stored on the internal map. In the case of legitimate player mistakes,
+            // these items can be recovered. In the case of GM error or exploit-driven overloads, the
+            // RecycleBin will automatically self-destruct after 10 days. All activity is logged.
+
+            // Inclusion rules: conditions that qualify an item for recycle-bin handling
+            bool incl1 = this.MaxItems > 0 && this.Items.Count >= this.MaxItems;   // item count overflow (0: no item limit, as in CheckHold)
+            bool incl2 = this.MaxWeight > 0 && this.TotalWeight >= this.MaxWeight; // weight overflow
+
+            // Exclusion rules: conditions that disqualify an item from recycle-bin handling
+            bool excl1 = (this.Movable == false && !PlayerOwned())                 // system / event containers
+                         || this.Map == Map.Internal;
+
+            bool excl2 = SpecialLoot(dropped);                                     // preserve special loot
+            bool excl3 = this is RecycleBin;                                       // recycle bins are terminal
+
+            bool shouldRecycle = (incl1 || incl2) && !(excl1 || excl2 || excl3);
+
+            if (shouldRecycle)
             {
-                // log it
+                #region log it
                 string addtl = "";
-                if (rule1 == true) addtl += "(items)";
-                if (rule2 == true) addtl += "(weight)";
-                string text = string.Format(string.Format("{1} Trying to drop: {0} into container: {2}", dropped, addtl, this.Serial));
+                if (incl1) addtl += "(items)";
+                if (incl2) addtl += "(weight)";
+
+                Mobile root = this.RootParent as Mobile;
+
+                string actorText;
+                string guidText;
+
+                if (root != null)
+                {
+                    actorText = root.ToString();
+                    guidText = string.Format(" GUID:{0}", root.AcctGUID);
+                }
+                else
+                {
+                    actorText = "Unknown";
+                    guidText = "";
+                }
+
+                string text = string.Format(
+                    "{0}{1} Trying to drop: {2} into container: {3} error: {4}",
+                    actorText,
+                    guidText,
+                    dropped,
+                    this,
+                    addtl
+                );
+                #endregion log it
 
                 // save it in a safe 'recoverable' place
                 // see Scripts\Engines\RecycleBin\RecycleBin.cs
                 DropOverflow(dropped, text);
 
-                // tell the owner what happened
-                if (this.RootParent != null && this.RootParent is Mobile)
-                    (this.RootParent as Mobile).SendMessage("Your container overflow items have been archived.");
+                // messaging, anti-spam
+                if (OverflowMessageGiven.Recall("overflow") == null)
+                {
+                    OverflowMessageGiven.Remember("overflow", 4);
+                    // tell the owner what happened
+                    if (this.RootParent != null && this.RootParent is Mobile m && m.Player)
+                        m.SendMessage("Your container overflow items have been archived.");
 
-                // tell staff what's going on
-                Point3D location = this.GetWorldLocation();
-                LogHelper.BroadcastMessage(AccessLevel.GameMaster, 52, string.Format("Possible container overflow exploit at: {0}", location));
+                    // tell staff what's going on, but don't spam
+                    Point3D location = this.GetWorldLocation();
+                    LogHelper.Broadcaster.BroadcastMessage(
+                        AccessLevel.GameMaster,
+                        52,
+                        string.Format("Possible container overflow exploit at: {0}", location),
+                        spamDelay: TimeSpan.FromMinutes(5));
+                }
 
                 // one of the problems with these lower level functions is that they don't properly account for items added and removed.
                 //  therefore we climb back up the container stack (to the parent mobile) and update totals.
@@ -2154,7 +1981,14 @@ namespace Server.Items
                 LabelTo(from, "(decorative)");
 
             if (CheckContentDisplay(from))
-                LabelTo(from, "({0} items, {1} stones)", TotalItems, TotalWeight);
+            {
+
+                if (from.AccessLevel >= AccessLevel.GameMaster)
+                    LabelTo(from, $"({ItemCountText}, {TotalWeight} stones, {TotalGold}) gold");
+                else
+                    LabelTo(from, $"({ItemCountText}, {TotalWeight} stones)");
+
+            }
         }
 
         private List<Mobile> m_Openers;
@@ -2241,7 +2075,13 @@ namespace Server.Items
             base.GetProperties(list);
 
             if (DisplaysContent)//CheckContentDisplay( from ) )
-                list.Add(1050044, "{0}\t{1}", TotalItems, TotalWeight);
+            {
+                string items = ItemCountText;
+                if (items == string.Format("{0} items", TotalItems))
+                    list.Add(1050044, "{0}\t{1}", TotalItems, TotalWeight);  // ~1_COUNT~ items, ~2_WEIGHT~ stones
+                else
+                    list.Add(string.Format("{0}, {1} stones", items, TotalWeight));    // the slots in use differ from the count
+            }
         }
 
         public override void OnDoubleClick(Mobile from)

@@ -4,7 +4,7 @@
  *   implementation          : (C) 2007-2023 Tara McGrew
  *   repository url          : https://foss.heptapod.net/zilf/zlr
  *   
- *   Angel Island UO Shard   : March 25, 2004
+ *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
@@ -19,12 +19,12 @@
  *
  ***************************************************************************/
 
+using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
+using System.Text;
 using System.Threading;
-using JetBrains.Annotations;
 using System.Threading.Tasks;
 
 // ReSharper disable once CheckNamespace
@@ -426,7 +426,7 @@ namespace ZLR.IFF
         {
             if (position + count > length)
                 count = (int)(length - position);
-            
+
             baseStream.Position = streamOffset + position;
             return baseStream.Read(buffer, offset, count);
         }

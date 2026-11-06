@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,13 +19,18 @@
  *
  ***************************************************************************/
 
-using System;
-
 namespace Server.Items
 {
     public abstract class BaseScales : Item, ICommodity
     {
-        public static bool Enabled { get { return (Core.RuleSets.AllShards || PublishInfo.PublishDate >= Core.PlagueOfDespair); } }
+        public static bool Enabled
+        {
+            get
+            {   // Tough to find info on it, but looks to have appeared in the AoS time frame
+                return (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.DragonScaleArmor) && PublishInfo.Publish >= 16);
+            }
+
+        }
 
         public override int LabelNumber { get { return 1053139; } } // dragon scales
 

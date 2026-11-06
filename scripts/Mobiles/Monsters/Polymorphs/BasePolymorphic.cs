@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -50,7 +50,7 @@ namespace Server.Mobiles
             }
             Tick(new object[] { this });
         }
-        private Timer m_config_timer = null;
+        private Timer? m_config_timer = null;
         [Constructable]
         public BasePolymorphic()
             : base(AIType.AI_Melee, FightMode.None, 10, 1, 0.25, 0.5)
@@ -176,22 +176,31 @@ namespace Server.Mobiles
         {
             Utility.CopyConstruction(typeof(GolemController), this);
             Utility.CopyStats(typeof(GolemController), this);
+            Title = null;   // clear "the controller" title
+            Hue = Utility.RandomSkinHue();  // restore a normal hue
             MyType = typeof(GolemController);
 
-            /* The following configure options are not supported for 'standard' Golem Controllers on, for example, Siege. 
-             * But since this is a custom mob we will allow it.
+            /*   We will override naturtal construction since these are champ mobs
+             *     "UsesHumanWeapons": false,
+             *     "UsesBandages": true,
+             *     "UsesPotions": true,
+             *     "CanRun": true,
+             *     "CanReveal": false
              */
-            BardImmune = true;
-            UsesHumanWeapons = false;
+            //BardImmune = true;
+            //UsesHumanWeapons = false;
             UsesBandages = true;
             UsesPotions = true;
             CanRun = true;
-            CanReveal = true;   // magic and smart
-            CrossHeals = true;  // classic Angel Island Golem Controllers
+            //CanReveal = true;   // magic and smart
+            //CrossHeals = true;  // classic Angel Island Golem Controllers
 
-            PackItem(new Bandage(Utility.RandomMinMax(VirtualArmor, VirtualArmor * 2)), lootType: LootType.UnStealable);
-            PackStrongPotions(6, 12);
-            PackItem(new Pouch(), lootType: LootType.UnStealable);
+            if (UsesBandages && !Utility.HasType(this, typeof(Bandage)))
+                PackItem(new Bandage(Utility.RandomMinMax(VirtualArmor, VirtualArmor * 2)), lootType: LootType.UnStealable);
+            if (UsesPotions && !Utility.HasType(this, typeof(BasePotion)))
+                PackStrongPotions(6, 12);
+            if (true /*this really needs to be an ability*/ && !Utility.HasType(this, typeof(Pouch)))
+                PackItem(new Pouch(), lootType: LootType.UnStealable);
         }
         public virtual void InitMelee(int subLevel)
         {
@@ -309,7 +318,7 @@ namespace Server.Mobiles
                 case 1:
                     m_level = reader.ReadInt();
                     m_max_levels = reader.ReadInt();
-                    string temp = reader.ReadString();
+                    string? temp = reader.ReadString();
                     m_my_type = ScriptCompiler.FindTypeByName(temp);
                     goto case 0;
                 case 0:
@@ -320,123 +329,39 @@ namespace Server.Mobiles
         {
             try
             {
-                //make sure cloths/weapons are newbied so they don't drop
-                Item[] items = new Item[19];
-                items[0] = this.FindItemOnLayer(Layer.Shoes);
-                items[1] = this.FindItemOnLayer(Layer.Pants);
-                items[2] = this.FindItemOnLayer(Layer.Shirt);
-                items[3] = this.FindItemOnLayer(Layer.Helm);
-                items[4] = this.FindItemOnLayer(Layer.Gloves);
-                items[5] = this.FindItemOnLayer(Layer.Neck);
-                items[6] = this.FindItemOnLayer(Layer.Waist);
-                items[7] = this.FindItemOnLayer(Layer.InnerTorso);
-                items[8] = this.FindItemOnLayer(Layer.MiddleTorso);
-                items[9] = this.FindItemOnLayer(Layer.Arms);
-                items[10] = this.FindItemOnLayer(Layer.Cloak);
-                items[11] = this.FindItemOnLayer(Layer.OuterTorso);
-                items[12] = this.FindItemOnLayer(Layer.OuterLegs);
-                items[13] = this.FindItemOnLayer(Layer.InnerLegs);
-                items[14] = this.FindItemOnLayer(Layer.Bracelet);
-                items[15] = this.FindItemOnLayer(Layer.Ring);
-                items[16] = this.FindItemOnLayer(Layer.Earrings);
-                items[17] = this.FindItemOnLayer(Layer.OneHanded);
-                items[18] = this.FindItemOnLayer(Layer.TwoHanded);
-                for (int i = 0; i < 19; i++)
-                {
-                    if (items[i] != null)
-                    {
-                        items[i].Hue = hue;
-                    }
-                }
+                foreach (Item item in Utility.GetLayerItems(this))
+                    item.Hue = hue;
             }
             catch (Exception exc)
             {
                 LogHelper.LogException(exc);
             }
-
         }
+
         public void RemoveHueOnLiftAllLayers()
         {
             try
             {
-                //make sure cloths/weapons are not movable so they stay equipped
-                Item[] items = new Item[19];
-                items[0] = this.FindItemOnLayer(Layer.Shoes);
-                items[1] = this.FindItemOnLayer(Layer.Pants);
-                items[2] = this.FindItemOnLayer(Layer.Shirt);
-                items[3] = this.FindItemOnLayer(Layer.Helm);
-                items[4] = this.FindItemOnLayer(Layer.Gloves);
-                items[5] = this.FindItemOnLayer(Layer.Neck);
-                items[6] = this.FindItemOnLayer(Layer.Waist);
-                items[7] = this.FindItemOnLayer(Layer.InnerTorso);
-                items[8] = this.FindItemOnLayer(Layer.MiddleTorso);
-                items[9] = this.FindItemOnLayer(Layer.Arms);
-                items[10] = this.FindItemOnLayer(Layer.Cloak);
-                items[11] = this.FindItemOnLayer(Layer.OuterTorso);
-                items[12] = this.FindItemOnLayer(Layer.OuterLegs);
-                items[13] = this.FindItemOnLayer(Layer.InnerLegs);
-                items[14] = this.FindItemOnLayer(Layer.Bracelet);
-                items[15] = this.FindItemOnLayer(Layer.Ring);
-                items[16] = this.FindItemOnLayer(Layer.Earrings);
-                items[17] = this.FindItemOnLayer(Layer.OneHanded);
-                items[18] = this.FindItemOnLayer(Layer.TwoHanded);
-                for (int i = 0; i < 19; i++)
-                {
-                    if (items[i] != null)
-                    {
-                        items[i].SetItemBool(Item.ItemBoolTable.RemoveHueOnLift, true);
-                    }
-                }
+                foreach (Item item in Utility.GetLayerItems(this))
+                    item.SetItemBool(Item.ItemBoolTable.RemoveHueOnLift, true);
             }
             catch (Exception exc)
             {
                 LogHelper.LogException(exc);
             }
-
         }
 
-        public static void DeNewbieLayers(Mobile src)
+        public void DeNewbieLayers(Mobile src)
         {
             try
             {
-                Item[] items = new Item[21];
-                items[0] = src.FindItemOnLayer(Layer.Shoes);
-                items[1] = src.FindItemOnLayer(Layer.Pants);
-                items[2] = src.FindItemOnLayer(Layer.Shirt);
-                items[3] = src.FindItemOnLayer(Layer.Helm);
-                items[4] = src.FindItemOnLayer(Layer.Gloves);
-                items[5] = src.FindItemOnLayer(Layer.Neck);
-                items[6] = src.FindItemOnLayer(Layer.Waist);
-                items[7] = src.FindItemOnLayer(Layer.InnerTorso);
-                items[8] = src.FindItemOnLayer(Layer.MiddleTorso);
-                items[9] = src.FindItemOnLayer(Layer.Arms);
-                items[10] = src.FindItemOnLayer(Layer.Cloak);
-                items[11] = src.FindItemOnLayer(Layer.OuterTorso);
-                items[12] = src.FindItemOnLayer(Layer.OuterLegs);
-                items[13] = src.FindItemOnLayer(Layer.InnerLegs);
-                items[14] = src.FindItemOnLayer(Layer.Bracelet);
-                items[15] = src.FindItemOnLayer(Layer.Ring);
-                items[16] = src.FindItemOnLayer(Layer.Earrings);
-                items[17] = src.FindItemOnLayer(Layer.OneHanded);
-                items[18] = src.FindItemOnLayer(Layer.TwoHanded);
-                items[19] = src.FindItemOnLayer(Layer.Hair);
-                items[20] = src.FindItemOnLayer(Layer.FacialHair);
-                for (int i = 0; i < items.Length; i++)
-                {   // No spellbooks (no runebools though - too personal)
-                    if (items[i] != null && items[i] is Runebook == false && items[i] is Spellbook == false)
-                    {
-                        items[i].LootType = LootType.Regular;
-                    }
-                }
+                foreach (Item item in Utility.GetLayerItems(this))
+                    item.LootType = LootType.Regular;
             }
             catch (Exception exc)
             {
                 Diagnostics.LogHelper.LogException(exc);
-                System.Console.WriteLine("Send to Zen please: ");
-                System.Console.WriteLine("Exception caught in Spawner.CopyLayers: " + exc.Message);
-                System.Console.WriteLine(exc.StackTrace);
             }
-
         }
     }
 }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -78,14 +78,14 @@ namespace Server.Diagnostics
             }
         }
 
-        public static PacketSendProfile Acquire(Type type)
+        public static PacketSendProfile? Acquire(Type type)
         {
             if (!Core.Profiling)
             {
                 return null;
             }
 
-            PacketSendProfile prof;
+            PacketSendProfile? prof;
 
             if (!_profiles.TryGetValue(type, out prof))
             {
@@ -113,7 +113,7 @@ namespace Server.Diagnostics
         }
 
         public PacketSendProfile(Type type)
-            : base(type.FullName)
+            : base(type.FullName!) // profiled packet types are concrete classes
         {
         }
 
@@ -137,14 +137,14 @@ namespace Server.Diagnostics
             }
         }
 
-        public static PacketReceiveProfile Acquire(int packetId)
+        public static PacketReceiveProfile? Acquire(int packetId)
         {
             if (!Core.Profiling)
             {
                 return null;
             }
 
-            PacketReceiveProfile prof;
+            PacketReceiveProfile? prof;
 
             if (!_profiles.TryGetValue(packetId, out prof))
             {

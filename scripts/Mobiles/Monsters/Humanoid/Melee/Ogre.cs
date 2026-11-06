@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -74,49 +74,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020214224839/uo.stratics.com/hunters/ogre.shtml
+            // 50 to 150 Gold, Potions, Arrows, Gems, Weapon Carried, 2 Raw Ribs (carved)
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(60, 90);
-                PackItem(new Club());
+                PackGold(50, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020214224839/uo.stratics.com/hunters/ogre.shtml
-                    // 50 to 150 Gold, Potions, Arrows, Gems, Weapon Carried, 2 Raw Ribs (carved)
+                PackPotion();
+                PackItem(new Arrow(Utility.RandomMinMax(1, 3)));
+                PackGem(1, .9);
+                PackGem(1, .05);
 
-                    if (Spawning)
-                    {
-                        PackGold(50, 150);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackItem(new Arrow(Utility.RandomMinMax(1, 3)));
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-
-                        // stratics says "Weapon Carried", I think they mean a club as the ogre doesn't carry a weapon
-                        PackItem(new Club());
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackItem(new Club());
-                    }
-                    else
-                    {
-                        PackItem(new Arrow());
-                    }
-
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Potions);
-                    AddLoot(LootPack.Gems);
-                }
+                // stratics says "Weapon Carried", I think they mean a club as the ogre doesn't carry a weapon
+                PackItem(new Club());
             }
         }
 

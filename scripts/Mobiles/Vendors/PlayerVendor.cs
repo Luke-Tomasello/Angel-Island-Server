@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,13 @@
 
 /* Scripts/Mobiles/Vendors/PlayerVendor.cs
  * CHANGELOG
+ *  10/15/2026, Adam (RefreshDefaultPrices)
+ *      Staff vendors: synchronize StaticDeed listings in place (price and description from GetDefaultPrice and
+ *      GetDefaultDescription) instead of removing and re-adding every house deed. Classic house deeds are no longer
+ *      touched (they were being relisted at the 999 default). A StaticDeed whose blueprint is missing (PriceError)
+ *      is logged and deleted. SyncStaticDeedListings performs one synchronization run and always writes it to
+ *      HousingVendorSync.log: a header naming the source, each old -> new price change, full details of each invalid
+ *      deed before deletion, and a summary (vendors scanned, static deeds examined, repriced, invalid deleted).
  *  8/20/2023, Adam
  *      1. You can no longer use commission vendors as free storage
  *          You can store at most 20 items in a container(s)
@@ -191,7 +198,7 @@ namespace Server.Mobiles
 
             protected override void OnTarget(Mobile from, object targ)
             {
-                PlayerVendor pv = targ as PlayerVendor;
+                PlayerVendor? pv = targ as PlayerVendor;
 
                 if (pv == null)
                 {
@@ -220,7 +227,7 @@ namespace Server.Mobiles
 
             protected override void OnTarget(Mobile from, object targ)
             {
-                RentedVendor rv = targ as RentedVendor;
+                RentedVendor? rv = targ as RentedVendor;
 
                 if (rv == null)
                 {
@@ -251,7 +258,7 @@ namespace Server.Mobiles
 
             protected override void OnTarget(Mobile from, object targ)
             {
-                PlayerVendor pv = targ as PlayerVendor;
+                PlayerVendor? pv = targ as PlayerVendor;
 
                 if (pv == null)
                 {
@@ -390,7 +397,7 @@ namespace Server.Mobiles
             if (RootParent is PlayerVendor)
             {
                 PlayerVendor vend = (PlayerVendor)RootParent;
-                VendorItem vi = (VendorItem)vend.SellItems[item];
+                VendorItem? vi = (VendorItem?)vend.SellItems[item];
 
                 //Pix: 9/24/04 - changed the following to NOT use the localized string
                 // so that we don't get the <B>...</B> tags with some client versions.
@@ -512,11 +519,11 @@ namespace Server.Mobiles
 
         public void UpdateClothes(object obj)
         {
-            PlayerVendor m = obj as PlayerVendor;
+            PlayerVendor? m = obj as PlayerVendor;
 
             if (m != null)
             {
-                Item[] items = new Item[1];
+                Item?[] items = new Item?[1];
                 items[0] = m.FindItemOnLayer(Layer.Shoes);
 
                 if (items[0] != null && items[0] is BaseClothing)
@@ -553,7 +560,7 @@ namespace Server.Mobiles
             writer.Write(list.Count);
             for (int i = 0; i < list.Count; i++)
             {
-                VendorItem vi = (VendorItem)list[i];
+                VendorItem? vi = (VendorItem?)list[i];
                 writer.Write(vi.Item);
                 writer.Write(vi.Price);
                 writer.Write(vi.Description);
@@ -594,9 +601,9 @@ namespace Server.Mobiles
                         m_SellItems = new Hashtable();
                         for (int i = 0; i < count; i++)
                         {
-                            Item item = reader.ReadItem();
+                            Item? item = reader.ReadItem();
                             int p = reader.ReadInt();
-                            string d = reader.ReadString();
+                            string? d = reader.ReadString();
 
                             if (item != null && !item.Deleted)
                                 m_SellItems[item] = new VendorItem(item, p, d);
@@ -678,8 +685,14 @@ namespace Server.Mobiles
         [CommandProperty(AccessLevel.GameMaster)]
         public Mobile Owner
         {
-            get { return m_Owner; }
-            set { m_Owner = value; }
+            get => m_Owner;
+            set
+            {
+                m_Owner = value;
+
+                // Estate ownership: this vendor “belongs to” the player’s GUID.
+                base.OwnerGUID = value != null ? value.AcctGUID : 0;
+            }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -803,7 +816,7 @@ namespace Server.Mobiles
             {
                 Hashtable newsellitems = new Hashtable();
 
-                Server.Diagnostics.LogHelper logger = null;
+                Server.Diagnostics.LogHelper? logger = null;
 
                 foreach (VendorItem vi in m_SellItems.Values)
                 {
@@ -825,7 +838,7 @@ namespace Server.Mobiles
 
                     if (vi.Item != null && vi.Item.Deleted == false)
                     {
-                        Item t = vi.Item;
+                        Item? t = vi.Item;
 
                         if (t == null)
                         {
@@ -906,7 +919,7 @@ namespace Server.Mobiles
             if (!base.OnBeforeDeath())
                 return false;
 
-            Item shoes = this.FindItemOnLayer(Layer.Shoes);
+            Item? shoes = this.FindItemOnLayer(Layer.Shoes);
 
             if (shoes is Sandals)
                 shoes.Hue = 0;
@@ -997,7 +1010,7 @@ namespace Server.Mobiles
             {
                 if (m_RestockMemory.ContainsKey(vi.Item))
                 {   // check to see if we are within the grace period
-                    VendorRestockItemMemory vim = m_RestockMemory[vi.Item] as VendorRestockItemMemory;
+                    VendorRestockItemMemory? vim = m_RestockMemory[vi.Item] as VendorRestockItemMemory;
                     if (vim == null) return false;
                     if (DateTime.UtcNow > vim.GracePeriod)
                     {   // reset graceperiod
@@ -1050,7 +1063,7 @@ namespace Server.Mobiles
 
         private bool CanBeVendorItem(Item item)
         {
-            Item parent = item.Parent as Item;
+            Item? parent = item.Parent as Item;
 
             if (parent == this.Backpack)
                 return true;
@@ -1074,27 +1087,117 @@ namespace Server.Mobiles
                 SetVendorItem(item, GetDefaultPrice(item), GetDefaultDescription(item));
         }
         public int RefreshDefaultPrices()
+        {   // single-vendor synchronization run (PatchV144, PatchV176)
+            return SyncStaticDeedListings(string.Format("RefreshDefaultPrices, vendor {0}", Serial),
+                new PlayerVendor[] { this }, out _, out _, out _);
+        }
+        /// <summary>
+        /// One synchronization run of the StaticDeed listings of staff-owned player vendors (see RefreshDefaultPrices).
+        /// Always writes a run to HousingVendorSync.log: a header naming the source, each change, full details of each
+        ///  invalid (PriceError) deed before it is deleted, and a summary, even when nothing needed changing.
+        /// Returns the number of listings repriced. Shared by [RepriceHousingVendors, [PreLaunch/world wipe, and patches.
+        /// </summary>
+        public static int SyncStaticDeedListings(string source, IEnumerable<PlayerVendor> vendors,
+            out int vendorsScanned, out int deedsExamined, out int invalidDeleted)
         {
-            if (!IsStaffOwned || Backpack == null)
-                return -1;
+            int repriced = 0;
+            vendorsScanned = deedsExamined = invalidDeleted = 0;
 
-            Item[] deeds = Backpack.FindItemsByType(typeof(Multis.Deeds.HouseDeed), recurse: false);
+            LogHelper logger = new LogHelper("HousingVendorSync.log", false);
 
-            List<Multis.Deeds.HouseDeed> list = new();
-            foreach (Item item in deeds)
-                if (item is Multis.Deeds.HouseDeed deed)
-                    list.Add(deed);
-
-            foreach (Multis.Deeds.HouseDeed deed in list)
+            try
             {
-                Backpack.RemoveItem(deed);
-                Backpack.AddItem(deed);
+                logger.Log(LogType.Text, string.Format("Housing vendor synchronization ({0})", source));
+
+                foreach (PlayerVendor pv in vendors)
+                {
+                    if (pv == null || pv.Deleted || !pv.IsStaffOwned || pv.Backpack == null)
+                        continue;
+
+                    vendorsScanned++;
+                    repriced += pv.RefreshDefaultPrices(logger, out int examined, out int deleted);
+                    deedsExamined += examined;
+                    invalidDeleted += deleted;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Log(LogType.Text, string.Format("Synchronization stopped by an exception: {0}", ex.Message));
+                LogHelper.LogException(ex);
+            }
+            finally
+            {
+                logger.Log(LogType.Text, string.Format(
+                    "Summary: {0} vendors scanned, {1} static deeds examined, {2} deeds repriced, {3} invalid deeds deleted",
+                    vendorsScanned, deedsExamined, repriced, invalidDeleted));
+                logger.Finish();
             }
 
-            if (list.Count > 0)
-                Defrag();
+            return repriced;
+        }
+        /// <summary>
+        /// Staff vendors only: bring each StaticDeed listing (top level of the backpack) in line with its blueprint.
+        /// The listing's price and description are a snapshot taken when the deed was stocked (GetDefaultPrice,
+        ///  GetDefaultDescription), while StaticDeed.Price is read from the blueprint, so the snapshot can go stale.
+        /// The VendorItem is updated in place. Classic house deeds are never touched (their default price is 999).
+        /// A deed whose blueprint is missing (Price == PriceError) is logged and deleted.
+        /// Returns the number of listings repriced. Running it again finds nothing to change.
+        /// </summary>
+        private int RefreshDefaultPrices(LogHelper logger, out int examined, out int invalidDeleted)
+        {
+            examined = invalidDeleted = 0;
 
-            return list.Count;
+            if (!IsStaffOwned || Backpack == null)
+                return 0;
+
+            int repriced = 0;
+
+            List<StaticDeed> deeds = new();
+            foreach (Item item in Backpack.Items)
+                if (item is StaticDeed sd && !sd.Deleted)
+                    deeds.Add(sd);
+
+            foreach (StaticDeed deed in deeds)
+            {
+                examined++;
+                VendorItem vi = GetVendorItem(deed);
+
+                if (deed.Price == PriceError)
+                {   // no blueprint for this HouseID: never list it at the sentinel price
+                    logger.Log(LogType.Mobile, this, string.Format(
+                        "Deleted invalid static deed {0} '{1}' (HouseID '{2}', Price PriceError) at {3} ({4}); listed at {5}, description '{6}'",
+                        deed.Serial, deed.Name, deed.HouseID, deed.GetWorldLocation(), deed.Map,
+                        vi != null ? vi.Price.ToString() : "(none)", vi != null ? vi.Description : "(none)"));
+                    deed.Delete();
+                    invalidDeleted++;
+                    continue;
+                }
+
+                int price = GetDefaultPrice(deed);
+                string description = GetDefaultDescription(deed);
+
+                if (vi != null && vi.Price == price && vi.Description == description)
+                    continue;
+
+                logger.Log(LogType.Mobile, this, string.Format(
+                    "Repriced static deed {0} (HouseID '{1}') from {2} '{3}' to {4} '{5}'",
+                    deed.Serial, deed.HouseID,
+                    vi != null ? vi.Price.ToString() : "(unlisted)", vi != null ? vi.Description : "",
+                    price, description));
+
+                if (vi == null)
+                    SetVendorItem(deed, price, description);
+                else
+                {
+                    vi.Price = price;
+                    vi.Description = description;
+                    deed.InvalidateProperties();
+                }
+
+                repriced++;
+            }
+
+            return repriced;
         }
         public int GetDefaultPrice(Item item)
         {
@@ -1106,8 +1209,8 @@ namespace Server.Mobiles
                 if (item is Multis.StaticHousing.StaticDeed)
                 {
                     Multis.StaticHousing.StaticDeed sd = (Multis.StaticHousing.StaticDeed)item;
-                    if (Core.RuleSets.SiegeStyleRules())
-                        defaultPrice = RealEstateBroker.ComputeHousingMarkupForSiege(sd.Price);
+                    if (Core.RuleSets.SiegeRules())
+                        defaultPrice = SiegeHelper.ComputeHousingMarkupForSiege(sd.Price);
                     else
                         defaultPrice = sd.Price;
                 }
@@ -1214,7 +1317,7 @@ namespace Server.Mobiles
 
             return false;
         }
-        private bool ValidDropItem(Item item, ref string reason, Item target = null)
+        private bool ValidDropItem(Item item, ref string reason, Item? target = null)
         {
             const int max = 125;
 
@@ -1244,7 +1347,7 @@ namespace Server.Mobiles
                     else
                         try
                         {
-                            Container cont = v.Item as Container;
+                            Container? cont = v.Item as Container;
                             if (cont != null)
                             {
                                 if (cont.Items != null)
@@ -1306,7 +1409,7 @@ namespace Server.Mobiles
             if (IsOwner(from))
             {
                 string reason = string.Empty;
-                Memory.ObjectMemory om = null;
+                Memory.ObjectMemory? om = null;
 
                 if (item is Gold)
                 {
@@ -1324,7 +1427,7 @@ namespace Server.Mobiles
                 {
                     if (om.Context != null)
                     {
-                        VendorItem vi = om.Context as VendorItem;
+                        VendorItem? vi = om.Context as VendorItem;
                         SetVendorItem(item, vi.Price, vi.Description);
                         if (this.Backpack != null && this.Backpack.TryDropItem(from, item, false))
                             return true;
@@ -1359,7 +1462,7 @@ namespace Server.Mobiles
             if (IsOwner(from))
             {
                 string reason = string.Empty;
-                Memory.ObjectMemory om = null;
+                Memory.ObjectMemory? om = null;
 
                 if (!ValidDropItem(item, ref reason, target))
                 {
@@ -1370,7 +1473,7 @@ namespace Server.Mobiles
                 {
                     if (om.Context != null)
                     {
-                        VendorItem vi = om.Context as VendorItem;
+                        VendorItem? vi = om.Context as VendorItem;
                         SetVendorItem(item, vi.Price, vi.Description);
                         return true;
                     }
@@ -1447,7 +1550,7 @@ namespace Server.Mobiles
                     // if it's a not-for-sale container that holds something for sale
                     if (GetVendorItem(item) != null && GetVendorItem(item).Price == -1 && price > 0)
                     {
-                        VendorRestockItemMemory vim = m_RestockMemory[item] as VendorRestockItemMemory;
+                        VendorRestockItemMemory? vim = m_RestockMemory[item] as VendorRestockItemMemory;
                         if (vim != null) vim.GracePeriod = DateTime.MinValue; // clear the grace period
                         this.SayTo(from, "That container must be emptied before it can be moved.");
                         return false;
@@ -1457,7 +1560,7 @@ namespace Server.Mobiles
                         // if moving the item would kill the vendor, simply warn the user
                         if ((this.BankAccount + this.HoldGold) < (int)(price * Commission))
                         {
-                            VendorRestockItemMemory vim = m_RestockMemory[item] as VendorRestockItemMemory;
+                            VendorRestockItemMemory? vim = m_RestockMemory[item] as VendorRestockItemMemory;
                             if (vim != null) vim.GracePeriod = DateTime.MinValue; // clear the grace period
                             this.SayTo(from, "I am not holding enough gold to cover the restock charges.");
                             return false;
@@ -1488,6 +1591,19 @@ namespace Server.Mobiles
 
         public override void OnDoubleClick(Mobile from)
         {
+            if (Core.RuleSets.MortalisRules())
+            {
+                if (from != null)
+                {
+                    bool ownerMissing = (Owner == null || Owner.Deleted);
+
+                    if (ownerMissing && OwnerGUID != 0 && OwnerGUID == from.AcctGUID)
+                    {
+                        Owner = from;
+                        from.SendMessage("You have reclaimed ownership of this vendor.");
+                    }
+                }
+            }
 
             if (IsOwner(from))
             {
@@ -1509,7 +1625,7 @@ namespace Server.Mobiles
         {
             base.GetChildProperties(list, item);
 
-            VendorItem vi = (VendorItem)m_SellItems[item];
+            VendorItem? vi = (VendorItem?)m_SellItems[item];
 
             if (vi != null)
             {
@@ -1611,7 +1727,7 @@ namespace Server.Mobiles
 
         public virtual void Destroy(bool toBackpack)
         {
-            Item shoes = this.FindItemOnLayer(Layer.Shoes);
+            Item? shoes = this.FindItemOnLayer(Layer.Shoes);
 
             if (shoes is Sandals)
                 shoes.Hue = 0;
@@ -1624,12 +1740,12 @@ namespace Server.Mobiles
                 {
                     if ((toBackpack || House == null) && this.Map != Map.Internal) // Move to backpack
                     {
-                        Container cont = null;
+                        Container? cont = null;
 
                         bool MakeStrongbox = BaseHouse.FindHouseAt(this) != null && Owner != null;
                         if (MakeStrongbox)
                         {
-                            BaseHouse bh = BaseHouse.FindHouseAt(this);
+                            BaseHouse? bh = BaseHouse.FindHouseAt(this);
                             cont = new VendorRecoveryBox(Owner, bh, list.Count + 1 /*+1 for any gold held*/);
                             cont.Movable = false;
                             cont.IsLockedDown = false;
@@ -1812,7 +1928,7 @@ namespace Server.Mobiles
 
         public bool IsTownshipEnemy(Mobile from)
         {
-            Regions.TownshipRegion tsr = Regions.TownshipRegion.GetTownshipAt(this);
+            Regions.TownshipRegion? tsr = Regions.TownshipRegion.GetTownshipAt(this);
 
             return (tsr != null && tsr.TStone != null && tsr.TStone.IsEnemy(from) && !IsOwner(from));
         }
@@ -1895,7 +2011,7 @@ namespace Server.Mobiles
 
         #region Delete Timer
 
-        private Timer m_DeleteTimer;
+        private Timer? m_DeleteTimer;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public bool Deleting
@@ -1963,7 +2079,7 @@ namespace Server.Mobiles
         /// <param name="penalty"></param>
         public void ProcessAwards(int pay, ChargeReason reason)
         {   // only award points to shopkeepers (ones that have purchased the book)
-            PlayerMobile pm = (Owner as PlayerMobile);
+            PlayerMobile? pm = (Owner as PlayerMobile);
             if (pm == null || pm.Deleted)
                 return;
 
@@ -2012,7 +2128,7 @@ namespace Server.Mobiles
         /// </summary>
         /// <param name="pm"></param>
         /// <param name="award"></param>
-        private void ApplyAwards(PlayerMobile pm, double award)
+        private void ApplyAwards(PlayerMobile? pm, double award)
         {
             if (pm is PlayerMobile == false || pm.Shopkeeper == false)
                 return;
@@ -2150,7 +2266,7 @@ namespace Server.Mobiles
                 ArrayList Cleanup = new ArrayList();
                 foreach (DictionaryEntry de in m_Vendor.RestockMemory)
                 {
-                    VendorRestockItemMemory vim = de.Value as VendorRestockItemMemory;
+                    VendorRestockItemMemory? vim = de.Value as VendorRestockItemMemory;
                     if (vim != null)
                         if (DateTime.UtcNow > vim.GracePeriod)
                             Cleanup.Add(de.Key);
@@ -2176,12 +2292,12 @@ namespace Server.Mobiles
                 {
                     Item item = (Item)targeted;
 
-                    PlayerVendor vendor = item.RootParent as PlayerVendor;
+                    PlayerVendor? vendor = item.RootParent as PlayerVendor;
 
                     if (vendor == null)
                         return;
 
-                    VendorItem vi = (VendorItem)vendor.SellItems[item];
+                    VendorItem? vi = (VendorItem?)vendor.SellItems[item];
 
                     if (vi != null)
                     {
@@ -2343,7 +2459,7 @@ public class PlayerVendorStaffCommands
                 return;
             }
 
-            PlayerVendor pv = targeted as PlayerVendor;
+            PlayerVendor? pv = targeted as PlayerVendor;
 
             if (pv == null)
             {
@@ -2370,7 +2486,7 @@ public class PlayerVendorStaffCommands
                 return;
             }
 
-            PlayerVendor pv = targeted as PlayerVendor;
+            PlayerVendor? pv = targeted as PlayerVendor;
 
             if (pv == null)
             {

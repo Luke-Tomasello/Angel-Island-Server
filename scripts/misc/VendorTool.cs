@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -33,7 +33,6 @@ using Server.Gumps;
 using Server.Mobiles;
 using Server.Network;
 using Server.Targeting;
-using System;
 using System.Collections;
 
 namespace Server.Tools
@@ -138,7 +137,7 @@ namespace Server.Tools
                 AddHtml(254, 22, 110, 16, "<basefont color=#ffffff>Item</basefont>", false, false);
                 for (int i = page * 20; i < page * 20 + 20 && i < m_Vendor.SellItems.Count; i++)
                 {
-                    VendorItem vi = values[i] as VendorItem;
+                    VendorItem? vi = values[i] as VendorItem;
                     if (vi == null)
                         continue;
                     AddHtml(2, 44 + 22 * (i % 20), 200, 16, string.Format("<basefont color=#ffffff>{0}</basefont>", vi.Description), false, false);
@@ -213,7 +212,7 @@ namespace Server.Tools
                 try
                 {
                     ArrayList keys = new ArrayList(m_Vendor.SellItems.Keys);
-                    Item key = keys[(ri.ButtonID - 4) / 2] as Item;
+                    Item? key = keys[(ri.ButtonID - 4) / 2] as Item;
                     m_Vendor.SellItems.Remove(key);
                     key.Delete();
                     ns.Mobile.SendGump(new VendorToolGump(ns.Mobile, m_Vendor, m_Page));

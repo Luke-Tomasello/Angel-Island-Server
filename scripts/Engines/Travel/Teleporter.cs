@@ -1,11 +1,11 @@
-/***************************************************************************
+﻿/***************************************************************************
  *
  *   RunUO                   : May 1, 2002
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,15 @@
 
 /* scripts\Engines\Travel\Teleporter.cs
  * CHANGELOG:
+ *  10/18/26, Adam (confinement Stage 5)
+ *      TestCenterTeleporter: a misplaced entry portal (not outside Test Center, or not leading into it) or exit portal (not
+ *      in Test Center, or one that would put the original back in Test Center) is refused and reported
+ *      (TestCenterPolicy.ValidatePortal / ReportPortal) instead of being used. The misuse branches go through
+ *      TestCenterPolicy.Enforce (the same penalties; first confinement wins). Staff still travel as themselves.
+ *      FindOriginal pulled out of HandleExitTestCenter; the exit broadcast no longer dereferences a missing original.
+ *  10/17/26, Adam (confinement admission refactor R1)
+ *      BankThese overload that reports what it did (items banked, items refused) and can keep refused items with the
+ *      player instead of dropping them at their feet. The original BankThese (and BankEverything) call it unchanged.
  *  12/30/2023, Adam 
  *      Remove the ability for mounted players to pass through a 'no pets' teleporter.
  *      Note: I'm leaving it alone for now, but will auto-patch after the current events completes 1/6/2024 
@@ -69,45 +78,59 @@
  *		Merged in 1.0RC0 code.
  */
 
+using Scripts.Misc;
+using Server.Accounting;
+using Server.Commands;
 using Server.Engines;
+using Server.Engines.Seasons;
+using Server.Items.Triggers;
+using Server.Misc;
 using Server.Mobiles;
 using Server.Network;
 using Server.Spells;
-using Server.Items.Triggers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using static Server.Utility;
 
 namespace Server.Items
 {
     [Flags]
     public enum TeleporterFlags
     {
-        None = 0x00,
-        GhostsOnly = 0x01,
-        MortalsOnly = 0x02,
-        EmptyBackpack = 0x04,
-        DestinationOverride = 0x08,
-        KinOnly = 0x10,
-        Criminals = 0x20,
-        Pets = 0x40,
-        SparkleEffect = 0x80,
-        SourceEffect = 0x100,
-        DestEffect = 0x200,
-        Running = 0x400,
-        DropHolding = 0x800,
-        Creatures = 0x1000,
-        Sparkle = 0x2000,
-        SparkleHue = 0x4000,
-        UseDirectional = 0x8000,
-        TicketPasscode = 0x10000,
-        AllowHolidayPets = 0x20000,
-        EverythingToBank = 0x40000,
-        StablePets = 0x80000,
+        None = 0,
+
+        GhostsOnly = 1 << 0,
+        MortalsOnly = 1 << 1,
+        EmptyBackpack = 1 << 2,
+        DestinationOverride = 1 << 3,
+        KinOnly = 1 << 4,
+        Criminals = 1 << 5,
+        Pets = 1 << 6,
+        SparkleEffect = 1 << 7,
+        SourceEffect = 1 << 8,
+        DestEffect = 1 << 9,
+        Running = 1 << 10,
+        DropDragging = 1 << 11,
+        Creatures = 1 << 12,
+        Sparkle = 1 << 13,
+        SparkleHue = 1 << 14,
+        UseDirectional = 1 << 15,
+        TicketPasscode = 1 << 16,
+        AllowHolidayPets = 1 << 17,
+        EverythingToBank = 1 << 18,
+        StablePets = 1 << 19,
+        NoGhosts = 1 << 20
     }
 
     public partial class Teleporter : Item, ITriggerable
     {
+        public override Item Dupe(int amount)
+        {
+            Teleporter new_item = new Teleporter();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
         #region props
         private Point3D m_PointDest;
         private Point3D m_PointDest2;
@@ -120,12 +143,12 @@ namespace Server.Items
         private Map m_MapDest;
         private string m_DelayMessage;
         private int m_SoundID;
-        private Item m_Sparkle;
+        private Item? m_Sparkle;
         private int m_SparkleHue;
         private TimeSpan m_Delay;
-        private string m_PetMessage;
+        private string? m_PetMessage;
         private AccessLevel m_AccessLevel;
-        private string m_TicketPasscode;
+        private string? m_TicketPasscode;
         public override void OnMapChange()
         {   // you're my sparkle! Follow me wherever I should lead.
             base.OnMapChange();
@@ -146,9 +169,9 @@ namespace Server.Items
                 else
                 {
                     if (ValidSparkle())
-                        m_Sparkle.LabelTo(from, MapDest.ToString());
+                        m_Sparkle.LabelTo(from, (MapDest ?? this.Map).ToString());
                     else
-                        this.LabelTo(from, MapDest.ToString());
+                        this.LabelTo(from, (MapDest ?? this.Map).ToString());
 
                     return true;
                 }
@@ -195,37 +218,58 @@ namespace Server.Items
                 SetSpecialFlag(TeleporterFlags.Sparkle, value); InvalidateProperties();
             }
         }
-        private bool ValidSparkle() { return ValidItem(m_Sparkle); }
-        private bool ValidItem(Item item) { return (item != null && !item.Deleted); }
-        private bool InitializeSparkle(Item value)
+        private bool ValidSparkle()
         {
-            if (ValidItem(value))
-            {
-                if (m_Sparkle != null)
-                    m_Sparkle.Delete();
+            return ValidItem(m_Sparkle);
+        }
 
-                m_Sparkle = value;
-                m_SparkleHue = m_SparkleHue != 0 ? m_SparkleHue : value.Hue;
-                m_Sparkle.Hue = m_SparkleHue;
-                m_Sparkle.InformNeighbor = true;
-                if (this is EventTeleporter etb)
-                    m_Sparkle.Visible = etb.Running;
-                else
-                    m_Sparkle.Visible = true;
-                m_Sparkle.MoveToWorld(this.Location, this.Map);
-                SetSpecialFlag(TeleporterFlags.Sparkle, true);
-                SetSpecialFlag(TeleporterFlags.SparkleHue, m_SparkleHue != 0);
-            }
-            else
+        private bool ValidItem([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] Item? item)
+        {
+            return item != null && !item.Deleted;
+        }
+
+        private bool InitializeSparkle(Item? value)
+        {
+            // No valid sparkle provided: remove any existing sparkle and clear state.
+            if (!ValidItem(value))
             {
-                if (GetSpecialFlag(TeleporterFlags.Sparkle) && ValidSparkle())
+                if (ValidSparkle())
                 {
                     m_Sparkle.Delete();
                     m_Sparkle = null;
                 }
+
                 SetSpecialFlag(TeleporterFlags.Sparkle, false);
+                return false;
             }
-            return ValidSparkle();
+
+            // Replace any existing sparkle with the new one.
+            if (ValidSparkle() && m_Sparkle != value)
+                m_Sparkle.Delete();
+
+            m_Sparkle = value;
+
+            // Preserve an explicitly configured sparkle hue; otherwise adopt the item's current hue.
+            if (m_SparkleHue == 0)
+                m_SparkleHue = m_Sparkle.Hue;
+
+            m_Sparkle.Hue = m_SparkleHue;
+            m_Sparkle.Movable = false;          // sparkle is teleporter-owned and should not be movable
+            m_Sparkle.InformNeighbor = true;
+
+            // Event teleporters only show sparkle while running; normal teleporters always show it.
+            if (this is EventTeleporter etb)
+                m_Sparkle.Visible = etb.Running;
+            else
+                m_Sparkle.Visible = true;
+
+            // Keep the sparkle anchored to the teleporter.
+            m_Sparkle.MoveToWorld(this.Location, this.Map);
+
+            SetSpecialFlag(TeleporterFlags.Sparkle, true);
+            SetSpecialFlag(TeleporterFlags.SparkleHue, m_SparkleHue != 0);
+
+            return true;
         }
         [CommandProperty(AccessLevel.GameMaster)]
         public int SparkleHue
@@ -298,7 +342,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public string NoTeleportPetMessage
+        public string? NoTeleportPetMessage
         {
             get { return m_PetMessage; }
             set { m_PetMessage = value; InvalidateProperties(); }
@@ -463,6 +507,7 @@ namespace Server.Items
             m_PetMessage = null;
             m_TicketPasscode = null;
             m_AccessLevel = Server.AccessLevel.Player;
+            TravelObject = true;
         }
         // we override this so staff cannot change it.
         //  i.e., not a CommandProperty
@@ -527,7 +572,8 @@ namespace Server.Items
                 LabelTo(from, "(inactive)");
             }
         }
-        private void SendSparkles_Callback(object state)
+
+        protected void SendSparkles_Callback(object state)
         {
             Mobile from = (Mobile)state;
 
@@ -629,7 +675,7 @@ namespace Server.Items
                 {
                     m.SendMessage("Your bank is full.");
                     m.SendMessage("Free up some room and try again.");
-                    return ;
+                    return;
                 }
                 if (!BankEverything(pm))
                 {
@@ -667,7 +713,13 @@ namespace Server.Items
             if (GetSpecialFlag(TeleporterFlags.SourceEffect))
                 Effects.SendLocationEffect(m.Location, m.Map, 0x3728, 10, 10);
 
-            // actual teleport
+            // 6/21/2026, Adam: disabled in Move() - causes jerky teleporter usage.
+            //  Maybe keep if we can limit scope to only the affected teleporters, like the one in Prison Spirit Spawn
+            // Teleport with a brief post-move input lock.
+            // This prevents client movement packets already in flight from being
+            // applied at the old Z/geometry, which can cause landing at an incorrect Z
+            // or becoming stuck (a known RunUO timing quirk).
+            m.TeleportMoveLockUntil = DateTime.UtcNow + TimeSpan.FromMilliseconds(CoreAI.PostTeleportMoveLockMs);
             m.MoveToWorld(p, map);
 
             #region Kiting Mitigation
@@ -677,7 +729,7 @@ namespace Server.Items
             // now, if we are teleporting onto another teleporter that uses UseDirectional, we issue an OnMoveOver
             //  this is so that if the user then turns into the prescribed direction, they will be teleported
             {
-                Teleporter other = (Teleporter)Utility.FindOneItemAt(p, map, typeof(Teleporter));
+                Teleporter? other = (Teleporter?)Utility.FindOneItemAt(p, map, typeof(Teleporter));
                 if (other is not null && other.Directional == true)
                     other.OnMoveOver(m);
             }
@@ -685,7 +737,7 @@ namespace Server.Items
                 Effects.SendLocationEffect(m.Location, m.Map, 0x3728, 10, 10);
 
             if (m_SoundID > 0)
-                m.Send(new PlaySound(m_SoundID, m.Location));
+                m.Send(new Server.Network.PlaySound(m_SoundID, m.Location));
         }
         private bool AllowPetTravel(BaseCreature pet)
         {
@@ -706,7 +758,7 @@ namespace Server.Items
 
             if (from != null && CanTeleport(from))
                 return true;
-            
+
             return false;
         }
         public virtual void OnTrigger(Mobile from)
@@ -776,7 +828,13 @@ namespace Server.Items
 
                 if (m.Player)
                 {
-                    if (!GetSpecialFlag(TeleporterFlags.Criminals) && m.Criminal == true)
+                    PlayerMobile? pm = m as PlayerMobile;
+                    if (pm == null)
+                        return false;
+
+                    // NOTE: OSI relied on short criminal timers for travel denial.
+                    // Mortalis uses explicit travel restriction logic; Criminal is no longer sufficient.
+                    if (!GetSpecialFlag(TeleporterFlags.Criminals) && !pm.CanCriminalTravel == true)
                     {
                         if (IsGate)
                             m.SendLocalizedMessage(1005561, "", 0x22); // Thou'rt a criminal and cannot escape so easily.
@@ -793,6 +851,16 @@ namespace Server.Items
                             m.SendMessage("You are a criminal and may not use this.");
 
                         return false;
+                    }
+
+                    // clones can never leave the TestCenter map unless it's via a Test Center Teleporter
+                    if (pm.Clone && this is not TestCenterTeleporter)
+                    {
+                        if (MapDest != null && MapDest != Map.TestCenter)
+                        {
+                            m.SendMessage("You cannot travel there.");
+                            return false;
+                        }
                     }
 
                     if (m.AccessLevel < m_AccessLevel)
@@ -834,7 +902,8 @@ namespace Server.Items
                     }
 
                     // not while mounted
-                    if (!Pets && !StablePets && CheckMount(m))
+                    //  If staff, we already got a message
+                    if (!Pets && !StablePets && CheckMount(m) && m.AccessLevel == AccessLevel.Player)
                     {
                         m.SendMessage("You can't use this while mounted on your pet.");
                         return false;
@@ -858,7 +927,7 @@ namespace Server.Items
             {
                 int available = 125 - m.BankBox.TotalItems;
                 int equipment = Utility.GetEquippedItems(m).Count;
-                equipment += m.Holding == null ? 0 : 1; // account for items on the cursor
+                equipment += m.Dragging == null ? 0 : 1; // account for items on the cursor
                 int belongings = m.Backpack.GetDeepItems().Count;
 
                 bags = 0;
@@ -874,36 +943,49 @@ namespace Server.Items
 
                     return true;
                 }
-                    
+
             }
 
             return false;
         }
-        public static void DropEverything(Mobile m)
-        {   // drop all their crap (punitive! They were *sent* to prison.)
-            
-            // drop what they are holding
+        public static void ArchiveEverything(Mobile m)
+        {
+            // Archive all possessions into the bank.
+            // Items are collected into two bags (belongings + equipment) and
+            // dropped into the bank box. Any capacity issues are intentionally
+            // handled by the bank overflow / recycler system.
+
+            if (m == null || m.Deleted)
+                return;
+
+            // Drop what they are currently holding
             Utility.DropHolding(m);
 
-            Backpack belongings = new();
+            BankBox bank = m.BankBox;
+            if (bank == null)
+                return; // nothing we can do
+
+            // Collect backpack contents
+            Backpack belongings = new Backpack();
             foreach (Item item in Utility.GetBackpackItems(m))
             {
                 m.Backpack.RemoveItem(item);
                 belongings.AddItem(item);
             }
 
-            Backpack equipment = new();
+            // Collect equipped items
+            Backpack equipment = new Backpack();
             foreach (Item item in Utility.GetEquippedItems(m))
             {
                 m.RemoveItem(item);
                 equipment.AddItem(item);
             }
 
-            belongings.MoveToWorld(m.Location, m.Map);
-            equipment.MoveToWorld(m.Location, m.Map);
-
-            return;
+            // Archive into bank (overflow/recycler will handle excess)
+            bank.DropItem(belongings);
+            bank.DropItem(equipment);
         }
+
         public static bool BankEverything(Mobile m)
         {   // will the players bank hold all their crap?
             if (m.BankBox != null && m.Backpack != null)
@@ -911,9 +993,9 @@ namespace Server.Items
                 byte bags = 0;
                 if (CheckBank(m, ref bags))
                 {
-                    bool success_belongings =   BankThese(m, Utility.GetBackpackItems(m), bags > 0);    // if we are allowed one bag, use it for backpack items
+                    bool success_belongings = BankThese(m, Utility.GetBackpackItems(m), bags > 0);    // if we are allowed one bag, use it for backpack items
                     bool use_bag = bags > 1 || (bags > 0 && Utility.GetBackpackItems(m).Count == 0);    // we didn't need the first bag, so we will use it for equiped items
-                    bool success_equipment =    BankThese(m, Utility.GetEquippedItems(m), use_bag);     // if we are allowed two bags, use the second for equiped items
+                    bool success_equipment = BankThese(m, Utility.GetEquippedItems(m), use_bag);     // if we are allowed two bags, use the second for equiped items
 
                     if (!success_belongings || !success_equipment)
                         return false;
@@ -926,8 +1008,26 @@ namespace Server.Items
         }
         private static bool BankThese(Mobile m, List<Item> items, bool use_bag)
         {
+            List<Item> refused = new();
+            BankThese(m, items, use_bag, RefusedItems.DropAtFeet, refused);
+            return refused.Count == 0;
+        }
+
+        /// <summary>What becomes of an item the bank box refuses.</summary>
+        public enum RefusedItems
+        {
+            DropAtFeet,     // moved to the world where they stand (as BankThese always has)
+            KeepWithOwner,  // left with them: a refused item stays where it was, a refused bag is emptied back into the backpack
+        }
+
+        /// <summary>
+        /// BankThese, reporting what it did: returns how many of items were banked; the refused ones are added to refused.
+        /// In a bag the items are banked or refused together.
+        /// </summary>
+        public static int BankThese(Mobile m, List<Item> items, bool use_bag, RefusedItems onRefusal, List<Item> refused)
+        {
             if (items.Count == 0)
-                return true;
+                return 0;
 
             if (use_bag)
             {
@@ -935,28 +1035,39 @@ namespace Server.Items
                 foreach (Item item in items)
                     backpack.AddItem(item);
 
-                bool drop_success = false;
-                if (!(drop_success = m.BankBox.TryDropItem(m, backpack, sendFullMessage: false)))
-                    backpack.MoveToWorld(m.Location, m.Map);
+                if (m.BankBox.TryDropItem(m, backpack, sendFullMessage: false))
+                    return items.Count;
 
-                return drop_success;
+                refused.AddRange(items);
+                if (onRefusal == RefusedItems.DropAtFeet)
+                    backpack.MoveToWorld(m.Location, m.Map);
+                else
+                {
+                    foreach (Item item in items)
+                        m.Backpack.DropItem(item);
+                    backpack.Delete();
+                }
+                return 0;
             }
             else
             {
-                int fails = 0;
+                int banked = 0;
                 foreach (Item item in items)
-                    if (!(m.BankBox.TryDropItem(m, item, sendFullMessage: false)))
+                    if (m.BankBox.TryDropItem(m, item, sendFullMessage: false))
+                        banked++;
+                    else
                     {
-                        item.MoveToWorld(m.Location, m.Map);
-                        fails++;
+                        refused.Add(item);
+                        if (onRefusal == RefusedItems.DropAtFeet)
+                            item.MoveToWorld(m.Location, m.Map);
                     }
 
-                return fails == 0;
+                return banked;
             }
         }
         private bool CreatureTeleportOk(Mobile m)
         {
-            BaseCreature bc = m as BaseCreature;
+            BaseCreature? bc = m as BaseCreature;
             if (bc is not null)
             {   // antiKiting is a one time use. It lets us chase after the cheesy player that is ducking in and out of a teleporter
                 bool antiKiting = bc.GetCreatureBool(CreatureBoolTable.AntiKiting);
@@ -984,7 +1095,7 @@ namespace Server.Items
         public Map GetMap(Mobile m)
         {
             //  in AI 5 and RunUO 2.6, null maps are allowed for teleporters, but not gates.
-            //  I don't really understand the logic of this, but we will carry this weirdness forward.
+            //  This is to allow teleporters to work relative to the currrent location. basically 'a teleport'
             Map map = m_MapDest;
             if (!IsGate)
                 if (map == null || map == Map.Internal)
@@ -1006,8 +1117,8 @@ namespace Server.Items
                 // DestinationOverride lets us go places usually restricted by CheckTravel()
                 if (DestinationOverride || SpellHelper.CheckTravel(map, PointDest, IsGate ? TravelCheckType.GateTo : TravelCheckType.TeleportTo, m, out jail))
                 {
-                    if (GetSpecialFlag(TeleporterFlags.DropHolding))
-                        m.DropHolding();
+                    if (GetSpecialFlag(TeleporterFlags.DropDragging))
+                        m.DropDragging();
 
                     StartTeleport(m);
                     if (GetSpecialFlag(TeleporterFlags.SparkleEffect))
@@ -1032,6 +1143,7 @@ namespace Server.Items
 
             return true;
         }
+
         public override bool OnMoveOver(Mobile m)
         {
             if (CanTeleport(m) && ValidateUse(m, message: true))
@@ -1058,8 +1170,9 @@ namespace Server.Items
         {
             if (value)
             {
-                if (CheckIllegalFlagCombination(flag))
+                if (CheckIllegalFlagCombination(flag, out string reason))
                 {
+                    this.SendMessageNearby(reason);
                     return;
                 }
             }
@@ -1069,17 +1182,36 @@ namespace Server.Items
             else
                 m_SpecialAccess &= ~flag;
         }
-        private bool CheckIllegalFlagCombination(TeleporterFlags flag)
+        private bool CheckIllegalFlagCombination(TeleporterFlags flag, out string reason)
         {
+            reason = null;
+
             TeleporterFlags temp = m_SpecialAccess | flag;
 
-            //can't have GhostOnly AND MortalsOnly
-            if ((temp & TeleporterFlags.GhostsOnly) != 0 && (temp & TeleporterFlags.MortalsOnly) != 0)
+            // GhostsOnly vs MortalsOnly
+            if ((temp & TeleporterFlags.GhostsOnly) != 0 &&
+                (temp & TeleporterFlags.MortalsOnly) != 0)
             {
+                reason = "Cannot combine GhostsOnly with MortalsOnly.";
                 return true;
             }
 
-            //No illegal flag combinations, return false
+            // GhostsOnly vs NoGhosts
+            if ((temp & TeleporterFlags.GhostsOnly) != 0 &&
+                (temp & TeleporterFlags.NoGhosts) != 0)
+            {
+                reason = "Cannot combine GhostsOnly with NoGhosts.";
+                return true;
+            }
+
+            // MortalsOnly vs NoGhosts (optional depending on semantics)
+            if ((temp & TeleporterFlags.MortalsOnly) != 0 &&
+                (temp & TeleporterFlags.NoGhosts) != 0)
+            {
+                reason = "MortalsOnly already excludes ghosts; NoGhosts is redundant.";
+                return true;
+            }
+
             return false;
         }
         [CommandProperty(AccessLevel.GameMaster)]
@@ -1087,6 +1219,12 @@ namespace Server.Items
         {
             get { return GetSpecialFlag(TeleporterFlags.GhostsOnly); }
             set { SetSpecialFlag(TeleporterFlags.GhostsOnly, value); }
+        }
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool NoGhosts
+        {
+            get { return GetSpecialFlag(TeleporterFlags.NoGhosts); }
+            set { SetSpecialFlag(TeleporterFlags.NoGhosts, value); }
         }
         [CommandProperty(AccessLevel.GameMaster)]
         public bool EverythingToBank
@@ -1176,8 +1314,8 @@ namespace Server.Items
         {
             //Don't bother checking it if there's no special flags.
             if (m_SpecialAccess == TeleporterFlags.None) return true;
-            PlayerMobile pm = m as PlayerMobile;
-            
+            PlayerMobile? pm = m as PlayerMobile;
+
             // can we move everything to the bank?
             if (EverythingToBank && pm != null)
             {
@@ -1227,6 +1365,23 @@ namespace Server.Items
                 }
             }
 
+            //Living Only
+            if (NoGhosts)
+            {
+                if (m is PlayerMobile)
+                {
+                    if (!m.Alive)
+                    {
+                        m.SendMessage("You are dead, you cannot pass.");
+                        return false;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
             //Mortals Only
             if (MortalsOnly)
             {
@@ -1254,7 +1409,7 @@ namespace Server.Items
                         m.SendMessage("You have items in your backpack, you cannot pass.");
                         return false;
                     }
-                    if (m.Holding != null)
+                    if (m.Dragging != null)
                     {
                         m.SendMessage("You are holding something, you cannot pass.");
                         return false;
@@ -1511,6 +1666,12 @@ namespace Server.Items
     }
     public class EventTeleporter : Teleporter
     {
+        public override Item Dupe(int amount)
+        {
+            EventTeleporter new_item = new EventTeleporter();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
         private Event m_event;
         #region Event Properties
         [CommandProperty(AccessLevel.GameMaster)]
@@ -1664,6 +1825,12 @@ namespace Server.Items
     }
     public class SkillTeleporter : Teleporter
     {
+        public override Item Dupe(int amount)
+        {
+            SkillTeleporter new_item = new SkillTeleporter();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
         private SkillName m_Skill;
         private double m_Required;
         private string m_MessageString;
@@ -1797,7 +1964,13 @@ namespace Server.Items
     }
     public class KeywordTeleporter : Teleporter
     {
-        private string m_Substring;
+        public override Item Dupe(int amount)
+        {
+            KeywordTeleporter new_item = new KeywordTeleporter();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
+        private string? m_Substring;
         private int m_Keyword;
         private int m_Range;
         public override void OnTrigger(Mobile from)
@@ -1805,7 +1978,7 @@ namespace Server.Items
             StartTeleport(from);
         }
         [CommandProperty(AccessLevel.GameMaster)]
-        public string Substring
+        public string? Substring
         {
             get { return m_Substring; }
             set { m_Substring = value; InvalidateProperties(); }
@@ -1931,72 +2104,14 @@ namespace Server.Items
     }
     public class EventKeywordTeleporter : EventTeleporter
     {
+        public override Item Dupe(int amount)
+        {
+            EventKeywordTeleporter new_item = new EventKeywordTeleporter();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
         private Event m_event;
         #region Event Properties
-#if false
-        [CommandProperty(AccessLevel.GameMaster)]
-        public bool TimerRunning
-        {
-            get { return m_event.TimerRunning; }
-        }
-        [CommandProperty(AccessLevel.GameMaster)]
-        public bool EventRunning
-        {
-            get { return m_event.EventRunning; }
-        }
-        [CommandProperty(AccessLevel.GameMaster)]
-        public string EventStart
-        {
-            get { return m_event.EventStart; }
-            set { m_event.EventStart = value; }
-        }
-        [CommandProperty(AccessLevel.GameMaster)]
-        public string EventEnd
-        {
-            get { return m_event.EventEnd; }
-            set { m_event.EventEnd = value; }
-        }
-        [CommandProperty(AccessLevel.Seer)]
-        public int OffsetFromUTC
-        {
-            get { return m_event.OffsetFromUTC; }
-            set { m_event.OffsetFromUTC = value; InvalidateProperties(); }
-        }
-        [CommandProperty(AccessLevel.Seer)]
-        public TimeSpan Countdown
-        {
-            get { return m_event.Countdown; }
-            set { m_event.Countdown = value; InvalidateProperties(); }
-        }
-        [CommandProperty(AccessLevel.Seer)]
-        public TimeSpan Duration
-        {
-            get { return m_event.Duration; }
-            set { m_event.Duration = value; InvalidateProperties(); }
-        }
-        [CommandProperty(AccessLevel.Owner, AccessLevel.Owner)]
-        public bool DurationOverride
-        {
-            get { return m_event.DurationOverride; }
-            set { m_event.DurationOverride = value; }
-        }
-        [CommandProperty(AccessLevel.GameMaster)]
-        public string Timezone
-        {
-            get
-            { return m_event.Timezone; }
-        }
-        [CommandProperty(AccessLevel.GameMaster)]
-        public bool EventDebug
-        {
-            get { return m_event.EventDebug; }
-            set { m_event.EventDebug = value; }
-        }
-        public string EventTimeRemaining
-        {
-            get { return m_event.EventTimeRemaining; }
-        }
-#endif
         #endregion Event Properties
         // don't make a command property, we don't want GM's starting/stopping in this way
         public override bool Running
@@ -2056,4 +2171,396 @@ namespace Server.Items
             }
         }
     }
+    /// <summary>
+    /// TestCenterTeleporter - Advanced clone-based Test Center system.
+    /// 
+    /// This teleporter supports three modes:
+    ///   - None  : Normal teleporter behavior (default)
+    ///   - To    : Real player steps on → creates disposable clone, transfers NetState, parks original
+    ///   - From  : Clone steps on → swaps NetState back to original player, then deletes the clone
+    /// 
+    /// Key Design:
+    ///   - Clones are completely disposable (dummy account + owned properties are deleted on delete)
+    ///   - Original player is safely stored on internal map while clone is active
+    ///   - Full NetState + packet handoff ensures smooth client transition in both directions
+    ///   - Strong safety: clones cannot re-enter, non-clones cannot exit from inside TC
+    ///   - Cron job catches and jails any clones that escape into the world
+    /// 
+    /// Logout/Reconnect Behavior:
+    ///   If a clone logs out, the original player is restored on next login and the clone is cleaned up.
+    /// 
+    /// All clone-related penalties (jail, inventory wipe, etc.) are handled via ApplyTestCenterPenalties().
+    /// </summary>
+    public class TestCenterTeleporter : Teleporter
+    {
+        public override Item Dupe(int amount)
+        {
+            TestCenterTeleporter new_item = new TestCenterTeleporter();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
+        public enum TestCenterMode
+        {
+            None,   // Normal teleporter behavior
+            To,     // Player enters Test Center (create clone)
+            From    // Clone exits Test Center (return to original)
+        }
+
+        private TestCenterMode m_Mode = TestCenterMode.None;
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public TestCenterMode Mode
+        {
+            get { return m_Mode; }
+            set { m_Mode = value; InvalidateProperties(); }
+        }
+
+        [Constructable]
+        public TestCenterTeleporter()
+        {
+        }
+
+        public TestCenterTeleporter(Serial serial)
+            : base(serial)
+        {
+        }
+
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+            writer.Write((int)1); // version
+                                  // version 1
+            writer.Write((int)m_Mode);
+
+            // version 0
+            // nothing to do
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+            int version = reader.ReadInt();
+            switch (version)
+            {
+                case 1:
+                    { // added TestCenterMode
+                        m_Mode = (TestCenterMode)reader.ReadInt();
+                        goto case 0;
+                    }
+                case 0:
+                    { // initial version
+                        break;
+                    }
+            }
+        }
+
+        public override void DoTeleport(Mobile m)
+        {
+            if (m == null || !m.Player || !(m is PlayerMobile player))
+            {
+                base.DoTeleport(m);
+                return;
+            }
+
+            // Staff always bypass cloning and get normal teleport behavior
+            if (player.AccessLevel > AccessLevel.Player)
+            {
+                m.SendMessage("Your godly powers spare you from the transformation mortals experience here.");
+                base.DoTeleport(m);
+                return;
+            }
+
+            switch (m_Mode)
+            {
+                case TestCenterMode.None:
+                    base.DoTeleport(m);
+                    return;
+
+                case TestCenterMode.To:
+                    if (!player.Clone)
+                    {
+                        // a misplaced entry portal is refused, never used (TestCenterPolicy.ValidatePortal)
+                        string? badEntry = TestCenterPolicy.ValidatePortal(this, original: null);
+                        if (badEntry != null)
+                        {
+                            TestCenterPolicy.ReportPortal(this, player, badEntry);
+                            return;
+                        }
+
+                        // Real player entering → create clone and send into Test Center
+                        PlayerMobile clone = HandleEnterTestCenter(player);
+                        CommandHandlers.BroadcastMessage(AccessLevel.Administrator, 0x482, $"[TC] {player.Name} entered Test Center (clone: {clone.Serial})");
+                    }
+                    else
+                    {
+                        // A clone is trying to re-enter the Test Center (not allowed)
+                        TestCenterPolicy.Enforce(player, "Clone caught outside Test Center (trying to enter).");
+                    }
+                    return;
+
+                case TestCenterMode.From:
+                    if (player.Clone)
+                    {
+                        // a misplaced exit portal, or one that would put the original back in Test Center, is refused
+                        string? badExit = TestCenterPolicy.ValidatePortal(this, FindOriginal(player));
+                        if (badExit != null)
+                        {
+                            TestCenterPolicy.ReportPortal(this, player, badExit);
+                            return;
+                        }
+
+                        // Valid clone exiting → return to original character
+                        PlayerMobile? original = HandleExitTestCenter(player);
+                        CommandHandlers.BroadcastMessage(AccessLevel.Administrator, 0x482, $"[TC] {original?.Name} returned from Test Center (clone removed: {player.Serial})");
+                    }
+                    else
+                    {
+                        // Non-clone player trying to use the exit teleporter (abuse)
+                        TestCenterPolicy.Enforce(player, "Player caught inside Test Center.");
+                    }
+                    return;
+            }
+        }
+
+        private PlayerMobile HandleEnterTestCenter(PlayerMobile player)
+        {
+            // 1. Create new clone
+            PlayerMobile clone = BuildClone(player);
+            clone.OwnerGUID = player.PlayerGUID; // clone points back to player
+
+            PerformNetStateSwap(player, clone, TestCenterMode.To);
+
+            // Load the clones bankbox with testcenter goods
+            CharacterCreation.FillBankbox(clone);
+
+            // ======================
+            // Now let the base class teleport the NEW mobile
+            // ======================
+            base.DoTeleport(clone);
+
+            // when the player logs back in, they will be here - near the teleporter they entered
+            player.LogoutLocation = player.Location = GetLogoutLocation(start: this.Location, this.Map, distance: 3);
+            player.LogoutMap = player.Map = this.Map;
+
+            // Park the original mobile on internal map
+            player.MoveToIntStorage(PreserveLocation: true);
+
+            return clone;
+        }
+        private static Point3D GetLogoutLocation(Point3D start, Map map, int distance)
+        {
+            if (map == null || map == Map.Internal || distance <= 0)
+                return start;
+
+            HashSet<Point2D> blocked = new HashSet<Point2D>();
+
+            IPooledEnumerable eable = map.GetItemsInRange(start, distance);
+
+            foreach (Item item in eable)
+            {
+                if (item == null || item.Deleted)
+                    continue;
+
+                if (item is Teleporter)
+                    blocked.Add(new Point2D(item.X, item.Y));
+            }
+
+            eable.Free();
+
+            for (int r = 1; r <= distance; r++)
+            {
+                for (int x = start.X - r; x <= start.X + r; x++)
+                {
+                    for (int y = start.Y - r; y <= start.Y + r; y++)
+                    {
+                        // Block entire vertical column
+                        if (blocked.Contains(new Point2D(x, y)))
+                            continue;
+
+                        int newZ = start.Z;
+
+                        if (Utility.CanSpawnMobile(map, x, y, ref newZ))
+                            return new Point3D(x, y, newZ);
+                    }
+                }
+            }
+
+            return start;
+        }
+        private PlayerMobile BuildClone(PlayerMobile source)
+        {
+            // 1. Create new clone
+            // link everything up so that when we delete the account, we delete 'owned' properties
+            string username = "Clone:" + KeyGenerator.Alloc().ToString();
+            string password = KeyGenerator.Alloc().ToString();
+            Account? acct = Accounts.AddAccount(username, password);
+            acct.GUID = Utility.MakeGuid(acct.Username, acct.Username);
+            PlayerMobile clone = new PlayerMobile(acct.GUID);
+            clone.Account = acct;
+
+            // associate this clone with the character array in it's account
+            for (int i = 0; i < 5; ++i)
+                if (acct[i] == null || acct[i].Deleted)
+                {
+                    acct[i] = clone;
+                    break;
+                }
+
+            // copy the clothes, jewelry, everything
+            Utility.CopyLayers(clone, source, CopyLayerFlags.Default);
+            Utility.CopySkills(clone, source, include_stats: true);
+
+            clone.Backpack?.Delete();
+            clone.BankBox?.Delete();
+            if (clone.Backpack == null)
+            {
+                Backpack backpack = new Backpack();
+                backpack.Movable = false;
+                clone.Backpack = backpack;
+                backpack.TrapOnDelete = true;
+            }
+            if (clone.BankBox == null)
+            {
+                BankBox bankBox = new BankBox(clone);
+                bankBox.Movable = false;
+                clone.BankBox = bankBox;
+                bankBox.TrapOnDelete = true;
+            }
+
+            // now everything else
+            clone.Name = source.Name;
+            clone.Hue = source.Hue;
+            clone.Body = (source.Female) ? 401 : 400; // get the correct body
+            clone.Female = source.Female; // get the correct sex
+            clone.Title = source.Title; // get the title
+            clone.Player = source.Player;
+            clone.Mortal = source.Mortal;
+            clone.AccessLevelInternal = source.AccessLevel;
+
+            clone.Clone = true; // I am a clone
+
+            return clone;
+        }
+
+        // the original player, by the OwnerGUID that was set during clone creation
+        private static PlayerMobile? FindOriginal(PlayerMobile clone)
+        {
+            foreach (PlayerMobile pm in PlayerMobile.Instances)
+                if (pm != null && !pm.Deleted && pm.PlayerGUID == clone.OwnerGUID)
+                    return pm;
+            return null;
+        }
+
+        private PlayerMobile? HandleExitTestCenter(PlayerMobile clone)
+        {
+            // Find the original player using the OwnerGUID that was set during clone creation
+            PlayerMobile? original = FindOriginal(clone);
+
+            if (original == null)
+            {
+                System.Diagnostics.Debug.Assert(false, $"Could not locate original player for clone {clone}");
+                // Fallback: just delete the clone so it doesn't leak
+                clone.MoveToIntStorage();
+                clone.Delete();
+                return original;
+            }
+
+            // Since PerformNetStateSwap performs login-sequence packets, we need to supress the 'welcome message'
+            original.SetPlayerBool(PlayerBoolTable.SuppressNextWelcomeMessage, true);
+
+            // Perform the NetState swap back to the original character
+            PerformNetStateSwap(clone, original, TestCenterMode.From);
+
+            // Teleport the original player back to the real world
+            base.DoTeleport(original);
+
+            // Delete the clone. This will delete its dummy account and clean up any owned properties.
+            clone.MoveToIntStorage();
+            clone.Delete();
+
+            return original;
+        }
+
+        /// <summary>
+        /// Performs the NetState swap and all required client packet synchronization.
+        /// This is the core identity handoff used when moving between real player and clone.
+        /// </summary>
+        /// <param name="srcMobile">The mobile currently controlling the client (being detached)</param>
+        /// <param name="dstMobile">The mobile that will take control of the client (being attached)</param>
+        /// <param name="direction">Whether we are entering or exiting the Test Center</param>
+        private void PerformNetStateSwap(PlayerMobile srcMobile, PlayerMobile dstMobile, TestCenterMode direction)
+        {
+            // 1. Move destination mobile to its final world location BEFORE sending packets
+            // This reduces client-side flicker and desync caused by late movement packets.
+            if (direction == TestCenterMode.From)
+            {
+                // Exiting Test Center: restore original player to their saved logout location
+                // Note: the original player is still on internal map, so we have to move them back to the world first before teleporting
+                //  the subsiquent teleport will then move them to the correct location near the felucca teleporter entrance
+                dstMobile.MoveToWorld(dstMobile.LogoutLocation, dstMobile.LogoutMap ?? Map.Felucca);
+            }
+            else
+            {
+                // Entering Test Center: place the new clone at the teleporter's destination
+                dstMobile.MoveToWorld(this.PointDest, this.MapDest ?? Map.Trammel);
+            }
+
+            // 2. Transfer NetState (critical: rebind the live client session)
+            NetState ns = srcMobile.NetState;
+            if (ns != null)
+            {
+                srcMobile.NetState = null;           // detach from source mobile
+                dstMobile.NetState = ns;             // attach to destination mobile
+                ns.Mobile = dstMobile;               // re-anchor the session
+            }
+
+            // 3. Retire the old mobile from the client's view
+            if (srcMobile != null && ns != null)
+                ns.Send(new RemoveMobile(srcMobile)); // breaks old identity on client
+
+            // 4. Re-establish identity and synchronize full state using the canonical login pipeline
+            // This is more reliable than sending individual packets manually
+            PacketHandlers.DoLogin(ns, dstMobile);
+
+            // 5. Force container and equipment deltas (ensures backpack, bank, and equipped items appear correctly)
+            dstMobile.Backpack?.Delta(ItemDelta.Update);
+            dstMobile.Backpack?.ProcessDelta();
+            dstMobile.BankBox?.Delta(ItemDelta.Update);
+            dstMobile.BankBox?.ProcessDelta();
+
+            // 6. Run custom login logic (Seasonal account handling, etc.)
+            OnLogin(dstMobile);
+        }
+        public override bool TryUseTeleport(Mobile m)
+        {
+            Map map = GetMap(m);
+
+            if (map != null && map != Map.Internal)
+            {
+                if (GetSpecialFlag(TeleporterFlags.DropDragging))
+                    m.DropDragging();
+
+                StartTeleport(m);
+                if (GetSpecialFlag(TeleporterFlags.SparkleEffect))
+                    Timer.DelayCall(TimeSpan.FromSeconds(0.5), new TimerStateCallback(SendSparkles_Callback), m);
+
+                return true;
+            }
+            else if (IsGate)
+                m.SendMessage("This Moongate does not seem to go anywhere.");
+
+            return true;
+        }
+        private void OnLogin(Mobile m)
+        {
+            #region Seasons
+            // Ensure this account has a valid seasonal leaderboard identity.
+            // If the seasonal account already exists, this will populate DisplayName
+            // once the player has chosen a real name.
+            if (Core.RuleSets.SeasonsRules() && m.Clone)
+                SeasonManager.EnsureSeasonalAccount(m.AcctGUID, m.Name + " " + "(clone)");
+            #endregion Seasons
+        }
+    }
+
 }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -42,7 +42,10 @@ namespace Server.Commands
     {
         public static void Initialize()
         {
-            Server.CommandSystem.Register("SwapBackPack", AccessLevel.Player, new CommandEventHandler(SwapBackPack_OnCommand));
+            if (!Core.RuleSets.MortalisStyleRules())
+                Server.CommandSystem.Register("SwapBackPack", AccessLevel.Player, new CommandEventHandler(SwapBackPack_OnCommand));
+            else
+                Server.CommandSystem.Register("SwapBackPack", AccessLevel.Owner, new CommandEventHandler(SwapBackPack_OnCommand));
         }
         [Usage("SwapBackPack")]
         [Description("Swap out a players backpack complete with all contents. Keeps newbied and blessed items.")]
@@ -103,8 +106,8 @@ namespace Server.Commands
                     if ((targeted as Backpack) != from.Backpack)
                     {
                         Container player_backpack = from.Backpack;
-                        Backpack target_backpack = (targeted as Backpack);
-                        BaseHouse house = BaseHouse.FindHouseAt(target_backpack);
+                        Backpack? target_backpack = (targeted as Backpack);
+                        BaseHouse? house = BaseHouse.FindHouseAt(target_backpack);
                         if (house != null)
                         {   // it's in their house
                             if (!(target_backpack.RootParent is Mobile))
@@ -193,7 +196,7 @@ namespace Server.Commands
                             List<Item> target_backpack_contents = (targeted as Backpack).Items;
                             player_backpack = from.Backpack;
                             target_backpack = targeted as Backpack;
-                            Container target_container = list[0] as Container;  // list[0] will be the nested container in the bankbox, or the bankbox itself.                            
+                            Container? target_container = list[0] as Container;  // list[0] will be the nested container in the bankbox, or the bankbox itself.                            
 
                             if (target_backpack.Parent != null && target_backpack.Parent is Container c && !c.CheckHold(from, player_backpack, true))
                             {
@@ -249,8 +252,8 @@ namespace Server.Commands
         private static void Tick(object state)
         {
             object[] aState = (object[])state;
-            Container backpack = aState[0] as Container;
-            Item item = aState[1] as Item;
+            Container? backpack = aState[0] as Container;
+            Item? item = aState[1] as Item;
             bool add = (aState[2] as TickState).Add;
             bool moveBlessed = (aState[2] as TickState).MoveBlessed;
 

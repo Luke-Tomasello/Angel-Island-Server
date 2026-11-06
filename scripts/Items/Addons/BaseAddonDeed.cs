@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -39,7 +39,7 @@
  *      BaseAddonDeed no longer implement the ICraftable interface.
  *      The ICraftable interface provides CraftResource support for addon deeds. However, we
  *      don't want colored addons at this time. Note that, once the ICraftable *is*
- *      implemented, the "OnCraft" method must appropriately set the hue of those addons that
+ *      implemented, the "OnCraft" method must appropriately set the  of those addons that
  *      *are* colored (example: stone furniture).
  *  1/17/22, Yoar
  *      Added support for township addons.
@@ -103,9 +103,9 @@ namespace Server.Items
         }
         #endregion
         #region Music
-        private string m_RazorFile;
+        private string? m_RazorFile;
         [CommandProperty(AccessLevel.GameMaster)]
-        public string RazorFile
+        public string? RazorFile
         {
             get { return m_RazorFile; }
             set
@@ -117,14 +117,14 @@ namespace Server.Items
                 else
                 {
                     CalypsoMusicPlayer.Metadata data = CalypsoMusicPlayer.GetMetaData(value);
-                    SendSystemMessage(string.Format("Adding music {0}", data?.Song));
+                    SendMessageNearby(string.Format("Adding music {0}", data?.Song));
 
                     m_RazorFile = value;
                     // delete the rolled up sheet music if it exists
-                    RolledUpSheetMusic rsm = GetRSM();
+                    RolledUpSheetMusic? rsm = GetRSM();
                     if (rsm != null)
                     {
-                        SendSystemMessage(string.Format("Deleting music {0}", rsm));
+                        SendMessageNearby(string.Format("Deleting music {0}", rsm));
                         RemoveItem(rsm);
                         rsm.Delete();
                     }
@@ -132,7 +132,7 @@ namespace Server.Items
             }
         }
         [CommandProperty(AccessLevel.Seer)]
-        public virtual Item SheetMusic
+        public virtual Item? SheetMusic
         {
             get
             {
@@ -143,11 +143,11 @@ namespace Server.Items
             }
             set
             {
-                Item musicObject = null;
+                Item? musicObject = null;
 
                 if (value != null && value is not RolledUpSheetMusic)
                 {
-                    this.SendSystemMessage("That is not rolled up sheet music");
+                    this.SendMessageNearby("That is not rolled up sheet music");
                     return;
                 }
 
@@ -164,12 +164,12 @@ namespace Server.Items
                     if (m_RazorFile != null)
                     {
                         if (GetRZR() != null)
-                            SendSystemMessage(string.Format("Deleting music {0}", m_RazorFile));
+                            SendMessageNearby(string.Format("Deleting music {0}", m_RazorFile));
                         m_RazorFile = null;
                     }
                     if (musicObject != null)
                     {
-                        SendSystemMessage(string.Format("Deleting music {0}", musicObject));
+                        SendMessageNearby(string.Format("Deleting music {0}", musicObject));
                         RemoveItem(musicObject);
                         musicObject.Delete();
                     }
@@ -178,15 +178,15 @@ namespace Server.Items
 
                     if (musicObject != null)
                     {
-                        Item item = Utility.Dupe(musicObject);
-                        SendSystemMessage(string.Format("Adding music {0}", item));
+                        Item? item = Utility.Dupe(musicObject);
+                        SendMessageNearby(string.Format("Adding music {0}", item));
                         AddItem(item);
                     }
                 }
             }
         }
         [CommandProperty(AccessLevel.Seer)]
-        public string Song
+        public string? Song
         {
             get
             {
@@ -214,19 +214,19 @@ namespace Server.Items
         {
             get
             {
-                this.SendSystemMessage("RangeExit: I get this far away and the music stops. -1 means no range checking");
+                this.SendMessageNearby("RangeExit: I get this far away and the music stops. -1 means no range checking");
                 return m_range_exit;
             }
             set { m_range_exit = value; }
         }
-        private RolledUpSheetMusic GetRSM()
+        private RolledUpSheetMusic? GetRSM()
         {
             foreach (Item item in PeekItems)
                 if (item is RolledUpSheetMusic rsm)
                     return rsm;
             return null;
         }
-        private string GetRZR()
+        private string? GetRZR()
         {
             if (m_RazorFile != null && m_RazorFile.EndsWith(".rzr") && File.Exists(Path.Combine(Core.DataDirectory, "song files", m_RazorFile)))
                 return m_RazorFile;
@@ -234,7 +234,7 @@ namespace Server.Items
         }
         private object GetMusic()
         {
-            object music = GetRSM();
+            object? music = GetRSM();
             if (music == null)
                 music = GetRZR();
             return music;
@@ -323,7 +323,7 @@ namespace Server.Items
                 from.SendLocalizedMessage(1042001); // That must be in your pack for you to use it.
         }
 
-        public void Place(IPoint3D p, Map map, Mobile from)
+        public void Place(IPoint3D? p, Map map, Mobile from)
         {
             if (p == null || map == null || this.Deleted)
                 return;
@@ -359,7 +359,7 @@ namespace Server.Items
                 TownshipBuilder.BuildResult result = TownshipBuilder.Check(from, new Point3D(p), map, addon);
 
                 bool valid = false;
-                BaseHouse house = null;
+                BaseHouse? house = null;
 
                 if (result == TownshipBuilder.BuildResult.Valid)
                 {
@@ -400,13 +400,6 @@ namespace Server.Items
                     addon.MoveToWorld(new Point3D(p), map);
 
                     Delete();
-#if false
-                    if (house != null)
-                        house.Addons.Add(addon);
-
-                    if (house == null)
-                        Server.Township.TownshipItemHelper.SetOwnership(addon, from);
-#endif
                     addon.OnAfterPlace(from, house);
                     new ConfirmationObject(addon, from);
                     from.SendGump(new ConfirmAddonPlacementGump(from, addon, house));
@@ -507,7 +500,7 @@ namespace Server.Items
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                IPoint3D p = targeted as IPoint3D;
+                IPoint3D? p = targeted as IPoint3D;
 
                 if (from == targeted)
                 {

@@ -1,0 +1,29 @@
+{
+  "Type": "PirateWench",
+  "SavedLocal": "2026-03-06 07:42:01",
+  "Stats": {
+    "Str": 157,
+    "Dex": 96,
+    "Int": 176,
+    "Hits": 269,
+    "VirtualArmor": 37,
+    "Damage": 1
+  },
+  "Behavior": {
+    "UsesHumanWeapons": false,
+    "UsesBandages": true,
+    "UsesPotions": true,
+    "CanRun": true,
+    "CanReveal": false
+  },
+  "Skills": {
+    "EvalInt": 54.1,
+    "Magery": 51.8,
+    "Meditation": 90.1,
+    "MagicResist": 5.3,
+    "Healing": 26.7,
+    "Tactics": 0.4,
+    "Wrestling": 80.7,
+    "Anatomy": 14.6
+  }
+}

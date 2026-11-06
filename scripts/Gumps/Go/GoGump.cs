@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts/Gumps/Go/GoGump.cs
  * Changelog:
+ *  10/22/2026, Adam
+ *      OnResponse: a destination is checked by CommandHandlers.PlayerMayGo before moving (player-level users may not
+ *      change facet, and on Trammel may only go to the new player starting area). Staff are unchanged.
  *  4/24/2024, Adam (One world, one map)
  *      Convert map entries to take a Map, have all maps use this new unified [go structure
  *  6/5/04, Pix
@@ -33,12 +36,89 @@ using System;
 namespace Server.Gumps
 {
     public class GoGump : Gump
-    {   // one world, one map
-        public static readonly LocationTree Felucca = new LocationTree("felucca.xml", Map.Felucca);
-        public static readonly LocationTree Trammel = new LocationTree("trammel.xml", Map.Trammel);
-        public static readonly LocationTree Ilshenar = new LocationTree("ilshenar.xml", Map.Ilshenar);
-        public static readonly LocationTree Malas = new LocationTree("malas.xml", Map.Malas);
+    {
+        public static void Initialize()
+        {
+            CommandSystem.Register("ReloadGo", AccessLevel.Administrator, ReloadGo_OnCommand);
+        }
+        public static LocationTree Felucca;
+        public static LocationTree Trammel;
+        public static LocationTree Ilshenar;
+        public static LocationTree Malas;
 
+        public static LocationTree FeluccaForPlayers;
+        public static LocationTree TrammelForPlayers;
+        public static LocationTree IlshenarForPlayers;
+        public static LocationTree MalasForPlayers;
+
+        public static void Configure()
+        {
+            Felucca = LoadTree("felucca.xml", Map.Felucca);
+            Trammel = LoadTree("felucca.xml", Map.Trammel);
+            Ilshenar = LoadTree("ilshenar.xml", Map.Ilshenar);
+            Malas = LoadTree("malas.xml", Map.Malas);
+
+            FeluccaForPlayers = Felucca.CreateForAccess(AccessLevel.Player);
+            TrammelForPlayers = Trammel.CreateForAccess(AccessLevel.Player);    // test center
+            IlshenarForPlayers = Ilshenar.CreateForAccess(AccessLevel.Player);
+            MalasForPlayers = Malas.CreateForAccess(AccessLevel.Player);
+        }
+        public static void Reload()
+        {
+            Configure();
+
+            Console.WriteLine("[Go] Location trees reloaded.");
+        }
+        private static LocationTree LoadTree(string file, Map map)
+        {
+            try
+            {
+                var tree = new LocationTree(file, map);
+                Console.WriteLine("[Go] Loaded {0} for {1}.", file, map);
+                return tree;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("[Go] ERROR loading {0} for {1}: {2}", file, map, ex);
+                throw;
+            }
+        }
+
+        private static void ReloadGo_OnCommand(CommandEventArgs e)
+        {
+            Mobile from = e.Mobile;
+
+            try
+            {
+                DateTime start = DateTime.UtcNow;
+
+                GoGump.Reload();
+
+                // If/when you add this:
+                // PlayerGo.ClearCache();
+
+                TimeSpan elapsed = DateTime.UtcNow - start;
+
+                from.SendMessage("Go location trees reloaded in {0:0.00}s.", elapsed.TotalSeconds);
+
+                // Optional: echo counts if you expose them later
+                // from.SendMessage("Felucca: {0} entries", GoGump.Felucca.Count);
+            }
+            catch (Exception ex)
+            {
+                from.SendMessage("Go reload failed.");
+
+                // Player-friendly
+                from.SendMessage("Error: {0}", ex.Message);
+
+                // Dev-friendly (console)
+                Console.WriteLine("[Go] Reload FAILED: {0}", ex);
+
+                // Optional: full stack to staff only
+                if (from.AccessLevel >= AccessLevel.Administrator)
+                    from.SendMessage(ex.ToString());
+            }
+        }
         public static bool OldStyle = PropsConfig.OldStyle;
 
         public const int GumpOffsetX = PropsConfig.GumpOffsetX;
@@ -92,21 +172,33 @@ namespace Server.Gumps
 
         public static void DisplayTo(Mobile from)
         {
-            LocationTree tree;
             // 4/24/2024, Adam(One world, one map)
             //  Convert map entries to take a Map, have all maps use this new unified [go structure
-            //if (from.Map == Map.Ilshenar)
-            //    tree = Ilshenar;
-            //else if (from.Map == Map.Felucca)
-            //    tree = Felucca;
-            //else if (from.Map == Map.Trammel)
-            //    tree = Trammel;
-            //else if (from.Map == Map.Malas)
-            //    tree = Malas;
-            //else
-            tree = Felucca; // default to Felucca
+            LocationTree tree;
+            if (from.Map == Map.Ilshenar)
+                tree = Ilshenar;
+            else if (from.Map == Map.Felucca)
+                tree = Felucca;
+            else if (from.Map == Map.Trammel)
+                tree = Trammel;
+            else if (from.Map == Map.Malas)
+                tree = Malas;
+            else
+                tree = Felucca; // default to Felucca
 
-            ParentNode branch = (ParentNode)tree.LastBranch[from];
+            ParentNode? branch = (ParentNode?)tree.LastBranch[from];
+
+            if (branch == null)
+                branch = tree.Root;
+
+            if (branch != null)
+                from.SendGump(new GoGump(0, from, tree, branch));
+        }
+        public static void DisplayTo(Mobile from, bool playerView)
+        {
+            LocationTree tree = GetTreeFor(from.Map, playerView);
+
+            ParentNode? branch = (ParentNode?)tree.LastBranch[from];
 
             if (branch == null)
                 branch = tree.Root;
@@ -115,6 +207,22 @@ namespace Server.Gumps
                 from.SendGump(new GoGump(0, from, tree, branch));
         }
 
+        public static LocationTree GetTreeFor(Map map, bool playerView)
+        {
+            if (map == Map.Ilshenar)
+                return playerView ? IlshenarForPlayers : Ilshenar;
+
+            if (map == Map.Felucca)
+                return playerView ? FeluccaForPlayers : Felucca;
+
+            if (map == Map.Trammel)
+                return playerView ? TrammelForPlayers : Trammel;
+
+            if (map == Map.Malas)
+                return playerView ? MalasForPlayers : Malas;
+
+            return playerView ? FeluccaForPlayers : Felucca;
+        }
         private LocationTree m_Tree;
         private ParentNode m_Node;
         private int m_Page;
@@ -265,7 +373,14 @@ namespace Server.Gumps
                             {
                                 ChildNode n = (ChildNode)o;
 
-                                from.MoveToWorld(n.Location, n.Map ?? m_Tree.Map);
+                                Map targetMap = n.Map ?? m_Tree.Map;
+
+                                if (n.Map == Map.Felucca && m_Tree.Map == Map.Trammel)
+                                    targetMap = Map.Trammel;
+
+                                // players: no change of facet, and on Trammel only the new player starting area
+                                if (Server.Commands.CommandHandlers.PlayerMayGo(from, n.Location, targetMap))
+                                    from.MoveToWorld(n.Location, targetMap);
                             }
                         }
 

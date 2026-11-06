@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -101,7 +101,7 @@ namespace Server.Commands
         {
             if (e.Length == 1)
             {
-                IEntity ent = World.FindEntity(e.GetInt32(0));
+                IEntity? ent = World.FindEntity(e.GetInt32(0));
 
                 if (ent == null)
                     e.Mobile.SendMessage("No object with that serial was found.");
@@ -130,7 +130,7 @@ namespace Server.Commands
         {
             if (e.Length == 1)
             {
-                IEntity ent = World.FindEntity(e.GetInt32(0));
+                IEntity? ent = World.FindEntity(e.GetInt32(0));
 
                 if (ent == null)
                     e.Mobile.SendMessage("No object with that serial was found.");
@@ -180,7 +180,7 @@ namespace Server.Commands
 
         private static Type typeofCPA = typeof(CPA);
 
-        public static CPA GetCPA(PropertyInfo p)
+        public static CPA? GetCPA(PropertyInfo p)
         {
             object[] attrs = p.GetCustomAttributes(typeofCPA, false);
 
@@ -190,7 +190,7 @@ namespace Server.Commands
             return attrs[0] as CPA;
         }
 
-        public static PropertyInfo[] GetPropertyInfoChain(Mobile from, Type type, string propertyString, bool isReading, ref string failReason)
+        public static PropertyInfo[]? GetPropertyInfoChain(Mobile? from, Type type, string propertyString, bool isReading, ref string failReason)
         {
             string[] split = propertyString.Split('.');
 
@@ -219,7 +219,7 @@ namespace Server.Commands
 
                     if (CIEqual(p.Name, propertyName))
                     {
-                        CPA attr = GetCPA(p);
+                        CPA? attr = GetCPA(p);
 
                         if (attr == null)
                         {
@@ -268,7 +268,7 @@ namespace Server.Commands
 
             return info;
         }
-        public static PropertyInfo[] GetPropertyInfoChain(Type type, string propertyString, bool isReading, ref string failReason)
+        public static PropertyInfo[]? GetPropertyInfoChain(Type type, string propertyString, bool isReading, ref string failReason)
         {
             string[] split = propertyString.Split('.');
 
@@ -323,25 +323,25 @@ namespace Server.Commands
 
             return info;
         }
-        public static PropertyInfo GetPropertyInfo(Mobile from, ref object obj, string propertyName, bool reading, ref string failReason)
+        public static PropertyInfo? GetPropertyInfo(Mobile? from, ref object obj, string propertyName, bool reading, ref string failReason)
         {
-            PropertyInfo[] chain = GetPropertyInfoChain(from, obj.GetType(), propertyName, reading, ref failReason);
+            PropertyInfo[]? chain = GetPropertyInfoChain(from, obj.GetType(), propertyName, reading, ref failReason);
 
             if (chain == null)
                 return null;
 
             return GetPropertyInfo(ref obj, chain, ref failReason);
         }
-        public static PropertyInfo GetPropertyInfo(ref object obj, string propertyName, bool reading, ref string failReason)
+        public static PropertyInfo? GetPropertyInfo(ref object obj, string propertyName, bool reading, ref string failReason)
         {
-            PropertyInfo[] chain = GetPropertyInfoChain(obj.GetType(), propertyName, reading, ref failReason);
+            PropertyInfo[]? chain = GetPropertyInfoChain(obj.GetType(), propertyName, reading, ref failReason);
 
             if (chain == null)
                 return null;
 
             return GetPropertyInfo(ref obj, chain, ref failReason);
         }
-        public static PropertyInfo GetPropertyInfo(ref object obj, PropertyInfo[] chain, ref string failReason)
+        public static PropertyInfo? GetPropertyInfo(ref object obj, PropertyInfo[]? chain, ref string failReason)
         {
             if (chain == null || chain.Length == 0)
             {
@@ -369,17 +369,17 @@ namespace Server.Commands
         public static string GetValue(Mobile from, object o, string name)
         {
             string failReason = "";
-            PropertyInfo p = GetPropertyInfo(from, ref o, name, true, ref failReason);
+            PropertyInfo? p = GetPropertyInfo(from, ref o, name, true, ref failReason);
 
             if (p == null)
                 return failReason;
 
             return InternalGetValue(o, p);
         }
-        public static string GetOnlyValue(Mobile from, object o, string name)
+        public static string? GetOnlyValue(Mobile? from, object o, string name)
         {
             string failReason = "";
-            PropertyInfo p = GetPropertyInfo(from, ref o, name, true, ref failReason);
+            PropertyInfo? p = GetPropertyInfo(from, ref o, name, true, ref failReason);
 
             if (p == null)
             {
@@ -433,7 +433,7 @@ namespace Server.Commands
                 {
                     if (CIEqual(p.Name, name))
                     {
-                        CPA attr = GetCPA(p);
+                        CPA? attr = GetCPA(p);
 
                         if (attr == null)
                             return "Property not found.";
@@ -460,7 +460,7 @@ namespace Server.Commands
 
             for (int i = 0; i < realProps.Length; ++i)
             {
-                object obj = realProps[i].GetValue(o, null);
+                object? obj = realProps[i].GetValue(o, null);
                 long v = (long)Convert.ChangeType(obj, TypeCode.Int64);
                 v += realValues[i];
 
@@ -488,8 +488,8 @@ namespace Server.Commands
         {
             Type type = p.PropertyType;
 
-            object value = p.GetValue(o, null);
-            string toString;
+            object? value = p.GetValue(o, null);
+            string? toString;
 
             if (value == null)
                 toString = PropNull;
@@ -507,12 +507,12 @@ namespace Server.Commands
             return string.Format("{0} = {1}", p.Name, toString);
         }
         //Pix: stupid fucking code, I want JUST the value!
-        private static string InternalGetOnlyValue(object o, PropertyInfo p)
+        private static string? InternalGetOnlyValue(object o, PropertyInfo p)
         {
             Type type = p.PropertyType;
 
-            object value = p.GetValue(o, null);
-            string toString;
+            object? value = p.GetValue(o, null);
+            string? toString;
 
             if (value == null)
                 toString = PropNull;
@@ -534,7 +534,7 @@ namespace Server.Commands
             object logObject = o;
 
             string failReason = "";
-            PropertyInfo p = GetPropertyInfo(from, ref o, name, false, ref failReason);
+            PropertyInfo? p = GetPropertyInfo(from, ref o, name, false, ref failReason);
 
             if (p == null)
                 return failReason;
@@ -545,7 +545,7 @@ namespace Server.Commands
         public static string SetValue(object o, string name, string value)
         {
             string failReason = "";
-            PropertyInfo p = GetPropertyInfo(ref o, name, false, ref failReason);
+            PropertyInfo? p = GetPropertyInfo(ref o, name, false, ref failReason);
 
             if (p == null)
                 return failReason;
@@ -591,9 +591,9 @@ namespace Server.Commands
         private static Type[] m_ParseTypes = new Type[] { typeof(string) };
         private static object[] m_ParseParams = new object[1];
 
-        private static object Parse(object o, Type t, string value)
+        private static object? Parse(object? o, Type t, string value)
         {
-            MethodInfo method = t.GetMethod("Parse", m_ParseTypes);
+            MethodInfo? method = t.GetMethod("Parse", m_ParseTypes);
 
             m_ParseParams[0] = value;
 
@@ -613,9 +613,9 @@ namespace Server.Commands
             return (Array.IndexOf(m_NumericTypes, t) >= 0);
         }
         public const string PropNull = "(-null-)";
-        public static string ConstructFromString(Type type, object obj, string value, ref object constructed)
+        public static string? ConstructFromString(Type type, object? obj, string value, ref object constructed)
         {
-            object toSet;
+            object? toSet;
 
             if (value == PropNull && !type.IsValueType)
                 value = null;
@@ -686,7 +686,7 @@ namespace Server.Commands
             {   // 7/26/2024, Adam: Add support for finding matching Serial
                 try
                 {   // need the cast to Serial here since Serial.Equals does not support comparing to an integer
-                    toSet = (Serial) Convert.ToInt32(value.Substring(2), 16);
+                    toSet = (Serial)Convert.ToInt32(value.Substring(2), 16);
                 }
                 catch
                 {
@@ -711,8 +711,8 @@ namespace Server.Commands
 
         public static string InternalSetValue(Mobile from, object logobj, object o, PropertyInfo p, string pname, string value, bool shouldLog)
         {
-            object toSet = null;
-            string result = ConstructFromString(p.PropertyType, o, value, ref toSet);
+            object? toSet = null;
+            string? result = ConstructFromString(p.PropertyType, o, value, ref toSet);
 
             if (result != null)
                 return result;
@@ -742,8 +742,8 @@ namespace Server.Commands
         }
         public static string InternalSetValue(object o, PropertyInfo p, string pname, string value)
         {
-            object toSet = null;
-            string result = ConstructFromString(p.PropertyType, o, value, ref toSet);
+            object? toSet = null;
+            string? result = ConstructFromString(p.PropertyType, o, value, ref toSet);
 
             if (result != null)
                 return result;

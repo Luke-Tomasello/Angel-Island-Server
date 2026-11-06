@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -85,7 +85,7 @@ namespace Server.Spells.Fourth
                 SpellHelper.AddStatCurse(Caster, m, StatType.Dex);
                 SpellHelper.AddStatCurse(Caster, m, StatType.Int); SpellHelper.DisableSkillCheck = false;
 
-                Timer t = (Timer)m_UnderEffect[m];
+                Timer? t = (Timer?)m_UnderEffect[m];
 
                 if (Caster.Player && m.Player && Caster != m && t == null)
                 {

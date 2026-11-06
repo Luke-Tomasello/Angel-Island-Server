@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -22,6 +22,11 @@
 /* Scripts/Engines/AngelIsland/AIGuardSpawn/AIPostGuard.cs
  * Created 4/1/04 by mith
  * ChangeLog
+ * 10/17/26, Adam
+ *		After hours club: only post guards spawned by a champion engine take part. The door is the one
+ *		next to that engine (BaseAIGuard.FindClubDoor), on its own facet. Checked once, in OnAfterSpawn (not MoveToWorld).
+ *		If the door was left unlocked (a prisoner used the captain's key), the first guard to spawn moves beside the
+ *		engine and re-keys and locks it (DebugFlags.Decisions). A locked door (and any unused key) is left alone.
  * 5/29/2021, Adam
  *		Updated the chance for a guard to drop a key to 20% from 1%
  *		The rares there are due to their scarcity and the difficulties associated with prison.
@@ -51,6 +56,7 @@
  * 		Changed starting skills to be from a range of 70-80 rather than flat 75.0.
  */
 
+using Server.Engines.ChampionSpawn;
 using Server.Items;
 using System;
 
@@ -77,30 +83,23 @@ namespace Server.Mobiles
             SetSkill(SkillName.Swords, CoreAI.PostGuardSkillLevel);
             SetSkill(SkillName.MagicResist, CoreAI.PostGuardSkillLevel);
         }
-        public override void MoveToWorld(Point3D newLocation, Map map)
-        {
-            base.MoveToWorld(newLocation, map);
-            if (map == Map.Felucca && AfterHoursClub == null)
-                InitializeAfterHoursClub();
+        public override void OnAfterSpawn()
+        {   // ChampEngine.PrepMob calls this once, after MoveToWorld, so wandering or teleporting never repairs the door
+            base.OnAfterSpawn();
+            if (SpawnerEngine != null)
+                RepairAfterHoursClub();
         }
-        private bool InitializeAfterHoursClub()
-        {   // small chance we won't find, that's ok
-            if (AfterHoursClub == null)
-            {
-                IPooledEnumerable eable = this.GetItemsInRange(20);
-                foreach (Item item in eable)
-                    if (item is BaseDoor bd)
-                    {   // lock it up!
-                        AfterHoursClub = bd;
-                        AfterHoursClub.KeyValue = Key.RandomValue();
-                        AfterHoursClub.Locked = true;
-                        eable.Free();
-                        return AfterHoursClub.Locked == true;
-                    }
-                eable.Free();
-            }
+        private void RepairAfterHoursClub()
+        {   // a locked door (and any unused captain's key) is left alone
+            BaseDoor? door = FindClubDoor(this);
+            ChampEngine? engine = SpawnerEngine;
+            if (door == null || door.Locked || engine == null)
+                return;
 
-            return AfterHoursClub != null && AfterHoursClub.Locked == true;
+            // the first guard to find it unlocked goes to the engine (3 tiles from the door) and repairs the lock
+            MoveToWorld(Spawner.GetSpawnPosition(engine.Map, engine.Location, 1, Utility.SpawnFlags.None, this), engine.Map);
+            door.LockAll(Key.RandomValue());
+            DebugSay(DebugFlags.Decisions, "Found door unlocked, locking");
         }
         public AIPostGuard(Serial serial)
             : base(serial)
@@ -111,47 +110,28 @@ namespace Server.Mobiles
         public override TimeSpan BandageDelay { get { return TimeSpan.FromSeconds(12.0); } }
         public override int BandageMin { get { return 15; } }
         public override int BandageMax { get { return 30; } }
-        private void AICrossShardLoot()
-        {   // Angel Island creatures that exist on multiple shards use common loot
-            //  i.e., that loot doesn't change across different shard configs
-            DropWeapon(1, 1);
-            DropWeapon(1, 1);
-
-            DropItem(new BagOfReagents(CoreAI.PostGuardNumRegDrop));
-            DropItem(new Bandage(CoreAI.PostGuardNumBandiesDrop));
-            DropItem(new ParalyzeScroll());
-            DropItem(new FireballScroll());
-            DropItem(new NightSightScroll());
-
-            if (Utility.Chance(0.2))
-            {
-                IDWand wand = new IDWand();
-                wand.MagicCharges = 5;
-                DropItem(wand);
-            }
-        }
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {   // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                AICrossShardLoot();
-            }
+            if (Spawning) { PackGold(10, 25); }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                        AICrossShardLoot();
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    // ai special
+                // Angel Island creatures that exist on multiple shards use common loot
+                //  i.e., that loot doesn't change across different shard configs
+
+                DropWeapon(1, 1);
+                DropWeapon(1, 1);
+
+                PackItem(new BagOfReagents(CoreAI.PostGuardNumRegDrop));
+                PackItem(new Bandage(CoreAI.PostGuardNumBandiesDrop));
+                PackItem(new ParalyzeScroll());
+                PackItem(new FireballScroll());
+                PackItem(new NightSightScroll());
+
+                if (Utility.Chance(0.2))
+                {
+                    IDWand wand = new IDWand();
+                    wand.MagicCharges = 5;
+                    PackItem(wand);
                 }
             }
         }
@@ -165,22 +145,26 @@ namespace Server.Mobiles
         {
             if (DateTime.UtcNow >= m_NextSpeechTime)
             {
-                PlayerMobile pm = m as PlayerMobile;
-                if (pm != null && pm.AccessLevel == AccessLevel.Player && !m.Hidden && m.Alive && m.Location != oldLocation && m.InRange(this, 8))
+                PlayerMobile? pm = m as PlayerMobile;
+
+                if (pm != null && pm.AccessLevel == AccessLevel.Player &&
+                    !m.Hidden && m.Alive &&
+                    m.Location != oldLocation &&
+                    m.InRange(this, 8))
                 {
                     if (Utility.RandomBool())
                     {
-                        switch (Utility.Random(5))
+                        switch (Utility.Random(14))
                         {
                             case 0:
                                 {
-                                    this.Say("Back to your cage wretched dog!");
+                                    this.Say("Back to your cage, wretched dog!");
                                     break;
                                 }
                             case 1:
                                 {
-                                    this.Say("Thinking of escape eh?");
-                                    this.Say("We�ll just see about that!");
+                                    this.Say("Thinking of escape, eh?");
+                                    this.Say("We'll just see about that!");
                                     break;
                                 }
                             case 2:
@@ -191,14 +175,65 @@ namespace Server.Mobiles
                                 }
                             case 3:
                                 {
-                                    this.Say("I see you�ve lost your way.");
-                                    this.Say("Shall I see you to the prison cemetery?");
+                                    this.Say("I see you've lost your way.");
+                                    this.Say("Shall I escort you to the prison cemetery?");
                                     break;
                                 }
                             case 4:
                                 {
                                     this.Say("Yes, run away!");
-                                    this.Say("Ah, hah hah hah!");
+                                    this.Say("Ah hah hah hah!");
+                                    break;
+                                }
+                            case 5:
+                                {
+                                    this.Say("Back behind the bars where you belong!");
+                                    break;
+                                }
+                            case 6:
+                                {
+                                    this.Say("Another rat sniffing for freedom.");
+                                    break;
+                                }
+                            case 7:
+                                {
+                                    this.Say("Careful now, prisoner.");
+                                    this.Say("The last one who ran bled all over the yard.");
+                                    break;
+                                }
+                            case 8:
+                                {
+                                    this.Say("Move along, convict.");
+                                    this.Say("The walls are higher than your hopes.");
+                                    break;
+                                }
+                            case 9:
+                                {
+                                    this.Say("You look nervous.");
+                                    this.Say("Good.");
+                                    break;
+                                }
+                            case 10:
+                                {
+                                    this.Say("Trying the gates again?");
+                                    this.Say("You lot never learn.");
+                                    break;
+                                }
+                            case 11:
+                                {
+                                    this.Say("*rattles keys*");
+                                    this.Say("Hear that?");
+                                    this.Say("That's the sound of your future.");
+                                    break;
+                                }
+                            case 12:
+                                {
+                                    this.Say("One more step and you'll feed the crows.");
+                                    break;
+                                }
+                            case 13:
+                                {
+                                    this.Say("The dead outside the walls once had plans too.");
                                     break;
                                 }
                         }

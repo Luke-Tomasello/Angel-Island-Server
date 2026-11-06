@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -29,6 +29,37 @@
  *		Merged in 1.0RC0 code.
  */
 
+/*
+ * ObjectConditional
+ *
+ * Parses and evaluates simple conditional expressions over world objects
+ * using reflection. Intended for use by admin commands and internal tooling.
+ *
+ * SYNTAX:
+ *   Condition where <TypeName> <Property> <Operator> <Value> [and/or ...]
+ *
+ * NOTES:
+ * - <TypeName> must be a concrete type known to the script compiler.
+ * - <Property> must be a public readable property on the type.
+ * - Enum values must match exactly.
+ * - Multiple conditions are ANDed by default; use 'or' explicitly.
+ *
+ * OPERATORS:
+ *   ==   equal
+ *   !=   not equal
+ *   >    greater than
+ *   <    less than
+ *   >=   greater or equal
+ *   <=   less or equal
+ *   ==~  case-insensitive string equality
+ *
+ * EXAMPLES:
+ *   Condition where FillableContainer ContentType == Rare
+ *   Condition where DungeonTreasureChest Locked == true
+ *   Condition where LockableContainer PlayerCrafted == true TrapType != None
+ *
+ */
+
 using Server.Targeting;
 using System;
 using System.Collections;
@@ -38,13 +69,13 @@ namespace Server.Commands
 {
     public class ObjectConditional
     {
-        private Type m_Type;
+        private Type? m_Type;
         private PropertyCondition[][] m_Conditions;
 
         private static Type typeofItem = typeof(Item);
         private static Type typeofMobile = typeof(Mobile);
 
-        public Type Type
+        public Type? Type
         {
             get { return m_Type; }
         }
@@ -110,9 +141,10 @@ namespace Server.Commands
             return false; // all conditions false
         }
 
-        public static ObjectConditional Parse(Mobile from, ref string[] args)
+        public static ObjectConditional Parse(Mobile? from, ref string[] args)
         {
-            string[] conditionArgs = null;
+
+            string[]? conditionArgs = null;
 
             for (int i = 0; i < args.Length; ++i)
             {
@@ -139,7 +171,7 @@ namespace Server.Commands
 
             int index = 0;
 
-            Type type = ScriptCompiler.FindTypeByName(conditionArgs[index++], true);
+            Type? type = ScriptCompiler.FindTypeByName(conditionArgs[index++], true);
 
             if (type == null)
                 throw new Exception(string.Format("No type with that name ({0}) was found.", conditionArgs[0]));
@@ -147,7 +179,7 @@ namespace Server.Commands
             PropertyInfo[] props = type.GetProperties();
 
             ArrayList allConditions = new ArrayList();
-            ArrayList currentConditions = null;
+            ArrayList? currentConditions = null;
 
             while (index < conditionArgs.Length)
             {
@@ -201,11 +233,10 @@ namespace Server.Commands
 
             for (int i = 0; i < conditions.Length; ++i)
                 conditions[i] = (PropertyCondition[])(((ArrayList)allConditions[i]).ToArray(typeof(PropertyCondition)));
-
             return new ObjectConditional(type, conditions);
         }
 
-        public ObjectConditional(Type type, PropertyCondition[][] conditions)
+        public ObjectConditional(Type? type, PropertyCondition[][] conditions)
         {
             m_Type = type;
             m_Conditions = conditions;
@@ -239,11 +270,11 @@ namespace Server.Commands
     {
         private PropertyInfo[] m_PropertyInfoChain;
         private ConditionOperator m_Operator;
-        private Mobile m_From;
+        private Mobile? m_From;
         private object m_Argument;
         private bool m_LogicalNot;
 
-        public PropertyCondition(Mobile from, Type type, PropertyInfo[] props, string prop, string oper, string arg, bool logicalNot)
+        public PropertyCondition(Mobile? from, Type type, PropertyInfo[] props, string prop, string oper, string arg, bool logicalNot)
         {
             m_From = from;
             m_LogicalNot = logicalNot;
@@ -255,28 +286,28 @@ namespace Server.Commands
                 throw new Exception(failReason);
 
             /*for ( int i = 0; i < props.Length; ++i )
-			{
-				PropertyInfo check = props[i];
+            {
+                PropertyInfo check = props[i];
 
-				if ( !Insensitive.Equals( check.Name, prop ) )
-					continue;
+                if ( !Insensitive.Equals( check.Name, prop ) )
+                    continue;
 
-				m_Property = check;
-				break;
-			}
+                m_Property = check;
+                break;
+            }
 
-			if ( m_Property == null )
-				throw new Exception( string.Format( "No property with the name ({0}) was found on type ({1}).", prop, type.Name ) );
+            if ( m_Property == null )
+                throw new Exception( string.Format( "No property with the name ({0}) was found on type ({1}).", prop, type.Name ) );
 
-			CPA attr = Properties.GetCPA( m_Property );
+            CPA attr = Properties.GetCPA( m_Property );
 
-			if ( attr == null )
-				throw new Exception( string.Format( "No property with the name ({0}) was found on type ({1}).", prop, type.Name ) );
+            if ( attr == null )
+                throw new Exception( string.Format( "No property with the name ({0}) was found on type ({1}).", prop, type.Name ) );
 
-			if ( from.AccessLevel < attr.ReadLevel )
-				throw new Exception( string.Format( "Getting this property ({0}) requires at least {1} access level.", prop, Mobile.GetAccessLevelName( attr.ReadLevel ) ) );*/
+            if ( from.AccessLevel < attr.ReadLevel )
+                throw new Exception( string.Format( "Getting this property ({0}) requires at least {1} access level.", prop, Mobile.GetAccessLevelName( attr.ReadLevel ) ) );*/
 
-            string error = Properties.ConstructFromString(m_PropertyInfoChain[m_PropertyInfoChain.Length - 1].PropertyType, null, arg, ref m_Argument);
+            string? error = Properties.ConstructFromString(m_PropertyInfoChain[m_PropertyInfoChain.Length - 1].PropertyType, null, arg, ref m_Argument);
 
             if (error != null)
                 throw new Exception(error);
@@ -328,7 +359,7 @@ namespace Server.Commands
             }
         }
 
-        public string AsString(object obj)
+        public string AsString(object? obj)
         {
             if (obj == null)
                 return "";
@@ -339,7 +370,7 @@ namespace Server.Commands
             return obj.ToString();
         }
 
-        public bool Equality(object obj)
+        public bool Equality(object? obj)
         {
             if (obj == null && m_Argument == null)
                 return true;
@@ -350,7 +381,7 @@ namespace Server.Commands
             return obj.Equals(m_Argument);
         }
 
-        public int CompareWith(object obj)
+        public int CompareWith(object? obj)
         {
             if (obj == null && m_Argument == null)
                 return 0;
@@ -371,13 +402,13 @@ namespace Server.Commands
         {
             bool ret;
 
-            string failReason = null;
-            PropertyInfo endProp = Properties.GetPropertyInfo(ref obj, m_PropertyInfoChain, ref failReason);
+            string? failReason = null;
+            PropertyInfo? endProp = Properties.GetPropertyInfo(ref obj, m_PropertyInfoChain, ref failReason);
 
             if (endProp == null)
                 return false;
 
-            object current = endProp.GetValue(obj, null);
+            object? current = endProp.GetValue(obj, null);
 
             switch (m_Operator)
             {

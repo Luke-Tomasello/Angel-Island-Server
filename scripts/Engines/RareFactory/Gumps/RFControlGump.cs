@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -132,7 +132,7 @@ namespace Server.Gumps
                         // The .ViewingDODIndex references the relative index
                         // within this particular DODGroup
 
-                        DODGroup dg = (DODGroup)RareFactory.DODGroup[RareFactory.ViewingDODGroupIndex];
+                        DODGroup? dg = (DODGroup?)RareFactory.DODGroup[RareFactory.ViewingDODGroupIndex];
 
                         if ((RareFactory.ViewingDODIndex + 1) >= dg.DODInst.Count)
                         {

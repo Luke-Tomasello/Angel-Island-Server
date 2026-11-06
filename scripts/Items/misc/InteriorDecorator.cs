@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -118,14 +118,14 @@ namespace Server.Items
 
         public static bool InHouse(Mobile from)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(from);
+            BaseHouse? house = BaseHouse.FindHouseAt(from);
 
             return (house != null && house.IsCoOwner(from));
         }
 
         public static bool InTownship(Mobile from)
         {
-            TownshipRegion tsr = TownshipRegion.GetTownshipAt(from);
+            TownshipRegion? tsr = TownshipRegion.GetTownshipAt(from);
 
             return (tsr != null && tsr.TStone != null && tsr.TStone.HasAccess(from, Township.TownshipAccess.Member));
         }
@@ -217,8 +217,8 @@ namespace Server.Items
                 {
                     Item item = (Item)targeted;
 
-                    BaseHouse house = BaseHouse.FindHouseAt(from);
-                    TownshipRegion tsr = TownshipRegion.GetTownshipAt(from);
+                    BaseHouse? house = BaseHouse.FindHouseAt(from);
+                    TownshipRegion? tsr = TownshipRegion.GetTownshipAt(from);
 
                     if (house == null && tsr != null && tsr.TStone != null && tsr.TStone.HasAccess(from, Township.TownshipAccess.Member))
                     {
@@ -299,7 +299,7 @@ namespace Server.Items
                     {
                         if (customFlipable)
                         {
-                            FlipableAttribute fa = null;
+                            FlipableAttribute? fa = null;
                             fa = new FlipableAttribute(Loot.FlipTable[item.ItemID]);
                             fa.Flip(item);
                         }

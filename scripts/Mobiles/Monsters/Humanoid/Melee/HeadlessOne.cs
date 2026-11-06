@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -63,6 +63,7 @@ namespace Server.Mobiles
 
         public override bool CanRummageCorpses { get { return Core.RuleSets.AngelIslandRules() ? true : true; } }
         public override int Meat { get { return 1; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
 
         public HeadlessOne(Serial serial)
             : base(serial)
@@ -71,31 +72,16 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020202090147/uo.stratics.com/hunters/headless.shtml
+            // 0 to 50 Gold, 1 Raw Ribs (carved)
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(0, 25);
+                PackGold(0, 50);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020202090147/uo.stratics.com/hunters/headless.shtml
-                    // 0 to 50 Gold, 1 Raw Ribs (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(0, 50);
-                    }
-                    else
-                    {
-                        // no more lootz
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Poor);
-                }
-                // TODO: body parts
+                // no more lootz
             }
         }
 

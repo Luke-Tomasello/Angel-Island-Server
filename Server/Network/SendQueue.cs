@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -149,7 +149,7 @@ namespace Server.Network
 
         private Queue<Gram> _pending;
 
-        private Gram _buffered;
+        private Gram? _buffered;
 
         public bool IsFlushReady
         {
@@ -174,7 +174,7 @@ namespace Server.Network
 
         public Gram CheckFlushReady()
         {
-            Gram gram = null;
+            Gram? gram = null;
 
             if (_pending.Count == 0 && _buffered != null)
             {
@@ -189,7 +189,7 @@ namespace Server.Network
 
         public Gram Dequeue()
         {
-            Gram gram = null;
+            Gram? gram = null;
 
             if (_pending.Count > 0)
             {
@@ -237,7 +237,7 @@ namespace Server.Network
                 throw new CapacityExceededException();
             }
 
-            Gram gram = null;
+            Gram? gram = null;
 
             while (length > 0)
             {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -101,7 +101,7 @@ namespace Server.Items
     [Obsolete("Use HolidayDeed instead")]
     public class HalloweenDeed : Item
     {
-        private string m_Signature;
+        private string? m_Signature;
         private int m_Place;
 
         [Constructable]
@@ -118,7 +118,7 @@ namespace Server.Items
             Hue = 44;
             LootType = LootType.Newbied;
             m_Place = place;
-            string PlaceText = null;
+            string? PlaceText = null;
 
             if (place == 1)
                 PlaceText = "1st place";

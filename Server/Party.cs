@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -23,9 +23,9 @@ namespace Server
 {
     public abstract class PartyCommands
     {
-        private static PartyCommands m_Handler;
+        private static PartyCommands? m_Handler;
 
-        public static PartyCommands Handler { get { return m_Handler; } set { m_Handler = value; } }
+        public static PartyCommands? Handler { get { return m_Handler; } set { m_Handler = value; } }
 
         public abstract void OnAdd(Mobile from);
         public abstract void OnRemove(Mobile from, Mobile target);

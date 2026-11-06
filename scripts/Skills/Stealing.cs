@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -91,6 +91,9 @@
  *		Set ClassicMode = true to re-enable perma-grey.
  */
 
+using Server.Accounting;
+using Server.Engines;
+using Server.Engines.DataRecorder;
 using Server.Factions;
 using Server.Items;
 using Server.Mobiles;
@@ -142,7 +145,7 @@ namespace Server.SkillHandlers
                     return true;
 
                 #region Static Region
-                StaticRegion sr = StaticRegion.FindStaticRegion(corpse);
+                StaticRegion? sr = StaticRegion.FindStaticRegion(corpse);
                 if (sr != null && sr.BlockLooting && m_Thief.AccessLevel == AccessLevel.Player)
                     return false;
                 #endregion
@@ -196,7 +199,7 @@ namespace Server.SkillHandlers
                 return false;
             }
 
-            private Item TryStealItem(Item toSteal, ref bool caught)
+            private Item? TryStealItem(Item toSteal, ref bool caught)
             {
                 //Zen make bankbox close when stealing!
                 BankBox box = m_Thief.FindBankNoCreate();
@@ -206,7 +209,7 @@ namespace Server.SkillHandlers
                     m_Thief.Send(new MobileUpdate(m_Thief));
                 }
 
-                Item stolen = null;
+                Item? stolen = null;
 
                 object root = toSteal.RootParent;
 
@@ -221,8 +224,8 @@ namespace Server.SkillHandlers
                 #region Sigils
                 else if (toSteal is Sigil)
                 {
-                    PlayerState pl = PlayerState.Find(m_Thief);
-                    Faction faction = (pl == null ? null : pl.Faction);
+                    PlayerState? pl = PlayerState.Find(m_Thief);
+                    Faction? faction = (pl == null ? null : pl.Faction);
 
                     Sigil sig = (Sigil)toSteal;
 
@@ -362,7 +365,7 @@ namespace Server.SkillHandlers
                                 int pileWeight = (int)Math.Ceiling(toSteal.Weight * toSteal.Amount);
                                 pileWeight *= 10;
 
-                                if (m_Thief.CheckTargetSkill(SkillName.Stealing, toSteal, pileWeight - 22.5, pileWeight + 27.5, new object[2] { toSteal.RootParent, null } /*contextObj*/))
+                                if (m_Thief.CheckTargetSkill(SkillName.Stealing, toSteal, pileWeight - 22.5, pileWeight + 27.5, new object?[2] { toSteal.RootParent, null } /*contextObj*/))
                                     stolen = toSteal;
                             }
                             else
@@ -370,7 +373,7 @@ namespace Server.SkillHandlers
                                 int pileWeight = (int)Math.Ceiling(toSteal.Weight * amount);
                                 pileWeight *= 10;
 
-                                if (m_Thief.CheckTargetSkill(SkillName.Stealing, toSteal, pileWeight - 22.5, pileWeight + 27.5, new object[2] { toSteal.RootParent, null } /*contextObj*/))
+                                if (m_Thief.CheckTargetSkill(SkillName.Stealing, toSteal, pileWeight - 22.5, pileWeight + 27.5, new object?[2] { toSteal.RootParent, null } /*contextObj*/))
                                 {
                                     stolen = toSteal.Dupe(amount);
                                     toSteal.Amount -= amount;
@@ -382,16 +385,36 @@ namespace Server.SkillHandlers
                             int iw = (int)Math.Ceiling(w);
                             iw *= 10;
 
-                            if (m_Thief.CheckTargetSkill(SkillName.Stealing, toSteal, iw - 22.5, iw + 27.5, new object[2] { toSteal.RootParent, null } /*contextObj*/))
+                            if (m_Thief.CheckTargetSkill(SkillName.Stealing, toSteal, iw - 22.5, iw + 27.5, new object?[2] { toSteal.RootParent, null } /*contextObj*/))
                                 stolen = toSteal;
                         }
 
                         if (stolen != null)
+                        {
                             m_Thief.SendLocalizedMessage(502724); // You successfully steal the item.
+
+                            #region DataRecorder
+                            Mobile? victim = root as Mobile;
+                            // make sure it's a criminal steal (not a friend or something, must be in a guarded region)
+                            if (CheckTheftCrime(m_Thief, victim, root))
+                                if (stolen is Gold gold)
+                                {
+                                    DataRecorder.Add(m_Thief, RecorderDomain.TheftGold, gold.Amount);
+                                }
+                            #endregion DataRecorder
+                        }
                         else
                             m_Thief.SendLocalizedMessage(502723); // You fail to steal the item.
 
-                        caught = (m_Thief.Skills[SkillName.Stealing].Value < Utility.Random(150));
+                        // Self-stealing: never criminal, never caught
+                        if (root != null && root == m_Thief)
+                        {
+                            caught = false;
+                        }
+                        else
+                        {
+                            caught = (m_Thief.Skills[SkillName.Stealing].Value < Utility.Random(150));
+                        }
 
                         if (stolen != null && stolen.GetFlag(LootType.Rare))
                             m_Thief.RareAcquisitionLog(stolen);
@@ -423,7 +446,7 @@ namespace Server.SkillHandlers
                 int iw = (int)Math.Ceiling(GetWeight(item));
                 iw *= 10;
 
-                if (m_Thief.CheckTargetSkill(SkillName.Stealing, item, iw - 22.5, iw + 27.5, new object[2] { item.RootParent, null } /*contextObj*/))
+                if (m_Thief.CheckTargetSkill(SkillName.Stealing, item, iw - 22.5, iw + 27.5, new object?[2] { item.RootParent, null } /*contextObj*/))
                     return true;
 
                 return false;
@@ -466,8 +489,8 @@ namespace Server.SkillHandlers
             {
                 from.RevealingAction();
 
-                Item stolen = null;
-                object root = null;
+                Item? stolen = null;
+                object? root = null;
                 bool caught = false;
 
                 if (target is Item)
@@ -486,13 +509,26 @@ namespace Server.SkillHandlers
                         Container pack = ((Mobile)target).Backpack;
 
                         // adam, TODO: we need to change this to be any kin 
-                        Item hat = from.FindItemOnLayer(Layer.Helm);      // Added by OldSalty 6/12/04 from here...
+                        Item? hat = from.FindItemOnLayer(Layer.Helm);      // Added by OldSalty 6/12/04 from here...
                         if (hat is OrcishKinMask && (target is Orc || target is OrcBomber || target is OrcBrute || target is OrcCaptain || target is OrcishLord || target is OrcishMage))
                         {
-                            AOS.Damage(from, 50, 0, 100, 0, 0, 0, hat);
-                            hat.Delete();
-                            from.FixedParticles(0x36BD, 20, 10, 5044, EffectLayer.Head);
-                            from.PlaySound(0x307);
+                            if (Core.RuleSets.UpheavalRules())
+                            {
+                                // Upheaval: the disguise is blown rather than destroyed.
+                                // Same OrcEnemy state and duration as ContestedSpawner kills.
+                                if (from is PlayerMobile pm && pm.Account is Account acct)
+                                {
+                                    acct.SetSeason2OrcEnemy(Core.Debug ? TimeSpan.FromMinutes(5) : TimeSpan.FromHours(72));
+                                    Account.EnforceOrcMaskRestrictions(pm, hide: false, message: true, requireDistrict: false);
+                                }
+                            }
+                            else
+                            {
+                                AOS.Damage(from, 50, new DamageContext { Source = this });
+                                hat.Delete();
+                                from.FixedParticles(0x36BD, 20, 10, 5044, EffectLayer.Head);
+                                from.PlaySound(0x307);
+                            }
                         }                                                   // . . . to here
 
                         if (pack != null && pack.Items.Count > 0)
@@ -522,6 +558,13 @@ namespace Server.SkillHandlers
                     // Some stolen items morph into something else. Like the scarecrow morphs into an addondeed
                     OnAfterStolen(from, stolen);
 
+                    //// Criminal action to innocent: start short anti-disconnect-abuse window
+                    //if (root is PlayerMobile victim && from is PlayerMobile thief)
+                    //{
+                    //    if (thief.IsCriminal(victim))           // target is innocent to thief
+                    //        thief.MarkRecentCriminalWindow();   // mark the thief, not the victim
+                    //}
+
                     #region Hot Items
                     if (root is Mobile && ((Mobile)root).Player)
                     {
@@ -539,52 +582,152 @@ namespace Server.SkillHandlers
                 {
                     if (root == null)
                     {
-                        m_Thief.CriminalAction(false);
+                        HandleCriminalAction(m_Thief, null, null, stolen);
                     }
-                    else if (root is Corpse && ((Corpse)root).IsCriminalAction(m_Thief))
+                    else if (root is Corpse corpse && corpse.IsCriminalAction(m_Thief))
                     {
-                        m_Thief.CriminalAction(false);
+                        HandleCriminalAction(m_Thief, null, root, stolen);
                     }
-                    else if (root is Mobile)
+                    else if (root is Mobile mobRoot)
                     {
-                        Mobile mobRoot = (Mobile)root;
-
                         if (!IsInGuild(mobRoot) && IsInnocentTo(m_Thief, mobRoot))
-                            m_Thief.CriminalAction(false);
+                            HandleCriminalAction(m_Thief, mobRoot, null, stolen);
 
-                        string message = string.Format("You notice {0} trying to steal from {1}.", m_Thief.Name, mobRoot.Name);
+                        string message = string.Format(
+                            "You notice {0} trying to steal from {1}.",
+                            m_Thief.Name,
+                            mobRoot.Name);
 
                         foreach (NetState ns in m_Thief.GetClientsInRange(8))
-                        {   // 5/6/2024, Adam: Add the LOS check here. Players shouldn't report things they cannot see
+                        {
+                            // LOS check: players should not report what they cannot see
                             if (ns.Mobile != m_Thief && ns.Mobile.InLOS(m_Thief))
                                 ns.Mobile.SendMessage(message);
                         }
                     }
                 }
-                else if (root is Corpse && ((Corpse)root).IsCriminalAction(m_Thief))
+                else if (root is Corpse corpse && corpse.IsCriminalAction(m_Thief))
                 {
-                    m_Thief.CriminalAction(false);
+                    HandleCriminalAction(m_Thief, null, root, stolen);
                 }
 
-                if (root is Mobile && ((Mobile)root).Player && m_Thief is PlayerMobile && IsInnocentTo(m_Thief, (Mobile)root) && !IsInGuild((Mobile)root))
+                Mobile? rootMobile = root as Mobile;
+
+                bool rootIsPlayer = (rootMobile != null && rootMobile.Player);
+                bool thiefIsPlayer = (m_Thief is PlayerMobile);
+
+                // Self-stealing: never criminal, never caught
+                bool isSelfSteal = (rootMobile != null && rootMobile == m_Thief);
+
+                bool rootIsInnocentToThief =
+                    (rootMobile != null && IsInnocentTo(m_Thief, rootMobile));
+
+                bool rootIsNotInGuild =
+                    (rootMobile != null && !IsInGuild(rootMobile));
+
+                bool shouldCriminalFlag =
+                    rootMobile != null &&
+                    !isSelfSteal &&
+                    rootIsPlayer &&
+                    thiefIsPlayer &&
+                    rootIsInnocentToThief &&
+                    rootIsNotInGuild;
+
+                if (shouldCriminalFlag)
                 {
+
                     PlayerMobile pm = (PlayerMobile)m_Thief;
 
-                    pm.PermaFlags.Add((Mobile)root);
+                    pm.AddPermaFlag((Mobile)root);
                     pm.Delta(MobileDelta.Noto);
                 }
-
-                //PIX: 11/17/07 - WTF is this?  Why did I have this in my code?
-                //if (stolen != null)
-                //{
-                //	if (root is Mobile)
-                //	{
-                //		((Mobile)root).AggressiveAction(m_Thief, false);
-                //	}
-                //}
             }
         }
+        private static void HandleCriminalAction(Mobile thief, Mobile? victim, object? root, Item? stolen)
+        {
+            if (thief is not PlayerMobile)
+                return;
 
+            if (thief.Account is not Account acct)
+                return;
+
+            // make sure it's an actual whackable offense, in a guard region, etc.
+            if (CheckTheftCrime(thief, victim, root))
+            {
+                // Otherwise: fall through => treat as crime
+
+                TimeSpan duration = TimeSpan.FromMinutes(CoreAI.ThievingGrayMinutes);
+
+                DateTime sentence = DateTime.UtcNow + duration;
+
+                // Apply theft criminality on all shards.
+                // Region notification is handled by the stealing act itself.
+                thief.CriminalAction(message: false,
+                    ctx: thief.CreateCriminalityContext(victim, source: root),
+                    Mobile.CriminalitySource.Thieving,
+                    regionInform: false);
+
+                // Mortalis-only justice system additions.
+                if (Core.RuleSets.MortalisStyleRules())
+                {
+                    ListEntry? tcTextHandle = PlayerJusticeSystem.AddThiefOffender(thief, victim, root, duration, null /* "Caught stealing" */);
+
+                    BountyUtility.CreateAndRegisterBounty(World.GetSystemAcct(), thief, tcTextHandle.EntryID);
+
+                    Utility.AddIncarcerationComment(
+                        null, // system
+                        thief,
+                        "caught stealing",
+                        duration,
+                        Utility.GetSextantLocation(thief),
+                        destination: null);
+                }
+            }
+
+            return;
+        }
+
+        private static bool CheckTheftCrime(Mobile thief, Mobile? victim, object? root)
+        {
+            if (thief is not PlayerMobile)
+                return false;
+
+            if (thief.Account is not Account acct)
+                return false;
+
+            Regions.GuardedRegion? gr = thief.Region as Regions.GuardedRegion;
+            bool isGuarded = (gr != null && gr.IsGuarded);
+
+            // Theft crime rules (clear ordering):
+            //
+            // 1) Wilderness (not guarded):
+            //    - Exempt from town-crime handling entirely.
+            //    - Victim-based criminality (if any) is handled elsewhere.
+            //
+            // 2) Guarded regions:
+            //    - Victimless environmental looting is NOT a crime (ground/container).
+            //    - Corpse exception: if the corpse requires criminal action, it IS a crime.
+
+            if (!isGuarded)
+            {
+                return false; // no town crime outside guarded regions
+            }
+
+            // From here on, we are in a guarded region.
+
+            // Victimless environmental loot (NOT a crime):
+            // - no victim
+            // - ground item OR container
+            // - EXCEPT corpses that explicitly require criminal action
+            if (victim == null &&
+                (root == null || root is Container) &&
+                !(root is Corpse corpse && corpse.IsCriminalAction(thief)))
+            {
+                return false; // no crime
+            }
+
+            return true;
+        }
         public static bool IsEmptyHanded(Mobile from)
         {
             if (from.FindItemOnLayer(Layer.OneHanded) != null)
@@ -598,7 +741,7 @@ namespace Server.SkillHandlers
 
         public static bool IsInsideLockedContainer(Item item)
         {
-            Container cont = item.Parent as Container;
+            Container? cont = item.Parent as Container;
 
             while (cont != null)
             {
@@ -641,7 +784,7 @@ namespace Server.SkillHandlers
                 return false;
 
             Container c = ((Container)target);
-            PlayerMobile mark = null;
+            PlayerMobile? mark = null;
 
             if (!(c.Parent is PlayerMobile))
                 return false;
@@ -661,7 +804,7 @@ namespace Server.SkillHandlers
                 return false;
 
             //Check perma flags
-            if (!thief.PermaFlags.Contains(mark))
+            if (!thief.ContainsPermaFlag(mark))
             {
                 thief.SendMessage("You many only attempt to plant books on marks who you are already criminal to.");
                 return false;
@@ -676,8 +819,10 @@ namespace Server.SkillHandlers
 
             //All we need to do here is the criminal action, since they will already be perma
             if (IsInnocentTo(thief, mark))
-            {
-                thief.CriminalAction(false);
+            {   // we only apply basice criminality here.
+                // if they are caught, ApplyCriminality below will apply the full crime with whack/travel time, and region inform.
+                // This is to avoid informing guards twice in the case of a failed attempt.
+                thief.CriminalAction(message: false);
             }
 
             //Normal check, 75% chance to plant book successfully
@@ -736,7 +881,7 @@ namespace Server.SkillHandlers
 
         public static bool IsHotItem(Item item, Mobile from)
         {
-            HotItemTimer timer;
+            HotItemTimer? timer;
 
             return (m_HotItems.TryGetValue(item, out timer) && timer.Victim != from);
         }
@@ -761,7 +906,7 @@ namespace Server.SkillHandlers
 
         public static void RemoveHotItem(Item item)
         {
-            HotItemTimer timer;
+            HotItemTimer? timer;
 
             if (m_HotItems.TryGetValue(item, out timer))
             {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -25,8 +25,6 @@
  *      For instance a dead horse is 0x2006. Although it shows up as a dead ogre until you add 200 to the amount! Crazy.
  *      here we will simply suppress the display of the amount else we get "[200] dead horse"
  */
-using System;
-
 namespace Server.Items
 {
     public class Static : Item
@@ -55,10 +53,10 @@ namespace Server.Items
                 Article article;
                 string baseName = GetBaseOldName(out article);
 
-                string prefix = GetOldPrefix(ref article);
-                string suffix = GetOldSuffix();
+                string? prefix = GetOldPrefix(ref article);
+                string? suffix = GetOldSuffix();
 
-                string articleStr;
+                string? articleStr;
                 // 3/6/2024, Adam: It seems the client uses 'amount' to select a display graphic.
                 //  For instance a dead horse is 0x2006. Although it shows up as a dead ogre until you add 200 to the amount! Crazy.
                 //      here we will simply suppress the display of the amount else we get "[200] dead horse"

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -111,7 +111,7 @@ namespace Server.Custom
 
             for (int i = 0; i < ce.Matched.Count; ++i)
             {
-                CategoryTypeEntry cte = (CategoryTypeEntry)ce.Matched[i];
+                CategoryTypeEntry? cte = (CategoryTypeEntry?)ce.Matched[i];
 
                 xml.WriteStartElement("object");
 
@@ -207,7 +207,7 @@ namespace Server.Custom
             if (!type.IsSubclassOf(typeofItem) && !type.IsSubclassOf(typeofMobile))
                 return false;
 
-            ConstructorInfo ctor = type.GetConstructor(Type.EmptyTypes);
+            ConstructorInfo? ctor = type.GetConstructor(Type.EmptyTypes);
 
             return (ctor != null && ctor.IsDefined(typeofConstructable, false));
         }
@@ -232,8 +232,8 @@ namespace Server.Custom
         {
             for (int i = 0; i < list.Count; ++i)
             {
-                Type type = (Type)list[i];
-                CategoryEntry match = GetDeepestMatch(root, type);
+                Type? type = (Type?)list[i];
+                CategoryEntry? match = GetDeepestMatch(root, type);
 
                 if (match == null)
                     continue;
@@ -246,14 +246,14 @@ namespace Server.Custom
             }
         }
 
-        private static CategoryEntry GetDeepestMatch(CategoryEntry root, Type type)
+        private static CategoryEntry? GetDeepestMatch(CategoryEntry root, Type type)
         {
             if (!root.IsMatch(type))
                 return null;
 
             for (int i = 0; i < root.SubCategories.Length; ++i)
             {
-                CategoryEntry check = GetDeepestMatch(root.SubCategories[i], type);
+                CategoryEntry? check = GetDeepestMatch(root.SubCategories[i], type);
 
                 if (check != null)
                     return check;
@@ -265,9 +265,9 @@ namespace Server.Custom
 
     public class CategorySorter : IComparer
     {
-        public int Compare(object x, object y)
+        public int Compare(object? x, object? y)
         {
-            string a = null, b = null;
+            string? a = null, b = null;
 
             if (x is CategoryEntry)
                 a = ((CategoryEntry)x).Title;
@@ -312,12 +312,12 @@ namespace Server.Custom
         private string m_Title;
         private Type[] m_Matches;
         private CategoryEntry[] m_SubCategories;
-        private CategoryEntry m_Parent;
+        private CategoryEntry? m_Parent;
         private ArrayList m_Matched;
 
         public string Title { get { return m_Title; } }
         public Type[] Matches { get { return m_Matches; } }
-        public CategoryEntry Parent { get { return m_Parent; } }
+        public CategoryEntry? Parent { get { return m_Parent; } }
         public CategoryEntry[] SubCategories { get { return m_SubCategories; } }
         public ArrayList Matched { get { return m_Matched; } }
 
@@ -329,7 +329,7 @@ namespace Server.Custom
             m_Matched = new ArrayList();
         }
 
-        public CategoryEntry(CategoryEntry parent, string title, CategoryEntry[] subCats)
+        public CategoryEntry(CategoryEntry? parent, string title, CategoryEntry[] subCats)
         {
             m_Parent = parent;
             m_Title = title;
@@ -348,7 +348,7 @@ namespace Server.Custom
             return isMatch;
         }
 
-        public CategoryEntry(CategoryEntry parent, CategoryLine[] lines, ref int index)
+        public CategoryEntry(CategoryEntry? parent, CategoryLine[] lines, ref int index)
         {
             m_Parent = parent;
 
@@ -373,7 +373,7 @@ namespace Server.Custom
 
             for (int i = 0; i < split.Length; ++i)
             {
-                Type type = ScriptCompiler.FindTypeByName(split[i].Trim());
+                Type? type = ScriptCompiler.FindTypeByName(split[i].Trim());
 
                 if (type == null)
                     Console.WriteLine("Match type not found ('{0}')", split[i].Trim());

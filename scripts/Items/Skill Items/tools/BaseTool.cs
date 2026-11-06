@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -33,9 +33,9 @@
  *		Merged in 1.0RC0 code.
  */
 
+using Scripts.Misc;
 using Server.Engines.Craft;
 using Server.Engines.EventResources;
-using Server.Engines.OldSchoolCraft;
 using Server.Network;
 using System;
 
@@ -211,7 +211,7 @@ namespace Server.Items
 
         public static bool CheckTool(Item tool, Mobile m)
         {
-            Item check = m.FindItemOnLayer(Layer.OneHanded);
+            Item? check = m.FindItemOnLayer(Layer.OneHanded);
 
             if (check is BaseTool && check != tool)
                 return false;
@@ -230,7 +230,7 @@ namespace Server.Items
             {
                 // we would like a date here but we do not know when Durability display appeared.
                 //	for now we will just condition on SP
-                return (!Core.RuleSets.SiegeStyleRules());
+                return (!Core.RuleSets.SiegeRules());
             }
         }
 
@@ -248,7 +248,7 @@ namespace Server.Items
 
             foreach (EventResourceSystem ers in EventResourceSystem.Systems)
             {
-                CraftSystem mutateSystem = ers.MutateCraft(from, this);
+                CraftSystem? mutateSystem = ers.MutateCraft(from, this);
 
                 if (mutateSystem != null)
                 {
@@ -262,6 +262,13 @@ namespace Server.Items
 
             if (IsChildOf(from.Backpack) || Parent == from)
             {
+                // Ownership check first
+                if (this is Item it && !StartingLootMonitor.CanUse(from, it))
+                {
+                    from.SendMessage("This tool is bound to another soul.");
+                    return;
+                }
+
                 TextDefinition badCraft = system.CanCraft(from, this, null);
 
                 if (!TextDefinition.IsNullOrEmpty(badCraft))
@@ -271,19 +278,9 @@ namespace Server.Items
                 else
                 {
                     // What good is this? Just to ensure creation?
-                    CraftContext context = system.GetContext(from);
+                    CraftContext? context = system.GetContext(from);
 
-                    // add UOSP old school craft system hook here
-                    // 10/31/22, Adam: incomplete, and probably not worth the bother as it's very
-                    //  clunky and difficult to use. The consideration here is quality of life, and having
-                    //  the old-school craft system just isn't worth it.
-                    if (false /*Core.RuleSets.SiegeStyleRules()*/)
-                    {
-                        if (new OldSchoolCraft(from, system, this, null).DoOldSchoolCraft() == false)
-                            from.SendGump(new CraftGump(from, system, this, null)); // call the old system as the old-school system is not impl
-                    }
-                    else
-                        from.SendGump(new CraftGump(from, system, this, null));
+                    from.SendGump(new CraftGump(from, system, this, null));
                 }
             }
             else
@@ -357,7 +354,7 @@ namespace Server.Items
 
             Resource = CraftResources.GetFromType(resourceType);
 
-            CraftContext context = craftSystem.GetContext(from);
+            CraftContext? context = craftSystem.GetContext(from);
 
             if (context != null && context.DoNotColor)
                 Hue = 0;

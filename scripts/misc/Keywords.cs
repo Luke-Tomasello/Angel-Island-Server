@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -40,11 +40,14 @@
  *		players can still decay their counts at the appropriate time by simply checking how many counts they have left. 
  */
 
+using Server.Accounting;
 using Server.Guilds;
 using Server.Gumps;
 using Server.Mobiles;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using static Server.Mobile;
 
 namespace Server.Misc
 {
@@ -62,24 +65,21 @@ namespace Server.Misc
             int[] keywords = args.Keywords;
 
             // "what have i done"
-            if (args.Speech.ToLower() == "what have i done" || args.Speech.ToLower() == "what have i done?")
+            string speech = args.Speech == null ? "" : args.Speech.Trim();
+
+            if (speech.Equals("what have i done", StringComparison.OrdinalIgnoreCase) || speech.Equals("what have i done?", StringComparison.OrdinalIgnoreCase))
             {
-                if (from is Server.Mobiles.PlayerMobile)
-                {
-                    ((Server.Mobiles.PlayerMobile)from).DecayKills();
-                }
-                from.SendMessage("Short Term Murders : {0}", from.ShortTermMurders);
-                from.SendMessage("Long Term Murders : {0}", from.LongTermMurders);
+                WhatHaveIDone(from);
                 return;
             }
 
             // Shrine of Sacrifice - pet release / smerx
             else if ((args.Speech.ToLower()).StartsWith("i wish to release ") && args.Speech.Length > 18 && from is PlayerMobile && from.CheckAlive() && from.X > 3350 && from.X < 3359 && from.Y > 284 && from.Y < 296)
             {
-                String torelease = args.Speech.Remove(0, 18);
+                string torelease = args.Speech.Remove(0, 18);
                 torelease.ToLower();
-                PlayerMobile pm = from as PlayerMobile;
-                Mobile pet = FindPet(torelease, pm);
+                PlayerMobile? pm = from as PlayerMobile;
+                Mobile? pet = FindPet(torelease, pm);
 
                 if (!ValidatePet(pet, pm))
                     return;
@@ -156,8 +156,240 @@ namespace Server.Misc
                 }
             }
         }
+        private static void WhatHaveIDone(Mobile from)
+        {
+            if (from is not PlayerMobile pm) return;
+            if (pm.Account is not Account acct) return;
+            DateTime now = DateTime.UtcNow;
 
-        private static Mobile FindPet(String petname, PlayerMobile owner)
+            pm.DecayKills();
+
+            bool any = false;
+
+            MurderStatusInfo status = MurderCountUtility.GetMurderStatus(pm);
+
+            #region Murders & Status
+            if (pm.LongTermMurders > 0 || pm.ShortTermMurders > 0)
+            {
+                from.SendMessage("Murder counts:");
+                if (pm.LongTermMurders > 0)
+                    from.SendMessage("  Long-term: {0}", pm.LongTermMurders);
+                if (pm.ShortTermMurders > 0)
+                    from.SendMessage("  Short-term: {0}", pm.ShortTermMurders);
+                any = true;
+            }
+            #endregion
+
+            #region Criminality (prioritized)
+            if (!status.GlobalWhackable)
+            {
+                // Non-red: full prioritized display
+                var sources = new[]
+                {
+                (Severity: 4, Label: "Harmful", GrayEnds: acct.HarmfulCriminalityEnds, WhackEnds: acct.HarmfulGuardWhackEnds, TravelEnds: acct.HarmfulTravelLockEnds),
+                (Severity: 3, Label: "AFK", GrayEnds: acct.AFKCriminalityEnds, WhackEnds: acct.AFKGuardWhackEnds, TravelEnds: acct.AFKTravelLockEnds),
+                (Severity: 2, Label: "Thieving", GrayEnds: acct.ThievingCriminalityEnds, WhackEnds: acct.ThievingGuardWhackEnds, TravelEnds: acct.ThievingTravelLockEnds),
+                (Severity: 1, Label: "Criminal", GrayEnds: DateTime.MinValue, WhackEnds: DateTime.MinValue, TravelEnds: DateTime.MinValue)
+            };
+
+                var activeSources = sources
+                    .Where(s => s.GrayEnds > now)
+                    .OrderByDescending(s => s.GrayEnds)
+                    .ThenByDescending(s => s.Severity)
+                    .ToList();
+
+                if (activeSources.Any())
+                {
+                    var dominant = activeSources[0];
+
+                    from.SendMessage("{0} criminality:", dominant.Label);
+                    SendRemaining(from, "  Criminal status remaining", RemainingUntil(dominant.GrayEnds, now));
+                    SendRemaining(from, "  Travel restricted remaining", RemainingUntil(dominant.TravelEnds, now));
+                    SendRemaining(from, "  Guards callable remaining", RemainingUntil(dominant.WhackEnds, now));
+
+                    any = true;
+
+                    if (activeSources.Count > 1)
+                    {
+                        var others = activeSources.Skip(1).Select(s => s.Label);
+                        from.SendMessage("  Also active: {0}", string.Join(", ", others));
+                    }
+                }
+                else if (pm.ExpireCriminal != null && pm.ExpireCriminal.Running)
+                {
+                    YouAreACriminal(from);
+                    any = true;
+                }
+            }
+            else // Red players: show max gray and travel from any source
+            {
+                TimeSpan maxGray = TimeSpan.Zero;
+                TimeSpan maxTravel = TimeSpan.Zero;
+
+                if (acct.HarmfulCriminalityEnds > now)
+                {
+                    TimeSpan gray = RemainingUntil(acct.HarmfulCriminalityEnds, now);
+                    if (gray > maxGray) maxGray = gray;
+
+                    TimeSpan travel = RemainingUntil(acct.HarmfulTravelLockEnds, now);
+                    if (travel > maxTravel) maxTravel = travel;
+                }
+
+                if (acct.AFKCriminalityEnds > now)
+                {
+                    TimeSpan gray = RemainingUntil(acct.AFKCriminalityEnds, now);
+                    if (gray > maxGray) maxGray = gray;
+
+                    TimeSpan travel = RemainingUntil(acct.AFKTravelLockEnds, now);
+                    if (travel > maxTravel) maxTravel = travel;
+                }
+
+                if (acct.ThievingCriminalityEnds > now)
+                {
+                    TimeSpan gray = RemainingUntil(acct.ThievingCriminalityEnds, now);
+                    if (gray > maxGray) maxGray = gray;
+
+                    TimeSpan travel = RemainingUntil(acct.ThievingTravelLockEnds, now);
+                    if (travel > maxTravel) maxTravel = travel;
+                }
+
+                // Runtime criminal timer (fallback/legacy)
+                if (pm.ExpireCriminal != null && pm.ExpireCriminal.Running)
+                {
+                    TimeSpan runtimeGray = pm.ExpireCriminal.NextTick - now;
+                    if (runtimeGray > maxGray) maxGray = runtimeGray;
+                }
+
+                if (maxGray > TimeSpan.Zero)
+                {
+                    SendRemaining(from, "  Criminal status remaining", maxGray);
+                    any = true;
+                }
+
+                if (maxTravel > TimeSpan.Zero)
+                {
+                    SendRemaining(from, "  Travel restricted remaining", maxTravel);
+                    any = true;
+                }
+            }
+            #endregion Criminality (prioritized)
+
+            #region Secondary (only for non-reds)
+            if (!status.GlobalWhackable)
+            {
+                var permaTable = pm.PermaFlagsTable;
+                if (permaTable != null && permaTable.Count > 0)
+                {
+                    foreach (var kvp in permaTable)
+                    {
+                        Mobile attacker = kvp.Key;
+                        DateTime expiresAt = kvp.Value;
+
+                        if (attacker == null || attacker.Deleted) continue;
+
+                        TimeSpan remaining = expiresAt == DateTime.MaxValue ? TimeSpan.MaxValue : expiresAt - now;
+                        if (remaining <= TimeSpan.Zero) continue;
+
+                        if (remaining == TimeSpan.MaxValue)
+                            from.SendMessage("{0} may always attack you.", attacker.Name);
+                        else if (remaining.TotalMinutes < 60)
+                            from.SendMessage("{0} may attack you for {1} minutes.", attacker.Name, (int)Math.Ceiling(remaining.TotalMinutes));
+                        else
+                            from.SendMessage("{0} may attack you for {1}h {2}m.", attacker.Name, (int)remaining.TotalHours, remaining.Minutes);
+
+                        any = true;
+                    }
+                }
+
+                if (Spells.SpellHelper.CheckCombat(from, out TimeSpan combatRemaining, out Mobile against) &&
+                    against != null && against.Player)
+                {
+                    int secs = (int)Math.Ceiling(combatRemaining.TotalSeconds);
+                    if (secs < 1) secs = 1;
+
+                    if (secs < 3600)
+                    {
+                        int mm = secs / 60;
+                        int ss = secs % 60;
+                        from.SendMessage("Aggression timer against {0}: {1}:{2:D2} remaining.", against.Name, mm, ss);
+                    }
+                    else
+                    {
+                        int hh = secs / 3600;
+                        int mm = (secs % 3600) / 60;
+                        from.SendMessage("Aggression timer against {0}: {1}h {2}m remaining.", against.Name, hh, mm);
+                    }
+                    any = true;
+                }
+                if (acct != null && CharacterCreation.GrieferHotList.TryGetValue(acct.GUID, out DateTime hotUntil) && hotUntil > now)
+                {
+                    SendRemaining(from, "Guards actively looking for you (hot list) remaining", RemainingUntil(hotUntil, now));
+                    any = true;
+                }
+            }
+            #endregion Secondary (only for non-reds)
+
+            if (!any)
+                from.SendMessage("You have no outstanding judgments or restrictions.");
+        }
+        private static void SendRemaining(Mobile from, string label, TimeSpan remaining)
+        {
+            if (remaining <= TimeSpan.Zero) return;
+
+            if (remaining == TimeSpan.MaxValue)
+            {
+                from.SendMessage("{0}: forever", label);
+                return;
+            }
+
+            if (remaining.TotalMinutes < 60)
+                from.SendMessage("{0}: {1} minutes", label, (int)Math.Ceiling(remaining.TotalMinutes));
+            else
+                from.SendMessage("{0}: {1}h {2}m", label, (int)remaining.TotalHours, remaining.Minutes);
+        }
+        private static TimeSpan RemainingUntil(DateTime endsAt, DateTime now)
+        {
+            if (endsAt == DateTime.MaxValue) return TimeSpan.MaxValue;
+            TimeSpan rem = endsAt - now;
+            return rem > TimeSpan.Zero ? rem : TimeSpan.Zero;
+        }
+        private static void YouAreACriminal(Mobile from)
+        {
+            var timer = from.ExpireCriminal;
+
+            if (timer == null || !timer.Running)
+                return;
+
+            DateTime now = DateTime.UtcNow;
+            TimeSpan remaining = timer.NextTick - now;
+
+            if (remaining < TimeSpan.Zero)
+                remaining = TimeSpan.Zero;
+
+            int secs = (int)Math.Ceiling(remaining.TotalSeconds);
+            if (secs < 1 && remaining > TimeSpan.Zero)
+                secs = 1;
+
+            string reason = timer.Context?.Text ?? "source unknown";
+
+            if (secs < 3600)
+            {
+                int mm = secs / 60;
+                int ss = secs % 60;
+
+                from.SendMessage("You are a criminal ({0}). {1}:{2:D2} remaining.",
+                    reason, mm, ss);
+            }
+            else
+            {
+                int hh = secs / 3600;
+                int mm = (secs % 3600) / 60;
+
+                from.SendMessage("You are a criminal ({0}). {1}h {2}m remaining.",
+                    reason, hh, mm);
+            }
+        }
+        private static Mobile? FindPet(string petname, PlayerMobile? owner)
         {
             if (owner == null || petname == null)
                 return null;
@@ -192,11 +424,11 @@ namespace Server.Misc
         }
 
 
-        private static bool ValidatePet(Mobile pet, PlayerMobile messageReciever)
+        private static bool ValidatePet(Mobile? pet, PlayerMobile messageReciever)
         {
             if (pet != null && pet is BaseCreature && !pet.Deleted)
             {
-                BaseCreature bc = pet as BaseCreature;
+                BaseCreature? bc = pet as BaseCreature;
 
                 if (bc.IsAnyStabled)
                 {

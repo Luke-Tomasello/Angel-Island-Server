@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -115,21 +115,13 @@ namespace Server.Items.Triggers
         {
             if (!TriggerSystem.CheckEvent(this))    // Make sure we are not event blocked
                 return false;
-#if false
-            return TriggerSystem.CanTrigger(from, !IsLocked(from) ? m_Link : m_Else);
-#else
             return (!IsLocked(from) && TriggerSystem.CanTrigger(from, m_Link));
-#endif
         }
 
         public void OnTrigger(Mobile from)
         {
             BeginLock(from);
-#if false
-            TriggerSystem.OnTrigger(from, !IsLocked(from) ? m_Link : m_Else);
-#else
             TriggerSystem.OnTrigger(from, m_Link);
-#endif
         }
 
         private Memory m_Memory = new Memory();

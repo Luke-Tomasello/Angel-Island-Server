@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -63,7 +63,7 @@ namespace Server
 
             if (map != null)
             {
-                Packet playSound = null;
+                Packet? playSound = null;
 
                 IPooledEnumerable eable = map.GetClientsInRange(new Point3D(p));
 
@@ -102,7 +102,7 @@ namespace Server
 
             e.ProcessDelta();
 
-            Packet preEffect = null, boltEffect = null, playSound = null;
+            Packet? preEffect = null, boltEffect = null, playSound = null;
 
             IPooledEnumerable eable = map.GetClientsInRange(e.Location);
 
@@ -140,7 +140,7 @@ namespace Server
             eable.Free();
         }
 
-        public static void SendLocationEffect(IPoint3D p, Map map, int itemID, int duration)
+        public static void SendLocationEffect(IPoint3D p, Map? map, int itemID, int duration)
         {
             SendLocationEffect(p, map, itemID, duration, 10, 0, 0);
         }
@@ -155,7 +155,7 @@ namespace Server
             SendLocationEffect(p, map, itemID, duration, 10, hue, renderMode);
         }
 
-        public static void SendLocationEffect(IPoint3D p, Map map, int itemID, int duration, int speed, int hue, int renderMode)
+        public static void SendLocationEffect(IPoint3D p, Map? map, int itemID, int duration, int speed, int hue, int renderMode)
         {
             SendPacket(p, map, new LocationEffect(p, itemID, speed, duration, hue, renderMode));
         }
@@ -176,7 +176,7 @@ namespace Server
 
             if (map != null)
             {
-                Packet particles = null, regular = null;
+                Packet? particles = null, regular = null;
 
                 IPooledEnumerable eable = map.GetClientsInRange(e.Location);
 
@@ -250,7 +250,7 @@ namespace Server
 
             if (map != null)
             {
-                Packet particles = null, regular = null;
+                Packet? particles = null, regular = null;
 
                 IPooledEnumerable eable = map.GetClientsInRange(target.Location);
 
@@ -326,7 +326,7 @@ namespace Server
 
             if (map != null)
             {
-                Packet particles = null, regular = null;
+                Packet? particles = null, regular = null;
 
                 IPooledEnumerable eable = map.GetClientsInRange(from.Location);
 
@@ -380,7 +380,7 @@ namespace Server
             }
         }
 
-        public static void SendPacket(IPoint3D origin, Map map, Packet p)
+        public static void SendPacket(IPoint3D origin, Map? map, Packet p)
         {
             if (map != null)
             {

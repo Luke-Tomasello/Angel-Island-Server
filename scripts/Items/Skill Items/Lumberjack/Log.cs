@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -32,13 +32,11 @@
  *	    - Added logs for the ML wood types.
  */
 
-using System;
-
 namespace Server.Items
 {
     public abstract class BaseLog : Item, IAxe
     {
-        public static bool NewWoodTypes { get { return (Core.RuleSets.AngelIslandRules() || Core.SiegeII_CFG); } }
+        public static bool NewWoodTypes { get { return (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules(2)); } }
 
         private CraftResource m_Resource;
 

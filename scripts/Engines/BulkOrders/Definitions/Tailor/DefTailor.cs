@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,7 +28,7 @@ namespace Server.Engines.BulkOrders
 {
     public class DefTailor : BulkOrderSystem
     {
-        private static BulkOrderSystem m_System;
+        private static BulkOrderSystem? m_System;
 
         public static BulkOrderSystem System
         {
@@ -43,7 +43,7 @@ namespace Server.Engines.BulkOrders
 
         public override BulkOrderType BulkOrderType { get { return BulkOrderType.Tailor; } }
         public override CraftSystem CraftSystem { get { return DefTailoring.CraftSystem; } }
-
+        public override double GoldScalar { get { return 1; } }
         public DefTailor()
             : base()
         {
@@ -264,7 +264,7 @@ namespace Server.Engines.BulkOrders
             return new KnittingNeedles(type);
         }
 
-        private static Item CreateClothesArmoire(int type)
+        private static Item? CreateClothesArmoire(int type)
         {
             switch (type)
             {

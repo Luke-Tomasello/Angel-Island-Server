@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -43,8 +43,8 @@ namespace Server
     {
         private static MultiComponentList[] m_Components;
 
-        private static FileStream m_Index, m_Stream;
-        private static BinaryReader m_IndexReader, m_StreamReader;
+        private static FileStream? m_Index, m_Stream;
+        private static BinaryReader? m_IndexReader, m_StreamReader;
 
         public static MultiComponentList GetComponents(int multiID)
         {
@@ -71,6 +71,9 @@ namespace Server
         {
             try
             {
+                if (m_IndexReader == null || m_StreamReader == null)
+                    return MultiComponentList.Empty; // data files missing (this previously reached the catch below)
+
                 m_IndexReader.BaseStream.Seek(multiID * 12, SeekOrigin.Begin);
 
                 int lookup = m_IndexReader.ReadInt32();

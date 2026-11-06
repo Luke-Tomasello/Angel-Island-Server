@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -151,7 +151,7 @@ namespace Server.Items
                 && y < mcl.Height;
         }
 
-        public static BaseMulti Find(Point3D p, Map map)
+        public static BaseMulti? Find(Point3D p, Map map)
         {
             if (map == null)
                 return null;
@@ -169,7 +169,7 @@ namespace Server.Items
 
             return null;
         }
-        public static BaseMulti FindAt(Point3D p, Map map)
+        public static BaseMulti? FindAt(Point3D p, Map map)
         {   // Useful for finding camps - the camp is AT p, but does not CONTAIN p
             if (map == null)
                 return null;

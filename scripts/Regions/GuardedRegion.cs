@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -100,6 +100,7 @@
  *		Modified to work with the new non-insta-kill guards.
  */
 
+using Server.Accounting;
 using Server.Mobiles;
 using System;
 using System.Collections;
@@ -114,29 +115,65 @@ namespace Server.Regions
         private static object[] m_GuardParams = new object[1];
         private Type m_GuardType;
 
-        public override bool IsGuarded { get { return false; } set {; } }
-        public override bool IsSmartGuards { get { return false; } set {; } }
+        public override bool IsGuarded
+        {
+            get { return false; }
+            set {; }
+        }
+
+        public override bool IsSmartGuards
+        {
+            get { return false; }
+            set {; }
+        }
 
         public new static void Initialize()
         {
-            CommandSystem.Register("CheckGuarded", AccessLevel.GameMaster, new CommandEventHandler(CheckGuarded_OnCommand));
+            CommandSystem.Register("CheckGuarded", AccessLevel.GameMaster,
+                new CommandEventHandler(CheckGuarded_OnCommand));
             CommandSystem.Register("SetGuarded", AccessLevel.Seer, new CommandEventHandler(SetGuarded_OnCommand));
             CommandSystem.Register("ToggleGuarded", AccessLevel.Seer, new CommandEventHandler(ToggleGuarded_OnCommand));
         }
 
         [Usage("CheckGuarded")]
-        [Description("Returns a value indicating if the current region is guarded or not.")]
+        [Description("Reports whether the current region is guarded and whether reds are allowed.")]
         private static void CheckGuarded_OnCommand(CommandEventArgs e)
         {
             Mobile from = e.Mobile;
-            GuardedRegion reg = from.Region as GuardedRegion;
+            Region reg = from.Region;
 
             if (reg == null)
-                from.SendMessage("You are not in a guardable region.");
-            else if (reg.IsGuarded == false)
+            {
+                from.SendMessage("You are not in a region.");
+                return;
+            }
+
+            GuardedRegion? g = reg as GuardedRegion;
+
+            if (g == null)
+            {
+                from.SendMessage("This region is not guardable.");
+                return;
+            }
+
+            StaticRegion? sr = reg as StaticRegion;
+
+            bool guardsActive = sr != null
+                ? sr.EnableGuards && !sr.GuardLocked()
+                : g.IsGuarded;
+
+            if (!guardsActive)
                 from.SendMessage("The guards in this region have been disabled.");
             else
                 from.SendMessage("This region is actively guarded.");
+
+            bool redsAllowed = Utility.AreRedsAllowed(reg);
+            bool redsWillBeGuardWhacked = guardsActive && !redsAllowed;
+
+            if (redsWillBeGuardWhacked)
+                from.SendMessage("Reds are NOT allowed in this region.");
+            else
+                from.SendMessage("Reds are allowed in this region.");
         }
 
         [Usage("SetGuarded <true|false>")]
@@ -145,28 +182,21 @@ namespace Server.Regions
         {
             Mobile from = e.Mobile;
 
-            if (e.Length == 1)
-            {
-                GuardedRegion reg = from.Region as GuardedRegion;
-
-                if (reg == null)
-                {
-                    from.SendMessage("You are not in a guardable region.");
-                }
-                else
-                {
-                    reg.IsGuarded = e.GetBoolean(0);
-
-                    if (reg.IsGuarded == false)
-                        from.SendMessage("The guards in this region have been disabled.");
-                    else
-                        from.SendMessage("The guards in this region have been enabled.");
-                }
-            }
-            else
+            if (e.Length != 1)
             {
                 from.SendMessage("Format: SetGuarded <true|false>");
+                return;
             }
+
+            GuardedRegion? reg = from.Region as GuardedRegion;
+
+            if (reg == null)
+            {
+                from.SendMessage("You are not in a guardable region.");
+                return;
+            }
+
+            SetGuarded(from, reg, e.GetBoolean(0));
         }
 
         [Usage("ToggleGuarded")]
@@ -174,21 +204,32 @@ namespace Server.Regions
         private static void ToggleGuarded_OnCommand(CommandEventArgs e)
         {
             Mobile from = e.Mobile;
-            GuardedRegion reg = from.Region as GuardedRegion;
+            GuardedRegion? reg = from.Region as GuardedRegion;
 
             if (reg == null)
             {
                 from.SendMessage("You are not in a guardable region.");
+                return;
             }
-            else
-            {
-                reg.IsGuarded = !reg.IsGuarded;
 
-                if (reg.IsGuarded == false)
-                    from.SendMessage("The guards in this region have been disabled.");
-                else
-                    from.SendMessage("The guards in this region have been enabled.");
+            SetGuarded(from, reg, !reg.IsGuarded);
+        }
+        private static void SetGuarded(Mobile from, GuardedRegion reg, bool guarded)
+        {
+            StaticRegion? sr = reg as StaticRegion;
+
+            if (sr != null && sr.GuardLocked())
+            {
+                from.SendMessage("Guard state is currently controlled by Guard Lock. Disable Guard Lock before using this command.");
+                return;
             }
+
+            reg.IsGuarded = guarded;
+
+            if (!reg.IsGuarded)
+                from.SendMessage("The guards in this region have been disabled.");
+            else
+                from.SendMessage("The guards in this region have been enabled.");
         }
 
         public virtual bool CheckVendorAccess(BaseVendor vendor, Mobile from)
@@ -201,7 +242,8 @@ namespace Server.Regions
 
         // I think this is valid for all shards
         private bool RedsBuyRule()
-        {   // House of Commons from 2002-12-11
+        {
+            // House of Commons from 2002-12-11
             // Lord?Xanthor* Tarnipuss*Will reds be able to use item insurance? And if so how as they currently only have access to 1 town - Buc's Den (that is assuming it is something that must be purchased from a town)
             // 1/15/24, Yoar: Reds may bow buy from vendors in unguarded regions (e.g. townships)
             // https://wiki.stratics.com/index.php?title=UO:House_of_Commons_from_2002-12-11
@@ -262,18 +304,23 @@ namespace Server.Regions
             ArrayList pets = new ArrayList();
             foreach (Mobile m in World.Mobiles.Values)
             {
-                BaseCreature bc = m as BaseCreature;
+                BaseCreature? bc = m as BaseCreature;
                 if (bc != null && bc.Controlled && bc.ControlMaster == focus && bc.ControlOrder == OrderType.Attack)
-                {   // okay, looks bad for this pet...
+                {
+                    // okay, looks bad for this pet...
                     if (bc.Region == focus.Region && bc.Map == focus.Map)
-                    {   // okay, that's good enough for me.
+                    {
+                        // okay, that's good enough for me.
                         pets.Add(bc);
                     }
                 }
-                else if (bc != null && bc.Controlled && bc.ControlMaster == focus && bc.ControlOrder != OrderType.Attack)
-                {   // Siege has insta death, so it's not applicable
+                else if (bc != null && bc.Controlled && bc.ControlMaster == focus &&
+                         bc.ControlOrder != OrderType.Attack)
+                {
+                    // Siege has insta death, so it's not applicable
                     if (Core.RuleSets.InstaDeathGuards())
-                    {   // it's possible to command the rest of your pets to 'all kill' after the guards have been called.
+                    {
+                        // it's possible to command the rest of your pets to 'all kill' after the guards have been called.
                         //	the protect from this case, we will reduce all your pets Loyalty to almost nothing.
                         bc.LoyaltyValue = PetLoyalty.Confused;
                         // restart the clock
@@ -291,7 +338,52 @@ namespace Server.Regions
 
         public override void MakeGuard(Mobile focus)
         {
-            BaseGuard useGuard = null;
+            if (focus == null)
+                return;
+
+            if (focus.GuardIgnore)
+                return;
+
+            #region Mortalis Thieves Caught
+
+            // If a thief is caught in town while still within the special guard-whack window,
+            // do NOT guard-whack here. Instead, transport them to Buccaneer's Den (Mortalis rule).
+            // If they are not within the window, fall through to normal guard behavior.
+            if (Core.RuleSets.MortalisRules())
+            {
+                PlayerMobile? pm = focus as PlayerMobile;
+
+                if (pm != null)
+                {
+                    Account? acct = pm.Account as Account;
+
+                    if (acct != null)
+                    {
+                        // TODO: exact field/type name per your account extension
+                        // DateTime ThievingGuardWhackEndsUtc;
+                        DateTime ends = acct.ThievingGuardWhackEnds;
+
+                        if (ends > DateTime.UtcNow)
+                        {
+                            TimeSpan remaining = ends - DateTime.UtcNow;
+
+                            // TODO: implement the actual transport routine; keep this call site small.
+                            // Suggested behavior:
+                            // - clear combatant / aggressors as needed
+                            // - move to Buccaneer's Den safe location
+                            // - optional message to player
+                            // - optional log entry
+                            Utility.MortalisTransportThiefToBucs(pm);
+
+                            return; // handled
+                        }
+                    }
+                }
+            }
+
+            #endregion Mortalis Thieves Caught
+
+            BaseGuard? useGuard = null;
 
             IPooledEnumerable eable = focus.GetMobilesInRange(8);
             foreach (Mobile m in eable)
@@ -307,6 +399,7 @@ namespace Server.Regions
                     }
                 }
             }
+
             eable.Free();
 
             if (useGuard != null)
@@ -324,30 +417,28 @@ namespace Server.Regions
         public override void OnEnter(Mobile m)
         {
             base.OnEnter(m);
-            if (IsGuarded == false)
-            { return; }
+            if (IsGuarded == false) { return; }
 
-            //m.SendLocalizedMessage( 500112 ); // You are now under the protection of the town guards.
-
-            /* Seems to be over kill
-             * Let the town's people call guards if they see him.
-            if (m.Murderer)
-                CheckGuardCandidate(m, m.Player);
-
-            if (GuardAI.GuardedRegionEvilMonsterRule(null, this, m))
-                CheckGuardCandidate(m, m.Player); 
-            */
+            if (IsGuardRelevant(m))
+                m.SendLocalizedMessage(502275); // Guards can now be called on you!
+            else
+                m.SendLocalizedMessage(500112); // You are now under the protection of the town guards.
         }
 
         public override void OnExit(Mobile m)
         {
             base.OnExit(m);
-            if (IsGuarded == false)
-                return;
+            if (IsGuarded == false) { return; }
 
-            //m.SendLocalizedMessage( 500113 ); // You have left the protection of the town guards.
+            if (IsGuardRelevant(m))
+                m.SendMessage("You are now scot-free!");
+            else
+                m.SendLocalizedMessage(500113); // You have left the protection of the town guards.
         }
-
+        public bool IsGuardRelevant(Mobile m)
+        {
+            return Utility.GuardUtility.IsGuardRelevantGlobal(m, this);
+        }
         public override void OnSpeech(SpeechEventArgs args)
         {
             // 3/19/2022, Adam: we need base class processing to allow region speech to make it's way to registered items.
@@ -383,7 +474,7 @@ namespace Server.Regions
             //  https://www.uoguide.com/Siege_Perilous
             //  (Adam) However, it IS a criminal act, and while it's not an instant guard-whack (CheckGuardCandidate), you will
             //      get whacked if an NPC (or player) is nearby to "call guards!"
-            if (helper != helped && (noto == Notoriety.Criminal || (!Core.RuleSets.SiegeStyleRules() && noto == Notoriety.Murderer)))
+            if (helper != helped && (noto == Notoriety.Criminal || (!Core.RuleSets.SiegeRules() && noto == Notoriety.Murderer)))
                 CheckGuardCandidate(helper, helper.Player);
         }
 
@@ -394,18 +485,119 @@ namespace Server.Regions
             if (IsGuarded)
                 CheckGuardCandidate(m, m.Player);
         }
+        public override void OnGotHarmful(Mobile harmer, Mobile harmed, bool isCriminal)
+        {
+            if (!isCriminal)
+                return;
+
+            if (harmer == null || harmed == null || !isCriminal)
+                return;
+
+            if (harmer.Map != harmed.Map)
+                return;
+
+            if (harmer.GetDistanceToSqrt(harmed) > 16)
+                return;
+
+            bool wasHandled = false;
+
+            // Highest priority: shoreline / ocean edge cases
+            HandleImmediateShorelineAttack(harmer, harmed, ref wasHandled);
+            if (wasHandled)
+                return;
+
+            // General immediate-action case: creature harms player in guarded region
+            HandleImmediateGuardedCreatureHarm(harmer, harmed, ref wasHandled);
+            if (wasHandled)
+                return;
+
+            // Fallthrough intentionally does nothing.
+            // Standard witness/call-guards model applies.
+        }
+
+        private void HandleImmediateGuardedCreatureHarm(Mobile harmer, Mobile harmed, ref bool wasHandled)
+        {
+            // General immediate-action rule:
+            // A creature commits criminal harm against a player
+            // while both are within guarded regions.
+
+            if (harmer is not BaseCreature)
+                return;
+
+            if (harmed is not PlayerMobile)
+                return;
+
+            Regions.GuardedRegion? grHarmer = harmer.Region as Regions.GuardedRegion;
+            if (grHarmer == null || !grHarmer.IsGuarded)
+                return;
+
+            Regions.GuardedRegion? grHarmed = harmed.Region as Regions.GuardedRegion;
+            if (grHarmed == null || !grHarmed.IsGuarded)
+                return;
+
+            Utility.Monitor.WriteLine(
+                $"OnGotHarmful: GuardedCreatureHarm Harmer {harmer} Harmed {harmed} (HarmerRegion={grHarmer}, HarmedRegion={grHarmed})",
+                ConsoleColor.Red);
+
+            MakeGuard(harmer);
+            wasHandled = true;
+        }
+
+        private void HandleImmediateShorelineAttack(Mobile harmer, Mobile harmed, ref bool wasHandled)
+        {
+            // make sure we should even apply this rule
+            if (!harmer.IsOnWater() && !harmed.IsOnWater())
+                return;
+
+            // Determine whether this event belongs to the shoreline/ocean domain.
+            bool harmerSea = !harmer.InGuardJurisdiction;
+            bool harmedSea = !harmed.InGuardJurisdiction;
+
+            if (!harmerSea && !harmedSea)
+                return; // not shoreline domain
+
+            // This event is now owned by shoreline policy.
+            wasHandled = true;
+
+            // If the victim is not protected, guards do nothing.
+            if (harmedSea)
+                return;
+
+            // Victim is in guarded land/dock. Decide what to do about an offshore attacker.
+
+            // Creatures attacking from water are not policed by guards.
+            // (Fishers accept some danger at the shoreline.)
+            if (!harmer.Player)
+                return;
+
+
+            // Player accountability across shore:
+            // Even though the attacker is on water/boat (outside guard jurisdiction),
+            // we only apply this exception if the attacker is still within the same
+            // guarded region footprint. This prevents guards from policing crimes
+            // originating from open sea beyond the town's effective reach.
+            Regions.GuardedRegion? grHarmer = harmer.Region as Regions.GuardedRegion;
+            if (grHarmer == null || !grHarmer.IsGuarded)
+                return;
+
+            MakeGuard(harmer);
+
+        }
 
         private Hashtable m_GuardCandidates = new Hashtable();
-
+        public Hashtable GuardCandidates
+        {
+            get { return m_GuardCandidates; }
+        }
         public Mobile DidAnybodySeeThis(Mobile suspect, bool canSeeThroughWalls = false)
         {
-            Mobile fakeCall = null;
+            Mobile? fakeCall = null;
             // about 1 screen. we can't use BaseCreature's RangePerception, since things like vendors have a RP of like 2
             int rangePerception = 13;
             // 8.06 tiles if you don't have LOS (maybe they're looking through a window)
             // 5/7/2024, Adam: Make the default 'can't see through walls' due to player complaints
             double perceptionPenalty = canSeeThroughWalls ? rangePerception * .62 : 0;
-            bool MurdererPenalty = suspect.Red && !Core.RedsInTown;
+            bool murdererPenalty = suspect.Red && !Utility.AreRedsAllowed(suspect);
 
             List<Witness> witnesses = Witnesses(suspect);
             foreach (Witness witness in witnesses)
@@ -423,7 +615,7 @@ namespace Server.Regions
                 bool atSceneOfTheCrime = witness.Mobile.GetDistanceToSqrt(suspect.SceneOfTheCrime) <= (witness.HasLOS ? rangePerception : perceptionPenalty);
                 // we got a murderer here!
                 //  We don't care about the SceneOfTheCrime, they're a murderer!
-                if (MurdererPenalty && hasLOSOrCloseEnough)
+                if (murdererPenalty && hasLOSOrCloseEnough)
                 {
                     fakeCall = witness.Mobile;
                     break;
@@ -431,7 +623,7 @@ namespace Server.Regions
                 // we got a criminal here!
                 // Adam, we don't care how close they are now to the criminal, but rather how close they were to the crime
                 //  townspeople should not be reporting things they didn't see in the first place.
-                if (!MurdererPenalty && hasLOSOrCloseEnough && atSceneOfTheCrime)
+                if (!murdererPenalty && hasLOSOrCloseEnough && atSceneOfTheCrime)
                 {
                     fakeCall = witness.Mobile;
                     break;
@@ -495,10 +687,11 @@ namespace Server.Regions
         {
             if (IsGuarded == false)
                 return;
+
             if (m.Map != null)
                 if (IsGuardCandidate(m))
                 {
-                    GuardTimer timer = (GuardTimer)m_GuardCandidates[m];
+                    GuardTimer? timer = (GuardTimer?)m_GuardCandidates[m];
 
                     if (timer == null)
                     {
@@ -540,6 +733,14 @@ namespace Server.Regions
                     if (bc.GuardIgnore)
                         continue;
 
+                // don't guardwhack players in a house, or not in a guard region.
+                if (m.Region is HouseRegion ||
+                    !(m.Region is Regions.GuardedRegion gr && gr.IsGuarded))
+                {
+                    continue;
+                }
+
+
                 // we already check m.Murderer in IsGuardCandidate, this check is redundant and breaks the reds_in_town rule.
                 //if (IsGuardCandidate(m) && ((/*m.Murderer &&*/ Mobiles.ContainsKey(m.Serial)) || m_GuardCandidates.Contains(m)))
                 if (IsGuardCandidate(m) || m_GuardCandidates.Contains(m))
@@ -564,7 +765,7 @@ namespace Server.Regions
             IPooledEnumerable eable = m.GetMobilesInRange(10);
             foreach (Mobile check in eable)
             {
-                BaseGuard guard = check as BaseGuard;
+                BaseGuard? guard = check as BaseGuard;
                 if (guard != null && guard.Focus == m)
                 {   // guards are already on him
                     eable.Free();
@@ -577,27 +778,30 @@ namespace Server.Regions
         }
         public bool IsGuardCandidate(Mobile m)
         {
-            // 7/30/2021, Adam: Staff are now guard whackable if not blessed. this makes both testing easier and can improve events (for evil staff characters.)
-            if (m is BaseGuard || m is PlayerVendor || !m.Alive /*|| m.AccessLevel > AccessLevel.Player*/ || m.Blessed || !IsGuarded)
-                return false;
+            return Utility.GuardUtility.IsGuardRelevantLocal(m, this);
+            //// 7/30/2021, Adam: Staff are now guard whackable if not blessed. this makes both testing easier and can improve events (for evil staff characters.)
+            //if (m is BaseGuard || m is PlayerVendor || !m.Alive /*|| m.AccessLevel > AccessLevel.Player*/ || m.Blessed || !IsGuarded)
+            //    return false;
 
-            // first check if he is already a guard Candidate
-            if (AlreadyGuardCandidate(m))
-                return false;
+            //// first check if he is already a guard Candidate
+            //if (AlreadyGuardCandidate(m))
+            //    return false;
 
-            // 5/25/2003, Adam: Criminals are only guard whackable for 10 seconds.
-            // https://web.archive.org/web/20020806202758/http://uo.stratics.com/content/reputation/flags.shtml
-            if ((m.Criminal && m.IsGuardWackable) || GuardAI.GuardedRegionEvilMonsterRule(null, this, m))
-                return true;
+            //// 5/25/2003, Adam: Criminals are only guard whackable for 10 seconds.
+            //// https://web.archive.org/web/20020806202758/http://uo.stratics.com/content/reputation/flags.shtml
+            //if (
+            //    (m.Criminal && m.CanBeGuardWhacked) || Utility.InGrieferHotList(m) ||
+            //    GuardAI.GuardedRegionEvilMonsterRule(null, this, m)
+            //    )
+            //{
+            //    return true;
+            //}
 
-            // 8/10/22, Adam: Core.RedsInTown handled. 
-            if (m.Red)
-                if (Core.RedsInTown)
-                    return false;
-                else
-                    return true;
+            //// 8/10/22, Adam: Core.RedsInTown handled. 
+            //if (m.Red)
+            //    return !Utility.AreRedsAllowed(m.Region);
 
-            return false;
+            //return false;
         }
 
         private class GuardTimer : Timer

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,7 +48,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using CPA = Server.CommandPropertyAttribute;
-using System.Linq;
 
 namespace Server.Commands
 {
@@ -66,7 +65,7 @@ namespace Server.Commands
         {
             Invoke(from, start, end, args, null);
         }
-        public static void Invoke(Mobile from, Point3D start, Point3D end, string[] args, ArrayList packs)
+        public static void Invoke(Mobile from, Point3D start, Point3D end, string[] args, ArrayList? packs)
         {
             // access level < Owner get the event equivalent of these items: spawners, teleporters, and moongates
             Utility.AccessLevelRemap(from, args);
@@ -121,7 +120,7 @@ namespace Server.Commands
                 }
             }
 
-            Type type = ScriptCompiler.FindTypeByName(name);
+            Type? type = ScriptCompiler.FindTypeByName(name);
 
             if (type == null)
             {
@@ -159,11 +158,11 @@ namespace Server.Commands
             Array.Copy(old, 1, args, 0, args.Length);
         }
 
-        public static int BuildObjects(Mobile from, Type type, Point3D start, Point3D end, string[] args, string[,] props, ArrayList packs)
+        public static int BuildObjects(Mobile? from, Type type, Point3D start, Point3D end, string[] args, string[,]? props, ArrayList? packs)
         {
             Utility.FixPoints(ref start, ref end);
 
-            PropertyInfo[] realProps = null;
+            PropertyInfo[]? realProps = null;
 
             if (props != null)
             {
@@ -173,7 +172,7 @@ namespace Server.Commands
 
                 for (int i = 0; i < realProps.Length; ++i)
                 {
-                    PropertyInfo thisProp = null;
+                    PropertyInfo? thisProp = null;
 
                     string propName = props[i, 0];
 
@@ -190,7 +189,7 @@ namespace Server.Commands
                     }
                     else
                     {
-                        CPA attr = Properties.GetCPA(thisProp);
+                        CPA? attr = Properties.GetCPA(thisProp);
 
                         if (attr == null)
                         {
@@ -226,7 +225,7 @@ namespace Server.Commands
 
                 if (args.Length == paramList.Length)
                 {
-                    object[] paramValues = ParseValues(paramList, args);
+                    object[]? paramValues = ParseValues(paramList, args);
 
                     if (paramValues == null)
                         continue;
@@ -241,13 +240,13 @@ namespace Server.Commands
             return 0;
         }
 
-        public static object[] ParseValues(ParameterInfo[] paramList, string[] args)
+        public static object[]? ParseValues(ParameterInfo[] paramList, string[] args)
         {
             object[] values = new object[args.Length];
 
             for (int i = 0; i < args.Length; ++i)
             {
-                object value = ParseValue(paramList[i].ParameterType, args[i]);
+                object? value = ParseValue(paramList[i].ParameterType, args[i]);
 
                 if (value != null)
                     values[i] = value;
@@ -258,7 +257,7 @@ namespace Server.Commands
             return values;
         }
 
-        public static object ParseValue(Type type, string value)
+        public static object? ParseValue(Type type, string value)
         {
             try
             {
@@ -300,7 +299,7 @@ namespace Server.Commands
             }
         }
 
-        public static object Build(Mobile from, ConstructorInfo ctor, object[] values, string[,] props, PropertyInfo[] realProps, ref bool sendError)
+        public static object Build(Mobile from, ConstructorInfo ctor, object[] values, string[,] props, PropertyInfo[]? realProps, ref bool sendError)
         {
             object built = ctor.Invoke(values);
 
@@ -331,7 +330,7 @@ namespace Server.Commands
             return built;
         }
 
-        public static int Build(Mobile from, Point3D start, Point3D end, ConstructorInfo ctor, object[] values, string[,] props, PropertyInfo[] realProps, ArrayList packs)
+        public static int Build(Mobile from, Point3D start, Point3D end, ConstructorInfo ctor, object[] values, string[,] props, PropertyInfo[]? realProps, ArrayList? packs)
         {
             List<object> BuiltList = new List<object>();
             try
@@ -354,7 +353,7 @@ namespace Server.Commands
 
                         if (built is Item)
                         {
-                            Container pack = (Container)packs[i];
+                            Container? pack = (Container?)packs[i];
 
                             pack.DropItem((Item)built);
                         }
@@ -411,12 +410,12 @@ namespace Server.Commands
                 {
                     foreach (object o in BuiltList)
                     {
-                        string where = null;
+                        string? where = null;
                         if (o is Mobile mobile)
                             where = mobile.Location.ToString();
                         else if (o is Item item)
                             where = item.GetWorldLocation().ToString();
-                            
+
                         string output = string.Format($"{from.AccessLevel.ToString()} {CommandLogging.Format(from)} built {CommandLogging.Format(o)} at {where}");
 
                         CommandLogging.WriteLine(from, output);
@@ -485,7 +484,7 @@ namespace Server.Commands
 
             protected override void OnTarget(Mobile from, object o)
             {
-                IPoint3D p = o as IPoint3D;
+                IPoint3D? p = o as IPoint3D;
 
                 if (p != null)
                 {
@@ -637,9 +636,9 @@ namespace Server.Commands
         private static Type[] m_ParseTypes = new Type[] { typeof(string) };
         private static object[] m_ParseArgs = new object[1];
 
-        public static object ParseParsable(Type type, string value)
+        public static object? ParseParsable(Type type, string value)
         {
-            MethodInfo method = type.GetMethod("Parse", m_ParseTypes);
+            MethodInfo? method = type.GetMethod("Parse", m_ParseTypes);
 
             m_ParseArgs[0] = value;
 

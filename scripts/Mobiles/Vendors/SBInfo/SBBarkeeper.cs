@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -75,16 +75,19 @@ namespace Server.Mobiles
         {
             public InternalBuyInfo()
             {
+
                 Add(new BeverageBuyInfo(typeof(BeverageBottle), BeverageType.Ale, BaseVendor.PlayerPays(7), 20, 0x99F, 0));
                 Add(new BeverageBuyInfo(typeof(BeverageBottle), BeverageType.Wine, BaseVendor.PlayerPays(7), 20, 0x9C7, 0));
                 Add(new BeverageBuyInfo(typeof(BeverageBottle), BeverageType.Liquor, BaseVendor.PlayerPays(7), 20, 0x99B, 0));
                 Add(new BeverageBuyInfo(typeof(Jug), BeverageType.Cider, BaseVendor.PlayerPays(13), 20, 0x9C8, 0));
+                Add(new BeverageBuyInfo(typeof(Jug), BeverageType.Liquor, BaseVendor.PlayerPays(13), 20, 0x9C8, 0));
                 Add(new BeverageBuyInfo(typeof(Pitcher), BeverageType.Milk, BaseVendor.PlayerPays(7), 20, 0x9F0, 0));
                 Add(new BeverageBuyInfo(typeof(Pitcher), BeverageType.Ale, BaseVendor.PlayerPays(11), 20, 0x1F95, 0));
                 Add(new BeverageBuyInfo(typeof(Pitcher), BeverageType.Cider, BaseVendor.PlayerPays(11), 20, 0x1F97, 0));
                 Add(new BeverageBuyInfo(typeof(Pitcher), BeverageType.Liquor, BaseVendor.PlayerPays(11), 20, 0x1F99, 0));
                 Add(new BeverageBuyInfo(typeof(Pitcher), BeverageType.Wine, BaseVendor.PlayerPays(11), 20, 0x1F9B, 0));
                 Add(new BeverageBuyInfo(typeof(Pitcher), BeverageType.Water, BaseVendor.PlayerPays(11), 20, 0x1F9D, 0));
+
                 Add(new GenericBuyInfo(typeof(BreadLoaf), BaseVendor.PlayerPays(typeof(BreadLoaf)), 10, 0x103B, 0));
                 Add(new GenericBuyInfo(typeof(CheeseWheel), BaseVendor.PlayerPays(typeof(CheeseWheel)), 10, 0x97E, 0));
                 Add(new GenericBuyInfo(typeof(CookedBird), BaseVendor.PlayerPays(typeof(CookedBird)), 20, 0x9B7, 0));
@@ -116,7 +119,7 @@ namespace Server.Mobiles
                 if (Core.RuleSets.AngelIslandRules() || (Core.RuleSets.StandardShardRules() && PublishInfo.Publish >= 13))
                     Add(new GenericBuyInfo("a barkeep contract", typeof(BarkeepContract), BaseVendor.PlayerPays(typeof(BarkeepContract)), 20, 0x14F0, 0));
 
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules())
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules())
                 {
                     // Jade: Add new House Sitter deeds
                     Add(new GenericBuyInfo("a housesitter contract", typeof(HouseSitterDeed), BaseVendor.PlayerPays(typeof(HouseSitterDeed)), 20, 0x14F0, 0));

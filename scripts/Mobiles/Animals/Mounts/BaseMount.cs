@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,14 +48,16 @@
  * - Mounts are no longer mountable.
 */
 
+using System;
+
 namespace Server.Mobiles
 {
     public abstract class BaseMount : BaseCreature, IMount
     {
         private Mobile m_Rider;
-        private Item m_InternalItem;
+        private Item? m_InternalItem;
         private int m_ItemID;
-        public Item InternalItem
+        public Item? InternalItem
         {
             get { return m_InternalItem; }
             set { m_InternalItem = value; }
@@ -98,7 +100,7 @@ namespace Server.Mobiles
 
                 StamRefresh.Remember(ControlMaster, .250);      // 1/4 second delay between refreshes
 
-                PlayerMobile pm = ControlMaster as PlayerMobile;
+                PlayerMobile? pm = ControlMaster as PlayerMobile;
 
                 if (pm.StepsTaken == LastStepTaken)             // you need to move (like you walk while the creature follows)
                     return;
@@ -120,7 +122,13 @@ namespace Server.Mobiles
                     return;
 
                 // bump from 12 - 22 stam points
-                Stam += (int)LoyaltyValue / 5;
+                int stamGain = (int)LoyaltyValue / 5;
+                Stam = Math.Min(StamMax, Stam + stamGain);
+
+                if (LoyaltyValue < PetLoyalty.Content)
+                    return;
+
+
             }
         }
 
@@ -338,8 +346,12 @@ namespace Server.Mobiles
         }
 
         public virtual void OnDisallowedRider(Mobile m)
-        {
-            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())    // when no mounts use this message
+        {   //s this code dose not decide if players can mount, but rather the message they get when they cannot
+            if (Core.RuleSets.SeasonsRules(2)) // seasons 2 has no mounts in dungeons
+                m.SendMessage("Your mount's instincts warn of danger and it refuses to be ridden here.");
+            //else if (Core.RuleSets.SeasonsRules()) // when no mounts use this message
+            //    m.SendMessage("A strange force prevents you from mounting.");
+            else if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.UpheavalRules())
                 m.SendMessage("That beast will not allow you to mount it.");
             else
                 m.SendMessage("You may not ride this creature.");
@@ -347,7 +359,7 @@ namespace Server.Mobiles
 
         public override void OnDoubleClick(Mobile from)
         {
-            if (!Core.RuleSets.AllowMountRules()) // "turn off" mounts certain shards (Angel Island for instance)
+            if (!Core.RuleSets.AllowMountRules(from)) // "turn off" mounts certain shards (Angel Island for instance), and regions
             {
                 if (from.AccessLevel == AccessLevel.Player)
                 {
@@ -372,6 +384,12 @@ namespace Server.Mobiles
             if (!from.CanBeginAction(typeof(BaseMount)))
             {
                 from.SendLocalizedMessage(1040024); // You are still too dazed from being knocked off your mount to ride!
+                return;
+            }
+
+            if (!CanBeginAction(typeof(BaseMount)))
+            {
+                from.SendMessage("That creature is too entangled to be ridden.");
                 return;
             }
 
@@ -405,6 +423,7 @@ namespace Server.Mobiles
                 if ((Controlled && ControlMaster == from) || (Summoned && SummonMaster == from) || from.AccessLevel >= AccessLevel.GameMaster)
                 {
                     Rider = from;
+                    OnMounted(from);
                     from.OnMount(this);
                 }
                 else if (!Controlled && !Summoned)
@@ -421,7 +440,17 @@ namespace Server.Mobiles
                 from.SendLocalizedMessage(500206); // That is too far away to ride.
             }
         }
+        private double m_MountEnduranceMultiplier = 1.0;
 
+        public double MountEnduranceMultiplier
+        {
+            get { return m_MountEnduranceMultiplier; }
+        }
+
+        public virtual void OnMounted(Mobile rider)
+        {
+            m_MountEnduranceMultiplier = Misc.WeightOverloading.GetMountEnduranceMultiplier(this);
+        }
         [CommandProperty(AccessLevel.GameMaster)]
         public int ItemID
         {
@@ -440,7 +469,9 @@ namespace Server.Mobiles
             IMount mount = m.Mount;
 
             if (mount != null)
+            {
                 mount.Rider = null;
+            }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -499,7 +530,7 @@ namespace Server.Mobiles
                         Internalize();
                     }
 
-                    Mobile oldRider = m_Rider;
+                    Mobile? oldRider = m_Rider;
 
                     m_Rider = value;
 
@@ -516,7 +547,7 @@ namespace Server.Mobiles
 
     public class MountItem : Item, IMountItem
     {
-        private BaseMount m_Mount;
+        private BaseMount? m_Mount;
 
         public MountItem(BaseMount mount, int itemID)
             : base(itemID)

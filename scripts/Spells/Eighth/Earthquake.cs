@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -35,7 +35,7 @@
  */
 
 using System;
-using System.Collections;
+using System.Collections.Generic;
 
 namespace Server.Spells.Eighth
 {
@@ -64,19 +64,47 @@ namespace Server.Spells.Eighth
         {
             if (SpellHelper.CheckTown(Caster, Caster) && CheckSequence())
             {
-                ArrayList targets = new ArrayList();
+                var targets = new List<Mobile>();
 
                 Map map = Caster.Map;
 
                 if (map != null)
                 {
-                    IPooledEnumerable eable = Caster.GetMobilesInRange(1 + (int)(Caster.Skills[SkillName.Magery].Value / 15.0));
-                    foreach (Mobile m in eable)
+                    int radius = 1 + (int)(Caster.Skills[SkillName.Magery].Value / 15.0);
+
+                    // First: gather candidates using the existing EQ rules (skill-based radius + harm/valid checks).
+                    List<Mobile> candidates = new List<Mobile>();
+
+                    IPooledEnumerable eable = Caster.GetMobilesInRange(radius);
+                    try
                     {
-                        if (Caster != m && SpellHelper.ValidIndirectTarget(Caster, m) && Caster.CanBeHarmful(m, false) && (!Core.RuleSets.AOSRules() || Caster.InLOS(m)))
-                            targets.Add(m);
+                        foreach (Mobile m in eable)
+                        {
+                            if (m == null || m.Deleted)
+                                continue;
+
+                            if (Caster == m)
+                                continue;
+
+                            if (!SpellHelper.ValidIndirectTarget(Caster, m))
+                                continue;
+
+                            if (!Caster.CanBeHarmful(m, false))
+                                continue;
+
+                            candidates.Add(m);
+                        }
                     }
-                    eable.Free();
+                    finally
+                    {
+                        eable.Free();
+                    }
+
+                    // Second: apply LOS (AOS) + house penetration filtering in one place.
+                    bool requireLOS = Core.RuleSets.AOSRules();
+                    int penetrationDepth = 2; // whatever your chosen EQ wall-bleed depth is
+
+                    targets = SpellHelper.AOETargets(Caster, Caster.Location, candidates, penetrationDepth, requireLOS);
                 }
 
                 Caster.PlaySound(0x2F3);
@@ -101,16 +129,28 @@ namespace Server.Spells.Eighth
                     }
                     else
                     {
+                        // Base damage: 60% of current HP
                         damage = (m.Hits * 6) / 10;
 
+                        // NPC minimum damage so EQ remains useful vs weak creatures
                         if (!m.Player && damage < 10)
                             damage = 10;
-                        else if (damage > 75)
+
+                        // Global damage cap
+                        if (damage > 75)
                             damage = 75;
+
+                        // OSI rule: Earthquake cannot kill players
+                        if (m.Player && damage >= m.Hits)
+                            damage = m.Hits - 1;
+
+                        // Safety clamp (should rarely trigger, but prevents negative damage)
+                        if (damage < 0)
+                            damage = 0;
                     }
 
                     Caster.DoHarmful(m);
-                    SpellHelper.Damage(TimeSpan.Zero, m, Caster, damage, 100, 0, 0, 0, 0);
+                    SpellHelper.Damage(TimeSpan.Zero, m, Caster, damage, new DamageContext { Source = this, ImpactLocation = Caster.Location, TimestampUtc = DateTime.UtcNow });
                 }
             }
 

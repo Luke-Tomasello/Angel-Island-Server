@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -35,7 +35,7 @@ namespace Server.Mobiles
 
         public override Poison PoisonImmune { get { return Poison.Lethal; } }
         public override bool Commandable { get { return false; } }
-        protected virtual Mobile Focus
+        protected virtual Mobile? Focus
         {
             get
             {
@@ -66,7 +66,7 @@ namespace Server.Mobiles
             if (m_LastHidden != master.Hidden)
                 Hidden = m_LastHidden = master.Hidden;
 
-            Mobile toAttack = null;
+            Mobile? toAttack = null;
 
             if (!Hidden)
             {

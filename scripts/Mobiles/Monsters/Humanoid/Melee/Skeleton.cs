@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,7 +36,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -83,75 +82,27 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021014235748/uo.stratics.com/hunters/skeleton.shtml
+            // 0 to 50 Gold, Sometimes Bone Armor, Weapon Carried
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                switch (Utility.Random(5))
-                {
-                    case 0: PackItem(new BoneArms()); break;
-                    case 1: PackItem(new BoneChest()); break;
-                    case 2: PackItem(new BoneGloves()); break;
-                    case 3: PackItem(new BoneLegs()); break;
-                    case 4: PackItem(new BoneHelm()); break;
-                }
-
-                PackGold(0, 25);
-                PackItem(new Bone(Utility.Random(7, 10)));
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(0, 50);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021014235748/uo.stratics.com/hunters/skeleton.shtml
-                    // 0 to 50 Gold, Sometimes Bone Armor, Weapon Carried
-                    if (Spawning)
+                if (0.12 > Utility.RandomDouble())
+                    switch (Utility.Random(5))
                     {
-                        PackGold(0, 50);
-                    }
-                    else
-                    {
-                        if (0.12 > Utility.RandomDouble())
-                            switch (Utility.Random(5))
-                            {
-                                case 0: PackItem(new BoneArms()); break;
-                                case 1: PackItem(new BoneChest()); break;
-                                case 2: PackItem(new BoneGloves()); break;
-                                case 3: PackItem(new BoneLegs()); break;
-                                case 4: PackItem(new BoneHelm()); break;
-                            }
-
-                        // Weapon Carried
-                        if (Body == 56)
-                            PackItem(new Hatchet());
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        switch (Utility.Random(5))
-                        {
-                            case 0: PackItem(new BoneArms()); break;
-                            case 1: PackItem(new BoneChest()); break;
-                            case 2: PackItem(new BoneGloves()); break;
-                            case 3: PackItem(new BoneLegs()); break;
-                            case 4: PackItem(new BoneHelm()); break;
-                        }
+                        case 0: PackItem(new BoneArms()); break;
+                        case 1: PackItem(new BoneChest()); break;
+                        case 2: PackItem(new BoneGloves()); break;
+                        case 3: PackItem(new BoneLegs()); break;
+                        case 4: PackItem(new BoneHelm()); break;
                     }
 
-                    AddLoot(LootPack.Poor);
-                }
+                // Weapon Carried
+                if (Body == 56)
+                    PackItem(new Hatchet());
             }
         }
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,8 +28,6 @@
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -96,36 +94,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://www.uoguide.com/Juka_Warrior
+            // Post-era creature. No Stratics-era entry.
+            // 250 - 400 Gold
+            // Special: 2-5 Gems, Magic Weapons/Armor
+            // Note: Excludes later-era system loot/artifacts
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(100, 150);
-                PackGem();
+                PackGold(250, 400);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // no LBR
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // standard run uo
-                    if (Spawning)
-                    {
-                        if (Utility.RandomDouble() < 0.1)
-                            PackItem(new ArcaneGem());
-                    }
+                PackGem(2, 5);
 
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Meager);
-                    AddLoot(LootPack.Gems, 1);
-                }
+                PackMagicEquipment(2, 3, 1.0, 1.0);
+                PackMagicEquipment(2, 3, 0.50, 0.50);
             }
         }
 

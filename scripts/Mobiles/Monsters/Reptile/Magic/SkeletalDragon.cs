@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -50,8 +50,6 @@
  *		Merged in 1.0RC0 code.
  */
 
-using Server.Items;
-
 namespace Server.Mobiles
 {
     [CorpseName("a skeletal dragon corpse")]
@@ -86,10 +84,10 @@ namespace Server.Mobiles
         }
 
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override bool HasBreath { get { return true; } } // fire breath enabled
-        public override int BreathFireDamage { get { return 0; } }
-        public override int BreathColdDamage { get { return 100; } }
+        //public override int BreathFireDamage { get { return 0; } }
+        //public override int BreathColdDamage { get { return 100; } }
         public override int BreathEffectHue { get { return 0x480; } }
 
         public override Poison PoisonImmune { get { return Poison.Lethal; } }
@@ -104,69 +102,27 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020214230303/uo.stratics.com/hunters/skeletaldragon.shtml
+            // 2000 - 3000 Gold, gems, scrolls, magic items
+            // https://web.archive.org/web/20010805081053fw_/http://uo.stratics.com/hunters/skeletaldragon.shtml
+            // 2000 - 3000 Gold, gems, scrolls, magic items
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                for (int i = 0; i < 5; ++i)
-                    PackGem();
-
-                PackGold(2500, 3500);
-                //PackMagicEquipment( 1, 5, 0.50, 0.50 );
-                //PackMagicEquipment( 1, 3, 0.20, 0.20 );
-                PackItem(new Bone(Utility.Random(55, 80)));
-
-                // adam: add 25% chance to get a Random Slayer Instrument
-                PackSlayerInstrument(.25);
-
-                // Pigpen: Add the Unholy Bone (rare) armor to this mini-boss.
-                if (Utility.RandomDouble() < 0.10)
-                {
-                    switch (Utility.Random(5))
-                    {
-                        case 0: PackItem(new UnholyBoneLegs()); break;   // Leggings
-                        case 1: PackItem(new UnholyBoneArms()); break;   // arms
-                        case 2: PackItem(new UnholyBoneArmor()); break;  // Chest
-                        case 3: PackItem(new UnholyBoneGloves()); break; // gloves
-                        case 4: PackItem(new UnholyBoneHelm()); break;       // helm
-                    }
-                }
-
-                // Use our unevenly weighted table for chance resolution
-                Item item;
-                item = Loot.RandomArmorOrShieldOrWeapon();
-                PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6 /*6*/, 0, false));
+                PackGold(2000, 3000);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020214230303/uo.stratics.com/hunters/skeletaldragon.shtml
-                    // 2000 - 3000 Gold, gems, scrolls, magic items
-                    // https://web.archive.org/web/20010805081053fw_/http://uo.stratics.com/hunters/skeletaldragon.shtml
-                    // 2000 - 3000 Gold, gems, scrolls, magic items
-                    if (Spawning)
-                    {
-                        PackGold(2000, 3000);
-                    }
-                    else
-                    {
-                        PackGem(1, .9);
-                        PackGem(1, .6);
-                        PackGem(1, .2);
-                        PackScroll(3, 7);
-                        PackScroll(3, 7, 0.8);
-                        PackScroll(3, 7, 0.3);
+                PackGem(1, .9);
+                PackGem(1, .6);
+                PackGem(1, .2);
+                PackScroll(3, 7);
+                PackScroll(3, 7, 0.8);
+                PackScroll(3, 7, 0.3);
 
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 3);
-                        else
-                            PackMagicItem(2, 3, 0.10);
-                    }
-                }
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 3);
                 else
-                {   // Standard RunUO
-                    AddLoot(LootPack.FilthyRich, 4);
-                    AddLoot(LootPack.Gems, 5);
-                }
+                    PackMagicItem(2, 3, 0.10);
             }
         }
 

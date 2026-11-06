@@ -1,3 +1,41 @@
+#
+# Standard Pricing Database (SPD) - Pricing Philosophy
+# ================================================================
+#
+# This file is the single source of truth for all vendor buy/sell prices on the shard.
+#
+# Why Finished Item 'sell' prices (VendorPays) are critically important:
+#
+#   - They directly determine the gold reward value of Bulk Order Deeds (BODs)
+#     when using the GoldCraftValue model.
+#   - They control whether players can generate risk-free gold by simply buying
+#     raw materials from vendors, crafting the item, and immediately selling it back.
+#   - If a finished item's sell price is significantly higher than the total cost
+#     of its raw materials and sub-components, it creates an arbitrage loop.
+#     This undermines the intended economy where real profit should come from
+#     farming resources, not vendor manipulation.
+#
+# Our Goal:
+#   Maintain a consistent and fair pricing model where:
+#     - Finished item 'sell' prices should generally be in the range of 1.3x to 1.6x
+#       the total material cost (using VendorPays prices recursively).
+#     - Very low-value items (maps, basic food, etc.) are given more leeway.
+#     - High-value or complex craftables are kept under tighter control.
+#
+# We do NOT want players to profit simply by buying from vendors and selling back.
+# Profit should primarily come from gathering resources in the world.
+#
+# Maintenance:
+#   Use the command [RefactorSPDForConsistency to automatically detect and correct
+#   items where the sell price significantly exceeds material cost.
+#
+#   This tool reads the live SPD, calculates recursive material costs, and updates
+#   overly generous sell prices while preserving comments and formatting.
+#   It creates a backup (vendor pricing.bak) before making changes.
+#
+# Last reviewed: 2026-03-28
+# ================================================================
+#
 Server.Engines.Mahjong.MahjongGame: buy: 6
 Server.Engines.Plants.PlantBowl: buy: 2
 Server.Items.AccountBook: buy: 150
@@ -105,8 +143,10 @@ Server.Items.Boots: sell: 5
 Server.Items.Bottle: buy: 5
 Server.Items.Bottle: sell: 3
 Server.Items.BountyLedger: buy: 1000
+Server.Items.ForensicNotebook: buy: 1000
 Server.Items.Bow: buy: 40
-Server.Items.Bow: sell: 17
+# Repriced from 17 to 10 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.Bow: sell: 10
 Server.Items.BowlFlour: buy: 7
 Server.Items.BreadLoaf: buy: 6
 Server.Items.BreadLoaf: sell: 3
@@ -173,6 +213,7 @@ Server.Items.ClockParts: sell: 1
 Server.Items.CloseHelm: buy: 18
 Server.Items.CloseHelm: sell: 9
 Server.Items.Cloth: buy: 2
+Server.Items.Cloth: sell: 1
 Server.Items.ClothingBlessDeed: buy: 50000
 Server.Items.Club: buy: 16
 Server.Items.Club: sell: 8
@@ -186,7 +227,8 @@ Server.Items.CompositeBow: sell: 23
 Server.Items.ContractOfEmployment: buy: 1252
 Server.Items.ContractOfEmployment: sell: 626
 Server.Items.CookedBird: buy: 17
-Server.Items.CookedBird: sell: 8
+# Repriced from 8 to 6 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.CookedBird: sell: 6
 Server.Items.Cookies: buy: 4
 Server.Items.Cookies: sell: 3
 Server.Items.CorpseSkinScroll: sell: 8
@@ -197,7 +239,8 @@ Server.Items.CreateFoodScroll: sell: 4
 Server.Items.CrescentBlade: buy: 37
 Server.Items.CrescentBlade: sell: 18
 Server.Items.Crossbow: buy: 55
-Server.Items.Crossbow: sell: 25
+# Repriced from 25 to 10 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.Crossbow: sell: 10
 Server.Items.CunningScroll: buy: 22
 Server.Items.CunningScroll: sell: 6
 Server.Items.CureScroll: buy: 22
@@ -224,7 +267,8 @@ Server.Items.Diamond: sell: 100
 Server.Items.Dices: buy: 2
 Server.Items.Dices: sell: 1
 Server.Items.DispelFieldScroll: sell: 12
-Server.Items.DispelScroll: sell: 14
+# Repriced from 14 to 13 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.DispelScroll: sell: 13
 Server.Items.DisplayCaseLargeEastAddonDeed: buy: 100000
 Server.Items.DisplayCaseLargeSouthAddonDeed: buy: 100000
 Server.Items.DisplayCaseLargeAddonDeed: buy: 100000
@@ -249,7 +293,8 @@ Server.Items.DoubleBladedStaff: sell: 17
 Server.Items.Doublet: buy: 13
 Server.Items.Doublet: sell: 7
 Server.Items.Dough: buy: 8
-Server.Items.Dough: sell: 4
+# Repriced from 4 to 1 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.Dough: sell: 1
 Server.Items.DovetailSaw: buy: 12
 Server.Items.DovetailSaw: sell: 6
 Server.Items.DrawKnife: buy: 10
@@ -271,7 +316,8 @@ Server.Items.EmptyBookcase: buy: 14
 Server.Items.EmptyBookcase: sell: 7
 Server.Items.EmptyPewterBowl: buy: 2
 Server.Items.EmptyPewterBowl: sell: 1
-Server.Items.EnergyBoltScroll: sell: 14
+# Repriced from 14 to 11 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.EnergyBoltScroll: sell: 11
 Server.Items.EnergyFieldScroll: sell: 16
 Server.Items.EnergyVortexScroll: sell: 18
 Server.Items.EtchingBook: buy: 10625
@@ -280,7 +326,8 @@ Server.Items.EvilOmenScroll: sell: 8
 Server.Items.ExecutionersAxe: buy: 30
 Server.Items.ExecutionersAxe: sell: 15
 Server.Items.ExorcismScroll: sell: 3
-Server.Items.ExplosionScroll: sell: 14
+# Repriced from 14 to 13 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.ExplosionScroll: sell: 13
 Server.Items.FancyArmoire: buy: 24
 Server.Items.FancyArmoire: sell: 12
 Server.Items.FancyDress: buy: 26
@@ -288,8 +335,8 @@ Server.Items.FancyDress: sell: 12
 Server.Items.FancyShirt: buy: 21
 Server.Items.FancyShirt: sell: 10
 Server.Items.FancyWoodenChairCushion: sell: 12
-Server.Items.Feather: buy: 2
-Server.Items.Feather: sell: 1
+Server.Items.Feather: buy: 3
+Server.Items.Feather: sell: 2
 Server.Items.FeatheredHat: buy: 10
 Server.Items.FeatheredHat: sell: 5
 Server.Items.FeeblemindScroll: buy: 12
@@ -297,7 +344,8 @@ Server.Items.FeeblemindScroll: sell: 4
 Server.Items.FemaleLeatherChest: buy: 116
 Server.Items.FemaleLeatherChest: sell: 18
 Server.Items.FemalePlateChest: buy: 207
-Server.Items.FemalePlateChest: sell: 113
+# Repriced from 113 to 112 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.FemalePlateChest: sell: 112
 Server.Items.FemaleStuddedChest: buy: 142
 Server.Items.FemaleStuddedChest: sell: 25
 Server.Items.FireballScroll: buy: 32
@@ -310,7 +358,8 @@ Server.Items.FishingPole: buy: 15
 Server.Items.FishingPole: sell: 7
 Server.Items.FishingScales: buy: 80
 Server.Items.FlagStoneAddonDeed: buy: 45000
-Server.Items.FlamestrikeScroll: sell: 16
+# Repriced from 16 to 10 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.FlamestrikeScroll: sell: 10
 Server.Items.Flax: buy: 102
 Server.Items.Flax: sell: 51
 Server.Items.FletcherTools: buy: 2
@@ -323,14 +372,16 @@ Server.Items.FootStool: sell: 6
 Server.Items.FrenchBread: buy: 5
 Server.Items.FrenchBread: sell: 1
 Server.Items.FriedEggs: buy: 8
-Server.Items.FriedEggs: sell: 4
+# Repriced from 4 to 1 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.FriedEggs: sell: 1
 Server.Items.Froe: buy: 10
 Server.Items.Froe: sell: 5
 Server.Items.FullApron: buy: 26
 Server.Items.FullApron: sell: 5
 Server.Items.Garlic: buy: 3
 Server.Items.Garlic: sell: 2
-Server.Items.GateTravelScroll: sell: 16
+# Repriced from 16 to 14 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.GateTravelScroll: sell: 14
 Server.Items.Gears: buy: 2
 Server.Items.Gears: sell: 1
 Server.Items.GenderChangeDeed: buy: 33000
@@ -344,13 +395,17 @@ Server.Items.GnarledStaff: sell: 8
 Server.Items.GoldBeadNecklace: buy: 27
 Server.Items.GoldBeadNecklace: sell: 13
 Server.Items.GoldBracelet: buy: 27
-Server.Items.GoldBracelet: sell: 13
+# Repriced from 13 to 11 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.GoldBracelet: sell: 11
 Server.Items.GoldEarrings: buy: 27
-Server.Items.GoldEarrings: sell: 13
+# Repriced from 13 to 11 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.GoldEarrings: sell: 11
 Server.Items.GoldNecklace: buy: 27
-Server.Items.GoldNecklace: sell: 13
+# Repriced from 13 to 11 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.GoldNecklace: sell: 11
 Server.Items.GoldRing: buy: 27
-Server.Items.GoldRing: sell: 13
+# Repriced from 13 to 11 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.GoldRing: sell: 11
 Server.Items.Grapes: buy: 3
 Server.Items.Grapes: sell: 1
 Server.Items.GrapplingHook: buy: 200
@@ -381,10 +436,12 @@ Server.Items.Hatchet: sell: 13
 Server.Items.HealScroll: buy: 12
 Server.Items.HealScroll: sell: 4
 Server.Items.HeaterShield: buy: 231
-Server.Items.HeaterShield: sell: 115
+# Repriced from 115 to 101 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.HeaterShield: sell: 101
 Server.Items.HeatingStand: buy: 2
 Server.Items.HeavyCrossbow: buy: 55
-Server.Items.HeavyCrossbow: sell: 27
+# Repriced from 27 to 14 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.HeavyCrossbow: sell: 14
 Server.Items.Helmet: buy: 31
 Server.Items.Helmet: sell: 9
 Server.Items.Hides: buy: 3
@@ -402,7 +459,8 @@ Server.Items.Inshave: buy: 10
 Server.Items.Inshave: sell: 5
 Server.Items.InteriorDecorator: buy: 10001
 Server.Items.InteriorDecorator: sell: 5000
-Server.Items.InvisibilityScroll: sell: 14
+# Repriced from 14 to 13 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.InvisibilityScroll: sell: 13
 Server.Items.IronGateHouseDoorDeed: buy: 25000
 Server.Items.IronIngot: buy: 5
 Server.Items.IronIngot: sell: 4
@@ -453,9 +511,11 @@ Server.Items.LeatherChest: sell: 52
 Server.Items.LeatherEmbroideryBook: buy: 25000
 Server.Items.LeatherEmbroideryFloss: buy: 1000
 Server.Items.LeatherGloves: buy: 60
-Server.Items.LeatherGloves: sell: 30
+# Repriced from 30 to 21 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.LeatherGloves: sell: 21
 Server.Items.LeatherGorget: buy: 74
-Server.Items.LeatherGorget: sell: 37
+# Repriced from 37 to 28 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.LeatherGorget: sell: 28
 Server.Items.LeatherLegs: buy: 80
 Server.Items.LeatherLegs: sell: 40
 Server.Items.LeatherShorts: buy: 86
@@ -557,7 +617,8 @@ Server.Items.Nails: buy: 3
 Server.Items.Nails: sell: 1
 Server.Items.NameChangeDeed: buy: 33000
 Server.Items.Necklace: buy: 26
-Server.Items.Necklace: sell: 13
+# Repriced from 13 to 11 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.Necklace: sell: 11
 Server.Items.NecromancerSpellbook: buy: 115
 Server.Items.NewAquariumBook: buy: 15
 Server.Items.Nightshade: buy: 3
@@ -620,7 +681,8 @@ Server.Items.PlateArms: sell: 94
 Server.Items.PlateChest: buy: 243
 Server.Items.PlateChest: sell: 121
 Server.Items.PlateGloves: buy: 155
-Server.Items.PlateGloves: sell: 72
+# Repriced from 72 to 67 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.PlateGloves: sell: 67
 Server.Items.PlateGorget: buy: 104
 Server.Items.PlateGorget: sell: 52
 Server.Items.PlateHelm: buy: 21
@@ -629,9 +691,11 @@ Server.Items.PlateLegs: buy: 218
 Server.Items.PlateLegs: sell: 109
 Server.Items.PoisonFieldScroll: sell: 12
 Server.Items.PoisonScroll: buy: 32
-Server.Items.PoisonScroll: sell: 8
+# Repriced from 8 to 7 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.PoisonScroll: sell: 7
 Server.Items.PoisonStrikeScroll: sell: 10
-Server.Items.PolymorphScroll: sell: 16
+# Repriced from 16 to 15 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.PolymorphScroll: sell: 15
 Server.Items.PotionKegDyeTub: buy: 5000
 Server.Items.Pouch: buy: 6
 Server.Items.Pouch: sell: 3
@@ -643,7 +707,8 @@ Server.Items.ProtectionScroll: sell: 6
 Server.Items.Pumpkin: buy: 11
 Server.Items.Pumpkin: sell: 5
 Server.Items.QuarterStaff: buy: 19
-Server.Items.QuarterStaff: sell: 9
+# Repriced from 9 to 8 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.QuarterStaff: sell: 8
 Server.Items.Quiche: buy: 25
 Server.Items.Quiche: sell: 6
 Server.Items.RattanHouseDoorDeed: buy: 25000
@@ -669,8 +734,10 @@ Server.Items.RefreshPotion: buy: 15
 Server.Items.RefreshPotion: sell: 7
 Server.Items.RepeatingCrossbow: buy: 46
 Server.Items.RepeatingCrossbow: sell: 22
-Server.Items.ResurrectionScroll: sell: 18
-Server.Items.RevealScroll: sell: 14
+# Repriced from 18 to 15 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.ResurrectionScroll: sell: 15
+# Repriced from 14 to 13 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.RevealScroll: sell: 13
 Server.Items.Ribs: buy: 7
 Server.Items.Ribs: sell: 6
 Server.Items.RingmailArms: buy: 85
@@ -728,7 +795,8 @@ Server.Items.TreeTrimmer: buy: 2000
 Server.Items.SewingKit: buy: 3
 Server.Items.SewingKit: sell: 1
 Server.Items.Sextant: buy: 13
-Server.Items.Sextant: sell: 6
+# Repriced from 6 to 3 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.Sextant: sell: 3
 Server.Items.SextantParts: buy: 5
 Server.Items.SextantParts: sell: 2
 Server.Items.Shaft: buy: 3
@@ -811,13 +879,16 @@ Server.Items.StuddedLegs: buy: 103
 Server.Items.StuddedLegs: sell: 51
 Server.Items.SulfurousAsh: buy: 3
 Server.Items.SulfurousAsh: sell: 2
-Server.Items.SummonAirElementalScroll: sell: 18
+# Repriced from 18 to 15 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.SummonAirElementalScroll: sell: 15
 Server.Items.SummonCreatureScroll: sell: 12
 Server.Items.SummonDaemonScroll: sell: 18
-Server.Items.SummonEarthElementalScroll: sell: 18
+# Repriced from 18 to 15 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.SummonEarthElementalScroll: sell: 15
 Server.Items.SummonFamiliarScroll: sell: 8
 Server.Items.SummonFireElementalScroll: sell: 18
-Server.Items.SummonWaterElementalScroll: sell: 18
+# Repriced from 18 to 15 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.SummonWaterElementalScroll: sell: 15
 Server.Items.SurveyTool: buy: 5000
 Server.Items.TallStrawHat: buy: 8
 Server.Items.TallStrawHat: sell: 4
@@ -844,7 +915,8 @@ Server.Items.TinkersTools: buy: 7
 Server.Items.TinkerTools: buy: 30
 Server.Items.TinkerTools: sell: 3
 Server.Items.Tongs: buy: 13
-Server.Items.Tongs: sell: 7
+# Repriced from 7 to 6 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.Tongs: sell: 6
 Server.Items.Torch: buy: 7
 Server.Items.Torch: sell: 3
 Server.Items.Tourmaline: buy: 75
@@ -918,7 +990,8 @@ Server.Items.WoodEngravingBook: buy: 10625
 Server.Items.WoodenKiteShield: buy: 70
 Server.Items.WoodenKiteShield: sell: 35
 Server.Items.WoodenShield: buy: 30
-Server.Items.WoodenShield: sell: 15
+# Repriced from 15 to 13 (1.4x material cost) to prevent arbitrage - 2026-03-28
+Server.Items.WoodenShield: sell: 13
 Server.Items.WoodenThrone: buy: 12
 Server.Items.WoodenThrone: sell: 6
 Server.Items.Wool: buy: 62
@@ -988,26 +1061,63 @@ Server.Items.ModerateUpgradeContract: buy: 195750
 Server.Items.PremiumUpgradeContract: buy: 498900
 Server.Items.LavishUpgradeContract: buy: 767100
 Server.Items.DeluxeUpgradeContract: buy: 1603400
+Server.Items.SpecialHairDye: buy: 500000
+Server.Items.SpecialBeardDye: buy: 500000
+# The classic client encodes vendor buyback prices as a 16-bit unsigned value (ushort).
+# Any value above 65535 will overflow and display incorrectly in the sell gump,
+# so we ignore items whose computed buyback price exceeds the client protocol limit.
+# See also: VendorPays(Type type) in BaseVendor
+Server.Items.SpecialHairDye: sell: 65535 
+Server.Items.SpecialBeardDye: sell: 65535
 #
 # Special Resource Pool items
 #
 Server.Items.DullCopperIngot: buy: 6
+Server.Items.DullCopperIngot: sell: 5
 Server.Items.ShadowIronIngot: buy: 7
+Server.Items.ShadowIronIngot: sell: 5
 Server.Items.CopperIngot: buy: 8
+Server.Items.CopperIngot: sell: 6
 Server.Items.BronzeIngot: buy: 9
+Server.Items.BronzeIngot: sell: 7
 Server.Items.GoldIngot: buy: 10
+Server.Items.GoldIngot: sell: 8
 Server.Items.AgapiteIngot: buy: 11
+Server.Items.AgapiteIngot: sell: 8
 Server.Items.VeriteIngot: buy: 13
+Server.Items.VeriteIngot: sell: 10
 Server.Items.ValoriteIngot: buy: 15
+Server.Items.ValoriteIngot: sell: 11
 Server.Items.SpinedLeather: buy: 6
+Server.Items.SpinedLeather: sell: 5
 Server.Items.HornedLeather: buy: 7
+Server.Items.HornedLeather: sell: 5
 Server.Items.BarbedLeather: buy: 8
+Server.Items.BarbedLeather: sell: 6
 Server.Items.OakBoard: buy: 5
+Server.Items.OakBoard: sell: 4
 Server.Items.AshBoard: buy: 7
+Server.Items.AshBoard: sell: 5
 Server.Items.YewBoard: buy: 8
+Server.Items.YewBoard: sell: 6
 Server.Items.HeartwoodBoard: buy: 10
+Server.Items.HeartwoodBoard: sell: 7
 Server.Items.BloodwoodBoard: buy: 12
+Server.Items.BloodwoodBoard: sell: 9
 Server.Items.FrostwoodBoard: buy: 14
+Server.Items.FrostwoodBoard: sell: 10
+Server.Items.OakLog: buy: 5
+Server.Items.OakLog: sell: 4
+Server.Items.AshLog: buy: 7
+Server.Items.AshLog: sell: 5
+Server.Items.YewLog: buy: 8
+Server.Items.YewLog: sell: 6
+Server.Items.HeartwoodLog: buy: 10
+Server.Items.HeartwoodLog: sell: 7
+Server.Items.BloodwoodLog: buy: 12
+Server.Items.BloodwoodLog: sell: 9
+Server.Items.FrostwoodLog: buy: 14
+Server.Items.FrostwoodLog: sell: 10
 Server.Engines.Apiculture.BeehiveAddonDeed: buy: 2002
 Server.Engines.Apiculture.HiveTool: buy: 20
 Server.Mobiles.Chicken: buy: 24
@@ -1016,6 +1126,9 @@ Server.Mobiles.Pig: buy: 98
 Server.Mobiles.Sheep: buy: 201
 Server.Mobiles.Cow: buy: 403
 Server.Items.IronOre: buy: 16
+# Bone is valued at Leather for BOD craft-cost valuation.
+Server.Items.Bone: buy: 6
+Server.Items.Bone: sell: 5
 Server.Items.SmallVesperMarketStallDeed: buy: 125000
 Server.Items.LargeVesperMarketStallDeed: buy: 125000
 Server.Items.SmallNujelmMarketStallDeed: buy: 175000

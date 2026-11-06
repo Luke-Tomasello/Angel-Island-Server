@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -40,16 +40,16 @@ namespace Server.Engines.MyRunUO
         public static bool Enabled = false;
 
         // Details required for database connection string - setup in Configure()
-        public static string DatabaseDriver = null;
-        public static string DatabaseServer = null;
-        public static string DatabaseName = null;
-        public static string DatabaseUserID = null;
-        public static string DatabasePassword = null;
+        public static string? DatabaseDriver = null;
+        public static string? DatabaseServer = null;
+        public static string? DatabaseName = null;
+        public static string? DatabaseUserID = null;
+        public static string? DatabasePassword = null;
 
         public static void Configure()
         {
             // see if we are runninbg on the production server with MyRunUO enabled
-            string me = Environment.GetEnvironmentVariable("MYRUNUO_ENABLED");
+            string? me = Environment.GetEnvironmentVariable("MYRUNUO_ENABLED");
             if (me == null)
             {
                 Console.WriteLine("MyRunUO: No MYRUNUO_ENABLED environment variable found.");
@@ -65,17 +65,17 @@ namespace Server.Engines.MyRunUO
             {
                 Enabled = true;
 
-                if ((Core.RuleSets.AngelIslandRules()) && !Core.UOTC_CFG)
+                if ((Core.RuleSets.AngelIslandRules()) && !Core.GMNTC_CFG)
                 {
                     Enabled = false;
                     Console.WriteLine("MyRunUO: Disabled.");
                 }
-                else if (Core.RuleSets.StandardShardRules() && !Core.UOTC_CFG)
+                else if (Core.RuleSets.StandardShardRules() && !Core.GMNTC_CFG)
                 {
                     Enabled = false;
                     Console.WriteLine("MyRunUO: Disabled.");
                 }
-                else if (Core.UOTC_CFG)
+                else if (Core.GMNTC_CFG)
                 {
                     Console.WriteLine("MyRunUO: Enabled.");
                     DatabaseDriver = "{MySQL ODBC 3.51 Driver}";
@@ -114,14 +114,6 @@ namespace Server.Engines.MyRunUO
         // Export online list database every 5 minutes
         public static TimeSpan StatusUpdateInterval = TimeSpan.FromMinutes(5.0);
 
-        public static string CompileConnectionString()
-        {
-            //string connectionString = string.Format("DRIVER={0};SERVER={1};DATABASE={2};UID={3};PASSWORD={4};",
-            string connectionString = string.Format("DRIVER={0};SERVER={1};DATABASE={2};USER={3};PASSWORD={4};",
-                DatabaseDriver, DatabaseServer, DatabaseName, DatabaseUserID, DatabasePassword);
-
-            return connectionString;
-        }
     }
 
 

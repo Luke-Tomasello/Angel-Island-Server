@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -104,7 +104,7 @@ namespace Server.Engines.ConPVP
 
         public PreferencesEntry Find(Mobile mob)
         {
-            PreferencesEntry entry = (PreferencesEntry)m_Table[mob];
+            PreferencesEntry? entry = (PreferencesEntry?)m_Table[mob];
 
             if (entry == null)
             {
@@ -217,7 +217,7 @@ namespace Server.Engines.ConPVP
     public class PreferencesGump : Gump
     {
         private Mobile m_From;
-        private PreferencesEntry m_Entry;
+        private PreferencesEntry? m_Entry;
 
         public override void OnResponse(NetState sender, RelayInfo info)
         {
@@ -310,7 +310,7 @@ namespace Server.Engines.ConPVP
 
         private int m_ColumnX = 12;
 
-        private void AddColumnHeader(int width, string name)
+        private void AddColumnHeader(int width, string? name)
         {
             AddBackground(m_ColumnX, 12, width, 20, 0x242C);
             AddImageTiled(m_ColumnX + 2, 14, width - 4, 16, 0x2430);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -527,7 +527,7 @@ namespace Server.Mobiles
         }
         public DateTime Created { get { return m_Mobile.Created; } }
         #region CompareTo(...)
-        public int CompareTo(IEntity other)
+        public int CompareTo(IEntity? other)
         {
             if (other == null)
                 return -1;
@@ -540,7 +540,7 @@ namespace Server.Mobiles
             return this.CompareTo((IEntity)other);
         }
 
-        public int CompareTo(object other)
+        public int CompareTo(object? other)
         {
             if (other == null || other is IEntity)
                 return this.CompareTo((IEntity)other);
@@ -580,7 +580,7 @@ namespace Server.Mobiles
 
         public bool HoldingWeapon()
         {
-            Item weapon = m_Mobile.Weapon as Item;
+            Item? weapon = m_Mobile.Weapon as Item;
 
             if (weapon != null && weapon.Parent == m_Mobile && !(weapon is Fists))
                 return true;
@@ -661,7 +661,7 @@ namespace Server.Mobiles
             {
                 Container pack = m_Mobile.Backpack;
                 if (pack == null) return 0;
-                Item bandage = pack.FindItemByType(typeof(Bandage));
+                Item? bandage = pack.FindItemByType(typeof(Bandage));
                 return bandage != null ? bandage.Amount : 0;
             }
         }
@@ -671,7 +671,7 @@ namespace Server.Mobiles
             if (pack == null) return null;
             return pack.FindItemByType(typeof(Bandage)) as Bandage;
         }
-        private BandageContext m_Bandage;
+        private BandageContext? m_Bandage;
         private DateTime m_BandageStart;
         public DateTime BandageTime
         {
@@ -967,7 +967,7 @@ namespace Server.Mobiles
         #endregion
 
         #region pouches
-        protected virtual Pouch FindPouch(Mobile from)
+        protected virtual Pouch? FindPouch(Mobile from)
         {
             ArrayList list = GetPackItems(from);
             Pouch pouch;
@@ -986,15 +986,15 @@ namespace Server.Mobiles
 
         protected virtual void UseTrapPouch(Mobile from)
         {
-            Pouch pouch = FindPouch(from);
+            Pouch? pouch = FindPouch(from);
             if (pouch != null && pouch.TrapType == TrapType.MagicTrap)
                 pouch.ExecuteTrap(from);
         }
 
         protected virtual void TrapPouch(Mobile from)
         {
-            Spell spell = null;
-            Pouch pouch = FindPouch(from);
+            Spell? spell = null;
+            Pouch? pouch = FindPouch(from);
             if (pouch != null && pouch.TrapType == TrapType.None)
             {
                 spell = new MagicTrapSpell(from, null);
@@ -1072,22 +1072,6 @@ namespace Server.Mobiles
             return list;
         }
 
-        public bool FindWeapon(Mobile m)
-        {
-            Container pack = m.Backpack;
-
-            if (pack == null)
-                return false;
-
-            Item weapon = pack.FindItemByType(typeof(BaseWeapon));
-            Item weaponOne = m.FindItemOnLayer(Layer.OneHanded);
-            Item weaponTwo = m.FindItemOnLayer(Layer.TwoHanded);
-            if (weapon == null && weaponOne == null && weaponTwo == null)
-                return false;
-
-            return true;
-        }
-
         public virtual bool EquipWeapon()
         {
             Container pack = m_Mobile.Backpack;
@@ -1095,7 +1079,7 @@ namespace Server.Mobiles
             if (pack == null)
                 return false;
 
-            Item weapon = pack.FindItemByType(typeof(BaseWeapon));
+            Item? weapon = pack.FindItemByType(typeof(BaseWeapon));
 
             if (weapon == null)
                 return false;
@@ -1110,7 +1094,7 @@ namespace Server.Mobiles
             if (pack == null)
                 return false;
 
-            Item weapon = m_Mobile.Weapon as Item;
+            Item? weapon = m_Mobile.Weapon as Item;
 
             if (weapon != null && weapon.Parent == m_Mobile && !(weapon is Fists))
             {
@@ -1128,12 +1112,12 @@ namespace Server.Mobiles
             if (pack == null)
                 return WeaponArmStatus.NotFound;
 
-            Item weapon = m_Mobile.Weapon as Item;
+            Item? weapon = m_Mobile.Weapon as Item;
 
             if (weapon.GetType() == type)
                 return WeaponArmStatus.AlreadyArmed;
 
-            Item item = pack.FindItemByType(type);
+            Item? item = pack.FindItemByType(type);
 
             bool FoundWeapon = false;
             bool HandBlocked = false;
@@ -1159,128 +1143,6 @@ namespace Server.Mobiles
         }
 
 
-        public WeaponArmStatus ArmOneHandedWeapon()
-        {
-            Item weapon = m_Mobile.Weapon as Item;
-            if (weapon.Layer == Layer.OneHanded)
-                return WeaponArmStatus.AlreadyArmed;
-
-            bool HandBlocked = false;
-            bool FoundWeapon = false;
-
-            if (weapon.Layer == Layer.TwoHanded)
-                HandBlocked = true;
-
-            ArrayList list = GetPackItems(m_Mobile);
-            foreach (Item item in list)
-            {
-                if (item is BaseWeapon && item.Layer == Layer.OneHanded)
-                {
-                    FoundWeapon = true;
-                    if (m_Mobile.EquipItem(item))
-                    {
-                        return WeaponArmStatus.Success;
-                    }
-                }
-            }
-            if (!FoundWeapon)
-                return WeaponArmStatus.NotFound;
-            if (FoundWeapon && HandBlocked)
-                return WeaponArmStatus.HandFull;
-
-            return WeaponArmStatus.NotFound;
-        }
-
-        public WeaponArmStatus ArmTwoHandedWeapon()
-        {
-            Item weapon = m_Mobile.Weapon as Item;
-            if (weapon.Layer == Layer.TwoHanded)
-                return WeaponArmStatus.AlreadyArmed;
-
-            bool HandBlocked = false;
-            bool FoundWeapon = false;
-
-            Item IsArmed = m_Mobile.FindItemOnLayer(Layer.TwoHanded);
-
-            if (weapon.Layer == Layer.OneHanded || IsArmed is BaseShield)
-                HandBlocked = true;
-
-            ArrayList list = GetPackItems(m_Mobile);
-            foreach (Item item in list)
-            {
-                if (item is BaseWeapon && item.Layer == Layer.TwoHanded)
-                {
-                    FoundWeapon = true;
-                    if (m_Mobile.EquipItem(item))
-                    {
-                        return WeaponArmStatus.Success;
-                    }
-                }
-            }
-            if (!FoundWeapon)
-                return WeaponArmStatus.NotFound;
-            if (FoundWeapon && HandBlocked)
-                return WeaponArmStatus.HandFull;
-
-            return WeaponArmStatus.NotFound;
-        }
-
-        public bool ArmShield()
-        {
-            Item IsArmed = m_Mobile.FindItemOnLayer(Layer.TwoHanded);
-            if (IsArmed is BaseShield)
-                return true;
-
-            ArrayList list = GetPackItems(m_Mobile);
-            foreach (Item item in list)
-            {
-                if (item is BaseShield && item.Layer == Layer.TwoHanded)
-                {
-                    if (m_Mobile.EquipItem(item))
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
-        public void DisarmOneHandedWeapon()
-        {
-            m_Mobile.ClearHand(m_Mobile.FindItemOnLayer(Layer.OneHanded));
-        }
-
-        public void DisarmTwoHandedWeapon()
-        {
-            Item shield = m_Mobile.FindItemOnLayer(Layer.TwoHanded);
-            if (shield != null && shield is BaseShield)
-                return;
-
-            m_Mobile.ClearHand(m_Mobile.FindItemOnLayer(Layer.TwoHanded));
-        }
-
-        public void DisarmShield()
-        {
-            Item shield = m_Mobile.FindItemOnLayer(Layer.TwoHanded);
-            if (shield != null && shield is BaseShield)
-                m_Mobile.ClearHand(m_Mobile.FindItemOnLayer(Layer.TwoHanded));
-
-        }
-
-        public bool CheckIfHaveItem(Type type)
-        {
-            Container pack = m_Mobile.Backpack;
-
-            if (pack == null)
-                return false;
-
-            Item item = pack.FindItemByType(type);
-
-            if (item == null)
-                return false;
-
-            return true;
-        }
-
         public virtual bool UseItemByType(Type type)
         {
             Container pack = m_Mobile.Backpack;
@@ -1288,7 +1150,7 @@ namespace Server.Mobiles
             if (pack == null)
                 return false;
 
-            Item item = pack.FindItemByType(type);
+            Item? item = pack.FindItemByType(type);
 
             if (item == null)
                 return false;
@@ -1331,6 +1193,73 @@ namespace Server.Mobiles
 
             return (name != null && Insensitive.StartsWith(speech, name));
         }
+        /// <summary>
+        /// Determines whether the spoken command explicitly targets this mobile by name
+        /// using the grammar: "<name> <verb> [arguments...]".
+        ///
+        /// This method exists to prevent prefix-collision issues where one mobile's name
+        /// is a strict prefix of another (e.g., "a" vs "a dog").
+        /// 
+        /// Example:
+        ///   Speech: "a dog release"
+        ///     - Name "a"      → does NOT match (expects "a release")
+        ///     - Name "a dog"  → matches
+        ///
+        /// The check requires:
+        ///   1) The speech starts with the mobile's name (case-insensitive)
+        ///   2) The name is followed by a word boundary
+        ///   3) The next token matches the expected verb
+        ///
+        /// This allows multi-token commands after the verb while ensuring that
+        /// shorter names do not incorrectly match longer, more specific names.
+        /// </summary>
+        public bool WasNamedVerb(string speech, string verb)
+        {
+            if (string.IsNullOrWhiteSpace(speech) || string.IsNullOrWhiteSpace(verb))
+                return false;
+
+            string? name = m_Mobile?.Name;
+
+            if (string.IsNullOrWhiteSpace(name))
+                return false;
+
+            // Must start with the name
+            if (!Insensitive.StartsWith(speech, name))
+                return false;
+
+            int idx = name.Length;
+
+            // Require boundary after name
+            if (speech.Length == idx)
+                return false;
+
+            if (!char.IsWhiteSpace(speech[idx]))
+                return false;
+
+            // Skip whitespace
+            while (idx < speech.Length && char.IsWhiteSpace(speech[idx]))
+                idx++;
+
+            // Now expect the verb
+            if (!Insensitive.StartsWith(speech.Substring(idx), verb))
+                return false;
+
+            int verbEnd = idx + verb.Length;
+
+            // Require boundary after verb (or end of speech)
+            if (speech.Length == verbEnd)
+                return true;
+
+            char next = speech[verbEnd];
+            return char.IsWhiteSpace(next) || char.IsPunctuation(next);
+        }
+
+        public virtual bool AnyName(string speech)
+        {
+            string name = "vendor";
+
+            return WasNamed(speech) || (name != null && Insensitive.StartsWith(speech, name));
+        }
 
         private class InternalEntry : ContextMenuEntry
         {
@@ -1366,11 +1295,7 @@ namespace Server.Mobiles
                             }
                         case OrderType.Release:
                             {
-                                if (m_Mobile.IOBFollower)
-                                {
-                                    m_Mobile.AttemptIOBDismiss();
-                                }
-                                else if (m_Mobile.Summoned)
+                                if (m_Mobile.Summoned)
                                     goto default;
                                 else
                                     m_From.SendGump(new Gumps.ConfirmReleaseGump(m_From, m_Mobile));
@@ -1381,7 +1306,12 @@ namespace Server.Mobiles
                         default:
                             {
                                 if (m_Mobile.CheckControlChance(m_From))
+                                {
+                                    m_Mobile.ControlTarget = null;
                                     m_Mobile.ControlOrder = m_Order;
+
+                                    m_Mobile.NotifyControlCommandAccepted(m_From, m_Order, null);
+                                }
 
                                 break;
                             }
@@ -1392,7 +1322,7 @@ namespace Server.Mobiles
 
         public virtual void GetContextMenuEntries(Mobile from, ArrayList list)
         {
-            if (from.Alive && m_Mobile.Controlled && from == m_Mobile.ControlMaster && from.InRange(m_Mobile, 14) && !m_Mobile.IOBFollower)
+            if (from.Alive && m_Mobile.Controlled && from == m_Mobile.ControlMaster && from.InRange(m_Mobile, 14))
             {
                 list.Add(new InternalEntry(from, 6107, 14, m_Mobile, this, OrderType.Guard));  // Command: Guard
                 list.Add(new InternalEntry(from, 6108, 14, m_Mobile, this, OrderType.Follow)); // Command: Follow
@@ -1408,11 +1338,6 @@ namespace Server.Mobiles
                     list.Add(new InternalEntry(from, 6113, 14, m_Mobile, this, OrderType.Transfer)); // Transfer
 
                 list.Add(new InternalEntry(from, 6118, 14, m_Mobile, this, OrderType.Release)); // Release
-            }
-
-            if (m_Mobile.IOBFollower && m_Mobile.IOBLeader == from && !m_Mobile.Tamable)
-            {
-                list.Add(new InternalEntry(from, 6129, 14, m_Mobile, this, OrderType.Release)); //Dismiss
             }
         }
 
@@ -1443,59 +1368,11 @@ namespace Server.Mobiles
             if (from == null)
             {
                 Console.WriteLine("(from == null) in BaseAI::EndPickTarget");
-                //return;
+                return;
             }
 
             if (m_Mobile.Deleted || !m_Mobile.Controlled || from != m_Mobile.ControlMaster || !from.InRange(m_Mobile, 14) || from.Map != m_Mobile.Map || !from.CheckAlive())
                 return;
-
-            //Special case for if it's an iob follower!
-            if (m_Mobile.IOBFollower && m_Mobile.IOBLeader == from)
-            {
-                if (target is BaseCreature)
-                {
-                    BaseCreature bc = (BaseCreature)target;
-                    if (bc.IOBAlignment != IOBAlignment.None)
-                    {
-                        if (bc.IOBAlignment == m_Mobile.IOBAlignment)
-                        {
-                            //Won't attack same IOBAlignment
-                        }
-                        else
-                        {
-                            m_Mobile.ControlTarget = target;
-                            m_Mobile.ControlOrder = order;
-                        }
-                    }
-                    else
-                    {
-                        m_Mobile.SayTo(from, "Your follower refuses to attack that creature");
-                    }
-                }
-                else if (target is PlayerMobile)
-                {
-                    if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.IOBShardWide)
-                        || (Server.Engines.IOBSystem.IOBRegions.IsInIOBRegion(from)
-                        && Server.Engines.IOBSystem.IOBRegions.IsInIOBRegion(target)))
-                    {
-                        PlayerMobile pm = (PlayerMobile)target;
-                        if (pm.IOBAlignment == m_Mobile.IOBAlignment || pm.IOBAlignment == IOBAlignment.None)
-                        {
-                            //Won't attack same IOBAlignment
-                        }
-                        else
-                        {
-                            m_Mobile.ControlTarget = target;
-                            m_Mobile.ControlOrder = order;
-                        }
-                    }
-                    else
-                    {
-                        m_Mobile.SayTo(from, "Your follower refuses to attack that here.");
-                    }
-                }
-                return;
-            }
 
             if (order == OrderType.Attack && target is BaseCreature && (((BaseCreature)target).IsScaryToPets && ((BaseCreature)target).IsScaryCondition()) && m_Mobile.IsScaredOfScaryThings)
             {
@@ -1507,6 +1384,9 @@ namespace Server.Mobiles
             {
                 m_Mobile.ControlTarget = target;
                 m_Mobile.ControlOrder = order;
+
+                // Passive taming gain framework hook (no-op until enabled in BaseCreature.Passive.cs)
+                m_Mobile.NotifyControlCommandAccepted(from, order, target);
             }
         }
 
@@ -1518,64 +1398,8 @@ namespace Server.Mobiles
             if (from.Alive && m_Mobile.Controlled && m_Mobile.Commandable && from == m_Mobile.ControlMaster)
                 return true;
 
-            //Pix: This is needed for the "join me" command issued to bretheren
-            if (from.Alive && m_Mobile.IOBAlignment != IOBAlignment.None)
-                return true;
-
             return (from.Alive && from.InRange(m_Mobile.Location, 3) && m_Mobile.IsHumanInTown());
         }
-
-        private static SkillName[] m_KeywordTable = new SkillName[]
-            {
-                SkillName.Parry,
-                SkillName.Healing,
-                SkillName.Hiding,
-                SkillName.Stealing,
-                SkillName.Alchemy,
-                SkillName.AnimalLore,
-                SkillName.ItemID,
-                SkillName.ArmsLore,
-                SkillName.Begging,
-                SkillName.Blacksmith,
-                SkillName.Fletching,
-                SkillName.Peacemaking,
-                SkillName.Camping,
-                SkillName.Carpentry,
-                SkillName.Cartography,
-                SkillName.Cooking,
-                SkillName.DetectHidden,
-                SkillName.Discordance,//??
-				SkillName.EvalInt,
-                SkillName.Fishing,
-                SkillName.Provocation,
-                SkillName.Lockpicking,
-                SkillName.Magery,
-                SkillName.MagicResist,
-                SkillName.Tactics,
-                SkillName.Snooping,
-                SkillName.RemoveTrap,
-                SkillName.Musicianship,
-                SkillName.Poisoning,
-                SkillName.Archery,
-                SkillName.SpiritSpeak,
-                SkillName.Tailoring,
-                SkillName.AnimalTaming,
-                SkillName.TasteID,
-                SkillName.Tinkering,
-                SkillName.Veterinary,
-                SkillName.Forensics,
-                SkillName.Herding,
-                SkillName.Tracking,
-                SkillName.Stealth,
-                SkillName.Inscribe,
-                SkillName.Swords,
-                SkillName.Macing,
-                SkillName.Fencing,
-                SkillName.Wrestling,
-                SkillName.Lumberjacking,
-                SkillName.Mining,
-                SkillName.Meditation
-            };
         public void OnCombatantChange()
         {
             if (m_Mobile.Deleted || m_Mobile.ControlMaster == null || m_Mobile.ControlMaster.Deleted)
@@ -1677,14 +1501,10 @@ namespace Server.Mobiles
                             System.Console.WriteLine("DoGenericLocate... ");
                             Utility.TimeCheck tc = new Utility.TimeCheck();
                             tc.Start();
-#if true // run as a background task
                             IntelligentDialogue.LoadPlayerCache(m_Mobile.Location);
                             IntelligentDialogue.LoadMobilesCache();
                             Console.Out.Flush();
                             Task.Factory.StartNew(() => IntelligentDialogue.DoGenericLocate(m_Mobile, e, true));
-#else
-                            IntelligentDialogue.DoGenericLocate(m_Mobile, e, false);
-#endif
                             tc.End();
                             System.Console.WriteLine("DoGenericLocate finished in {0} seconds (main thread).", tc.TimeTaken);
                         }
@@ -1697,568 +1517,568 @@ namespace Server.Mobiles
                 LogHelper.LogException(ex);
             }
         }
+
+        private Memory m_PlayerCommandMemory = new Memory();
+        public virtual void OnGlobalOrder(SpeechEventArgs e)
+        {
+            if (e == null)
+                return;
+
+            Mobile from = e.Mobile;
+
+            // Only living players, and never the control master.
+            if (from == null || !from.Player || !from.Alive || from == m_Mobile.ControlMaster)
+                return;
+
+            int[] keywords = e.Keywords;
+            if (keywords == null || keywords.Length == 0)
+                return;
+
+            // Only handle "*move*" (anti-grief mitigation).
+            bool hasMove = false;
+            for (int i = 0; i < keywords.Length; ++i)
+            {
+                if (keywords[i] == 0x9D)
+                {
+                    hasMove = true;
+                    break;
+                }
+            }
+
+            if (!hasMove || !WasNamed(e.Speech))
+                return;
+
+            BaseCreature target = m_Mobile as BaseCreature;
+            if (target == null)
+                return;
+
+            // Target must be controlled by a player (not wild/NPC) and not staff-owned.
+            if (!target.Controlled || target.ControlMaster == null || target.IsStaffOwned)
+                return;
+
+            // Blocking case only: stationary and not in combat.
+            if (target.ControlOrder != OrderType.Stay || target.Combatant != null)
+                return;
+
+            // Must be in a guarded or town-rules region, and issuer must be in the same region.
+            Regions.GuardedRegion? gr = target.Region as Regions.GuardedRegion;
+            if (gr == null || !(gr.IsTownRules || gr.IsGuarded) || from.Region != gr)
+                return;
+
+            // Rate limit: if we remember this player, ignore.
+            if (m_PlayerCommandMemory.Recall(from))
+                return;
+
+            // if I can't move, ignore
+            if (!CanMove(target))
+                return;
+
+            e.Handled = true;
+
+            Point3D oldLocation = m_Mobile.Location;
+
+            // NOTE: The third parameter limits movement distance.
+            // CanMove() only validates the 1-tile neighborhood.
+            // If this value is increased, CanMove() must be updated
+            // to scan the full reachable matrix to avoid stepping
+            // onto travel objects (gates, teleporters, etc.).
+            WalkRandomInHome(2, 2, 1, evenIfStationed: true);
+
+            // Only react if we actually moved.
+            if (oldLocation != m_Mobile.Location)
+            {
+                if (m_Mobile.Body.IsHuman)
+                    m_Mobile.PublicOverheadMessage(MessageType.Regular, 0x3B2, ascii: true, "Sorry");
+                else
+                    m_Mobile.PlaySound(m_Mobile.GetIdleSound());
+
+                // remember this player so they don't spam/try to drive our mobile away
+                m_PlayerCommandMemory.Remember(from, TimeSpan.FromSeconds(30).TotalSeconds);
+            }
+        }
+        public static bool CanMove(Mobile m)
+        {
+            if (m == null || m.Map == null)
+                return false;
+
+            Map map = m.Map;
+            Point3D loc = m.Location;
+
+            bool foundStep = false;
+
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    if (dx == 0 && dy == 0)
+                        continue;
+
+                    int x = loc.X + dx;
+                    int y = loc.Y + dy;
+                    int z = loc.Z;
+
+                    Point3D p = new Point3D(x, y, z);
+
+                    if (!map.CanSpawnLandMobile(p))
+                        continue;
+
+                    foundStep = true;
+
+                    // Any adjacent step-valid travel trigger means: do not risk random walking.
+                    if (Trickery(map, x, y, z))
+                        return false;
+                }
+            }
+
+            return foundStep;
+        }
+
+        public static bool Trickery(Map map, int x, int y, int z)
+        {
+            Point3D px = new Point3D(x, y, z);
+
+            List<Item> items = FindItemsAt(px, map, 2);
+            foreach (Item ix in items)
+            {
+
+                if (ix is Teleporter tele)
+                {
+                    if (tele.Running == true && tele.Creatures == true)
+                        return true;
+                }
+                else if (ix.TravelObject)
+                    return true;
+            }
+
+            return false;
+        }
+
         public virtual void OnSpeech(SpeechEventArgs e)
         {
-
-            #region [Vendor] Buy Sell
-            /// when a vendor enters battle, they switch from AI_Vendor to AI_Melee and will no longer talk to customers
-            if (m_Mobile is BaseVendor && e.Mobile.InRange(m_Mobile, 4) && !e.Handled && m_Mobile.AI == AIType.AI_Melee &&
-                (e.HasKeyword(0x14D) || /*vendor sell*/
-                e.HasKeyword(0x3C) ||  // *vendor buy*
-                (WasNamed(e.Speech) && (e.HasKeyword(0x177) || /*sell*/	e.HasKeyword(0x171)) /*buy*/)))
+            if (VendorInConflict())
             {
-                e.Handled = true;
-                // I am too busy fighting to deal with thee!
+                // "I am too busy fighting to deal with thee!"
                 m_Mobile.PublicOverheadMessage(MessageType.Regular, 0x3B2, 501482);
+                e.Handled = true;
+                return;
             }
-            #endregion [Vendor] Buy Sell
 
-            #region Move Time, and Train
-            else if (e.Mobile.Alive && e.Mobile.InRange(m_Mobile.Location, 3) && m_Mobile.IsHumanInTown())
-            {
-                if (e.HasKeyword(0x9D) && WasNamed(e.Speech)) // *move*
-                {
-                    if (m_Mobile.Combatant != null)
-                    {
-                        // I am too busy fighting to deal with thee!
-                        m_Mobile.PublicOverheadMessage(MessageType.Regular, 0x3B2, 501482);
-                    }
-                    else
-                    {
-                        // Excuse me?
-                        m_Mobile.PublicOverheadMessage(MessageType.Regular, 0x3B2, 501516);
-                        WalkRandomInHome(2, 2, 1, evenIfStationed: true);
-                    }
+            // Normalize: use locals once for readability (not an "abstraction"; just local references).
+            string speech = e.Speech;
+            int[] keywords = e.Keywords;
 
-                    // Adam, guards and animal trainers have extended speech processing, so to prevent them from trying to process this
-                    //  we set Handled. (Shouldn't this always be the case?)
-                    if (m_Mobile is BaseGuard || m_Mobile is AnimalTrainer)
-                        e.Handled = true;
-                }       // *move*
-                else if (e.HasKeyword(0x9E) && WasNamed(e.Speech)) // *time*
-                {
-                    if (m_Mobile.Combatant != null)
-                    {
-                        // I am too busy fighting to deal with thee!
-                        m_Mobile.PublicOverheadMessage(MessageType.Regular, 0x3B2, 501482);
-                    }
-                    else
-                    {
-                        int generalNumber;
-                        string exactTime;
-
-                        Clock.GetTime(m_Mobile, out generalNumber, out exactTime);
-
-                        m_Mobile.PublicOverheadMessage(MessageType.Regular, 0x3B2, generalNumber);
-                    }
-                }  // *time*
-                else if (e.HasKeyword(0x6C) && WasNamed(e.Speech))      // *train
-                {
-                    if (m_Mobile.Combatant != null)
-                    {
-                        // I am too busy fighting to deal with thee!
-                        m_Mobile.PublicOverheadMessage(MessageType.Regular, 0x3B2, 501482);
-                    }
-                    else
-                    {
-                        bool foundSomething = false;
-
-                        Skills ourSkills = m_Mobile.Skills;
-                        Skills theirSkills = e.Mobile.Skills;
-
-                        for (int i = 0; i < ourSkills.Length && i < theirSkills.Length; ++i)
-                        {
-                            Skill skill = ourSkills[i];
-                            Skill theirSkill = theirSkills[i];
-
-                            if (skill != null && theirSkill != null && skill.Base >= 60.0 && m_Mobile.CheckTeach(skill.SkillName, e.Mobile))
-                            {
-                                double toTeach = skill.Base / 3.0;
-
-                                if (toTeach > 42.0)
-                                    toTeach = 42.0;
-
-                                if (toTeach > theirSkill.Base)
-                                {
-                                    int number = 1043059 + i;
-
-                                    if (number > 1043107)
-                                        continue;
-
-                                    if (!foundSomething)
-                                        m_Mobile.Say(1043058); // I can train the following:
-
-                                    m_Mobile.Say(number);
-
-                                    /* DEBUG - testing resolution of what thetrainer says he can teach and the 'real' skill name
-									string lookup = "";
-									bool ok = Server.Text.Cliloc.Lookup.TryGetValue(number, out lookup);
-									if (ok)
-									{
-										Console.WriteLine(Server.Text.Cliloc.Lookup[number]);
-										string sq = Utility.Levenshtein.BestEnumMatch(typeof(SkillName), lookup);
-										//m_Mobile.Say("Corrected: {0}", sq);
-										if (sq.ToLower() != lookup)
-										Console.WriteLine("Corrected: {0}", sq);
-									}*/
-
-                                    foundSomething = true;
-                                }
-                            }
-                        }
-
-                        if (!foundSomething)
-                            m_Mobile.Say(501505); // Alas, I cannot teach thee anything.
-                    }
-                }  // *train
-                else if (e.Speech.IndexOf(" train ", StringComparison.CurrentCultureIgnoreCase) != -1)
-                {   // expand on the limited keyword modle to allow for key phrases, like: Bobby teach animal lore 100
-                    int index = 0;
-                    if (WasNamed(e.Speech))
-                    { // the first arg is the NPC's name
-                        index++;
-                    }
-                    // break up our string into tokens
-                    string[] tokens = e.Speech.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    // parse out the amount they want to spend
-                    int amount = 0;
-                    bool ok = int.TryParse(tokens[tokens.Length - 1], out amount);
-                    // get the tokens
-                    string skillname = "";
-                    for (int jx = index + 1; jx < tokens.Length - ((ok) ? 1 : 0); jx++)
-                    {
-                        skillname += tokens[jx];
-                    }
-                    BaseCreature bc = this.m_Mobile as BaseCreature;
-                    if (bc != null)
-                    {
-                        // didn't specify an amount. In that case, we'll just tell them how much it will cost
-                        if (ok == false)
-                        {   // lookup the actual skill name
-                            int score;
-                            string real_name = IntelligentDialogue.Levenshtein.BestEnumMatch(typeof(SkillName), skillname, out score);
-                            if (real_name != null && real_name != "" && score <= 5)
-                            { // found the skill they want to train
-                              // We'll let Teach() explain the terms
-                                bc.Teach((SkillName)Enum.Parse(typeof(SkillName), real_name, true), e.Mobile, 0, ok);
-                            }
-                        }
-                        else
-                        {
-                            // lookup the actual skill name
-                            int score;
-                            string real_name = IntelligentDialogue.Levenshtein.BestEnumMatch(typeof(SkillName), skillname, out score);
-                            if (real_name != null && real_name != "" && score <= 5)
-                            { // found the skill they want to train
-                              // calculate the cost
-                                int cost = 0;
-                                if (bc.CheckTeachSkills((SkillName)Enum.Parse(typeof(SkillName), real_name, true), e.Mobile,
-                                    amount, ref cost, false) == BaseCreature.TeachResult.Success)
-                                {
-                                    // show me the money honey!
-                                    Container cont = e.Mobile.Backpack;
-                                    BaseVendor vendor = this.m_Mobile as BaseVendor;
-                                    if (cont != null && vendor != null)
-                                    {   // try to get it from their backpack first
-                                        if (vendor.ConsumeTotal(e.Mobile, cont, typeof(UnemploymentCheck), cost) || cont.ConsumeTotal(typeof(Gold), cost))
-                                        {
-                                            // Teach
-                                            bc.Teach((SkillName)Enum.Parse(typeof(SkillName), real_name, true), e.Mobile, amount, true);
-                                        }
-                                        else
-                                        {
-                                            vendor.SayTo(e.Mobile, 500192);//Begging thy pardon, but thou casnt afford that.
-                                        }
-                                    }
-                                }
-                                else
-                                    // They know as much as I do. Just let Teach explain that to them
-                                    bc.Teach((SkillName)Enum.Parse(typeof(SkillName), real_name, true), e.Mobile, 0, false);
-                            }
-                        }
-                    }
-                }
-                else                                                   // *train <skill>
-                {
-                    SkillName toTrain = (SkillName)(-1);
-
-                    for (int i = 0; toTrain == (SkillName)(-1) && i < e.Keywords.Length; ++i)
-                    {
-                        int keyword = e.Keywords[i];
-
-                        if (keyword == 0x154)
-                        {
-                            toTrain = SkillName.Anatomy;
-                        }
-                        else if (keyword >= 0x6D && keyword <= 0x9C)
-                        {
-                            int index = keyword - 0x6D;
-
-                            if (index >= 0 && index < m_KeywordTable.Length)
-                                toTrain = m_KeywordTable[index];
-                        }
-                    }
-
-                    if (toTrain != (SkillName)(-1) && WasNamed(e.Speech))
-                    {
-                        if (m_Mobile.Combatant != null)
-                        {
-                            // I am too busy fighting to deal with thee!
-                            m_Mobile.PublicOverheadMessage(MessageType.Regular, 0x3B2, 501482);
-                        }
-                        else
-                        {
-                            Skills skills = m_Mobile.Skills;
-                            Skill skill = skills[toTrain];
-
-                            if (skill == null || skill.Base < 60.0 || !m_Mobile.CheckTeach(toTrain, e.Mobile))
-                            {
-                                m_Mobile.Say(501507); // 'Tis not something I can teach thee of.
-                            }
-                            else
-                            {
-                                m_Mobile.Teach(toTrain, e.Mobile, 0, false);
-                            }
-                        }
-                    }
-                }                                                // *train <skill>
-            }   // move, time train
-            #endregion Move Time, and Train
-
-            string heardspeech = e.Speech;
-
-            #region Normal Commands
+            #region Pet Commands (normal + custom)
             if (m_Mobile.Controlled && m_Mobile.Commandable)
             {
-                m_Mobile.DebugSay(DebugFlags.AI, "I listen");
+                // -------------------------------------------------------------
+                // OnGlobalOrder
+                // Move. This is different handling than asking a vendor to move.
+                //  This Move is ant-griefing where players park their hires/pets to block
+                // -------------------------------------------------------------
+                OnGlobalOrder(e);
 
-                if (e.Mobile.Alive && e.Mobile == m_Mobile.ControlMaster)
+                // Only the living control master can issue commands.
+                if (e.Mobile?.Alive == true && e.Mobile == m_Mobile.ControlMaster)
                 {
-                    m_Mobile.DebugSay(DebugFlags.AI, "Its from my master");
-
                     // erl: clear herding attempt, if one exists
                     m_Mobile.TargetLocation = Point2D.Zero;
 
-                    int[] keywords = e.Keywords;
-                    string speech = e.Speech;
+                    // --------------------------------------------------------------------
+                    // 1) Keyword-based commands (all* first, then *command)
+                    // --------------------------------------------------------------------
 
                     // First, check the all*
                     for (int i = 0; i < keywords.Length; ++i)
                     {
-                        int keyword = keywords[i];
-
-                        switch (keyword)
+                        switch (keywords[i])
                         {
                             case 0x164: // all come
+                                if (m_Mobile.CheckControlChance(e.Mobile))
                                 {
-                                    if (m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = null;
-                                        m_Mobile.ControlOrder = OrderType.Come;
-                                    }
+                                    m_Mobile.ControlTarget = null;
+                                    m_Mobile.ControlOrder = OrderType.Come;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Come, null);
+                                }
+                                e.Handled = false; // broadcast: allow other controlled pets to process
+                                return;
 
-                                    return;
-                                }
                             case 0x165: // all follow
-                                {
-                                    BeginPickTarget(e.Mobile, OrderType.Follow);
-                                    return;
-                                }
+                                BeginPickTarget(e.Mobile, OrderType.Follow);
+                                e.Handled = false; // broadcast: allow other controlled pets to process
+                                return;
+
                             case 0x166: // all guard
+                                if (m_Mobile.CheckControlChance(e.Mobile))
                                 {
-                                    if (m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = null;
-                                        m_Mobile.ControlOrder = OrderType.Guard;
-                                    }
-                                    return;
+                                    m_Mobile.ControlTarget = null;
+                                    m_Mobile.ControlOrder = OrderType.Guard;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Guard, null);
                                 }
+                                e.Handled = false; // broadcast: allow other controlled pets to process
+                                return;
+
                             case 0x167: // all stop
+                                if (m_Mobile.CheckControlChance(e.Mobile))
                                 {
-                                    if (m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = null;
-                                        m_Mobile.ControlOrder = OrderType.Stop;
-                                    }
-                                    return;
+                                    m_Mobile.ControlTarget = null;
+                                    m_Mobile.ControlOrder = OrderType.Stop;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Stop, null);
                                 }
+                                e.Handled = false; // broadcast: allow other controlled pets to process
+                                return;
+
                             case 0x168: // all kill
                             case 0x169: // all attack
+                                if (m_Mobile.CanBeDamaged())
                                 {
-                                    if (m_Mobile.CanBeDamaged())
-                                        BeginPickTarget(e.Mobile, OrderType.Attack);
+                                    BeginPickTarget(e.Mobile, OrderType.Attack);
+                                }
+                                else
+                                {
+                                    m_Mobile.DebugSay(DebugFlags.AI,
+                                        "I'm {0}, I can't do that!",
+                                        m_Mobile.Blessed ? "blessed" :
+                                        m_Mobile.IsInvulnerable ? "invulnerable" : "dead pet");
+                                }
+                                e.Handled = false; // broadcast: allow other controlled pets to process
+                                return;
 
-                                    if (!m_Mobile.CanBeDamaged())
-                                        m_Mobile.DebugSay(DebugFlags.AI, string.Format("I'm {0}, I can't do that!", m_Mobile.Blessed ? "blessed" : m_Mobile.IsInvulnerable ? "invulnerable" : "dead pet"));
-                                    return;
-                                }
                             case 0x16B: // all guard me
+                                if (m_Mobile.CanBeDamaged() && m_Mobile.CheckControlChance(e.Mobile))
                                 {
-                                    if (m_Mobile.CanBeDamaged() && m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = e.Mobile;
-                                        m_Mobile.ControlOrder = OrderType.Guard;
-                                    }
-                                    if (!m_Mobile.CanBeDamaged())
-                                        m_Mobile.DebugSay(DebugFlags.AI, string.Format("I'm {0}, I can't do that!", m_Mobile.Blessed ? "blessed" : m_Mobile.IsInvulnerable ? "invulnerable" : "dead pet"));
-                                    return;
+                                    m_Mobile.ControlTarget = e.Mobile;
+                                    m_Mobile.ControlOrder = OrderType.Guard;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Guard, e.Mobile);
                                 }
+                                else if (!m_Mobile.CanBeDamaged())
+                                {
+                                    m_Mobile.DebugSay(DebugFlags.AI,
+                                        "I'm {0}, I can't do that!",
+                                        m_Mobile.Blessed ? "blessed" :
+                                        m_Mobile.IsInvulnerable ? "invulnerable" : "dead pet");
+                                }
+                                e.Handled = false; // broadcast: allow other controlled pets to process
+                                return;
+
                             case 0x16C: // all follow me
+                                if (m_Mobile.CheckControlChance(e.Mobile))
                                 {
-                                    if (m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = e.Mobile;
-                                        m_Mobile.ControlOrder = OrderType.Follow;
-                                    }
-                                    return;
+                                    m_Mobile.ControlTarget = e.Mobile;
+                                    m_Mobile.ControlOrder = OrderType.Follow;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Follow, e.Mobile);
                                 }
+                                e.Handled = false; // broadcast: allow other controlled pets to process
+                                return;
+
                             case 0x170: // all stay
+                                if (m_Mobile.CheckControlChance(e.Mobile))
                                 {
-                                    if (m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = null;
-                                        m_Mobile.ControlOrder = OrderType.Stay;
-                                    }
-                                    return;
+                                    m_Mobile.ControlTarget = null;
+                                    m_Mobile.ControlOrder = OrderType.Stay;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Stay, null);
                                 }
+                                e.Handled = false; // broadcast: allow other controlled pets to process
+                                return;
                         }
                     }
 
                     // No all*, so check *command
+                    // Use WasNamedVerb() for single-pet commands to avoid name prefix collisions.
+                    // Example: speech "a dog release" must target pet named "a dog", not pet named "a".
+                    // ("all <verb>" commands are unaffected because they do not use a name prefix.)
                     for (int i = 0; i < keywords.Length; ++i)
                     {
-                        int keyword = keywords[i];
-
-                        switch (keyword)
+                        switch (keywords[i])
                         {
                             case 0x155: // *come
-                                {
-                                    if (WasNamed(speech) && m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = null;
-                                        m_Mobile.ControlOrder = OrderType.Come;
-                                    }
+                                        // Targeted command: only consume speech when this creature is explicitly addressed.
+                                        // This prevents earlier/other pets from swallowing the command due to iteration order.
+                                if (!WasNamedVerb(speech, "come"))
+                                    break;
 
-                                    return;
+                                if (m_Mobile.CheckControlChance(e.Mobile))
+                                {
+                                    m_Mobile.ControlTarget = null;
+                                    m_Mobile.ControlOrder = OrderType.Come;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Come, null);
                                 }
+
+                                e.Handled = true;
+                                return;
+
                             case 0x156: // *drop
-                                {
-                                    if (!m_Mobile.IsDeadPet && !m_Mobile.Summoned && WasNamed(speech) && m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = null;
-                                        m_Mobile.ControlOrder = OrderType.Drop;
-                                    }
+                                if (!WasNamedVerb(speech, "drop"))
+                                    break;
 
-                                    return;
+                                if (!m_Mobile.IsDeadPet && !m_Mobile.Summoned && m_Mobile.CheckControlChance(e.Mobile))
+                                {
+                                    m_Mobile.ControlTarget = null;
+                                    m_Mobile.ControlOrder = OrderType.Drop;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Drop, null);
                                 }
+
+                                e.Handled = true;
+                                return;
+
                             case 0x15A: // *follow
-                                {
-                                    if (WasNamed(speech) && m_Mobile.CheckControlChance(e.Mobile))
-                                        BeginPickTarget(e.Mobile, OrderType.Follow);
+                                if (!WasNamedVerb(speech, "follow"))
+                                    break;
 
-                                    return;
-                                }
+                                if (m_Mobile.CheckControlChance(e.Mobile))
+                                    BeginPickTarget(e.Mobile, OrderType.Follow);
+
+                                e.Handled = true;
+                                return;
+
                             case 0x15C: // *guard
+                                if (!WasNamedVerb(speech, "guard"))
+                                    break;
+
+                                if (m_Mobile.CanBeDamaged() && !m_Mobile.IsDeadPet && m_Mobile.CheckControlChance(e.Mobile))
                                 {
-                                    if (m_Mobile.CanBeDamaged() && !m_Mobile.IsDeadPet && WasNamed(speech) && m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = null;
-                                        m_Mobile.ControlOrder = OrderType.Guard;
-                                    }
-
-                                    if (!m_Mobile.CanBeDamaged())
-                                        m_Mobile.DebugSay(DebugFlags.AI, string.Format("I'm {0}, I can't do that!", m_Mobile.Blessed ? "blessed" : m_Mobile.IsInvulnerable ? "invulnerable" : "dead pet"));
-
-                                    return;
+                                    m_Mobile.ControlTarget = null;
+                                    m_Mobile.ControlOrder = OrderType.Guard;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Guard, null);
                                 }
+                                else if (!m_Mobile.CanBeDamaged())
+                                {
+                                    m_Mobile.DebugSay(DebugFlags.AI,
+                                        "I'm {0}, I can't do that!",
+                                        m_Mobile.Blessed ? "blessed" :
+                                        m_Mobile.IsInvulnerable ? "invulnerable" : "dead pet");
+                                }
+
+                                e.Handled = true;
+                                return;
+
                             case 0x15D: // *kill
                             case 0x15E: // *attack
                                 {
-                                    if (m_Mobile.CanBeDamaged() && !m_Mobile.IsDeadPet && WasNamed(speech) && m_Mobile.CheckControlChance(e.Mobile))
+                                    // Keywords may be either "kill" or "attack"; accept either token in speech.
+                                    bool addressed =
+                                        WasNamedVerb(speech, "kill") ||
+                                        WasNamedVerb(speech, "attack");
+
+                                    if (!addressed)
+                                        break;
+
+                                    if (m_Mobile.CanBeDamaged() && !m_Mobile.IsDeadPet && m_Mobile.CheckControlChance(e.Mobile))
+                                    {
                                         BeginPickTarget(e.Mobile, OrderType.Attack);
+                                    }
+                                    else if (!m_Mobile.CanBeDamaged())
+                                    {
+                                        m_Mobile.DebugSay(DebugFlags.AI,
+                                            "I'm {0}, I can't do that!",
+                                            m_Mobile.Blessed ? "blessed" :
+                                            m_Mobile.IsInvulnerable ? "invulnerable" : "dead pet");
+                                    }
 
-                                    if (!m_Mobile.CanBeDamaged())
-                                        m_Mobile.DebugSay(DebugFlags.AI, string.Format("I'm {0}, I can't do that!", m_Mobile.Blessed ? "blessed" : m_Mobile.IsInvulnerable ? "invulnerable" : "dead pet"));
-
+                                    e.Handled = true;
                                     return;
                                 }
+
                             case 0x15F: // *patrol
-                                {
-                                    if (WasNamed(speech) && m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = null;
-                                        m_Mobile.ControlOrder = OrderType.Patrol;
-                                    }
+                                if (!WasNamedVerb(speech, "patrol"))
+                                    break;
 
-                                    return;
+                                if (m_Mobile.CheckControlChance(e.Mobile))
+                                {
+                                    m_Mobile.ControlTarget = null;
+                                    m_Mobile.ControlOrder = OrderType.Patrol;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Patrol, null);
                                 }
+
+                                e.Handled = true;
+                                return;
+
                             case 0x161: // *stop
-                                {
-                                    if (WasNamed(speech) && m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = null;
-                                        m_Mobile.ControlOrder = OrderType.Stop;
-                                    }
+                                if (!WasNamedVerb(speech, "stop"))
+                                    break;
 
-                                    return;
+                                if (m_Mobile.CheckControlChance(e.Mobile))
+                                {
+                                    m_Mobile.ControlTarget = null;
+                                    m_Mobile.ControlOrder = OrderType.Stop;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Stop, null);
                                 }
+
+                                e.Handled = true;
+                                return;
+
                             case 0x163: // *follow me
-                                {
-                                    if (WasNamed(speech) && m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = e.Mobile;
-                                        m_Mobile.ControlOrder = OrderType.Follow;
-                                    }
+                                        // Keyword is the phrase "follow me" but the speech verb token is still "follow".
+                                if (!WasNamedVerb(speech, "follow"))
+                                    break;
 
-                                    return;
+                                if (m_Mobile.CheckControlChance(e.Mobile))
+                                {
+                                    m_Mobile.ControlTarget = e.Mobile;
+                                    m_Mobile.ControlOrder = OrderType.Follow;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Follow, e.Mobile);
                                 }
+
+                                e.Handled = true;
+                                return;
+
                             case 0x16D: // *release
-                                {   // 1/8/2024, Adam: You cannot release township NPCs in this way
-                                    //if (m_Mobile is not ITownshipNPC)
-                                    // 8/30/21, Adam: you shouldn't need a Loyalty check to release a pet. 
-                                    if (WasNamed(speech) /*&& m_Mobile.CheckControlChance(e.Mobile)*/)
-                                    {
-                                        if (!m_Mobile.Summoned)
-                                        {
-                                            e.Mobile.SendGump(new Gumps.ConfirmReleaseGump(e.Mobile, m_Mobile));
-                                        }
-                                        else
-                                        {
-                                            m_Mobile.ControlTarget = null;
-                                            m_Mobile.ControlOrder = OrderType.Release;
-                                        }
-                                    }
-                                    return;
+                                        // 1/8/2024, Adam: You cannot release township NPCs in this way
+                                        // 8/30/21, Adam: you shouldn't need a Loyalty check to release a pet.
+                                if (!WasNamedVerb(speech, "release"))
+                                    break;
+
+                                if (!m_Mobile.Summoned)
+                                {
+                                    e.Mobile.SendGump(new Gumps.ConfirmReleaseGump(e.Mobile, m_Mobile));
                                 }
+                                else
+                                {
+                                    m_Mobile.ControlTarget = null;
+                                    m_Mobile.ControlOrder = OrderType.Release;
+                                    m_Mobile.IsBonded = false;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Release, null);
+                                }
+
+                                e.Handled = true;
+                                return;
 
                             case 0x16E: // *transfer
-                                {
-                                    if (!m_Mobile.IsDeadPet && WasNamed(speech) && m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        if (m_Mobile.Summoned)
-                                            e.Mobile.SendLocalizedMessage(1005487); // You cannot transfer ownership of a summoned creature.
-                                        else if (m_Mobile.MinTameSkill == 0.0)      // StrudyPackLlama and SturdyPackHorse
-                                            e.Mobile.SendMessage("You cannot transfer ownership of this creature.");
-                                        else
-                                            BeginPickTarget(e.Mobile, OrderType.Transfer);
-                                    }
+                                if (!WasNamedVerb(speech, "transfer"))
+                                    break;
 
-                                    return;
+                                if (!m_Mobile.IsDeadPet && m_Mobile.CheckControlChance(e.Mobile))
+                                {
+                                    if (m_Mobile.Summoned)
+                                        e.Mobile.SendLocalizedMessage(1005487); // You cannot transfer ownership of a summoned creature.
+                                    else if (m_Mobile.MinTameSkill == 0.0)      // StrudyPackLlama and SturdyPackHorse
+                                        e.Mobile.SendMessage("You cannot transfer ownership of this creature.");
+                                    else
+                                        BeginPickTarget(e.Mobile, OrderType.Transfer);
                                 }
+
+                                e.Handled = true;
+                                return;
+
                             case 0x16F: // *stay
+                                if (!WasNamedVerb(speech, "stay"))
+                                    break;
+
+                                if (m_Mobile.CheckControlChance(e.Mobile))
                                 {
-                                    if (WasNamed(speech) && m_Mobile.CheckControlChance(e.Mobile))
-                                    {
-                                        m_Mobile.ControlTarget = null;
-                                        m_Mobile.ControlOrder = OrderType.Stay;
-                                    }
-
-                                    return;
+                                    m_Mobile.ControlTarget = null;
+                                    m_Mobile.ControlOrder = OrderType.Stay;
+                                    m_Mobile.NotifyControlCommandAccepted(e.Mobile, OrderType.Stay, null);
                                 }
-                        }
-                    }
-                }
-            }       // m_Mobile.Controlled && m_Mobile.Commandable
-            #endregion Normal Commands
 
-            #region Custom  Commands
-            if (m_Mobile.Controlled && m_Mobile.Commandable)
-            {
-                m_Mobile.DebugSay(DebugFlags.AI, "I listen");
-
-                if (e.Mobile.Alive && e.Mobile == m_Mobile.ControlMaster)
-                {
-                    m_Mobile.DebugSay(DebugFlags.AI, "Its from my master");
-
-                    // erl: clear herding attempt, if one exists
-                    m_Mobile.TargetLocation = Point2D.Zero;
-
-                    int[] keywords = e.Keywords;
-                    string speech = e.Speech;
-
-                    #region command extensions
-                    {
-                        string[] tokens = speech.ToLower().Split(new char[] { ' ' });
-                        if (tokens.Length == 2 && WasNamed(e.Speech) || tokens[0] == "all")
-                        {
-                            switch (tokens[1])
-                            {
-                                case "mount":
-                                    {
-                                        if (m_Mobile.Body.IsHuman && m_Mobile.CommandMount())
-                                            if (tokens[0] != "all")
-                                                e.Handled = true;
-                                        break;
-                                    }
-                                case "dismount":
-                                case "unmount":
-                                    {
-                                        if (m_Mobile.Body.IsHuman && m_Mobile.CommandDismount())
-                                            if (tokens[0] != "all")
-                                                e.Handled = true;
-                                        break;
-                                    }
-                            }
+                                e.Handled = true;
+                                return;
                         }
                     }
 
-                    #region allow orcs to command in their own language
-                    if (speech.ToLower() == "lat stai") // all stay
+                    // --------------------------------------------------------------------
+                    // 2) Custom command extensions (string-based)
+                    // --------------------------------------------------------------------
+
+                    // Normalize once
+                    string lower = speech.ToLowerInvariant();
+
+                    // Allow orcs to command in their own language
+                    if (lower == "lat stai") // all stay
                     {
                         if (m_Mobile.CheckControlChance(e.Mobile))
                         {
                             m_Mobile.ControlTarget = null;
                             m_Mobile.ControlOrder = OrderType.Stay;
+                            // (No NotifyControlCommandAccepted before; leaving as-is.)
                         }
+
+                        e.Handled = false; // broadcast: allow other controlled pets to process
                         return;
                     }
-                    if (speech.ToLower() == "lat clomp")
+
+                    if (lower == "lat clomp")
                     {
                         BeginPickTarget(e.Mobile, OrderType.Attack);
+                        e.Handled = false; // broadcast: allow other controlled pets to process
                         return;
                     }
-                    if (speech.ToLower() == "lat follow")
+
+                    if (lower == "lat follow")
                     {
                         BeginPickTarget(e.Mobile, OrderType.Follow);
+                        e.Handled = false; // broadcast: allow other controlled pets to process
                         return;
                     }
-                    #endregion allow orcs to command in their own language
 
-                    #endregion command extensions
+                    // Mount/unmount extensions:
+                    // Old behavior: only sets e.Handled when NOT "all". Preserve that.
+                    // Also fix precedence bug: tokens.Length == 2 && (WasNamed(...) || tokens[0] == "all")
+                    string[] tokens = lower.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if (tokens.Length == 2 && (WasNamed(speech) || tokens[0] == "all"))
+                    {
+                        bool isAll = (tokens[0] == "all");
+
+                        switch (tokens[1])
+                        {
+                            case "mount":
+                                if (m_Mobile.Body.IsHuman && m_Mobile.CommandMount())
+                                {
+                                    if (!isAll)
+                                        e.Handled = true;
+                                }
+                                return;
+
+                            case "dismount":
+                            case "unmount":
+                                if (m_Mobile.Body.IsHuman && m_Mobile.CommandDismount())
+                                {
+                                    if (!isAll)
+                                        e.Handled = true;
+                                }
+                                return;
+                        }
+                    }
                 }
-            }       // m_Mobile.Controlled && m_Mobile.Commandable
-            #endregion Custom Commands
+            }
+            #endregion Pet Commands (normal + custom)
 
-            #region Take control of any creature with Obey command
+            #region GM: Take control of any creature with "obey"
             else
             {
-                if (e.Mobile.AccessLevel >= AccessLevel.GameMaster)
+                if (e.Mobile != null && e.Mobile.AccessLevel >= AccessLevel.GameMaster)
                 {
-                    m_Mobile.DebugSay(DebugFlags.AI, "Its from a GM");
-
-                    if (m_Mobile.FindMyName(e.Speech, true))
+                    if (m_Mobile.FindMyName(speech, true))
                     {
-                        string[] str = e.Speech.Split(' ');
-                        int i;
+                        string[] parts = speech.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-                        for (i = 0; i < str.Length; i++)
+                        for (int i = 0; i < parts.Length; i++)
                         {
-                            string word = str[i];
-
-                            if (Insensitive.Equals(word, "obey"))
+                            if (Insensitive.Equals(parts[i], "obey"))
                             {
                                 m_Mobile.SetControlMaster(e.Mobile, force: true);
 
                                 if (m_Mobile.Summoned)
                                     m_Mobile.SummonMaster = e.Mobile;
 
+                                e.Handled = true;
                                 return;
                             }
                         }
                     }
                 }
-            }                                                   // everything else
-            #endregion Take control of any creature with Obey command
+            }
+            #endregion GM: Take control of any creature with "obey"
+        }
+
+        public bool VendorInConflict()
+        {
+            if (m_Mobile is BaseVendor)
+            {
+                return m_Mobile.Combatant != null || m_Mobile.AI == AIType.AI_Melee;
+            }
+
+            return false;
         }
 
         //public virtual RefreshStam
@@ -2278,13 +2098,13 @@ namespace Server.Mobiles
         ///     BaseAI.PrioritizeCombatant() is called when we have a combatant AND one or more damagers that should be considered. 
         /// </summary>
         /// <returns>true if we switched combatants</returns>
-        public virtual bool PrioritizeCombatant(Mobile target = null)
+        public virtual bool PrioritizeCombatant(Mobile? target = null)
         {
             // who we are prioritizing for
             if (target == null)
                 target = m_Mobile;
 
-            Mobile new_target = GetPriorityCombatant(target);
+            Mobile? new_target = GetPriorityCombatant(target);
             if (new_target != null && new_target != target.Combatant)
             {   // if we are discovering for a BaseCreature, clear the path
                 if (target is BaseCreature bc && bc.AIObject != null)
@@ -2351,7 +2171,7 @@ namespace Server.Mobiles
                 }
             }
         }
-        public virtual Mobile GetPriorityCombatant(Mobile target = null)
+        public virtual Mobile? GetPriorityCombatant(Mobile? target = null)
         {   // who we are prioritizing for
             if (target == null)
                 target = m_Mobile;
@@ -2360,7 +2180,7 @@ namespace Server.Mobiles
             if (target == null || target.Deleted)
                 return null;
 
-            Mobile new_combatant = null;
+            Mobile? new_combatant = null;
             Mobile master = m_Mobile.ControlMaster;
 
             #region First Priority Damagers
@@ -2374,7 +2194,7 @@ namespace Server.Mobiles
                 MobileInfo info = GetMobileInfo(new MobileInfo(target.Combatant));
                 if (info.available)
                 {   // make sure our combatant is in the list
-                    DamageEntry cde = target.FindDamageEntryFor(target.Combatant);
+                    DamageEntry? cde = target.FindDamageEntryFor(target.Combatant);
                     new_combatant_damage = cde != null ? cde.DamageGiven : 0;
                     list.Add(new Tuple<Mobile, int>(target.Combatant, new_combatant_damage));
                 }
@@ -2439,11 +2259,11 @@ namespace Server.Mobiles
             else
                 return null;
         }
-        public virtual Mobile GetPriorityAggressor(Mobile target)
+        public virtual Mobile? GetPriorityAggressor(Mobile target)
         {
             BaseCreature me = m_Mobile;
             List<AggressorInfo> aggressors = target.Aggressors;
-            Mobile combatant = null;
+            Mobile? combatant = null;
             Mobile master = m_Mobile.ControlMaster;
             if (aggressors.Count > 0)
             {
@@ -2498,7 +2318,7 @@ namespace Server.Mobiles
             }
             else
             {   // we remember them, see how many times we have ping ponged.
-                Memory.ObjectMemory ox = ping_pong.Recall((object)m);
+                Memory.ObjectMemory? ox = ping_pong.Recall((object)m);
                 int count = (int)ox.Context;
                 ox.Context = count + 1;
                 if (count >= 2)
@@ -2814,6 +2634,11 @@ namespace Server.Mobiles
                 m_Mobile.DebugSay(DebugFlags.AI, "Ya, I busted something");
             #endregion Don't block BlockDamage creatures
 
+            #region Reequip
+            if (CanReequip())
+                TryReequip();
+            #endregion Reequip
+
             // SomethingToInvestigate
             Direction sti = Direction.North;
 
@@ -2901,6 +2726,64 @@ namespace Server.Mobiles
 
             return true;
         }
+        public bool CanReequip()
+        {
+            if (m_Mobile != null)
+            {
+                // Only humanoids should attempt to wield weapons
+                if (!m_Mobile.Body.IsHuman)
+                    return false;
+
+                if (m_Mobile.FindItemOnLayer(Layer.OneHanded) != null)
+                    return false;
+
+                if (m_Mobile.FindItemOnLayer(Layer.TwoHanded) != null)
+                    return false;
+
+                Container pack = m_Mobile.Backpack;
+                if (pack == null)
+                    return false;
+
+                // Look for a base weapon in the top level of the pack
+                foreach (Item item in pack.Items)
+                {
+                    if (item is BaseWeapon)
+                        return true;
+                }
+            }
+            return false;
+        }
+        public void TryReequip()
+        {
+            Container pack = m_Mobile.Backpack;
+            if (pack == null)
+                return;
+
+            // Debug: attempting re-equip
+            m_Mobile.DebugSay(DebugFlags.AI, "Attempting to re-equip a weapon…");
+
+            foreach (Item item in pack.Items)
+            {
+                if (item is BaseWeapon weapon)
+                {
+                    // Attempt to equip it
+                    m_Mobile.EquipItem(weapon);
+
+                    // Debug: success
+                    m_Mobile.DebugSay(
+                        DebugFlags.AI,
+                        "I have successfully re-equipped my {0}.",
+                        weapon.Name ?? weapon.GetType().Name
+                    );
+
+                    return;
+                }
+            }
+
+            // Debug: nothing found
+            m_Mobile.DebugSay(DebugFlags.AI, "No suitable weapon found in my pack.");
+        }
+
         private Point3D ProactiveHoming()
         {
             Point3D preferred = Point3D.Zero;
@@ -2919,7 +2802,7 @@ namespace Server.Mobiles
 		 * build a list of players we would like to kill. We then see if we can Recall() them. You Recall someone if you have 
 		 * fought them before. Players are stored in this type of memory for a short while, maybe 10 seconds.
 		 */
-        protected Mobile FindHiddenTarget()
+        protected Mobile? FindHiddenTarget()
         {
             Mobile mx;
             List<Mobile> mobiles = new List<Mobile>();
@@ -3044,21 +2927,6 @@ namespace Server.Mobiles
 
             return false;
         }
-        public bool HandleLostSightOfCombatant()
-        {
-            if (GetFocusMob() && m_Mobile.Combatant != null)
-            {
-                m_Mobile.DebugSay(DebugFlags.AI, "I am now going to fight {0}", MobileName(m_Mobile.Combatant));
-                return true;
-            }
-            else
-            {
-                m_Mobile.DebugSay(DebugFlags.AI, "nothing is around. I am on guard.");
-                m_Mobile.Combatant = m_Mobile.FocusMob = null;
-                Action = ActionType.Guard;
-                return true;
-            }
-        }
         public bool GetFocusMob()
         {
             if (AcquireFocusMob(m_Mobile.RangePerception, m_Mobile.FightMode, false, false, true))
@@ -3135,7 +3003,7 @@ namespace Server.Mobiles
 
                         bc.DebugSay(DebugFlags.NavStar, "NavStar: Initial beacon request");
                         NavStar.CreateRequest(bc, bc.NavDestination);   // initialize stack of destinations
-                        NavBeacon current = NavStar.ProcessRequest(bc); // grab the first destination
+                        NavBeacon? current = NavStar.ProcessRequest(bc); // grab the first destination
 
                         // 3/28/2024, Adam: This SameIsland check fails frequently, even when the two points are clearly valid, maybe 10 tiles away.
                         //  Internally, when getting the next WayPoint within the SectorPathAlgorithm, SameIsland is not failing, or very rarely.
@@ -3190,7 +3058,7 @@ namespace Server.Mobiles
                                 bc.Beacon.Ring);
 
                             NavBeacon previous = bc.Beacon;                 // for debug reporting purposes
-                            NavBeacon current = NavStar.ProcessRequest(bc); // where we go next
+                            NavBeacon? current = NavStar.ProcessRequest(bc); // where we go next
 
                             if (current != null)
                             {   // okay, got a new beacon, keep walking
@@ -3247,10 +3115,10 @@ namespace Server.Mobiles
         private bool CheckNavStuck()
         {
             // do we remember this pet?
-            Memory.ObjectMemory om = StuckMemory.Recall(m_Mobile as object);
+            Memory.ObjectMemory? om = StuckMemory.Recall(m_Mobile as object);
             if (om != null)
             {   // yes, we do remember him
-                NavMemory nm = om.Context as NavMemory;
+                NavMemory? nm = om.Context as NavMemory;
 
                 if (nm.stuck_counter == 0)
                     nm.last_location = m_Mobile.Location;
@@ -3739,12 +3607,12 @@ namespace Server.Mobiles
 
             // selfInflicted is the case where the master damages himself, like with a spell cast upon himself
             bool selfInflicted = m_Mobile.ControlMaster == m_Mobile.ControlMaster.Combatant;
-            Mobile combatant = control_master_info.available && !selfInflicted ? m_Mobile.ControlMaster.Combatant : my.Combatant;
+            Mobile? combatant = control_master_info.available && !selfInflicted ? m_Mobile.ControlMaster.Combatant : my.Combatant;
 
             // find out who is/was attacking our master
             if (control_master_info.available)
             {   // if there is no HIGHER PriorityCombatant, we return null, and you stick with combatant
-                Mobile higher_priority_combatant = GetPriorityCombatant(control_master);
+                Mobile? higher_priority_combatant = GetPriorityCombatant(control_master);
                 // 9/20/2023, Adam: turret bug fix.
                 //  We check to see if our combatant is an Aggressor to our master 
                 //  If our master simply double-clicked someone in war mode, this is not enough.
@@ -3767,7 +3635,7 @@ namespace Server.Mobiles
             // if I am in guard mode, yet my master is nowhere to be found, protect myself
             if (control_master_info.unavailable)
             {
-                Mobile higher_priority_combatant = GetPriorityCombatant(me);
+                Mobile? higher_priority_combatant = GetPriorityCombatant(me);
                 combatant = higher_priority_combatant != null ? higher_priority_combatant : combatant;
                 if (combatant != null)
                     me.DebugSay(DebugFlags.AI, "I'm in guard mode, being attacked, but my master isn't around, so defend myself!");
@@ -3833,7 +3701,7 @@ namespace Server.Mobiles
                     #region Attack next Aggressor
                     if ((m_Mobile.FightMode & FightMode.All) > 0 || (m_Mobile.FightMode & FightMode.Aggressor) > 0)
                     {
-                        Mobile newCombatant = null;
+                        Mobile? newCombatant = null;
                         double newScore = 0.0;
 
                         List<AggressorInfo> list = m_Mobile.Aggressors;
@@ -4081,15 +3949,6 @@ namespace Server.Mobiles
             int y = m_Mobile.TargetLocation.Y;
             int z = m_Mobile.Z;
             #region Allow herding up z, down z (currently unsupported)
-#if false
-            object surface = m_Mobile.Map.GetTopSurface(new Point3D(x, y, m_Mobile.Z + 25));
-            if (surface is LandTile)
-                z = m_Mobile.Map.GetAverageZ(x, y);
-            else if (surface is StaticTile)
-                z = ((StaticTile)surface).Z;
-            else if (surface is Item)
-                z = ((Item)surface).Z;
-#endif
             #endregion Allow herding up z, down z (currently unsupported)
 
             return Spawner.ClearPathLand(m_Mobile.Location, new Point3D(x, y, z), map: map);
@@ -4115,7 +3974,7 @@ namespace Server.Mobiles
                 #region DarkTidesQuest
                 if (distance < 1 && target.X == 1076 && target.Y == 450 && (m_Mobile is HordeMinionFamiliar))
                 {
-                    PlayerMobile pm = m_Mobile.ControlMaster as PlayerMobile;
+                    PlayerMobile? pm = m_Mobile.ControlMaster as PlayerMobile;
 
                     if (pm != null)
                     {
@@ -4123,7 +3982,7 @@ namespace Server.Mobiles
 
                         if (qs is DarkTidesQuest)
                         {
-                            QuestObjective obj = qs.FindObjective(typeof(FetchAbraxusScrollObjective));
+                            QuestObjective? obj = qs.FindObjective(typeof(FetchAbraxusScrollObjective));
 
                             if (obj != null && !obj.Completed)
                             {
@@ -4182,7 +4041,7 @@ namespace Server.Mobiles
         private Memory RunMemory = new Memory();
         private bool ShouldRun(Mobile pet, Mobile master, int startRun)
         {
-            BaseCreature bcPet = pet as BaseCreature;
+            BaseCreature? bcPet = pet as BaseCreature;
             if (bcPet == null || bcPet.Deleted)
                 return false;
 
@@ -4190,7 +4049,7 @@ namespace Server.Mobiles
             bool bRun = (iCurrDist > startRun);
 
             // do we remember this pet?
-            Memory.ObjectMemory om = RunMemory.Recall(pet as object);
+            Memory.ObjectMemory? om = RunMemory.Recall(pet as object);
             if (om == null)
             {   // don't remember him
                 if (iCurrDist < 2 || !bRun)
@@ -4202,7 +4061,7 @@ namespace Server.Mobiles
             }
             else
             {   // do remember him
-                RunContext rc = om.Context as RunContext;
+                RunContext? rc = om.Context as RunContext;
                 if (iCurrDist < 2)
                 {   // we're there
                     RunMemory.Forget(pet);
@@ -4416,8 +4275,8 @@ namespace Server.Mobiles
             }
             else
             {
+                m_Mobile.Unpacify();
                 m_Mobile.DebugSay(DebugFlags.AI, "I no more Pacified");
-                m_Mobile.BardPacified = false;
             }
 
             return true;
@@ -4600,7 +4459,7 @@ namespace Server.Mobiles
                 if (m_Pet.Deleted || !m_Pet.IsBonded)
                     return;
 
-                PlayerMobile pm = state.Mobile as PlayerMobile;
+                PlayerMobile? pm = state.Mobile as PlayerMobile;
 
                 if (pm == null)
                     return;
@@ -4873,7 +4732,7 @@ namespace Server.Mobiles
 
                         while (m_Obstacles.Count > 0)
                         {
-                            Item item = (Item)m_Obstacles.Dequeue();
+                            Item? item = (Item?)m_Obstacles.Dequeue();
 
                             if (item is BaseDoor)
                             {
@@ -5026,13 +4885,13 @@ namespace Server.Mobiles
 
             return false;
         }
-        protected PathFollower m_Path;
-        public PathFollower Path
+        protected PathFollower? m_Path;
+        public PathFollower? Path
         {   // see BaseCreature.ConsiderCombatantChange()
             get { return m_Path; }
             set { m_Path = value; }
         }
-        public PathFollower NavPath;
+        public PathFollower? NavPath;
         public virtual void OnTeleported()
         {
             if (m_Path != null)
@@ -5087,14 +4946,6 @@ namespace Server.Mobiles
 
             #region DoorExploit
             //	the door exploit is where the player is probably standing behind an open door so that they can hit us, but we cannot hit them.
-#if false
-            if (false && /* adam: not sure this is even working*/ m_Mobile.InRange(px, range) && !DoorExploit(px, dirTo))
-            {
-                m_Mobile.Direction = dirTo; //make sure we point toward our enemy
-                m_Path = null;
-                return true;
-            }
-#endif
             #endregion DoorExploit
 
             // Don't bother with DoMove if we're needing to run up a flight of stairs turn left/right etc.. Just too many fails
@@ -5471,10 +5322,10 @@ namespace Server.Mobiles
             public GetMobileTarget(object o) : base(12, true, TargetFlags.None) { m_newActionString = (string)o; }
             protected override void OnTarget(Mobile from, object targeted)
             {
-                LandTarget tl = targeted as LandTarget;
-                Item it = targeted as Item;
-                Mobile mt = targeted as Mobile;
-                StaticTarget st = targeted as StaticTarget;
+                LandTarget? tl = targeted as LandTarget;
+                Item? it = targeted as Item;
+                Mobile? mt = targeted as Mobile;
+                StaticTarget? st = targeted as StaticTarget;
                 string clipboard = string.Empty;
                 if (mt == null)
                 {
@@ -5508,10 +5359,10 @@ namespace Server.Mobiles
             public GetTrapTarget() : base(12, true, TargetFlags.None) {; }
             protected override void OnTarget(Mobile from, object targeted)
             {
-                LandTarget tl = targeted as LandTarget;
-                Item it = targeted as Item;
-                Mobile mt = targeted as Mobile;
-                StaticTarget st = targeted as StaticTarget;
+                LandTarget? tl = targeted as LandTarget;
+                Item? it = targeted as Item;
+                Mobile? mt = targeted as Mobile;
+                StaticTarget? st = targeted as StaticTarget;
                 string clipboard = string.Empty;
                 if (mt == null)
                 {

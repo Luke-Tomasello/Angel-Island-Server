@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -124,6 +124,19 @@ namespace Server.Items
             }
         }
 
+        [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
+        public Mobile Owner
+        {
+            get
+            {
+                return m_Structure.Owner;
+            }
+            set
+            {
+                m_Structure.Owner = value;
+            }
+        }
+
         [CommandProperty(AccessLevel.GameMaster)]
         public double HouseDecayMinutesStored
         {
@@ -207,13 +220,18 @@ namespace Server.Items
 
                             if (m_Structure.Public == false)
                                 m_Structure.ChangeLocks(from);
+
+                            // the first double click reclaims ownership
+                            BaseHouse.OnAfterInheritance(from);
+                            from.SendLocalizedMessage(501293); // Welcome back to the house, friend!
+                            return;
                         }
                     }
 
                     // fall through
                 }
 
-                if (!m_Structure.CheckAccount(from, m_Structure.Owner))
+                if (!m_Structure.CheckAccount(from, m_Structure.Owner) && from.AccessLevel == AccessLevel.Player)
                 {
                     from.SendMessage("Only the tent's owner can pack it away.");
                     return;
@@ -231,7 +249,7 @@ namespace Server.Items
                 else
                     pack = ((Tent)m_Structure).TentPack;
 
-                if (pack != null && pack.Items.Count > 0)
+                if (pack != null && pack.Items.Count > 0 && from.AccessLevel == AccessLevel.Player)
                 {
                     from.SendMessage("You must empty your tent's pack before you can pack it away.");
                     return;
@@ -293,7 +311,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public Mobile Owner
+        public Mobile? Owner
         {
             get
             {

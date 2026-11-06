@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -67,7 +67,7 @@ namespace Server.Gumps
             m_Vendor = vend;
             m_VI = vi;
 
-            string desc = m_VI.Description;
+            string? desc = m_VI.Description;
 
             if (desc != null && (desc = desc.Trim()).Length == 0)
                 desc = null;
@@ -213,7 +213,8 @@ namespace Server.Gumps
             }
 
             // 8/26/23, Yoar: If we don't have CMEs, allow opening of the paperdoll through the gump
-            if ((m_Vendor.Body == 0x191 || m_Vendor.Body == 0x190) && !Core.RuleSets.ContextMenuRules())
+            // 1/9/2025, Adam: allowing this unconditionally. Having the option here is convenient. 
+            if ((m_Vendor.Body == 0x191 || m_Vendor.Body == 0x190) /*&& !Core.RuleSets.ContextMenuRules()*/)
             {
                 AddHtmlLocalized(425, 72, 120, 20, 3006123, false, false); // Open Paperdoll
                 AddButton(390, 71, 4005, 4007, 3, GumpButtonType.Reply, 0);
@@ -322,13 +323,13 @@ namespace Server.Gumps
                 m_LongText = longText;
             }
 
-            public Item Create()
+            public Item? Create()
             {
-                Item i = null;
+                Item? i = null;
 
                 try
                 {
-                    ConstructorInfo ctor = m_Type.GetConstructor(new Type[0]);
+                    ConstructorInfo? ctor = m_Type.GetConstructor(new Type[0]);
                     if (ctor != null)
                         i = ctor.Invoke(null) as Item;
                 }
@@ -546,7 +547,7 @@ namespace Server.Gumps
                 {
                     if (ent < Categories[cat].Entries.Length && ent >= 0)
                     {
-                        Item item = m_Vendor.FindItemOnLayer(Categories[cat].Layer);
+                        Item? item = m_Vendor.FindItemOnLayer(Categories[cat].Layer);
 
                         if (item != null)
                             item.Delete();
@@ -598,7 +599,7 @@ namespace Server.Gumps
                     {
                         if (cat < Categories.Length && cat >= 0)
                         {
-                            Item item = null;
+                            Item? item = null;
 
                             List<Item> items = m_Vendor.Items;
 
@@ -624,7 +625,7 @@ namespace Server.Gumps
 
                         if (cat < Categories.Length && cat >= 0)
                         {
-                            Item item = null;
+                            Item? item = null;
 
                             List<Item> items = m_Vendor.Items;
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -92,6 +92,22 @@ namespace Server.Items
                 from.SendMessage("That is not a spellbook. Try again.");
             }
         }
+        public void Fill()
+        {
+            // If the book is a full 64-spell book, use full mask for efficiency
+            if (BookCount == 64)
+            {
+                Content = ulong.MaxValue;
+            }
+            else
+            {
+                // Otherwise set bits [0..BookCount-1]
+                // Safe even for BookCount == 0 (yields 0ul)
+                Content = (BookCount >= 64)
+                    ? ulong.MaxValue
+                    : ((1ul << BookCount) - 1);
+            }
+        }
 
         private static void EventSink_OpenSpellbookRequest(OpenSpellbookRequestEventArgs e)
         {
@@ -110,7 +126,7 @@ namespace Server.Items
                 case 3: type = SpellbookType.Paladin; break;
             }
 
-            Spellbook book = Spellbook.Find(from, -1, type);
+            Spellbook? book = Spellbook.Find(from, -1, type);
 
             if (book != null)
                 book.DisplayTo(from);
@@ -123,7 +139,7 @@ namespace Server.Items
             if (!Multis.DesignContext.Check(from))
                 return; // They are customizing
 
-            Spellbook book = e.Spellbook as Spellbook;
+            Spellbook? book = e.Spellbook as Spellbook;
             int spellID = e.SpellID;
 
             if (book == null || !book.HasSpell(spellID))
@@ -131,7 +147,7 @@ namespace Server.Items
 
             if (book != null && book.HasSpell(spellID))
             {
-                Spell spell = SpellRegistry.NewSpell(spellID, from, null);
+                Spell? spell = SpellRegistry.NewSpell(spellID, from, null);
 
                 if (spell != null)
                     spell.Cast();
@@ -158,32 +174,17 @@ namespace Server.Items
             return SpellbookType.Invalid;
         }
 
-        public static Spellbook FindRegular(Mobile from)
-        {
-            return Find(from, -1, SpellbookType.Regular);
-        }
-
-        public static Spellbook FindNecromancer(Mobile from)
-        {
-            return Find(from, -1, SpellbookType.Necromancer);
-        }
-
-        public static Spellbook FindPaladin(Mobile from)
-        {
-            return Find(from, -1, SpellbookType.Paladin);
-        }
-
-        public static Spellbook Find(Mobile from, int spellID)
+        public static Spellbook? Find(Mobile from, int spellID)
         {
             return Find(from, spellID, GetTypeForSpell(spellID));
         }
 
-        public static Spellbook Find(Mobile from, int spellID, SpellbookType type)
+        public static Spellbook? Find(Mobile from, int spellID, SpellbookType type)
         {
             if (from == null)
                 return null;
 
-            ArrayList list = (ArrayList)m_Table[from];
+            ArrayList? list = (ArrayList?)m_Table[from];
 
             if (from.Deleted)
             {
@@ -198,7 +199,7 @@ namespace Server.Items
             else
                 searchAgain = true;
 
-            Spellbook book = FindSpellbookInList(list, from, spellID, type);
+            Spellbook? book = FindSpellbookInList(list, from, spellID, type);
 
             if (book == null && searchAgain)
             {
@@ -210,7 +211,7 @@ namespace Server.Items
             return book;
         }
 
-        public static Spellbook FindSpellbookInList(ArrayList list, Mobile from, int spellID, SpellbookType type)
+        public static Spellbook? FindSpellbookInList(ArrayList list, Mobile from, int spellID, SpellbookType type)
         {
             Container pack = from.Backpack;
 
@@ -219,7 +220,7 @@ namespace Server.Items
                 if (i >= list.Count)
                     continue;
 
-                Spellbook book = (Spellbook)list[i];
+                Spellbook? book = (Spellbook?)list[i];
 
                 if (!book.Deleted && (book.Parent == from || (pack != null && book.Parent == pack)) && ValidateSpellbook(book, spellID, type))
                     return book;
@@ -234,7 +235,7 @@ namespace Server.Items
         {
             ArrayList list = new ArrayList();
 
-            Item item = from.FindItemOnLayer(Layer.OneHanded);
+            Item? item = from.FindItemOnLayer(Layer.OneHanded);
 
             if (item is Spellbook)
                 list.Add(item);
@@ -510,7 +511,7 @@ namespace Server.Items
             Ethics.EthicBless.LabelTo(this, from);
 
             // we would rather have a date here
-            if (!Core.RuleSets.SiegeStyleRules())
+            if (!Core.RuleSets.SiegeRules())
                 this.LabelTo(from, 1042886, m_Count.ToString());
         }
 

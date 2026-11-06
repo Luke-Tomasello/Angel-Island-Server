@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -38,14 +38,7 @@ namespace Server.Items
 {
     public class HolyHandGrenade : Item
     {
-#if false
-        public override string DefaultName { get { return "holy hand grenade"; } }
-
-        public override string OldName { get { return "holy hand grenade%s"; } }
-        public override Article OldArticle { get { return Article.The; } }
-#else
         public override string DefaultName { get { return "consecrated water"; } }
-#endif
 
         public static int ExplodeTicks = 3;
         public static int ExplodeRange = 4;
@@ -54,8 +47,8 @@ namespace Server.Items
         public static int MaxDamage = 120;
         public static int CooldownDuration = 10;
 
-        private ThrowTimer m_ThrowTimer;
-        private ExplodeTimer m_ExplodeTimer;
+        private ThrowTimer? m_ThrowTimer;
+        private ExplodeTimer? m_ExplodeTimer;
         private List<Mobile> m_Users;
 
         [Constructable]
@@ -87,11 +80,7 @@ namespace Server.Items
             }
             else if (m_ExplodeTimer == null && InCooldown(from))
             {
-#if false
-                from.SendMessage("You must wait before using another holy hand grenade.");
-#else
                 from.SendMessage("You must wait before using another bottle of consecrated water.");
-#endif
             }
             else if (!BasePotion.HasFreeHand(from))
             {
@@ -120,7 +109,7 @@ namespace Server.Items
 
         private void Throw(Mobile from, object targeted)
         {
-            IPoint3D p = targeted as IPoint3D;
+            IPoint3D? p = targeted as IPoint3D;
 
             if (p == null)
                 return;
@@ -210,7 +199,7 @@ namespace Server.Items
 
             foreach (Mobile m in GetMobilesInRange(ExplodeRange))
             {
-                BaseCreature bc = m as BaseCreature;
+                BaseCreature? bc = m as BaseCreature;
 
                 if (bc != null && IsUndead(bc))
                     targets.Add(m);
@@ -233,7 +222,7 @@ namespace Server.Items
                 target.FixedParticles(0x373A, 10, 15, 5012, EffectLayer.Waist);
                 target.PlaySound(0x1E0);
 
-                target.Damage(Utility.RandomMinMax(MinDamage, MaxDamage), from, this);
+                target.Damage(Utility.RandomMinMax(MinDamage, MaxDamage), from, new DamageContext { Source = this });
             }
 
             Delete();
@@ -243,7 +232,7 @@ namespace Server.Items
         {
             Mobile heldBy = HeldBy;
 
-            if (heldBy != null && heldBy.Holding == this)
+            if (heldBy != null && heldBy.Dragging == this)
                 return heldBy;
 
             object root = RootParent;
@@ -277,7 +266,7 @@ namespace Server.Items
             if (bc.GuildAlignment == AlignmentType.Undead)
                 return true;
 
-            SlayerEntry entry = SlayerGroup.GetEntryByName(SlayerName.Silver);
+            SlayerEntry? entry = SlayerGroup.GetEntryByName(SlayerName.Silver);
 
             if (entry != null && InTypeList(entry.Types, bc.GetType()))
                 return true;
@@ -410,7 +399,7 @@ namespace Server.Items
 
         private static void EndCooldown(Mobile m)
         {
-            Timer timer;
+            Timer? timer;
 
             if (m_CooldownTimers.TryGetValue(m, out timer))
             {
@@ -442,7 +431,7 @@ namespace Server.Items
 
             foreach (Mobile m in m_Users)
             {
-                ThrowTarget target = m.Target as ThrowTarget;
+                ThrowTarget? target = m.Target as ThrowTarget;
 
                 if (target != null && target.Item == this)
                     Target.Cancel(m);

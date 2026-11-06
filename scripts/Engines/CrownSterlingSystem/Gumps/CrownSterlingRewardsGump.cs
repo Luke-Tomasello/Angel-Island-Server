@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -46,15 +46,15 @@ namespace Server.Engines.CrownSterlingSystem
 
         private CrownSterlingSystem m_System;
         private Page m_Page;
-        private CrownSterlingReward m_Reward;
+        private CrownSterlingReward? m_Reward;
         List<CrownSterlingReward> m_AddRewardsDatabase = new();
         List<CrownSterlingReward> m_RemoveRewardsDatabase = new();
-        public CrownSterlingRewardsGump(CrownSterlingSystem system, Mobile from, object[] args)
-            : this(system, from, Page.Select, new object[] { args[0], args[1], null })
+        public CrownSterlingRewardsGump(CrownSterlingSystem system, Mobile from, object?[] args)
+            : this(system, from, Page.Select, new object?[] { args[0], args[1], null })
         {
         }
 
-        private CrownSterlingRewardsGump(CrownSterlingSystem system, Mobile buyer, Page page, object[] args)
+        private CrownSterlingRewardsGump(CrownSterlingSystem system, Mobile buyer, Page page, object?[] args)
             : base(250, 50)
         {
             m_System = system;
@@ -208,7 +208,7 @@ namespace Server.Engines.CrownSterlingSystem
                         if (info.ButtonID == 2)
                         {
                             from.CloseGump(typeof(CrownSterlingRewardsGump));
-                            from.SendGump(new CrownSterlingRewardsGump(m_System, from, Page.Select, new object[] { m_AddRewardsDatabase, m_RemoveRewardsDatabase, null }));
+                            from.SendGump(new CrownSterlingRewardsGump(m_System, from, Page.Select, new object?[] { m_AddRewardsDatabase, m_RemoveRewardsDatabase, null }));
                         }
                         else
                         {
@@ -230,7 +230,7 @@ namespace Server.Engines.CrownSterlingSystem
                         if (info.ButtonID == 0)
                         {
                             from.CloseGump(typeof(CrownSterlingRewardsGump));
-                            from.SendGump(new CrownSterlingRewardsGump(m_System, from, Page.Select, new object[] { m_AddRewardsDatabase, m_RemoveRewardsDatabase, null }));
+                            from.SendGump(new CrownSterlingRewardsGump(m_System, from, Page.Select, new object?[] { m_AddRewardsDatabase, m_RemoveRewardsDatabase, null }));
                         }
                         else if (info.ButtonID == 1)
                         {
@@ -240,7 +240,7 @@ namespace Server.Engines.CrownSterlingSystem
                             }
 
                             from.CloseGump(typeof(CrownSterlingRewardsGump));
-                            from.SendGump(new CrownSterlingRewardsGump(m_System, from, Page.Select, new object[] { m_AddRewardsDatabase, m_RemoveRewardsDatabase, null }));
+                            from.SendGump(new CrownSterlingRewardsGump(m_System, from, Page.Select, new object?[] { m_AddRewardsDatabase, m_RemoveRewardsDatabase, null }));
                         }
 
                         break;

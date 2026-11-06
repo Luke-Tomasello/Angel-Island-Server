@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -150,7 +150,7 @@ namespace Server.Items
 
             if (bank != null)
             {
-                Item gift = HolidayDeedSystem.MakeGift(m, m_Season, m_Year);
+                Item? gift = HolidayDeedSystem.MakeGift(m, m_Season, m_Year);
 
                 if (gift != null)
                 {
@@ -203,7 +203,7 @@ namespace Server.Items
 
     public static class HolidayDeedSystem
     {
-        public static string HintMessage;
+        public static string? HintMessage;
         public static string GiveToType; // TODO: Replace GiveToType with DeliverCondition
         public static HolidayGiftEntry[] Gifts = new HolidayGiftEntry[12];
 
@@ -241,11 +241,11 @@ namespace Server.Items
 
         private static void SaveFile(string fileName)
         {
-            XmlTextWriter writer = null;
+            XmlTextWriter? writer = null;
 
             try
             {
-                string folder = Path.GetDirectoryName(fileName);
+                string? folder = Path.GetDirectoryName(fileName);
 
                 if (!Directory.Exists(folder))
                     Directory.CreateDirectory(folder);
@@ -310,7 +310,7 @@ namespace Server.Items
             if (!File.Exists(fileName))
                 return false;
 
-            XmlTextReader reader = null;
+            XmlTextReader? reader = null;
 
             try
             {
@@ -373,7 +373,7 @@ namespace Server.Items
 
         #endregion
 
-        public static Item MakeGift(Mobile m, HolidaySeason season, int year)
+        public static Item? MakeGift(Mobile m, HolidaySeason season, int year)
         {
             Container giftBox = new GiftBox();
 
@@ -388,24 +388,24 @@ namespace Server.Items
                     if (string.IsNullOrEmpty(entry.Type))
                         continue;
 
-                    string giftTypeName = GetValue(entry.Type);
+                    string? giftTypeName = GetValue(entry.Type);
 
                     if (string.IsNullOrEmpty(giftTypeName))
                         throw new InvalidOperationException("InvalidGiftType");
 
-                    Type giftType = SpawnerType.GetType(giftTypeName);
+                    Type? giftType = SpawnerType.GetType(giftTypeName);
 
                     if (giftType == null || !typeof(Item).IsAssignableFrom(giftType))
                         throw new InvalidOperationException("InvalidGiftType");
 
-                    Item item = (Item)Construct(giftType);
+                    Item? item = (Item?)Construct(giftType);
 
                     if (item == null)
                         throw new InvalidOperationException("NullGift");
 
                     if (!string.IsNullOrEmpty(entry.Name))
                     {
-                        string name = GetValue(entry.Name);
+                        string? name = GetValue(entry.Name);
 
                         if (string.IsNullOrEmpty(name))
                             throw new InvalidOperationException("InvalidGiftName");
@@ -415,7 +415,7 @@ namespace Server.Items
 
                     if (!string.IsNullOrEmpty(entry.Hue))
                     {
-                        string hueStr = GetValue(entry.Hue);
+                        string? hueStr = GetValue(entry.Hue);
 
                         int hue;
 
@@ -456,7 +456,7 @@ namespace Server.Items
             return null;
         }
 
-        private static string GetValue(string str)
+        private static string? GetValue(string str)
         {
             if (string.IsNullOrEmpty(str))
                 return null;
@@ -469,12 +469,12 @@ namespace Server.Items
             return split[Utility.Random(split.Length)].Trim();
         }
 
-        private static Item Construct(Type type)
+        private static Item? Construct(Type type)
         {
             if (type == null)
                 return null;
 
-            ConstructorInfo ctor = type.GetConstructor(new Type[0]);
+            ConstructorInfo? ctor = type.GetConstructor(new Type[0]);
 
             if (ctor == null || !Add.IsConstructable(ctor))
                 return null;
@@ -594,7 +594,7 @@ namespace Server.Items
     public class HolidayDeedConsole : Item
     {
         [CommandProperty(AccessLevel.GameMaster)]
-        public string HintMessage
+        public string? HintMessage
         {
             get { return HolidayDeedSystem.HintMessage; }
             set { HolidayDeedSystem.HintMessage = value; }
@@ -610,90 +610,90 @@ namespace Server.Items
         #region Gift Accessors
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift1
+        public HolidayGiftEntry? Gift1
         {
             get { return GetGift(0); }
             set { }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift2
+        public HolidayGiftEntry? Gift2
         {
             get { return GetGift(1); }
             set { }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift3
+        public HolidayGiftEntry? Gift3
         {
             get { return GetGift(2); }
             set { }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift4
+        public HolidayGiftEntry? Gift4
         {
             get { return GetGift(3); }
             set { }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift5
+        public HolidayGiftEntry? Gift5
         {
             get { return GetGift(4); }
             set { }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift6
+        public HolidayGiftEntry? Gift6
         {
             get { return GetGift(5); }
             set { }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift7
+        public HolidayGiftEntry? Gift7
         {
             get { return GetGift(6); }
             set { }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift8
+        public HolidayGiftEntry? Gift8
         {
             get { return GetGift(7); }
             set { }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift9
+        public HolidayGiftEntry? Gift9
         {
             get { return GetGift(8); }
             set { }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift10
+        public HolidayGiftEntry? Gift10
         {
             get { return GetGift(9); }
             set { }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift11
+        public HolidayGiftEntry? Gift11
         {
             get { return GetGift(10); }
             set { }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public HolidayGiftEntry Gift12
+        public HolidayGiftEntry? Gift12
         {
             get { return GetGift(11); }
             set { }
         }
 
-        private HolidayGiftEntry GetGift(int index)
+        private HolidayGiftEntry? GetGift(int index)
         {
             if (index >= 0 && index < HolidayDeedSystem.Gifts.Length)
                 return HolidayDeedSystem.Gifts[index];

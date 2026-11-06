@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -87,7 +87,7 @@ namespace Server.Items
 
             if (EventResourceSystem.Find(m_Resource) != null)
             {
-                CraftResourceInfo info = CraftResources.GetInfo(m_Resource);
+                CraftResourceInfo? info = CraftResources.GetInfo(m_Resource);
 
                 if (info != null)
                 {
@@ -189,7 +189,7 @@ namespace Server.Items
 
             Resource = CraftResources.GetFromType(resourceType);
 
-            CraftContext context = craftSystem.GetContext(from);
+            CraftContext? context = craftSystem.GetContext(from);
 
             if (context != null && context.DoNotColor)
                 Hue = 0;

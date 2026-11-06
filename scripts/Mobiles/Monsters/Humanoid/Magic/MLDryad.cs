@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -75,7 +75,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            // TODO
+            // https://www.uoguide.com/Dryad
+            // ML creature (post-era). No Stratics-era entry.
+            // 100 - 200 Gold
+            // Special: 2-4 Gems, Magic Weapons/Armor
+            // Note: ML systems (nature charms, etc.) intentionally excluded
+
+            if (Spawning)
+            {
+                PackGold(100, 200);
+            }
+            else
+            {
+                PackGem(2, 4);
+
+                PackMagicEquipment(1, 2, 0.75, 0.75);
+            }
         }
 
         public override int Meat { get { return 1; } }
@@ -130,7 +145,7 @@ namespace Server.Mobiles
 
         public static void EndEffect(Mobile m)
         {
-            Timer timer;
+            Timer? timer;
 
             if (m_Timers.TryGetValue(m, out timer))
             {
@@ -180,7 +195,7 @@ namespace Server.Mobiles
 
         public void UndressItem(Mobile m, Layer layer)
         {
-            Item item = m.FindItemOnLayer(layer);
+            Item? item = m.FindItemOnLayer(layer);
 
             if (item != null && item.Movable)
                 m.PlaceInBackpack(item);

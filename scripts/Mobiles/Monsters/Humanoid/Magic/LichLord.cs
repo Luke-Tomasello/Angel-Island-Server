@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -64,7 +64,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -115,76 +114,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020213054135/uo.stratics.com/hunters/lichlord.shtml
+            // 400 to 700 Gold, Magic items, Gems, Scrolls, Blackmoor reagent
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackItem(new GnarledStaff());
-                PackScroll(3, 7);
-                PackScroll(3, 7);
-                PackMagicEquipment(2, 3, 0.60, 0.60);
-                PackMagicEquipment(2, 3, 0.25, 0.25);
-                PackReg(10, 20);
-
-                // pack the gold
-                PackGold(600, 800);
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-
-                    if (Utility.RandomDouble() < 0.10)
-                        PackItem(Loot.IDWand());
-                }
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                // Category 4 MID
-                PackMagicItem(2, 3, 0.10);
-                PackMagicItem(2, 3, 0.05);
-                PackMagicItem(2, 3, 0.02);
-
-                // pack bulk reg
-                PackItem(new BlackPearl(Utility.RandomMinMax(10, 20)));
+                PackGold(400, 700);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020213054135/uo.stratics.com/hunters/lichlord.shtml
-                    // 400 to 700 Gold, Magic items, Gems, Scrolls, Blackmoor reagent
-
-                    if (Spawning)
-                    {
-                        PackGold(400, 700);
-                    }
-                    else
-                    {
-                        PackMagicEquipment(2, 3);
-                        PackMagicItem(2, 3, 0.10);
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                        PackScroll(4, 7, .9);
-                        PackScroll(4, 7, .05);
-                        PackItem(typeof(Blackmoor), 0.005);     // TODO: no idea the rarity, make it 5 in 1000
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackItem(new GnarledStaff());
-                        if (Core.RuleSets.AOSRules())
-                            PackNecroReg(12, 40);
-                    }
-
-                    AddLoot(LootPack.FilthyRich);
-                    AddLoot(LootPack.MedScrolls, 2);
-                }
+                PackMagicEquipment(2, 3);
+                PackMagicItem(2, 3, 0.10);
+                PackGem(1, .9);
+                PackGem(1, .05);
+                PackScroll(4, 7, .9);
+                PackScroll(4, 7, .05);
+                PackItem(typeof(Blackmoor), 0.005);     // TODO: no idea the rarity, make it 5 in 1000
             }
         }
 

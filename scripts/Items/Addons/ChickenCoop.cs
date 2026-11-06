@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -35,7 +35,6 @@ using Server.Gumps;
 using Server.Mobiles;
 using Server.Network;
 using Server.Targeting;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -57,24 +56,24 @@ namespace Server.Items
         #region Stabled Accessors
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public BaseCreature Stabled1 { get { return Get(0); } set { } }
+        public BaseCreature? Stabled1 { get { return Get(0); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public BaseCreature Stabled2 { get { return Get(1); } set { } }
+        public BaseCreature? Stabled2 { get { return Get(1); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public BaseCreature Stabled3 { get { return Get(2); } set { } }
+        public BaseCreature? Stabled3 { get { return Get(2); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public BaseCreature Stabled4 { get { return Get(3); } set { } }
+        public BaseCreature? Stabled4 { get { return Get(3); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public BaseCreature Stabled5 { get { return Get(4); } set { } }
+        public BaseCreature? Stabled5 { get { return Get(4); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public BaseCreature Stabled6 { get { return Get(5); } set { } }
+        public BaseCreature? Stabled6 { get { return Get(5); } set { } }
 
-        private BaseCreature Get(int index)
+        private BaseCreature? Get(int index)
         {
             if (index >= 0 && index < m_Stabled.Count)
                 return m_Stabled[index];
@@ -152,13 +151,6 @@ namespace Server.Items
         public override void GetContextMenuEntries(Mobile from, ArrayList list)
         {
             // Clilocs are not supported
-#if false
-            if (from.Alive)
-            {
-                list.Add(new StableCME());
-                list.Add(new ClaimCME());
-            }
-#endif
 
             base.GetContextMenuEntries(from, list);
         }
@@ -203,7 +195,7 @@ namespace Server.Items
             if (Deleted || from.Map != this.Map || !from.InRange(this, UseRange) || !from.CheckAlive() || !IsAccessibleTo(from))
                 return;
 
-            BaseCreature pet = targeted as BaseCreature;
+            BaseCreature? pet = targeted as BaseCreature;
 
             if (pet == null)
             {

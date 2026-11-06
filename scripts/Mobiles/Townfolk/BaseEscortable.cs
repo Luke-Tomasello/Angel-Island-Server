@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -235,9 +235,18 @@ namespace Server.Mobiles
             }
         }
 
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
+        {
+            // if our master attacks us, abandon the escort and fight back
+            // Should we check criminal here? I think not, otherwise players will just take them to their house.
+            if (aggressor == this.ControlMaster)
+                EscorterAbandonment(aggressor);
+            base.AggressiveAction(aggressor, criminal, source);
+        }
+
         private Point3D m_Destination;
         private DateTime m_DeleteTime;
-        private Timer m_DeleteTimer;
+        private Timer? m_DeleteTimer;
 
         public override bool Commandable { get { return false; } } // Our master cannot boss us around!
 
@@ -315,7 +324,7 @@ namespace Server.Mobiles
                 case 3: AddItem(new KrisnaHair(Utility.RandomHairHue())); break;
             }
 
-            if (!Core.RuleSets.SiegeStyleRules())
+            if (!Core.RuleSets.SiegeRules())
                 PackGold(50, 125);
         }
 
@@ -380,7 +389,7 @@ namespace Server.Mobiles
             if (!m.Alive)
                 return false;
 
-            Mobile escorter = GetEscorterWithSideEffects();
+            Mobile? escorter = GetEscorterWithSideEffects();
 
             if (escorter == null)
             {
@@ -410,12 +419,12 @@ namespace Server.Mobiles
             if (dest == Point3D.Zero)
                 return false;
 
-            Mobile escorter = GetEscorterWithSideEffects();
+            Mobile? escorter = GetEscorterWithSideEffects();
 
             if (escorter != null || !m.Alive)
                 return false;
 
-            BaseEscortable escortable = (BaseEscortable)m_EscortTable[m];
+            BaseEscortable? escortable = (BaseEscortable?)m_EscortTable[m];
 
             if (escortable != null && !escortable.Deleted && escortable.GetEscorterWithSideEffects() == m)
             {
@@ -480,7 +489,7 @@ namespace Server.Mobiles
         private bool m_Abandoning = false;
         public bool EscorterAbandonment(Mobile m)
         {
-            Mobile escorter = GetEscorterWithSideEffects();
+            Mobile? escorter = GetEscorterWithSideEffects();
 
             if (escorter != m || !m.Alive)
                 return false;
@@ -522,7 +531,7 @@ namespace Server.Mobiles
 
         public override void OnThink()
         {
-            Mobile e = null;
+            Mobile? e = null;
             if ((e = GetMaster()) != null && e.CanSee(this))
                 m_LastSeenEscorter = DateTime.UtcNow;
 
@@ -592,7 +601,7 @@ namespace Server.Mobiles
         }
 
         // Like GetEscorter but without all the kooky side-effects :\
-        new public Mobile GetMaster()
+        new public Mobile? GetMaster()
         {
             if (!Controlled)
                 return null;
@@ -608,7 +617,7 @@ namespace Server.Mobiles
             return master;
         }
 
-        public virtual Mobile GetEscorterWithSideEffects()
+        public virtual Mobile? GetEscorterWithSideEffects()
         {
             if (!Controlled)
                 return null;
@@ -682,14 +691,14 @@ namespace Server.Mobiles
             return false;
         }
 
-        public void GiveLoot(Item item)
+        public void GiveLoot(Item? item)
         {   // adam: default is to try to pack an enchanted scroll
             GiveLoot(item, true);
         }
 
-        public void GiveLoot(Item item, bool EScrollChance)
+        public void GiveLoot(Item? item, bool EScrollChance)
         {
-            Mobile escorter = GetEscorterWithSideEffects();
+            Mobile? escorter = GetEscorterWithSideEffects();
 
             if (escorter == null)
                 return;
@@ -753,7 +762,7 @@ namespace Server.Mobiles
 
         public virtual bool CheckAtDestination()
         {
-            Mobile escorter = GetEscorterWithSideEffects();
+            Mobile? escorter = GetEscorterWithSideEffects();
 
             if (escorter == null)
                 return false;
@@ -873,7 +882,7 @@ namespace Server.Mobiles
 
             if (dest != Point3D.Zero && from.Alive)
             {
-                Mobile escorter = GetMaster();
+                Mobile? escorter = GetMaster();
 
                 if (escorter == null || escorter == from)
                     list.Add(new AskDestinationEntry(this, from));
@@ -1068,7 +1077,7 @@ namespace Server.Mobiles
         {
             // not going anywhere
             m_Destination = Point3D.Zero;
-            Mobile escorter = GetEscorterWithSideEffects();
+            Mobile? escorter = GetEscorterWithSideEffects();
             if (escorter != null)
                 m_EscortTable.Remove(escorter);
         }
@@ -1080,11 +1089,11 @@ namespace Server.Mobiles
             BeginDelete();
         }
 
-        public Region Find(string name)
+        public Region? Find(string name)
         {
             // add it if it is valid 
             Point3D location = Point3D.Zero;
-            Region reg = null;
+            Region? reg = null;
             if (name != null)   // added by Adam 5/24
             {
                 try { location = Point3D.Parse(name); }
@@ -1134,7 +1143,7 @@ namespace Server.Mobiles
 
             for (int i = regions.Count - 1; i >= 0; i--)
             {
-                Region region = (Region)regions[i];
+                Region? region = (Region?)regions[i];
 
                 if (region.IsDefault)
                     continue;

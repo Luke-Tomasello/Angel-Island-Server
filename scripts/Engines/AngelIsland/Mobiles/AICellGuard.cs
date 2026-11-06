@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -61,40 +61,22 @@ namespace Server.Mobiles
             : base(serial)
         {
         }
-        private void AICrossShardLoot()
-        {   // Angel Island creatures that exist on multiple shards use common loot
-            //  i.e., that loot doesn't change across different shard configs
-            DropWeapon(1, 1);
-            DropWeapon(1, 1);
 
-            DropItem(new BagOfReagents(CoreAI.CellGuardNumRegDrop));
-            DropItem(new ParalyzeScroll());
-            DropItem(new FireballScroll());
-            DropItem(new NightSightScroll());
-        }
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {   // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                AICrossShardLoot();
-            }
+            if (Spawning) { PackGold(10, 25); }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                        AICrossShardLoot();
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    // ai special
-                }
+                // Angel Island creatures that exist on multiple shards use common loot
+                //  i.e., that loot doesn't change across different shard configs
+
+                DropWeapon(1, 1);
+                DropWeapon(1, 1);
+
+                PackItem(new BagOfReagents(CoreAI.CellGuardNumRegDrop));
+                PackItem(new ParalyzeScroll());
+                PackItem(new FireballScroll());
+                PackItem(new NightSightScroll());
             }
         }
 

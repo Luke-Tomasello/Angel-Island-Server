@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -49,7 +49,7 @@ namespace Server
         public static readonly TextEntry Empty = new TextEntry();
 
         private int m_Number;
-        private string m_String;
+        private string? m_String;
 
         public int Number { get { return m_Number; } }
         public string String { get { return m_String; } }
@@ -64,7 +64,7 @@ namespace Server
         {
         }
 
-        public TextEntry(int number, string str)
+        public TextEntry(int number, string? str)
         {
             m_Number = number;
             m_String = str;
@@ -199,7 +199,7 @@ namespace Server
             }
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return (obj is TextEntry && Equals((TextEntry)obj));
         }
@@ -239,7 +239,7 @@ namespace Server
             return string.Empty;
         }
 
-        public static TextEntry Parse(string value)
+        public static TextEntry Parse(string? value)
         {
             if (string.IsNullOrEmpty(value))
                 return TextEntry.Empty;
@@ -332,7 +332,7 @@ namespace Server
                 this.Add(new TextEntry(reader));
         }
 
-        public static TEList Parse(string value)
+        public static TEList Parse(string? value)
         {
             TEList list = new TEList();
 

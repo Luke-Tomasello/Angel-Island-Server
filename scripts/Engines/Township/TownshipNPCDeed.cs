@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -40,6 +40,7 @@
 
 using Server.Guilds;
 using Server.Mobiles;
+using Server.Regions;
 using System;
 
 namespace Server.Items
@@ -87,18 +88,34 @@ namespace Server.Items
         public override void OnDoubleClick(Mobile from)
         {
             if (!IsChildOf(from.Backpack))
+            {
                 from.SendLocalizedMessage(1042001); // That must be in your pack for you to use it.
+            }
             else if (m_Guild != null && !m_Guild.IsMember(from))
+            {
                 from.SendMessage("Only guild members can place this vendor.");
-            else if (TownshipNPCHelper.CheckPlaceNPC(from, NPCType, this.RestorationMobile))
+            }
+            else if (TownshipNPCHelper.CheckPlaceNPC(from, NPCType, RestorationMobile))
+            {
+                Mobile? m = World.FindMobile(RestorationMobile);
+
+                if (m != null && !m.Deleted)
+                {
+                    TownshipRegion? tsr = TownshipRegion.GetTownshipAt(m);
+
+                    if (tsr != null && tsr.TStone != null)
+                        tsr.TStone.UnregisterStashedNPC(m);
+                }
+
                 Delete();
+            }
         }
 
         public override void OnDelete()
         {
             if (m_RestorationMobile != Serial.Zero)
             {
-                Mobile m = World.FindMobile(m_RestorationMobile);
+                Mobile? m = World.FindMobile(m_RestorationMobile);
                 if (m != null && m.IsIntMapStorage)
                     m.Delete();
             }
@@ -365,7 +382,107 @@ namespace Server.Items
 
         #endregion
     }
+    public class TSBlacksmithDeed : TownshipNPCDeed
+    {
+        public override Type NPCType { get { return typeof(TSBlacksmith); } }
 
+        [Constructable]
+        public TSBlacksmithDeed()
+            : base()
+        {
+        }
+
+        #region Serialization
+
+        public TSBlacksmithDeed(Serial serial)
+            : base(serial)
+        {
+        }
+
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+
+            writer.Write((int)0); // version
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+
+            int version = reader.ReadInt();
+        }
+
+        #endregion
+    }
+
+    public class TSTailorDeed : TownshipNPCDeed
+    {
+        public override Type NPCType { get { return typeof(TSTailor); } }
+
+        [Constructable]
+        public TSTailorDeed()
+            : base()
+        {
+        }
+
+        #region Serialization
+
+        public TSTailorDeed(Serial serial)
+            : base(serial)
+        {
+        }
+
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+
+            writer.Write((int)0); // version
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+
+            int version = reader.ReadInt();
+        }
+
+        #endregion
+    }
+
+    public class TSCarpenterDeed : TownshipNPCDeed
+    {
+        public override Type NPCType { get { return typeof(TSCarpenter); } }
+
+        [Constructable]
+        public TSCarpenterDeed()
+            : base()
+        {
+        }
+
+        #region Serialization
+
+        public TSCarpenterDeed(Serial serial)
+            : base(serial)
+        {
+        }
+
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+
+            writer.Write((int)0); // version
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+
+            int version = reader.ReadInt();
+        }
+
+        #endregion
+    }
     public class TSArmsTrainerDeed : TownshipNPCDeed
     {
         public override Type NPCType { get { return typeof(TSArmsTrainer); } }

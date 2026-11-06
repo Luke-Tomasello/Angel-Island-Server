@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,7 +52,7 @@ namespace Server.Items
                     continue;
                 if (item is not Teleporter)
                     continue;
-                Teleporter teleporter = item as Teleporter;
+                Teleporter? teleporter = item as Teleporter;
                 if (Utility.IsDungeon(teleporter.Location) || Utility.IsDungeon(teleporter.PointDest))
                     TeleporterFamily.Add(item as Teleporter);
             }
@@ -113,7 +113,7 @@ namespace Server.Items
             }
             else
             {   // refresh our recollection and increase memory time
-                Memory.ObjectMemory om = m_PlayerMemory.Recall(m as object);
+                Memory.ObjectMemory? om = m_PlayerMemory.Recall(m as object);
                 m_PlayerMemory.Refresh(m, om.Context, seconds);
             }
         }
@@ -133,9 +133,9 @@ namespace Server.Items
         }
         private BaseCreature KM_ClosestAdversiary(Mobile m)
         {
-            Mobile closest = null;
+            Mobile? closest = null;
             uint distance = uint.MaxValue;
-            PlayerMobile pm = m as PlayerMobile;
+            PlayerMobile? pm = m as PlayerMobile;
             // find the closest mobile we were fighting
             if (pm.Aggressors != null && pm.Aggressors.Count > 0)
                 foreach (var info in pm.Aggressors)
@@ -187,7 +187,7 @@ namespace Server.Items
         }
         private bool KM_IsKiting(Mobile m)
         {
-            PlayerMobile pm = m as PlayerMobile;
+            PlayerMobile? pm = m as PlayerMobile;
             if (pm.Aggressors != null && pm.Aggressors.Count > 0)
                 foreach (var info in pm.Aggressors)
                     // if we are involved, and one of us isn't a player
@@ -219,8 +219,8 @@ namespace Server.Items
             }
             else
             {   // refresh our recollection and increment count
-                Memory.ObjectMemory om = m_PlayerMemory.Recall(m as object);
-                PlayerContext pc = om.Context as PlayerContext;
+                Memory.ObjectMemory? om = m_PlayerMemory.Recall(m as object);
+                PlayerContext? pc = om.Context as PlayerContext;
                 m_PlayerMemory.Refresh(m, new PlayerContext(pc.Visits + 1));
                 Utility.Monitor.DebugOut("KM({1}): I remember {0}.", RandomConsoleColor(this.Serial), m.Name, this.Serial);
                 Utility.Monitor.DebugOut("KM({1}): {0} has visited {2} time(s).", RandomConsoleColor(this.Serial), m.Name, this.Serial, pc.Visits + 1);
@@ -238,7 +238,7 @@ namespace Server.Items
         }
         public int KM_GetCount(Mobile m)
         {
-            Memory.ObjectMemory om = m_PlayerMemory.Recall(m as object);
+            Memory.ObjectMemory? om = m_PlayerMemory.Recall(m as object);
             if (om != null)
                 return (om.Context as PlayerContext).Visits;
             else
@@ -267,8 +267,8 @@ namespace Server.Items
             if (aState[0] == null || aState[1] == null)
                 return;
 
-            BaseCreature bc = aState[0] as BaseCreature;
-            PlayerMobile pm = aState[1] as PlayerMobile;
+            BaseCreature? bc = aState[0] as BaseCreature;
+            PlayerMobile? pm = aState[1] as PlayerMobile;
             int count = (int)aState[2];
 
             if (bc == null || bc.Deleted || bc.AIObject == null || bc.Spawner == null || pm == null)

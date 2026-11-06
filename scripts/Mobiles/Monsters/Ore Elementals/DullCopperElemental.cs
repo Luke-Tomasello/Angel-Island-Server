@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,7 +66,7 @@ namespace Server.Mobiles
         }
 
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
 
         public DullCopperElemental(Serial serial)
             : base(serial)
@@ -75,64 +75,33 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://web.archive.org/web/20010805021023fw_/http://uo.stratics.com/hunters/ore_elem.shtml
+            // Magic Weapons, Magic Armor, 25 Large Colored Ore of the Elemental's type, Gems, 600 Gold
+            // Note: The naturally spawning Dull Copper Elemental in Shame gives:
+            // 2 Large Dull Copper Ore, 2-3 Gems, and 90 - 180 Gold.
+
+            bool naturallySpawning = SpawnerLocation != Point3D.Zero;
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
-                PackGem();
-
-                // 7/7/21, Adam: add AncientSmithyHammer for player crafted magic items
-                if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.MagicCraftSystem) == true)
-                    if (Utility.RandomChance(5))
-                        PackItem(new TenjinsHammer(200));
-
-                // adam: Changed from 25-40, to 5-15
-                PackItem(new DullCopperOre(Utility.Random(5, 15)));
-
-                // add some gold to make up for the low ore
-                PackGold(75, 100);
+                if (naturallySpawning)
+                    PackGold(90, 180);
+                else
+                    PackGold(600);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // https://web.archive.org/web/20010805021023fw_/http://uo.stratics.com/hunters/ore_elem.shtml
-                    //  Magic Weapons, Magic Armor, 25 Large Colored Ore of the Elemental's type, Gems, 600 Gold 
-                    //	(The Dull Copper Elemental that spawns naturally in Shame only gives 2 Large Dull Copper Ore, 2-3 Gems and 90 - 180 Gold)
-
-                    // if it's on a spawner, it's a naturally spawning elemental
-                    //  because we don't know at Spawning time if we are naturally spawning, we punt on 'at spawn' loot and instead manage all loot generation 
-                    //  when Spawning==false. Sorry thieves, it's a special case.
-                    if (Spawning)
-                    {
-                        // special case: nothing
-                        // we do not yet know if we have a spawner
-                    }
-                    else
-                    {   // we now know if we have a spawner
-                        bool naturallySpawning = this.SpawnerLocation != Point3D.Zero;
-                        if (naturallySpawning)
-                        {
-                            PackGold(90, 180);
-                            PackItem(new DullCopperOre(2));
-                            PackGem(Utility.Random(2, 3));
-                        }
-                        else
-                        {
-                            PackGold(600);
-                            PackMagicEquipment(1, 2);
-                            PackItem(new DullCopperOre(25));
-                            PackGem(Utility.Random(3, 5));
-                            PackGem(1, .05);
-                        }
-                    }
+                if (naturallySpawning)
+                {
+                    PackItem(new DullCopperOre(2));
+                    PackGem(Utility.RandomMinMax(2, 3));
                 }
                 else
                 {
-                    if (Spawning)
-                        PackItem(new DullCopperOre(2/*oreAmount*/));
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Gems, 2);
+                    PackMagicEquipment(1, 2);
+                    PackItem(new DullCopperOre(25));
+                    PackGem(Utility.RandomMinMax(3, 5));
+                    PackGem(1, .05);
                 }
             }
         }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -73,42 +73,16 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020213041409/uo.stratics.com/hunters/snowelemental.shtml
+            // 200 to 250 Gold, Ore, Black Pearl
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackItem(new IronOre(3));
-                PackItem(new BlackPearl(3));
-                PackGold(175, 225);
-                PackMagicEquipment(1, 5);
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
+                PackGold(200, 250);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020213041409/uo.stratics.com/hunters/snowelemental.shtml
-                    // 200 to 250 Gold, Ore, Black Pearl
-                    if (Spawning)
-                    {
-                        PackGold(200, 250);
-                    }
-                    else
-                    {
-                        PackItem(new IronOre(3));
-                        PackItem(new BlackPearl(3));
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackItem(new IronOre(3));
-                        PackItem(new BlackPearl(3));
-                    }
-
-                    AddLoot(LootPack.Rich);
-                }
+                PackItem(new IronOre(3));
+                PackItem(new BlackPearl(3));
             }
         }
 

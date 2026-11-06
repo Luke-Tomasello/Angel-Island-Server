@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,7 +19,7 @@
  *
  ***************************************************************************/
 
-/* Scripts/Accounting/Account.cs
+/* Scripts\Accounting\IPException.cs
  *	CHANGELOG
  * 7/29/2024, Adam
  *  Initialize database if it does not exist.
@@ -65,7 +65,6 @@ using System.Data;
 using System.Data.SQLite;
 using System.IO;
 using System.Xml;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Server.Accounting
 {
@@ -248,7 +247,7 @@ namespace Server.Accounting
 
         public static string GetDatabasePath(ref bool error)
         {
-            string path = Environment.GetEnvironmentVariable("AI.IPEXCEPTIONDB");
+            string? path = Environment.GetEnvironmentVariable("AI.IPEXCEPTIONDB");
 
             if (string.IsNullOrWhiteSpace(path))
                 path = @"C:\AIDB\ipexception.db";
@@ -256,7 +255,7 @@ namespace Server.Accounting
             error = false;
             if (!File.Exists(path))
             {   // initialize database
-                string directory = Path.GetDirectoryName(path);
+                string? directory = Path.GetDirectoryName(path);
                 if (!Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
                 // this creates a zero-byte file
@@ -301,7 +300,7 @@ namespace Server.Accounting
         {
             EnsureTable();
 
-            DataTable table = null;
+            DataTable? table = null;
 
             const string cmdText = "SELECT accountlimit FROM IPException WHERE ipaddress=@ip;";
 
@@ -447,7 +446,7 @@ namespace Server.Accounting
         {
             EnsureTable();
 
-            DataTable table = null;
+            DataTable? table = null;
 
             const string cmdText = "SELECT ipaddress FROM IPException;";
 
@@ -479,7 +478,7 @@ namespace Server.Accounting
 
             for (int i = 0; i < table.Rows.Count; i++)
             {
-                string ipAddress = null;
+                string? ipAddress = null;
 
                 try
                 {

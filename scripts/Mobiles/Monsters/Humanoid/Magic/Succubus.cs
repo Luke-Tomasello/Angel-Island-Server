@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -110,7 +110,7 @@ namespace Server.Mobiles
                 int toDrain = Utility.RandomMinMax(10, 40);
 
                 Hits += toDrain;
-                m.Damage(toDrain, this, this);
+                m.Damage(toDrain, this, new DamageContext { Source = this });
             }
         }
 
@@ -137,46 +137,23 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020220114204/uo.stratics.com/hunters/succubus.shtml
+            // 1200-2000 Gold, gems, scrolls, magic items
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(450, 700);
-                PackScroll(1, 7);
-                PackScroll(1, 7);
-                PackMagicEquipment(1, 3, 0.30, 0.30);
-                PackMagicEquipment(1, 3, 0.05, 0.30);
-                // Category 4 MID
-                PackMagicItem(2, 3, 0.10);
-                PackMagicItem(2, 3, 0.05);
-                PackMagicItem(2, 3, 0.02);
+                PackGold(1200, 2000);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020220114204/uo.stratics.com/hunters/succubus.shtml
-                    // 1200-2000 Gold, gems, scrolls, magic items
-                    if (Spawning)
-                    {
-                        PackGold(1200, 2000);
-                    }
-                    else
-                    {
-                        PackGem(1, .9);
-                        PackGem(1, .5);
-                        PackScroll(1, 7);
-                        PackScroll(1, 7, 0.5);
+                PackGem(1, .9);
+                PackGem(1, .5);
+                PackScroll(1, 7);
+                PackScroll(1, 7, 0.5);
 
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 3);
-                        else
-                            PackMagicItem(2, 3, 0.10);
-                    }
-                }
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 3);
                 else
-                {
-                    AddLoot(LootPack.FilthyRich, 2);
-                    AddLoot(LootPack.MedScrolls, 2);
-                }
+                    PackMagicItem(2, 3, 0.10);
             }
         }
 

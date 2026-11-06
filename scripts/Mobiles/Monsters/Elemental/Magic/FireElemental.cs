@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,7 +48,7 @@ namespace Server.Mobiles
     [CorpseName("a fire elemental corpse")]
     public class FireElemental : BaseCreature
     {
-        public override double DispelDifficulty { get { return Summoned ? 100 : 73; } }
+        public override double DispelDifficulty { get { return 100; } }
         public override double DispelFocus { get { return 45.0; } }
 
         [Constructable]
@@ -111,43 +111,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020202091822/uo.stratics.com/hunters/fireelemental.shtml
+            // 150 to 300 Gold, Gems, Sulphurous Ash
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGem();
-
-                PackItem(new SulfurousAsh(3));
-                PackGold(100, 130);
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(150, 300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020202091822/uo.stratics.com/hunters/fireelemental.shtml
-                    // 150 to 300 Gold, Gems, Sulphurous Ash
-
-                    if (Spawning)
-                    {
-                        PackGold(150, 300);
-                    }
-                    else
-                    {
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                        PackItem(new SulfurousAsh(3));
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new SulfurousAsh(3));
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Meager);
-                    AddLoot(LootPack.Gems);
-                }
+                PackGem(1, .9);
+                PackGem(1, .05);
+                PackItem(new SulfurousAsh(3));
             }
         }
 

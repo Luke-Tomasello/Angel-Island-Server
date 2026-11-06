@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>annotations</Nullable>
+    <Configurations>Debug;Release;Nullable</Configurations>
+  </PropertyGroup>
+
+  <!-- Nullable: same as Debug, plus full nullable analysis -->
+  <PropertyGroup Condition="'$(Configuration)'=='Nullable'">
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <DisableImplicitConfigurationDefines>true</DisableImplicitConfigurationDefines>
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+	<PropertyGroup>
+		<GenerateDependencyFile>false</GenerateDependencyFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <!-- the running server supplies GMN Core -->
+	  <ProjectReference Include="..\GMN Core.csproj">
+	    <Private>false</Private>
+	  </ProjectReference>
+	</ItemGroup>
+
+	<!-- Dynamic patches are loaded by [Nuke Run <name>] from <ExeDirectory>\Patches.
+	     Copy only this patch there, not the referenced server's outputs. -->
+	<Target Name="CopyToPatches" AfterTargets="Build">
+		<Copy SourceFiles="$(TargetPath);$(TargetDir)$(TargetName).pdb" DestinationFolder="..\Patches\" SkipUnchangedFiles="true" />
+	</Target>
+
+</Project>

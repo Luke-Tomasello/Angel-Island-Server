@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -96,7 +96,7 @@ namespace Server.Spells.Seventh
                     {
                         m.SendLocalizedMessage(501783); // You feel yourself resisting magical energy.
 
-                        if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+                        if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
                         {
                             // double reversechance = 12.5 * ((Target.Magery + Target.Eval - Caster.Magery - Caster.Eval) / 100) + 12.5;
                             double reversechance = (.125 * .01 * (m.Skills[SkillName.Magery].Value + m.Skills[SkillName.EvalInt].Value - Caster.Skills[SkillName.Magery].Value - Caster.Skills[SkillName.EvalInt].Value) + .125);

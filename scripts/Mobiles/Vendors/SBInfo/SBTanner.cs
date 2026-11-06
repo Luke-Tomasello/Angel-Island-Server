@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -20,6 +20,9 @@
  ***************************************************************************/
 
 /* ChangeLog
+ *  10/20/26, Adam: (Colored leather)
+ *      Cash buyback now includes SpinedLeather, HornedLeather and BarbedLeather at their SPD VendorPays prices.
+ *      Shop goods are still refused on Mortalis-style shards (GenericSellInfo.IsRestrictedShopGoods).
  *  11/8/22, Adam: (Vendor System)
  *  Complete overhaul of the vendor system:
  * - DisplayCache:
@@ -87,12 +90,6 @@ namespace Server.Mobiles
                     foreach (Type type in BBSTypes)
                         if (ResourcePool.IsPooledResource(type))
                             Add(new GenericBuyInfo(type));
-#if false
-                    Add(new GenericBuyInfo(typeof(Leather)));
-                    Add(new GenericBuyInfo(typeof(SpinedLeather)));
-                    Add(new GenericBuyInfo(typeof(HornedLeather)));
-                    Add(new GenericBuyInfo(typeof(BarbedLeather)));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersSellResourcesRules())
                     Add(new GenericBuyInfo(typeof(Leather), BaseVendor.PlayerPays(typeof(Leather)), 20, 0x1081, 0));
@@ -131,20 +128,13 @@ namespace Server.Mobiles
                 {   // balanced buyback system
                     foreach (Type type in BBSTypes)
                         AddToResourcePool(type);
-#if false
-                    AddToResourcePool(typeof(Leather));
-                    AddToResourcePool(typeof(SpinedLeather));
-                    AddToResourcePool(typeof(HornedLeather));
-                    AddToResourcePool(typeof(BarbedLeather));
-                    AddToResourcePool(typeof(Hides));
-                    AddToResourcePool(typeof(SpinedHides));
-                    AddToResourcePool(typeof(BarbedHides));
-                    AddToResourcePool(typeof(HornedHides));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersBuyResourcesRules())
                 {   // cash buyback
                     Add(typeof(Leather), BaseVendor.VendorPays(typeof(Leather)));
+                    Add(typeof(SpinedLeather), BaseVendor.VendorPays(typeof(SpinedLeather)));
+                    Add(typeof(HornedLeather), BaseVendor.VendorPays(typeof(HornedLeather)));
+                    Add(typeof(BarbedLeather), BaseVendor.VendorPays(typeof(BarbedLeather)));
                 }
 
                 if (Core.RuleSets.ShopkeepersBuyItemsRules())

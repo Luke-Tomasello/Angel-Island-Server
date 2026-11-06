@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -238,7 +238,7 @@ namespace Server.Mobiles
             }
             public bool QuestWaitingPeriodOver()
             {
-                if (Core.UOTC_CFG || Core.Debug)
+                if (Core.GMNTC_CFG || Core.Debug)
                     // 5-10 minute waiting period before you may pick up your magic item (TestCenter/Debug)
                     return DateTime.UtcNow > (m_waitingStart + TimeSpan.FromMinutes(Utility.RandomMinMax(5, 10)));
 
@@ -276,19 +276,19 @@ namespace Server.Mobiles
         public class DialogManager
         {
             private Mobile m_player = null;
-            private Mobile m_zora = null;
+            private Mobile? m_zora = null;
             private Dictionary<string, DateTime> m_saidDatabase = null;
             public Dictionary<string, DateTime> SaidDatabase { get { return m_saidDatabase; } }
             private DateTime m_lastSpeech;
             public DateTime LastSpeech { get { return m_lastSpeech; } }
-            public DialogManager(Mobile m, Mobile zora)
+            public DialogManager(Mobile m, Mobile? zora)
             {
                 m_saidDatabase = new Dictionary<string, DateTime>();
                 m_lastSpeech = DateTime.UtcNow;
                 m_player = m;
                 m_zora = zora;
             }
-            public bool Match(string text, string matches, string doesntMatch = null)
+            public bool Match(string text, string matches, string? doesntMatch = null)
             {   // matches word|word|word but not word|word|word
                 // more clear than regex, and far simplier syntax - less chance of syntactical errors
 
@@ -319,10 +319,6 @@ namespace Server.Mobiles
                     return false;
                 else
                     return foundMatch;
-            }
-            public bool HaveSaid(string text)
-            {
-                return m_saidDatabase.ContainsKey(text);
             }
             private string SubStringParser(string text)
             {
@@ -413,7 +409,7 @@ namespace Server.Mobiles
         {
             private static MachineState m_previousState = MachineState.invalid;
             private static Memory m_stateTimeout = new Memory();
-            private static object m_semaphore = null;
+            private static object? m_semaphore = null;
             private static int m_idleTimeout = 2 * 60;                        // 2 minute idle timeiout. (If a player has been in this state this long, or we can't reach a player)
             public static void Refresh()
             {   // refresh the timeout on this pbject
@@ -596,7 +592,7 @@ namespace Server.Mobiles
             if ((int)this.GetDistanceToSqrt(pm.Player) <= 3)
             {   // we are there
                 DebugPrint(string.Format("I am chatting with {0}.", pm.Player));
-                string text = null;                     // find out what they want
+                string? text = null;                     // find out what they want
                 text = "Do you wish a weapon or an instrument?";
                 pm.Dialog.MeteredDialog(text, 0);
             }
@@ -833,7 +829,7 @@ namespace Server.Mobiles
             if ((int)this.GetDistanceToSqrt(pm.Player) <= 3)
             {   // we are there
                 DebugPrint(string.Format("I am chatting with {0}.", pm.Player));
-                string text = null;
+                string? text = null;
                 if (m_questerDatabase.ContainsKey(pm.Player) && m_questerDatabase[pm.Player].AllItems)
                 {
                     text = "I suppose you've come back for your slayer?";
@@ -1321,7 +1317,7 @@ namespace Server.Mobiles
             else
                 return this.Spawner.HomeRange;
         }
-        private string lastText = null;
+        private string? lastText = null;
         private DateTime nextMessage = DateTime.UtcNow;
         private void DebugPrint(string text)
         {
@@ -1462,8 +1458,8 @@ namespace Server.Mobiles
                             int count = reader.ReadInt();
                             for (int ix = 0; ix < count; ix++)
                             {
-                                Mobile m = reader.ReadMobile();
-                                Quest quest = null;
+                                Mobile? m = reader.ReadMobile();
+                                Quest? quest = null;
                                 if (m != null)
                                     quest = new Quest(new PlayerManager(m, this));
                                 else
@@ -1494,7 +1490,7 @@ namespace Server.Mobiles
                             int count = reader.ReadInt();
                             for (int ix = 0; ix < count; ix++)
                             {
-                                Mobile m = reader.ReadMobile();
+                                Mobile? m = reader.ReadMobile();
                                 Quest quest = new Quest(new PlayerManager(m, this));
                                 quest.QuestStart = reader.ReadDateTime();
                                 quest.WaitingStart = reader.ReadDateTime();

@@ -1,11 +1,11 @@
-/***************************************************************************
+﻿/***************************************************************************
  *
  *   RunUO                   : May 1, 2002
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -33,6 +33,8 @@
 
 using Server.Items;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Server.Mobiles
 {
@@ -102,7 +104,7 @@ namespace Server.Mobiles
             if (base.Spawner is Spawner spawner)
                 decayTime = Utility.RandomMinMax(spawner.MinDelay, spawner.MinDelay);
 
-            Corpse corpse = c as Corpse;
+            Corpse? corpse = c as Corpse;
             corpse.BeginDecay(decayTime);
             corpse.StaticCorpse = true;
             for (int i = 0; i < 3; i++)
@@ -186,7 +188,7 @@ namespace Server.Mobiles
             if (base.Spawner is Spawner spawner)
                 decayTime = Utility.RandomMinMax(spawner.MinDelay, spawner.MinDelay);
 
-            Corpse corpse = c as Corpse;
+            Corpse? corpse = c as Corpse;
             corpse.BeginDecay(decayTime);
             corpse.StaticCorpse = true;
             for (int i = 0; i < 3; i++)
@@ -281,7 +283,7 @@ namespace Server.Mobiles
             if (base.Spawner is Spawner spawner)
                 decayTime = Utility.RandomMinMax(spawner.MinDelay, spawner.MinDelay);
 
-            Corpse corpse = c as Corpse;
+            Corpse? corpse = c as Corpse;
             corpse.BeginDecay(decayTime);
             corpse.StaticCorpse = true;
             for (int i = 0; i < 3; i++)
@@ -359,11 +361,11 @@ namespace Server.Mobiles
         {
             base.OnDeath(c);
 
-            TimeSpan decayTime = TimeSpan.FromHours(24.0);
+            TimeSpan decayTime = TimeSpan.FromMinutes(CoreAI.StaticCorpseMinutes);
             if (base.Spawner is Spawner spawner)
                 decayTime = Utility.RandomMinMax(spawner.MinDelay, spawner.MinDelay);
 
-            Corpse corpse = c as Corpse;
+            Corpse? corpse = c as Corpse;
             corpse.BeginDecay(decayTime);
             corpse.StaticCorpse = true;
             for (int i = 0; i < 3; i++)
@@ -383,6 +385,149 @@ namespace Server.Mobiles
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
+        }
+    }
+
+    public class DoppelgangerPlayer : MurderedMiner
+    {
+        [Constructable]
+        public DoppelgangerPlayer()
+            : base()
+        {
+        }
+
+        public DoppelgangerPlayer(Serial serial)
+            : base(serial)
+        {
+        }
+        public override void InitBody() { Body = 400; }
+
+        public override void InitOutfit() { Utility.WipeLayers(this); }
+
+        public override void OnDeath(Server.Items.Container c)
+        {
+            base.OnDeath(c);
+#if DEBUG
+            TimeSpan decayTime = TimeSpan.FromMinutes(5);
+#else
+            TimeSpan decayTime = TimeSpan.FromHours(36.0);
+#endif
+            Corpse? corpse = c as Corpse;
+            corpse.BeginDecay(decayTime);
+            corpse.StaticCorpse = true;
+        }
+        public override void Delete()
+        {
+
+
+            base.Delete();
+        }
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+            writer.Write(0);                // version
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+            int version = reader.ReadInt();           // version
+            switch (version)
+            {
+                case 0:
+                    break;
+            }
+        }
+    }
+    public class DoppelgangerCorpse : Corpse
+    {
+        // Standard naming convention used across the codebase for fast lookup collections
+        private static readonly Dictionary<uint, DoppelgangerCorpse> Instances = new();
+
+        public DoppelgangerCorpse(Mobile owner, ArrayList equipItems)
+            : base(owner, equipItems)
+        {
+            // Identity chain:
+            // Player.GUID → DoppelgangerPlayer.OwnerGUID → DoppelgangerCorpse.OwnerGUID
+            // This corpse inherits the player’s identity so that it can later be retrieved
+            // when the real corpse decays.
+            this.OwnerGUID = owner.OwnerGUID;
+
+            // Register for fast lookup
+            if (OwnerGUID != 0)
+                Instances[OwnerGUID] = this;
+
+            // Hide the memorial until the real corpse decays
+            this.MoveToIntStorage(PreserveLocation: true);
+        }
+
+        public DoppelgangerCorpse(Serial serial) : base(serial) { }
+
+        /// <summary>
+        /// Copies forensic and loot-related data from the real corpse to this memorial.
+        /// Called right before the memorial is promoted into the world.
+        /// </summary>
+        public void CopyForensicData(Corpse originalCorpse)
+        {
+            if (originalCorpse == null)
+                return;
+
+            // Core forensic fields used by Forensic Evaluation
+            this.Killer = originalCorpse.Killer;
+            this.TimeOfDeath = originalCorpse.TimeOfDeath;
+
+            // Looters (important so players can't loot the memorial but can still see who looted the real corpse)
+            if (originalCorpse.Looters != null)
+            {
+                this.Looters = new ArrayList();
+
+                foreach (object looter in originalCorpse.Looters)
+                {
+                    if (looter is Mobile m)
+                        this.Looters.Add(m);
+                }
+            }
+
+            // Optional but recommended:
+            // this.DamageEntries = originalCorpse.DamageEntries?.Select(d => d.Clone()).ToList();
+            // this.Murderer = originalCorpse.Murderer;
+        }
+
+        /// <summary>
+        /// Returns the active memorial corpse for a given player GUID, or null if none exists.
+        /// </summary>
+        public static DoppelgangerCorpse GetMemorialFor(uint playerGUID)
+        {
+            Instances.TryGetValue(playerGUID, out DoppelgangerCorpse? memorial);
+            return memorial;
+        }
+
+        public override void Delete()
+        {
+            if (OwnerGUID != 0)
+                Instances.Remove(OwnerGUID);
+
+            base.Delete();
+        }
+
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+            writer.Write((int)0); // version
+            writer.Write(OwnerGUID);
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+            int version = reader.ReadInt();
+
+            if (version >= 0)
+                OwnerGUID = reader.ReadUInt();
+
+            // Re-register on world load
+            if (OwnerGUID != 0 && !Deleted)
+                Instances[OwnerGUID] = this;
         }
     }
     [CorpseName("a dead miner")]
@@ -448,7 +593,7 @@ namespace Server.Mobiles
             if (base.Spawner is Spawner spawner)
                 decayTime = Utility.RandomMinMax(spawner.MinDelay, spawner.MinDelay);
 
-            Corpse corpse = c as Corpse;
+            Corpse? corpse = c as Corpse;
             corpse.BeginDecay(decayTime);
             corpse.StaticCorpse = true;
             for (int i = 0; i < 3; i++)
@@ -510,7 +655,7 @@ namespace Server.Mobiles
         {
             base.OnDeath(c);
 
-            Corpse corpse = c as Corpse;
+            Corpse? corpse = c as Corpse;
             corpse.BeginDecay(TimeSpan.FromHours(24.0));
             corpse.StaticCorpse = true;
             for (int i = 0; i < 3; i++)

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -374,6 +374,35 @@ namespace Server.Items
         }
 
         public StrongWoodDoor(Serial serial)
+            : base(serial)
+        {
+        }
+
+        public override void Serialize(GenericWriter writer) // Default Serialize method
+        {
+            base.Serialize(writer);
+
+            writer.Write((int)0); // version
+        }
+
+        public override void Deserialize(GenericReader reader) // Default Deserialize method
+        {
+            base.Deserialize(reader);
+
+            int version = reader.ReadInt();
+        }
+    }
+
+    // based on DarkWoodDoor, this is simply the dummy door we construct during a Dupe()
+    public class GenericDoor : BaseDoor
+    {
+        [Constructable]
+        public GenericDoor(DoorFacing facing)
+            : base(0x6A5, 0x6A6, 0xEA, 0xF1, facing)
+        {
+        }
+
+        public GenericDoor(Serial serial)
             : base(serial)
         {
         }

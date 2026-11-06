@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -94,7 +94,7 @@ namespace Server.Items
                 LabelToAffix(from, 1077826, AffixType.Append, string.Format(": {0}", m_Quantity)); // Quantity: ~1_QUANTITY~
         }
 
-        private static object m_Targeted;
+        private static object? m_Targeted;
 
         public override void OnDoubleClick(Mobile from)
         {
@@ -280,7 +280,7 @@ namespace Server.Items
         {
         }
 
-        private TextDefinition Verify(Item pot)
+        private TextDefinition? Verify(Item? pot)
         {
             if (pot != null)
             {
@@ -305,7 +305,7 @@ namespace Server.Items
 
         private bool Acquire(object targeted, out TextDefinition message)
         {
-            Item pot = targeted as Item;
+            Item? pot = targeted as Item;
 
             message = Verify(pot);
 
@@ -324,7 +324,7 @@ namespace Server.Items
         {
             Container pack = From.Backpack;
 
-            Item found = null;
+            Item? found = null;
 
             if (pack != null)
             {

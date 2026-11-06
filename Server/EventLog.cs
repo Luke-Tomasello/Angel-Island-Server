@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -18,52 +18,3 @@
  *   (at your option) any later version.
  *
  ***************************************************************************/
-#if false
-using System;
-using System.Diagnostics;
-using DiagELog = System.Diagnostics.EventLog;
-
-namespace Server
-{
-    public class EventLog
-    {
-        static EventLog()
-        {
-            if (!DiagELog.SourceExists("RunUO"))
-            {
-                DiagELog.CreateEventSource("RunUO", "Application");
-            }
-        }
-
-        public static void Error(int eventID, string text)
-        {
-            DiagELog.WriteEntry("RunUO", text, EventLogEntryType.Error, eventID);
-        }
-
-        public static void Error(int eventID, string format, params object[] args)
-        {
-            Error(eventID, string.Format(format, args));
-        }
-
-        public static void Warning(int eventID, string text)
-        {
-            DiagELog.WriteEntry("RunUO", text, EventLogEntryType.Warning, eventID);
-        }
-
-        public static void Warning(int eventID, string format, params object[] args)
-        {
-            Warning(eventID, string.Format(format, args));
-        }
-
-        public static void Inform(int eventID, string text)
-        {
-            DiagELog.WriteEntry("RunUO", text, EventLogEntryType.Information, eventID);
-        }
-
-        public static void Inform(int eventID, string format, params object[] args)
-        {
-            Inform(eventID, string.Format(format, args));
-        }
-    }
-}
-#endif

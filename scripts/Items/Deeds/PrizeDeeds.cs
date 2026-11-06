@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -29,14 +29,17 @@
  */
 
 using System;
+using System.Text.RegularExpressions;
 
 namespace Server.Items
 {
     public class HomeDecoPrize : Item
     {
-        private string m_Signature;
-        private int m_Place;
-        private string m_PlaceText;
+        private string? m_Signature;    // null for a legacy ticket that could not be validated
+        private int m_Place;            // 1..3, or 0 for a legacy ticket that could not be validated
+
+        // the only Name format this item has ever produced: "{1st|2nd|3rd} place Home Deco Prize Ticket: {month}/{year}"
+        private static readonly Regex m_TicketName = new Regex(@"^(1st|2nd|3rd) place Home Deco Prize Ticket: ([1-9]|1[0-2])/([1-9][0-9]{3})\z", RegexOptions.CultureInvariant);
 
         [Constructable]
         public HomeDecoPrize(int place)
@@ -45,27 +48,29 @@ namespace Server.Items
             Weight = 1.0;
             Hue = 53;
             LootType = LootType.Newbied;
+
+            if (place != 1 && place != 2 && place != 3)
+                place = 3;
+
             m_Place = place;
 
-            if (place == 1)
-                m_PlaceText = "1st place";
-            else if (place == 2)
-                m_PlaceText = "2nd place";
-            else if (place == 3)
-                m_PlaceText = "3rd place";
-            else
-            {
-                place = 3;
-                m_PlaceText = "3rd place";
-            }
-
-            m_Signature = string.Format("{2} Home Deco Prize: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, m_PlaceText);
-            Name = string.Format("{2} Home Deco Prize Ticket: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, m_PlaceText);
+            m_Signature = string.Format("{2} Home Deco Prize: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, PlaceText(m_Place));
+            Name = string.Format("{2} Home Deco Prize Ticket: {0}/{1}", DateTime.UtcNow.Month, DateTime.UtcNow.Year, PlaceText(m_Place));
         }
 
         public HomeDecoPrize(Serial serial)
             : base(serial)
         {
+        }
+
+        private static string PlaceText(int place)
+        {
+            if (place == 1)
+                return "1st place";
+            else if (place == 2)
+                return "2nd place";
+            else
+                return "3rd place";
         }
 
         public override void OnDoubleClick(Mobile from)
@@ -74,6 +79,13 @@ namespace Server.Items
             if (from.Backpack == null || !IsChildOf(from.Backpack))
             {
                 from.SendLocalizedMessage(1042001);  // Must be in pack to use!!
+                return;
+            }
+
+            // a legacy ticket whose prize could not be recovered; keep it so staff can resolve it
+            if (m_Place < 1 || m_Place > 3 || m_Signature == null)
+            {
+                from.SendMessage("This Home Deco Prize ticket could not be validated. Please contact staff.");
                 return;
             }
 
@@ -169,7 +181,11 @@ namespace Server.Items
         {
             base.Serialize(writer);
 
-            writer.Write((int)0); // version
+            writer.Write((int)1); // version
+
+            // version 1
+            writer.Write((int)m_Place);
+            writer.Write(m_Signature);
         }
 
         public override void Deserialize(GenericReader reader)
@@ -177,6 +193,31 @@ namespace Server.Items
             base.Deserialize(reader);
 
             int version = reader.ReadInt();
+
+            switch (version)
+            {
+                case 1:
+                    {
+                        m_Place = reader.ReadInt();
+                        m_Signature = reader.ReadString();
+                        break;
+                    }
+
+                case 0:
+                    {   // version 0 saved nothing beyond the base item: recover from an exact canonical Name only, never guess
+                        Match match = m_TicketName.Match(Name ?? string.Empty);
+                        if (match.Success)
+                        {
+                            string placeText = match.Groups[1].Value + " place";
+                            for (int place = 1; place <= 3; place++)
+                                if (PlaceText(place) == placeText)
+                                    m_Place = place;
+
+                            m_Signature = string.Format("{2} Home Deco Prize: {0}/{1}", match.Groups[2].Value, match.Groups[3].Value, placeText);
+                        }
+                        break;
+                    }
+            }
         }
 
     }

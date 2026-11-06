@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,7 +41,6 @@
 
 using Server.Diagnostics;
 using Server.Mobiles;
-using System;
 using System.Collections;
 
 namespace Server.Items.Triggers
@@ -75,8 +74,8 @@ namespace Server.Items.Triggers
             set
             {
                 m_Message = value;
-                SendSystemMessage("Supported macros:");
-                SendSystemMessage("{name} {title} {guild_short} {guild_long} {item.Name}");
+                SendMessageNearby("Supported macros:");
+                SendMessageNearby("{name} {title} {guild_short} {guild_long} {item.Name}");
             }
         }
 

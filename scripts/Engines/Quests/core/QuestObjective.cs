@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -252,7 +252,7 @@ namespace Server.Engines.Quests
 
             for (int i = 0; i < objectives.Count; ++i)
             {
-                QuestObjective obj = (QuestObjective)objectives[objectives.Count - 1 - i];
+                QuestObjective? obj = (QuestObjective?)objectives[objectives.Count - 1 - i];
 
                 if (i > 0)
                 {
@@ -277,7 +277,7 @@ namespace Server.Engines.Quests
         {
             for (int i = m_Objectives.Count - 1; i >= 0; --i)
             {
-                QuestObjective obj = (QuestObjective)m_Objectives[i];
+                QuestObjective? obj = (QuestObjective?)m_Objectives[i];
 
                 if (!obj.HasBeenRead)
                 {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -80,7 +80,7 @@ namespace Server.Engines.Chat
             }
             set
             {
-                Account acct = m_Mobile.Account as Account;
+                Account? acct = m_Mobile.Account as Account;
 
                 if (acct != null)
                     acct.SetTag("ChatName", value);
@@ -165,7 +165,7 @@ namespace Server.Engines.Chat
             SendMessage(number, param1, null);
         }
 
-        public void SendMessage(int number, string param1, string param2)
+        public void SendMessage(int number, string? param1, string? param2)
         {
             if (m_Mobile.NetState != null)
                 m_Mobile.Send(new ChatMessagePacket(m_Mobile, number, param1, param2));
@@ -245,7 +245,7 @@ namespace Server.Engines.Chat
 
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    Channel c = (Channel)list[i];
+                    Channel? c = (Channel?)list[i];
 
                     if (c.AddUser(user))
                         break;
@@ -257,7 +257,7 @@ namespace Server.Engines.Chat
             return user;
         }
 
-        public static void RemoveChatUser(ChatUser user)
+        public static void RemoveChatUser(ChatUser? user)
         {
             if (user == null)
                 return;
@@ -289,11 +289,11 @@ namespace Server.Engines.Chat
             return (ChatUser)m_Table[from];
         }
 
-        public static ChatUser GetChatUser(string username)
+        public static ChatUser? GetChatUser(string username)
         {
             for (int i = 0; i < m_Users.Count; ++i)
             {
-                ChatUser user = (ChatUser)m_Users[i];
+                ChatUser? user = (ChatUser?)m_Users[i];
 
                 if (user.Username == username)
                     return user;
@@ -327,11 +327,11 @@ namespace Server.Engines.Chat
             GlobalSendCommand(command, initiator, param1, null);
         }
 
-        public static void GlobalSendCommand(ChatCommand command, ChatUser initiator, string param1, string param2)
+        public static void GlobalSendCommand(ChatCommand command, ChatUser? initiator, string? param1, string? param2)
         {
             for (int i = 0; i < m_Users.Count; ++i)
             {
-                ChatUser user = (ChatUser)m_Users[i];
+                ChatUser? user = (ChatUser?)m_Users[i];
 
                 if (user == initiator)
                     continue;

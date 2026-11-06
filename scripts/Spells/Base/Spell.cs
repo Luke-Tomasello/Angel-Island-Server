@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -89,6 +89,7 @@
  *		Changed OnDisturbDelay()
  *		Amended m_Caster.NextSpellTime = DateTime.UtcNow + GetDisturbRecovery();
  */
+using Scripts.Misc;
 using Server.Items;
 using Server.Mobiles;
 using Server.Network;
@@ -96,6 +97,7 @@ using Server.Regions;
 using Server.Spells.Second;
 using Server.Targeting;
 using System;
+using static Server.Items.Container;
 
 namespace Server.Spells
 {
@@ -112,7 +114,7 @@ namespace Server.Spells
     public abstract class Spell : ISpell
     {
         private Mobile m_Caster;
-        private Item m_Scroll;
+        private Item? m_Scroll;
         private SpellInfo m_Info;
         private SpellState m_State;
         private DateTime m_StartCastTime;
@@ -121,10 +123,10 @@ namespace Server.Spells
         public Mobile Caster { get { return m_Caster; } }
         public SpellInfo Info { get { return m_Info; } }
         public string Name { get { return m_Info.Name; } }
-        public string Mantra { get { return m_Info.Mantra; } }
+        public string? Mantra { get { return m_Info.Mantra; } }
         public SpellCircle Circle { get { return m_Info.Circle; } set { m_Info.Circle = value; } }
         public Type[] Reagents { get { return m_Info.Reagents; } }
-        public Item Scroll { get { return m_Scroll; } }
+        public Item? Scroll { get { return m_Scroll; } }
 
         //private static TimeSpan NextSpellDelay = TimeSpan.FromSeconds( 1.0 );  // value changes
         private static TimeSpan NextSpellDelay;
@@ -136,7 +138,7 @@ namespace Server.Spells
 
         public virtual bool RevealOnCast { get { return true; } }
         public virtual bool ClearHandsOnCast { get { return !(m_Scroll is IMagicItem); } }
-        public virtual bool EquipSpellbookOnCast { get { return !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules() && PublishInfo.CheckPublish(5) ? true : false; } }
+        public virtual bool EquipSpellbookOnCast { get { return !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules() && PublishInfo.CheckPublish(5) ? true : false; } }
 
         public virtual bool DelayedDamage { get { return false; } }
 
@@ -147,7 +149,7 @@ namespace Server.Spells
         //spell damage type
         public virtual SpellDamageType DamageType { get { return SpellDamageType.None; } }
 
-        public Spell(Mobile caster, Item scroll, SpellInfo info)
+        public Spell(Mobile caster, Item? scroll, SpellInfo info)
         {
             m_Caster = caster;
             m_Scroll = scroll;
@@ -204,7 +206,7 @@ namespace Server.Spells
         {
             if (IsCasting)
             {
-                object o = ProtectionSpell.Registry[m_Caster];
+                object? o = ProtectionSpell.Registry[m_Caster];
                 bool disturb = true;
 
                 if (o != null && o is double)
@@ -232,7 +234,7 @@ namespace Server.Spells
         {
             if (IsCasting && BlocksMovement)
             {
-                m_Caster.SendLocalizedMessage(500111); // You are frozen and can not move.
+                m_Caster.SendLocalizedMessage(500111); // You are frozen and cannot move.
                 return false;
             }
 
@@ -263,7 +265,7 @@ namespace Server.Spells
 
         public virtual bool ConsumeReagents()
         {
-            if (m_Scroll != null || (!m_Caster.Player && m_Caster is BaseCreature && ((BaseCreature)m_Caster).AIObject.UsesRegs == false))
+            if (m_Scroll != null || (!m_Caster.Player && m_Caster is BaseCreature bc && bc.AIObject.UsesRegs == false))
                 return true;
 
             if (AosAttributes.GetValue(m_Caster, AosAttribute.LowerRegCost) > Utility.Random(100))
@@ -274,12 +276,16 @@ namespace Server.Spells
                 return true;
             #endregion
 
-            Container pack = m_Caster.Backpack;
-
+            var pack = m_Caster.Backpack;
             if (pack == null)
                 return false;
 
-            if (pack.ConsumeTotal(m_Info.Reagents, m_Info.Amounts) == -1)
+            // Only consume items owned by this caster (when caster is a PlayerMobile).
+            var actor = m_Caster as PlayerMobile;
+            Func<Item, bool>? onlyOwned = actor == null ? null : (it => StartingLootMonitor.CanUse(actor, it));
+
+            // Use the ownership-aware overload; recurse = true; no callback.
+            if (pack.ConsumeTotal(m_Info.Reagents, m_Info.Amounts, true, null, onlyOwned) == -1)
                 return true;
 
             if (GetType().BaseType == typeof(Spell))
@@ -289,6 +295,30 @@ namespace Server.Spells
             }
 
             return false;
+        }
+
+        public ConsumeCheckStatus CheckConsumeReagents()
+        {
+            if (m_Scroll != null || (!m_Caster.Player && m_Caster is BaseCreature && ((BaseCreature)m_Caster).AIObject.UsesRegs == false))
+                return ConsumeCheckStatus.Ok;
+
+            if (AosAttributes.GetValue(m_Caster, AosAttribute.LowerRegCost) > Utility.Random(100))
+                return ConsumeCheckStatus.Ok;
+
+            #region Dueling
+            if (Engines.ConPVP.DuelContext.IsFreeConsume(m_Caster))
+                return ConsumeCheckStatus.Ok;
+            #endregion
+
+            Container pack = m_Caster.Backpack;
+
+            if (pack == null)
+                return ConsumeCheckStatus.Error;
+
+            var status = pack.CheckConsumeTotal(m_Info.Reagents, m_Info.Amounts, m_Caster as PlayerMobile, recurse: true,
+                out _, out _, out _);
+
+            return status;
         }
 
         // Old AI formula
@@ -466,8 +496,8 @@ namespace Server.Spells
             }
         }
 
-        private CastTimer m_CastTimer;
-        private AnimTimer m_AnimTimer;
+        private CastTimer? m_CastTimer;
+        private AnimTimer? m_AnimTimer;
 
         public void Disturb(DisturbType type)
         {
@@ -670,17 +700,37 @@ namespace Server.Spells
 
                     if (ClearHandsOnCast)
                     {
+
+                        #region Add backpack if needed
+                        if (Caster != null && !Caster.Player)
+                        {
+                            Item? one = Caster.FindItemOnLayer(Layer.OneHanded);
+                            Item? two = Caster.FindItemOnLayer(Layer.TwoHanded);
+
+                            // See if there is anything in hand that actually needs clearing
+                            bool needsClear =
+                                (one != null && one.Movable && !one.AllowEquipedCast(Caster)) ||
+                                (two != null && two.Movable && !two.AllowEquipedCast(Caster));
+
+                            // We never want NPCs dropping their (possibly valuable) weapon on the ground
+                            if (needsClear && Caster.Backpack == null)
+                            {
+                                Utility.AddBackpack(Caster, Caster is BaseHealer ? 1/*black*/ : 0);
+                            }
+                        }
+                        #endregion Add backpack if needed
+
                         m_Caster.ClearHands();
 
                         if (m_Scroll == null && EquipSpellbookOnCast)
                         {
-                            Item item = m_Caster.FindItemOnLayer(Layer.OneHanded);
+                            Item? item = m_Caster.FindItemOnLayer(Layer.OneHanded);
                             if (item is Spellbook == false)
                             {
                                 //m_Caster.SendMessage("Equipping spell book.");
                                 if (m_Caster.Backpack != null)
                                 {
-                                    Item spellbook = m_Caster.Backpack.FindItemByType(typeof(Spellbook), false);
+                                    Item? spellbook = m_Caster.Backpack.FindItemByType(typeof(Spellbook), false);
                                     if (spellbook != null)
                                         m_Caster.EquipItem(spellbook);
                                 }
@@ -886,21 +936,34 @@ namespace Server.Spells
             #region Static Region
             if (m_Caster != null && m_Caster.Spell != null)
             {
-                StaticRegion sr = StaticRegion.FindStaticRegion(m_Caster);
-                if (sr != null && sr.IsRestrictedSpell(m_Caster.Spell) && ((m_Caster is BaseCreature && !sr.RestrictCreatureMagic) || m_Caster is PlayerMobile) && m_Caster.AccessLevel == AccessLevel.Player)
+                StaticRegion? sr = StaticRegion.FindStaticRegion(m_Caster);
+
+                if (sr != null &&
+                    sr.IsRestrictedSpell(m_Caster.Spell) &&
+                    ((m_Caster is BaseCreature && !sr.RestrictCreatureMagic) || m_Caster is PlayerMobile) &&
+                    m_Caster.AccessLevel == AccessLevel.Player)
                 {
-                    m_State = SpellState.None;
-                    if (m_Caster.Spell == this)
-                        m_Caster.Spell = null;
-                    Target.Cancel(m_Caster);
-                    if (sr.RestrictedMagicMessage == null)
-                        m_Caster.SendMessage("You cannot cast that spell here.");
-                    else
-                        m_Caster.SendMessage(sr.RestrictedMagicMessage);
+                    // Travel spells are validated contextually by SpellHelper using
+                    // source/target region checks. Do not hard-block them here.
+                    if (!Spell.IsTravelSpell(m_Caster.Spell))
+                    {
+                        m_State = SpellState.None;
+
+                        if (m_Caster.Spell == this)
+                            m_Caster.Spell = null;
+
+                        Target.Cancel(m_Caster);
+
+                        if (sr.RestrictedMagicMessage == null)
+                            m_Caster.SendMessage("You cannot cast that spell here.");
+                        else
+                            m_Caster.SendMessage(sr.RestrictedMagicMessage);
+
+                        return false;
+                    }
                 }
             }
             #endregion
-
             int mana = ScaleMana(GetMana());
 
             if (m_Caster.Deleted || !m_Caster.Alive || m_Caster.Spell != this || m_State != SpellState.Sequencing)
@@ -910,6 +973,10 @@ namespace Server.Spells
             else if (m_Scroll != null && !(m_Scroll is Runebook) && (m_Scroll.Amount <= 0 || m_Scroll.Deleted || (m_Scroll.Layer != Layer.Invalid && m_Scroll.RootParent != m_Caster) || (m_Scroll is IMagicItem && (((IMagicItem)m_Scroll).MagicCharges <= 0 || (m_Scroll.Layer != Layer.Invalid && m_Scroll.Parent != m_Caster)))))
             {
                 DoFizzle();
+            }
+            else if (CheckConsumeReagents() == ConsumeCheckStatus.Filtered)
+            {
+                m_Caster.SendMessage("Some of these reagents are bound to another soul.");
             }
             else if (!ConsumeReagents())
             {
@@ -996,21 +1063,34 @@ namespace Server.Spells
             #region Static Region
             if (m_Caster != null && m_Caster.Spell != null && target != null && m_Caster.Region != target.Region)
             {
-                StaticRegion sr = StaticRegion.FindStaticRegion(target);
-                if (sr != null && sr.IsRestrictedSpell(m_Caster.Spell) && ((m_Caster is BaseCreature && !sr.RestrictCreatureMagic) || m_Caster is PlayerMobile) && m_Caster.AccessLevel == AccessLevel.Player)
+                StaticRegion? sr = StaticRegion.FindStaticRegion(target);
+
+                if (sr != null &&
+                    sr.IsRestrictedSpell(m_Caster.Spell) &&
+                    ((m_Caster is BaseCreature && !sr.RestrictCreatureMagic) || m_Caster is PlayerMobile) &&
+                    m_Caster.AccessLevel == AccessLevel.Player)
                 {
-                    m_State = SpellState.None;
-                    if (m_Caster.Spell == this)
-                        m_Caster.Spell = null;
-                    Target.Cancel(m_Caster);
-                    if (sr.RestrictedMagicMessage == null)
-                        m_Caster.SendMessage("You cannot cast that spell here.");
-                    else
-                        m_Caster.SendMessage(sr.RestrictedMagicMessage);
+                    // Travel spells are validated contextually by SpellHelper using
+                    // source/target region checks. Do not hard-block them here.
+                    if (!Spell.IsTravelSpell(m_Caster.Spell))
+                    {
+                        m_State = SpellState.None;
+
+                        if (m_Caster.Spell == this)
+                            m_Caster.Spell = null;
+
+                        Target.Cancel(m_Caster);
+
+                        if (sr.RestrictedMagicMessage == null)
+                            m_Caster.SendMessage("You cannot cast that spell here.");
+                        else
+                            m_Caster.SendMessage(sr.RestrictedMagicMessage);
+
+                        return false;
+                    }
                 }
             }
             #endregion
-
             if (!target.Alive && !allowDead)
             {
                 m_Caster.SendLocalizedMessage(501857); // This spell won't work on that!
@@ -1032,21 +1112,34 @@ namespace Server.Spells
             #region Static Region
             if (m_Caster != null && m_Caster.Spell != null && target != null && m_Caster.Region != target.Region)
             {
-                StaticRegion sr = StaticRegion.FindStaticRegion(target);
-                if (sr != null && sr.IsRestrictedSpell(m_Caster.Spell) && ((m_Caster is BaseCreature && !sr.RestrictCreatureMagic) || m_Caster is PlayerMobile) && m_Caster.AccessLevel == AccessLevel.Player)
+                StaticRegion? sr = StaticRegion.FindStaticRegion(target);
+
+                if (sr != null &&
+                    sr.IsRestrictedSpell(m_Caster.Spell) &&
+                    ((m_Caster is BaseCreature && !sr.RestrictCreatureMagic) || m_Caster is PlayerMobile) &&
+                    m_Caster.AccessLevel == AccessLevel.Player)
                 {
-                    m_State = SpellState.None;
-                    if (m_Caster.Spell == this)
-                        m_Caster.Spell = null;
-                    Target.Cancel(m_Caster);
-                    if (sr.RestrictedMagicMessage == null)
-                        m_Caster.SendMessage("You cannot cast that spell here.");
-                    else
-                        m_Caster.SendMessage(sr.RestrictedMagicMessage);
+                    // Travel spells are validated contextually by SpellHelper using
+                    // source/target region checks. Do not hard-block them here.
+                    if (!Spell.IsTravelSpell(m_Caster.Spell))
+                    {
+                        m_State = SpellState.None;
+
+                        if (m_Caster.Spell == this)
+                            m_Caster.Spell = null;
+
+                        Target.Cancel(m_Caster);
+
+                        if (sr.RestrictedMagicMessage == null)
+                            m_Caster.SendMessage("You cannot cast that spell here.");
+                        else
+                            m_Caster.SendMessage(sr.RestrictedMagicMessage);
+
+                        return false;
+                    }
                 }
             }
             #endregion
-
             if (!target.Alive)
             {
                 m_Caster.SendLocalizedMessage(501857); // This spell won't work on that!
@@ -1062,7 +1155,13 @@ namespace Server.Spells
                 return false;
             }
         }
-
+        public static bool IsTravelSpell(ISpell s)
+        {
+            return s is Spells.Third.TeleportSpell ||
+                   s is Spells.Fourth.RecallSpell ||
+                   s is Spells.Sixth.MarkSpell ||
+                   s is Spells.Seventh.GateTravelSpell;
+        }
         private class AnimTimer : Timer
         {
             private Spell m_Spell;

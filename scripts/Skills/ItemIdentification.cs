@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -45,6 +45,8 @@
 
 using Server.Targeting;
 using System;
+using System.Collections;
+using static Server.Item;
 
 namespace Server.Items
 {
@@ -64,7 +66,7 @@ namespace Server.Items
         }
 
         // wea: 14/Mar/2007 Added rarity check
-        public static bool IdentifyItem(Mobile from, object o)
+        public static bool IdentifyItem(Mobile from, object o, bool simple = false)
         {
             if (o is EnchantedScroll)
                 o = (o as EnchantedScroll).Item;
@@ -72,7 +74,7 @@ namespace Server.Items
             if (o is not Item)
                 return false;
 
-            Item itm = (Item)o;
+            Item item = (Item)o;
 
             if (o is BaseWeapon)
                 ((BaseWeapon)o).Identified = true;
@@ -85,29 +87,54 @@ namespace Server.Items
             else if (o is BaseStatue)
                 ((BaseStatue)o).Identified = true;
 
-            string idstr = "You determine that : ";
+            //if (!Core.RuleSets.AOSRules())
+            //    item.OnSingleClick(from);
 
-            if (itm.PlayerCrafted)
-                idstr += "the item was crafted";
-            else
-                idstr += "the item is of an unknown origin";
+            from.SendMessage(item.OldSchoolName());
 
-            if (!Core.RuleSets.AOSRules())
-                itm.OnSingleClick(from);
-
-            /*if (itm.RareData > 0)
+            if (!simple)
             {
-                idstr += string.Format(" and is number {0} of a collection of {1}",
-                                       itm.RareCurIndex,
-                                      (itm.RareLastIndex - itm.RareStartIndex) + 1);
-            }*/
+                // noise
+                //from.SendMessage("You have successfully identified the item.");
 
-            if (idstr != "")
-            {
-                from.SendMessage(idstr + ".");
+                string? origin = GetOriginDescription(item);
+
+                if (!string.IsNullOrEmpty(origin))
+                    from.SendMessage(origin);
             }
 
             return true;
+        }
+        private static string? GetOriginDescription(Item item)
+        {
+            if (item == null)
+                return null;
+
+            if (item.PlayerCrafted || item.Origin.HasFlag(Genesis.Player))
+                return "You determine that the item was crafted by a player.";
+
+            if (item.Origin.HasFlag(Genesis.Monster))
+                return "You determine that the item came from a monster.";
+
+            if (item.Origin.HasFlag(Genesis.TChest))
+                return "You determine that the item came from a treasure map chest.";
+
+            if (item.Origin.HasFlag(Genesis.DChest))
+                return "You determine that the item came from a dungeon chest.";
+
+            if (item.Origin.HasFlag(Genesis.Chest))
+                return "You determine that the item came from a treasure chest.";
+
+            if (item.Origin.HasFlag(Genesis.Scroll))
+                return "You determine that the item came from an enchanted scroll.";
+
+            if (item.Origin.HasFlag(Genesis.BOD))
+                return "You determine that the item was issued as a bulk order reward.";
+
+            if (item.Origin.HasFlag(Genesis.Legacy))
+                return "You determine that the item is legacy magic loot.";
+
+            return "You determine that the item is of unknown origin.";
         }
 
 
@@ -120,17 +147,43 @@ namespace Server.Items
 
             protected override void OnTarget(Mobile from, object o)
             {
-                if (o is Item)
+                if (o is Item item)
                 {
-                    if (from.CheckTargetSkill(SkillName.ItemID, o, 0, 100, new object[2] /*contextObj*/))
+                    if (item is Container container &&
+                        from.Skills[SkillName.ItemID].Value >= 100.0 &&
+                        item.Movable &&
+                        item.RootParent == from)
+                    {
+                        ArrayList list = container.GetDeepItems();
+
+                        int identified = 0;
+
+                        foreach (object obj in list)
+                        {
+                            if (obj is Item child)
+                            {
+                                if (IdentifyItem(from, child, simple: true))
+                                    identified++;
+                            }
+                        }
+
+                        from.SendMessage("You identify {0} item{1}.", identified, identified == 1 ? "" : "s");
+                        return;
+                    }
+
+                    if (from.CheckTargetSkill(SkillName.ItemID, o, minSkill: 0, maxSkill: 100, new object[2] /*contextObj*/))
                         IdentifyItem(from, o);
                     else
                         from.SendLocalizedMessage(500353); // You are not certain...
                 }
                 else if (o is Mobile)
+                {
                     ((Mobile)o).OnSingleClick(from);
+                }
                 else
+                {
                     from.SendLocalizedMessage(500353); // You are not certain...
+                }
             }
         }
     }

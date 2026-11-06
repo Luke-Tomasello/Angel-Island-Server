@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,7 +26,6 @@
  */
 
 using Server.Network;
-using System;
 
 namespace Server.Gumps
 {
@@ -42,7 +41,7 @@ namespace Server.Gumps
         private int m_X, m_Y;
         private int m_Width, m_Height;
         private int m_Number;
-        private string m_Args;
+        private string? m_Args;
         private int m_Color;
         private bool m_Background, m_Scrollbar;
 
@@ -108,7 +107,7 @@ namespace Server.Gumps
             }
         }
 
-        public string Args
+        public string? Args
         {
             get
             {

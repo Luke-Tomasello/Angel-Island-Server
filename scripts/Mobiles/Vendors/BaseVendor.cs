@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,22 @@
 
 /* Scripts/Mobiles/Vendors/BaseVendor.cs 
  * Changelog
+ *  10/21/2026, Adam (StoreBought provenance, generic)
+ *      VendorSell: refused shop goods are those ArbitrageTable prices at 0 (GenericSellInfo.IsRefusedShopGoods); goods it
+ *          buys for less get one extra reply. Load: PricingVersion counts reloads of the pricing database.
+ *  10/19/2026, Adam (StoreBought provenance)
+ *      ProcessValidPurchase: every item bought from an NPC is now marked StoreBought (before, only purchases that
+ *          overflowed onto the ground were marked, and multi-item purchases marked the first object only).
+ *          Player goods resold from the vendor's buy pack are marked too.
+ *      VendorSell: says why shop goods (and what was cut from them) are left out of the sell list on
+ *          Mortalis-style shards; GenericSellInfo.IsSellable refuses them. Only items the vendor would otherwise list
+ *          get that reply; ineligible items (e.g. Newbied house deeds) keep "You have nothing I would be interested in."
+ *  12/3/2025, Adam
+ *      Change: Removed the siege_factor adjustment from BaseVendor.PlayerPays().
+ *      Background: The siege_factor was originally introduced because the BaseUpgradeContract.Price value (used directly when adjusting a house’s upgrade cost) did not reflect Siege’s 3× pricing model.
+ *      To compensate, we multiplied by 1/3 (i.e., divided the Siege price) so the upgrade cost machinery would align with the Deed.Price field.
+ *      However, this made upgrade contracts appear artificially cheap for Siege players.
+ *      Fix: The proper Siege pricing is now handled explicitly in BaseUpgradeContract.cs, ensuring correct 3× pricing and refund behavior when houses are sold.
  *  11/10/2023, Adam (UpdateBuyInfo())
  *      remove housing from participation in faction pricing.
  *      By order of Lord British blah blah, real estate is owned by the kingdom and therefore...
@@ -162,10 +178,12 @@
 
 using Server.ContextMenus;
 using Server.Diagnostics;
+using Server.Engines;
 using Server.Engines.BulkOrders;
 using Server.Engines.ResourcePool;
 using Server.Factions;
 using Server.Items;
+using Server.Misc;
 using Server.Mobiles;
 using Server.Multis.Deeds;
 using Server.Multis.StaticHousing;
@@ -189,15 +207,17 @@ namespace Server.Mobiles
         ThighBoots
     }
 
-    public abstract class BaseVendor : BaseCreature, IVendor
+    public abstract partial class BaseVendor : BaseCreature, IVendor
     {
         #region OnSee(Item item)
+
         public override void OnSee(Mobile from, Item item)
         {
             base.OnSee(from, item);
             if (from != null)
                 if (item is BaseExplosionPotion bep && bep.Armed)
-                {   // adam: criminal action on armed if any mobiles are to be affected but me or bad guys
+                {
+                    // adam: criminal action on armed if any mobiles are to be affected but me or bad guys
                     if (bep.CriminalBombing(from, item.Location, item.Map))
                         from.CriminalAction(true);
 
@@ -210,9 +230,11 @@ namespace Server.Mobiles
 
                     // just for fun
                     if (.25 >= Utility.RandomDouble())
-                        Timer.DelayCall(TimeSpan.FromSeconds(.25), new TimerStateCallback(PanicSpeak), new object[] { null });
+                        Timer.DelayCall(TimeSpan.FromSeconds(.25), new TimerStateCallback(PanicSpeak),
+                            new object?[] { null });
                 }
         }
+
         private void PanicSpeak(object state)
         {
             switch (Utility.Random(4))
@@ -223,35 +245,88 @@ namespace Server.Mobiles
                 case 3: Emote("*covers eyes*"); break;
             }
         }
+
         #endregion OnSee(Item item)
+
         private const int MaxSell = 500;
 
         protected abstract ArrayList SBInfos { get; }
-        public ArrayList Inventory { get { return SBInfos; } }
 
-        private ArrayList m_ArmorBuyInfo = new ArrayList();
-        private ArrayList m_ArmorSellInfo = new ArrayList();
+        public ArrayList Inventory
+        {
+            get { return SBInfos; }
+        }
+
+        private ArrayList m_BuyInfo = new ArrayList();
+        private ArrayList m_SellInfo = new ArrayList();
 
         private DateTime m_LastRestock;
 
-        public override bool CanTeach { get { return Core.RuleSets.SiegeStyleRules() ? false : true; } }
+        public override bool CanTeach
+        {
+            get { return Core.RuleSets.CanTeach(); }
+        }
 
-        public override bool CanDeactivate { get { return true; } }
+        public override bool CanDeactivate
+        {
+            get { return true; }
+        }
 
-        public virtual bool IsActiveVendor { get { return true; } }
-        public virtual bool IsActiveBuyer { get { return IsActiveVendor; } } // response to vendor SELL
-        public virtual bool IsActiveSeller { get { return IsActiveVendor; } } // response to vendor BUY
+        public virtual bool IsActiveVendor
+        {
+            get { return true; }
+        }
 
-        public virtual NpcGuild NpcGuild { get { return NpcGuild.None; } }
+        public virtual bool IsActiveBuyer
+        {
+            get { return IsActiveVendor; }
+        } // response to vendor SELL
 
-        public override bool ShowFameTitle { get { return false; } }
+        public virtual bool IsActiveSeller
+        {
+            get { return IsActiveVendor; }
+        } // response to vendor BUY
 
-        public virtual BulkOrderSystem BulkOrderSystem { get { return null; } }
+        public virtual bool IsSelling(Mobile from)
+        {
+            return true;
+        }
+
+        public virtual bool IsBuying(Mobile from)
+        {
+            return true;
+        }
+
+        public virtual void NotSellingMessage(Mobile from)
+        {
+            SayTo(from, "I have nothing to sell.");
+        }
+
+        public virtual void NotBuyingMessage(Mobile from)
+        {
+            SayTo(from, "I am not buying anything.");
+        }
+
+        public virtual NpcGuild NpcGuild
+        {
+            get { return NpcGuild.None; }
+        }
+
+        public override bool ShowFameTitle
+        {
+            get { return false; }
+        }
+
+        public virtual BulkOrderSystem BulkOrderSystem
+        {
+            get { return null; }
+        }
 
         #region Faction
+
         public virtual int GetPriceScalar()
         {
-            Town town = Town.FromRegion(this.Region);
+            Town? town = Town.FromRegion(this.Region);
 
             if (town != null)
                 return (100 + town.Tax);
@@ -263,7 +338,7 @@ namespace Server.Mobiles
         {
             int priceScalar = GetPriceScalar();
 
-            IBuyItemInfo[] buyinfo = (IBuyItemInfo[])m_ArmorBuyInfo.ToArray(typeof(IBuyItemInfo));
+            IBuyItemInfo[] buyinfo = (IBuyItemInfo[])m_BuyInfo.ToArray(typeof(IBuyItemInfo));
 
             if (buyinfo != null)
             {
@@ -277,6 +352,7 @@ namespace Server.Mobiles
 
             }
         }
+
         #endregion
 
         public BaseVendor(string title)
@@ -285,12 +361,11 @@ namespace Server.Mobiles
 
             // Shopkeepers can fight (poorly) on Siege, make sure they have SOME skill
             //	we don't know what the correct skill here is...
-            if (Core.RuleSets.SiegeStyleRules() && this.Skills != null && this.Skills.Wrestling != null)
+            if (Core.RuleSets.SiegeRules() && this.Skills != null && this.Skills.Wrestling != null)
                 if (this.Skills.Wrestling.Value == 0)
                     SetSkill(SkillName.Wrestling, 36.0, 68.0);
 
             LoadSBInfo();
-
 
             this.Title = title;
 
@@ -315,6 +390,15 @@ namespace Server.Mobiles
 
             // defaulted here, but can be overridden by the spawner
             IsInvulnerable = Core.RuleSets.BaseVendorInvulnerability();
+
+            // register with our personality system: seasons 3 + Upheaval
+            Timer.DelayCall(TimeSpan.Zero, RegisterPersonalityTick);
+        }
+
+        private void RegisterPersonalityTick()
+        {
+            if (HasBuyInfo() || this is BaseGuildmaster)
+                RegisterPersonality(this);
         }
 
         public BaseVendor(Serial serial)
@@ -385,7 +469,7 @@ namespace Server.Mobiles
         {
             get
             {
-                Container pack = FindItemOnLayer(Layer.ShopBuy) as Container;
+                Container? pack = FindItemOnLayer(Layer.ShopBuy) as Container;
 
                 if (pack == null)
                 {
@@ -401,22 +485,76 @@ namespace Server.Mobiles
 
         public abstract void InitSBInfo();
 
-        protected void LoadSBInfo()
+        protected void ClearSBInfo()
+        {
+            Inventory.Clear();
+            m_BuyInfo.Clear();
+            m_SellInfo.Clear();
+        }
+
+        protected void LoadSBInfo(bool worldLoading = false)
         {
             m_LastRestock = DateTime.UtcNow;
             m_NextRestockVariant = TimeSpan.FromMinutes((Utility.RandomDouble() * 20) - 10.0);
 
             InitSBInfo();
 
-            m_ArmorBuyInfo.Clear();
-            m_ArmorSellInfo.Clear();
+            m_BuyInfo.Clear();
+            m_SellInfo.Clear();
 
             for (int i = 0; i < SBInfos.Count; i++)
             {
-                SBInfo sbInfo = (SBInfo)SBInfos[i];
-                m_ArmorBuyInfo.AddRange(sbInfo.BuyInfo);
-                m_ArmorSellInfo.Add(sbInfo.SellInfo);
+                SBInfo? sbInfo = (SBInfo?)SBInfos[i];
+                m_BuyInfo.AddRange(sbInfo.BuyInfo);
+                m_SellInfo.Add(sbInfo.SellInfo);
             }
+
+            // 9/27/2026, Adam: seems inappropriate for any shards really, since inventory buyback is controlled by:
+            // Core.RuleSets.ShopkeepersBuyItemsRules() && Core.RuleSets.ShopkeepersBuyResourcesRules()
+            //// season 3 and Upheaval
+            //if ((Core.RuleSets.SeasonsRules(3) || Core.RuleSets.UpheavalRules()))
+            //{
+            //    // Vendors buy nothing from players.
+            //    m_SellInfo.Clear();
+            //}
+            //else 
+            if (Core.RuleSets.SeasonsRules(2))
+            {
+                // During world load many vendors rebuild SBInfo in sequence.
+                // The Season 2 allowed-inventory list is global, so only load it once
+                // during startup. Runtime calls reload it so config changes can be picked
+                // up without requiring a full world restart.
+                if (worldLoading)
+                {
+                    if (AllowedVendorInventoryRules.Count == 0)
+                        LoadVendorInventory();
+                }
+                else
+                {
+                    LoadVendorInventory(force: false);
+                }
+
+                // Vendors buy nothing from players.
+                m_SellInfo.Clear();
+
+                // Remove disallowed vendor inventory.
+                for (int i = m_BuyInfo.Count - 1; i >= 0; i--)
+                {
+                    GenericBuyInfo? gbi = m_BuyInfo[i] as GenericBuyInfo;
+
+                    if (gbi == null || !IsSeason2AllowedBuyInfo(gbi))
+                        m_BuyInfo.RemoveAt(i);
+                }
+            }
+
+            CacheFactory.RegisterVendorInventory(this);
+        }
+
+        public override void OnAfterDelete()
+        {
+            CacheFactory.UnregisterVendorInventory(this);
+            UnregisterPersonality(this);
+            base.OnAfterDelete();
         }
         public virtual bool GetGender()
         {
@@ -550,7 +688,7 @@ namespace Server.Mobiles
 
             for (int i = 0; i < items.Count; ++i)
             {
-                Item item = (Item)items[i];
+                Item? item = (Item?)items[i];
 
                 if (item is Hair || item is Beard)
                     item.Hue = 0;
@@ -567,7 +705,7 @@ namespace Server.Mobiles
 
             for (int i = 0; i < items.Count; ++i)
             {
-                Item item = (Item)items[i];
+                Item? item = (Item?)items[i];
 
                 if (item is BaseClothing || item is Hair || item is Beard)
                     item.Delete();
@@ -765,6 +903,15 @@ namespace Server.Mobiles
                     return;
                 }
 
+                string message;
+                if (!Interact(from, out message))
+                {
+                    if (!string.IsNullOrEmpty(message))
+                        Say(message);
+
+                    return;
+                }
+
                 if (DateTime.UtcNow - m_LastRestock > RestockDelay)
                     Restock();
 
@@ -774,7 +921,7 @@ namespace Server.Mobiles
                 List<BuyItemState> list;
 
                 // Adam: Catch the exception
-                IBuyItemInfo[] buyInfo = null;
+                IBuyItemInfo[]? buyInfo = null;
                 try
                 {
                     buyInfo = this.GetBuyInfo();
@@ -813,7 +960,7 @@ namespace Server.Mobiles
 
                         // NOTE: Only GBI supported; if you use another implementation of IBuyItemInfo, this will crash
                         GenericBuyInfo gbi = (GenericBuyInfo)buyItem;
-                        IEntity disp = gbi.GetDisplayObject() as IEntity;
+                        IEntity? disp = gbi.GetDisplayObject() as IEntity;
 
                         int price = gbi.Price;
 
@@ -866,7 +1013,7 @@ namespace Server.Mobiles
                     Item item = (Item)playerItems[i];
 
                     int price = 0;
-                    string name = null;
+                    string? name = null;
 
                     foreach (IShopSellInfo ssi in sellInfo)
                     {
@@ -926,7 +1073,7 @@ namespace Server.Mobiles
 
         public virtual void SendPacksTo(Mobile from)
         {
-            Item pack = FindItemOnLayer(Layer.ShopBuy);
+            Item? pack = FindItemOnLayer(Layer.ShopBuy);
 
             if (pack == null)
             {
@@ -957,7 +1104,7 @@ namespace Server.Mobiles
 
             from.Send(new EquipUpdate(pack));
         }
-
+        private const int MaxVendorBuybackPrice = 0xFFFF; // 65535 (client ushort ceiling)
         public virtual void VendorSell(Mobile from)
         {
             if (!IsActiveBuyer)
@@ -979,6 +1126,9 @@ namespace Server.Mobiles
                 IShopSellInfo[] info = GetSellInfo();
 
                 Dictionary<Item, SellItemState> table = new Dictionary<Item, SellItemState>();
+                int filteredStarter = 0; // count FamilyID-filtered items
+                int filteredShopGoods = 0; // marked goods on an arbitrage route that this vendor refuses (ArbitrageTable)
+                int reducedShopGoods = 0;  // marked goods on an arbitrage route bought for less
 
                 foreach (IShopSellInfo ssi in info)
                 {
@@ -989,13 +1139,39 @@ namespace Server.Mobiles
                         if (item is Container && ((Container)item).Items.Count != 0)
                             continue;
 
-                        if (item.IsStandardLoot() && item.Movable && ssi.IsSellable(item))
+                        // shop goods this vendor would otherwise list (loot type, movable, price), refused by IsSellable.
+                        //  Anything ineligible anyway (Newbied, Blessed, immovable, unpriced) keeps its usual reply.
+                        if (GenericSellInfo.IsRefusedShopGoods(item) && (item.IsStandardLoot() || IsVendorSellableLoot(item)) && item.Movable
+                            && (ssi is GenericSellInfo nominal ? nominal.GetNominalSellPriceFor(item) : ssi.GetSellPriceFor(item)) is > 0 and <= MaxVendorBuybackPrice)
                         {
+                            filteredShopGoods++;
+                            continue;
+                        }
+
+                        if ((item.IsStandardLoot() || IsVendorSellableLoot(item)) && item.Movable && ssi.IsSellable(item))
+                        {
+                            // --- Starter-family block: silently exclude ---
+                            if (item.StartingLoot)
+                            {
+                                filteredStarter++;
+                                continue;
+                            }
+
                             if (Core.RuleSets.ResourcePoolRules())
                                 if (ResourcePool.AddSellInfo(this, item, ref table))
                                     continue;
 
+                            // The classic client encodes vendor buyback prices as a 16-bit unsigned value (ushort).
+                            // Values outside the range 1–65535 will display incorrectly in the sell gump,
+                            // so we ignore items whose computed buyback price falls outside the client limit.
+                            int price = ssi.GetSellPriceFor(item);
+                            if (price <= 0 || price > MaxVendorBuybackPrice)
+                                continue;
+
                             table[item] = new SellItemState(item, ssi.GetSellPriceFor(item), ssi.GetNameFor(item));
+
+                            if (ssi is GenericSellInfo reduced && reduced.IsReducedShopGoods(item))
+                                reducedShopGoods++;
                         }
                     }
                 }
@@ -1004,30 +1180,61 @@ namespace Server.Mobiles
                 {
                     SendPacksTo(from);
 
+                    // Optional: one soft hint if we filtered any starter supplies
+                    if (filteredStarter > 0)
+                        Say(true, "Well, I'm not interested in your starter supplies, but I will take these...");
+                    else if (filteredShopGoods > 0)
+                        Say(true, "I'll not buy back what came off a merchant's shelf, but I will take these...");
+
+                    if (reducedShopGoods > 0)
+                        Say(true, "Some of that was made with goods bought from a merchant, so I'll pay less for it.");
+
                     from.Send(new VendorSellList(this, table.Values));
                 }
                 else
                 {
-                    Say(true, "You have nothing I would be interested in.");
+                    if (filteredStarter > 0)
+                        Say(true, "Items bound to new souls hold no value to merchants.");
+                    else if (filteredShopGoods > 0)
+                        Say(true, "I'll not pay coin for a merchant's own wares, nor for what was made from them.");
+                    else
+                        Say(true, "You have nothing I would be interested in.");
                 }
+
             }
         }
+        private static bool IsVendorSellableLoot(Item item)
+        {
+            if (item == null)
+                return false;
 
+            //if ( Mobile.InsuranceEnabled && Insured )
+            //return false;
+
+            if (item.BlessedFor != null)
+                return false;
+
+            return item.LootType == LootType.Smuggled
+                   || item.LootType == LootType.UnStealable;
+        }
         public override bool OnDragDrop(Mobile from, Item dropped)
         {
             if (dropped is BaseBOD && BulkOrderSystem != null && BulkOrderSystem.IsEnabled() && BulkOrderSystem.SupportsBulkOrders(from))
                 return BulkOrderSystem.HandleBulkOrderDropped(from, this, (BaseBOD)dropped);
 
+            if (dropped is VendorCourierItem courier)
+                return HandleCourierDelivery(from, courier);
+
             return base.OnDragDrop(from, dropped);
         }
 
-        private GenericBuyInfo LookupDisplayObject(object obj)
+        private GenericBuyInfo? LookupDisplayObject(object obj)
         {
             try
             {
                 if (Core.RuleSets.ResourcePoolRules())
                 {
-                    GenericBuyInfo rpgbi = ResourcePool.LookupBuyInfo(obj);
+                    GenericBuyInfo? rpgbi = ResourcePool.LookupBuyInfo(obj);
 
                     if (rpgbi != null)
                         return rpgbi;
@@ -1037,7 +1244,7 @@ namespace Server.Mobiles
 
                 for (int i = 0; i < buyInfo.Length; ++i)
                 {
-                    GenericBuyInfo gbi = buyInfo[i] as GenericBuyInfo;
+                    GenericBuyInfo? gbi = buyInfo[i] as GenericBuyInfo;
                     if (gbi.GetDisplayObject() == obj)
                         return gbi;
                 }
@@ -1080,7 +1287,7 @@ namespace Server.Mobiles
             return true;
         }
 
-        private void ProcessValidPurchase(int amount, IBuyItemInfo bii, Mobile buyer, Container cont)
+        private void ProcessValidPurchase(int amount, IBuyItemInfo bii, Mobile buyer, Container? cont)
         {
             if (amount > bii.Amount)
                 amount = bii.Amount;
@@ -1108,7 +1315,10 @@ namespace Server.Mobiles
 
             if (o is Item)
             {
-                Item item = (Item)o;
+                Item? item = (Item)o;
+
+                // marked before it can stack in the buyer's pack (a commodity deed carries the marked goods)
+                StoreBought(item);
 
                 if (item.Stackable)
                 {
@@ -1119,7 +1329,6 @@ namespace Server.Mobiles
 
                     if (cont == null || !cont.TryDropItem(buyer, item, false))
                     {
-                        StoreBought(o);
                         TCUpgrade(o);
                         item.MoveToWorld(buyer.Location, buyer.Map);
                         OnPurchase(buyer, item);
@@ -1131,7 +1340,6 @@ namespace Server.Mobiles
 
                     if (cont == null || !cont.TryDropItem(buyer, item, false))
                     {
-                        StoreBought(o);
                         TCUpgrade(o);
                         item.MoveToWorld(buyer.Location, buyer.Map);
                         OnPurchase(buyer, item);
@@ -1144,10 +1352,10 @@ namespace Server.Mobiles
                         if (item != null)
                         {
                             item.Amount = 1;
+                            StoreBought(item);
 
                             if (cont == null || !cont.TryDropItem(buyer, item, false))
                             {
-                                StoreBought(o);
                                 TCUpgrade(o);
                                 item.MoveToWorld(buyer.Location, buyer.Map);
                                 OnPurchase(buyer, item);
@@ -1158,7 +1366,7 @@ namespace Server.Mobiles
             }
             else if (o is Mobile)
             {
-                Mobile m = (Mobile)o;
+                Mobile? m = (Mobile)o;
 
                 m.Direction = (Direction)Utility.Random(8);
                 m.MoveToWorld(buyer.Location, buyer.Map);
@@ -1191,31 +1399,13 @@ namespace Server.Mobiles
         {
             // turning this off for now. Test Center should be an accurate representation of the shard
             //  it represents. If we want this functionality for Server Wars, then we need a special condition for that.
-#if false
-            if (o is Item item)
-            {
-                // all weapons and armor are exceptional during server wars
-                if (Server.Misc.TestCenter.Enabled == true && !Core.UOBETA_CFG)
-                {
-                    if (item is BaseArmor)
-                    {
-                        (item as BaseArmor).Quality = ArmorQuality.Exceptional;
-                        (item as BaseArmor).DurabilityLevel = ArmorDurabilityLevel.Fortified;
-                        (item as BaseArmor).Identified = true;
-                    }
-                    if (item is BaseWeapon)
-                    {
-                        (item as BaseWeapon).Quality = WeaponQuality.Exceptional;
-                        (item as BaseWeapon).DurabilityLevel = WeaponDurabilityLevel.Fortified;
-                        (item as BaseWeapon).Identified = true;
-                    }
-                }
-            }
-#endif
         }
         private static void StoreBought(object o)
         {
-            // all items bought in a store (from an NPC) only yield 1 ingot when smelted
+            // bought from an NPC: on an NPC arbitrage route, NPCs pay less for it (and for what it becomes) or refuse it,
+            //  see Server.Engines.Economy.ArbitrageTable and GenericSellInfo.GetSellPriceFor
+            // (Items bought in a store only yield 1 ingot when smelted, but that rule keys on PlayerCrafted, not on this
+            //  mark: see Recycle.ProcessRecycle.)
             if (o is Item i)
                 i.StoreBought = true;
         }
@@ -1279,12 +1469,12 @@ namespace Server.Mobiles
 
                     if (ser.IsItem)
                     {
-                        Item item = World.FindItem(ser);
+                        Item? item = World.FindItem(ser);
 
                         if (item == null)
                             continue;
 
-                        GenericBuyInfo gbi = LookupDisplayObject(item);
+                        GenericBuyInfo? gbi = LookupDisplayObject(item);
 
                         if (gbi != null)
                         {
@@ -1334,7 +1524,7 @@ namespace Server.Mobiles
                     }
                     else if (ser.IsMobile)
                     {
-                        Mobile mob = World.FindMobile(ser);
+                        Mobile? mob = World.FindMobile(ser);
 
                         if (mob == null)
                             continue;
@@ -1352,7 +1542,7 @@ namespace Server.Mobiles
 
                         }
 
-                        GenericBuyInfo gbi = LookupDisplayObject(mob);
+                        GenericBuyInfo? gbi = LookupDisplayObject(mob);
 
                         if (gbi != null)
                         {
@@ -1401,13 +1591,16 @@ namespace Server.Mobiles
                 if (!bought && cont != null)
                 {   // try to get it from their backpack first.
                     // Players cannot make a ConsignmentPurchase with an UnemploymentCheck though.
-                    if ((!ResourcePool.IsConsignmentPurchase(list) && ConsumeTotal(buyer, cont, typeof(UnemploymentCheck), totalCost)) || cont.ConsumeTotal(typeof(Gold), totalCost))
+                    if ((!ResourcePool.IsConsignmentPurchase(list) &&
+                            ConsumeTotal(buyer, cont, typeof(UnemploymentCheck), null, totalCost) ||
+                            ConsumeTotal(buyer, cont, typeof(CivicBond), new[] { CivicBondKeys.UnemploymentCheck }, totalCost)) ||
+                        cont.ConsumeTotal(typeof(Gold), totalCost))
                     {
                         bought = true;
                     }
                     else if (totalCost < 2000)
                     {
-                        if (HasUnemploymentCheck(buyer, cont, typeof(UnemploymentCheck), totalCost))
+                        if (HasVoucher(buyer, cont, totalCost))
                             SayTo(buyer, "The seller of these commodities has instructed me to only accept a cash payment.");
                         else
                             SayTo(buyer, 500192);//Begging thy pardon, but thou casnt afford that.
@@ -1457,7 +1650,7 @@ namespace Server.Mobiles
 
                     if (ser.IsItem)
                     {
-                        Item item = World.FindItem(ser);
+                        Item? item = World.FindItem(ser);
 
                         if (item == null)
                             continue;
@@ -1465,7 +1658,7 @@ namespace Server.Mobiles
                         // record this item purchase for our gold sink tracking
                         Engines.DataRecorder.DataRecorder.GoldSink(buyer, item, amount);
 
-                        GenericBuyInfo gbi = LookupDisplayObject(item);
+                        GenericBuyInfo? gbi = LookupDisplayObject(item);
 
                         if (gbi != null)
                         {
@@ -1493,6 +1686,9 @@ namespace Server.Mobiles
                                             item.Amount -= amount;
                                         }
 
+                                        // resold player goods are bought from an NPC too
+                                        StoreBought(buyItem);
+
                                         if (cont == null || !cont.TryDropItem(buyer, buyItem, false))
                                             buyItem.MoveToWorld(buyer.Location, buyer.Map);
 
@@ -1504,12 +1700,12 @@ namespace Server.Mobiles
                     }
                     else if (ser.IsMobile)
                     {
-                        Mobile mob = World.FindMobile(ser);
+                        Mobile? mob = World.FindMobile(ser);
 
                         if (mob == null)
                             continue;
 
-                        GenericBuyInfo gbi = LookupDisplayObject(mob);
+                        GenericBuyInfo? gbi = LookupDisplayObject(mob);
 
                         if (gbi != null)
                             ProcessValidPurchase(amount, gbi, buyer, cont);
@@ -1605,6 +1801,13 @@ namespace Server.Mobiles
             int buyerGold = UnemploymentCheckValue(buyer, buyer.Backpack);
             return CanBuy(list, buyerGold);
         }
+        private bool CanBuyerPurchaseFromVoucher(Mobile buyer, List<BuyItemResponse> list, string[] civicBondKeys)
+        {
+            if (buyer.Backpack == null)
+                return false;
+            int buyerGold = VoucherValue(buyer, buyer.Backpack, civicBondKeys);
+            return CanBuy(list, buyerGold);
+        }
         //adam: integer overflow (exploit) prevention:
         // It's easier to simply add the overflow checking in this tiny routine than to sprinkle overflow checking in all the different places purchase prices are calculated.
         //  Here, we simply abort out as soon as the buyer can no longer afford what they have selected.
@@ -1613,9 +1816,9 @@ namespace Server.Mobiles
             int _totalCost = 0;
             foreach (BuyItemResponse buy in list)
             {
-                object o = World.FindEntity(buy.Serial);
+                object? o = World.FindEntity(buy.Serial);
                 if (o == null) return false;
-                GenericBuyInfo gbi = LookupDisplayObject(o);
+                GenericBuyInfo? gbi = LookupDisplayObject(o);
                 int amount = buy.Amount;
                 int price = int.MaxValue;
                 if (gbi != null)
@@ -1674,36 +1877,72 @@ namespace Server.Mobiles
         }
         private bool CanAfford(Mobile buyer, List<BuyItemResponse> list)
         {
-            return (CanBuyerPurchaseFromBank(buyer, list) == true || CanBuyerPurchaseFromBackpack(buyer, list) == true || CanBuyerPurchaseFromUnemploymentCheck(buyer, list) == true);
+            return (CanBuyerPurchaseFromBank(buyer, list) == true ||
+                    CanBuyerPurchaseFromBackpack(buyer, list) == true ||
+                    CanBuyerPurchaseFromUnemploymentCheck(buyer, list) == true ||
+                    CanBuyerPurchaseFromVoucher(buyer, list, new[] { CivicBondKeys.UnemploymentCheck }) == true);
         }
         // they have enough money in their UnemploymentCheck
-        public bool HasUnemploymentCheck(Mobile buyer, Container cont, Type type, int amount)
+        public bool HasVoucher(Mobile buyer, Container cont, int amount)
         {
-            Item[] items = cont.FindItemsByType(type, true);
-            if (items.Length == 0)
+            if (buyer == null || cont == null || amount <= 0)
                 return false;
 
-            // okay, they have an UnemploymentCheck
-            UnemploymentCheck uc = null;
-            for (int ix = 0; ix < items.Length; ix++)
-            {   // make sure one of them is theirs
-                uc = items[ix] as UnemploymentCheck;
-                if (uc.OwnerSerial != buyer.Serial)
-                    continue;   // not their UnemploymentCheck!
-                else break;
+            // ------------------------------------------------------------
+            // 1) Look for a classic UnemploymentCheck owned by this buyer
+            // ------------------------------------------------------------
+            Item[] checks = cont.FindItemsByType(typeof(UnemploymentCheck), true);
+            if (checks != null && checks.Length > 0)
+            {
+                for (int i = 0; i < checks.Length; i++)
+                {
+                    var uc = checks[i] as UnemploymentCheck;
+                    if (uc == null || uc.Deleted)
+                        continue;
+
+                    // ensure it belongs to this buyer
+                    if (uc.OwnerSerial != buyer.Serial)
+                        continue;
+
+                    // They may only have one; first owned match decides
+                    if (uc.Worth >= amount)
+                        return true;    // enough in their unemployment check
+
+                    return false;       // belongs to them, but not enough worth
+                }
             }
 
-            // make sure we found one that belongs to them
-            if (uc.OwnerSerial != buyer.Serial)
-                return false;   // not their UnemploymentCheck!
+            // -----------------------------------------------------------------
+            // 2) If no suitable UnemploymentCheck, look for a CivicBond acting
+            //    as an unemployment instrument (BondKey == UnemploymentCheck)
+            // -----------------------------------------------------------------
+            Item[] bonds = cont.FindItemsByType(typeof(CivicBond), true);
+            if (bonds != null && bonds.Length > 0)
+            {
+                for (int i = 0; i < bonds.Length; i++)
+                {
+                    var bond = bonds[i] as CivicBond;
+                    if (bond == null || bond.Deleted)
+                        continue;
 
-            // okay, they have an UnemploymentCheck. They may only have one, so further looking
-            //	is not justified.
-            if ((uc == null) || uc != null && amount > uc.Worth)
-                return false;   // not enough left in their check
+                    // Only treat bonds with the UnemploymentCheck key as vouchers
+                    if (bond.BondKey != CivicBondKeys.UnemploymentCheck)
+                        continue;
 
-            return true;
+                    if (bond.OwnerSerial != buyer.Serial)
+                        continue;
+
+                    if (bond.Worth >= amount)
+                        return true;    // enough in their bond-backed voucher
+
+                    return false;       // belongs to them, but not enough worth
+                }
+            }
+
+            // No owned voucher/bond found with sufficient worth
+            return false;
         }
+
         public int UnemploymentCheckValue(Mobile buyer, Container cont)
         {
             Item[] items = cont.FindItemsByType(typeof(UnemploymentCheck), true);
@@ -1711,7 +1950,7 @@ namespace Server.Mobiles
                 return 0;
 
             // okay, they have an UnemploymentCheck
-            UnemploymentCheck uc = null;
+            UnemploymentCheck? uc = null;
             for (int ix = 0; ix < items.Length; ix++)
             {   // make sure one of them is theirs
                 uc = items[ix] as UnemploymentCheck;
@@ -1731,44 +1970,190 @@ namespace Server.Mobiles
 
             return uc.Worth;
         }
-        public bool ConsumeTotal(Mobile buyer, Container cont, Type type, int amount)
+        public int VoucherValue(Mobile buyer, Container cont, string[] civicBondKeys)
         {
-            Item[] items = cont.FindItemsByType(type, true);
-            if (items.Length == 0)
-                return false;
+            if (buyer == null || cont == null)
+                return 0;
 
-            // okay, they have an UnemploymentCheck
-            UnemploymentCheck uc = null;
-            for (int ix = 0; ix < items.Length; ix++)
-            {   // make sure one of them is theirs
-                uc = items[ix] as UnemploymentCheck;
-                if (uc.OwnerSerial != buyer.Serial)
-                    continue;   // not their UnemploymentCheck!
-                else break;
+            // For CivicBonds we require an explicit filter; it tells us which bond types
+            // (UnemploymentCheck, TrainingVoucher, CashiersCheck, etc.) we are summing.
+            if (civicBondKeys == null || civicBondKeys.Length == 0)
+                return 0;
+
+            Item[] items = cont.FindItemsByType(typeof(CivicBond), true);
+            if (items == null || items.Length == 0)
+                return 0;
+
+            // Normalize filter to a fast lookup
+            var keyFilter = new HashSet<string>(civicBondKeys);
+
+            int total = 0;
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                if (items[i] is not CivicBond bond || bond.Deleted)
+                    continue;
+
+                // Must belong to this buyer
+                if (bond.OwnerSerial != buyer.Serial)
+                    continue;
+
+                // Must be a CivicBond type we care about for this call
+                if (!keyFilter.Contains(bond.BondKey))
+                    continue;
+
+                if (bond.Worth <= 0)
+                    continue;
+
+                total += bond.Worth;
             }
 
-            // make sure we found one that belongs to them
-            if (uc.OwnerSerial != buyer.Serial)
-                return false;   // not their UnemploymentCheck!
+            return total;
+        }
 
-            // okay, they have an UnemploymentCheck. They may only have one, so further looking
-            //	is not justified.
-            if ((uc == null) || uc != null && amount > uc.Worth)
-                return false;   // not enough left in their check
+        public bool ConsumeTotal(Mobile buyer, Container cont, Type type, string[]? civicBondKeys, int amount)
+        {
+            if (buyer == null || cont == null || amount <= 0)
+                return false;
 
-            // okay, they have a check that belongs to them and it holds enough value for the purchase.
-            int remainder = uc.Worth - amount;
+            Item[] items = cont.FindItemsByType(type, true);
+            if (items == null || items.Length == 0)
+                return false;
+
+            // Normalize CivicBond filters into a lookup for this call.
+            HashSet<string>? bondKeyFilter = null;
+            if (type == typeof(CivicBond) && civicBondKeys != null && civicBondKeys.Length > 0)
+                bondKeyFilter = new HashSet<string>(civicBondKeys);
+
+            // Local adapter that binds the specific instrument class requested by 'type'.
+            //
+            // Caller controls intent by which 'type' they pass and in what order, plus
+            // which CivicBond keys (if any) are acceptable for that call.
+            //
+            bool TryBindInstrument(
+                Item it,
+                out Serial owner,
+                out int worth,
+                out Action<int> setWorth,
+                out Action delete)
+            {
+                owner = Serial.Zero;
+                worth = 0;
+                setWorth = null;
+                delete = null;
+
+                // Legacy unemployment path (will be obsoleted once fully migrated)
+                if (type == typeof(UnemploymentCheck) && it is UnemploymentCheck uc)
+                {
+                    owner = uc.OwnerSerial;
+                    worth = uc.Worth;
+                    setWorth = v => uc.Worth = v;
+                    delete = () => uc.Delete();
+                    return true;
+                }
+
+                // Legacy training voucher path (will be obsoleted once fully migrated)
+                if (type == typeof(TrainingVoucher) && it is TrainingVoucher tv)
+                {
+                    owner = tv.OwnerSerial;
+                    worth = tv.Worth;
+                    setWorth = v => tv.Worth = v;
+                    delete = () => tv.Delete();
+                    return true;
+                }
+
+                // CivicBond mapping depends on the requested 'type' and the bondKeyFilter.
+                if (it is CivicBond bond)
+                {
+                    // Bridging behavior: if caller still uses the legacy types, we also
+                    // accept CivicBonds with the corresponding keys, ignoring civicBondKeys.
+                    if (type == typeof(UnemploymentCheck) &&
+                        bond.BondKey == CivicBondKeys.UnemploymentCheck)
+                    {
+                        owner = bond.OwnerSerial;
+                        worth = bond.Worth;
+                        setWorth = v => bond.Worth = v;
+                        delete = () => bond.Delete();
+                        return true;
+                    }
+
+                    if (type == typeof(TrainingVoucher) &&
+                        bond.BondKey == CivicBondKeys.TrainingVoucher)
+                    {
+                        owner = bond.OwnerSerial;
+                        worth = bond.Worth;
+                        setWorth = v => bond.Worth = v;
+                        delete = () => bond.Delete();
+                        return true;
+                    }
+
+                    // Pure CivicBond intent:
+                    // Only accept CivicBonds whose BondKey is in the provided filter.
+                    if (type == typeof(CivicBond))
+                    {
+                        if (bondKeyFilter == null || bondKeyFilter.Count == 0)
+                            return false; // caller did not specify what to accept
+
+                        if (!bondKeyFilter.Contains(bond.BondKey))
+                            return false;
+
+                        owner = bond.OwnerSerial;
+                        worth = bond.Worth;
+                        setWorth = v => bond.Worth = v;
+                        delete = () => bond.Delete();
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            // Find the first matching instrument of the requested 'type' that belongs to the buyer
+            Serial ownerSerial = Serial.Zero;
+            int currentWorth = 0;
+            Action<int>? setBalance = null;
+            Action? deleteItem = null;
+            Item? matched = null;
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                var it = items[i];
+                if (it == null || it.Deleted)
+                    continue;
+
+                // Ensure it matches the requested type AND adapts under the current intent.
+                if (!type.IsInstanceOfType(it))
+                    continue;
+
+                if (TryBindInstrument(it, out ownerSerial, out currentWorth, out setBalance, out deleteItem)
+                    && ownerSerial == buyer.Serial)
+                {
+                    matched = it;
+                    break;
+                }
+            }
+
+            // No owned instrument found for this intent
+            if (matched == null || setBalance == null)
+                return false;
+
+            // Check available balance
+            if (currentWorth < amount)
+                return false;
+
+            int remainder = currentWorth - amount;
+
             if (remainder == 0)
-                uc.Delete();    // delete the check if it is spent
-
-            // new balance of the UnemploymentCheck
-            uc.Worth = remainder;
+                deleteItem();          // fully consumed
+            else
+                setBalance(remainder); // update remaining balance
 
             return true;
         }
+
         public virtual bool CheckVendorAccess(Mobile from)
         {
-            GuardedRegion reg = this.Region as GuardedRegion;
+            GuardedRegion? reg = this.Region as GuardedRegion;
 
             if (reg != null && !reg.CheckVendorAccess(this, from))
                 return false;
@@ -1805,6 +2190,24 @@ namespace Server.Mobiles
                     Say(501522); // I shall not treat with scum like thee!
                     return false;
                 }
+                // VendorAntiBot: commerce hold (failed/expired attendance check)
+                if (VendorAntiBot.Enabled && VendorAntiBot.IsBarred(seller))
+                {
+                    TimeSpan remain = VendorAntiBot.GetBarredRemaining(seller);
+
+                    // RP admonishment, similar vibe to criminal access checks
+                    SayTo(seller, true,
+                        "Hold, friend. Ye failed my patience a moment ago. Return when thou art ready to deal properly.");
+
+                    // Optional: useful hint without over-explaining
+                    if (remain > TimeSpan.Zero)
+                        SayTo(seller, true, "Try again in {0}.", FormatShortTime(remain));
+
+                    return false;
+                }
+
+                // Optional (if you want): ensure schedule / possibly issue RTT when due
+                // VendorAntiBot.OnSellTransaction(...) already handles issuance when due, so you can leave this out.
 
                 seller.PlaySound(0x32);
 
@@ -1812,10 +2215,14 @@ namespace Server.Mobiles
                 IBuyItemInfo[] buyInfo = this.GetBuyInfo();
                 int GiveGold = 0;
                 int Sold = 0;
+                int potentialGold = 0;      // Mortalis: total GOLD that would be paid for this transaction
                 Container cont;
                 ArrayList delete = new ArrayList();
                 ArrayList drop = new ArrayList();
+                int countedGold = 0; // Mortalis: gold that counts against the daily limit (non-crafted only)
+                List<VendorAntiBot.SoldSummary>? antiBotItems = null;
 
+                // First pass: determine how many items *could* be sold and how much gold they are worth
                 foreach (SellItemResponse resp in list)
                 {
                     if (resp.Item.RootParent != seller || resp.Amount <= 0)
@@ -1823,11 +2230,30 @@ namespace Server.Mobiles
 
                     foreach (IShopSellInfo ssi in info)
                     {
-                        if (ssi.IsSellable(resp.Item))
+                        if (!ssi.IsSellable(resp.Item))
+                            continue;
+
+                        Sold++;
+
+                        // Player-crafted items are exempt from the daily vendor sell limit.
+                        // They still count toward Sold/MaxSell, but they do NOT contribute to potentialGold.
+                        bool craftedExempt = resp.Item.PlayerCrafted;
+
+                        int amount = resp.Amount;
+                        if (amount > resp.Item.Amount)
+                            amount = resp.Item.Amount;
+
+                        if (!craftedExempt)
                         {
-                            Sold++;
-                            break;
+                            // Compute what we *would* pay for this item in this transaction (non-crafted only)
+                            int price = ssi.GetSellPriceFor(resp.Item);
+
+                            if (price > 0 && amount > 0)
+                                potentialGold += price * amount;
                         }
+
+                        // We found the sell-info match for this item, move on to next resp
+                        break;
                     }
                 }
 
@@ -1841,6 +2267,33 @@ namespace Server.Mobiles
                     return true;
                 }
 
+                // enforce per-player daily vendor GOLD limit, if applicable
+                int remainingGold;
+                if (!CheckDailySellLimit(seller, potentialGold, out remainingGold))
+                {
+                    // remainingGold is gold remaining before hitting DailySellGoldLimit
+                    if (remainingGold <= 0)
+                    {
+                        SayTo(seller, true,
+                            "Thou hast taken all the coin I may offer thee this day.");
+                        SayTo(seller, true,
+                            "Return upon the morrow, and we shall bargain anew.");
+                    }
+                    else
+                    {
+                        SayTo(seller, true,
+                            "I may grant thee but {0} more in gold for thy wares this day.",
+                            remainingGold.ToString("N0"));
+                        SayTo(seller, true,
+                            "Spend thy remaining allowance wisely.");
+                    }
+
+                    return false;
+                }
+
+                Dictionary<Type, int>? typeCounts = null; // lazily allocated
+
+                // Second pass: actually process the sale and compute the real gold paid
                 foreach (SellItemResponse resp in list)
                 {
                     if (resp.Item.RootParent != seller || resp.Amount <= 0)
@@ -1855,9 +2308,47 @@ namespace Server.Mobiles
                             if (amount > resp.Item.Amount)
                                 amount = resp.Item.Amount;
 
+                            // Track item types actually sold (lazy allocate)
+                            if (amount > 0)
+                            {
+                                if (typeCounts == null)
+                                    typeCounts = new Dictionary<Type, int>();
+
+                                IncTypeCount(typeCounts, resp.Item, amount);
+                            }
+
+                            // Build "actually sold" summary for VendorAntiBot (pre-mutation).
+                            if (amount > 0)
+                            {
+                                if (antiBotItems == null)
+                                    antiBotItems = new List<VendorAntiBot.SoldSummary>(Sold);
+
+                                antiBotItems.Add(new VendorAntiBot.SoldSummary(resp.Item.GetType(), amount, resp.Item.PlayerCrafted));
+                            }
+
+                            // Compute price BEFORE any mutation/consume/drop/delete.
+                            int sellPrice = ssi.GetSellPriceFor(resp.Item);
+                            int delta = 0;
+
+                            if (sellPrice > 0 && amount > 0)
+                                delta = sellPrice * amount;
+
                             if (Core.RuleSets.ResourcePoolRules())
+                            {
                                 if (ResourcePool.OnVendorSell(this, seller, resp.Item, amount))
+                                {
+                                    // Resource pool handled the sale; still pay and still count/non-count consistently.
+                                    if (delta > 0)
+                                    {
+                                        GiveGold += delta;
+
+                                        if (!resp.Item.PlayerCrafted)
+                                            countedGold += delta;
+                                    }
+
                                     break;
+                                }
+                            }
 
                             if (ssi.IsResellable(resp.Item))
                             {
@@ -1869,7 +2360,6 @@ namespace Server.Mobiles
                                     {
                                         resp.Item.Consume(amount);
                                         found = true;
-
                                         break;
                                     }
                                 }
@@ -1900,7 +2390,15 @@ namespace Server.Mobiles
                                     resp.Item.Delete();
                             }
 
-                            GiveGold += ssi.GetSellPriceFor(resp.Item) * amount;
+                            // Apply payout + daily-limit accounting using the precomputed delta.
+                            if (delta > 0)
+                            {
+                                GiveGold += delta;
+
+                                if (!resp.Item.PlayerCrafted)
+                                    countedGold += delta;
+                            }
+
                             break;
                         }
                     }
@@ -1918,11 +2416,19 @@ namespace Server.Mobiles
 
                     seller.PlaySound(0x0037);//Gold dropping sound
 
-                    if (BulkOrderSystem != null && BulkOrderSystem.IsEnabled() && BulkOrderSystem.SupportsBulkOrders(seller) && DateTime.UtcNow >= BulkOrderSystem.GetNextBOD(seller))
+                    if (BulkOrderSystem != null && BulkOrderSystem.IsEnabled() &&
+                        BulkOrderSystem.SupportsBulkOrders(seller) &&
+                        DateTime.UtcNow >= BulkOrderSystem.GetNextBOD(seller))
+                    {
                         BulkOrderSystem.OfferBulkOrder(seller, this, false);
+                    }
+
+                    // Mortalis: record daily usage ONLY for non-crafted gold
+                    if (countedGold > 0)
+                        RecordDailySale(seller, countedGold);
+
+                    VendorAntiBot.OnSellTransaction(seller, this, antiBotItems, GiveGold, countedGold, typeCounts);
                 }
-                //no cliloc for this?
-                //SayTo( seller, true, "Thank you! I bought {0} item{1}. Here is your {2}gp.", Sold, (Sold > 1 ? "s" : ""), GiveGold );
 
                 return true;
             }
@@ -1934,48 +2440,80 @@ namespace Server.Mobiles
             return false;
         }
 
+        private static void IncTypeCount(Dictionary<Type, int> dict, Item item, int amount)
+        {
+            if (dict == null || item == null || amount <= 0)
+                return;
+
+            Type t = item.GetType();
+
+            if (dict.TryGetValue(t, out int cur))
+                dict[t] = cur + amount;
+            else
+                dict[t] = amount;
+        }
+
+        public override void WorldLoaded()
+        {
+            /*
+             * Vendor SBInfo initialization:
+             *
+             * Historically, RunUO initialized vendor SBInfos during Deserialize(),
+             * which tightly coupled vendor inventory layout to serialized state.
+             * That approach proved fragile once vendor inventories evolved
+             * (reordering, additions, or NONE -> SOMETHING transitions), breaking
+             * long-term binary compatibility across shards.
+             *
+             * We now initialize SBInfos after world load instead.
+             * This preserves correct vendor behavior on server startup while
+             * avoiding persistence of positional inventory data.
+             *
+             * Vendor stock growth is handled naturally at runtime.
+             */
+            try
+            {
+                base.WorldLoaded();
+
+                // load up vendor inventories
+                if (!TemplateCopy)
+                    LoadSBInfo(worldLoading: true);
+
+                // Register with the vendor personality system (Seasons 3 + Upheaval).
+                // Do it here rather than during deserialization since districts have not yet
+                // been constructed. Ignore vendors without inventories, except guildmasters
+                // who participate through training.
+                if (HasBuyInfo() || this is BaseGuildmaster)
+                    RegisterPersonality(this);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex);
+            }
+        }
+
+        private bool HasBuyInfo()
+        {
+            bool hasBuyInfo = false;
+
+            foreach (SBInfo sb in Inventory)
+            {
+                if (sb.BuyInfo != null && sb.BuyInfo.Count > 0)
+                {
+                    hasBuyInfo = true;
+                    break;
+                }
+            }
+
+            return hasBuyInfo;
+        }
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
 
-            writer.Write((int)3); // version
-
-            // removed in version 3. Pushed down to Mobile
-            //writer.Write((bool)m_Invulnerable);
-
-            ArrayList sbInfos = this.SBInfos;
-
-            for (int i = 0; sbInfos != null && i < sbInfos.Count; ++i)
-            {
-                SBInfo sbInfo = (SBInfo)sbInfos[i];
-                ArrayList buyInfo = sbInfo.BuyInfo;
-
-                for (int j = 0; buyInfo != null && j < buyInfo.Count; ++j)
-                {
-                    GenericBuyInfo gbi = (GenericBuyInfo)buyInfo[j];
-
-                    int maxAmount = gbi.MaxAmount;
-                    int doubled = 0;
-
-                    switch (maxAmount)
-                    {
-                        case 40: doubled = 1; break;
-                        case 80: doubled = 2; break;
-                        case 160: doubled = 3; break;
-                        case 320: doubled = 4; break;
-                        case 640: doubled = 5; break;
-                        case 999: doubled = 6; break;
-                    }
-
-                    if (doubled > 0)
-                    {
-                        writer.WriteEncodedInt(1 + ((j * sbInfos.Count) + i));
-                        writer.WriteEncodedInt(doubled);
-                    }
-                }
-            }
-
-            writer.WriteEncodedInt(0);
+            // Version 4:
+            // Vendor stock persistence has been intentionally removed.
+            // Stock growth is now handled naturally at runtime.
+            writer.Write((int)4);
         }
 
         public override void Deserialize(GenericReader reader)
@@ -1984,62 +2522,50 @@ namespace Server.Mobiles
 
             int version = reader.ReadInt();
 
-            LoadSBInfo();
-
-            ArrayList sbInfos = this.SBInfos;
-
             switch (version)
             {
+                case 4:
+                    {
+                        // Version 4 and later:
+                        // No persisted vendor stock data.
+                        break;
+                    }
+
                 case 3:
                     {
-                        // skip to version 1 as we no longer read m_Invulnerable
+                        // Version 3 removed m_Invulnerable.
                         goto case 1;
                     }
+
                 case 2:
                     {
-                        /*m_Invulnerable = */
+                        // Legacy m_Invulnerable flag (no longer used).
                         reader.ReadBool();
                         goto case 1;
                     }
+
                 case 1:
                     {
-                        int index;
+                        /*
+                         * Legacy behavior (RunUO):
+                         * Vendor stock "doubling" was serialized using positional indices
+                         * into SBInfo / BuyInfo tables. This design is fragile and breaks
+                         * binary compatibility when vendor inventories change, reorder,
+                         * or transition from NONE to SOMETHING across shards.
+                         *
+                         * Decision:
+                         * We no longer restore persisted vendor stock levels.
+                         * Stock now grows naturally during runtime, which is simpler,
+                         * more robust, and acceptable for gameplay.
+                         *
+                         * We still consume the serialized data to keep the reader aligned.
+                         */
 
+                        int index;
                         while ((index = reader.ReadEncodedInt()) > 0)
                         {
-                            int doubled = reader.ReadEncodedInt();
-
-                            if (sbInfos != null)
-                            {
-                                index -= 1;
-                                int sbInfoIndex = index % sbInfos.Count;
-                                int buyInfoIndex = index / sbInfos.Count;
-
-                                if (sbInfoIndex >= 0 && sbInfoIndex < sbInfos.Count)
-                                {
-                                    SBInfo sbInfo = (SBInfo)sbInfos[sbInfoIndex];
-                                    ArrayList buyInfo = sbInfo.BuyInfo;
-
-                                    if (buyInfo != null && buyInfoIndex >= 0 && buyInfoIndex < buyInfo.Count)
-                                    {
-                                        GenericBuyInfo gbi = (GenericBuyInfo)buyInfo[buyInfoIndex];
-
-                                        int amount = 20;
-
-                                        switch (doubled)
-                                        {
-                                            case 1: amount = 40; break;
-                                            case 2: amount = 80; break;
-                                            case 3: amount = 160; break;
-                                            case 4: amount = 320; break;
-                                            case 5: amount = 640; break;
-                                            case 6: amount = 999; break;
-                                        }
-
-                                        gbi.Amount = gbi.MaxAmount = amount;
-                                    }
-                                }
-                            }
+                            // Consume doubled value, ignore semantics.
+                            reader.ReadEncodedInt();
                         }
 
                         break;
@@ -2047,9 +2573,9 @@ namespace Server.Mobiles
             }
 
             NameHue = CalcInvulNameHue();
-
             CheckMorph();
         }
+
 
         public override void AddCustomContextEntries(Mobile from, ArrayList list)
         {
@@ -2078,12 +2604,12 @@ namespace Server.Mobiles
 
         public virtual IShopSellInfo[] GetSellInfo()
         {
-            return (IShopSellInfo[])m_ArmorSellInfo.ToArray(typeof(IShopSellInfo));
+            return (IShopSellInfo[])m_SellInfo.ToArray(typeof(IShopSellInfo));
         }
 
         public virtual IBuyItemInfo[] GetBuyInfo()
         {
-            return (IBuyItemInfo[])m_ArmorBuyInfo.ToArray(typeof(IBuyItemInfo));
+            return (IBuyItemInfo[])m_BuyInfo.ToArray(typeof(IBuyItemInfo));
         }
 
         public override bool CanBeDamaged()
@@ -2099,7 +2625,7 @@ namespace Server.Mobiles
 			 * If a shopkeeper is killed, a new shopkeeper will appear as soon as another player (other than the one that killed it) approaches.
 			 * http://www.uoguide.com/Publish_4
 			 */
-            if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules() && PublishInfo.Publish >= 4)
+            if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules() && PublishInfo.Publish >= 4)
             {
                 if (Spawner != null && !Spawner.Deleted && Spawner.Running)
                 {
@@ -2119,7 +2645,7 @@ namespace Server.Mobiles
 			 * NPC shopkeepers will give a murder count when they die unless they are criminal or evil. The issue with murder counts from NPCs not decaying (as reported on Siege Perilous) will also be addressed.
 			 * http://www.uoguide.com/Publish_4
 			 */
-            if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules() && PublishInfo.Publish >= 4)
+            if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules() && PublishInfo.Publish >= 4)
             {
                 foreach (AggressorInfo ai in this.Aggressors)
                 {
@@ -2211,8 +2737,8 @@ namespace Server.Mobiles
             base.OnActionWander();
         }
         #region Standard Pricing Database
-        [CallPriority(0)]   // must come before ResourcePool
-        public static void Configure()
+        [CallPriority(0)]   // must come before ResourcePool and bulk order system
+        public new static void Configure()
         {   // Note: PreWorldLoad here since we need to be up and running before 
             //  WorldLoad where BaseVendor configures his pricing tables
             EventSink.PreWorldLoad += new PreWorldLoadEventHandler(Load);
@@ -2220,22 +2746,22 @@ namespace Server.Mobiles
         public const int PlayerPaysFailsafe = 1000000;
         public static int PlayerPays(int price)
         {   // this is for items that can't be looked up by type,
-            //  For instance a a Pitcher of Milk costs different that a Pitcher of Ale
-            if (Core.RuleSets.SiegeStyleRules())
+            //  For instance a a Pitcher of Milk costs different than a Pitcher of Ale
+            if (Core.RuleSets.SiegeRules())
                 price *= 3;
             return price;
         }
-        public static int PlayerPays(Type type, double siege_factor = 1.0)
+        public static int PlayerPays(Type type)
         {
             if (StandardPricingDictionary.ContainsKey(type))
                 foreach (var kvp in StandardPricingDictionary[type])
                     if (kvp.Key == StandardPricingType.Buy)
-                        if (Core.RuleSets.SiegeStyleRules())
-                            return Core.RuleSets.SiegePriceRules(type, (int)(kvp.Value * siege_factor));
+                        if (Core.RuleSets.SiegeRules())
+                            return SiegeHelper.SiegePriceRules(type, (int)(kvp.Value));
                         else
-                            return (int)(kvp.Value * siege_factor);
+                            return (int)(kvp.Value);
 
-            Utility.Monitor.WriteLine("Could not find buy price for type {0}", ConsoleColor.Red, type == null ? "(null)" : type.FullName);
+            Utility.Monitor.WriteLine("PlayerPays: Could not find buy price for type {0}", ConsoleColor.Red, type == null ? "(null)" : type.FullName);
             // failsafe pricing
             return PlayerPaysFailsafe;
         }
@@ -2245,15 +2771,29 @@ namespace Server.Mobiles
             if (StandardPricingDictionary.ContainsKey(type))
                 foreach (var kvp in StandardPricingDictionary[type])
                     if (kvp.Key == StandardPricingType.Sell)
-                        return kvp.Value;
+                    {
+                        System.Diagnostics.Debug.Assert(kvp.Value <= MaxVendorBuybackPrice);
+                        if (kvp.Value > MaxVendorBuybackPrice)
+                        {
+                            // The classic client encodes vendor buyback prices as a 16-bit unsigned value (ushort).
+                            // Any value above 65535 will overflow and display incorrectly in the sell gump,
+                            // so we ignore items whose computed buyback price exceeds the client protocol limit.
+                            return 0;
+                        }
 
-            Utility.Monitor.WriteLine("Could not find sell price for type {0}", ConsoleColor.Red, type == null ? "(null)" : type.FullName);
+                        return kvp.Value;
+                    }
+
+            Utility.Monitor.WriteLine("VendorPays: Could not find sell price for type {0}", ConsoleColor.Red, type == null ? "(null)" : type.FullName);
             // failsafe pricing
             return VendorPaysFailsafe;
         }
         public static Dictionary<Type, List<KeyValuePair<StandardPricingType, int>>> StandardPricingDictionary = new();
+        // incremented on every (re)load of the pricing database; ArbitrageTable rebuilds when it changes
+        public static int PricingVersion;
         public static void Load()
         {
+            PricingVersion++;
             Console.Write("Standard Pricing Database Loading...");
             try
             {
@@ -2314,6 +2854,7 @@ namespace Server.Mobiles
             }
         }
         #endregion Standard Pricing Database
+
     }
     public enum StandardPricingType
     {

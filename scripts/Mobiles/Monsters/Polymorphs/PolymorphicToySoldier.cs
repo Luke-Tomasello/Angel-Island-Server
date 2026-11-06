@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -125,63 +125,64 @@ namespace Server.Mobiles
         }
 
         public override void GenerateLoot()
-        {
+        {   // ai special
             base.GenerateLoot();
-            if (Utility.Chance(0.2))
-            {
-                /* Equal chance to get either a weapon or armor piece (for soldiers that have both)
-                 * Since items are always added in the same order, we need to shuffle to ensure a 50/50 split
-                 *  between weapons and armor.
-                 * Mages for instance don't have a weapon, that's handled.
-                 */
-                Utility.Shuffle(Items);                     // mix up ordering so we don't always get the same armor piece or weapon
-                List<Item> list = new List<Item>();         // since soldiers have more armor than weapons, only select one of each group        
-                bool have_weapon = false;
-                bool have_armor = false;
-                foreach (Item equip in Items)
+            if (!Spawning)
+                if (Utility.Chance(0.2))
                 {
-                    if (have_weapon && have_armor)
-                        break;
+                    /* Equal chance to get either a weapon or armor piece (for soldiers that have both)
+                     * Since items are always added in the same order, we need to shuffle to ensure a 50/50 split
+                     *  between weapons and armor.
+                     * Mages for instance don't have a weapon, that's handled.
+                     */
+                    Utility.Shuffle(Items);                     // mix up ordering so we don't always get the same armor piece or weapon
+                    List<Item> list = new List<Item>();         // since soldiers have more armor than weapons, only select one of each group        
+                    bool have_weapon = false;
+                    bool have_armor = false;
+                    foreach (Item equip in Items)
+                    {
+                        if (have_weapon && have_armor)
+                            break;
 
-                    if (have_weapon == false && equip is BaseWeapon)
-                    {
-                        list.Add(equip);
-                        have_weapon = true;
+                        if (have_weapon == false && equip is BaseWeapon)
+                        {
+                            list.Add(equip);
+                            have_weapon = true;
+                        }
+                        else if (have_armor == false && equip is BaseArmor)
+                        {
+                            list.Add(equip);
+                            have_armor = true;
+                        }
                     }
-                    else if (have_armor == false && equip is BaseArmor)
+                    Utility.Shuffle(list);                                          // shuffle again since armor has a greater chance to be on top
+                                                                                    // should be at most one armor and one weapon
+                    foreach (Item equip in list)
                     {
-                        list.Add(equip);
-                        have_armor = true;
+                        equip.SetItemBool(Item.ItemBoolTable.NoScroll, true);               // don't make scroll
+                        equip.SetItemBool(Item.ItemBoolTable.RemoveHueOnLift, false);       // don't remove hue on lift
+                        equip.Hue = 0;                                              // remove any existing hue
+                        equip.HideAttributes = true;                                // don't display attributes
+                        equip.Name = string.Format("toy soldier's {0}", equip.GetType().Name.ToLower());
+
+                        if (equip is BaseWeapon bw)
+                        {   // drop our weapon!
+                            bw = (BaseWeapon)Loot.ImbueWeaponOrArmor(bw, 2);        // add low magics
+                            bw.Quality = WeaponQuality.Exceptional;                 // addition buff
+                            bw.Identified = true;
+                            bw.Resource = (Hue == (int)ToyHues.Green) ? CraftResource.Verite : CraftResource.Gold;
+                            break;
+                        }
+                        else if (equip is BaseArmor ba)
+                        {   // drop our armor!
+                            ba = (BaseArmor)Loot.ImbueWeaponOrArmor(ba, 2);        // add low magics
+                            ba.Quality = ArmorQuality.Exceptional;                 // addition buff
+                            ba.Identified = true;
+                            ba.Resource = (Hue == (int)ToyHues.Green) ? CraftResource.Verite : CraftResource.Gold;
+                            break;
+                        }
                     }
                 }
-                Utility.Shuffle(list);                                          // shuffle again since armor has a greater chance to be on top
-                // should be at most one armor and one weapon
-                foreach (Item equip in list)
-                {
-                    equip.SetItemBool(Item.ItemBoolTable.NoScroll, true);               // don't make scroll
-                    equip.SetItemBool(Item.ItemBoolTable.RemoveHueOnLift, false);       // don't remove hue on lift
-                    equip.Hue = 0;                                              // remove any existing hue
-                    equip.HideAttributes = true;                                // don't display attributes
-                    equip.Name = string.Format("toy soldier's {0}", equip.GetType().Name.ToLower());
-
-                    if (equip is BaseWeapon bw)
-                    {   // drop our weapon!
-                        bw = (BaseWeapon)Loot.ImbueWeaponOrArmor(bw, 2);        // add low magics
-                        bw.Quality = WeaponQuality.Exceptional;                 // addition buff
-                        bw.Identified = true;
-                        bw.Resource = (Hue == (int)ToyHues.Green) ? CraftResource.Verite : CraftResource.Gold;
-                        break;
-                    }
-                    else if (equip is BaseArmor ba)
-                    {   // drop our armor!
-                        ba = (BaseArmor)Loot.ImbueWeaponOrArmor(ba, 2);        // add low magics
-                        ba.Quality = ArmorQuality.Exceptional;                 // addition buff
-                        ba.Identified = true;
-                        ba.Resource = (Hue == (int)ToyHues.Green) ? CraftResource.Verite : CraftResource.Gold;
-                        break;
-                    }
-                }
-            }
         }
 
         public override void Serialize(GenericWriter writer)

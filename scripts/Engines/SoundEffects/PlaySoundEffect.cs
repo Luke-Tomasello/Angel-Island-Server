@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -92,7 +92,7 @@ namespace Server.Engines
             }
             return false;
         }
-        private static PlayerMobile GetNearestPlayer(IEntity entity)
+        private static PlayerMobile? GetNearestPlayer(IEntity entity)
         {
             if (entity is PlayerMobile)
                 return entity as PlayerMobile;
@@ -118,7 +118,7 @@ namespace Server.Engines
             try
             {
                 ;
-                PlayerMobile pm = GetNearestPlayer(ent);
+                PlayerMobile? pm = GetNearestPlayer(ent);
                 if (pm == null || id == SoundEffect.None)
                     return false;
 

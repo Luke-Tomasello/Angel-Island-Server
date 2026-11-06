@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -99,43 +99,19 @@ namespace Server.Mobiles
         }
 
         public override void GenerateLoot()
-        {
-            if (Core.RuleSets.AngelIslandRules())
+        {   // Angel Island custom. 
+
+            // http://web.archive.org/web/20021015003503/uo.stratics.com/hunters/seaserpent.shtml
+            // Special Fishing Net, 8 blue scales (carved), 1 Fish Steak (carved), 10 Horned Hides (carved)
+            // https://web.archive.org/web/20011031024504/http://uo.stratics.com/hunters/seaserpent.shtml
+            // 	Special Fishing Net, 1 Fish Steak (carved)
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                //PackItem( new SpecialFishingNet() );
-                PackGold(25, 50);
+
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021015003503/uo.stratics.com/hunters/seaserpent.shtml
-                    // Special Fishing Net, 8 blue scales (carved), 1 Fish Steak (carved), 10 Horned Hides (carved)
-                    // https://web.archive.org/web/20011031024504/http://uo.stratics.com/hunters/seaserpent.shtml
-                    // 	Special Fishing Net, 1 Fish Steak (carved)
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-
-                    // no special fishing nets here, thos are dropped as part of the fishing system.
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        if (Utility.RandomBool())
-                            PackItem(new SulfurousAsh(4));
-                        else
-                            PackItem(new BlackPearl(4));
-
-                        PackItem(new RawFishSteak());
-
-                        //PackItem( new SpecialFishingNet() );
-                    }
-
-                    AddLoot(LootPack.Meager);
-                }
+                // no special fishing nets here, thos are dropped as part of the fishing system.    
             }
         }
 

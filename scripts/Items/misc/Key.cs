@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,10 @@
 
 /* Items/Misc/Key.cs
  * CHANGELOG:
+ *  10/17/26, Adam
+ *      Rusty locks (After Hours Club): using the key on the locked door unlocks it (and its linked halves) without
+ *      opening it, then the key breaks (RemoveKeys, as before). The door stays unlocked until a champion post guard
+ *      repairs it, so a key will not relock it. Only a locked door consumes the key.
  *  1/16/11, Pix
  *      Made Boat key location only show on AngelIsland
  *	10/5/07, Adam
@@ -290,7 +294,7 @@ namespace Server.Items
         {
             base.GetProperties(list);
 
-            string desc;
+            string? desc;
 
             if (m_KeyVal == 0)
                 desc = "(blank)";
@@ -388,6 +392,20 @@ namespace Server.Items
                         {
                             from.SendLocalizedMessage(1042001); // That must be in your pack for you to use it.
                         }
+                        else if (o is BaseDoor rusty && rusty.RustyLock)
+                        {   // the rusty lock only unlocks, and the key breaks. The door stays unlocked (and closed)
+                            //  until a champion post guard spawns and repairs the lock (see AIPostGuard)
+                            if (rusty.Locked)
+                            {
+                                rusty.UnlockAll();
+                                rusty.SendLocalizedMessageTo(from, 1048001); // "You unlock it."
+                                from.SendMessage("The lock was rusty and the key broke off in your fingers.");
+                                from.PlaySound(0x3A4);
+                                Key.RemoveKeys(from, m_Key.KeyValue);
+                            }
+                            else
+                                from.SendMessage("The rusty lock won't turn.");
+                        }
                         else
                         {
                             if (o is BaseHouseDoor)
@@ -405,16 +423,6 @@ namespace Server.Items
 
                             // lock/unlock the door
                             o.Locked = !o.Locked;
-
-                            // 5/28/2021, Adam
-                            //	If the door lock was rusty, destroy the key (single use)
-                            //	Used at the Angel Island guard tower
-                            if ((o is BaseDoor) && (o as BaseDoor).RustyLock == true)
-                            {
-                                from.SendMessage("The lock was rusty and the key broke off in your fingers.");
-                                from.PlaySound(0x3A4);
-                                Key.RemoveKeys(from, m_Key.KeyValue);
-                            }
 
                             if (o is LockableContainer)
                             {

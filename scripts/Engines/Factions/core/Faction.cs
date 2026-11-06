@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -243,8 +243,8 @@ namespace Server.Factions
             {
                 Mobile recv = (Mobile)obj;
 
-                PlayerState giveState = PlayerState.Find(from);
-                PlayerState recvState = PlayerState.Find(recv);
+                PlayerState? giveState = PlayerState.Find(from);
+                PlayerState? recvState = PlayerState.Find(recv);
 
                 if (giveState == null)
                     return;
@@ -275,7 +275,7 @@ namespace Server.Factions
 
         public void AddMember(Mobile mob)
         {
-            PlayerState pl = PlayerState.Find(mob);
+            PlayerState? pl = PlayerState.Find(mob);
 
             if (pl != null && Members.Contains(pl))
                 return;
@@ -405,65 +405,9 @@ namespace Server.Factions
             return false;
         }
 
-        public void RemovePlayerState(PlayerState pl)
-        {
-            if (pl == null || !Members.Contains(pl))
-                return;
-
-            int killPoints = pl.KillPoints;
-
-            if (pl.RankIndex != -1)
-            {
-                while ((pl.RankIndex + 1) < ZeroRankOffset)
-                {
-                    PlayerState pNext = Members[pl.RankIndex + 1] as PlayerState;
-                    Members[pl.RankIndex + 1] = pl;
-                    Members[pl.RankIndex] = pNext;
-                    pl.RankIndex++;
-                    pNext.RankIndex--;
-                }
-
-                ZeroRankOffset--;
-            }
-
-            Members.Remove(pl);
-
-            PlayerMobile pm = (PlayerMobile)pl.Mobile;
-            if (pm == null)
-                return;
-
-            Mobile mob = pl.Mobile;
-            if (pm.FactionPlayerState == pl)
-            {
-                pm.FactionPlayerState = null;
-
-                mob.InvalidateProperties();
-                mob.Delta(MobileDelta.Noto);
-
-                if (Election.IsCandidate(mob))
-                    Election.RemoveCandidate(mob);
-
-                if (pl.Finance != null)
-                    pl.Finance.Finance = null;
-
-                if (pl.Sheriff != null)
-                    pl.Sheriff.Sheriff = null;
-
-                Election.RemoveVoter(mob);
-
-                if (Commander == mob)
-                    Commander = null;
-
-                pm.ValidateEquipment();
-            }
-
-            if (killPoints > 0)
-                DistributePoints(killPoints);
-        }
-
         public void RemoveMember(Mobile mob)
         {
-            PlayerState pl = PlayerState.Find(mob);
+            PlayerState? pl = PlayerState.Find(mob);
 
             if (pl == null || !Members.Contains(pl))
                 return;
@@ -528,7 +472,7 @@ namespace Server.Factions
 
         public void JoinGuilded(PlayerMobile mob, Guild guild)
         {
-            Faction accountAllegiance = GetAccountAllegiance(mob);
+            Faction? accountAllegiance = GetAccountAllegiance(mob);
 
             /*if (mob.Young)
             {
@@ -536,12 +480,12 @@ namespace Server.Factions
                 mob.SendLocalizedMessage(1042283); // You have been kicked out of your guild!  Young players may not remain in a guild which is allied with a faction.
             }
             else*/
-            if (!Core.RuleSets.MLRules() && accountAllegiance != null)
+            if (!Core.RuleSets.MondainsLegacyRules() && accountAllegiance != null)
             {
                 guild.RemoveMember(mob);
                 mob.SendLocalizedMessage(1005281); // You have been kicked out of your guild due to factional overlap
             }
-            else if (Core.RuleSets.MLRules() && accountAllegiance != null && accountAllegiance != this)
+            else if (Core.RuleSets.MondainsLegacyRules() && accountAllegiance != null && accountAllegiance != this)
             {
                 guild.RemoveMember(mob);
                 mob.SendLocalizedMessage(1005281); // You have been kicked out of your guild due to factional overlap
@@ -564,9 +508,9 @@ namespace Server.Factions
             mob.SendLocalizedMessage(1005058); // You have joined the faction
         }
 
-        private static Faction GetAccountAllegiance(Mobile mob)
+        private static Faction? GetAccountAllegiance(Mobile mob)
         {
-            Account acct = mob.Account as Account;
+            Account? acct = mob.Account as Account;
 
             if (acct != null)
             {
@@ -586,7 +530,7 @@ namespace Server.Factions
 
         public static bool IsFactionBanned(Mobile mob)
         {
-            Account acct = mob.Account as Account;
+            Account? acct = mob.Account as Account;
 
             if (acct == null)
                 return false;
@@ -596,28 +540,28 @@ namespace Server.Factions
 
         public void OnJoinAccepted(Mobile mob)
         {
-            PlayerMobile pm = mob as PlayerMobile;
+            PlayerMobile? pm = mob as PlayerMobile;
 
             if (pm == null)
                 return; // sanity
 
-            PlayerState pl = PlayerState.Find(pm);
-            Faction accountAllegiance = GetAccountAllegiance(pm);
+            PlayerState? pl = PlayerState.Find(pm);
+            Faction? accountAllegiance = GetAccountAllegiance(pm);
 
             /*if (pm.Young)
                 pm.SendLocalizedMessage(1010104); // You cannot join a faction as a young player
             else*/
             if (pl != null && pl.IsLeaving)
                 pm.SendLocalizedMessage(1005051); // You cannot use the faction stone until you have finished quitting your current faction
-            else if (!Core.RuleSets.MLRules() && accountAllegiance != null)
+            else if (!Core.RuleSets.MondainsLegacyRules() && accountAllegiance != null)
                 pm.SendLocalizedMessage(1005059); // You cannot join a faction because you already declared your allegiance with another character
-            else if (Core.RuleSets.MLRules() && accountAllegiance != null && accountAllegiance != this)
+            else if (Core.RuleSets.MondainsLegacyRules() && accountAllegiance != null && accountAllegiance != this)
                 pm.SendLocalizedMessage(1080111); // You cannot join this faction because you've already declared your allegiance to another.
             else if (IsFactionBanned(mob))
                 pm.SendLocalizedMessage(1005052); // You are currently banned from the faction system
             else if (pm.Guild != null)
             {
-                Guild guild = pm.Guild as Guild;
+                Guild? guild = pm.Guild as Guild;
 
                 if (guild.Leader != pm)
                     pm.SendLocalizedMessage(1005057); // You cannot join a faction because you are in a guild and not the guildmaster
@@ -635,7 +579,7 @@ namespace Server.Factions
 
                     for (int i = 0; i < members.Count; ++i)
                     {
-                        PlayerMobile member = members[i] as PlayerMobile;
+                        PlayerMobile? member = members[i] as PlayerMobile;
 
                         if (member == null)
                             continue;
@@ -659,7 +603,7 @@ namespace Server.Factions
             if (mob == null || mob.Deleted)
                 return false;
 
-            PlayerState pl = PlayerState.Find(mob);
+            PlayerState? pl = PlayerState.Find(mob);
 
             return (mob.AccessLevel >= AccessLevel.GameMaster || (pl != null && m_State.Members.Contains(pl)));
         }
@@ -682,7 +626,7 @@ namespace Server.Factions
             return m_Definition.FriendlyName;
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             return m_Definition.Sort - ((Faction)obj).m_Definition.Sort;
         }
@@ -853,8 +797,8 @@ namespace Server.Factions
 
             for (int i = 0; i < pots.Count; ++i)
             {
-                Item item = (Item)pots[i];
-                IFactionItem fci = (IFactionItem)item;
+                Item? item = (Item?)pots[i];
+                IFactionItem? fci = (IFactionItem?)item;
 
                 if (fci.FactionItemState != null || item.LootType != LootType.Blessed)
                     continue;
@@ -891,7 +835,7 @@ namespace Server.Factions
             if (obj is PlayerMobile)
             {
                 Mobile targ = (Mobile)obj;
-                PlayerState pl = PlayerState.Find(targ);
+                PlayerState? pl = PlayerState.Find(targ);
 
                 if (pl != null)
                 {
@@ -930,37 +874,6 @@ namespace Server.Factions
             else
             {
                 from.SendMessage("That is not a faction stone.");
-            }
-        }
-
-        public static void FactionKick_OnCommand(CommandEventArgs e)
-        {
-            e.Mobile.SendMessage("Target a player to remove them from their faction.");
-            e.Mobile.BeginTarget(-1, false, TargetFlags.None, new TargetCallback(FactionKick_OnTarget));
-        }
-
-        public static void FactionKick_OnTarget(Mobile from, object obj)
-        {
-            if (obj is Mobile)
-            {
-                Mobile mob = (Mobile)obj;
-                PlayerState pl = PlayerState.Find((Mobile)mob);
-
-                if (pl != null)
-                {
-                    pl.Faction.RemoveMember(mob);
-
-                    mob.SendMessage("You have been kicked from your faction.");
-                    from.SendMessage("They have been kicked from their faction.");
-                }
-                else
-                {
-                    from.SendMessage("They are not in a faction.");
-                }
-            }
-            else
-            {
-                from.SendMessage("That is not a player.");
             }
         }
 
@@ -1111,7 +1024,7 @@ namespace Server.Factions
 
         public static bool ClearSkillLoss(Mobile mob)
         {
-            SkillLossContext context;
+            SkillLossContext? context;
 
             if (!m_SkillLoss.TryGetValue(mob, out context))
                 return false;
@@ -1157,7 +1070,7 @@ namespace Server.Factions
         public static Faction FindSmallestFaction()
         {
             List<Faction> factions = Factions;
-            Faction smallest = null;
+            Faction? smallest = null;
 
             for (int i = 0; i < factions.Count; ++i)
             {
@@ -1172,7 +1085,7 @@ namespace Server.Factions
 
         public static bool StabilityActive()
         {
-            if (Core.RuleSets.MLRules())
+            if (Core.RuleSets.MondainsLegacyRules())
                 return false;
 
             List<Faction> factions = Factions;
@@ -1209,13 +1122,13 @@ namespace Server.Factions
             if (killer == null)
                 killer = victim.FindMostRecentDamager(true);
 
-            PlayerState killerState = PlayerState.Find(killer);
+            PlayerState? killerState = PlayerState.Find(killer);
 
             Container pack = victim.Backpack;
 
             if (pack != null)
             {
-                Container killerPack = (killer == null ? null : killer.Backpack);
+                Container? killerPack = (killer == null ? null : killer.Backpack);
                 Item[] sigils = pack.FindItemsByType(typeof(Sigil));
 
                 for (int i = 0; i < sigils.Length; ++i)
@@ -1276,7 +1189,7 @@ namespace Server.Factions
                 return;
             }
 
-            PlayerState victimState = PlayerState.Find(victim);
+            PlayerState? victimState = PlayerState.Find(victim);
 
             if (victimState == null)
                 return;
@@ -1372,8 +1285,8 @@ namespace Server.Factions
 
         public static void HandleMurder(Mobile victim, Mobile killer)
         {
-            PlayerState killerState = PlayerState.Find(killer);
-            PlayerState victimState = PlayerState.Find(victim);
+            PlayerState? killerState = PlayerState.Find(killer);
+            PlayerState? victimState = PlayerState.Find(victim);
 
             if (killerState != null && victimState != null && killerState.Faction == victimState.Faction)
             {
@@ -1434,7 +1347,7 @@ namespace Server.Factions
 
         public static List<Faction> Factions { get { return Reflector.Factions; } }
 
-        public static Faction ReadReference(GenericReader reader)
+        public static Faction? ReadReference(GenericReader reader)
         {
             int idx = reader.ReadEncodedInt() - 1;
 
@@ -1454,9 +1367,9 @@ namespace Server.Factions
             return Find(mob, inherit, false);
         }
 
-        public static Faction Find(Mobile mob, bool inherit, bool creatureAllegiances)
+        public static Faction? Find(Mobile mob, bool inherit, bool creatureAllegiances)
         {
-            PlayerState pl = PlayerState.Find(mob);
+            PlayerState? pl = PlayerState.Find(mob);
 
             if (pl != null)
                 return pl.Faction;
@@ -1478,7 +1391,7 @@ namespace Server.Factions
             return null;
         }
 
-        public static Faction Parse(string name)
+        public static Faction? Parse(string name)
         {
             List<Faction> factions = Factions;
 
@@ -1547,7 +1460,7 @@ namespace Server.Factions
             {
                 case FactionKickType.Kick:
                     {
-                        PlayerState pl = PlayerState.Find(mob);
+                        PlayerState? pl = PlayerState.Find(mob);
 
                         if (pl != null)
                         {
@@ -1564,7 +1477,7 @@ namespace Server.Factions
                     }
                 case FactionKickType.Ban:
                     {
-                        Account acct = mob.Account as Account;
+                        Account? acct = mob.Account as Account;
 
                         if (acct != null)
                         {
@@ -1584,7 +1497,7 @@ namespace Server.Factions
 
                                 if (mob != null)
                                 {
-                                    PlayerState pl = PlayerState.Find(mob);
+                                    PlayerState? pl = PlayerState.Find(mob);
 
                                     if (pl != null)
                                     {
@@ -1604,7 +1517,7 @@ namespace Server.Factions
                     }
                 case FactionKickType.Unban:
                     {
-                        Account acct = mob.Account as Account;
+                        Account? acct = mob.Account as Account;
 
                         if (acct != null)
                         {
@@ -1643,7 +1556,7 @@ namespace Server.Factions
 
         public override void Execute(CommandEventArgs e, object obj)
         {
-            PlayerState pl = PlayerState.Find((Mobile)obj);
+            PlayerState? pl = PlayerState.Find((Mobile)obj);
 
             if (pl == null)
                 LogFailure("They have no faction player state.");

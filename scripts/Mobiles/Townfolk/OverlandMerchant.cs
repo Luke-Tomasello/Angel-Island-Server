@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -287,75 +287,37 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                // this loot drops with corpse
+            // Announced overland merchants carry better loot because they create public risk.
+            // Manually spawned merchants get only modest fallback loot.
+
 #if DEBUG
-                if (true)
+            bool announced = true;
 #else
-                if (Announce == true)
+    bool announced = Announce;
 #endif
-                {
-                    PackScroll(6, 8);
-                    PackScroll(6, 8);
-                    PackReg(10);
-                    PackReg(10);
-                }
-                else
-                {
-                    // crappy loot if manually spawned 
-                    PackGold(200, 250);
-                }
-            }
-            else if (Core.RuleSets.SiegeStyleRules())
+
+            if (Spawning)
             {
-                // this loot drops with corpse
-#if DEBUG
-                if (true)
-#else
-                if (Announce == true)
-#endif
-                {
-                    if (!Spawning)
-                    {
-                        PackScroll(6, 8);
-                        PackScroll(6, 8);
-                        PackReg(10);
-                        PackReg(10);
-                    }
-                }
-                else
-                {
-                    // crappy loot if manually spawned 
+                if (!announced)
                     PackGold(200, 250);
-                }
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    // ai special
-                }
+
+                return;
             }
 
-            return;
+            if (!announced)
+                return;
+
+            PackScroll(6, 8);
+            PackScroll(6, 8);
+
+            PackReg(10);
+            PackReg(10);
         }
 
         // timer callback to complain about moongate travel
         public override void tcMoongate()
         {
-            Mobile mob = GetEscorterWithSideEffects();
+            Mobile? mob = GetEscorterWithSideEffects();
             if (mob != null)
                 this.Say("I'm sorry {0}, but magic scares me and I do not wish to travel this way.", mob.Name);
             else
@@ -366,7 +328,7 @@ namespace Server.Mobiles
         {
             if (GateTravel == false)
             {
-                Mobile mob = GetEscorterWithSideEffects();
+                Mobile? mob = GetEscorterWithSideEffects();
                 if (mob != null)
                 {
                     int save = this.SpeechHue;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -35,6 +35,7 @@ using Server.Multis.Deeds;
 using Server.Network;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Server.Gumps
 {
@@ -95,22 +96,35 @@ namespace Server.Gumps
                     else if (m_House.FindPlayer() != null)
                     {
                         m_Mobile.SendMessage("It is not safe to demolish this tent with someone still inside."); // You need to collect your vendor's belongings before moving.
-                                                                                                                 //Tell staff that an exploit is in progress
-                                                                                                                 //Server.Commands.CommandHandlers.BroadcastMessage( AccessLevel.Counselor, 
-                                                                                                                 //0x482, 
-                                                                                                                 //string.Format( "Exploit in progress at {0}. Stay hidden, Jail involved players, get acct name, ban.", m_House.Location.ToString() ) );
                         return;
                     }
 
-                    Item toGive;
+                    Item toGiveDeed;
+                    Backpack? toGivePack = null;
+                    Container pack;
+
+                    if (m_House is SiegeTent)
+                        pack = ((SiegeTent)m_House).TentPack;
+                    else
+                        pack = ((Tent)m_House).TentPack;
 
                     if (m_House is Tent)
                     {
-                        toGive = (TentBag)((Tent)m_House).GetDeed();
+                        toGiveDeed = (TentBag)((Tent)m_House).GetDeed();
+                        if (m_Mobile.AccessLevel >= AccessLevel.GameMaster && pack != null && pack.Items != null && pack.Items.Count > 0)
+                        {
+                            toGivePack = new();
+                            Utility.RecursiveMove(toGivePack, pack, new List<Type>());
+                        }
                     }
                     else if (m_House is SiegeTent)
                     {
-                        toGive = (SiegeTentBag)((SiegeTent)m_House).GetDeed();
+                        toGiveDeed = (SiegeTentBag)((SiegeTent)m_House).GetDeed();
+                        if (m_Mobile.AccessLevel >= AccessLevel.GameMaster && pack != null && pack.Items != null && pack.Items.Count > 0)
+                        {
+                            toGivePack = new();
+                            Utility.RecursiveMove(toGivePack, pack, new List<Type>());
+                        }
                     }
                     else
                     {
@@ -127,8 +141,12 @@ namespace Server.Gumps
                             break;
 
                     // Hue the tent bag to the roof hue
-                    toGive.Hue = ((TentRoof)ta_enum.Current).Hue;
-                    toGive.MoveToWorld(m_House.Location, m_Mobile.Map);
+                    toGiveDeed.Hue = ((TentRoof)ta_enum.Current).Hue;
+                    toGiveDeed.MoveToWorld(m_House.Location, m_Mobile.Map);
+                    if (m_Mobile.AccessLevel >= AccessLevel.GameMaster && toGivePack != null)
+                    {
+                        toGivePack.MoveToWorld(m_House.Location, m_Mobile.Map);
+                    }
 
                     m_House.Delete();
                 }

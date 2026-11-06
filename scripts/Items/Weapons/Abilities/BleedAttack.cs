@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,7 +62,7 @@ namespace Server.Items
 
         public static void BeginBleed(Mobile m, Mobile from)
         {
-            Timer t = (Timer)m_Table[m];
+            Timer? t = (Timer?)m_Table[m];
 
             if (t != null)
                 t.Stop();
@@ -83,7 +83,7 @@ namespace Server.Items
                     damage *= 2;
 
                 m.PlaySound(0x133);
-                m.Damage(damage, from, from);
+                m.Damage(damage, from, new DamageContext { Source = "BleedAttack" });
 
                 Blood blood = new Blood();
 
@@ -99,7 +99,7 @@ namespace Server.Items
 
         public static void EndBleed(Mobile m, bool message)
         {
-            Timer t = (Timer)m_Table[m];
+            Timer? t = (Timer?)m_Table[m];
 
             if (t == null)
                 return;

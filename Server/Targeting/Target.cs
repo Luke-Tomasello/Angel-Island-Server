@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -81,7 +81,7 @@ namespace Server.Targeting
                 targ.OnTargetCancel(m, TargetCancelType.Canceled);
         }
 
-        private Timer m_TimeoutTimer;
+        private Timer? m_TimeoutTimer;
 
         public void BeginTimeout(Mobile from, TimeSpan delay)
         {
@@ -203,7 +203,7 @@ namespace Server.Targeting
             OnTargetCancel(from, type);
             OnTargetFinish(from);
         }
-        public void Invoke(Mobile from, object targeted)
+        public void Invoke(Mobile from, object? targeted)
         {
             CancelTimeout();
             from.ClearTarget();

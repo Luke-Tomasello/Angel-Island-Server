@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -57,7 +57,7 @@ namespace Server.Engines
                 }
             }
         }
-        private static ProcessTimer m_ProcessTimer = null;
+        private static ProcessTimer? m_ProcessTimer = null;
         private class ProcessTimer : Timer
         {
             Mobile m_mobile;
@@ -180,7 +180,7 @@ namespace Server.Engines
             else
             {
                 e.Mobile.SendMessage("Starting IDS regression tests...");
-                Mobile target = null;
+                Mobile? target = null;
                 if (NearBy(e.Mobile, ref target, typeof(BaseGuard)))
                 {
                     string filename = Path.Combine(Core.DataDirectory, "Intelligent Dialogue Regression Tests.txt");

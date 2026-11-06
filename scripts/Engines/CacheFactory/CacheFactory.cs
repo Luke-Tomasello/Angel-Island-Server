@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -43,6 +43,7 @@
 using Server.Items;
 using Server.Mobiles;
 using Server.Multis;
+using Server.Text;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -66,6 +67,7 @@ namespace Server.Engines
         private static Dictionary<string, Point3D> m_docksQuickTable = new Dictionary<string, Point3D>(StringComparer.OrdinalIgnoreCase);
         private static Dictionary<string, List<Region>> m_regionQuickTable = new Dictionary<string, List<Region>>(StringComparer.OrdinalIgnoreCase);
         private static Dictionary<string, List<Point3D>> m_inventoryQuickTable = new Dictionary<string, List<Point3D>>(StringComparer.OrdinalIgnoreCase);
+        private static Dictionary<Serial, List<string>> m_vendorInventoryIndex = new Dictionary<Serial, List<string>>();
         private static Dictionary<string, Type> m_OldNameToTypeQuickTable = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
 
         private static List<int> m_signIds = new List<int>();
@@ -147,57 +149,189 @@ namespace Server.Engines
                 }
             }
         }
+        #region InitializeInventories
         private static void InitializeInventories()
-        {   // we do this in two passes since binfo.GetDisplayObject() creates/adds both Items and Mobiles as a cached display object
-            //  whereby modifying the World.Mobiles.Values that we are trying to enumerate. (badness)
-            Console.WriteLine("Generating Inventory quick table, please wait...");
+        {
+            Console.WriteLine("Initializing inventory quick table...");
 
-            Dictionary<SBInfo, Point3D> list = new Dictionary<SBInfo, Point3D>();
-            foreach (Mobile mob in World.Mobiles.Values)
+            m_inventoryQuickTable.Clear();
+            m_vendorInventoryIndex.Clear();
+
+            Console.WriteLine("Inventory quick table initialized.");
+        }
+
+        public static void RegisterVendorInventory(BaseVendor vendor)
+        {
+            if (vendor == null || vendor.Deleted)
+                return;
+
+            if (!IsVendorReadyForRegistration(vendor))
             {
-                if (mob == null || mob is PlayerVendor || mob is RentedVendor)
-                    continue;
-
-                if (mob.Map != Map.Felucca || mob.Title == null)
-                    continue;
-
-                if (mob is BaseVendor vendor)
-                {
-                    ArrayList infos = vendor.Inventory;
-                    if (infos != null)
-                        foreach (SBInfo info in infos)
-                            if (info == null || info.BuyInfo == null || info.BuyInfo.GetType() == null)
-                                continue;
-                            else
-                                list.Add(info, mob.Location);
-                }
+                QueueVendorRegistrationRetry(vendor);
+                return;
             }
-            foreach (KeyValuePair<SBInfo, Point3D> info in list)
-                foreach (GenericBuyInfo binfo in info.Key.BuyInfo)
-                {   // exclude BBS items (price==0)
 
-                    if (binfo.Type == null)
-                    {   // check and make sure you are not adding something as a pooled resource without pooled resource being enabled.
-                        //  this will cause an 'empty' entry in the list 'info'
-                        Utility.Monitor.WriteLine(string.Format("binfo.Type == null: {0}. ", Utility.FileInfo()), ConsoleColor.Red);
+            RegisterVendorInventoryCore(vendor);
+        }
+        private static HashSet<Serial> m_pendingVendorRegistration = new HashSet<Serial>();
+        private static void QueueVendorRegistrationRetry(BaseVendor vendor)
+        {
+            if (vendor == null || vendor.Deleted)
+                return;
+
+            Serial serial = vendor.Serial;
+
+            // Avoid scheduling multiple retries
+            if (m_pendingVendorRegistration.Contains(serial))
+                return;
+
+            m_pendingVendorRegistration.Add(serial);
+
+            Timer.DelayCall(TimeSpan.FromSeconds(1.0), () =>
+            {
+                m_pendingVendorRegistration.Remove(serial);
+
+                if (vendor == null || vendor.Deleted)
+                    return;
+
+                // Try registration again
+                RegisterVendorInventory(vendor);
+            });
+        }
+        private static bool IsVendorReadyForRegistration(BaseVendor vendor)
+        {
+            return vendor != null
+                   && !vendor.Deleted
+                   && vendor.Map != null
+                   && vendor.Map != Map.Internal
+                   && !string.IsNullOrWhiteSpace(vendor.Name)
+                   && vendor.Inventory != null;
+        }
+        public static void RegisterVendorInventoryCore(BaseVendor vendor)
+        {
+            if (vendor == null || vendor.Deleted)
+                return;
+
+            if (vendor.Map != Map.Felucca || vendor.Title == null)
+                return;
+
+            ArrayList infos = vendor.Inventory;
+
+            if (infos == null || infos.Count == 0)
+                return;
+
+            // Make registration idempotent.
+            UnregisterVendorInventory(vendor);
+
+            List<string> registeredNames = new List<string>();
+            Point3D loc = vendor.Location;
+
+            foreach (SBInfo info in infos)
+            {
+                if (info == null || info.BuyInfo == null)
+                    continue;
+
+                foreach (GenericBuyInfo binfo in info.BuyInfo)
+                {
+                    if (binfo == null || binfo.Type == null)
                         continue;
-                    }
 
+                    // Exclude pooled resource placeholders / BBS-style zero-price entries.
                     if (ResourcePool.ResourcePool.IsPooledResource(binfo.Type, true) && binfo.Price == 0)
                         continue;
 
-                    string name = Utility.GetObjectDisplayName(binfo.GetDisplayObject(), binfo.Type);
+                    string? name = GetBuyInfoDisplayName(binfo);
 
-                    if (m_inventoryQuickTable.ContainsKey(name))
-                        m_inventoryQuickTable[name].Add(info.Value);
-                    else
-                        m_inventoryQuickTable.Add(name, new List<Point3D> { info.Value });
+                    if (string.IsNullOrWhiteSpace(name))
+                        continue;
 
-                    //Console.WriteLine(m_inventoryQuickTable.Count);
+                    List<Point3D>? points;
+
+                    if (!m_inventoryQuickTable.TryGetValue(name, out points))
+                    {
+                        points = new List<Point3D>();
+                        m_inventoryQuickTable[name] = points;
+                    }
+
+                    // Avoid duplicate locations for the same item name from the same vendor.
+                    if (!points.Contains(loc))
+                        points.Add(loc);
+
+                    if (!registeredNames.Contains(name))
+                        registeredNames.Add(name);
                 }
+            }
 
-            Console.WriteLine("Inventory quick table generation complete with {0} items registered.", m_inventoryQuickTable.Count);
+            if (registeredNames.Count > 0)
+                m_vendorInventoryIndex[vendor.Serial] = registeredNames;
         }
+        public static void UnregisterVendorInventory(BaseVendor vendor)
+        {
+            if (vendor == null)
+                return;
+
+            List<string>? names;
+
+            if (!m_vendorInventoryIndex.TryGetValue(vendor.Serial, out names) || names == null || names.Count == 0)
+                return;
+
+            Point3D loc = vendor.Location;
+
+            foreach (string name in names)
+            {
+                if (string.IsNullOrWhiteSpace(name))
+                    continue;
+
+                List<Point3D>? points;
+
+                if (!m_inventoryQuickTable.TryGetValue(name, out points) || points == null)
+                    continue;
+
+                points.RemoveAll(p => p == loc);
+
+                if (points.Count == 0)
+                    m_inventoryQuickTable.Remove(name);
+            }
+
+            m_vendorInventoryIndex.Remove(vendor.Serial);
+        }
+        private static string? GetBuyInfoDisplayName(GenericBuyInfo binfo)
+        {
+            if (binfo == null)
+                return null;
+
+            string name = binfo.Name;
+
+            // 1. Prefer an explicit meaningful string name.
+            // If it is not just a numeric cliloc id, use it as-is.
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                name = name.Trim();
+
+                int number;
+                if (!int.TryParse(name, out number))
+                    return name;
+            }
+
+            // 2. Prefer the buy type name over generic cliloc results like "deed".
+            if (binfo.Type != null)
+                return Utility.SplitCamelCase(binfo.Type.Name);
+
+            // 3. Last resort: resolve numeric cliloc name if present.
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                int number;
+                if (int.TryParse(name, out number))
+                {
+                    string? clilocName;
+                    if (Cliloc.Lookup.TryGetValue(number, out clilocName) && !string.IsNullOrWhiteSpace(clilocName))
+                        return clilocName;
+                }
+            }
+
+            return null;
+        }
+        #endregion InitializeInventories
         private static void InitializeOldNames()
         {
             Console.WriteLine("Generating OldNames quick table, please wait...");
@@ -226,7 +360,7 @@ namespace Server.Engines
             }
 
 
-            Console.WriteLine("OldNames quick table generation complete with {0} items registered.", m_inventoryQuickTable.Count);
+            Console.WriteLine("OldNames quick table generation complete with {0} items registered.", m_OldNameToTypeQuickTable.Count);
         }
         private static void InitializeRegions()
         {
@@ -272,15 +406,15 @@ namespace Server.Engines
         private static void InitializeMoongates()
         {
             Console.WriteLine("Generating Moongate quick table, please wait...");
-            m_moongatesQuickTable.Add("britain", new Point3D(1330, 1991, 0));
-            m_moongatesQuickTable.Add("jhelom", new Point3D(1494, 3767, 0));
-            m_moongatesQuickTable.Add("minoc", new Point3D(2694, 685, 0));
-            m_moongatesQuickTable.Add("trinsic", new Point3D(1823, 2943, 0));
-            m_moongatesQuickTable.Add("yew", new Point3D(761, 741, 0));
-            m_moongatesQuickTable.Add("skara brae", new Point3D(638, 2062, 0));
-            m_moongatesQuickTable.Add("moonglow", new Point3D(4459, 1276, 0));
-            m_moongatesQuickTable.Add("magincia", new Point3D(3554, 2132, 0));
-            Console.WriteLine("Moongate quick table generation complete with {0} moongates registered.", VendorsQuickTable.Count);
+            m_moongatesQuickTable.TryAdd("britain", new Point3D(1330, 1991, 0));
+            m_moongatesQuickTable.TryAdd("jhelom", new Point3D(1494, 3767, 0));
+            m_moongatesQuickTable.TryAdd("minoc", new Point3D(2694, 685, 0));
+            m_moongatesQuickTable.TryAdd("trinsic", new Point3D(1823, 2943, 0));
+            m_moongatesQuickTable.TryAdd("yew", new Point3D(761, 741, 0));
+            m_moongatesQuickTable.TryAdd("skara brae", new Point3D(638, 2062, 0));
+            m_moongatesQuickTable.TryAdd("moonglow", new Point3D(4459, 1276, 0));
+            m_moongatesQuickTable.TryAdd("magincia", new Point3D(3554, 2132, 0));
+            Console.WriteLine("Moongate quick table generation complete with {0} moongates registered.", m_moongatesQuickTable.Count);
             return;
         }
         private static void InitializeVendors()
@@ -360,7 +494,7 @@ namespace Server.Engines
             // locations based on Locations/felucca.xml
             XmlDocument doc = new XmlDocument();
             doc.Load(Path.Combine(Core.DataDirectory, "Locations", "felucca.xml"));
-            XmlElement root = doc["places"];
+            XmlElement? root = doc["places"];
             foreach (XmlElement places in root.GetElementsByTagName("parent"))
             {
                 string placeName = places.GetAttribute("name");
@@ -468,7 +602,7 @@ namespace Server.Engines
 
             // let's begin
             Console.WriteLine("Generating Spawner quick table, please wait...");
-            foreach (Spawner spawner in SpawnerCache.Spawners)
+            foreach (Spawner spawner in Spawner.Instances)
             {
                 if (spawner == null || spawner.Running == false || spawner.Map != Map.Felucca)
                     continue;
@@ -482,7 +616,7 @@ namespace Server.Engines
                             m_spawnedObjectsQuickTable.Add(sx.ToLower(), new List<Spawner> { spawner });
 
                         // now create two more tables, one for items and one for mobiles
-                        Type type = ScriptCompiler.FindTypeByName(sx);
+                        Type? type = ScriptCompiler.FindTypeByName(sx);
                         if (type != null)
                         {
                             // if a mobile, cache here
@@ -651,8 +785,8 @@ namespace Server.Engines
 
                     for (int i = 0; i < list.Count; ++i)
                     {
-                        SignEntry e = (SignEntry)list[i];
-                        Map[] maps = null;
+                        SignEntry? e = (SignEntry?)list[i];
+                        Map[]? maps = null;
 
                         switch (e.m_Map)
                         {
@@ -701,40 +835,111 @@ namespace Server.Engines
         [Description("Looks up a text string in all of our databases.")]
         public static void CacheLookup_OnCommand(CommandEventArgs c)
         {
+            string? needle = c.ArgString?.Trim();
+
+            if (string.IsNullOrWhiteSpace(needle))
+            {
+                c.Mobile.SendMessage("Usage: CacheLookup <text>");
+                return;
+            }
+
+            // remove surrounding quotes
+            if (needle.Length >= 2 && needle[0] == '"' && needle[needle.Length - 1] == '"')
+                needle = needle.Substring(1, needle.Length - 2);
+
+            bool found = SearchCaches(c, needle);
+
+            if (!found && Utility.LooksCamelCase(needle))
+            {
+                string camel = Utility.SplitCamelCase(needle);
+
+                if (!camel.Equals(needle, StringComparison.OrdinalIgnoreCase))
+                {
+                    c.Mobile.SendMessage("No match for '{0}', retrying as '{1}'...", needle, camel);
+                    found = SearchCaches(c, camel);
+                }
+            }
+
+            if (!found)
+                c.Mobile.SendMessage("'{0}' was not found in any cache list.", needle);
+
+            c.Mobile.SendMessage("done.");
+        }
+
+        public static bool SearchCaches(CommandEventArgs c, string needle)
+        {
+            bool found = false;
+
             List<Dictionary<string, List<Point3D>>> dic3DLists = new List<Dictionary<string, List<Point3D>>>()
-            {  m_placesQuickTable, m_vendorsQuickTable};
+    { m_placesQuickTable, m_vendorsQuickTable };
+
             List<Dictionary<string, List<Spawner>>> dicSpawnerLists = new List<Dictionary<string, List<Spawner>>>()
-            { m_spawnedObjectsQuickTable, m_spawnedItemsQuickTable,m_spawnedMobilesQuickTable };
+    { m_spawnedObjectsQuickTable, m_spawnedItemsQuickTable, m_spawnedMobilesQuickTable };
+
             List<Dictionary<string, Point3D>> dicMoongateLists = new List<Dictionary<string, Point3D>>()
-            {  m_moongatesQuickTable};
+    { m_moongatesQuickTable };
 
             foreach (string s in PlacesList)
-                if (s.ToLower().Contains(c.ArgString.ToLower()))
-                    c.Mobile.SendMessage(string.Format("'{0}' was found in PlacesList", s));
+            {
+                if (s != null && s.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    c.Mobile.SendMessage("'{0}' was found in PlacesList", s);
+                    found = true;
+                }
+            }
 
             foreach (string s in InventoryList)
-                if (s.ToLower().Contains(c.ArgString.ToLower()))
-                    c.Mobile.SendMessage(string.Format("'{0}' was found in InventoryList", s));
+            {
+                if (s != null && s.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    c.Mobile.SendMessage("'{0}' was found in InventoryList", s);
+                    found = true;
+                }
+            }
 
             foreach (string s in VendorTitleList)
-                if (s.ToLower().Contains(c.ArgString.ToLower()))
-                    c.Mobile.SendMessage(string.Format("'{0}' was found in VendorTitleList", s));
+            {
+                if (s != null && s.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    c.Mobile.SendMessage("'{0}' was found in VendorTitleList", s);
+                    found = true;
+                }
+            }
 
             foreach (string s in TownsList)
-                if (s.ToLower().Contains(c.ArgString.ToLower()))
-                    c.Mobile.SendMessage(string.Format("'{0}' was found in TownsList", s));
+            {
+                if (s != null && s.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    c.Mobile.SendMessage("'{0}' was found in TownsList", s);
+                    found = true;
+                }
+            }
 
-            foreach (Dictionary<string, List<Point3D>> kvp in dic3DLists)
-                foreach (string s in kvp.Keys)
-                    if (s.ToLower().Contains(c.ArgString.ToLower()))
-                        c.Mobile.SendMessage(string.Format("'{0}' was found in dic3DLists", s));
+            foreach (Dictionary<string, List<Point3D>> dict in dic3DLists)
+            {
+                foreach (string s in dict.Keys)
+                {
+                    if (s != null && s.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        c.Mobile.SendMessage("'{0}' was found in dic3DLists", s);
+                        found = true;
+                    }
+                }
+            }
 
-            foreach (Dictionary<string, Point3D> kvp in dicMoongateLists)
-                foreach (string s in kvp.Keys)
-                    if (s.ToLower().Contains(c.ArgString.ToLower()))
-                        c.Mobile.SendMessage(string.Format("'{0}' was found in dicMoongateLists", s));
+            foreach (Dictionary<string, Point3D> dict in dicMoongateLists)
+            {
+                foreach (string s in dict.Keys)
+                {
+                    if (s != null && s.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        c.Mobile.SendMessage("'{0}' was found in dicMoongateLists", s);
+                        found = true;
+                    }
+                }
+            }
 
-            c.Mobile.SendMessage(string.Format("done."));
+            return found;
         }
         #endregion CacheLookup Command
     }

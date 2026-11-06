@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -22,7 +22,6 @@
 using Server.Gumps;
 using Server.Network;
 using Server.Targets;
-using System;
 using System.Collections;
 
 namespace Server.Commands
@@ -87,7 +86,7 @@ namespace Server.Commands
             {
                 AddNewLine();
 
-                object obj = m_List[i];
+                object? obj = m_List[i];
                 bool isDeleted = false;
 
                 if (obj is Item)
@@ -143,7 +142,7 @@ namespace Server.Commands
 
                         if (v >= 0 && v < m_List.Count)
                         {
-                            object obj = m_List[v];
+                            object? obj = m_List[v];
 
                             if (!BaseCommand.IsAccessible(m_From, obj))
                             {
@@ -269,7 +268,7 @@ namespace Server.Commands
                     }
                 case 6: // Bring to pack
                     {
-                        Mobile owner = m_Item.RootParent as Mobile;
+                        Mobile? owner = m_Item.RootParent as Mobile;
 
                         if (owner != null && (owner.Map != null && owner.Map != Map.Internal) && !m_From.CanSee(owner))
                         {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -37,11 +37,11 @@ namespace Server.Mobiles
     [CorpseName("a plague spawn corpse")]
     public class PlagueSpawn : BaseCreature
     {
-        private Mobile m_Owner;
+        private Mobile? m_Owner;
         private DateTime m_ExpireTime;
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Mobile Owner
+        public Mobile? Owner
         {
             get { return m_Owner; }
             set { m_Owner = value; }
@@ -97,7 +97,7 @@ namespace Server.Mobiles
             }
         }
 
-        public PlagueSpawn(Mobile owner)
+        public PlagueSpawn(Mobile? owner)
             : base(AIType.AI_Melee, FightMode.All | FightMode.Closest, 10, 1, 0.25, 0.5)
         {
             m_Owner = owner;
@@ -105,11 +105,7 @@ namespace Server.Mobiles
 
             Name = "a plague spawn";
             // 10/16/23, Yoar: Let's use slime hues here instead of these jarring colors
-#if false
-            Hue = Utility.Random(0x11, 15);
-#else
             Hue = Utility.RandomSlimeHue();
-#endif
 
             switch (Utility.Random(12))
             {
@@ -164,12 +160,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-                PackGold(0, 25);
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=278
+            // 25 - 50 Gold
+            // Special: None (base/special loot unknown; treated as minimal spawn creature)
+            // Cut Up: None
+
+            if (Spawning)
+            {
+                PackGold(25, 50);
+            }
             else
             {
-                AddLoot(LootPack.Poor);
-                AddLoot(LootPack.Gems);
+                // No additional loot
             }
         }
 

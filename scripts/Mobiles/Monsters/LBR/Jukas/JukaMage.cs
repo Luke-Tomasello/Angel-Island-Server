@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -31,7 +31,6 @@
  *		Merged in 1.0RC0 code.
  */
 
-using Server.Items;
 using Server.Spells;
 using System;
 
@@ -101,7 +100,7 @@ namespace Server.Mobiles
         {
             if (DateTime.UtcNow >= m_NextAbilityTime)
             {
-                JukaLord toBuff = null;
+                JukaLord? toBuff = null;
 
                 IPooledEnumerable eable = this.GetMobilesInRange(8);
                 foreach (Mobile m in eable)
@@ -191,77 +190,26 @@ namespace Server.Mobiles
             : base(serial)
         {
         }
-
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://www.uoguide.com/Juka_Mage
+            // Post-era creature. No Stratics-era entry.
+            // 300 - 500 Gold
+            // Special: 3-6 Gems, Magic Weapons/Armor, Reagents, Scrolls
+            // Note: Excludes later-era system loot/artifacts
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                Container bag = new Bag();
-
-                int count = Utility.RandomMinMax(10, 20);
-
-                for (int i = 0; i < count; ++i)
-                {
-                    Item item = Loot.RandomReagent();
-
-                    if (item == null)
-                        continue;
-
-                    if (!bag.TryDropItem(this, item, false))
-                        item.Delete();
-                }
-
-                PackItem(bag);
-
-                PackItem(new ArcaneGem());
-
-                PackGold(125, 175);
-                PackGem();
-                PackScroll(3, 6);
-                PackScroll(3, 6);
+                PackGold(300, 500);
             }
             else
             {
+                PackGem(3, 6);
+                PackReg(3);
+                PackScroll(4, 7);
 
-                if (Core.RuleSets.AllShards)
-                {   // no LBR
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // standard runuo
-
-                    if (Spawning)
-                    {
-                        Container bag = new Bag();
-
-                        int count = Utility.RandomMinMax(10, 20);
-
-                        for (int i = 0; i < count; ++i)
-                        {
-                            Item item = Loot.RandomReagent();
-
-                            if (item == null)
-                                continue;
-
-                            if (!bag.TryDropItem(this, item, false))
-                                item.Delete();
-                        }
-
-                        PackItem(bag);
-
-                        PackItem(new ArcaneGem());
-                    }
-
-                    AddLoot(LootPack.Average, 2);
-                    AddLoot(LootPack.MedScrolls, 2);
-                }
+                PackMagicEquipment(2, 3, 1.0, 1.0);
+                PackMagicEquipment(2, 3, 0.50, 0.50);
             }
         }
 

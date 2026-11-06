@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -96,27 +96,12 @@ namespace Server.Items
 
         private static CandyCaneTimer EnsureTimer(Mobile from)
         {
-            CandyCaneTimer timer;
+            CandyCaneTimer? timer;
 
             if (!m_ToothAches.TryGetValue(from, out timer))
                 m_ToothAches[from] = timer = new CandyCaneTimer(from);
 
             return timer;
-        }
-
-        public static int GetToothAche(Mobile from)
-        {
-            CandyCaneTimer timer;
-
-            if (m_ToothAches.TryGetValue(from, out timer))
-                return timer.Eaten;
-
-            return 0;
-        }
-
-        public static void SetToothAche(Mobile from, int value)
-        {
-            EnsureTimer(from).Eaten = value;
         }
 
         [Constructable]

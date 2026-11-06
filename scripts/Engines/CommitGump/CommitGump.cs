@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -132,7 +132,7 @@ namespace Server.Engines.CommitGump
 
         public CommitGumpBase(int page, Mobile from) : this(page, null, from) { }
 
-        public CommitGumpBase(int page, GumpSession session, Mobile from)
+        public CommitGumpBase(int page, GumpSession? session, Mobile from)
             : base(25, 25)
         {
             this.Closable = true;
@@ -208,7 +208,7 @@ namespace Server.Engines.CommitGump
                 {
                     try
                     {
-                        ICommitGumpEntity entity = Activator.CreateInstance(kvp.Value, this) as ICommitGumpEntity;
+                        ICommitGumpEntity? entity = Activator.CreateInstance(kvp.Value, this) as ICommitGumpEntity;
                         if (entity != null)
                         {
                             if (entity.Validate())
@@ -231,7 +231,7 @@ namespace Server.Engines.CommitGump
                     CurrentPage.SaveStateInfo();
 
                 //Continue by creating a new gump of whatever this type is with reflection
-                CommitGumpBase gump = null;
+                CommitGumpBase? gump = null;
                 try
                 {
                     gump = Activator.CreateInstance(this.GetType(), m_Page, m_GumpSession, m_From) as CommitGumpBase;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -27,7 +27,6 @@
 
 using Server.Engines.Alignment;
 using Server.Engines.ChampionSpawn;
-using Server.Engines.IOBSystem;
 using Server.Items;
 using System;
 
@@ -128,74 +127,25 @@ namespace Server.Mobiles
         {
         }
         #region DraggingMitigation
-#if false
-        public override List<Mobile> GetDraggingMitigationHelpers()
-        {
-            List<Mobile> helpers = new List<Mobile>();
-            // okay, now we take action against this bothersome individual!
-            for (int ix = 0; ix < 2; ix++)
-            {   // these will be out helpers
-                switch (Utility.Random(4))
-                {
-                    case 0:
-                    case 1:
-                    case 2:
-                        helpers.Add(new CouncilMember());
-                        break;
-                    default:
-                        helpers.Add(new CouncilElder());
-                        break;
-                }
-            }
-            return helpers;
-        }
-#endif
         #endregion DraggingMitigation
 
         public override void GenerateLoot()
         {
             if (IsChampion)
             {
-                if (Core.RuleSets.AngelIslandRules())
+                if (Spawning)
                 {
-                    // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
                     PackGold(750, 800);
-
-                    PackItem(new TheGuardianBook());
-
-                    // Froste: 12% random IOB drop
-                    if (0.12 > Utility.RandomDouble())
-                    {
-                        Item iob = Loot.RandomIOB();
-                        PackItem(iob);
-                    }
-
-                    if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                    {
-                        // 30% boost to gold
-                        PackGold(base.GetGold() / 3);
-                    }
                 }
                 else
                 {
-                    if (Core.RuleSets.AllShards)
-                    {   // ai special
-                        if (Spawning)
-                        {
-                            PackGold(0);
-                        }
-                        else
-                        {
-                            Scepter scepter = new Scepter();
-                            scepter.Name = "the scepter of Queen Zhah";
-                            scepter.LootType = LootType.UnStealable;
-                            PackItem(scepter);
-                        }
-                    }
-                    else
-                    {   // Standard RunUO
-                        // ai special
-                    }
+                    Item reward = new UncutCloth(50);
+                    reward.Hue = 1150; // nice white (0x47E);
+                    PackItem(reward);
+                    Scepter scepter = new Scepter();
+                    scepter.Name = "the scepter of Queen Zhah";
+                    scepter.LootType = LootType.UnStealable;
+                    PackItem(scepter);
                 }
             }
         }
@@ -208,7 +158,7 @@ namespace Server.Mobiles
             return base.OnBeforeDeath();
         }
         private bool m_SpawnedGuardians = false;
-        private BoneDemon m_Guardian = null;
+        private BoneDemon? m_Guardian = null;
         public void CheckGuardians()
         {
             Point3D point = this.Location;
@@ -231,12 +181,13 @@ namespace Server.Mobiles
                     } // else we just target the Combatant
 
                     // Here lie those that had no names.
-                    Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(Tick), new object[] { "Teresta sit lem antende n�m.", null });
+                    Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(Tick), new object?[] { "Teresta sit lem antende n�m.", null });
 
                     // Within the Codex is written the one right and true answer to any problem.
-                    Timer.DelayCall(TimeSpan.FromSeconds(2.0), new TimerStateCallback(Tick), new object[] { "�nte k�dex skr�le pr� ben esh ver res qu� quae.", null });
+                    Timer.DelayCall(TimeSpan.FromSeconds(2.0), new TimerStateCallback(Tick), new object?[] { "�nte k�dex skr�le pr� ben esh ver res qu� quae.", null });
 
                     m_Guardian.MoveToWorld(point, this.Map);
+                    m_Guardian.OnAfterSpawn();
 
                     m_Guardian.Combatant = combatant;
 
@@ -264,7 +215,7 @@ namespace Server.Mobiles
             BaseSoundID = 357;
             Hue = 0xB8f;
         }
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
             Mobile combatant = this.Combatant;
 
@@ -293,7 +244,7 @@ namespace Server.Mobiles
                 }
             }
 
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
         }
 
         public override void OnMovement(Mobile m, Point3D oldLocation)
@@ -301,7 +252,7 @@ namespace Server.Mobiles
 
             if (m.Player && m.Alive && m.InRange(this, 10) && m.AccessLevel == AccessLevel.Player && DateTime.UtcNow >= m_NextSpeechTime && Combatant == null)
             {
-                Item item = m.FindItemOnLayer(Layer.Helm);
+                Item? item = m.FindItemOnLayer(Layer.Helm);
 
                 if (this.InLOS(m) && this.CanSee(m))
                 {

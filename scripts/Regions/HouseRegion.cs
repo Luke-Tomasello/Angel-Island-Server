@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -93,10 +93,28 @@ namespace Server.Regions
         }
         public static void OnLogin(LoginEventArgs e)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(e.Mobile);
+            BaseHouse? house = BaseHouse.FindHouseAt(e.Mobile, parcel: true);
+            BaseHouse? mclTest = BaseHouse.FindHouseAt(e.Mobile);
+            bool exploit = false;
+            if (mclTest == null && house != null)
+                exploit = true;
 
             if (house != null && !house.Public && !house.IsFriend(e.Mobile))
+            {
+                if (exploit == true)
+                {   // log the exploit
+
+                    LogHelper logger = new LogHelper("house break-in.log", overwrite: false, sline: true);
+                    logger.Log(LogType.Mobile, e.Mobile);
+                    logger.Log(LogType.Text, house, string.Format("Tried logging to something like a castle courtyard"));
+                    logger.Finish();
+                    (e.Mobile as PlayerMobile)?.AddWatch($"Tried logging to something like a castle courtyard at {house.Location}");
+                    // let the player know we are on to their shenanigans
+                    e.Mobile.SendMessage("Nice try Louie.");
+                }
+
                 e.Mobile.Location = house.BanLocation;
+            }
         }
         public HouseRegion(BaseHouse house)
             : base("", "", house.Map)
@@ -199,7 +217,7 @@ namespace Server.Regions
 
                 // Murderers and criminals will not be able to kick/ban others from their home, nor will they be able to log out instantly
                 // https://www.uoguide.com/Siege_Perilous
-                if (m.Criminal || m.IsMurderer && Core.RuleSets.SiegeStyleRules())
+                if (m.Criminal || m.IsMurderer && Core.RuleSets.SiegeRules())
                     return base.GetLogoutDelay(m);
 
                 return TimeSpan.Zero;
@@ -376,7 +394,7 @@ namespace Server.Regions
                 if (isCoOwner)
                 {
                     // ask the playermobile to deal with this item request
-                    Item item = from.RequestItem(typeof(Server.Items.Guildstone));
+                    Item? item = from.RequestItem(typeof(Server.Items.Guildstone));
                     if (item == null)
                         from.SendMessage("You do not seem to have one of those.");
                     else
@@ -397,7 +415,7 @@ namespace Server.Regions
         public override bool EquipItem(Mobile m, Item item)
         {
             #region Static Region
-            StaticRegion sr = StaticRegion.FindStaticRegion(m);
+            StaticRegion? sr = StaticRegion.FindStaticRegion(m);
             if (sr != null)
                 return sr.EquipItem(m, item);
             #endregion
@@ -497,7 +515,7 @@ namespace Server.Regions
                 #region Tents
                 if (m_House is Tent tent)
                 {
-                    if (Core.RuleSets.SiegeStyleRules())
+                    if (Core.RuleSets.SiegeRules())
                     {
                         // 2/29/2024, Adam: Don't let staff refresh players house in this way (unless it is their own m_House.)
                         if ((m_House.IsFriend(m) && m.AccessLevel == AccessLevel.Player) || m == m_House.Owner)
@@ -524,7 +542,7 @@ namespace Server.Regions
         public override bool OnDoubleClick(Mobile from, object o)
         {
             #region Static Region
-            StaticRegion sr = StaticRegion.FindStaticRegion(from);
+            StaticRegion? sr = StaticRegion.FindStaticRegion(from);
             if (sr != null)
                 return sr.OnDoubleClick(from, o);
             #endregion
@@ -562,7 +580,7 @@ namespace Server.Regions
         public override bool OnSkillUse(Mobile m, int skill)
         {
             #region Static Region
-            StaticRegion sr = StaticRegion.FindStaticRegion(m);
+            StaticRegion? sr = StaticRegion.FindStaticRegion(m);
             if (sr != null)
                 return sr.OnSkillUse(m, skill);
             #endregion
@@ -572,7 +590,7 @@ namespace Server.Regions
         public override bool OnBeginSpellCast(Mobile from, ISpell s)
         {
             #region Static Region
-            StaticRegion sr = StaticRegion.FindStaticRegion(from);
+            StaticRegion? sr = StaticRegion.FindStaticRegion(from);
             if (sr != null)
                 return sr.OnBeginSpellCast(from, s);
             #endregion
@@ -582,7 +600,7 @@ namespace Server.Regions
         public override bool OnDeath(Mobile m)
         {
             #region Static Region
-            StaticRegion sr = StaticRegion.FindStaticRegion(m);
+            StaticRegion? sr = StaticRegion.FindStaticRegion(m);
             if (sr != null && sr.IsNoMurderZone)
             {
                 foreach (AggressorInfo ai in m.Aggressors)

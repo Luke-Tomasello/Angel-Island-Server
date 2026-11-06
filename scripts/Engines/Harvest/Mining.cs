@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -58,7 +58,7 @@ namespace Server.Engines.Harvest
 {
     public class Mining : HarvestSystem
     {
-        private static Mining m_System;
+        private static Mining? m_System;
 
         public static Mining System
         {
@@ -244,7 +244,7 @@ namespace Server.Engines.Harvest
         {
             // TODO: Move to HarvestSystem?
             #region Harvest Map
-            ResourceMap resourceMap = ResourceMap.Find(from, loc, from.Map, def);
+            ResourceMap? resourceMap = ResourceMap.Find(from, loc, from.Map, def);
 
             if (resourceMap != null)
             {
@@ -384,7 +384,7 @@ namespace Server.Engines.Harvest
                             if (map == null)
                                 return;
 
-                            BaseCreature spawned = Activator.CreateInstance(resource.Types[2]) as BaseCreature;
+                            BaseCreature? spawned = Activator.CreateInstance(resource.Types[2]) as BaseCreature;
 
                             if (spawned != null)
                             {

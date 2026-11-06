@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -86,11 +86,11 @@ namespace Server.Gumps
     {
         private string m_Title;
         private CAGNode[] m_Nodes;
-        private CAGCategory m_Parent;
+        private CAGCategory? m_Parent;
 
         public string Title { get { return m_Title; } }
         public CAGNode[] Nodes { get { return m_Nodes; } }
-        public CAGCategory Parent { get { return m_Parent; } }
+        public CAGCategory? Parent { get { return m_Parent; } }
 
         public override string Caption { get { return m_Title; } }
 
@@ -105,7 +105,7 @@ namespace Server.Gumps
             m_Nodes = new CAGNode[0];
         }
 
-        public CAGCategory(CAGCategory parent, XmlTextReader xml)
+        public CAGCategory(CAGCategory? parent, XmlTextReader xml)
         {
             m_Parent = parent;
 
@@ -139,7 +139,7 @@ namespace Server.Gumps
             }
         }
 
-        private static CAGCategory m_Root;
+        private static CAGCategory? m_Root;
 
         public static CAGCategory Root
         {

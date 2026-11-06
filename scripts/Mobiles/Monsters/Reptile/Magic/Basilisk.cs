@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -532,7 +532,7 @@ namespace Server.Mobiles
 
         public override bool ReAcquireOnMovement { get { return true; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override Poison PoisonImmune { get { return Poison.Deadly; } }
         public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 4 : 0; } }
         public override HideType HideType { get { return HideType.Barbed; } }
@@ -602,10 +602,12 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
                 PackGold(400, 500);
+            }
+            else
+            {
                 PackItem(new DeadlyPoisonPotion());
                 PackMagicEquipment(1, 2, 0.20, 0.20);
                 PackMagicEquipment(1, 2, 0.05, 0.05);
@@ -613,23 +615,6 @@ namespace Server.Mobiles
                 // Category 3 MID
                 PackMagicItem(1, 2, 0.10);
                 PackMagicItem(1, 2, 0.05);
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    // ai special
-                }
             }
         }
 
@@ -885,9 +870,6 @@ namespace Server.Mobiles
                  */
 
                 // don't screw players; no random init. of genes during version update
-#if false
-                Genetics.InitGenes(this, "Versatility", "StrMax", "IntMax", "DexMax", "Physique", "Claw Size", "Scales", "Meat", "Hides");
-#else
                 m_StatCapFactor = 2.0;
                 m_StrMax = this.RawStr;
                 m_IntMax = this.RawInt;
@@ -895,17 +877,12 @@ namespace Server.Mobiles
                 m_HitsMaxFactor = 1.10;
                 m_Meat = 10;
                 m_Hides = 20;
-#endif
             }
 
             if (version < 2)
             {
                 // don't screw players; no random init. of genes during version update
-#if false
-                Genetics.InitGenes(this, "Claw Accuracy");
-#else
                 m_ClawAccuracy = 1.10;
-#endif
             }
 
             if (version < 3)
@@ -918,12 +895,8 @@ namespace Server.Mobiles
                 m_BondedDate = dt;
 
                 // don't screw players; no random init. of genes during version update
-#if false
-                Genetics.InitGenes(this, "Toxicity", "Healing Potency");
-#else
                 m_Toxicity = 0.0;
                 m_HealingPotency = 1.0;
-#endif
             }
 
             if (version < 4)

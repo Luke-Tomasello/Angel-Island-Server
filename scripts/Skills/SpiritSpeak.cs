@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -117,8 +117,8 @@ namespace Server.SkillHandlers
                         }
                         else
                         {   // we remember this guy so update 
-                            Memory.ObjectMemory om = m_HealSummonsMemory.Recall(m as object);
-                            HealSummonsTimer th = (HealSummonsTimer)om.Context;
+                            Memory.ObjectMemory? om = m_HealSummonsMemory.Recall(m as object);
+                            HealSummonsTimer? th = (HealSummonsTimer?)om.Context;
                             if (th is HealSummonsTimer && th.Context != null)
                                 th.Context.HealSummonsHP += th.Context.HealSummonsHPMax / 4.0;
                         }
@@ -145,16 +145,16 @@ namespace Server.SkillHandlers
                             }
                             else
                             {   // we remember this guy so update 
-                                Memory.ObjectMemory om = m_SlayerDamageAccumulator.Recall(m as object);
-                                SlayerDamageTimer th = (SlayerDamageTimer)om.Context;
+                                Memory.ObjectMemory? om = m_SlayerDamageAccumulator.Recall(m as object);
+                                SlayerDamageTimer? th = (SlayerDamageTimer?)om.Context;
                                 if (th is SlayerDamageTimer && th.Context != null)
                                     th.Context.SlayerDamageHP += th.Context.SlayerDamageHPMax / 4.0;
                             }
                         }
                         else
                         {
-                            Memory.ObjectMemory om = SpiritSpeak.SlayerDamageCache.Recall(m as object);
-                            SlayerDamageContext sdc = om.Context as SlayerDamageContext;
+                            Memory.ObjectMemory? om = SpiritSpeak.SlayerDamageCache.Recall(m as object);
+                            SlayerDamageContext? sdc = om.Context as SlayerDamageContext;
                             if (sdc.SlayerDamageHP > 0)
                                 m.SendMessage("Your weapon is already fully charged.");
                             // else they have discharged their weapon and must now wait
@@ -197,11 +197,11 @@ namespace Server.SkillHandlers
         #region Slayer Boost
         private static bool CheckSlayer(Mobile attacker)
         {
-            BaseWeapon atkWeapon = attacker.Weapon as BaseWeapon;
+            BaseWeapon? atkWeapon = attacker.Weapon as BaseWeapon;
             if (atkWeapon == null)
                 return false;
 
-            SlayerEntry atkSlayer = SlayerGroup.GetEntryByName(atkWeapon.Slayer);
+            SlayerEntry? atkSlayer = SlayerGroup.GetEntryByName(atkWeapon.Slayer);
 
             return atkSlayer != null;
         }
@@ -231,7 +231,7 @@ namespace Server.SkillHandlers
                 if (m_SlayerDamageHP >= m_SlayerDamageHPMax && bShown == false)
                 {   // show the player that we are fully charged
                     bShown = true;
-                    BaseWeapon weapon = Owner.Weapon as BaseWeapon;
+                    BaseWeapon? weapon = Owner.Weapon as BaseWeapon;
                     int itemID, soundID;
 
                     switch (weapon.Skill)
@@ -291,7 +291,7 @@ namespace Server.SkillHandlers
                 //SpiritSpeak.UsageReport(m_context.Owner, "Spirit Speak: SlayerDamage");
 
                 // apply the bonus
-                Memory.ObjectMemory om = SpiritSpeak.SlayerDamageCache.Recall(Context.Owner as object);
+                Memory.ObjectMemory? om = SpiritSpeak.SlayerDamageCache.Recall(Context.Owner as object);
                 if (om != null)
                 {   // delete the old cached bonus
                     SpiritSpeak.SlayerDamageCache.Forget(Context.Owner);
@@ -366,7 +366,7 @@ namespace Server.SkillHandlers
 
                 for (int ix = 0; ix < pets.Count; ix++)
                 {
-                    BaseCreature pet = pets[ix] as BaseCreature;
+                    BaseCreature? pet = pets[ix] as BaseCreature;
                     if (pet.Hits < pet.HitsMax)
                     {
                         int delta = pet.HitsMax - pet.Hits;
@@ -453,7 +453,7 @@ namespace Server.SkillHandlers
 
             public override void OnCast()
             {
-                Corpse toChannel = null;
+                Corpse? toChannel = null;
 
                 IPooledEnumerable eable = Caster.GetItemsInRange(3);
                 foreach (Item item in eable)

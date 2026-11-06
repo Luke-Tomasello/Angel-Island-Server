@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -25,7 +25,7 @@ namespace Server.Gumps
 {
     public abstract class GumpEntry
     {
-        private Gump m_Parent;
+        private Gump? m_Parent;
 
         public GumpEntry()
         {
@@ -70,7 +70,7 @@ namespace Server.Gumps
             }
         }
 
-        public Gump Parent
+        [System.Diagnostics.CodeAnalysis.DisallowNull] public Gump? Parent
         {
             get
             {

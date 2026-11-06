@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -80,12 +80,12 @@ namespace Server.Items
             return GetData(Folder, id);
         }
 
-        public static AddonData GetData(string folder, string id)
+        public static AddonData? GetData(string folder, string id)
         {
             if (id == null)
                 return null;
 
-            AddonData data;
+            AddonData? data;
 
             if (m_Cache.TryGetValue(id, out data))
                 return data;
@@ -371,7 +371,7 @@ namespace Server.Items
 
         private static void Save(string fileName, AddonData data)
         {
-            XmlTextWriter writer = null;
+            XmlTextWriter? writer = null;
 
             try
             {
@@ -398,14 +398,14 @@ namespace Server.Items
             }
         }
 
-        private static AddonData Load(string fileName)
+        private static AddonData? Load(string fileName)
         {
             if (!File.Exists(fileName))
                 return null;
 
-            AddonData data = null;
+            AddonData? data = null;
 
-            XmlTextReader reader = null;
+            XmlTextReader? reader = null;
 
             try
             {
@@ -457,7 +457,7 @@ namespace Server.Items
             {
             }
 
-            public int Compare(AddonComponentEntry a, AddonComponentEntry b)
+            public int Compare(AddonComponentEntry? a, AddonComponentEntry? b)
             {
                 int dz = a.Z.CompareTo(b.Z);
 
@@ -552,7 +552,7 @@ namespace Server.Items
         private int m_Y;
         private int m_Z;
         private int m_Hue;
-        private string m_Name;
+        private string? m_Name;
         private LightType m_Light;
 
         public int ItemID { get { return m_ItemID; } }
@@ -560,7 +560,7 @@ namespace Server.Items
         public int Y { get { return m_Y; } set { m_Y = value; } }
         public int Z { get { return m_Z; } set { m_Z = value; } }
         public int Hue { get { return m_Hue; } set { m_Hue = value; } }
-        public string Name { get { return m_Name; } set { m_Name = value; } }
+        public string? Name { get { return m_Name; } set { m_Name = value; } }
         public LightType Light { get { return m_Light; } set { m_Light = value; } }
 
         public AddonComponentEntry(int itemID, int x, int y, int z)
@@ -711,7 +711,7 @@ namespace Server.Items
 
         public static void Build(BaseAddon addon, string folder, string id, Type componentType)
         {
-            AddonData data = XmlAddonSystem.GetData(folder, id);
+            AddonData? data = XmlAddonSystem.GetData(folder, id);
 
             if (data == null)
             {
@@ -722,7 +722,7 @@ namespace Server.Items
             {
                 foreach (AddonComponentEntry e in data.Components)
                 {
-                    AddonComponent c = ConstructComponent(componentType, e.ItemID);
+                    AddonComponent? c = ConstructComponent(componentType, e.ItemID);
 
                     // failed to construct component
                     if (c == null)
@@ -741,7 +741,7 @@ namespace Server.Items
                 }
             }
         }
-        private static AddonComponent ConstructComponent(Type type, int itemID)
+        private static AddonComponent? ConstructComponent(Type type, int itemID)
         {
             // special case, we pass the deco flag
             if (type == typeof(AddonComponent))
@@ -750,7 +750,7 @@ namespace Server.Items
             if (!typeof(AddonComponent).IsAssignableFrom(type))
                 return null;
 
-            AddonComponent ac;
+            AddonComponent? ac;
 
             try
             {
@@ -766,14 +766,14 @@ namespace Server.Items
 
         public static bool MatchByName(BaseAddon addon, string folder, string id)
         {
-            AddonData data = XmlAddonSystem.GetData(folder, id);
+            AddonData? data = XmlAddonSystem.GetData(folder, id);
 
             if (data == null || addon.Components.Count != data.Components.Length)
                 return false;
 
             for (int i = 0; i < addon.Components.Count; i++)
             {
-                AddonComponent c = addon.Components[i] as AddonComponent;
+                AddonComponent? c = addon.Components[i] as AddonComponent;
                 AddonComponentEntry e = data.Components[i];
 
                 if (

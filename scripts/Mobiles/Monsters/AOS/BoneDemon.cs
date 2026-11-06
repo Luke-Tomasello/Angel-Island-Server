@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -88,7 +88,7 @@ namespace Server.Mobiles
         }
 
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override Poison PoisonImmune { get { return Poison.Lethal; } }
 
         public BoneDemon(Serial serial)
@@ -98,23 +98,56 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            PackGem();
-            PackGold(2500, 3500);
-            //PackMagicEquipment( 1, 3, 0.80, 0.80 );
-            //PackMagicEquipment( 1, 3, 0.20, 0.20 );
-            PackItem(new Bone(100));
+            if (SpawnerEngine != null)
+            {
+                GenerateMiniBossLoot();
+                return;
+            }
 
-            // adam: add 25% chance to get a Random Slayer Instrument
-            PackSlayerInstrument(.25);
+            // https://web.archive.org/web/20011201000000/http://uo.stratics.com/hunters/bonedemon.shtml
+            // 300 - 400 Gold
+            // Special: 3-7 Gems, Magic Weapons/Armor
 
-            // Pigpen: Add the Unholy Bone (rare) armor to this mini-boss.
-            if (Core.RuleSets.MiniBossArmor())
-                DoMiniBossArmor();
+            if (Spawning)
+            {
+                PackGold(300, 400);
+            }
+            else
+            {
+                PackGem(3, 7);
 
-            // Use our unevenly weighted table for chance resolution
-            Item item;
-            item = Loot.RandomArmorOrShieldOrWeapon();
-            PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6 /*6*/, 0, false));
+                PackMagicEquipment(2, 3, 1.0, 1.0);
+                PackMagicEquipment(2, 3, 0.50, 0.50);
+            }
+        }
+
+        private void GenerateMiniBossLoot()
+        {
+            // Champ-engine mini-boss variant.
+            // Higher gold, bone resources, slayer instrument chance, mini-boss armor,
+            // and one high-end unevenly weighted magic equipment roll.
+
+            if (Spawning)
+            {
+                PackGold(2500, 3500);
+            }
+            else
+            {
+                PackGem();
+                PackItem(new Bone(100));
+
+                // 25% chance to drop a random slayer instrument
+                if (Core.RuleSets.SlayerInstruments())
+                    PackSlayerInstrument(0.25);
+
+                // Rare mini-boss armor drop, ruleset-gated
+                if (Core.RuleSets.MiniBossArmor())
+                    DoMiniBossArmor();
+
+                // High-end unevenly weighted armor/shield/weapon roll
+                Item item = Loot.RandomArmorOrShieldOrWeapon();
+                PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6, 0, false));
+            }
         }
         private void DoMiniBossArmor()
         {

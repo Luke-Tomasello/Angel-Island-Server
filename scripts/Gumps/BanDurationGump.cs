@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -97,10 +97,10 @@ namespace Server.Gumps
             if (from.AccessLevel < AccessLevel.Administrator)
                 return;
 
-            TextRelay d = info.GetTextEntry(0);
-            TextRelay h = info.GetTextEntry(1);
-            TextRelay m = info.GetTextEntry(2);
-            TextRelay s = info.GetTextEntry(3);
+            TextRelay? d = info.GetTextEntry(0);
+            TextRelay? h = info.GetTextEntry(1);
+            TextRelay? m = info.GetTextEntry(2);
+            TextRelay? s = info.GetTextEntry(3);
 
             TimeSpan duration;
             bool shouldSet;
@@ -113,7 +113,7 @@ namespace Server.Gumps
                     {
                         for (int i = 0; i < m_List.Count; ++i)
                         {
-                            Account a = (Account)m_List[i];
+                            Account? a = (Account?)m_List[i];
 
                             a.SetUnspecifiedBan(from);
                         }
@@ -229,7 +229,7 @@ namespace Server.Gumps
             {
                 for (int i = 0; i < m_List.Count; ++i)
                 {
-                    Account a = (Account)m_List[i];
+                    Account? a = (Account?)m_List[i];
 
                     a.SetBanTags(from, DateTime.UtcNow, duration);
                 }

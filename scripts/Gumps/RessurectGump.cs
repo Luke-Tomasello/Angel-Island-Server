@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -68,7 +68,7 @@ namespace Server.Gumps
 
     public class ResurrectGump : Gump
     {
-        private Mobile m_Healer;
+        private Mobile? m_Healer;
         private int m_Price;
         private bool m_Statloss = true;
 
@@ -99,7 +99,7 @@ namespace Server.Gumps
             AddHtmlLocalized(0, 20, 400, 35, 1011022, false, false); // <center>Resurrection</center>
 
             #region UOAI
-            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SeasonsRules() || Core.RuleSets.UpheavalRules())
             {
                 /* It is possible for you to be resurrected here by this healer. Do you wish to try?<br>
 				 * CONTINUE - You chose to try to come back to life now.<br>
@@ -150,7 +150,7 @@ namespace Server.Gumps
         }
 
         // called from ResGate (no statloss)
-        public ResurrectGump(Mobile owner, bool Statloss)
+        public ResurrectGump(Mobile? owner, bool Statloss)
             : base(100, 0)
         {
             m_Healer = owner;
@@ -300,7 +300,7 @@ namespace Server.Gumps
 
                 Misc.Titles.AwardFame(from, -100, true); // TODO: Proper fame loss
 
-                PlayerMobile pm = from as PlayerMobile;
+                PlayerMobile? pm = from as PlayerMobile;
                 // If the player is an inmate of AI, we don't want them taking stat-loss
                 // Adam: we now have gumps that don't invoke stat loss (m_Statloss)
                 if (!Core.RuleSets.AOSRules() && StatLossCandidate(from) && m_Statloss == true)
@@ -337,9 +337,9 @@ namespace Server.Gumps
             }
         }
 
-        private bool StatLossCandidate(Mobile owner)
+        private bool StatLossCandidate(Mobile? owner)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 return false;
             }
@@ -350,7 +350,7 @@ namespace Server.Gumps
 
         private bool StatLossReprieve(Mobile owner)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 return false;
             }

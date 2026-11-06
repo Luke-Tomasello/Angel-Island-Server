@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -135,8 +135,8 @@ namespace Server.Gumps
                         return;
                     }
 
-                    Item toGive = null;
-                    Item Refund = null;     // for various home upgrades
+                    Item? toGive = null;
+                    Item? Refund = null;     // for various home upgrades
 
                     if (m_House.IsAosRules)
                     {
@@ -178,6 +178,9 @@ namespace Server.Gumps
 
                             m_House.RemoveKeys(m_Mobile);
                             m_House.Delete();
+
+                            // shouldn't need this, the field should have meen cleared when the house was placed.
+                            BaseHouse.OnAfterInheritance(m_Mobile);
                         }
                         else
                         {

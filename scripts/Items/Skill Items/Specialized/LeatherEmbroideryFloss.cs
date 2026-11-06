@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -170,7 +170,7 @@ namespace Server.Items
             m_Embroidery = embroidery;
         }
 
-        private bool IsMadeOfLeather(Item item)
+        private bool IsMadeOfLeather(Item? item)
         {
             if (IsLeatherArmor(item))
             {
@@ -182,7 +182,7 @@ namespace Server.Items
         {
             if (item is BaseArmor)
             {
-                BaseArmor ba = item as BaseArmor;
+                BaseArmor? ba = item as BaseArmor;
                 if (ba != null && ba.Quality == ArmorQuality.Exceptional)
                 {
                     return true;
@@ -190,7 +190,7 @@ namespace Server.Items
             }
             return false;
         }
-        private bool IsPlayerCrafted(Item item)
+        private bool IsPlayerCrafted(Item? item)
         {
             if (item != null)
             {
@@ -201,11 +201,11 @@ namespace Server.Items
 
 
         //This was taken from LeatherArmorDyeTub.cs
-        private bool IsLeatherArmor(Item item)
+        private bool IsLeatherArmor(Item? item)
         {
             if (item is BaseArmor)
             {
-                BaseArmor ba = item as BaseArmor;
+                BaseArmor? ba = item as BaseArmor;
                 if (ba == null)
                     return false;
 
@@ -236,7 +236,7 @@ namespace Server.Items
         {
             if (target is Item)
             {
-                Item item = target as Item;
+                Item? item = target as Item;
                 if (item == null)
                 {
                     from.SendMessage("Bad item.");
@@ -291,18 +291,6 @@ namespace Server.Items
                 m_from = from;
                 m_item = item;
                 m_embroidery = embroidery;
-            }
-
-            private void ReduceQuality(Item item)
-            {
-                if (item is BaseArmor)
-                {
-                    BaseArmor ba = item as BaseArmor;
-                    if (ba != null && ba.Quality == ArmorQuality.Exceptional)
-                    {
-                        ba.Quality = ArmorQuality.Regular;
-                    }
-                }
             }
 
             private bool HasSpecialKeyword(string text)

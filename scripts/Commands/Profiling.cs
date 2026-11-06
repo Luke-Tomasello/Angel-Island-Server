@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,12 +34,8 @@ namespace Server.Commands
             CommandSystem.Register("CountObjects", AccessLevel.Administrator, new CommandEventHandler(CountObjects_OnCommand));
             CommandSystem.Register("ProfileWorld", AccessLevel.Administrator, new CommandEventHandler(ProfileWorld_OnCommand));
             CommandSystem.Register("TraceInternal", AccessLevel.Administrator, new CommandEventHandler(TraceInternal_OnCommand));
-            CommandSystem.Register("TraceExpanded", AccessLevel.Administrator, new CommandEventHandler(TraceExpanded_OnCommand));
             CommandSystem.Register("WriteProfiles", AccessLevel.Administrator, new CommandEventHandler(WriteProfiles_OnCommand));
             CommandSystem.Register("SetProfiles", AccessLevel.Administrator, new CommandEventHandler(SetProfiles_OnCommand));
-#if false // not sure why this is turned off
-            Register("TimerProfiles", AccessLevel.Administrator, new CommandEventHandler(TimerProfiles_OnCommand));
-#endif
         }
 
         [Usage("WriteProfiles")]
@@ -107,7 +103,7 @@ namespace Server.Commands
 
         private class CountSorter : IComparer
         {
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
                 DictionaryEntry a = (DictionaryEntry)x;
                 DictionaryEntry b = (DictionaryEntry)y;
@@ -128,7 +124,7 @@ namespace Server.Commands
                 return v;
             }
 
-            private int GetCount(object obj)
+            private int GetCount(object? obj)
             {
                 if (obj is int)
                     return (int)obj;
@@ -161,7 +157,7 @@ namespace Server.Commands
                 {
                     Type type = item.GetType();
 
-                    object o = (object)table[type];
+                    object? o = (object?)table[type];
 
                     if (o == null)
                         table[type] = 1;
@@ -177,7 +173,7 @@ namespace Server.Commands
                 {
                     Type type = m.GetType();
 
-                    object o = (object)table[type];
+                    object? o = (object?)table[type];
 
                     if (o == null)
                         table[type] = 1;
@@ -209,102 +205,6 @@ namespace Server.Commands
             }
 
             e.Mobile.SendMessage("Object table has been generated. See the file : <runuo root>/objects.log");
-        }
-
-        [Usage("TraceExpanded")]
-        [Description("Generates a log file describing all items using expanded memory.")]
-        public static void TraceExpanded_OnCommand(CommandEventArgs e)
-        {
-            Hashtable typeTable = new Hashtable();
-
-            foreach (Item item in World.Items.Values)
-            {
-                ExpandFlag flags = item.GetExpandFlags();
-
-                if ((flags & ~(ExpandFlag.TempFlag | ExpandFlag.SaveFlag)) == 0)
-                    continue;
-
-                Type itemType = item.GetType();
-
-                do
-                {
-                    int[] countTable = typeTable[itemType] as int[];
-
-                    if (countTable == null)
-                        typeTable[itemType] = countTable = new int[9];
-
-                    if ((flags & ExpandFlag.Name) != 0)
-                        ++countTable[0];
-
-                    if ((flags & ExpandFlag.Items) != 0)
-                        ++countTable[1];
-
-                    if ((flags & ExpandFlag.Bounce) != 0)
-                        ++countTable[2];
-
-                    if ((flags & ExpandFlag.Holder) != 0)
-                        ++countTable[3];
-
-                    if ((flags & ExpandFlag.Blessed) != 0)
-                        ++countTable[4];
-
-                    /*if ( ( flags & ExpandFlag.TempFlag ) != 0 )
-						++countTable[5];
-
-					if ( ( flags & ExpandFlag.SaveFlag ) != 0 )
-						++countTable[6];*/
-
-                    if ((flags & ExpandFlag.Weight) != 0)
-                        ++countTable[7];
-
-                    if ((flags & ExpandFlag.Spawner) != 0)
-                        ++countTable[8];
-
-                    itemType = itemType.BaseType;
-                } while (itemType != typeof(object));
-            }
-
-            try
-            {
-                using (StreamWriter op = new StreamWriter("expandedItems.log", true))
-                {
-                    string[] names = new string[]
-                    {
-                        "Name",
-                        "Items",
-                        "Bounce",
-                        "Holder",
-                        "Blessed",
-                        "TempFlag",
-                        "SaveFlag",
-                        "Weight",
-                        "Spawner"
-                    };
-
-                    ArrayList list = new ArrayList(typeTable);
-
-                    list.Sort(new CountSorter());
-
-                    foreach (DictionaryEntry de in list)
-                    {
-                        Type itemType = de.Key as Type;
-                        int[] countTable = de.Value as int[];
-
-                        op.WriteLine("# {0}", itemType.FullName);
-
-                        for (int i = 0; i < countTable.Length; ++i)
-                        {
-                            if (countTable[i] > 0)
-                                op.WriteLine("{0}\t{1:N0}", names[i], countTable[i]);
-                        }
-
-                        op.WriteLine();
-                    }
-                }
-            }
-            catch
-            {
-            }
         }
 
         [Usage("TraceInternal")]
@@ -385,11 +285,11 @@ namespace Server.Commands
                         int serial = bin.ReadInt32();
                         long pos = bin.ReadInt64();
                         int length = bin.ReadInt32();
-                        Type objType = (Type)types[typeID];
+                        Type? objType = (Type?)types[typeID];
 
                         while (objType != null && objType != typeof(object))
                         {
-                            object obj = table[objType];
+                            object? obj = table[objType];
 
                             if (obj == null)
                                 table[objType] = length;
@@ -422,35 +322,5 @@ namespace Server.Commands
             }
         }
 
-#if false
-        [Usage("TimerProfiles")]
-        [Description("Generates a log file containing performance information pertaining to timers.")]
-        public static void TimerProfiles_OnCommand(CommandEventArgs e)
-        {
-            try
-            {
-                using (StreamWriter sw = new StreamWriter("timerprofiles.log", true))
-                {
-                    Hashtable profiles = Timer.Profiles;
-
-                    sw.WriteLine("# Dump on {0:f}", DateTime.Now);
-                    sw.WriteLine("# Core profiling for " + Core.ProfileTime);
-                    sw.WriteLine();
-
-                    foreach (DictionaryEntry de in profiles)
-                    {
-                        string name = (string)de.Key;
-                        TimerProfile prof = (TimerProfile)de.Value;
-
-                        sw.WriteLine("{6,-100}{0,-12}{1,12} {2,-12}{3,12} {4,-12:F5}{5:F5}", prof.Created, prof.Started, prof.Stopped, prof.Ticked, prof.TotalProcTime.TotalSeconds, prof.AverageProcTime.TotalSeconds, name);
-                    }
-
-                    sw.WriteLine();
-                    sw.WriteLine();
-                }
-            }
-            catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-        }
-#endif
     }
 }

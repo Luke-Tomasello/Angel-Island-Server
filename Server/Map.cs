@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -461,7 +461,9 @@ namespace Server
         public static Map[] Maps { get { return m_Maps; } }
 
         public static Map Felucca { get { return m_Maps[0]; } }
+        [Obsolete("For game-master.net shards, we use Map.TestCenter")]
         public static Map Trammel { get { return m_Maps[1]; } }
+        public static Map TestCenter { get { return m_Maps[1]; } }
         public static Map Ilshenar { get { return m_Maps[2]; } }
         public static Map Malas { get { return m_Maps[3]; } }
         public static Map Tokuno { get { return m_Maps[4]; } }
@@ -478,7 +480,7 @@ namespace Server
         private int m_SectorsWidth, m_SectorsHeight;
         private int m_Season;
         private Dictionary<string, Region> m_Regions;
-        private Region m_DefaultRegion;
+        private Region? m_DefaultRegion;
 
         public int Season { get { return m_Season; } set { m_Season = value; } }
 
@@ -487,7 +489,7 @@ namespace Server
         private Sector[][] m_Sectors;
         private Sector m_InvalidSector;
 
-        private TileMatrix m_Tiles;
+        private TileMatrix? m_Tiles;
 
 #if Map_InternalProtection || Map_AllUpdates
 		public static string[] GetMapNames()
@@ -547,7 +549,7 @@ namespace Server
             return m_MapValues;
         }
 
-        public static Map Parse(string value)
+        public static Map? Parse(string? value)
         {
             CheckNamesAndValues();
 
@@ -983,7 +985,7 @@ namespace Server
         {
             public static readonly ZComparer Default = new ZComparer();
 
-            public int Compare(Item x, Item y)
+            public int Compare(Item? x, Item? y)
             {
                 return x.Z.CompareTo(y.Z);
             }
@@ -1233,7 +1235,7 @@ namespace Server
             return list;
         }
 
-        public object GetTopSurface(Point3D p)
+        public object? GetTopSurface(Point3D p)
         {
             int surfaceZ;
 
@@ -1245,14 +1247,14 @@ namespace Server
         /// </summary>
         /// <param name="p">The reference point.</param>
         /// <returns>A surface <typeparamref name="Tile"/> or <typeparamref name="Item"/>.</returns>
-        public object GetTopSurface(Point3D p, out int surfaceZ)
+        public object? GetTopSurface(Point3D p, out int surfaceZ)
         {
             surfaceZ = int.MinValue;
 
             if (this == Map.Internal)
                 return null;
 
-            object surface = null;
+            object? surface = null;
 
 
             LandTile lt = Tiles.GetLandTile(p.X, p.Y);
@@ -1812,7 +1814,7 @@ namespace Server
 
             public static PooledEnumerable<T> Instantiate(Map map, Rectangle2D bounds, PooledEnumeration.Selector<T> selector)
             {
-                PooledEnumerable<T> e = null;
+                PooledEnumerable<T>? e = null;
 
                 lock (((ICollection)_Buffer).SyncRoot)
                 {
@@ -1837,7 +1839,7 @@ namespace Server
             }
 
             private bool _IsDisposed;
-            private List<T> _Pool;
+            private List<T>? _Pool;
 
             public PooledEnumerable(IEnumerable<T> pool)
             {
@@ -2917,7 +2919,7 @@ namespace Server
             set { m_InvalidLandTiles = value; }
         }
 
-        public int CompareTo(Map other)
+        public int CompareTo(Map? other)
         {
             if (other == null)
                 return -1;
@@ -2925,7 +2927,7 @@ namespace Server
             return m_MapID.CompareTo(other.m_MapID);
         }
 
-        public int CompareTo(object other)
+        public int CompareTo(object? other)
         {
             if (other == null || other is Map)
                 return this.CompareTo(other);

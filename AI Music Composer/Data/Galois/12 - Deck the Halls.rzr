@@ -1,0 +1,39 @@
+# Song: Deck the Halls
+# Author: Galois
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: False
+say '[play -f cl a c .44 .24 g as .22 -f cl f a .44 -cl -as e g .44' 
+say '[play -d -a d f .44 -cl cl e g .44 -f cl f a .44 -f -a cl f .44' 
+say '[play -cl cl e g .2 f a .22 g as .22 e g .22 -f cl f a .44 .24 -as d g .23' 
+say '[play -cl -a cl f .44 -cl -g cl e .44 -f -a cl f .44 .48' 
+say '[play -f cl a c .44 .24 g as .22 -f cl f a .44 -cl -as e g .44' 
+say '[play -d -a d f .44 -cl cl e g .44 -f cl f a .44 -f -a cl f .44' 
+say '[play -cl cl e g .2 f a .22 g as .22 e g .22 -f cl f a .44 .24 -as d g .23' 
+say '[play -cl -a cl f .44 -cl -g cl e .44 -f -a cl f .44 .48' 
+say '[play -cl cl e g .44 .24 f a .22 -cl cl g as .44 -cl cl e g .44' 
+say '[play -f cl f a .44 .24 g as .22 -f cl a c .44 -e cl g .45' 
+say '[play -f cl f a .2 -fh b .22 -e cl g c .44 -f cl a dh .2 a eh .22 -d d a fh .44' 
+say '[play -g cl g eh .44 -g -b f dh .44 -cl cl e c .44 -as .47' 
+say '[play -f cl a c .44 .24 g as .22 -f cl f a .44 -cl -as e g .44' 
+say '[play -d -a d f .44 -cl cl e g .44 -f cl f a .44 -f -a cl f .44' 
+say '[play -as f as dh .2 -ash +dh .22 as dh .22 as dh .22 -f cl a c .44 .24 g as .22' 
+say '[play -cl -a cl a .44 -cl -g e g .44 -f -a cl f .44 .48' 
+say '[play -f cl a c .44 .24 g as .22 -f cl f a .44 -cl -as e g .44' 
+say '[play -d -a d f .44 -cl cl e g .44 -f cl f a .44 -f -a cl f .44' 
+say '[play -cl cl e g .2 f a .22 g as .22 e g .22 -f cl f a .44 .24 -as d g .23' 
+say '[play -cl -a cl f .44 -cl -g cl e .44 -f -a cl f .44 .48' 
+say '[play -f cl a c .44 .24 g as .22 -f cl f a .44 -cl -as e g .44' 
+say '[play -d -a d f .44 -cl cl e g .44 -f cl f a .44 -f -a cl f .44' 
+say '[play -cl cl e g .2 f a .22 g as .22 e g .22 -f cl f a .44 .24 -as d g .23' 
+say '[play -cl -a cl f .44 -cl -g cl e .44 -f -a cl f .44 .48' 
+say '[play -cl cl e g .44 .24 f a .22 -cl cl g as .44 -cl cl e g .44' 
+say '[play -f cl f a .44 .24 g as .22 -f cl a c .44 -e cl g .45' 
+say '[play -f cl f a .2 -fh b .22 -e cl g c .44 -f cl a dh .2 a eh .22 -d d a fh .44' 
+say '[play -g cl g eh .44 -g -b f dh .44 -cl cl e c .44 -as .47' 
+say '[play -f cl a c .44 .24 g as .22 -f cl f a .44 -cl -as e g .44' 
+say '[play -d -a d f .44 -cl cl e g .44 -f cl f a .44 -f -a cl f .44' 
+say '[play -as f as dh .2 -ash +dh .22 as dh .22 as dh .22 -f cl a c .44 .24 g as .22' 
+say '[play -cl -a cl a .44 -cl -g e g .44 -f -a cl f .44 .48' 

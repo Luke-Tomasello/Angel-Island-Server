@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -151,18 +151,6 @@ namespace Server.Network
                 return false;
 
             return (m_Data[m_Index++] != 0);
-        }
-
-        public string ReadUnicodeStringLE()
-        {
-            StringBuilder sb = new StringBuilder();
-
-            int c;
-
-            while ((m_Index + 1) < m_Size && (c = (m_Data[m_Index++] | (m_Data[m_Index++] << 8))) != 0)
-                sb.Append((char)c);
-
-            return sb.ToString();
         }
 
         public string ReadUnicodeStringLESafe(int fixedLength)
@@ -323,28 +311,6 @@ namespace Server.Network
             }
 
             return sb.ToString();
-        }
-
-        public string ReadUTF8String()
-        {
-            if (m_Index >= m_Size)
-                return string.Empty;
-
-            int count = 0;
-            int index = m_Index;
-
-            while (index < m_Size && m_Data[index++] != 0)
-                ++count;
-
-            index = 0;
-
-            byte[] buffer = new byte[count];
-            int value = 0;
-
-            while (m_Index < m_Size && (value = m_Data[m_Index++]) != 0)
-                buffer[index++] = (byte)value;
-
-            return Utility.UTF8.GetString(buffer);
         }
 
         public string ReadString()

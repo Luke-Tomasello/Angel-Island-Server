@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,8 +36,8 @@ namespace Server.Engines.PartySystem
             if (o is Mobile)
             {
                 Mobile m = (Mobile)o;
-                Party p = Party.Get(from);
-                Party mp = Party.Get(m);
+                Party? p = Party.Get(from);
+                Party? mp = Party.Get(m);
 
                 if (from == m)
                     from.SendLocalizedMessage(1005439); // You cannot add yourself to a party.

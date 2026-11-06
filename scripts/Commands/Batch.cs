@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -75,14 +75,14 @@ namespace Server.Commands
 
                 for (int i = 0; i < m_BatchCommands.Count; ++i)
                 {
-                    BatchCommand bc = (BatchCommand)m_BatchCommands[i];
+                    BatchCommand? bc = (BatchCommand?)m_BatchCommands[i];
 
                     string commandString, argString;
                     string[] args;
 
                     bc.GetDetails(out commandString, out argString, out args);
 
-                    BaseCommand command = (BaseCommand)m_Scope.Commands[commandString];
+                    BaseCommand? command = (BaseCommand?)m_Scope.Commands[commandString];
 
                     commands[i] = command;
                     eventArgs[i] = new CommandEventArgs(e.Mobile, commandString, argString, args);
@@ -106,7 +106,7 @@ namespace Server.Commands
                 for (int i = 0; i < commands.Length; ++i)
                 {
                     BaseCommand command = commands[i];
-                    BatchCommand bc = (BatchCommand)m_BatchCommands[i];
+                    BatchCommand? bc = (BatchCommand?)m_BatchCommands[i];
 
                     if (list.Count > 20)
                         CommandLogging.Enabled = false;
@@ -125,14 +125,14 @@ namespace Server.Commands
 
                         for (int j = 0; j < list.Count; ++j)
                         {
-                            object obj = list[j];
+                            object? obj = list[j];
 
                             if (obj == null)
                                 continue;
 
                             Type type = obj.GetType();
 
-                            PropertyInfo[] chain = (PropertyInfo[])propertyChains[type];
+                            PropertyInfo[]? chain = (PropertyInfo[]?)propertyChains[type];
 
                             string failReason = "";
 
@@ -142,7 +142,7 @@ namespace Server.Commands
                             if (chain == null)
                                 continue;
 
-                            PropertyInfo endProp = Properties.GetPropertyInfo(ref obj, chain, ref failReason);
+                            PropertyInfo? endProp = Properties.GetPropertyInfo(ref obj, chain, ref failReason);
 
                             if (endProp == null)
                                 continue;
@@ -320,7 +320,7 @@ namespace Server.Commands
 
             for (int i = 0; i < m_Batch.BatchCommands.Count; ++i)
             {
-                BatchCommand bc = (BatchCommand)m_Batch.BatchCommands[i];
+                BatchCommand? bc = (BatchCommand?)m_Batch.BatchCommands[i];
 
                 AddNewLine();
 
@@ -355,14 +355,14 @@ namespace Server.Commands
             if (!SplitButtonID(info.ButtonID, 1, out type, out index))
                 return;
 
-            TextRelay entry = info.GetTextEntry(0);
+            TextRelay? entry = info.GetTextEntry(0);
 
             if (entry != null)
                 m_Batch.Condition = entry.Text;
 
             for (int i = m_Batch.BatchCommands.Count - 1; i >= 0; --i)
             {
-                BatchCommand sc = (BatchCommand)m_Batch.BatchCommands[i];
+                BatchCommand? sc = (BatchCommand?)m_Batch.BatchCommands[i];
 
                 entry = info.GetTextEntry(1 + (i * 2));
 
@@ -435,7 +435,7 @@ namespace Server.Commands
             /* Options */
             for (int i = 0; i < BaseCommandImplementor.Implementors.Count; ++i)
             {
-                BaseCommandImplementor impl = (BaseCommandImplementor)BaseCommandImplementor.Implementors[i];
+                BaseCommandImplementor? impl = (BaseCommandImplementor?)BaseCommandImplementor.Implementors[i];
 
                 if (m_From.AccessLevel < impl.AccessLevel)
                     continue;
@@ -461,7 +461,7 @@ namespace Server.Commands
                         {
                             if (index < BaseCommandImplementor.Implementors.Count)
                             {
-                                BaseCommandImplementor impl = (BaseCommandImplementor)BaseCommandImplementor.Implementors[index];
+                                BaseCommandImplementor? impl = (BaseCommandImplementor?)BaseCommandImplementor.Implementors[index];
 
                                 if (m_From.AccessLevel >= impl.AccessLevel)
                                     m_Batch.Scope = impl;

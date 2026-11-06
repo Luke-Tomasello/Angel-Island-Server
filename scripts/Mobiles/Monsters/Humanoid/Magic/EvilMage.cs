@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -60,7 +60,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -73,7 +72,7 @@ namespace Server.Mobiles
         // Blackthorn's Revenge is when we got the Todd McFarlane (crap) bodies
         //	Blackthorn's Revenge was release 2/12/2002 according to UOGuide.
         // Since Publish 15 was 1/9/2002, we can safely exclude Todd McFarlane bodies pre Publish 15
-        private bool Blackthorns_Revenge = (PublishInfo.Publish > 15 && (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) == false);
+        private bool Blackthorns_Revenge = (PublishInfo.Publish > 15 && (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) == false);
 
         [Constructable]
         public EvilMage()
@@ -200,7 +199,7 @@ namespace Server.Mobiles
                         AddItem(new Sandals());
                 }
 
-                Item hair = null;
+                Item? hair = null;
                 switch (Utility.Random(4))
                 {
                     case 0: //  bald
@@ -224,7 +223,7 @@ namespace Server.Mobiles
                     AddItem(hair);
                 }
 
-                Item beard = null;
+                Item? beard = null;
                 switch (Utility.Random(4))
                 {
                     case 0: //  clean shaven
@@ -254,70 +253,23 @@ namespace Server.Mobiles
         }
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020207054748/uo.stratics.com/hunters/evilmage.shtml
+            // 	Red Robe: 0 to 50 Gold, Scrolls (circles 1-7), Reagents
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackReg(6);
-                PackScroll(2, 7);
-                PackItem(new Robe(Utility.RandomPinkHue())); // Former AddItem moved to the loot section
-
-                // pack the gold
-                PackGold(50, 100);
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(0, 50);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020207054748/uo.stratics.com/hunters/evilmage.shtml
-                    // 	Red Robe: 0 to 50 Gold, Scrolls (circles 1-7), Reagents
-
-                    if (Spawning)
-                    {
-                        PackGold(0, 50);
-                    }
-                    else
-                    {
-                        if (Blackthorns_Revenge == true)
-                        {   // don't need to dress Todd's graphics - just add as loot
-                            PackItem(new Robe(Utility.RandomRedHue())); // TODO: Proper hue
-                                                                        // sandals removed (unsure)
-                        }
-
-                        PackScroll(1, 7);
-                        PackReg(6);
-                    }
+                if (Blackthorns_Revenge == true)
+                {   // don't need to dress Todd's graphics - just add as loot
+                    PackItem(new Robe(Utility.RandomRedHue())); // TODO: Proper hue
+                                                                // sandals removed (unsure)
                 }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackReg(6);
 
-                        if (Blackthorns_Revenge == true)
-                        {   // don't need to dress Todd's graphics - just add as loot
-                            PackItem(new Robe(Utility.RandomRedHue())); // TODO: Proper hue
-                            PackItem(new Sandals());
-                        }
-                    }
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.MedScrolls);
-                }
+                PackScroll(1, 7);
+                PackReg(6);
             }
         }
 

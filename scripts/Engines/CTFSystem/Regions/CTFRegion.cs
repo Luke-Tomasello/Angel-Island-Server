@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -54,7 +54,7 @@ namespace Server.Engines
         {
             base.OnRegionRegistrationChanged();
 
-            CTFControl ctfc = this.Controller as CTFControl;
+            CTFControl? ctfc = this.Controller as CTFControl;
             if (ctfc != null)
             {
                 if (!this.Registered)
@@ -65,7 +65,7 @@ namespace Server.Engines
         // process CTF commands
         public override void OnSpeech(SpeechEventArgs e)
         {
-            CTFControl ctfc = this.Controller as CTFControl;
+            CTFControl? ctfc = this.Controller as CTFControl;
             if (ctfc != null)
             {
                 if (ctfc.OnRegionSpeech(e))
@@ -76,7 +76,7 @@ namespace Server.Engines
 
         public override bool OnDeath(Mobile m)
         {
-            CTFControl ctfc = this.Controller as CTFControl;
+            CTFControl? ctfc = this.Controller as CTFControl;
             if (ctfc == null) return base.OnDeath(m);
             ctfc.OnDeath(m);
             return base.OnDeath(m);
@@ -84,7 +84,7 @@ namespace Server.Engines
 
         public override void OnAfterDeath(Mobile m)
         {
-            CTFControl ctfc = this.Controller as CTFControl;
+            CTFControl? ctfc = this.Controller as CTFControl;
             if (ctfc == null) return;
             ctfc.OnRegionAfterDeath(m);
         }
@@ -97,14 +97,14 @@ namespace Server.Engines
         public override void OnPlayerAdd(Mobile m)
         {   // player is logging into the region
             base.OnPlayerAdd(m);
-            CTFControl ctfc = this.Controller as CTFControl;
+            CTFControl? ctfc = this.Controller as CTFControl;
             if (ctfc != null)
                 ctfc.OnPlayerAdd(m);
         }
 
         public override bool CheckAccessibility(Item i, Mobile m)
         {
-            CTFControl ctfc = this.Controller as CTFControl;
+            CTFControl? ctfc = this.Controller as CTFControl;
             if (ctfc != null && m.AccessLevel == AccessLevel.Player)
                 return ctfc.OnRegionCheckAccessibility(i, m);
             else
@@ -114,7 +114,7 @@ namespace Server.Engines
         public override bool EquipItem(Mobile m, Item item)
         {
             bool result = true;
-            CTFControl ctfc = this.Controller as CTFControl;
+            CTFControl? ctfc = this.Controller as CTFControl;
             if (ctfc != null)
                 result = ctfc.OnRegionEquipItem(m, item);
             return base.EquipItem(m, item) && result;

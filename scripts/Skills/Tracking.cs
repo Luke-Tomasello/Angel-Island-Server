@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -20,8 +20,89 @@
  ***************************************************************************/
 
 /*
+ * Detective / Forensic Lead Tracking
+ *
+ * Tracking is the convergence point for the Detective profession.
+ *
+ * The Detective system is intentionally split across three cooperating
+ * components:
+ *
+ *  1. Forensic Evaluation
+ *     Extracts facts from a target, especially corpses. It produces
+ *     ForensicInfo but does not decide how that information is later used.
+ *
+ *  2. ForensicNotebook
+ *     Stores forensic observations and active leads. It owns evidence
+ *     lifetime, packing/expiry, suspect aggregation, and lead-strength
+ *     scoring.
+ *
+ *  3. Tracking
+ *     Consumes notebook leads and turns them into pursuit gameplay.
+ *
+ * Normal Tracking remains proximity-based:
+ *
+ *     Search range -> nearby candidates -> selected target -> quest arrow
+ *
+ * Forensic lead tracking is evidence-based:
+ *
+ *     Corpse -> Forensics -> Notebook -> Forensic Leads -> suspect pursuit
+ *
+ * A forensic lead is not meant to act as magical GPS. Tracking should not
+ * reveal exact coordinates or online/offline status. Instead, it interprets
+ * the evidence in the notebook and produces one of three outcomes:
+ *
+ *  1. Active trail
+ *     If the suspect is within Arrow range, the detective picks up the trail
+ *     and receives a quest arrow.
+ *
+ *  2. Directional hint
+ *     If the suspect is outside Arrow range but within Hint range, the
+ *     detective receives vague directional/distance information.
+ *
+ *  3. Cold trail
+ *     If the suspect is beyond Hint range, on another map, unavailable, or
+ *     otherwise unreachable, the detective receives only a failure/cold-trail
+ *     message. The specific reason is intentionally not disclosed.
+ *
+ * Range terminology:
+ *
+ *  Search:
+ *      The ordinary candidate-discovery radius used by normal Tracking.
+ *
+ *  Arrow:
+ *      The pursuit radius within which a selected target can be followed by
+ *      quest arrow.
+ *
+ *  Hint:
+ *      The extended forensic radius within which evidence can still produce
+ *      directional clues, but not an arrow.
+ *
+ * GetTrackingRanges(from) returns the baseline ranges derived from Tracking
+ * skill, ruleset modifiers, and CoreAI tuning values.
+ *
+ * GetTrackingRanges(from, suspect) layers forensic evidence strength on top
+ * of the baseline ranges. This overload is used only after a forensic suspect
+ * has been selected, because evidence strength is suspect-specific.
+ *
+ * Evidence strength is owned by ForensicNotebook, not Tracking. Tracking asks
+ * the notebook how strong the lead is; it does not inspect notebook entries or
+ * score forensic evidence directly.
+ *
+ * Design rule:
+ *
+ *     Forensics identifies.
+ *     The notebook remembers.
+ *     Tracking pursues.
+ *
+ * The goal is to create investigation and manhunt gameplay, not a location
+ * service.
+ */
+
+/*
  * Scripts/Skills/Tracking.cs
  *	ChangeLog
+ *  6/3/2026, Adam
+ *      Added Detective / Forensic Lead Tracking system
  *  5/9/23, Yoar
  *      Restored passive tracking gain
  *      Disabled pre-Pub16 tracking bug
@@ -51,14 +132,17 @@
 */
 
 using Server.Gumps;
+using Server.Items;
 using Server.Network;
 using System;
 using System.Collections;
+using System.Linq;
 
 namespace Server.SkillHandlers
 {
     public class Tracking
     {
+
         public static void Initialize()
         {
             SkillInfo.Table[(int)SkillName.Tracking].Callback = new SkillUseCallback(OnUse);
@@ -80,16 +164,21 @@ namespace Server.SkillHandlers
     {
         private Mobile m_From;
         private bool m_Success;
+        private bool m_HasForensicLeads;
 
         public TrackWhatGump(Mobile from)
             : base(20, 30)
         {
             m_From = from;
             m_Success = from.CheckSkill(SkillName.Tracking, 0, 21.1, contextObj: new object[2]);
+            ForensicNotebook? notebook = ForensicNotebook.Find(from);
+            m_HasForensicLeads = notebook != null && notebook.GetActiveSuspects().Any();
 
             AddPage(0);
 
-            AddBackground(0, 0, 440, 135, 5054);
+            int height = m_HasForensicLeads ? 270 : 135;
+            AddBackground(0, 0, 440, height, 5054);
+            //AddBackground(0, 0, 440, 135, 5054);
 
             AddBackground(10, 10, 420, 75, 2620);
             AddBackground(10, 85, 420, 25, 3000);
@@ -109,21 +198,40 @@ namespace Server.SkillHandlers
             AddItem(320, 20, 8455);
             AddButton(320, 110, 4005, 4007, 4, GumpButtonType.Reply, 0);
             AddHtmlLocalized(320, 90, 100, 20, 1018090, false, false); // Players
+
+            if (m_HasForensicLeads)
+            {
+                AddBackground(10, 145, 420, 75, 2620);
+                AddBackground(10, 220, 420, 25, 3000);
+
+                AddItem(20, 155, 0x2252);
+                AddButton(20, 245, 4005, 4007, 5, GumpButtonType.Reply, 0);
+                AddHtml(20, 225, 140, 20, "Forensic Leads", false, false);
+            }
         }
 
         public override void OnResponse(NetState state, RelayInfo info)
         {
             if (info.ButtonID >= 1 && info.ButtonID <= 4)
+            {
                 TrackWhoGump.DisplayTo(m_Success, m_From, info.ButtonID - 1);
+            }
+            else if (info.ButtonID == 5 && m_HasForensicLeads)
+            {
+                TrackWhoGump.DisplayForensicLeadsTo(m_Success, m_From);
+            }
         }
     }
 
     public delegate bool TrackTypeDelegate(Mobile m);
 
-    public class TrackWhoGump : Gump
+    public partial class TrackWhoGump : Gump
     {
         private Mobile m_From;
         private int m_Range;
+        private TrackingRanges m_Ranges;
+        private bool m_ForensicLeads;
+        private ArrayList m_List;
 
         private static TrackTypeDelegate[] m_Delegates = new TrackTypeDelegate[]
             {
@@ -142,7 +250,7 @@ namespace Server.SkillHandlers
                 m_From = from;
             }
 
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
                 if (x == null && y == null)
                     return 0;
@@ -151,8 +259,8 @@ namespace Server.SkillHandlers
                 else if (y == null)
                     return 1;
 
-                Mobile a = x as Mobile;
-                Mobile b = y as Mobile;
+                Mobile? a = x as Mobile;
+                Mobile? b = y as Mobile;
 
                 if (a == null || b == null)
                     throw new ArgumentException();
@@ -178,11 +286,8 @@ namespace Server.SkillHandlers
 
             from.CheckSkill(SkillName.Tracking, 21.1, 100.0, contextObj: new object[2]); // Passive gain
 
-            double drange = CoreAI.TrackRangeBase;
-
-            drange += CoreAI.TrackRangePerSkill * from.Skills[SkillName.Tracking].Value;
-
-            int range = (int)drange;
+            TrackingRanges ranges = GetTrackingRanges(from);
+            int range = ranges.Search;
 
             if (range < CoreAI.TrackRangeMin)
                 range = CoreAI.TrackRangeMin;
@@ -190,7 +295,7 @@ namespace Server.SkillHandlers
             // Adam: 5/29/10 - triple tracking range.
             // Adam: 9/19/04 - Return tracking to it's original distance.
             // Pixie: 9/11/04 - increase tracking range (double it)
-            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
                 range *= 3;
 
             ArrayList list = new ArrayList();
@@ -198,7 +303,7 @@ namespace Server.SkillHandlers
             IPooledEnumerable eable = from.GetMobilesInRange(range);
             foreach (Mobile m in eable)
             {
-                if (Core.RuleSets.SiegeStyleRules())
+                if (Core.RuleSets.SiegeRules())
                 {
                     #region NEW SIEGE CODE
                     // Ghosts can no longer be tracked 
@@ -312,7 +417,7 @@ namespace Server.SkillHandlers
             {
                 list.Sort(new InternalSorter(from));
 
-                from.SendGump(new TrackWhoGump(from, list, range));
+                from.SendGump(new TrackWhoGump(from, list, ranges));
                 from.SendLocalizedMessage(1018093); // Select the one you would like to track.
             }
             else
@@ -326,55 +431,91 @@ namespace Server.SkillHandlers
             }
         }
 
-        // Tracking players uses tracking and detect hidden vs. hiding and stealth 
-        private static bool CheckDifficulty(Mobile from, Mobile m)
+        /*
+         * Determines whether a tracker can successfully track a player.
+         *
+         * Non-player creatures are always trackable.
+         *
+         * Player tracking is an opposed skill check:
+         *
+         *      Tracker:
+         *          Tracking
+         *          Detect Hidden
+         *          Forensics (AI/Mortalis bonus)
+         *
+         *      Target:
+         *          Hiding
+         *          Stealth
+         *
+         * Higher Tracking and Detect Hidden increase the chance of acquiring
+         * the target, while Hiding and Stealth make the target more difficult
+         * to track.
+         *
+         * On Angel Island / Mortalis-style shards, Forensics provides an
+         * additional bonus of up to +10% at Grandmaster.
+         *
+         * Historically, pre-Publish 16 shards contained a tracking bug that
+         * granted automatic success once Tracking exceeded 20.0. That behavior
+         * is preserved only on shards explicitly configured to emulate it.
+         */
+        private static bool CheckDifficulty(Mobile tracker, Mobile target)
         {
-            if (!m.Player)
+            // Non-player mobiles are always trackable.
+            if (!target.Player)
                 return true;
 
-            int tracking = from.Skills[SkillName.Tracking].Fixed;
-            int detectHidden = from.Skills[SkillName.DetectHidden].Fixed;
-            int forensics = (int)from.Skills[SkillName.Forensics].Value;        // AI and MO only
+            int tracking = tracker.Skills[SkillName.Tracking].Fixed;
+            int detectHidden = tracker.Skills[SkillName.DetectHidden].Fixed;
+            int forensics = (int)tracker.Skills[SkillName.Forensics].Value;
 
-            //if (Core.ML && m.Race == Race.Elf)
-            //tracking /= 2; //The 'Guide' says that it requires twice as Much tracking SKILL to track an elf.  Not the total difficulty to track.
+            int hiding = target.Skills[SkillName.Hiding].Fixed;
+            int stealth = target.Skills[SkillName.Stealth].Fixed;
 
-            int hiding = m.Skills[SkillName.Hiding].Fixed;
-            int stealth = m.Skills[SkillName.Stealth].Fixed;
-            int divisor = hiding + stealth;
+            int targetDifficulty = hiding + stealth;
 
-            // Necromancy forms affect tracking difficulty 
-            /*if (TransformationSpellHelper.UnderTransformation(m, typeof(HorrificBeastSpell)))
-				divisor -= 200;
-			else if (TransformationSpellHelper.UnderTransformation(m, typeof(VampiricEmbraceSpell)) && divisor < 500)
-				divisor = 500;
-			else if (TransformationSpellHelper.UnderTransformation(m, typeof(WraithFormSpell)) && divisor <= 2000)
-				divisor += 200;*/
+            // Legacy pre-Publish 16 tracking bug:
+            // Tracking > 20.0 resulted in automatic success.
+            bool useLegacyBug =
+                !CoreAI.TrackDifficulty &&
+                !Core.RuleSets.MortalisStyleRules() &&
+                !Core.RuleSets.AngelIslandRules() &&
+                PublishInfo.Publish < 16.0 &&
+                tracker.Skills[SkillName.Tracking].Value >= 20.1;
 
-            bool bug = !CoreAI.TrackDifficulty && !Core.RuleSets.MortalisRules() && !Core.RuleSets.AngelIslandRules() && PublishInfo.Publish < 16.0 && from.Skills[SkillName.Tracking].Value >= 20.1;
+            int chanceToTrack;
 
-            int chance;
-            if (bug)
+            if (useLegacyBug)
             {
-                chance = 100;
+                chanceToTrack = 100;
             }
-            else if (divisor > 0)
+            else if (targetDifficulty > 0)
             {
-                if (Core.RuleSets.SERules())
-                    chance = 50 * (tracking * 2 + detectHidden) / divisor;
+                if (Core.RuleSets.SamuraiEmpireRules())
+                {
+                    chanceToTrack =
+                        50 * (tracking * 2 + detectHidden) / targetDifficulty;
+                }
                 else
-                    chance = 50 * (tracking + detectHidden + 10 * Utility.RandomMinMax(1, 20)) / divisor;
+                {
+                    int randomBonus = 10 * Utility.RandomMinMax(1, 20);
 
-                // add bonus for fonensics (10% at GM forensics)
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
-                    chance += forensics / 10;
+                    chanceToTrack =
+                        50 * (tracking + detectHidden + randomBonus) / targetDifficulty;
+                }
+
+                // Angel Island / Mortalis bonus:
+                // +10% at GM Forensics.
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
+                    chanceToTrack += forensics / 10;
             }
             else
-                chance = 100;
+            {
+                // Target has neither Hiding nor Stealth.
+                chanceToTrack = 100;
+            }
 
-            return chance > Utility.Random(100);
+            return chanceToTrack > Utility.Random(100);
         }
-
         private static bool IsAnimal(Mobile m)
         {
             return (!m.Player && m.Body.IsAnimal);
@@ -392,7 +533,7 @@ namespace Server.SkillHandlers
 
         private static bool IsPlayer(Mobile m)
         {
-            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || PublishInfo.Publish >= 13)
+            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules() || PublishInfo.Publish >= 13)
                 return m.Player;
             else
             {   // publish 13 bug
@@ -403,14 +544,19 @@ namespace Server.SkillHandlers
             }
         }
 
-        private ArrayList m_List;
+        private TrackWhoGump(Mobile from, ArrayList list, TrackingRanges ranges)
+            : this(from, list, ranges, false)
+        {
+        }
 
-        private TrackWhoGump(Mobile from, ArrayList list, int range)
+        private TrackWhoGump(Mobile from, ArrayList list, TrackingRanges ranges, bool forensicLeads)
             : base(20, 30)
         {
             m_From = from;
             m_List = list;
-            m_Range = range;
+            m_Ranges = ranges;
+            m_Range = ranges.Search; // legacy/display compatibility
+            m_ForensicLeads = forensicLeads;
 
             AddPage(0);
 
@@ -437,7 +583,7 @@ namespace Server.SkillHandlers
 
             for (int i = 0; i < list.Count && i < 12; ++i)
             {
-                Mobile m = (Mobile)list[i];
+                Mobile? m = (Mobile?)list[i];
 
                 AddItem(20 + ((i % 4) * 100), 20 + ((i / 4) * 155), ShrinkTable.Lookup(m));
                 AddButton(20 + ((i % 4) * 100), 130 + ((i / 4) * 155), 4005, 4007, i + 1, GumpButtonType.Reply, 0);
@@ -453,16 +599,309 @@ namespace Server.SkillHandlers
 
             if (index >= 0 && index < m_List.Count && index < 12)
             {
-                Mobile m = (Mobile)m_List[index];
+                Mobile? m = (Mobile?)m_List[index];
 
-                m_From.QuestArrow = new TrackArrow(m_From, m, m_Range * 2);
+                if (m_ForensicLeads)
+                {
+                    TrackingRanges ranges = GetTrackingRanges(m_From, m);
+                    TrackForensicLead(m_From, m, ranges);
+                    return;
+                }
+
+                m_From.QuestArrow = new TrackArrow(m_From, m, m_Ranges.Arrow);
             }
         }
-    }
+        private static void TrackForensicLead(Mobile from, Mobile? suspect, TrackingRanges ranges)
+        {
+            if (from == null || suspect == null || suspect.Deleted)
+                return;
 
+            if (from.Map == null || suspect.Map == null || from.Map != suspect.Map)
+            {
+                from.SendMessage("You are unable to establish a trail.");
+                return;
+            }
+
+            DungeonTransition transition;
+            bool trackEntrance;
+
+            if (IsDungeonBoundaryTransition(from, suspect, out transition, out trackEntrance))
+            {
+                Point3D point;
+
+                if (TryGetDungeonTransitionPoint(from, transition, trackEntrance, out point))
+                {
+                    if (Core.Debug)
+                    {
+                        //from.SendMessage(
+                        //    "Dungeon tracking: {0} trail for {1} via {2} at {3}.",
+                        //    trackEntrance ? "entrance" : "exit",
+                        //    suspect.Name,
+                        //    transition.Name,
+                        //    point);
+                    }
+
+                    TrackDungeonTransitionPoint(from, suspect, point, from.Map, ranges, transition, trackEntrance);
+                    return;
+                }
+            }
+
+            double distance = from.GetDistanceToSqrt(suspect);
+
+            if (distance <= ranges.Arrow)
+            {
+                from.SendMessage("You pick up {0}'s trail.", suspect.Name);
+                from.QuestArrow = new TrackArrow(from, suspect, ranges.Arrow);
+            }
+            else if (distance <= ranges.Hint)
+            {
+                GiveForensicDirectionalHint(from, suspect);
+            }
+            else
+            {
+                from.SendMessage("The trail has gone cold.");
+            }
+        }
+        private static void GiveForensicDirectionalHint(Mobile from, Mobile suspect)
+        {
+            string direction = from.GetDirectionTo(suspect.Location).ToString();
+
+            if (direction == "Left")
+                direction = "South-West";
+            else if (direction == "Right")
+                direction = "North-East";
+            else if (direction == "Up")
+                direction = "North-West";
+            else if (direction == "Down")
+                direction = "South-East";
+            else if (direction == "Mask")
+                direction = "North-West";
+
+            double distance = from.GetDistanceToSqrt(suspect);
+
+            if (distance > 150)
+                from.SendMessage("Your notes suggest {0} is quite a long distance to the {1}.", suspect.Name, direction);
+            else if (distance > 100)
+                from.SendMessage("Your notes suggest {0} is a long way to the {1}.", suspect.Name, direction);
+            else if (distance > 75)
+                from.SendMessage("Your notes suggest {0} is a fair distance to the {1}.", suspect.Name, direction);
+            else if (distance > 50)
+                from.SendMessage("Your notes suggest {0} is quite a ways to the {1}.", suspect.Name, direction);
+            else if (distance > 40)
+                from.SendMessage("Your notes suggest {0} is just a short way to the {1}.", suspect.Name, direction);
+            else if (distance > 20)
+                from.SendMessage("Your notes suggest {0} is but a few steps to the {1}.", suspect.Name, direction);
+            else
+                from.SendMessage("You pick up {0}'s trail.", suspect.Name);
+        }
+        private static void GiveForensicDirectionalHint(Mobile from, Mobile suspect, Point3D point)
+        {
+            string direction = from.GetDirectionTo(point).ToString();
+
+            if (direction == "Left")
+                direction = "South-West";
+            else if (direction == "Right")
+                direction = "North-East";
+            else if (direction == "Up")
+                direction = "North-West";
+            else if (direction == "Down")
+                direction = "South-East";
+            else if (direction == "Mask")
+                direction = "North-West";
+
+            double distance = from.GetDistanceToSqrt(point);
+
+            if (distance > 150)
+                from.SendMessage("Your notes suggest {0}'s trail leads quite a long distance to the {1}.", suspect.Name, direction);
+            else if (distance > 100)
+                from.SendMessage("Your notes suggest {0}'s trail leads a long way to the {1}.", suspect.Name, direction);
+            else if (distance > 75)
+                from.SendMessage("Your notes suggest {0}'s trail leads a fair distance to the {1}.", suspect.Name, direction);
+            else if (distance > 50)
+                from.SendMessage("Your notes suggest {0}'s trail leads quite a ways to the {1}.", suspect.Name, direction);
+            else if (distance > 40)
+                from.SendMessage("Your notes suggest {0}'s trail leads just a short way to the {1}.", suspect.Name, direction);
+            else if (distance > 20)
+                from.SendMessage("Your notes suggest {0}'s trail leads but a few steps to the {1}.", suspect.Name, direction);
+            else
+                from.SendMessage("You pick up {0}'s trail.", suspect.Name);
+        }
+        public static void DisplayForensicLeadsTo(bool success, Mobile from)
+        {
+            if (!success)
+            {
+                from.SendLocalizedMessage(1018092); // You see no evidence of those in the area.
+                return;
+            }
+
+            ForensicNotebook? notebook = ForensicNotebook.Find(from);
+
+            if (notebook == null)
+            {
+                from.SendMessage("You have no forensic notebook.");
+                return;
+            }
+
+            from.CheckSkill(SkillName.Tracking, 21.1, 100.0, contextObj: new object[2]); // Passive gain
+
+            ArrayList list = new ArrayList();
+
+            foreach (Mobile suspect in notebook.GetActiveSuspects())
+            {
+                if (suspect == null || suspect.Deleted)
+                    continue;
+
+                if (!Core.Debug && suspect == from)
+                    continue;
+
+                list.Add(suspect);
+            }
+
+            if (list.Count == 0)
+            {
+                from.SendMessage("Your notebook contains no fresh forensic leads.");
+                return;
+            }
+
+            list.Sort(new InternalSorter(from));
+
+            TrackingRanges ranges = GetTrackingRanges(from);
+
+            from.SendGump(new TrackWhoGump(from, list, ranges, true));
+            from.SendMessage("Select the forensic lead you would like to pursue.");
+        }
+        /*
+         * Tracking Range Model
+         *
+         * Search Range:
+         *   Base tracking distance is:
+         *
+         *      10 + (Tracking Skill × 0.1)
+         *
+         *   Examples:
+         *      0.0 Tracking   = 10 tiles
+         *      50.0 Tracking  = 15 tiles
+         *      100.0 Tracking = 20 tiles
+         *
+         *   On Angel Island / Mortalis-style rulesets (including Seasons),
+         *   the search range is tripled:
+         *
+         *      GM Tracking = 60 tiles
+         *
+         * Arrow Range:
+         *   When tracking a suspect, a quest arrow is provided if the suspect
+         *   is within:
+         *
+         *      Search Range × 2
+         *
+         *   Example:
+         *      GM Tracking = 60 tile search range
+         *      Arrow Range = 120 tiles
+         *
+         * Hint Range:
+         *   Directional hints ("north", "southwest", etc.) are provided if the
+         *   suspect is within:
+         *
+         *      Search Range × 3
+         *
+         *   Example:
+         *      GM Tracking = 60 tile search range
+         *      Hint Range = 180 tiles
+         *
+         * Forensic Evidence:
+         *   Forensic Notebook evidence may further increase Arrow and Hint
+         *   ranges based on the strength of the evidence collected against
+         *   the suspect. Search Range itself is unaffected.
+         */
+        private struct TrackingRanges
+        {
+            public int Search;
+            public int Arrow;
+            public int Hint;
+        }
+
+        private static TrackingRanges GetTrackingRanges(Mobile from)
+        {
+            int search = GetTrackingSearchRange(from);
+
+            TrackingRanges ranges = new TrackingRanges();
+
+            ranges.Search = search;
+            ranges.Arrow = (int)(search * CoreAI.TrackArrowRangeMultiplier);
+            ranges.Hint = (int)(search * CoreAI.TrackHintRangeMultiplier);
+
+            return ranges;
+        }
+
+        private static int GetTrackingSearchRange(Mobile from)
+        {
+            double drange = CoreAI.TrackRangeBase;
+
+            drange += CoreAI.TrackRangePerSkill * from.Skills[SkillName.Tracking].Value;
+
+            int range = (int)drange;
+
+            if (range < CoreAI.TrackRangeMin)
+                range = CoreAI.TrackRangeMin;
+
+            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
+                range *= 3;
+
+            return range;
+        }
+
+        private static TrackingRanges GetTrackingRanges(Mobile from, Mobile? suspect)
+        {
+            TrackingRanges ranges = GetTrackingRanges(from);
+
+            double multiplier = GetEvidentiaryStrengthMultiplier(from, suspect);
+
+            ranges.Arrow = (int)(ranges.Arrow * multiplier);
+            ranges.Hint = (int)(ranges.Hint * multiplier);
+
+            return ranges;
+        }
+
+        private static double GetEvidentiaryStrengthMultiplier(Mobile from, Mobile? suspect)
+        {
+            ForensicNotebook? notebook = ForensicNotebook.FindBest(from, suspect);
+
+            if (notebook == null)
+                return 1.0;
+
+            return notebook.GetLeadStrengthMultiplier(suspect);
+        }
+    }
+    public class TrackPointArrow : QuestArrow
+    {
+        private Mobile? m_From;
+        private Timer m_Timer;
+
+        public TrackPointArrow(Mobile from, Point3D target, Map map, int range)
+            : base(from)
+        {
+            m_From = from;
+            m_Timer = new TrackPointTimer(from, target, map, range, this);
+            m_Timer.Start();
+        }
+
+        public override void OnClick(bool rightClick)
+        {
+            if (rightClick)
+            {
+                m_From = null;
+                Stop();
+            }
+        }
+
+        public override void OnStop()
+        {
+            m_Timer.Stop();
+        }
+    }
     public class TrackArrow : QuestArrow
     {
-        private Mobile m_From;
+        private Mobile? m_From;
         private Timer m_Timer;
 
         public TrackArrow(Mobile from, Mobile target, int range)
@@ -487,11 +926,59 @@ namespace Server.SkillHandlers
         {
             m_Timer.Stop();
 
-            if (m_From != null)
-                m_From.SendLocalizedMessage(503177); // You have lost your quarry.
+            // 6/3/2026, Adam: we start/stop arrows, and shouldn't always get this message
+            //  If specific messaging needs to happen, it needs to happen outsice this call
+            //if (m_From != null)
+            //    m_From.SendLocalizedMessage(503177); // You have lost your quarry.
         }
     }
+    public class TrackPointTimer : Timer
+    {
+        private Mobile m_From;
+        private Point3D m_Target;
+        private Map m_Map;
+        private int m_Range;
+        private QuestArrow m_Arrow;
 
+        public TrackPointTimer(Mobile from, Point3D target, Map map, int range, QuestArrow arrow)
+            : base(TimeSpan.FromSeconds(0.25), TimeSpan.FromSeconds(2.5))
+        {
+            m_From = from;
+            m_Target = target;
+            m_Map = map;
+            m_Range = range;
+            m_Arrow = arrow;
+        }
+
+        protected override void OnTick()
+        {
+            if (!m_Arrow.Running)
+            {
+                Stop();
+                return;
+            }
+
+            if (m_From == null || m_From.NetState == null || m_From.Deleted || m_From.Map != m_Map)
+            {
+                if (m_From != null && m_From.NetState != null)
+                    m_From.Send(new CancelArrow());
+
+                Stop();
+                return;
+            }
+
+            if (!m_From.InRange(m_Target, m_Range))
+            {
+                m_From.Send(new CancelArrow());
+                m_From.SendLocalizedMessage(503177); // You have lost your quarry.
+
+                Stop();
+                return;
+            }
+
+            m_Arrow.Update(m_Target.X, m_Target.Y);
+        }
+    }
     public class TrackTimer : Timer
     {
         private Mobile m_From, m_Target;

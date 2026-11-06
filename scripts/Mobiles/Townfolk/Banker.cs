@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -334,40 +334,6 @@ namespace Server.Mobiles
 
             return balance;
         }
-        public static int GetGoldBalanceFromAllEnrolled(Mobile from)
-        {   // Get Balance From players on this account that have enrolled in bankbox sharing
-            int total = 0;
-            if (from is PlayerMobile pm && pm != null)
-            {
-                // you cannot share other's bank if you yourself are not sharing
-                if (pm.ShareBank == false)
-                    return 0;
-
-                Server.Accounting.Account acct = (Server.Accounting.Account)pm.Account;
-                for (int i = 0; i < 5; ++i)
-                {
-                    if (acct[i] is PlayerMobile target)
-                    {
-                        if (target != null)
-                        {
-                            if (target.ShareBank)
-                            {
-                                if (target.BankBox != null)
-                                {
-                                    Item[] items = target.BankBox.FindItemsByType(typeof(Gold), true);
-
-                                    for (int jx = 0; jx < items.Length; ++jx)
-                                        if (items[jx].Deleted == false)
-                                            total += items[jx].Amount;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            return total;
-        }
         public static int GetCombinedBalanceFromAllEnrolled(Mobile from)
         {
             List<KeyValuePair<Mobile, List<Item>>> gold = new List<KeyValuePair<Mobile, List<Item>>>();
@@ -447,7 +413,7 @@ namespace Server.Mobiles
             return total;
         }
         #endregion New Banking System
-        public static bool Check(Mobile banker, Mobile m, int amount)
+        public static bool Check(Mobile? banker, Mobile m, int amount)
         {
             BankBox box = m.BankBox;
             if (box != null)
@@ -652,7 +618,7 @@ namespace Server.Mobiles
                             {
                                 e.Handled = true;
 
-                                if (e.Mobile.Criminal)
+                                if (e.Mobile.HasActiveJusticeRestriction)
                                 {
                                     this.Say(500389); // I will not do business with a criminal!
                                     break;
@@ -698,7 +664,7 @@ namespace Server.Mobiles
                             {
                                 e.Handled = true;
 
-                                if (e.Mobile.Criminal)
+                                if (e.Mobile.HasActiveJusticeRestriction)
                                 {
                                     this.Say(500389); // I will not do business with a criminal!
                                     break;
@@ -733,7 +699,9 @@ namespace Server.Mobiles
                             {
                                 e.Handled = true;
 
-                                if (e.Mobile.Criminal)
+                                // NOTE: OSI relied on short criminal timers to deny NPC services.
+                                // Mortalis uses explicit justice restriction windows; Criminal is no longer sufficient.
+                                if (e.Mobile is PlayerMobile pm && pm.HasActiveJusticeRestriction)
                                 {
                                     this.Say(500378); // Thou art a criminal and cannot access thy bank box.
                                     break;
@@ -760,7 +728,7 @@ namespace Server.Mobiles
                             {
                                 e.Handled = true;
 
-                                if (e.Mobile.Criminal)
+                                if (e.Mobile.HasActiveJusticeRestriction)
                                 {
                                     this.Say(500389); // I will not do business with a criminal!
                                     break;
@@ -849,7 +817,7 @@ namespace Server.Mobiles
         private static int m_value_withdrawn;
         private static int m_balance;
         private static readonly object mutex = new object();
-        public static LogHelper Logger
+        public static LogHelper? Logger
         {
             get
             {
@@ -954,8 +922,8 @@ namespace Server.Mobiles
             }
         }
 
-        private static ProcessTimer m_ProcessTimer = null;
-        private static LogHelper m_logger = null;
+        private static ProcessTimer? m_ProcessTimer = null;
+        private static LogHelper? m_logger = null;
         private static bool m_running = false;
         private static List<PlayerMobile> m_mobiles = new List<PlayerMobile>();
 
@@ -1053,7 +1021,7 @@ namespace Server.Mobiles
                 }
 
                 // okay, account created, characters created, backpacks filled, ... launch!
-                Timer.DelayCall(TimeSpan.FromSeconds(1), new TimerStateCallback(Tick), new object[] { null });
+                Timer.DelayCall(TimeSpan.FromSeconds(1), new TimerStateCallback(Tick), new object?[] { null });
             }
         }
         private static void Tick(object state)
@@ -1104,7 +1072,7 @@ namespace Server.Mobiles
                 m_dummyAccount = new Accounting.Account("username", "password");
                 for (int ix = 0; ix < 4; ix++)
                 {   // this is our canned list of participants
-                    PlayerMobile m = CharacterCreation.CreateMobile(m_dummyAccount) as PlayerMobile;
+                    PlayerMobile? m = CharacterCreation.CreateMobile(m_dummyAccount) as PlayerMobile;
                     m.BankBox = new BankBox(m);
                     m.ShareBank = true;
                     m.Name = "Jimmy " + (ix + 1).ToString();

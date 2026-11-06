@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -72,7 +72,6 @@
 
 using Server.Diagnostics;
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -91,7 +90,7 @@ namespace Server.Mobiles
         /// <param name="want">Mobile you wish to test or null for any mobile</param>
         /// <param name="killFocus">Unset the FocusMob</param>
         /// <returns>Mobile of interest</returns>
-        public Mobile AcquireFocusMob(Mobile want = null, bool bPlayerOnly = true, bool bFacFriend = false, bool bFacFoe = true, bool killFocus = false)
+        public Mobile? AcquireFocusMob(Mobile? want = null, bool bPlayerOnly = true, bool bFacFriend = false, bool bFacFoe = true, bool killFocus = false)
         {   // we're looking to attack a specific mobile or any mobile
             List<Mobile> ignore = new();
             while (AcquireFocusMob(m_Mobile.RangePerception, m_Mobile.FightMode, bPlayerOnly, bFacFriend, bFacFoe, ignore))
@@ -99,7 +98,7 @@ namespace Server.Mobiles
                 if (want == null || m_Mobile.FocusMob == want)
                 {   // we may only want the mobile that WOULD be the focus. Here we unset
                     //  the FocusMob if so instructed
-                    Mobile focus = m_Mobile.FocusMob;
+                    Mobile? focus = m_Mobile.FocusMob;
                     if (killFocus)
                         m_Mobile.FocusMob = null;
                     return focus;
@@ -140,7 +139,7 @@ namespace Server.Mobiles
 
             return false;                   // okay to process aggressors
         }
-        public bool AcquireFocusMob(int iRange, FightMode acqTypeRaw, bool bPlayerOnly, bool bFacFriend, bool bFacFoe, List<Mobile> ignore = null)
+        public bool AcquireFocusMob(int iRange, FightMode acqTypeRaw, bool bPlayerOnly, bool bFacFriend, bool bFacFoe, List<Mobile>? ignore = null)
         {
 
             // separate the flags from the target types
@@ -210,7 +209,7 @@ namespace Server.Mobiles
 		 *  bFacFoe : Check people in other factions
 		 * 
 		 */
-        public virtual bool AcquireFocusMobWorker(int iRange, FightMode acqType, FightMode acqFlags, bool bPlayerOnly, bool bFacFriend, bool bFacFoe, List<Mobile> ignore = null)
+        public virtual bool AcquireFocusMobWorker(int iRange, FightMode acqType, FightMode acqFlags, bool bPlayerOnly, bool bFacFriend, bool bFacFoe, List<Mobile>? ignore = null)
         {
             if (m_Mobile.Deleted)
                 return false;
@@ -241,7 +240,7 @@ namespace Server.Mobiles
                 //  first 'available' ControlMaster aggressor, then if not found, first available aggressor of mine.
                 if (m_Mobile.ControlTarget == m_Mobile.ControlMaster && m_Mobile.ControlOrder == OrderType.Guard)
                 {   // To mitigate this bug, we set the focusmob to be that thing that is attacking the tamer
-                    Mobile tempFocus = null;
+                    Mobile? tempFocus = null;
                     foreach (AggressorInfo aggressorInfo in m_Mobile.ControlMaster.Aggressors)
                     {   // see if we have a viable target
                         MobileInfo attackerinfo = GetMobileInfo(new MobileInfo(aggressorInfo.Attacker));
@@ -269,12 +268,6 @@ namespace Server.Mobiles
                         }
 
                     m_Mobile.FocusMob = tempFocus;
-#if false
-                    if (m_Mobile.ControlMaster.Aggressors.Count > 0)
-                        m_Mobile.FocusMob = m_Mobile.ControlMaster.Aggressors[0].Attacker;
-                    else
-                        m_Mobile.FocusMob = null;
-#endif
                 }
                 else
                     m_Mobile.FocusMob = m_Mobile.ControlTarget;
@@ -323,13 +316,13 @@ namespace Server.Mobiles
 
             if (map != null)
             {
-                Mobile newFocusMob = null;
+                Mobile? newFocusMob = null;
 
                 // Siege folks are complaining that monsters are aggroing from too far away.
                 //  The RunUO code used to have the default range perception at 10, then they changed it to 16
                 //  I can only assume that 10'ish was right for the Siege era, and this is the problem.
                 //  Rather than change/condition 100 source files, we'll just reduce the aggro range here to 70%
-                if (Core.RuleSets.SiegeStyleRules())
+                if (Core.RuleSets.SiegeRules() || Core.RuleSets.MortalisStyleRules())
                     iRange = (int)((double)iRange * 0.7);
 
                 // add each mobile found to our list
@@ -394,8 +387,8 @@ namespace Server.Mobiles
                     if (m.Deleted || m.Blessed)
                         continue;
 
-                    // Let's not target ourselves...
-                    if (m == m_Mobile)
+                    // Let's not target ourselves or our pets...
+                    if (m == m_Mobile || IsMyPet(m))
                         continue;
 
                     // Dead targets are invalid.
@@ -505,14 +498,6 @@ namespace Server.Mobiles
                     if (bFacFoe && !bFacFriend && !m_Mobile.CanBeHarmful(m, false))
                         continue;
 
-                    // faction friends are cool
-                    if (IOBSystem.IsFriend(m_Mobile, m) == true && m_Mobile.IsTeamOpposition(m) == false)
-                        continue;
-
-                    //Pix: this is the case where a non-IOBAligned mob is trying to target a IOBAligned mob AND the IOBAligned mob is an IOBFollower
-                    if (m is BaseCreature && IOBSystem.IsIOBAligned(m) && !IOBSystem.IsIOBAligned(m_Mobile) && (m as BaseCreature).IOBFollower == true)
-                        continue;
-
                     #region Alignment
                     bool aligned = AlignmentSystem.Enabled && AlignmentSystem.IsAlly(m_Mobile, m, true, true);
                     if (aligned && !me.GetFlag(FightMode.NoAllegiance))
@@ -588,12 +573,41 @@ namespace Server.Mobiles
 
             return (m_Mobile.FocusMob != null);
         }
+
+        /// <summary>
+        /// Returns true if the given mobile is one of this AI's controlled pets 
+        /// (walks up the full ControlMaster ownership chain).
+        /// </summary>
+        private bool IsMyPet(Mobile m)
+        {
+            if (m == null || m_Mobile == null || m.Deleted || m_Mobile.Deleted)
+                return false;
+
+            if (m == m_Mobile)
+                return false; // self is not a pet
+
+            Mobile current = m;
+            int safety = 0; // prevent any theoretical infinite loop
+
+            while (current != null && safety++ < 10)
+            {
+                if (current == m_Mobile)
+                    return true;
+
+                if (current is BaseCreature bc && bc.Controlled && bc.ControlMaster != null)
+                    current = bc.ControlMaster;
+                else
+                    break; // not controlled or no master
+            }
+
+            return false;
+        }
         private bool CloseEnough(Mobile m)
         {
             //return m_Mobile.InRange(m, m_Mobile.RangeFight);
             return (m_Mobile.GetDistanceToSqrt(m) < 2.0 && Math.Abs(m_Mobile.Z - m.Z) < 2);
         }
-        private bool Ignored(Mobile m, List<Mobile> list)
+        private bool Ignored(Mobile m, List<Mobile>? list)
         {
             if (list != null)
                 return list.Contains(m);
@@ -601,7 +615,7 @@ namespace Server.Mobiles
         }
         public void InvestigativeMemoryAI(Mobile m)
         {   // do we remember this guy?
-            Memory.ObjectMemory om = InvestigativeMemory.Recall(m as object);
+            Memory.ObjectMemory? om = InvestigativeMemory.Recall(m as object);
             if (om == null)
             {   // nope, don't remember him. Let's remember him and whether we can path to him
                 m_Mobile.DebugSay(DebugFlags.AI, string.Format("Remembering {0} in InvestigativeMemory.", m));
@@ -684,10 +698,10 @@ namespace Server.Mobiles
             /// Value Condition Less than zero <paramref name="x"/> is less than <paramref name="y"/>. Zero <paramref name="x"/> equals <paramref name="y"/>. Greater than zero <paramref name="x"/> is greater than <paramref name="y"/>.
             /// </returns>
             /// <exception cref="T:System.ArgumentException">Neither <paramref name="x"/> nor <paramref name="y"/> implements the <see cref="T:System.IComparable"/> interface.-or- <paramref name="x"/> and <paramref name="y"/> are of different types and neither one can handle comparisons with the other. </exception>
-            int IComparer.Compare(object x, object y)
+            int IComparer.Compare(object? x, object? y)
             {
-                Mobile mobileX = (Mobile)x;
-                Mobile mobileY = (Mobile)y;
+                Mobile? mobileX = (Mobile?)x;
+                Mobile? mobileY = (Mobile?)y;
 
                 if (mobileX == null && mobileY == null)
                 {

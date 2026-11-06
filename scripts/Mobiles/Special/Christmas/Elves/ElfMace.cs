@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -83,7 +83,7 @@ namespace Server.Mobiles
         public override bool UsesOppositionGroups { get { return true; } }
         public override OppositionGroup OppositionGroup { get { return OppositionGroup.ElvesAndEvilElves; } }
 
-        public override void AggressiveAction(Mobile aggressor, bool criminal, object source = null)
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
         {
             base.AggressiveAction(aggressor, criminal, source);
 

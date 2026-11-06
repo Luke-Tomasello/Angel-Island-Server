@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -165,7 +165,7 @@ namespace Server.Mobiles
 
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    Mobile m = (Mobile)list[i];
+                    Mobile? m = (Mobile?)list[i];
 
                     int damage = (int)(m.Hits * scalar);
 
@@ -178,7 +178,7 @@ namespace Server.Mobiles
                     m.MovingParticles(this, 0x0001, 1, 0, false, true, 32, 0, 9535, 9536, 0, (EffectLayer)255, 0);
 
                     this.DoHarmful(m);
-                    this.Hits += AOS.Damage(m, this, damage, 100, 0, 0, 0, 0, this);
+                    this.Hits += AOS.Damage(m, this, damage, new DamageContext { Source = this });
                 }
 
                 this.Say(true, "If I cannot cleanse thy soul, I will destroy it!");
@@ -217,7 +217,7 @@ namespace Server.Mobiles
 
                 this.PlaySound(0x209);
                 this.DoHarmful(combatant);
-                this.Hits += AOS.Damage(combatant, this, Utility.RandomMinMax(30, 40) - (Core.RuleSets.AOSRules() ? 0 : 10), 100, 0, 0, 0, 0, this);
+                this.Hits += AOS.Damage(combatant, this, Utility.RandomMinMax(30, 40) - (Core.RuleSets.AOSRules() ? 0 : 10), new DamageContext { Source = this });
             }
         }
 

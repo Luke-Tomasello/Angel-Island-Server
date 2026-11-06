@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -53,7 +53,7 @@ namespace Server.Engines.Doom
         private Rectangle2D m_RegionBounds;
         private ArrayList m_Traps;
 
-        private Region m_Region;
+        private Region? m_Region;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public new string TypeName
@@ -93,7 +93,7 @@ namespace Server.Engines.Doom
 
                 for (int i = 0; i < m_Creatures.Count; ++i)
                 {
-                    Mobile mob = (Mobile)m_Creatures[i];
+                    Mobile? mob = (Mobile?)m_Creatures[i];
 
                     if (!mob.Deleted)
                         return false;
@@ -179,7 +179,7 @@ namespace Server.Engines.Doom
             }
         }
 
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         public ArrayList Creatures
         {
@@ -193,7 +193,7 @@ namespace Server.Engines.Doom
             set { m_Traps = value; }
         }
 
-        public Region Region
+        public new Region? Region
         {
             get { return m_Region; }
             set { m_Region = value; }
@@ -242,7 +242,7 @@ namespace Server.Engines.Doom
             if (map == null)
                 return;
 
-            Item trap = null;
+            Item? trap = null;
 
             int random = Utility.Random(100);
 
@@ -350,12 +350,12 @@ namespace Server.Engines.Doom
                 if (m_TypeName == null)
                     return;
 
-                Type type = ScriptCompiler.FindTypeByName(m_TypeName, true);
+                Type? type = ScriptCompiler.FindTypeByName(m_TypeName, true);
 
                 if (type == null)
                     return;
 
-                object obj = Activator.CreateInstance(type);
+                object? obj = Activator.CreateInstance(type);
 
                 if (obj == null)
                     return;
@@ -586,7 +586,7 @@ namespace Server.Engines.Doom
 
             for (int i = 0; i < items.Count; ++i)
             {
-                Item item = (Item)items[i];
+                Item? item = (Item?)items[i];
 
                 if (item.Layer != Layer.ShopBuy && item.Layer != Layer.ShopResale && item.Layer != Layer.ShopSell)
                     item.Delete();

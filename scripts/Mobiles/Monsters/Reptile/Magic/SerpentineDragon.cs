@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -92,7 +92,7 @@ namespace Server.Mobiles
 
         public override bool HasBreath { get { return true; } } // fire breath enabled
                                                                 // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override HideType HideType { get { return HideType.Barbed; } }
         public override int Hides { get { return 40; } }
         public override int Meat { get { return 20; } }
@@ -124,48 +124,25 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020202092707/uo.stratics.com/hunters/serpentinedragon.shtml
+            // 1500 - 2000 Gold, gems, scrolls, magic items
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGem();
-                PackGem();
-                PackGold(800, 900);
-                PackMagicEquipment(1, 3, 0.50, 0.50);
-                PackMagicEquipment(1, 3, 0.15, 0.15);
-                // Category 4 MID
-                PackMagicItem(2, 3, 0.10);
-                PackMagicItem(2, 3, 0.05);
-                PackMagicItem(2, 3, 0.02);
+                PackGold(1500, 2000);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020202092707/uo.stratics.com/hunters/serpentinedragon.shtml
-                    // 1500 - 2000 Gold, gems, scrolls, magic items
-                    if (Spawning)
-                    {
-                        PackGold(1500, 2000);
-                    }
-                    else
-                    {
-                        PackGem(1, .9);
-                        PackGem(1, .6);
-                        PackGem(1, .2);
-                        PackScroll(3, 7);
-                        PackScroll(3, 7, 0.8);
-                        PackScroll(3, 7, 0.3);
+                PackGem(1, .9);
+                PackGem(1, .6);
+                PackGem(1, .2);
+                PackScroll(3, 7);
+                PackScroll(3, 7, 0.8);
+                PackScroll(3, 7, 0.3);
 
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 3);
-                        else
-                            PackMagicItem(2, 3, 0.10);
-                    }
-                }
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 3);
                 else
-                {   // Standard RunUO
-                    AddLoot(LootPack.FilthyRich, 2);
-                    AddLoot(LootPack.Gems, 2);
-                }
+                    PackMagicItem(2, 3, 0.10);
             }
         }
 

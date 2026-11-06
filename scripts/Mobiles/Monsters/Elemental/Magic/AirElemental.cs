@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,7 +41,7 @@ namespace Server.Mobiles
     [CorpseName("an air elemental corpse")]
     public class AirElemental : BaseCreature
     {
-        public override double DispelDifficulty { get { return 56; } }
+        public override double DispelDifficulty { get { return 100; } }
         public override double DispelFocus { get { return 45.0; } }
 
         [Constructable]
@@ -102,40 +102,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021015004827/uo.stratics.com/hunters/airelemental.shtml
+            // 200 to 300 Gold, Scrolls, Potions
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(100, 150);
-                PackMagicEquipment(1, 1, 0.10, 0.10);
-                PackScroll(1, 6);
-                PackScroll(1, 6);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(200, 300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021015004827/uo.stratics.com/hunters/airelemental.shtml
-                    // 200 to 300 Gold, Scrolls, Potions
-
-                    if (Spawning)
-                    {
-                        PackGold(200, 300);
-                    }
-                    else
-                    {
-                        PackScroll(1, 6, .9);
-                        PackScroll(1, 6, .5);
-                        PackPotion();
-                    }
-                }
-                else
-                {   // standard runuo
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Meager);
-                    AddLoot(LootPack.LowScrolls);
-                    AddLoot(LootPack.MedScrolls);
-                }
+                PackScroll(1, 6, .9);
+                PackScroll(1, 6, .5);
+                PackPotion();
             }
         }
 

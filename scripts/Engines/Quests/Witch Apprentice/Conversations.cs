@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -445,7 +445,7 @@ namespace Server.Engines.Quests.Hag
 
         public override void OnRead()
         {
-            FindIngredientObjective obj = System.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
+            FindIngredientObjective? obj = System.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
 
             if (obj != null)
                 System.AddObjective(new FindIngredientObjective(obj.Ingredients, true));
@@ -645,7 +645,7 @@ namespace Server.Engines.Quests.Hag
 
         public override void OnRead()
         {
-            FindIngredientObjective obj = System.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
+            FindIngredientObjective? obj = System.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
 
             if (obj != null)
                 obj.NextStep();

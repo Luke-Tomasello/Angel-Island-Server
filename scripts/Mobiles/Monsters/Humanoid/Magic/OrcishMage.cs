@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -46,7 +46,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 using Server.Misc;
 
@@ -100,78 +99,41 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20011217100121/uo.stratics.com/hunters/orcmage.shtml
+            // 50 to 150 Gold, Potions, Arrows, Gems, Scrolls (circle 1-4), Reagents, Mask of Orcish Kin, 1 Raw Ribs (carved)
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackReg(3);
-                PackReg(3);
-                PackGold(60, 90);
-                PackScroll(1, 4);
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(50, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20011217100121/uo.stratics.com/hunters/orcmage.shtml
-                    // 50 to 150 Gold, Potions, Arrows, Gems, Scrolls (circle 1-4), Reagents, Mask of Orcish Kin, 1 Raw Ribs (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(50, 150);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                        PackScroll(1, 4);
-                        PackReg(3);
-                        PackReg(3, 0.3);
-                        // http://www.uoguide.com/Savage_Empire
-                        // http://uo.stratics.com/secrets/archive/orcsavage.shtml
-                        if (PublishInfo.PublishDate >= Core.EraSAVE)
-                            if (0.05 > Utility.RandomDouble())
-                                PackItem(new OrcishKinMask());
-                            // 4/28/23, Adam: Non standard loot.
-                            //  Reasoning: We are at least starting out with a healthy RP orc population. All they want to do is role play.
-                            //  These masks shouldn't be some super rare, so drop them!
-                            else if (0.1 > Utility.RandomDouble())
-                                PackItem(new OrcishMask());
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackReg(6);
-
-                        // http://www.uoguide.com/Savage_Empire
-                        // http://uo.stratics.com/secrets/archive/orcsavage.shtml
-                        if (PublishInfo.PublishDate >= Core.EraSAVE)
-                            if (0.05 > Utility.RandomDouble())
-                                PackItem(new OrcishKinMask());
-                    }
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.LowScrolls);
-                }
+                PackPotion();
+                PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
+                PackGem(1, .9);
+                PackGem(1, .05);
+                PackScroll(1, 4);
+                PackReg(3);
+                PackReg(3, 0.3);
+                // http://www.uoguide.com/Savage_Empire
+                // http://uo.stratics.com/secrets/archive/orcsavage.shtml
+                if (PublishInfo.PublishDate >= Core.EraSAVE)
+                    if (0.05 > Utility.RandomDouble())
+                        PackItem(new OrcishKinMask());
             }
+        }
+
+        public override void GenerateNonStandardLoot()
+        {
+            // 4/28/23, Adam: Non-standard loot.
+            // Reasoning: We are at least starting out with a healthy RP orc population.
+            // These masks should not be super rare, so drop them unless the standard
+            // loot path already produced a Mask of Orcish Kin.
+            if (Backpack != null && Backpack.FindItemByType(typeof(OrcishKinMask)) != null)
+                return;
+
+            if (0.1 > Utility.RandomDouble())
+                PackItem(new OrcishMask());
         }
 
         public override OppositionGroup OppositionGroup
@@ -181,24 +143,32 @@ namespace Server.Mobiles
 
         public override bool IsEnemy(Mobile m, RelationshipFilter filter)
         {
-            if (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled)
-                if (m.Player && m.FindItemOnLayer(Layer.Helm) is OrcishKinMask)
+            bool useMask = (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules());
+
+            if (useMask ||
+                (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled))
+            {
+                if (m.Player &&
+                    m.FindItemOnLayer(Layer.Helm) is OrcishKinMask)
+                {
                     return false;
+                }
+            }
 
             return base.IsEnemy(m, filter);
         }
 
-        public override void AggressiveAction(Mobile aggressor, bool criminal, object source = null)
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
         {
             base.AggressiveAction(aggressor, criminal);
 
             if (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled)
             {
-                Item item = aggressor.FindItemOnLayer(Layer.Helm);
+                Item? item = aggressor.FindItemOnLayer(Layer.Helm);
 
                 if (item is OrcishKinMask)
                 {
-                    AOS.Damage(aggressor, 50, 0, 100, 0, 0, 0, item);
+                    AOS.Damage(aggressor, 50, new DamageContext { Source = this });
                     item.Delete();
                     aggressor.FixedParticles(0x36BD, 20, 10, 5044, EffectLayer.Head);
                     aggressor.PlaySound(0x307);

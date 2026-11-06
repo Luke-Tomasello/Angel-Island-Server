@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,12 +76,12 @@ namespace Server.Guilds
             }
         }
 
-        public static BaseGuild Find(int id)
+        public static BaseGuild? Find(int id)
         {
-            return (BaseGuild)m_GuildList[id];
+            return (BaseGuild?)m_GuildList[id];
         }
 
-        public static BaseGuild FindByName(string name)
+        public static BaseGuild? FindByName(string name)
         {
             foreach (BaseGuild g in m_GuildList.Values)
             {
@@ -92,7 +92,7 @@ namespace Server.Guilds
             return null;
         }
 
-        public static BaseGuild FindByAbbrev(string abbr)
+        public static BaseGuild? FindByAbbrev(string abbr)
         {
             foreach (BaseGuild g in m_GuildList.Values)
             {

@@ -1,11 +1,11 @@
-/***************************************************************************
+﻿/***************************************************************************
  *
  *   RunUO                   : May 1, 2002
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -121,7 +121,7 @@ namespace Server.Spells.Sixth
 
                     //Strength
                     string name = string.Format("[Magic] {0} Offset", StatType.Str);
-                    StatMod mod = Caster.GetStatMod(name);
+                    StatMod? mod = Caster.GetStatMod(name);
                     if (mod != null /*&& mod.Offset > 0*/)
                     {
                         Caster.RemoveStatMod(name);
@@ -168,6 +168,7 @@ namespace Server.Spells.Sixth
                     {
                         Caster.BodyMod = 0;
                         Caster.HueMod = -1;
+                        PolymorphSpell.StopTimer(Caster);
                         Caster.EndAction(typeof(PolymorphSpell));
 
                         BaseArmor.ValidateMobile(Caster);
@@ -188,21 +189,13 @@ namespace Server.Spells.Sixth
                 {
                     SpellHelper.Turn(Caster, m);
 
-                    BaseCreature bc = m as BaseCreature;
+                    BaseCreature? bc = m as BaseCreature;
 
                     double dispelChance = 0;
 
                     if (bc != null)
                     {
-                        // players don't have trouble dispelling the summons of a summoner (magery+spirit speak)
-                        if (Caster is PlayerMobile || bc.ControlMaster == null)
-                            dispelChance = (50.0 + ((100 * (Caster.Skills.Magery.Value - bc.DispelDifficulty)) / (bc.DispelFocus * 2))) / 100;
-                        else
-                        {
-                            double difficulty = bc.DispelDifficulty + bc.ControlMaster.Skills.SpiritSpeak.Value / 2.0;
-                            if (difficulty > 125) difficulty = 125;
-                            dispelChance = (50.0 + ((100 * (Caster.Skills.Magery.Value - difficulty)) / (bc.DispelFocus * 2))) / 100;
-                        }
+                        dispelChance = Spells.Sixth.DispelSpell.GetDispelChance(Caster, bc);
                     }
 
                     if (dispelChance > Utility.RandomDouble())
@@ -222,7 +215,72 @@ namespace Server.Spells.Sixth
 
             FinishSequence();
         }
+        /// <summary>
+        /// Computes the chance (0.0 – 1.0) that 'caster' successfully dispels 'target'.
+        /// Logic is rule-set aware:
+        ///   - AngelIslandRules(): includes Spirit Speak + ControlMaster difficulty bump.
+        ///   - Otherwise (Mortalis/OSI): uses standard RunUO-style difficulty.
+        /// </summary>
+        public static double GetDispelChance(Mobile caster, Mobile target)
+        {
+            if (caster == null || target == null)
+                return 0.0;
 
+            BaseCreature? bc = target as BaseCreature;
+            if (bc == null)
+                return 0.0;
+
+            double magery = caster.Skills.Magery.Value;
+
+            //
+            // Handle Angel Island custom rules
+            //
+            if (Core.RuleSets.AngelIslandRules())
+            {
+                // Players dispelling wild creatures → normal difficulty.
+                // Non-player casters dispelling controlled creatures → Spirit Speak penalty.
+                if (caster is PlayerMobile || bc.ControlMaster == null)
+                {
+                    return ComputeChance(magery, bc.DispelDifficulty, bc.DispelFocus);
+                }
+                else
+                {
+                    double difficulty = bc.DispelDifficulty + (bc.ControlMaster.Skills.SpiritSpeak.Value / 2.0);
+
+                    if (difficulty > 125.0)
+                        difficulty = 125.0;
+
+                    return ComputeChance(magery, difficulty, bc.DispelFocus);
+                }
+            }
+
+            //
+            // Standard OSI / RunUO-style behavior
+            //
+            return ComputeChance(magery, bc.DispelDifficulty, bc.DispelFocus);
+        }
+
+
+        /// <summary>
+        /// Applies the canonical RunUO dispel formula:
+        /// chance = (50 + ((100 * (magery - difficulty)) / (2 * focus))) / 100
+        /// Clamps results to [0, 1].
+        /// </summary>
+        private static double ComputeChance(double magery, double difficulty, double focus)
+        {
+            if (focus <= 0.0)
+                focus = 20.0; // defensive fallback
+
+            double num = 50.0 + ((100.0 * (magery - difficulty)) / (focus * 2.0));
+            double chance = num / 100.0;
+
+            if (chance < 0.0)
+                chance = 0.0;
+            else if (chance > 1.0)
+                chance = 1.0;
+
+            return chance;
+        }
         public class InternalTarget : Target
         {
             private DispelSpell m_Owner;

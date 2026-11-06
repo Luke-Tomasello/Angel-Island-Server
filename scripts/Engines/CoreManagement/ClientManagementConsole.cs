@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -23,22 +23,18 @@
  * ChangeLog
  *	8/26/2023, Adam
  *		Created.
- *		Management console for the global values stored in Engines/AngelIsland/CoreAI.cs
- *		This console manages aspects of the client software enforcement.
+ *  3/18/26, Luke
+ *      Refactored to inherit from BaseConsole.
  */
 
-namespace Server.Items
+namespace Server.Engines.Consoles
 {
-    [FlipableAttribute(0x1f14, 0x1f15, 0x1f16, 0x1f17)]
-    public class ClientManagementConsole : Item
+    public class ClientManagementConsole : BaseConsole
     {
         [Constructable]
         public ClientManagementConsole()
-            : base(0x1F14)
+            : base("Client Management Console")
         {
-            Weight = 1.0;
-            Hue = 0x973;
-            Name = "Client Management Console";
         }
 
         public ClientManagementConsole(Serial serial)
@@ -50,184 +46,138 @@ namespace Server.Items
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public static bool ForceGMNCUO
         {
-            get
-            {
-                return CoreAI.ForceGMNCUO;
-            }
-            set
-            {
-                CoreAI.ForceGMNCUO = value;
-            }
+            get => CoreAI.ForceGMNCUO;
+            set => CoreAI.ForceGMNCUO = value;
         }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public static bool ForceGMNRZR
         {
-            get
-            {
-                return CoreAI.ForceGMNRZR;
-            }
-            set
-            {
-                CoreAI.ForceGMNRZR = value;
-            }
+            get => CoreAI.ForceGMNRZR;
+            set => CoreAI.ForceGMNRZR = value;
         }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public static bool FakeBadGMNCUO
         {
-            get
-            {
-                return CoreAI.FakeBadGMNCUO;
-            }
-            set
-            {
-                CoreAI.FakeBadGMNCUO = value;
-            }
+            get => CoreAI.FakeBadGMNCUO;
+            set => CoreAI.FakeBadGMNCUO = value;
         }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public static bool FakeBadGMNRZR
         {
-            get
-            {
-                return CoreAI.FakeBadGMNRZR;
-            }
-            set
-            {
-                CoreAI.FakeBadGMNRZR = value;
-            }
+            get => CoreAI.FakeBadGMNRZR;
+            set => CoreAI.FakeBadGMNRZR = value;
         }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public static bool WarnBadGMNCUO
         {
-            get
-            {
-                return CoreAI.WarnBadGMNCUO;
-            }
-            set
-            {
-                CoreAI.WarnBadGMNCUO = value;
-            }
+            get => CoreAI.WarnBadGMNCUO;
+            set => CoreAI.WarnBadGMNCUO = value;
         }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public static bool WarnBadGMNRZR
         {
-            get
-            {
-                return CoreAI.WarnBadGMNRZR;
-            }
-            set
-            {
-                CoreAI.WarnBadGMNRZR = value;
-            }
+            get => CoreAI.WarnBadGMNRZR;
+            set => CoreAI.WarnBadGMNRZR = value;
         }
 #else
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
         public static bool ForceGMNCUO
         {
-            get
-            {
-                return CoreAI.ForceGMNCUO;
-            }
-            set
-            {
-                CoreAI.ForceGMNCUO = value;
-            }
+            get => CoreAI.ForceGMNCUO;
+            set => CoreAI.ForceGMNCUO = value;
         }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
         public static bool ForceGMNRZR
         {
-            get
-            {
-                return CoreAI.ForceGMNRZR;
-            }
-            set
-            {
-                CoreAI.ForceGMNRZR = value;
-            }
+            get => CoreAI.ForceGMNRZR;
+            set => CoreAI.ForceGMNRZR = value;
         }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
         public static bool FakeBadGMNCUO
         {
-            get
-            {
-                return CoreAI.FakeBadGMNCUO;
-            }
-            set
-            {
-                CoreAI.FakeBadGMNCUO = value;
-            }
+            get => CoreAI.FakeBadGMNCUO;
+            set => CoreAI.FakeBadGMNCUO = value;
         }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
         public static bool FakeBadGMNRZR
         {
-            get
-            {
-                return CoreAI.FakeBadGMNRZR;
-            }
-            set
-            {
-                CoreAI.FakeBadGMNRZR = value;
-            }
+            get => CoreAI.FakeBadGMNRZR;
+            set => CoreAI.FakeBadGMNRZR = value;
         }
 #endif
 
         [CommandProperty(AccessLevel.Administrator)]
         public bool IPBinderEnabled
         {
-            get
-            {
-                return CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.IPBinderEnabled);
-            }
+            get => CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.IPBinderEnabled);
             set
             {
-                if (value == true)
+                if (value)
                     CoreAI.SetDynamicFeature(CoreAI.FeatureBits.IPBinderEnabled);
                 else
                     CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.IPBinderEnabled);
             }
         }
+
         [CommandProperty(AccessLevel.Owner)]
         public int MaxConcurrentAddresses
         {
-            get { return CoreAI.MaxConcurrentAddresses; }
-            set { CoreAI.MaxConcurrentAddresses = value; }
+            get => CoreAI.MaxConcurrentAddresses;
+            // configured in ShardInit()
+            //set => CoreAI.MaxConcurrentAddresses = value;
+        }
+
+        [CommandProperty(AccessLevel.Owner)]
+        public int MaxCharactersPerAccount
+        {
+            get => CoreAI.MaxCharactersPerAccount;
+            // configured in ShardInit()
+            //set => CoreAI.MaxCharactersPerAccount = value;
         }
         [CommandProperty(AccessLevel.Administrator)]
         public static int MaxAccountsPerIP
         {
-            get { return CoreAI.MaxAccountsPerIP; }
-            set { CoreAI.MaxAccountsPerIP = value; }
+            get => CoreAI.MaxAccountsPerIP;
+            // configured in ShardInit()
+            //set => CoreAI.MaxAccountsPerIP = value;
         }
+
         [CommandProperty(AccessLevel.Administrator)]
         public static int MaxAccountsPerMachine
         {
-            get { return CoreAI.MaxAccountsPerMachine; }
-            set { CoreAI.MaxAccountsPerMachine = value; }
+            get => CoreAI.MaxAccountsPerMachine;
+            // configured in ShardInit()
+            //set => CoreAI.MaxAccountsPerMachine = value;
         }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public bool RazorNegFeaturesEnabled
         {
-            get
-            {
-                return CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.RazorNegotiateFeaturesEnabled);
-            }
+            get => CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.RazorNegotiateFeaturesEnabled);
             set
             {
-                if (value == true)
+                if (value)
                     CoreAI.SetDynamicFeature(CoreAI.FeatureBits.RazorNegotiateFeaturesEnabled);
                 else
                     CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.RazorNegotiateFeaturesEnabled);
             }
         }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public bool RazorNegWarnAndKick
         {
-            get
-            {
-                return CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.RazorNegotiateWarnAndKick);
-            }
+            get => CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.RazorNegotiateWarnAndKick);
             set
             {
-                if (value == true)
+                if (value)
                     CoreAI.SetDynamicFeature(CoreAI.FeatureBits.RazorNegotiateWarnAndKick);
                 else
                     CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.RazorNegotiateWarnAndKick);
@@ -237,15 +187,12 @@ namespace Server.Items
         public override void OnDoubleClick(Mobile from)
         {
             if (from.AccessLevel > AccessLevel.Administrator)
-            {
                 from.SendGump(new Server.Gumps.PropertiesGump(from, this));
-            }
         }
-
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((int)1); // version
+            writer.Write((int)0); // version
         }
 
         public override void Deserialize(GenericReader reader)
@@ -254,5 +201,4 @@ namespace Server.Items
             int version = reader.ReadInt();
         }
     }
-
 }

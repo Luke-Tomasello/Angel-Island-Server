@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -138,7 +138,6 @@ namespace Server.Guilds
 
         #region IOB
 
-        private static int m_JoinDelay = 10;
         private IOBAlignment m_IOBAlignment;
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -164,24 +163,6 @@ namespace Server.Guilds
         {
             get { return m_LastIOBChangeTime; }
             set { m_LastIOBChangeTime = value; }
-        }
-
-        private bool CanJoinIOB()
-        {
-            if (m_LastIOBChangeTime + TimeSpan.FromDays(m_JoinDelay) > DateTime.UtcNow)
-                return false;
-
-            return true;
-        }
-
-        public void IOBKick()
-        {
-            string message = string.Format("Your guild has been kicked from the {0} by the consensus of other {0}.  You cannot rejoin for {1} days.",
-                Engines.IOBSystem.IOBSystem.GetIOBName(IOBAlignment), m_JoinDelay);
-            GuildMessage(message);
-
-            m_LastIOBChangeTime = DateTime.UtcNow;
-            m_IOBAlignment = IOBAlignment.None;
         }
 
         #endregion //IOB Functionality
@@ -217,7 +198,7 @@ namespace Server.Guilds
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public AlignmentState AlignmentState
+        public AlignmentState? AlignmentState
         {
             get { return AlignmentState.GetState(m_Alignment); }
             set { }
@@ -262,9 +243,9 @@ namespace Server.Guilds
             return (BaseGuild)(new Guild(args.Id));
         }
 
-        public static bool NewGuildSystem { get { return Core.RuleSets.SERules(); } }
+        public static bool NewGuildSystem { get { return Core.RuleSets.SamuraiEmpireRules(); } }
 
-        private Mobile m_Leader;
+        private Mobile? m_Leader;
 
         private string m_Name;
         private string m_Abbreviation;
@@ -276,10 +257,10 @@ namespace Server.Guilds
 
         private Dictionary<Mobile, DateTime> m_Banned;
 
-        private Item m_Guildstone;
-        private Item m_Teleporter;
+        private Item? m_Guildstone;
+        private Item? m_Teleporter;
 
-        private Item m_TownshipStone;
+        private Item? m_TownshipStone;
 
         private string m_Charter;
         private string m_Website;
@@ -409,7 +390,7 @@ namespace Server.Guilds
 
             return GuildBanType.None;               // not banned
         }
-        public Mobile GetBannedMember(Mobile m)
+        public Mobile? GetBannedMember(Mobile m)
         {
             TidyBanList();
 
@@ -584,10 +565,10 @@ namespace Server.Guilds
 
         public void AlliedChat(Mobile from, int hue, string text)
         {
-            Packet p = null;
+            Packet? p = null;
             for (int i = 0; i < m_Members.Count; i++)
             {
-                Mobile m = m_Members[i] as Mobile;
+                Mobile? m = m_Members[i] as Mobile;
 
                 if (m != null)
                 {
@@ -642,10 +623,10 @@ namespace Server.Guilds
         }
         public void GuildChat(Mobile from, int hue, string text)
         {
-            Packet p = null;
+            Packet? p = null;
             for (int i = 0; i < m_Members.Count; i++)
             {
-                Mobile m = m_Members[i] as Mobile;
+                Mobile? m = m_Members[i] as Mobile;
 
                 if (m != null)
                 {
@@ -739,7 +720,7 @@ namespace Server.Guilds
 
                 for (int i = 0; i < m_Members.Count; i++)
                 {
-                    Mobile member = m_Members[i] as Mobile;
+                    Mobile? member = m_Members[i] as Mobile;
                     if (member != null)
                     {
                         if (member.GuildFealty == originalVote)
@@ -768,7 +749,7 @@ namespace Server.Guilds
 
                 for (int i = 0; i < m_Members.Count; i++)
                 {
-                    Mobile m = m_Members[i] as Mobile;
+                    Mobile? m = m_Members[i] as Mobile;
                     if (m != null)
                     {
                         if (m == member)
@@ -796,7 +777,7 @@ namespace Server.Guilds
             return count;
         }
 
-        private Mobile CalculateMemberVote(Mobile member)
+        private Mobile? CalculateMemberVote(Mobile? member)
         {
             try
             {
@@ -830,17 +811,6 @@ namespace Server.Guilds
             return null;
         }
 
-        private bool IsTitleStartDate(string str)
-        {   // "{0}/{1}", month, day
-
-            foreach (char c in str)
-            {
-                if ((c < '0' || c > '9') && c != '/')
-                    return false;
-            }
-
-            return true;
-        }
         public void CalculateGuildmaster()
         {
             try
@@ -897,7 +867,7 @@ namespace Server.Guilds
                     // don't allow members that have not logged in for 14 days to vote
                     if (m_Members[i] as Mobile is Mobiles.PlayerMobile pm && pm != null && pm.Account as Accounting.Account != null)
                     {
-                        Accounting.Account acct = pm.Account as Accounting.Account;
+                        Accounting.Account? acct = pm.Account as Accounting.Account;
                         TimeSpan delta = DateTime.UtcNow - acct.LastLogin;
                         if (delta.TotalDays > 14)
                         {   // can't vote / set guild fealty to self
@@ -906,7 +876,7 @@ namespace Server.Guilds
                         }
                     }
 
-                    Mobile v = CalculateMemberVote(m_Members[i] as Mobile);
+                    Mobile? v = CalculateMemberVote(m_Members[i] as Mobile);
 
                     if (v == null)
                         continue;
@@ -916,7 +886,7 @@ namespace Server.Guilds
                         votes[v] = (int)(votes[v]) + 1;
                 }
 
-                Mobile winner = null;
+                Mobile? winner = null;
                 int highVotes = 0;
 
                 // find winner
@@ -1045,7 +1015,7 @@ namespace Server.Guilds
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Item TownshipStone
+        public Item? TownshipStone
         {
             get
             {
@@ -1058,7 +1028,7 @@ namespace Server.Guilds
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Item Teleporter
+        public Item? Teleporter
         {
             get
             {
@@ -1216,7 +1186,7 @@ namespace Server.Guilds
                     if (value is Mobile && (value as Mobile).Player)
                     {
                         if (value.Guild != null)
-                            this.Guildstone.SendSystemMessage("They must resign from their current guild before controlling another.");
+                            this.Guildstone.SendMessageNearby("They must resign from their current guild before controlling another.");
                         else
                         {
                             AddMember(value);
@@ -1224,7 +1194,7 @@ namespace Server.Guilds
                         }
                     }
                     else
-                        this.Guildstone.SendSystemMessage("You cannot make that a guildmaster.");
+                        this.Guildstone.SendMessageNearby("You cannot make that a guildmaster.");
                 }
             }
         }
@@ -1314,7 +1284,7 @@ namespace Server.Guilds
             return m_Members.Contains(m);
         }
 
-        public bool IsAlly(Guild g)
+        public bool IsAlly(Guild? g)
         {
             return m_Allies.Contains(g);
         }
@@ -1450,7 +1420,7 @@ namespace Server.Guilds
                         m_Banned = new Dictionary<Mobile, DateTime>(count);
                         for (int ix = 0; ix < count; ix++)
                         {   // while we're here, we'll tidy the list;
-                            Mobile m = reader.ReadMobile();
+                            Mobile? m = reader.ReadMobile();
                             DateTime expiry = reader.ReadDateTime();
                             if (DateTime.UtcNow > expiry)
                                 continue;               // don't add to the list. No longer banned
@@ -1549,7 +1519,8 @@ namespace Server.Guilds
             EventSink.CreateGuild += new CreateGuildHandler(EventSink_CreateGuild);
 
             Server.CommandSystem.Register("ListenToGuild", AccessLevel.GameMaster, new CommandEventHandler(ListenToGuild_OnCommand));
-            Server.CommandSystem.Register("BanMember", AccessLevel.Player, new CommandEventHandler(BanMember_OnCommand));
+            if (!Core.RuleSets.MortalisRules())
+                Server.CommandSystem.Register("BanMember", AccessLevel.Player, new CommandEventHandler(BanMember_OnCommand));
             TargetCommands.Register(new GuildBanClear());
         }
 
@@ -1565,7 +1536,7 @@ namespace Server.Guilds
             {
                 if (obj is Mobile)
                 {
-                    Guild g = ((Mobile)obj).Guild as Guild;
+                    Guild? g = ((Mobile)obj).Guild as Guild;
 
                     if (g == null)
                     {
@@ -1589,7 +1560,7 @@ namespace Server.Guilds
         {
             if (e.Mobile != null)
             {
-                Guild g = e.Mobile.Guild as Guild;
+                Guild? g = e.Mobile.Guild as Guild;
                 if (g == null) return;  // no message
                 if (g.Leader != e.Mobile)
                 {
@@ -1602,13 +1573,13 @@ namespace Server.Guilds
         }
         public static void BanMember_OnTarget(Mobile me, object obj)
         {
-            Guild my_guild = me.Guild as Guild;
+            Guild? my_guild = me.Guild as Guild;
             try
             {
-                Mobile them = obj as Mobile;
+                Mobile? them = obj as Mobile;
                 if (them != null)
                 {
-                    Guild targeted_guild = them.Guild as Guild;
+                    Guild? targeted_guild = them.Guild as Guild;
                     if (targeted_guild == null)
                     {
                         me.SendMessage("They are not in a guild.");

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -171,7 +171,7 @@ namespace Server
 
         public static string GetDatabasePath(ref bool error)
         {
-            string path = Environment.GetEnvironmentVariable("AI.FIREWALLDB");
+            string? path = Environment.GetEnvironmentVariable("AI.FIREWALLDB");
 
             if (string.IsNullOrWhiteSpace(path))
                 path = @"C:\AIDB\firewalldb.db";
@@ -179,7 +179,7 @@ namespace Server
             error = false;
             if (!File.Exists(path))
             {   // initialize database
-                string directory = Path.GetDirectoryName(path);
+                string? directory = Path.GetDirectoryName(path);
                 if (!Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
                 // this creates a zero-byte file
@@ -224,7 +224,7 @@ namespace Server
         {
             EnsureTable();
 
-            DataTable table = null;
+            DataTable? table = null;
 
             const string cmdText = "SELECT ipaddress FROM Firewall WHERE ipaddress=@ip;";
 
@@ -358,7 +358,7 @@ namespace Server
         {
             EnsureTable();
 
-            DataTable table = null;
+            DataTable? table = null;
 
             const string cmdText = "SELECT ipaddress FROM Firewall;";
 
@@ -390,7 +390,7 @@ namespace Server
 
             for (int i = 0; i < table.Rows.Count; i++)
             {
-                string ipAddress = null;
+                string? ipAddress = null;
 
                 try
                 {

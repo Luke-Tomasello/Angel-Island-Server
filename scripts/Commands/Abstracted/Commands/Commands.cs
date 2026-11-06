@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -67,6 +67,7 @@ using Server.Accounting;
 using Server.Diagnostics;
 using Server.Gumps;
 using Server.Items;
+using Server.Misc;
 using Server.Mobiles;
 using Server.Network;
 using Server.Spells;
@@ -76,6 +77,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using TextCopy;
+using static Server.DupeUtility;
 
 namespace Server.Commands
 {
@@ -113,8 +115,11 @@ namespace Server.Commands
             Register(new OpenBrowserCommand());
             Register(new CountCommand());
             Register(new InterfaceCommand());
-            Register(new DupeCommand());            // adam: convert to area aware
+            Register(new DupeCommand());                // adam: convert to area aware
+            Register(new DupeToClipboardCommand());     // adam: Dupe item(s) to xml and place on the clipboard
+            Register(new DupeFromClipboardCommand());   // adam: Take xml from clipboard and reconstruct item(s)
             Register(new DupeMobileCommand());
+
             Register(new Factions.FactionKickCommand(Factions.FactionKickType.Kick));
             Register(new Factions.FactionKickCommand(Factions.FactionKickType.Ban));
             Register(new Factions.FactionKickCommand(Factions.FactionKickType.Unban));
@@ -133,7 +138,7 @@ namespace Server.Commands
 
             for (int i = 0; i < impls.Count; ++i)
             {
-                BaseCommandImplementor impl = (BaseCommandImplementor)impls[i];
+                BaseCommandImplementor? impl = (BaseCommandImplementor?)impls[i];
 
                 if ((command.Supports & impl.SupportRequirement) != 0)
                     impl.Register(command);
@@ -342,8 +347,8 @@ namespace Server.Commands
 
             for (int i = 0; i < list.Count; ++i)
             {
-                object obj = list[i];
-                Container cont = null;
+                object? obj = list[i];
+                Container? cont = null;
 
                 if (obj is Mobile)
                 {
@@ -384,7 +389,7 @@ namespace Server.Commands
         {
             if (e.Length >= 1)
             {
-                Type t = ScriptCompiler.FindTypeByName(e.GetString(0));
+                Type? t = ScriptCompiler.FindTypeByName(e.GetString(0));
 
                 if (t == null)
                 {
@@ -417,7 +422,7 @@ namespace Server.Commands
 
         public override void Execute(CommandEventArgs e, object obj)
         {
-            IPoint3D p = obj as IPoint3D;
+            IPoint3D? p = obj as IPoint3D;
 
             if (p == null)
                 return;
@@ -445,8 +450,18 @@ namespace Server.Commands
 
         public override void Execute(CommandEventArgs e, object obj)
         {
-            IPoint3D p = obj as IPoint3D;
+            IPoint3D? p = obj as IPoint3D;
             Mobile from = e.Mobile;
+
+            if (obj is VendorCourierItem vci)
+            {
+                Mobile m = vci.DestinationVendor;
+                if (m != null)
+                {
+                    p = m.Location;
+                    from.Map = m.Map;
+                }
+            }
 
             if (obj is FDFile.FDRegionControl rc)
             {
@@ -782,6 +797,7 @@ namespace Server.Commands
                 List<string> restricted_words = new() { "map", "location", "x", "y", "z" };
                 List<string> input = new(tokens);
                 bool restricted = input.Intersect(restricted_words, StringComparer.OrdinalIgnoreCase).ToList().Count > 0;
+
                 if (obj is Item item && restricted && Utility.IsRestrictedObject(item) && from.AccessLevel < AccessLevel.Owner)
                 {
                     string text = string.Format(string.Format("{0}s are not authorized to change core shard assets in this way.", from.AccessLevel));
@@ -789,9 +805,32 @@ namespace Server.Commands
                     LogFailure(text);
                     return;
                 }
+
                 for (int i = 0; (i + 1) < e.Length; i += 2)
                 {
-                    string result = Properties.SetValue(e.Mobile, obj, e.GetString(i), e.GetString(i + 1));
+                    string propName = e.GetString(i);
+                    string propValue = e.GetString(i + 1);
+
+                    // For Mortalis/Seasons, gate [set name <something>] for player mobiles so staff cannot bypass
+                    // normal reserved-name conflict rules.
+                    if (obj is Mobile targetMobile && Core.RuleSets.UsesReservedNames() &&
+                        targetMobile.Player &&
+                        string.Equals(propName, "Name", StringComparison.OrdinalIgnoreCase))
+                    {
+                        bool self;
+
+                        if (NameVerification.IsNameConflict(targetMobile, propValue, out self))
+                        {
+                            if (self)
+                                LogFailure("That account is already using that name.");
+                            else
+                                LogFailure("That name is already reserved by another account.");
+
+                            continue;
+                        }
+                    }
+
+                    string result = Properties.SetValue(e.Mobile, obj, propName, propValue);
 
                     if (result == "Property has been set.")
                         AddResponse(result);
@@ -821,7 +860,7 @@ namespace Server.Commands
         public override void Execute(CommandEventArgs e, object obj)
         {
             Clipboard clipboard = new Clipboard();
-            string text = clipboard.GetText();
+            string? text = clipboard.GetText();
 
             if (e.Length == 1)
             {
@@ -981,7 +1020,7 @@ namespace Server.Commands
             {
                 if (mob.IsDeadBondedPet)
                 {
-                    BaseCreature bc = mob as BaseCreature;
+                    BaseCreature? bc = mob as BaseCreature;
 
                     if (bc != null)
                     {
@@ -1143,8 +1182,8 @@ namespace Server.Commands
 
                 if (fromState != null && targState != null)
                 {
-                    Account fromAccount = fromState.Account as Account;
-                    Account targAccount = targState.Account as Account;
+                    Account? fromAccount = fromState.Account as Account;
+                    Account? targAccount = targState.Account as Account;
 
                     if (fromAccount != null && targAccount != null)
                     {
@@ -1196,6 +1235,7 @@ namespace Server.Commands
         {
             m_Amount = 1;
             m_Deep = false;
+
             if (e.Length == 1)
             {
                 m_Amount = e.GetInt32(0);
@@ -1205,64 +1245,230 @@ namespace Server.Commands
                 m_Amount = e.GetInt32(0);
                 m_Deep = e.GetBoolean(1);
             }
+
             PerItem(e.Mobile, obj);
         }
 
         private void PerItem(Mobile from, object targ)
         {
             bool done = false;
+
             if (!(targ is Item))
             {
                 LogFailure("You can only dupe items.");
                 return;
             }
 
-            CommandLogging.WriteLine(from, "{0} {1} duping {2} (inBag={3}; amount={4})", from.AccessLevel, CommandLogging.Format(from), CommandLogging.Format(targ), m_InBag, m_Amount);
+            CommandLogging.WriteLine(
+                from,
+                "{0} {1} duping {2} (inBag={3}; amount={4}; deep={5})",
+                from.AccessLevel,
+                CommandLogging.Format(from),
+                CommandLogging.Format(targ),
+                m_InBag,
+                m_Amount,
+                m_Deep);
 
-            Item copy = (Item)targ;
-            Container pack;
+            Item source = (Item)targ;
+            Container? pack;
 
             if (m_InBag)
             {
-                if (copy.Parent is Container)
-                    pack = (Container)copy.Parent;
-                else if (copy.Parent is Mobile)
-                    pack = ((Mobile)copy.Parent).Backpack;
+                if (source.Parent is Container)
+                    pack = (Container)source.Parent;
+                else if (source.Parent is Mobile)
+                    pack = ((Mobile)source.Parent).Backpack;
                 else
                     pack = null;
             }
             else
+            {
                 pack = from.Backpack;
+            }
 
             try
             {
+                DupeFlags flags = DupeFlags.AddonToStatic;
+
+                if (m_Deep)
+                    flags |= DupeFlags.Deep;
+
                 for (int i = 0; i < m_Amount; i++)
                 {
-                    Item new_item = null;
-                    if (m_Deep)
-                        new_item = Utility.DeepDupe(copy);
-                    else
-                        new_item = Utility.Dupe(copy);
+                    Item? newItem = Server.DupeUtility.Dupe(source, flags);
+
+                    if (newItem == null)
+                        continue;
+
                     if (pack != null)
-                        pack.DropItem(new_item);
+                        pack.DropItem(newItem);
                     else
-                        new_item.MoveToWorld(from.Location, from.Map);
+                        newItem.MoveToWorld(from.Location, from.Map);
                 }
+
                 done = true;
             }
             catch (Exception ex)
             {
-                LogFailure(string.Format("{0}", ex.ToString()));
+                LogFailure(string.Format("{0}", ex));
                 return;
             }
 
             if (!done)
-                LogFailure("Unable to dupe.  Item must have a 0 parameter constructor.");
+                LogFailure("Unable to dupe item.");
             else
                 AddResponse("Done.");
         }
     }
+    public class DupeToClipboardCommand : BaseCommand
+    {
+        private bool m_Deep = true;
 
+        public DupeToClipboardCommand()
+        {
+            AccessLevel = AccessLevel.Administrator;
+            Supports = CommandSupport.AllItems | CommandSupport.Single;
+            Commands = new string[] { "DupeToClipboard" };
+            ObjectTypes = ObjectTypes.Items;
+            Usage = "DupeToClipboard <deep=true>";
+            Description = "Exports an item to XML and copies it to the clipboard.";
+        }
+
+        public override void Execute(CommandEventArgs e, object obj)
+        {
+            m_Deep = true;
+
+            if (e.Length >= 1)
+                m_Deep = e.GetBoolean(0);
+
+            PerItem(e.Mobile, obj);
+        }
+
+        private void PerItem(Mobile from, object targ)
+        {
+            if (!(targ is Item item))
+            {
+                LogFailure("You can only export items.");
+                return;
+            }
+
+            try
+            {
+                DupeFlags flags = DupeFlags.AddonToStatic;
+
+                if (m_Deep)
+                    flags |= DupeFlags.Deep;
+
+                string? xml = Server.DupeUtility.DupeToXml(item, flags);
+
+                if (string.IsNullOrWhiteSpace(xml))
+                {
+                    LogFailure("Failed to export item.");
+                    return;
+                }
+
+                ClipboardService.SetText(xml);
+
+                CommandLogging.WriteLine(
+                    from,
+                    "{0} {1} exported {2} to clipboard (deep={3})",
+                    from.AccessLevel,
+                    CommandLogging.Format(from),
+                    CommandLogging.Format(item),
+                    m_Deep);
+
+                AddResponse("Item copied to clipboard.");
+            }
+            catch (Exception ex)
+            {
+                LogFailure(ex.ToString());
+            }
+        }
+    }
+    public class DupeFromClipboardCommand : BaseCommand
+    {
+        public DupeFromClipboardCommand()
+        {
+            AccessLevel = AccessLevel.Administrator;
+            Supports = CommandSupport.AllItems | CommandSupport.Single | CommandSupport.AllMobiles;
+            Commands = new string[] { "DupeFromClipboard" };
+            ObjectTypes = ObjectTypes.All;
+            Usage = "DupeFromClipboard";
+            Description = "Creates an item from XML stored in the clipboard.";
+        }
+
+        public override void Execute(CommandEventArgs e, object obj)
+        {
+            Mobile from = e.Mobile;
+
+            try
+            {
+                string? xml = ClipboardService.GetText();
+
+                if (string.IsNullOrWhiteSpace(xml))
+                {
+                    LogFailure("Clipboard is empty.");
+                    return;
+                }
+
+                Item? item = Server.DupeUtility.DupeFromXml(xml);
+
+                if (item == null)
+                {
+                    LogFailure("Unable to reconstruct item from clipboard XML.");
+                    return;
+                }
+
+                if (obj is Mobile mob)
+                {
+                    Container pack = mob.Backpack;
+
+                    if (pack != null)
+                        pack.DropItem(item);
+                    else
+                        item.MoveToWorld(mob.Location, mob.Map);
+                }
+                else if (obj is Container container)
+                {
+                    container.DropItem(item);
+                }
+                else if (obj is IPoint3D p)
+                {
+                    Map map = from.Map;
+
+                    if (map == null || map == Map.Internal)
+                    {
+                        item.Delete();
+                        LogFailure("Invalid target map.");
+                        return;
+                    }
+
+                    Point3D loc = new Point3D(p);
+                    item.MoveToWorld(loc, map);
+                }
+                else
+                {
+                    item.Delete();
+                    LogFailure("Target a mobile, container, or location.");
+                    return;
+                }
+
+                CommandLogging.WriteLine(
+                    from,
+                    "{0} {1} imported {2} from clipboard to {3}",
+                    from.AccessLevel,
+                    CommandLogging.Format(from),
+                    CommandLogging.Format(item),
+                    CommandLogging.Format(obj));
+
+                AddResponse("Item created from clipboard.");
+            }
+            catch (Exception ex)
+            {
+                LogFailure(ex.ToString());
+            }
+        }
+    }
     public class DupeMobileCommand : BaseCommand
     {
         public DupeMobileCommand()
@@ -1297,7 +1503,7 @@ namespace Server.Commands
             try
             {
 
-                Mobile new_mobile = null;
+                Mobile? new_mobile = null;
                 new_mobile = Utility.Dupe(copy);
                 new_mobile.MoveToWorld(from.Location, from.Map);
                 done = true;

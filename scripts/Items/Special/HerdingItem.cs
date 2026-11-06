@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -58,8 +58,8 @@ namespace Server.Items
         public override int InitMaxHits { get { return 50; } }
         #endregion
 
-        private string m_ConditionStr;
-        private ObjectConditional m_ConditionImpl;
+        private string? m_ConditionStr;
+        private ObjectConditional? m_ConditionImpl;
 
         private double m_ReqSkill;
         private double m_MinSkill;
@@ -73,7 +73,7 @@ namespace Server.Items
         private string m_BreakMessage;
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-        public string Condition
+        public string? Condition
         {
             get { return m_ConditionStr; }
             set
@@ -250,7 +250,7 @@ namespace Server.Items
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                BaseCreature bc = targeted as BaseCreature;
+                BaseCreature? bc = targeted as BaseCreature;
 
                 if (bc == null || !m_Item.CheckCondition(bc))
                 {
@@ -281,7 +281,7 @@ namespace Server.Items
                 if (m_Item.Deleted)
                     return;
 
-                IPoint2D p = targeted as IPoint2D;
+                IPoint2D? p = targeted as IPoint2D;
 
                 if (p == null)
                     return;
@@ -292,7 +292,7 @@ namespace Server.Items
                 }
                 else
                 {
-                    if (from.Skills[SkillName.Herding].Value < m_Item.ReqSkill || !from.CheckTargetSkill(SkillName.Herding, m_Creature, m_Item.MinSkill, m_Item.MaxSkill, new object[2] { m_Creature, null } /*contextObj*/))
+                    if (from.Skills[SkillName.Herding].Value < m_Item.ReqSkill || !from.CheckTargetSkill(SkillName.Herding, m_Creature, m_Item.MinSkill, m_Item.MaxSkill, new object?[2] { m_Creature, null } /*contextObj*/))
                     {
                         from.SendMessage("You don't seem to be able to persuade them to move.");
 

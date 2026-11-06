@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts/Misc/AddToBank.cs
  * ChangeLog:
+ *	10/22/26, Adam
+ *		GiveItemToCharacters / GiveItemToAccessLevel: iterate the live PlayerMobile.Instances (deleted entries skipped)
+ *		instead of copying and scanning every mobile in the world. Filtering and results are unchanged.
  *	2/7/08, Adam
  *		Add option to copy properties. Default: True
  *  12/20/07, Adam
@@ -175,11 +178,22 @@ namespace Server.Commands
             return 0;
         }
 
+        // Snapshot of the live player characters. PlayerMobile.Instances holds every PlayerMobile ever constructed
+        //  (created or loaded) and never drops deleted ones, so filter those out; the copy also keeps the loops safe
+        //  if the list changes while items are given.
+        private static List<Mobile> LivePlayers()
+        {
+            List<Mobile> players = new List<Mobile>(PlayerMobile.Instances.Count);
+            foreach (PlayerMobile pm in PlayerMobile.Instances)
+                if (pm != null && !pm.Deleted)
+                    players.Add(pm);
+            return players;
+        }
+
         private static bool GiveItemToCharacters(Item item, int amount, bool copyProperties)
         {
             bool success = true;
-            //ArrayList mobs = new ArrayList(World.Mobiles.Values);
-            List<Mobile> mobs = new List<Mobile>(World.Mobiles.Values);
+            List<Mobile> mobs = LivePlayers();
             foreach (Mobile m in mobs)
             {
                 if (m is PlayerMobile)
@@ -197,8 +211,7 @@ namespace Server.Commands
         private static bool GiveItemToAccessLevel(Item item, int amount, bool copyProperties, int access)
         {
             bool success = true;
-            //ArrayList mobs = new ArrayList(World.Mobiles.Values);
-            List<Mobile> mobs = new List<Mobile>(World.Mobiles.Values);
+            List<Mobile> mobs = LivePlayers();
             foreach (Mobile m in mobs)
             {
                 if (m is PlayerMobile)
@@ -510,7 +523,7 @@ namespace Server.Commands
                         }
                         else
                         {
-                            Type type = ScriptCompiler.FindTypeByName(TypeName, true);
+                            Type? type = ScriptCompiler.FindTypeByName(TypeName, true);
                             if (type == null)
                             {
                                 from.SendMessage("{0} is not a valid type", type);
@@ -519,7 +532,7 @@ namespace Server.Commands
                             }
                             else
                             {
-                                object obj = Activator.CreateInstance(type);
+                                object? obj = Activator.CreateInstance(type);
                                 if (obj is Item)
                                     AddToBank.GiveItem(from, (Item)obj, m_Amount, CopyProperties != 0, GiveRule, Access);
                                 else

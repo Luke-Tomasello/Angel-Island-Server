@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -122,7 +122,7 @@ namespace Server.Items
 
         public bool ValidateUse(Mobile from)
         {
-            PlayerMobile pm = from as PlayerMobile;
+            PlayerMobile? pm = from as PlayerMobile;
 
             if (!IsChildOf(from.Backpack))
             {
@@ -299,7 +299,7 @@ namespace Server.Items
                         else
                             pm.SetHairMods(m_Kit.LastHairID = Utility.RandomList(Utility.HairIDs), m_Kit.LastBeardID = Utility.RandomList(Utility.BeardIDs));
 
-                        Item look = pm.FindItemOnLayer(Layer.Hair);
+                        Item? look = pm.FindItemOnLayer(Layer.Hair);
 
                         if (look != null)
                             m_Kit.LastHairHue = look.Hue = m_Kit.NextHairHue();
@@ -321,7 +321,7 @@ namespace Server.Items
                         else
                             pm.SetHairMods(m_Kit.LastHairID, m_Kit.LastBeardID);
 
-                        Item look = pm.FindItemOnLayer(Layer.Hair);
+                        Item? look = pm.FindItemOnLayer(Layer.Hair);
 
                         if (look != null && m_Kit.LastHairID != DisguiseKit.NoChange)
                             look.Hue = m_Kit.LastHairHue;
@@ -381,7 +381,7 @@ namespace Server.Items
                             pm.SetHairMods(DisguiseKit.NoChange, m_Kit.LastBeardID = entry.m_ItemID);
 
                         #region Hue
-                        Item look;
+                        Item? look;
 
                         if (hair)
                         {
@@ -434,7 +434,7 @@ namespace Server.Items
 
         public static bool StopTimer(Mobile m)
         {
-            Timer t = (Timer)m_Timers[m];
+            Timer? t = (Timer?)m_Timers[m];
 
             if (t != null)
             {

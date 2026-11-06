@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -99,7 +99,7 @@ namespace Server.Items
         }
 
         #region UsesRemaining
-        public bool WearsOut { get { return Core.RuleSets.SiegeStyleRules(); } }
+        public bool WearsOut { get { return Core.RuleSets.SiegeRules(); } }
         public int ToolBrokeMessage => 502470; // You broke your shepherd's crook.
         int m_usesRemaining;
         // staff don't need to see this
@@ -237,7 +237,7 @@ namespace Server.Items
                     {
                         int LoyaltyLev = (int)m_Creature.LoyaltyValue;
 
-                        if (from.CheckTargetSkill(SkillName.Herding, m_Creature, 0, 100, new object[2] { m_Creature, null }/*contextObj*/))
+                        if (from.CheckTargetSkill(SkillName.Herding, m_Creature, 0, 100, new object?[2] { m_Creature, null }/*contextObj*/))
                         {
                             // erl: ammended formula so scales proportionately and without
                             // bias + allow non controled beast herding (assumes 88% chance

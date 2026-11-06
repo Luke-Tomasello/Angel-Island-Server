@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -78,7 +78,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public string GuildAbbr
+        public string? GuildAbbr
         {
             get
             {
@@ -113,7 +113,7 @@ namespace Server.Items
         public override void OnDelete()
         {
             // if the deed is deleted, the stone is deleted
-            if (/*IsFreezeDrying == false &&*/ m_Guild != null && m_Guild.Guildstone != null)
+            if (m_Guild != null && m_Guild.Guildstone != null)
                 m_Guild.Guildstone.Delete();
 
             base.OnDelete();
@@ -165,7 +165,7 @@ namespace Server.Items
             {
                 if (m_Guild != null && m_Guild.Guildstone != null && m_Guild.Guildstone is Guildstone)
                 {
-                    Guildstone stone = m_Guild.Guildstone as Guildstone;
+                    Guildstone? stone = m_Guild.Guildstone as Guildstone;
                     if (stone.PlaceStone(from))
                     {
                         from.SendMessage("You place the guildstone.");

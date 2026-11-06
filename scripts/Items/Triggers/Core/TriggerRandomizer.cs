@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -53,7 +53,7 @@ namespace Server.Items.Triggers
 
         #region Entry Accessors
 
-        private Item GetLink(int index)
+        private Item? GetLink(int index)
         {
             if (index >= 0 && index < m_Links.Count)
                 return m_Links[index];
@@ -173,7 +173,7 @@ namespace Server.Items.Triggers
             TriggerSystem.CheckTrigger(from, Randomize(from));
         }
 
-        private Item Randomize(Mobile from)
+        private Item? Randomize(Mobile from)
         {
             List<Item> list = new List<Item>();
             for (int i = 0; i < m_Links.Count; i++)
@@ -186,35 +186,6 @@ namespace Server.Items.Triggers
                 if (TriggerSystem.CanTrigger(from, item))
                     return item;
 
-#if false
-            int total = 0;
-
-            for (int i = 0; i < m_Links.Count; i++)
-            {
-                Item e = m_Links[i];
-
-                if (e.Weight > 0 && TriggerSystem.CanTrigger(from, e))
-                    total += e.Weight;
-            }
-
-            if (total == 0)
-                return null;
-
-            int rnd = Utility.Random(total);
-
-            for (int i = 0; i < m_Links.Count; i++)
-            {
-                Item e = m_Links[i];
-
-                if (e.Weight > 0 && TriggerSystem.CanTrigger(from, e.Link))
-                {
-                    if (rnd < e.Weight)
-                        return e.Link;
-                    else
-                        rnd -= e.Weight;
-                }
-            }
-#endif
             return null;
         }
 
@@ -231,7 +202,7 @@ namespace Server.Items.Triggers
         {
             TriggerRandomizer duped = new TriggerRandomizer();
 
-            Utility.CopyProperties(duped, this);
+            Utility.CopyProperties(this, duped);
 
             duped.Links = new List<Item>();
 
@@ -292,55 +263,5 @@ namespace Server.Items.Triggers
 
             EnsureEntries();
         }
-#if false
-        [PropertyObject]
-        public class Item
-        {
-            private int m_Weight;
-            private Item m_Link;
-
-            [CommandProperty(AccessLevel.GameMaster)]
-            public int Weight
-            {
-                get { return m_Weight; }
-                set { m_Weight = value; }
-            }
-
-            [CommandProperty(AccessLevel.GameMaster)]
-            public Item Link
-            {
-                get { return m_Link; }
-                set { m_Link = value; }
-            }
-
-            public Item()
-                : this(1, null)
-            {
-            }
-
-            public Item(int weight, Item link)
-            {
-                m_Weight = weight;
-                m_Link = link;
-            }
-
-            public void Serialize(GenericWriter writer)
-            {
-                writer.Write((int)m_Weight);
-                writer.Write((Item)m_Link);
-            }
-
-            public Item(GenericReader reader, int version)
-            {
-                m_Weight = reader.ReadInt();
-                m_Link = reader.ReadItem();
-            }
-
-            public override string ToString()
-            {
-                return string.Format("x{0} {1}", m_Weight, m_Link);
-            }
-        }
-#endif
     }
 }

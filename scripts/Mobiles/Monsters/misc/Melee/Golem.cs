@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -114,92 +114,45 @@ namespace Server.Mobiles
 
             // 4 control slots is standard OSI
             // https://uo.stratics.com/database/view.php?db_content=hunters&id=197
-            ControlSlots = Core.SiegeII_CFG ? 3 : 4;
+            ControlSlots = Core.RuleSets.SiegeRules(2) ? 3 : 4;
         }
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020806222514/uo.stratics.com/hunters/irongolem.shtml
+            // 11-25 Ingots, Arcane Gems, Gems, Gears, Power Crystals, Clockwork Assembly
+            // https://web.archive.org/web/20011007074011/http://uo.stratics.com/hunters/irongolem.shtml
+            // 	11-25 Ingots, Arcane Gems, Gems, Gears
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
+
+            }
+            else
+            {   // don't think you can summon these in this era, but better to be safe
                 if (!Summoned)
                 {
-                    PackItem(new IronIngot(Utility.RandomMinMax(13, 21)));
+                    PackItem(new IronIngot(Utility.RandomMinMax(11, 25)));
 
-                    if (0.1 > Utility.RandomDouble())
-                        PackItem(new PowerCrystal());
+                    // Found as loot on Controllers. Tailors can use an Arcane Gem on exceptional quality items to make Arcane clothing. Arcane Gems can be used to recharge Arcane Clothing that has run out of charges.
+                    // 6/3/2023, Adam. These appear to be in our era, but we will need to decide if we want them on Siege
+                    if (PublishInfo.Publish >= 15)
+                        if (0.2 > Utility.RandomDouble())
+                            PackItem(new ArcaneGem());
 
-                    if (0.15 > Utility.RandomDouble())
-                        PackItem(new ClockworkAssembly());
-
-                    if (0.2 > Utility.RandomDouble())
-                        PackItem(new ArcaneGem());
+                    PackGem(1, .9);
+                    PackGem(1, .05);
 
                     if (0.25 > Utility.RandomDouble())
                         PackItem(new Gears());
-                }
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020806222514/uo.stratics.com/hunters/irongolem.shtml
-                    // 11-25 Ingots, Arcane Gems, Gems, Gears, Power Crystals, Clockwork Assembly
-                    // https://web.archive.org/web/20011007074011/http://uo.stratics.com/hunters/irongolem.shtml
-                    // 	11-25 Ingots, Arcane Gems, Gems, Gears
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {   // don't think you can summon these in this era, but better to be safe
-                        if (!Summoned)
-                        {
-                            PackItem(new IronIngot(Utility.RandomMinMax(11, 25)));
 
-                            // Found as loot on Controllers. Tailors can use an Arcane Gem on exceptional quality items to make Arcane clothing. Arcane Gems can be used to recharge Arcane Clothing that has run out of charges.
-                            // 6/3/2023, Adam. These appear to be in our era, but we will need to decide if we want them on Siege
-                            if (!Core.RuleSets.SiegeStyleRules())
-                                if (0.2 > Utility.RandomDouble())
-                                    PackItem(new ArcaneGem());
+                    if (PublishInfo.PublishDate >= new System.DateTime(2002, 06, 03))
+                        if (0.1 > Utility.RandomDouble())
+                            PackItem(new PowerCrystal());
 
-                            PackGem(1, .9);
-                            PackGem(1, .05);
+                    if (PublishInfo.PublishDate >= new System.DateTime(2002, 06, 03))
+                        if (0.15 > Utility.RandomDouble())
+                            PackItem(new ClockworkAssembly());
 
-                            if (0.25 > Utility.RandomDouble())
-                                PackItem(new Gears());
-
-                            if (PublishInfo.PublishDate >= new System.DateTime(2002, 06, 03))
-                                if (0.1 > Utility.RandomDouble())
-                                    PackItem(new PowerCrystal());
-
-                            if (PublishInfo.PublishDate >= new System.DateTime(2002, 06, 03))
-                                if (0.15 > Utility.RandomDouble())
-                                    PackItem(new ClockworkAssembly());
-
-                        }
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                    {
-                        if (!Summoned)
-                        {
-                            PackItem(new IronIngot(Utility.RandomMinMax(13, 21)));
-
-                            if (0.1 > Utility.RandomDouble())
-                                PackItem(new PowerCrystal());
-
-                            if (0.15 > Utility.RandomDouble())
-                                PackItem(new ClockworkAssembly());
-
-                            if (0.2 > Utility.RandomDouble())
-                                PackItem(new ArcaneGem());
-
-                            if (0.25 > Utility.RandomDouble())
-                                PackItem(new Gears());
-                        }
-                    }
                 }
             }
         }
@@ -260,7 +213,7 @@ namespace Server.Mobiles
                 defender.Animate(21, 6, 1, true, false, 0);
                 this.PlaySound(0xEE);
 
-                BaseWeapon weapon = this.Weapon as BaseWeapon;
+                BaseWeapon? weapon = this.Weapon as BaseWeapon;
                 if (weapon != null)
                     weapon.OnHit(this, defender);
 
@@ -277,7 +230,7 @@ namespace Server.Mobiles
 
         private static void Recover_Callback(object state)
         {
-            Mobile defender = state as Mobile;
+            Mobile? defender = state as Mobile;
 
             if (defender != null)
             {
@@ -296,7 +249,7 @@ namespace Server.Mobiles
 
         private static void StopTimer(Mobile m)
         {
-            Timer timer;
+            Timer? timer;
 
             if (m_StunTimers.TryGetValue(m, out timer))
             {
@@ -305,7 +258,7 @@ namespace Server.Mobiles
             }
         }
 
-        public override void OnDamage(int amount, Mobile from, bool willKill, object source_weapon)
+        public override void OnDamage(int amount, Mobile from, bool willKill, DamageContext context)
         {
             if (Controlled || Summoned)
             {
@@ -317,7 +270,7 @@ namespace Server.Mobiles
                 if (master != null && master.Player && master.Map == this.Map && master.InRange(Location, 20))
                 {
                     //10/9/2023, Adam: reduce mana/damage by 50%
-                    int mod_amount = Core.SiegeII_CFG ? amount / 2 : amount;
+                    int mod_amount = Core.RuleSets.SiegeRules(2) ? amount / 2 : amount;
 
                     if (master.Mana >= mod_amount)
                     {
@@ -327,7 +280,7 @@ namespace Server.Mobiles
                     {   // the amount of damage we do to the master, less their remaining mana
                         mod_amount -= master.Mana;
                         master.Mana = 0;
-                        master.Damage(mod_amount, this);
+                        master.Damage(mod_amount, new DamageContext { Source = this });
                     }
                 }
                 else
@@ -340,7 +293,7 @@ namespace Server.Mobiles
             }
 
             // we always do full damage to the target
-            base.OnDamage(amount, from, willKill, source_weapon);
+            base.OnDamage(amount, from, willKill, context);
         }
 
         public override Poison PoisonImmune { get { return Poison.Lethal; } }

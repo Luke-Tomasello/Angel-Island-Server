@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -165,66 +165,32 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020207053503/uo.stratics.com/hunters/bogling.shtml
+            // no page
+            // http://web.archive.org/web/20020806164704/uo.stratics.com/hunters/bogthing.shtml
+            // 100 - 150 Gold, Reagents, 10 Logs, 2 Seeds
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                if (0.25 > Utility.RandomDouble())
-                    PackItem(new Board(10));
-                else
-                    PackItem(new Log(10));
-
-                PackReg(10, 15);
-                PackGold(50, 100);
-                PackItem(new Engines.Plants.Seed());
-                PackItem(new Engines.Plants.Seed());
+                PackGold(100, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020207053503/uo.stratics.com/hunters/bogling.shtml
-                    // no page
-                    // http://web.archive.org/web/20020806164704/uo.stratics.com/hunters/bogthing.shtml
-                    // 100 - 150 Gold, Reagents, 10 Logs, 2 Seeds
-                    if (Spawning)
-                    {
-                        PackGold(100, 150);
-                    }
-                    else
-                    {
-                        PackReg(10, 15);
-                        PackItem(new Log(10));
-                        if (Engines.Plants.PlantSystem.Enabled)
-                        {
-                            PackItem(new Engines.Plants.Seed());
-                            PackItem(new Engines.Plants.Seed());
-                        }
-
-                        // we don't use the tree of knowledge on Siege (no bonded pets) so we spawn Kukui Nuts here
-                        if (Core.RuleSets.SiegeRules() && Core.SiegeII_CFG)
-                            if (Utility.Chance(0.20))
-                                PackItem(new KukuiNut());
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                    {
-                        if (0.25 > Utility.RandomDouble())
-                            PackItem(new Board(10));
-                        else
-                            PackItem(new Log(10));
-
-                        PackReg(3);
-                        if (Engines.Plants.PlantSystem.Enabled)
-                        {
-                            PackItem(new Engines.Plants.Seed());
-                            PackItem(new Engines.Plants.Seed());
-                        }
-                    }
-
-                    AddLoot(LootPack.Average, 2);
+                PackReg(10, 15);
+                PackItem(new Log(10));
+                if (Engines.Plants.PlantSystem.Enabled)
+                {
+                    PackItem(new Engines.Plants.Seed());
+                    PackItem(new Engines.Plants.Seed());
                 }
             }
+        }
+
+        public override void GenerateNonStandardLoot()
+        {
+            // we don't use the tree of knowledge on Siege (no bonded pets) so we spawn Kukui Nuts here
+            if (Core.RuleSets.SiegeRules() && Core.RuleSets.SiegeRules(2))
+                if (Utility.Chance(0.20))
+                    PackItem(new KukuiNut());
         }
     }
 }

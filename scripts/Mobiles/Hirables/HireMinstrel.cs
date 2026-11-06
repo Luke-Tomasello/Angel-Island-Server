@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,9 +26,11 @@
  */
 
 using Server.Commands;
+using Server.ContextMenus;
 using Server.Items;
 using Server.Misc;
 using System;
+using System.Collections;
 
 namespace Server.Mobiles
 {
@@ -73,7 +75,7 @@ namespace Server.Mobiles
             set { CoreAI.MinstrelBasePay = value; }
         }
         [CommandProperty(AccessLevel.GameMaster)]
-        public MusicBox MusicBox
+        public MusicBox? MusicBox
         {
             get { return GetMusicBox(); }
         }
@@ -86,14 +88,65 @@ namespace Server.Mobiles
         {
             double pay = BasePay;
 
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
                 pay *= 3;
 
             return (int)pay;
         }
         public override bool IsInvulnerable { get { return true; } }
         public override bool ClickTitle { get { return true; } }
-        private MusicBox GetMusicBox()
+
+        public override void GetContextMenuEntries(Mobile from, ArrayList list)
+        {
+            base.GetContextMenuEntries(from, list);
+
+            // Strip specific pet commands we do not want from this NPC
+            for (int i = 0; i < list.Count; ++i)
+            {
+                var entry = list[i] as ContextMenuEntry;
+                if (entry == null)
+                    continue;
+
+                // Always keep core UI stuff (paperdoll, backpack, etc.)
+                if (entry is ContextMenus.PaperdollEntry ||
+                    entry is ContextMenus.OpenBackpackEntry)
+                {
+                    continue;
+                }
+
+                // Remove Guard / Drop / Kill.
+                switch (entry.Number)
+                {
+                    // Drop
+                    case 3006109:
+                        list.RemoveAt(i--);
+                        break;
+
+                    // Guard
+                    case 3006107:
+                        list.RemoveAt(i--);
+                        break;
+
+                    // Kill / Attack
+                    case 3006111:
+                        list.RemoveAt(i--);
+                        break;
+
+                    // Stop
+                    case 3006112:
+                        list.RemoveAt(i--);
+                        break;
+
+                    default:
+                        // Follow / Stay / Release are left alone
+                        break;
+                }
+
+
+            }
+        }
+
+        private MusicBox? GetMusicBox()
         {
             foreach (Item item in Items)
                 if (item is MusicBox mb)
@@ -103,9 +156,9 @@ namespace Server.Mobiles
                 }
             return null;
         }
-        private string GetMusicBoxName(MusicBox mx = null)
+        private string GetMusicBoxName(MusicBox? mx = null)
         {
-            MusicBox mb = mx ?? GetMusicBox();
+            MusicBox? mb = mx ?? GetMusicBox();
             if (mb != null)
                 return Name;
             return mb.Name;
@@ -114,7 +167,7 @@ namespace Server.Mobiles
         {
             if (ControlMaster == e.Mobile && !e.Handled && !IsBaseCommand(e))
             {
-                MusicBox mb = GetMusicBox();
+                MusicBox? mb = GetMusicBox();
                 bool wasNamed = false;
                 // YouTalkingToMe filters for real MB commands, and you must use the mobiles name
                 if (mb != null && mb.YouTalkingToMe(e, out wasNamed))

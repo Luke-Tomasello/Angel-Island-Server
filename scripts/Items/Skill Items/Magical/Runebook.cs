@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,7 +41,6 @@
  *		Merged in 1.0RC0 code.
  */
 
-using Server.Engines.BulkOrders;
 using Server.Engines.Craft;
 using Server.Gumps;
 using Server.Multis;
@@ -49,6 +48,7 @@ using Server.Network;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Xml;
 
 namespace Server.Items
 {
@@ -140,7 +140,7 @@ namespace Server.Items
         {
             Runebook new_obj = new();
 
-            Utility.CopyProperties(new_obj, this);
+            Utility.CopyProperties(this, new_obj);
             new_obj.Level = this.Level;
             new_obj.Description = this.Description;
             new_obj.CurCharges = this.CurCharges;
@@ -150,6 +150,90 @@ namespace Server.Items
             new_obj.m_Entries = new ArrayList(this.Entries);
 
             return base.Dupe(new_obj, amount);
+        }
+        public override void WriteDupeXml(XmlTextWriter xml)
+        {
+            xml.WriteElementString("Level", Level.ToString());
+            xml.WriteElementString("Description", Description ?? string.Empty);
+            xml.WriteElementString("CurCharges", CurCharges.ToString());
+            xml.WriteElementString("MaxCharges", MaxCharges.ToString());
+            xml.WriteElementString("Quality", ((int)Quality).ToString());
+
+            if (Crafter != null)
+                xml.WriteElementString("Crafter", Crafter.Name);
+
+            xml.WriteStartElement("Entries");
+
+            foreach (RunebookEntry entry in m_Entries)
+            {
+                if (entry == null)
+                    continue;
+
+                xml.WriteStartElement("Entry");
+
+                xml.WriteAttributeString("Description", entry.Description ?? string.Empty);
+                xml.WriteAttributeString("Map", entry.Map.ToString());
+                xml.WriteAttributeString("X", entry.Location.X.ToString());
+                xml.WriteAttributeString("Y", entry.Location.Y.ToString());
+                xml.WriteAttributeString("Z", entry.Location.Z.ToString());
+
+                xml.WriteEndElement();
+            }
+
+            xml.WriteEndElement(); // </Entries>
+        }
+
+        public override void ReadDupeXml(XmlElement node)
+        {
+            if (node == null)
+                return;
+
+            Level = (SecureLevel)Utility.ToInt32(node["Level"]?.InnerText);
+
+            Description = node["Description"]?.InnerText;
+
+            CurCharges = Utility.ToInt32(node["CurCharges"]?.InnerText);
+
+            MaxCharges = Utility.ToInt32(node["MaxCharges"]?.InnerText);
+
+            if (int.TryParse(node["Quality"]?.InnerText, out int quality))
+                Quality = (RunebookQuality)quality;
+
+            XmlElement? entriesNode = node["Entries"];
+
+            if (entriesNode != null)
+            {
+                m_Entries = new ArrayList();
+
+                foreach (XmlElement entryNode in entriesNode.GetElementsByTagName("Entry"))
+                {
+                    try
+                    {
+                        string desc = entryNode.GetAttribute("Description");
+
+                        Map? map = Map.Parse(entryNode.GetAttribute("Map"));
+
+                        Point3D loc = new Point3D(
+                            Utility.ToInt32(entryNode.GetAttribute("X")),
+                            Utility.ToInt32(entryNode.GetAttribute("Y")),
+                            Utility.ToInt32(entryNode.GetAttribute("Z")));
+
+                        // Re-resolve the house association at import time.
+                        //
+                        // We intentionally do not serialize/preserve the original BaseHouse
+                        // object reference across XML export/import, since the destination
+                        // shard/world may not contain the same live house instance.
+                        //
+                        // Instead, if a house exists at the imported rune location, restore
+                        // the semantic house association using the current world state.
+                        BaseHouse? house = BaseHouse.FindHouseAt(loc, map, 16);
+                        m_Entries.Add(new RunebookEntry(loc, map, desc, house));
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
         }
         public override int LabelNumber { get { return 1041267; } } // runebook
 
@@ -186,7 +270,7 @@ namespace Server.Items
             }
         }
 
-        public RunebookEntry Default
+        public RunebookEntry? Default
         {
             get
             {
@@ -385,7 +469,7 @@ namespace Server.Items
         {
             #region Townships
 
-            Regions.TownshipRegion tsr = Regions.TownshipRegion.GetTownshipAt(this);
+            Regions.TownshipRegion? tsr = Regions.TownshipRegion.GetTownshipAt(this);
 
             if (tsr != null && tsr.TStone != null && tsr.TStone.IsLockedDown(this))
                 return (tsr.TStone.IsLockdownOwner(m, this) || m.AccessLevel >= AccessLevel.GameMaster);
@@ -395,7 +479,7 @@ namespace Server.Items
             if (!IsLockedDown || m.AccessLevel >= AccessLevel.GameMaster)
                 return true;
 
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             if (house != null && house.IsAosRules && (house.Public ? house.IsBanned(m) : !house.HasAccess(m)))
                 return false;
@@ -497,7 +581,7 @@ namespace Server.Items
             if (charges > 10)
                 charges = 10;
 
-            MaxCharges = (Core.RuleSets.SERules() ? charges * 2 : charges);
+            MaxCharges = (Core.RuleSets.SamuraiEmpireRules() ? charges * 2 : charges);
 
             if (makersMark)
                 Crafter = from;
@@ -542,16 +626,19 @@ namespace Server.Items
         public Map Map
         {
             get { return m_Map; }
+            set => m_Map = value;
         }
 
         public string Description
         {
             get { return m_Description; }
+            set => m_Description = value;
         }
 
         public BaseHouse House
         {
             get { return m_House; }
+            set => m_House = value;
         }
 
         public RunebookEntry(Point3D loc, Map map, string desc, BaseHouse house)

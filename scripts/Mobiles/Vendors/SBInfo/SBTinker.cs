@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -84,13 +84,13 @@ namespace Server.Mobiles
             public InternalBuyInfo()
             {
 
-                if (Core.RuleSets.AngelIslandRules())
+                if (Core.RuleSets.AngelIslandRules() || (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
                 {
                     Add(new GenericBuyInfo("metal etching", typeof(EtchingBook), BaseVendor.PlayerPays(typeof(EtchingBook)), 20, 0xFF4, 0));
                     Add(new GenericBuyInfo("metal etching kit", typeof(EtchingKit), BaseVendor.PlayerPays(typeof(EtchingKit)), 20, 0x1EB8, 0));
                 }
 
-                if (Core.RuleSets.AngelIslandRules() || Core.SiegeII_CFG)
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules(2) || Core.RuleSets.MortalisRules() || Core.RuleSets.UpheavalRules())
                 {
                     Add(new GenericBuyInfo(typeof(DoorRekeyingContract), BaseVendor.PlayerPays(typeof(DoorRekeyingContract)), 20, 0x14F0, 0));  // minor gold sink
                 }
@@ -147,18 +147,6 @@ namespace Server.Mobiles
                     foreach (Type type in BBSTypes)
                         if (ResourcePool.IsPooledResource(type))
                             Add(new GenericBuyInfo(type));
-#if false
-                    Add(new GenericBuyInfo(typeof(Board)));
-                    Add(new GenericBuyInfo(typeof(IronIngot)));
-                    Add(new GenericBuyInfo(typeof(DullCopperIngot)));
-                    Add(new GenericBuyInfo(typeof(ShadowIronIngot)));
-                    Add(new GenericBuyInfo(typeof(CopperIngot)));
-                    Add(new GenericBuyInfo(typeof(BronzeIngot)));
-                    Add(new GenericBuyInfo(typeof(GoldIngot)));
-                    Add(new GenericBuyInfo(typeof(AgapiteIngot)));
-                    Add(new GenericBuyInfo(typeof(VeriteIngot)));
-                    Add(new GenericBuyInfo(typeof(ValoriteIngot)));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersSellResourcesRules())
                 {
@@ -176,28 +164,6 @@ namespace Server.Mobiles
                 {   // balanced buyback system
                     foreach (Type type in BBSTypes)
                         AddToResourcePool(type);
-#if false
-                    AddToResourcePool(typeof(Board));
-                    AddToResourcePool(typeof(Log));
-                    AddToResourcePool(typeof(IronIngot));
-                    AddToResourcePool(typeof(DullCopperIngot));
-                    AddToResourcePool(typeof(ShadowIronIngot));
-                    AddToResourcePool(typeof(CopperIngot));
-                    AddToResourcePool(typeof(BronzeIngot));
-                    AddToResourcePool(typeof(GoldIngot));
-                    AddToResourcePool(typeof(AgapiteIngot));
-                    AddToResourcePool(typeof(VeriteIngot));
-                    AddToResourcePool(typeof(ValoriteIngot));
-                    AddToResourcePool(typeof(IronOre));
-                    AddToResourcePool(typeof(DullCopperOre));
-                    AddToResourcePool(typeof(ShadowIronOre));
-                    AddToResourcePool(typeof(CopperOre));
-                    AddToResourcePool(typeof(BronzeOre));
-                    AddToResourcePool(typeof(GoldOre));
-                    AddToResourcePool(typeof(AgapiteOre));
-                    AddToResourcePool(typeof(VeriteOre));
-                    AddToResourcePool(typeof(ValoriteOre));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersBuyResourcesRules())
                 {   // cash buyback

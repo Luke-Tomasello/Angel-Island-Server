@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -120,10 +120,10 @@ namespace Server.Items.Triggers
             }
         }
 
-        private Spawner m_Spawner;
+        private Spawner? m_Spawner;
         //[CopyableAttribute(CopyType.DoNotCopy)]
         [CommandProperty(AccessLevel.GameMaster)]
-        public Spawner TargetSpawner
+        public Spawner? TargetSpawner
         {
             get { return m_Spawner; }
             set
@@ -153,7 +153,7 @@ namespace Server.Items.Triggers
 
         #region Frame Accessors
 
-        private Frame GetFrame(int index)
+        private Frame? GetFrame(int index)
         {
             if (index >= 0 && index < m_Frames.Count)
                 return m_Frames[index];
@@ -451,7 +451,7 @@ namespace Server.Items.Triggers
                                 attributes[0].Flip(item);
                             else if (Loot.FlipTable.ContainsKey(item.ItemID))
                             {
-                                FlipableAttribute fa = null;
+                                FlipableAttribute? fa = null;
                                 fa = new FlipableAttribute(Loot.FlipTable[item.ItemID]);
                                 fa.Flip(item);
                             }
@@ -466,7 +466,7 @@ namespace Server.Items.Triggers
         {
             try
             {
-                PropertyInfo prop = obj.GetType().GetProperty(propName, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.SetProperty);
+                PropertyInfo? prop = obj.GetType().GetProperty(propName, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.SetProperty);
 
                 if (prop == null)
                     return;
@@ -475,13 +475,13 @@ namespace Server.Items.Triggers
                 if (prop.PropertyType == typeof(AccessLevel))
                     return;
 
-                CommandPropertyAttribute cpa = Properties.GetCPA(prop);
+                CommandPropertyAttribute? cpa = Properties.GetCPA(prop);
 
                 if (cpa == null || cpa.WriteLevel > AccessLevel.GameMaster)
                     return;
 
-                object toSet = null;
-                string result = Properties.ConstructFromString(prop.PropertyType, obj, propValue, ref toSet);
+                object? toSet = null;
+                string? result = Properties.ConstructFromString(prop.PropertyType, obj, propValue, ref toSet);
 
                 if (result == null)
                     prop.SetValue(obj, toSet);
@@ -496,7 +496,7 @@ namespace Server.Items.Triggers
         {
             try
             {
-                PropertyInfo prop = obj.GetType().GetProperty(propName, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty | BindingFlags.SetProperty);
+                PropertyInfo? prop = obj.GetType().GetProperty(propName, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty | BindingFlags.SetProperty);
 
                 if (prop == null)
                     return;
@@ -505,12 +505,12 @@ namespace Server.Items.Triggers
                 if (prop.PropertyType == typeof(AccessLevel))
                     return;
 
-                CommandPropertyAttribute cpa = Properties.GetCPA(prop);
+                CommandPropertyAttribute? cpa = Properties.GetCPA(prop);
 
                 if (cpa == null || cpa.ReadLevel > AccessLevel.GameMaster || cpa.WriteLevel > AccessLevel.GameMaster)
                     return;
 
-                object curValue = prop.GetValue(obj, null);
+                object? curValue = prop.GetValue(obj, null);
 
                 if (!(curValue is IConvertible))
                     return;
@@ -545,7 +545,7 @@ namespace Server.Items.Triggers
         {
             try
             {
-                PropertyInfo prop = obj.GetType().GetProperty(propName, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty | BindingFlags.SetProperty);
+                PropertyInfo? prop = obj.GetType().GetProperty(propName, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.GetProperty | BindingFlags.SetProperty);
 
                 if (prop == null)
                     return;
@@ -554,12 +554,12 @@ namespace Server.Items.Triggers
                 if (prop.PropertyType == typeof(AccessLevel))
                     return;
 
-                CommandPropertyAttribute cpa = Properties.GetCPA(prop);
+                CommandPropertyAttribute? cpa = Properties.GetCPA(prop);
 
                 if (cpa == null || cpa.ReadLevel > AccessLevel.GameMaster || cpa.WriteLevel > AccessLevel.GameMaster)
                     return;
 
-                object curValue = prop.GetValue(obj, null);
+                object? curValue = prop.GetValue(obj, null);
 
                 if (!(curValue is IConvertible))
                     return;
@@ -585,7 +585,7 @@ namespace Server.Items.Triggers
             }
         }
 
-        private InternalTimer m_Timer;
+        private InternalTimer? m_Timer;
 
         public bool Running { get { return (m_Timer != null); } }
 
@@ -844,9 +844,9 @@ namespace Server.Items.Triggers
 
                         if (reader.ReadBool())
                         {
-                            Mobile from = reader.ReadMobile();
+                            Mobile? from = reader.ReadMobile();
 
-                            IEntity target;
+                            IEntity? target;
 
                             if (version < 3)
                                 target = m_Target;

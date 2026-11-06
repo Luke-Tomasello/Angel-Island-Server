@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -128,7 +128,7 @@ namespace Server.Items
         {
             base.OnSingleClick(from);
 
-            string text = null;
+            string? text = null;
             if (Expired == true)
                 text = "[Expired]";
             else
@@ -229,7 +229,7 @@ namespace Server.Items
                     if (temp == null || temp is PlayerQuestDeed == false)
                         continue;
 
-                    PlayerQuestDeed px = temp as PlayerQuestDeed;
+                    PlayerQuestDeed? px = temp as PlayerQuestDeed;
                     if (pqd.Expires < px.Expires)
                     {   // insert before this one
                         m_Table.Insert(m_Table.IndexOf(temp), pqd);
@@ -274,7 +274,7 @@ namespace Server.Items
                 foreach (object o in PlayerQuestManager.Deeds)
                 {
                     if (o is PlayerQuestDeed == false) continue;
-                    PlayerQuestDeed pqd = o as PlayerQuestDeed;
+                    PlayerQuestDeed? pqd = o as PlayerQuestDeed;
 
                     if (pqd.Deleted == true)
                         ToDelete.Add(pqd);
@@ -291,7 +291,7 @@ namespace Server.Items
                         // don't announce if in a locked down container in a house
                         if (root is BaseContainer && Server.Multis.BaseHouse.FindHouseAt(pqd) != null)
                         {
-                            BaseContainer bc = root as BaseContainer;
+                            BaseContainer? bc = root as BaseContainer;
                             if (bc.IsLockedDown == true || bc.IsSecure == true)
                                 continue;
                         }
@@ -315,7 +315,7 @@ namespace Server.Items
                                 continue;
 
                         // only public houses
-                        Server.Multis.BaseHouse house = null;
+                        Server.Multis.BaseHouse? house = null;
                         if (root is Item)
                             house = Server.Multis.BaseHouse.FindHouseAt(root as Item);
                         if (root is Mobile)
@@ -333,7 +333,7 @@ namespace Server.Items
                         string[] lines = new string[2];
                         if (root is Mobile)
                         {
-                            Mobile mob = root as Mobile;
+                            Mobile? mob = root as Mobile;
                             lines[0] = string.Format(
                                 "{0} was last seen near {1}. {2} is not to be trusted.",
                                 mob.Name,
@@ -370,7 +370,7 @@ namespace Server.Items
                 // cleanup
                 for (int i = 0; i < ToDelete.Count; i++)
                 {
-                    PlayerQuestDeed pqd = ToDelete[i] as PlayerQuestDeed;
+                    PlayerQuestDeed? pqd = ToDelete[i] as PlayerQuestDeed;
                     if (pqd != null)
                         PlayerQuestManager.Deeds.Remove(pqd);
                 }

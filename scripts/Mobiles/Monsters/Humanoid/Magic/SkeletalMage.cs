@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -40,7 +40,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -89,66 +88,35 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021014235656/uo.stratics.com/hunters/skeletalmage.shtml
+            // 50 to 200 Gold, Magic items, Gems, Scrolls, Bone
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(60, 90);
-                PackScroll(1, 5);
-                PackReg(3);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(50, 200);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021014235656/uo.stratics.com/hunters/skeletalmage.shtml
-                    // 50 to 200 Gold, Magic items, Gems, Scrolls, Bone
-                    if (Spawning)
-                    {
-                        PackGold(50, 200);
-                    }
-                    else
-                    {
-                        PackMagicItem(1, 1, 0.05);
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                        PackScroll(1, 5);
-                        PackScroll(1, 5, 0.05);
-                        PackItem(typeof(Bone), 0.8);
+                PackMagicItem(1, 1, 0.05);
+                PackGem(1, .9);
+                PackGem(1, .05);
+                PackScroll(1, 5);
+                PackScroll(1, 5, 0.05);
+                PackItem(typeof(Bone), 0.8);
+            }
+        }
 
-                        // 6/23/2023, Adam: NON STANDARD LOOT
-                        // 10% drop, similar to bear masks
-                        if (Utility.RandomChance(10))
-                            // medible, no AR
-                            PackItem(new BoneMagiHelm(armorBase: 1, strReq: 0));
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackReg(3);
-                        if (Core.RuleSets.AOSRules())
-                            PackNecroReg(3, 10);
-                        PackItem(new Bone());
-                    }
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.LowScrolls);
-                    AddLoot(LootPack.Potions);
-                }
+        public override void GenerateNonStandardLoot()
+        {
+            if (Spawning)
+            {
+            }
+            else
+            {
+                // 6/23/2023, Adam: NON STANDARD LOOT
+                // 10% drop, similar to bear masks
+                if (Utility.RandomChance(10))
+                    // medible, no AR
+                    PackItem(new BoneMagiHelm(armorBase: 1, strReq: 0));
             }
         }
 

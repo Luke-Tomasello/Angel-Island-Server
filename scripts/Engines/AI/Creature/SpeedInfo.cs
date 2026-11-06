@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -83,7 +83,7 @@ namespace Server
             if (m_Table == null)
                 LoadTable();
 
-            SpeedInfo sp = (SpeedInfo)m_Table[obj.GetType()];
+            SpeedInfo? sp = (SpeedInfo?)m_Table[obj.GetType()];
 
             return (sp != null);
         }
@@ -101,7 +101,7 @@ namespace Server
             if (m_Table == null)
                 LoadTable();
 
-            SpeedInfo sp = (SpeedInfo)m_Table[t];
+            SpeedInfo? sp = (SpeedInfo?)m_Table[t];
 
             if (sp == null)
                 return false;
@@ -126,7 +126,7 @@ namespace Server
             }
         }
 
-        private static Hashtable m_Table;
+        private static Hashtable? m_Table;
 
         private static SpeedInfo[] m_Speeds = new SpeedInfo[]
             {

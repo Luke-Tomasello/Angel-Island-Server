@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -87,7 +87,7 @@ namespace Server.Spells.First
                 m.FixedParticles(0x3709, 1, 30, 9963, 13, 3, EffectLayer.Head);
                 m.PlaySound(0x208);
 
-                SpellHelper.Damage(this, m, damage, 0, 0, 100, 0, 0);
+                SpellHelper.Damage(this, m, damage, new DamageContext { Source = this });
             }
 
             FinishSequence();

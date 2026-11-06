@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -24,20 +24,18 @@
  *	10/26/21, Adam
  *		Created.
  *		Controls the success of creating magic gear via the Magic Craft system
+ *  3/18/26, Luke
+ *      Refactored to inherit from BaseConsole.
  */
 
-namespace Server.Items
+namespace Server.Engines.Consoles
 {
-    [FlipableAttribute(0x1f14, 0x1f15, 0x1f16, 0x1f17)]
-    public class MagicCraftManagementConsole : Item
+    public class MagicCraftManagementConsole : BaseConsole
     {
         [Constructable]
         public MagicCraftManagementConsole()
-            : base(0x1F14)
+            : base("Magic Craft Management Console")
         {
-            Weight = 1.0;
-            Hue = 0x33;
-            Name = "Magic Craft Management Console";
         }
 
         public MagicCraftManagementConsole(Serial serial)
@@ -48,54 +46,34 @@ namespace Server.Items
         [CommandProperty(AccessLevel.Owner)]
         public double ValoriteSuccess
         {
-            get
-            {
-                return CoreAI.ValoriteSuccess;
-            }
-            set
-            {
-                CoreAI.ValoriteSuccess = value;
-            }
+            get => CoreAI.ValoriteSuccess;
+            set => CoreAI.ValoriteSuccess = value;
         }
 
         [CommandProperty(AccessLevel.Owner)]
         public double VeriteSuccess
         {
-            get
-            {
-                return CoreAI.VeriteSuccess;
-            }
-            set
-            {
-                CoreAI.VeriteSuccess = value;
-            }
+            get => CoreAI.VeriteSuccess;
+            set => CoreAI.VeriteSuccess = value;
         }
 
         [CommandProperty(AccessLevel.Owner)]
         public double AgapiteSuccess
         {
-            get
-            {
-                return CoreAI.AgapiteSuccess;
-            }
-            set
-            {
-                CoreAI.AgapiteSuccess = value;
-            }
+            get => CoreAI.AgapiteSuccess;
+            set => CoreAI.AgapiteSuccess = value;
         }
 
         public override void OnDoubleClick(Mobile from)
         {
             if (from.AccessLevel > AccessLevel.Administrator)
-            {
                 from.SendGump(new Server.Gumps.PropertiesGump(from, this));
-            }
         }
 
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((int)1); // version
+            writer.Write((int)0); // version
         }
 
         public override void Deserialize(GenericReader reader)
@@ -104,5 +82,4 @@ namespace Server.Items
             int version = reader.ReadInt();
         }
     }
-
 }

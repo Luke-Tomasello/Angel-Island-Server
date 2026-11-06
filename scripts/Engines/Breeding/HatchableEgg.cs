@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -88,7 +88,7 @@ namespace Server.Engines.Breeding
             {
                 double days = Utility.RandomMinMax(5, 7);
 
-                if (Core.UOTC_CFG)
+                if (Core.GMNTC_CFG)
                     days /= 360; // speed up 360x
 
                 return TimeSpan.FromDays(days);
@@ -336,7 +336,7 @@ namespace Server.Engines.Breeding
             this.Delete();
         }
 
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         private void DoDelayed(TimeSpan delay, TimerStateCallback callback, object state)
         {
@@ -381,7 +381,7 @@ namespace Server.Engines.Breeding
 
         public static void InspectEgg(Mobile from, IEgg egg)
         {
-            Item eggItem = egg as Item;
+            Item? eggItem = egg as Item;
 
             if (eggItem == null || eggItem.Map == null || !from.InRange(eggItem.GetWorldLocation(), 1))
                 return;
@@ -475,7 +475,7 @@ namespace Server.Engines.Breeding
 
     public class HatchableEgg : BaseHatchableEgg
     {
-        private static string GetName(BaseCreature chick)
+        private static string GetName(BaseCreature? chick)
         {
             if (chick != null)
             {

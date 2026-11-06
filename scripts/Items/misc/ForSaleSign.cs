@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,7 +26,7 @@
  *		For sale signs for the custom housing area
  */
 
-using Server.Mobiles;
+using Server.Misc;
 using Server.Multis;
 using Server.Multis.StaticHousing;
 using Server.Targeting;
@@ -35,16 +35,17 @@ namespace Server.Items
 {
     public class ForSaleSign : Item
     {
-        private StaticDeed m_staticHouseDeed = null;
+        private StaticDeed? m_staticHouseDeed = null;
+        [CopyableAttribute(CopyType.DoNotRelink)]
         [CommandProperty(AccessLevel.Administrator)]
-        public StaticDeed Deed
+        public StaticDeed? Deed
         {
             get { return m_staticHouseDeed; }
             set
             {
                 if (value != null && value is not StaticDeed)
                 {
-                    this.SendSystemMessage("That is not a static deed");
+                    this.SendMessageNearby("That is not a static deed");
                     return;
                 }
 
@@ -58,7 +59,7 @@ namespace Server.Items
                 {
                     m_staticHouseDeed = new StaticDeed(value.HouseID);
                     m_staticHouseDeed.MoveToIntStorage();
-                    this.SendSystemMessage("Updated.");
+                    this.SendMessageNearby("Updated.");
                 }
             }
         }
@@ -78,7 +79,7 @@ namespace Server.Items
                 LabelTo(from, "Coming soon!");
             else if (m_staticHouseDeed.Name != null)
             {
-                int price = RealEstateBroker.ComputeHousingMarkupForSiege(m_staticHouseDeed.Price);
+                int price = SiegeHelper.ComputeHousingMarkupForSiege(m_staticHouseDeed.Price);
                 LabelTo(from, m_staticHouseDeed.Name.Replace("deed to a ", ""));
                 LabelTo(from, "Price {0}", price.ToString("N0"));
             }
@@ -106,7 +107,7 @@ namespace Server.Items
             {
                 if (target is HouseSign hs && hs.Structure is StaticHouse sh)
                 {
-                    StaticDeed temp = (StaticDeed)sh.Sign.Structure.GetDeed();
+                    StaticDeed? temp = (StaticDeed?)sh.Sign.Structure.GetDeed();
                     m_Sign.Deed = temp;    // these signs dupe the deed, so we need to delete the temp one
                     temp.Delete();
                 }

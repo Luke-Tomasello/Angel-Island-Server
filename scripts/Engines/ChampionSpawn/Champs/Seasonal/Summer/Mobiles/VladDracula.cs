@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -113,7 +113,7 @@ namespace Server.Mobiles
         #endregion DraggingMitigation
 
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
 
         public override void InitBody()
         {
@@ -177,7 +177,7 @@ namespace Server.Mobiles
 
             if (m.BeginAction(typeof(PolymorphSpell)))
             {
-                Item disarm = m.FindItemOnLayer(Layer.OneHanded);
+                Item? disarm = m.FindItemOnLayer(Layer.OneHanded);
 
                 if (disarm != null && disarm.Movable)
                     m.AddToBackpack(disarm);
@@ -190,7 +190,7 @@ namespace Server.Mobiles
                 m.BodyMod = BatGraphic();
                 m.HueMod = 0;
 
-                new ExpirePolymorphTimer(m).Start();
+                PolymorphSpell.StartTimer(m, new ExpirePolymorphTimer(m));
             }
         }
 
@@ -263,6 +263,7 @@ namespace Server.Mobiles
                         }
 
                         bat.MoveToWorld(loc, map);
+                        bat.OnAfterSpawn();
 
                         bat.Combatant = target;
                     }
@@ -350,145 +351,125 @@ namespace Server.Mobiles
         {
             if (IsChampion)
             {
-                if (Core.RuleSets.AllShards)
+                if (Spawning)
                 {
-                    if (Spawning)
-                    {
-                        // No at spawn loot
-                    }
-                    else
-                    {
-                        Item blood = new BloodVial();
-                        blood.Name = "blood of " + this.Name;
-                        PackItem(blood);
-
-                        // Valad's 'impaler'
-                        Scepter Scepter = new Scepter();    // since Vlad's secpter was newbied, lets generate a fresh one
-                        Scepter.Name = "an impaler";        // needs a name
-                        PackItem(Scepter);
-
-                        // https://whitewolf.fandom.com/wiki/Sword_of_Dracula
-                        // Ravnos Durga Syn created 'Ainkurn', the Sword of Dracula
-                        BoneHarvester boneHarvester = new BoneHarvester();
-                        boneHarvester.Name = "Ainkurn";
-                        Mobile m = new Mobile();
-                        m.Name = "Ravnos Durga Syn";
-                        boneHarvester.Crafter = m;
-                        boneHarvester.Resource = (CraftResource)Utility.RandomList((int)CraftResource.Copper, (int)CraftResource.Bronze, (int)CraftResource.Iron);
-                        PackItem(boneHarvester);
-                        m.Delete();
-
-                        Item item;
-                        switch (Utility.Random(10))
-                        {
-                            // Tarot, 4773 (mirror type, 4774); another type of Tarot, 4775 (mirror type, 4776)
-                            case 0:
-                                {
-                                    item = new Item(4773);
-                                    item.Weight = 1;
-                                    PackItem(item);
-                                }
-                                break;
-
-                            case 1:
-                                {
-                                    item = new Item(4774);
-                                    item.Weight = 1;
-                                    PackItem(item);
-                                }
-                                break;
-
-                            case 2:
-                                {
-                                    item = new Item(4775);
-                                    item.Weight = 1;
-                                    PackItem(item);
-                                }
-                                break;
-
-                            case 3:
-                                {
-                                    item = new Item(4776);
-                                    item.Weight = 1;
-                                    PackItem(item);
-                                }
-                                break;
-
-                            // Shackles, 4706 (mirror type, 4707)
-                            case 4:
-                                {
-                                    item = new Item(4706);
-                                    item.Weight = 1;
-                                    PackItem(item);
-                                }
-                                break;
-
-                            case 5:
-                                {
-                                    item = new Item(4707);
-                                    item.Weight = 1;
-                                    PackItem(item);
-                                }
-                                break;
-
-                            //"Kazikli Voyvoda"
-                            case 6:
-                                {   // dracula's book
-                                    item = new Item(7712);
-                                    item.Weight = 1;
-                                    item.Name = "Kazikli Voyvoda";
-                                    PackItem(item);
-                                }
-                                break;
-                            case 7:
-                                {   // another vimpire's book
-                                    item = new Item(7713);
-                                    item.Weight = 2;
-                                    // http://www.spells4free.com/Article/vampires--7-Shurpu-Kishpu-The-Book-Of-Dreaming/547
-                                    item.Name = Utility.RandomBool() ? "Shurpu Kishpu" : "Hekal Tiamat";
-                                    PackItem(item);
-                                }
-                                break;
-
-                            // "a mask of vampiric death" 
-                            case 8:
-                                {
-                                    item = new Item(5147);
-                                    item.Weight = 2;
-                                    item.Hue = 1001;
-                                    item.Layer = Layer.Helm;
-                                    item.Name = "a mask of vampiric death";
-                                    PackItem(item);
-                                }
-                                break;
-                            case 9:
-                                {
-                                    item = new Item(5148);
-                                    item.Weight = 2;
-                                    item.Hue = 1001;
-                                    item.Layer = Layer.Helm;
-                                    item.Name = "a mask of vampiric death";
-                                    PackItem(item);
-                                }
-                                break;
-                        }
-                    }
+                    // No at spawn loot
                 }
                 else
                 {
-                    if (Core.RuleSets.AllShards)
-                    {   // ai special
-                        if (Spawning)
-                        {
-                            PackGold(0);
-                        }
-                        else
-                        {
-                        }
-                    }
-                    else
-                    {   // Standard RunUO
-                        // ai special
+                    Item blood = new BloodVial();
+                    blood.Name = "blood of " + this.Name;
+                    PackItem(blood);
+
+                    // Valad's 'impaler'
+                    Scepter Scepter = new Scepter();    // since Vlad's secpter was newbied, lets generate a fresh one
+                    Scepter.Name = "an impaler";        // needs a name
+                    PackItem(Scepter);
+
+                    // https://whitewolf.fandom.com/wiki/Sword_of_Dracula
+                    // Ravnos Durga Syn created 'Ainkurn', the Sword of Dracula
+                    BoneHarvester boneHarvester = new BoneHarvester();
+                    boneHarvester.Name = "Ainkurn";
+                    Mobile m = new Mobile();
+                    m.Name = "Ravnos Durga Syn";
+                    boneHarvester.Crafter = m;
+                    boneHarvester.Resource = (CraftResource)Utility.RandomList((int)CraftResource.Copper, (int)CraftResource.Bronze, (int)CraftResource.Iron);
+                    PackItem(boneHarvester);
+                    m.Delete();
+
+                    Item item;
+                    switch (Utility.Random(10))
+                    {
+                        // Tarot, 4773 (mirror type, 4774); another type of Tarot, 4775 (mirror type, 4776)
+                        case 0:
+                            {
+                                item = new Item(4773);
+                                item.Weight = 1;
+                                PackItem(item);
+                            }
+                            break;
+
+                        case 1:
+                            {
+                                item = new Item(4774);
+                                item.Weight = 1;
+                                PackItem(item);
+                            }
+                            break;
+
+                        case 2:
+                            {
+                                item = new Item(4775);
+                                item.Weight = 1;
+                                PackItem(item);
+                            }
+                            break;
+
+                        case 3:
+                            {
+                                item = new Item(4776);
+                                item.Weight = 1;
+                                PackItem(item);
+                            }
+                            break;
+
+                        // Shackles, 4706 (mirror type, 4707)
+                        case 4:
+                            {
+                                item = new Item(4706);
+                                item.Weight = 1;
+                                PackItem(item);
+                            }
+                            break;
+
+                        case 5:
+                            {
+                                item = new Item(4707);
+                                item.Weight = 1;
+                                PackItem(item);
+                            }
+                            break;
+
+                        //"Kazikli Voyvoda"
+                        case 6:
+                            {   // dracula's book
+                                item = new Item(7712);
+                                item.Weight = 1;
+                                item.Name = "Kazikli Voyvoda";
+                                PackItem(item);
+                            }
+                            break;
+                        case 7:
+                            {   // another vimpire's book
+                                item = new Item(7713);
+                                item.Weight = 2;
+                                // http://www.spells4free.com/Article/vampires--7-Shurpu-Kishpu-The-Book-Of-Dreaming/547
+                                item.Name = Utility.RandomBool() ? "Shurpu Kishpu" : "Hekal Tiamat";
+                                PackItem(item);
+                            }
+                            break;
+
+                        // "a mask of vampiric death" 
+                        case 8:
+                            {
+                                item = new Item(5147);
+                                item.Weight = 2;
+                                item.Hue = 1001;
+                                item.Layer = Layer.Helm;
+                                item.Name = "a mask of vampiric death";
+                                PackItem(item);
+                            }
+                            break;
+                        case 9:
+                            {
+                                item = new Item(5148);
+                                item.Weight = 2;
+                                item.Hue = 1001;
+                                item.Layer = Layer.Helm;
+                                item.Name = "a mask of vampiric death";
+                                PackItem(item);
+                            }
+                            break;
                     }
                 }
             }

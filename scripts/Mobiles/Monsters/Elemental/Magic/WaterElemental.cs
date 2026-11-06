@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,7 +48,7 @@ namespace Server.Mobiles
     [CorpseName("a water elemental corpse")]
     public class WaterElemental : BaseCreature
     {
-        public override double DispelDifficulty { get { return Summoned ? 75 : 73; } }
+        public override double DispelDifficulty { get { return 95; } }
         public override double DispelFocus { get { return 45.0; } }
 
         [Constructable]
@@ -110,44 +110,19 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020214225041/uo.stratics.com/hunters/waterelemental.shtml
+            //	200 to 250 Gold, Potions, Reagents
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackPotion();
-                PackReg(2);
-                PackGold(100, 130);
-                PackItem(new BlackPearl(3));
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(200, 250);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020214225041/uo.stratics.com/hunters/waterelemental.shtml
-                    //	200 to 250 Gold, Potions, Reagents
-
-                    if (Spawning)
-                    {
-                        PackGold(200, 250);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        // 2002 stratics says 'reagents', but later startics says 3 black pearl.
-                        //	we'll assume this is what was meant in 2002
-                        PackItem(new BlackPearl(3));
-                    }
-
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new BlackPearl(3));
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Meager);
-                    AddLoot(LootPack.Potions);
-                }
+                PackPotion();
+                // 2002 stratics says 'reagents', but later startics says 3 black pearl.
+                //	we'll assume this is what was meant in 2002
+                PackItem(new BlackPearl(3));
             }
         }
 

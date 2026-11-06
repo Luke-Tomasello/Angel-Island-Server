@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -39,8 +39,8 @@ namespace Server.Items
     {
         private IngredientFlag m_Ingredients;
         private Item m_Liquid;
-        private Timer m_CookTimer;
-        private Timer m_DrinkTimer;
+        private Timer? m_CookTimer;
+        private Timer? m_DrinkTimer;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public IngredientFlag Ingredients
@@ -78,7 +78,7 @@ namespace Server.Items
                 {
                     if ((mask & 0x1) != 0)
                     {
-                        IngredientInfo info = IngredientInfo.Lookup((IngredientFlag)(0x1 << i));
+                        IngredientInfo? info = IngredientInfo.Lookup((IngredientFlag)(0x1 << i));
 
                         if (info != null)
                             LabelTo(from, info.Name);
@@ -240,10 +240,10 @@ namespace Server.Items
                 }
                 else
                 {
-                    Item item = targeted as Item;
+                    Item? item = targeted as Item;
 
                     IngredientFlag flag = IngredientInfo.FindByType(targeted.GetType());
-                    IngredientInfo info = IngredientInfo.Lookup(flag);
+                    IngredientInfo? info = IngredientInfo.Lookup(flag);
 
                     if (item == null || flag == IngredientFlag.None || info == null)
                     {
@@ -485,7 +485,7 @@ namespace Server.Items
 
             public static IngredientInfo[] Table { get { return m_Table; } }
 
-            public static IngredientInfo Lookup(IngredientFlag reagent)
+            public static IngredientInfo? Lookup(IngredientFlag reagent)
             {
                 uint mask = (uint)reagent;
 
@@ -559,7 +559,7 @@ namespace Server.Items
 
             public static EffectInfo[] Table { get { return m_Table; } }
 
-            public static EffectInfo Lookup(EffectType effect)
+            public static EffectInfo? Lookup(EffectType effect)
             {
                 int index = (int)effect;
 
@@ -665,7 +665,7 @@ namespace Server.Items
         {
             EndEffect(m);
 
-            EffectInfo info = EffectInfo.Lookup(effect);
+            EffectInfo? info = EffectInfo.Lookup(effect);
 
             if (info != null)
                 info.BeginEffect(m);
@@ -675,11 +675,11 @@ namespace Server.Items
 
         public static void EndEffect(Mobile m)
         {
-            EffectTimer timer;
+            EffectTimer? timer;
 
             if (m_EffectTimers.TryGetValue(m, out timer))
             {
-                EffectInfo info = EffectInfo.Lookup(timer.Effect);
+                EffectInfo? info = EffectInfo.Lookup(timer.Effect);
 
                 if (info != null)
                     info.EndEffect(m);
@@ -691,7 +691,7 @@ namespace Server.Items
 
         public static EffectType GetEffect(Mobile m)
         {
-            EffectTimer timer;
+            EffectTimer? timer;
 
             if (m_EffectTimers.TryGetValue(m, out timer))
                 return timer.Effect;

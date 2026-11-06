@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -92,7 +92,7 @@ namespace Server.Items.Triggers
             StartTimer(from);
         }
 
-        private InternalTimer m_Timer;
+        private InternalTimer? m_Timer;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public bool Running
@@ -224,7 +224,7 @@ namespace Server.Items.Triggers
 
                         if (reader.ReadBool())
                         {
-                            Mobile m = reader.ReadMobile();
+                            Mobile? m = reader.ReadMobile();
                             TimeSpan ts = reader.ReadTimeSpan();
                             if (m != null)
                                 StartTimer(m, ts);

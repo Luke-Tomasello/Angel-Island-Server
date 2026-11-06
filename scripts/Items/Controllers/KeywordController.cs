@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -262,7 +262,7 @@ namespace Server.Items
 
         private string FormatReply(string str, SpeechEventArgs e)
         {
-            StringBuilder sb = null;
+            StringBuilder? sb = null;
 
             int cur = 0;
             int start = str.IndexOf(Token);
@@ -355,7 +355,7 @@ namespace Server.Items
             }
             else
             {
-                Item item = root as Item;
+                Item? item = root as Item;
 
                 if (item == null)
                     item = this;

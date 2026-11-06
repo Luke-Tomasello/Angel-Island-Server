@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -93,7 +93,7 @@ namespace Server.Items
 
         private class TreeTrunk : Item
         {
-            private HolidayTree m_Tree;
+            private HolidayTree? m_Tree;
 
             //public override int LabelNumber { get { return 1041117; } } // a tree for the holidays
 
@@ -298,7 +298,7 @@ namespace Server.Items
 
                         for (int i = 0; i < count; ++i)
                         {
-                            Item item = reader.ReadItem();
+                            Item? item = reader.ReadItem();
 
                             if (item != null)
                                 m_Components.Add(item);
@@ -315,7 +315,7 @@ namespace Server.Items
             {
                 if (m_Placer == null || from == m_Placer || from.AccessLevel >= AccessLevel.GameMaster)
                 {
-                    BaseHouse house = BaseHouse.FindHouseAt(this.Location, from.Map, 20);
+                    BaseHouse? house = BaseHouse.FindHouseAt(this.Location, from.Map, 20);
                     if (house != null)
                         house.Addons.Remove(this);
 

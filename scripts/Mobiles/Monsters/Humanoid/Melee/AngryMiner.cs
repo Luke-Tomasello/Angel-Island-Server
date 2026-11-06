@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,7 +62,7 @@ namespace Server.Mobiles
             public PlayerMobile Target { get { return m_target; } }
             string m_text;
             public string Text { get { return m_text; } }
-            public mState(AngryMiner me, InstanceMessage message, PlayerMobile target = null, string text = null)
+            public mState(AngryMiner me, InstanceMessage message, PlayerMobile? target = null, string? text = null)
             {
                 m_me = me;
                 m_message = message;
@@ -113,7 +113,7 @@ namespace Server.Mobiles
                 }
                 public TimeSpan GetQueueDeltaTime(mState state)
                 {
-                    Message found = null;
+                    Message? found = null;
                     foreach (Message m in m_messageQueue)
                     {
                         // state[1] is our InstanceMessage context - so it's our filter
@@ -142,7 +142,7 @@ namespace Server.Mobiles
                 }
                 public Message GetMessage()
                 {
-                    Message found = null;
+                    Message? found = null;
                     foreach (Message m in m_messageQueue)
                     {
                         // has the delay been met?
@@ -170,13 +170,7 @@ namespace Server.Mobiles
                 }
             }
             private static Dictionary<PlayerMobile, mRegion> m_registry = new Dictionary<PlayerMobile, mRegion>();
-            private static mRegion Find_mRegion(PlayerMobile target)
-            {
-                if (m_registry.ContainsKey(target))
-                    return m_registry[target];
-                return null;
-            }
-            private static mRegion RegisterMobile(PlayerMobile target, List<AngryMiner> list)
+            private static mRegion? RegisterMobile(PlayerMobile? target, List<AngryMiner> list)
             {
                 if (target == null)
                 {
@@ -237,7 +231,7 @@ namespace Server.Mobiles
                         return;
 
                     // first register this playermobile and all the miners that are angry at him
-                    mRegion mRegion = RegisterMobile(target, list);
+                    mRegion? mRegion = RegisterMobile(target, list);
 
                     if (DateTime.UtcNow > mRegion.NextIdleChat)
                     {
@@ -277,7 +271,7 @@ namespace Server.Mobiles
             {
                 // first register this playermobile and all the miners that are angry at him
                 //  we don't have the miners in this context, so we will pass an empty list
-                mRegion mRegion = RegisterMobile(state.Target, new List<AngryMiner>());
+                mRegion? mRegion = RegisterMobile(state.Target, new List<AngryMiner>());
                 if (mRegion != null)
                 {
                     // add the seconds of the last messaage of this type to the delay
@@ -311,9 +305,9 @@ namespace Server.Mobiles
             // Any time you call FlushUntil, you need to manually clear it with an InstanceMessage.Clear
             public static object FlushUntil { get { return (object)m_flushObject; } set { m_flushObject = (object)value; } }
             // FlushNow wipes all messages from the queue - now need to 'Clear' it
-            public static void FlushNow(PlayerMobile target)
+            public static void FlushNow(PlayerMobile? target)
             {
-                mRegion mRegion = RegisterMobile(target, new List<AngryMiner>());
+                mRegion? mRegion = RegisterMobile(target, new List<AngryMiner>());
                 if (mRegion != null)
                 {
                     mRegion.MessageQueue.Clear();
@@ -334,7 +328,7 @@ namespace Server.Mobiles
                             AngryMiner me = mx.Me;
                             Mobile target = mx.State.Target;
                             InstanceMessage context = mx.State.Message;
-                            string format_string = null;
+                            string? format_string = null;
 
 
                             // COMMAND FLUSH UNTIL - Until we get a 'Clear' message
@@ -379,7 +373,7 @@ namespace Server.Mobiles
                                         format_string = string.Format("Thank you {0}, I will keep an eye out for {1}.", author.Name, target.Name);
                                         break;
                                     case 1:
-                                        Item held = me.FindItemOnLayer(Layer.OneHanded);
+                                        Item? held = me.FindItemOnLayer(Layer.OneHanded);
                                         format_string = string.Format("I will introduce {0} to {1}.", target.Name, (held != null) ? held.Name : "my fists");
                                         break;
                                     case 2:
@@ -505,7 +499,7 @@ namespace Server.Mobiles
                                         format_string = string.Format("And that!");
                                         break;
                                     case 2:
-                                        Item item = me.FindItemOnLayer(Layer.OneHanded);
+                                        Item? item = me.FindItemOnLayer(Layer.OneHanded);
                                         format_string = string.Format("Feel the power of {0}!", (item != null) ? item.Name : "my fist");
                                         break;
                                     case 3:
@@ -583,7 +577,7 @@ namespace Server.Mobiles
                                             format_string = string.Format("I'll show you what we do to trespassers!");
                                             break;
                                         default:
-                                            Item held = me.FindItemOnLayer(Layer.OneHanded);
+                                            Item? held = me.FindItemOnLayer(Layer.OneHanded);
                                             format_string = string.Format("Come a little closer and I'll give you a taste of {0}!", (held != null) ? held.Name : "my fists");
                                             mRegion.chatter_ndx = 0;
                                             break;
@@ -654,7 +648,7 @@ namespace Server.Mobiles
             PackItem(new Bandage(Utility.RandomMinMax(10, 25)), lootType: LootType.UnStealable);
 
             // initialize our chatter
-            Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(ChatterTick), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(ChatterTick), new object?[] { null });
 
             // we are always in our own Compadres list
             Compadres.Add(this);
@@ -669,7 +663,7 @@ namespace Server.Mobiles
             : base(serial)
         {
             // initialize out chatter
-            Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(ChatterTick), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(ChatterTick), new object?[] { null });
             // we are always in our own Compadres list
             Compadres.Add(this);
         }
@@ -716,7 +710,7 @@ namespace Server.Mobiles
         public override bool ShowFameTitle { get { return false; } }
         public override bool CanRummageCorpses { get { return Core.RuleSets.AngelIslandRules() ? true : false; } }
         public override bool CanBandage { get { return Core.RuleSets.AngelIslandRules() ? true : base.CanBandage; } }
-        private AngryMiner GetRandomCompadre()
+        private AngryMiner? GetRandomCompadre()
         {
             List<AngryMiner> amList = Compadres;
             foreach (AngryMiner am in amList)
@@ -735,7 +729,7 @@ namespace Server.Mobiles
                 switch (Utility.Random(3))
                 {
                     case 0:
-                        AngryMiner angryCompadre = GetRandomCompadre();
+                        AngryMiner? angryCompadre = GetRandomCompadre();
                         if (angryCompadre != null)
                         {
                             Yelp(1, string.Format("Hey {0}, we have a musician on our hands!", angryCompadre.Name));
@@ -808,7 +802,7 @@ namespace Server.Mobiles
             {
                 GargoylesPickaxe gp = new GargoylesPickaxe();
                 gp.Resource = CraftResources.GetFromType(m_resourceType);
-                CraftResourceInfo cri = CraftResources.GetInfo(gp.Resource);
+                CraftResourceInfo? cri = CraftResources.GetInfo(gp.Resource);
                 if (cri != null)
                     gp.Hue = cri.Hue;
                 gp.Movable = false;
@@ -818,7 +812,7 @@ namespace Server.Mobiles
             {
                 SmallWarHammer ash = new SmallWarHammer();
                 ash.Resource = CraftResources.GetFromType(m_resourceType);
-                CraftResourceInfo cri = CraftResources.GetInfo(ash.Resource);
+                CraftResourceInfo? cri = CraftResources.GetInfo(ash.Resource);
                 if (cri != null)
                     ash.Hue = cri.Hue;
                 ash.Movable = false;
@@ -849,7 +843,7 @@ namespace Server.Mobiles
 
             // now see if we were involved
             bool were_involved = false;
-            Mobile killer = null;
+            Mobile? killer = null;
             List<AngryMiner> amList = Compadres;
             foreach (AngryMiner am in amList)
                 if (aggressors.Contains(am as Mobile))
@@ -940,7 +934,7 @@ namespace Server.Mobiles
         {
             get
             {
-                Item item = this.FindItemOnLayer(Layer.OneHanded);
+                Item? item = this.FindItemOnLayer(Layer.OneHanded);
                 if (item != null)
                     return item.Name;
                 else
@@ -1071,7 +1065,7 @@ namespace Server.Mobiles
                 }
             }
         }
-        public override void AggressiveAction(Mobile aggressor, bool criminal, object source = null)
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
         {
             base.AggressiveAction(aggressor, criminal, source);
             if (aggressor == null)
@@ -1084,7 +1078,7 @@ namespace Server.Mobiles
                     switch (Utility.Random(3))
                     {
                         case 0:
-                            AngryMiner angryCompadre = GetRandomCompadre();
+                            AngryMiner? angryCompadre = GetRandomCompadre();
                             if (angryCompadre != null)
                             {
                                 Yelp(1, string.Format("{0}, we've got a bard here. What are we going to do with {1}?", angryCompadre.Name, aggressor.Female ? "her" : "him"));
@@ -1103,7 +1097,7 @@ namespace Server.Mobiles
                 }
             }
         }
-        private PlayerMobile GetFocusMob()
+        private PlayerMobile? GetFocusMob()
         {
             PlayerMobile[] targets = new PlayerMobile[] { PreferredFocus as PlayerMobile, Combatant as PlayerMobile };
             foreach (PlayerMobile target in targets)
@@ -1118,10 +1112,6 @@ namespace Server.Mobiles
             if (focus.NetState == null) return false;
             if (TakingXanax() && focus.Hidden) return false;
             return this.GetDistanceToSqrt(focus) <= RangePerception;
-        }
-        protected bool FarFromOurCombatant(Mobile focus)
-        {
-            return !NearOurCombatant(focus);
         }
         protected bool AWOLCompadre(AngryMiner am)
         {
@@ -1140,7 +1130,7 @@ namespace Server.Mobiles
             AngryMinerDialog.PostIdleMessage(Compadres, AngryMinerDialog.GetChatterDelay, new mState(this, InstanceMessage.RegularMessage, target: GetFocusMob(), text: null));
 
             // and finally, schedule another chatter tick (this function)
-            Timer.DelayCall(TimeSpan.FromSeconds(1), new TimerStateCallback(ChatterTick), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromSeconds(1), new TimerStateCallback(ChatterTick), new object?[] { null });
         }
         private bool TeamClearHandled(InstanceMessage filter)
         {
@@ -1326,16 +1316,13 @@ namespace Server.Mobiles
         {
             if (Core.RuleSets.AllShards)
             {
-                if (Spawning && !Core.RuleSets.AngelIslandRules())
+                if (Spawning)
                 {
                     PackGold(100, 150);
                 }
                 else
                 {
-                    if (Core.RuleSets.AngelIslandRules())
-                        PackGold(100, 150);
-
-                    Item item;
+                    Item? item;
                     if (Utility.Chance(0.05))
                     {
                         item = this.FindItemOnLayer(Layer.OneHanded);
@@ -1354,22 +1341,6 @@ namespace Server.Mobiles
                         if (item != null)
                             PackItem(item);
                     }
-                }
-            }
-            else
-            {   // doesn't apply - AI custom mob
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020207053514/uo.stratics.com/hunters/brigand.shtml
-                    // 100 - 200 Gold, Clothing
-
-                    if (Spawning)
-                    {
-                        PackGold(100, 200);
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Average);
                 }
             }
         }
@@ -1392,7 +1363,7 @@ namespace Server.Mobiles
             int version = reader.ReadInt();
 
             m_originalHome = reader.ReadPoint3D();
-            string resourceType = reader.ReadString();
+            string? resourceType = reader.ReadString();
             m_resourceType = ScriptCompiler.FindTypeByName(resourceType);
         }
     }

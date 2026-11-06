@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,46 +76,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021015000826/uo.stratics.com/hunters/bloodelemental.shtml
+            // 1100 to 1400 Gold, Magic items, Gems, Scrolls, Vials of Blood reagent, Level 5 Treasure Maps
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(500, 700);
-                PackMagicEquipment(1, 3, 0.50, 0.50);
-                PackMagicEquipment(1, 3, 0.10, 0.10);
-
-                if (Utility.RandomDouble() >= 0.10)
-                    PackItem(new BloodVial(3));
-
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
+                PackGold(1100, 1400);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021015000826/uo.stratics.com/hunters/bloodelemental.shtml
-                    // 1100 to 1400 Gold, Magic items, Gems, Scrolls, Vials of Blood reagent, Level 5 Treasure Maps
-
-                    if (Spawning)
-                    {
-                        PackGold(1100, 1400);
-                    }
-                    else
-                    {
-                        PackMagicStuff(1, 3, 0.05);
-                        PackMagicStuff(1, 3, 0.03);
-                        PackGem(1, .9);
-                        PackGem(1, .5);
-                        PackScroll(1, 6, .9);
-                        PackScroll(1, 6, .5);
-                        PackItem(new BloodVial(3));
-                    }
-                }
-                else
-                {   // standard runuo
-                    AddLoot(LootPack.FilthyRich);
-                    AddLoot(LootPack.Rich);
-                }
+                PackMagicStuff(1, 3, 0.05);
+                PackMagicStuff(1, 3, 0.03);
+                PackGem(1, .9);
+                PackGem(1, .5);
+                PackScroll(1, 6, .9);
+                PackScroll(1, 6, .5);
+                PackItem(new BloodVial(3));
             }
         }
 

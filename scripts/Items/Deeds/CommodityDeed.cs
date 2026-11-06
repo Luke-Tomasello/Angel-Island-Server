@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,12 +62,12 @@ namespace Server.Items
         {
             get
             {
-                Item commodity = null;
+                Item? commodity = null;
                 try
                 {
                     if (m_Type != null)
                     {
-                        System.Reflection.ConstructorInfo ci = m_Type.GetConstructor(new Type[0]);
+                        System.Reflection.ConstructorInfo? ci = m_Type.GetConstructor(new Type[0]);
                         if (ci != null)
                             commodity = ci.Invoke(null) as Item;
 
@@ -166,7 +166,7 @@ namespace Server.Items
                         m_Amount = reader.ReadInt();
                         if (m_Amount > 0)
                         {
-                            string sType = reader.ReadString();
+                            string? sType = reader.ReadString();
                             m_Type = ScriptCompiler.FindTypeByName(sType);
                             m_LabelNumber = reader.ReadInt();
                             m_Description = reader.ReadString();
@@ -193,7 +193,7 @@ namespace Server.Items
                 m_oldversionCommodity.Delete();
         }
 
-        public CommodityDeed(Item commodity)
+        public CommodityDeed(Item? commodity)
             : base(0x14F0)
         {
             Weight = 1.0;
@@ -264,8 +264,8 @@ namespace Server.Items
                 {
                     number = 1047031; // The commodity has been redeemed.
 
-                    Item commodity = null;
-                    System.Reflection.ConstructorInfo ci = m_Type.GetConstructor(new Type[0]);
+                    Item? commodity = null;
+                    System.Reflection.ConstructorInfo? ci = m_Type.GetConstructor(new Type[0]);
                     if (ci != null)
                         commodity = ci.Invoke(null) as Item;
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -47,7 +47,7 @@ namespace Server.Engines.CrownSterlingSystem
             m_NPC = NPC;
             m_RewardSet = rewardSet;
         }
-        public static CrownSterlingSystem Factory(Mobile NPC, RewardSet rewardSet)
+        public static CrownSterlingSystem? Factory(Mobile NPC, RewardSet rewardSet)
         {
             if (!RewardsDatabase.ContainsKey(rewardSet))
                 return null;
@@ -119,7 +119,7 @@ namespace Server.Engines.CrownSterlingSystem
             {
                 if (Utility.HasParameterlessConstructor(t))
                 {
-                    object o = Activator.CreateInstance(t);
+                    object? o = Activator.CreateInstance(t);
                     if (o is Item item)
                     {
                         if (!IgnoredIDs.Contains(item.ItemID))
@@ -139,7 +139,7 @@ namespace Server.Engines.CrownSterlingSystem
                             {
                                 try
                                 {
-                                    MethodInfo flipMethod = item.GetType().GetMethod("Flip", Type.EmptyTypes);
+                                    MethodInfo? flipMethod = item.GetType().GetMethod("Flip", Type.EmptyTypes);
                                     if (flipMethod != null)
                                     {
                                         flipMethod.Invoke(item, new object[0]);
@@ -343,7 +343,7 @@ namespace Server.Engines.CrownSterlingSystem
                         {
                             try
                             {
-                                MethodInfo flipMethod = item.GetType().GetMethod("Flip", Type.EmptyTypes);
+                                MethodInfo? flipMethod = item.GetType().GetMethod("Flip", Type.EmptyTypes);
                                 if (flipMethod != null)
                                 {
                                     flipMethod.Invoke(item, new object[0]);
@@ -946,7 +946,7 @@ namespace Server.Engines.CrownSterlingSystem
                 writer.WriteEncodedInt(0); // version
 
                 // version 0
-                string type = m_Type == null ? null : m_Type.Name;
+                string? type = m_Type == null ? null : m_Type.Name;
                 writer.Write(type);
             }
 
@@ -960,7 +960,7 @@ namespace Server.Engines.CrownSterlingSystem
                 {
                     case 0:
                         {
-                            string typeName = reader.ReadString();
+                            string? typeName = reader.ReadString();
                             if (typeName != null)
                                 m_Type = ScriptCompiler.FindTypeByName(typeName);
                             break;
@@ -968,7 +968,7 @@ namespace Server.Engines.CrownSterlingSystem
                 }
             }
         }
-        private static string ClipName(AddonDeed deed)
+        private static string? ClipName(AddonDeed deed)
         {
             if (deed == null || deed.Name == null)
                 return null;
@@ -1034,7 +1034,7 @@ namespace Server.Engines.CrownSterlingSystem
 
             /* construct the item
              */
-            Item toGive = null;
+            Item? toGive = null;
             if (reward.ItemO is Item item)
             {
                 if (item is AddonFactory af)

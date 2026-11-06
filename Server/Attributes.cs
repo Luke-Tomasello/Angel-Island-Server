@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,10 @@
 
 /* Server\Attributes.cs
  * ChangeLog:
+ *  10/27/2026, Adam
+ *		Add StringListAttribute: [props offers a string property's values as a pick list, read from a public static
+ *		string[] property or field each time the list opens (e.g. names loaded from a data file, which CustomEnum's
+ *		compile-time names cannot be). First use: ChampEngine.DefinitionName.
  *  2/16/2024, Adam
  *		Add new CopyableAttribute
  *		This attribute should be applied to R/W properties that should not be copied during CopyProperties.
@@ -36,32 +40,46 @@ using System.Reflection;
 
 namespace Server
 {
+    /// <summary>
+    /// Controls how a property participates in duplication and relinking.
+    /// </summary>
     public enum CopyType
     {
+        /// <summary>
+        /// Default behavior: copy the value and allow relinking.
+        /// </summary>
         Copy,
+
+        /// <summary>
+        /// Do not copy this property at all.
+        /// </summary>
         DoNotCopy,
+
+        /// <summary>
+        /// Copy the property value, but do not relink it.
+        /// Useful for shared or cross-map references (e.g., LootPacks on Internal map).
+        /// </summary>
+        DoNotRelink
     }
 
     [AttributeUsage(AttributeTargets.Property)]
     public class CopyableAttribute : Attribute
     {
-        private CopyType m_CopyType;
-
-        public CopyType CopyType { get { return m_CopyType; } }
+        public CopyType CopyType { get; }
 
         public CopyableAttribute(CopyType copyType)
         {
-            m_CopyType = copyType;
+            CopyType = copyType;
         }
 
+        /// <summary>
+        /// Returns the effective CopyType for a property.
+        /// Defaults to Copy if no attribute is present.
+        /// </summary>
         public static CopyType Find(PropertyInfo propInfo)
         {
-            CopyableAttribute attr = propInfo.GetCustomAttribute<CopyableAttribute>();
-
-            if (attr != null)
-                return attr.CopyType;
-            else
-                return CopyType.Copy; // default: copy
+            var attr = propInfo.GetCustomAttribute<CopyableAttribute>();
+            return attr?.CopyType ?? CopyType.Copy;
         }
     }
 
@@ -116,10 +134,10 @@ namespace Server
 
     public class CallPriorityComparer : IComparer
     {
-        public int Compare(object x, object y)
+        public int Compare(object? x, object? y)
         {
-            MethodInfo a = x as MethodInfo;
-            MethodInfo b = y as MethodInfo;
+            MethodInfo? a = x as MethodInfo;
+            MethodInfo? b = y as MethodInfo;
 
             if (a == null && b == null)
                 return 0;
@@ -143,7 +161,7 @@ namespace Server
             if (objs.Length == 0)
                 return 0;
 
-            CallPriorityAttribute attr = objs[0] as CallPriorityAttribute;
+            CallPriorityAttribute? attr = objs[0] as CallPriorityAttribute;
 
             if (attr == null)
                 return 0;
@@ -198,6 +216,28 @@ namespace Server
         }
     }
 
+    // [props offers these strings as a pick list for a string property. The names are read from the provider's public
+    // static string[] property or field each time the list opens; an empty list falls back to ordinary text entry.
+    [AttributeUsage(AttributeTargets.Property)]
+    public class StringListAttribute : Attribute
+    {
+        private readonly Type m_Provider;
+        private readonly string m_Member;
+
+        public StringListAttribute(Type provider, string member)
+        {
+            m_Provider = provider;
+            m_Member = member;
+        }
+
+        public string[] GetNames()
+        {
+            const BindingFlags flags = BindingFlags.Public | BindingFlags.Static;
+            object? value = m_Provider.GetProperty(m_Member, flags)?.GetValue(null) ?? m_Provider.GetField(m_Member, flags)?.GetValue(null);
+            return value as string[] ?? new string[0];
+        }
+    }
+
     [AttributeUsage(AttributeTargets.Constructor)]
     public class ConstructableAttribute : Attribute
     {
@@ -205,7 +245,7 @@ namespace Server
         {
         }
     }
-#if true
+
     [AttributeUsage(AttributeTargets.Property)]
     public class CommandPropertyAttribute : Attribute
     {
@@ -252,39 +292,5 @@ namespace Server
             m_WriteLevel = writeLevel;
         }
     }
-#else
 
-    [AttributeUsage(AttributeTargets.Property)]
-    public class CommandPropertyAttribute : Attribute
-    {
-        private AccessLevel m_ReadLevel, m_WriteLevel;
-
-        public AccessLevel ReadLevel
-        {
-            get
-            {
-                return m_ReadLevel;
-            }
-        }
-
-        public AccessLevel WriteLevel
-        {
-            get
-            {
-                return m_WriteLevel;
-            }
-        }
-
-        public CommandPropertyAttribute(AccessLevel level)
-            : this(level, level)
-        {
-        }
-
-        public CommandPropertyAttribute(AccessLevel readLevel, AccessLevel writeLevel)
-        {
-            m_ReadLevel = readLevel;
-            m_WriteLevel = writeLevel;
-        }
-    }
-#endif
 }

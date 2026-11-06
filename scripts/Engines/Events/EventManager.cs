@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,7 +66,7 @@ namespace Server.Commands
                 !string.IsNullOrEmpty(e.GetString(index + 1)) &&
                 !string.IsNullOrEmpty(e.GetString(index + 2));
         }
-        public static object ParseTimeObject(CommandEventArgs e, ref int index)
+        public static object? ParseTimeObject(CommandEventArgs e, ref int index)
         {
             // try for the date time ([m/d/y] [h/m/s] [am/pm])
             if (LooksLikeDateTime(e, index))
@@ -101,8 +101,8 @@ namespace Server.Commands
             int index = 0;
             string command = e.GetString(index++).ToLower(); bool command_okay = !string.IsNullOrEmpty(command);
             string eventName = e.GetString(index++).ToLower(); bool eventName_okay = !string.IsNullOrEmpty(eventName);
-            object countdown = ParseTimeObject(e, ref index); bool countdown_ok = (countdown != null);
-            object duration = ParseTimeObject(e, ref index); bool duration_ok = (duration != null);
+            object? countdown = ParseTimeObject(e, ref index); bool countdown_ok = (countdown != null);
+            object? duration = ParseTimeObject(e, ref index); bool duration_ok = (duration != null);
 
             if (command_okay && e.Length == 1)
             {
@@ -310,7 +310,7 @@ namespace Server.Commands
                     element.Value.Remove(ix);
             }
         }
-        public static bool AddToEvent(Item it, string eventName, Mobile from = null)
+        public static bool AddToEvent(Item it, string eventName, Mobile? from = null)
         {
             Defrag();
             if (ValidType(it))
@@ -337,10 +337,10 @@ namespace Server.Commands
             else
             {
                 if (from != null)
-                    from.SendMessage("That is not a {0} or {1}, {2}, {3}, or {4}.",
+                    from.SendMessage("That is not a {0} or {1}, {2}, or {3}.",
                         typeof(EventTeleporter).Name,
                         typeof(EventKeywordTeleporter).Name,
-                        typeof(EventSpawner).Name, typeof(PushBackSpawner).Name,
+                        typeof(EventSpawner).Name,
                         typeof(EventSungate).Name);
                 return false;
             }
@@ -349,12 +349,12 @@ namespace Server.Commands
                 from.SendMessage("{0} ({1}) added to event '{2}'.", it.GetType().Name, it.Serial, eventName);
             return true;
         }
-        private static bool ValidType(Item item)
+        private static bool ValidType(Item? item)
         {
             if (item == null ||
                 item.GetType() != typeof(EventTeleporter) &&
                 item.GetType() != typeof(EventKeywordTeleporter) &&
-                item.GetType() != typeof(EventSpawner) && item.GetType() != typeof(PushBackSpawner) &&
+                item.GetType() != typeof(EventSpawner) &&
                 item.GetType() != typeof(EventSungate))
                 return false;
             return true;
@@ -370,7 +370,7 @@ namespace Server.Commands
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                Item it = targeted as Item;
+                Item? it = targeted as Item;
                 AddToEvent(it, m_eventName, from);
             }
         }
@@ -400,7 +400,7 @@ namespace Server.Commands
                             int count = reader.ReadInt();
                             for (int ix = 0; ix < count; ix++)
                             {
-                                string eventName = reader.ReadString();
+                                string? eventName = reader.ReadString();
                                 m_table.Add(eventName, reader.ReadItemList<Item>().Cast<object>().ToList());
                             }
                             break;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -102,7 +102,7 @@ namespace Server.Engines.Catacomb
                 if (m_Orb.Deleted || !m_Orb.IsAccessibleTo(from) || !from.InRange(m_Orb.GetWorldLocation(), 2) || !from.InLOS(m_Orb) || m_Orb.Charges <= 0)
                     return;
 
-                BaseWand wand = targeted as BaseWand;
+                BaseWand? wand = targeted as BaseWand;
 
                 if (wand == null)
                 {
@@ -148,7 +148,7 @@ namespace Server.Engines.Catacomb
                 if (m_First.Deleted || !m_First.IsAccessibleTo(from) || !from.InRange(m_First.GetWorldLocation(), 2) || !from.InLOS(m_First) || m_First.MagicCharges <= 0)
                     return;
 
-                BaseWand second = targeted as BaseWand;
+                BaseWand? second = targeted as BaseWand;
 
                 if (second == null)
                 {
@@ -200,9 +200,9 @@ namespace Server.Engines.Catacomb
             private void TransferEffect_Stage1(object state)
             {
                 object[] aState = (object[])state;
-                Mobile from = aState[0] as Mobile;
-                Item src_item = aState[1] as Item;
-                Item dest_item = aState[2] as Item;
+                Mobile? from = aState[0] as Mobile;
+                Item? src_item = aState[1] as Item;
+                Item? dest_item = aState[2] as Item;
 
                 if (src_item.RootParent == null && dest_item.RootParent == null)
                 {
@@ -223,9 +223,9 @@ namespace Server.Engines.Catacomb
             private void TransferEffect_Stage2(object state)
             {
                 object[] aState = (object[])state;
-                Mobile from = aState[0] as Mobile;
-                Item src_item = aState[1] as Item;
-                Item dest_item = aState[2] as Item;
+                Mobile? from = aState[0] as Mobile;
+                Item? src_item = aState[1] as Item;
+                Item? dest_item = aState[2] as Item;
 
                 if (src_item.RootParent == null && dest_item.RootParent == null)
                 {

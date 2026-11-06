@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts/Mobiles/Vendors/NPC/RealEstateBroker.cs
  *  Changelog:
+ *  1/5/2025, Adam
+ *      RealEstateBroker: filter out TentBag/SiegeTentBag deeds
+ *      Prevent TentBag from being treated as a refundable/valid HouseDeed.
  *  9/17/21, Yoar
  *      Turned on logging of failures in ComputePriceFor() on TC
  *  9/17/21, Yoar
@@ -40,6 +43,7 @@
 
 using Server.Diagnostics;
 using Server.Items;
+using Server.Misc;
 using Server.Multis.Deeds;
 using Server.Multis.StaticHousing;
 using Server.Network;
@@ -81,7 +85,11 @@ namespace Server.Mobiles
                     {
                         m_NextCheckPack = DateTime.UtcNow + TimeSpan.FromSeconds(2.0);
 
-                        Item deed = pack.FindItemByType(typeof(HouseDeed), false);
+                        // exclude TentBag/SiegeTentBag
+                        Item deed = pack.FindItemByType<HouseDeed>(
+                            recurse: false,
+                            predicate: d => TryGetRefundableDeed(d, out _)
+                        );
 
                         if (deed != null)
                         {
@@ -108,45 +116,55 @@ namespace Server.Mobiles
 
             base.OnSpeech(e);
         }
+        private static bool TryGetRefundableDeed(Item item, out HouseDeed deed)
+        {
+            deed = item as HouseDeed;
 
-        public override bool OnDragDrop(Mobile from, Item dropped)
-        {   // belt and suspenders!
-            if (dropped is HouseDeed deed && !deed.Deleted && deed.Map == Map.Internal && deed.Parent == null)
-            {
-                int price = ComputePriceFor(deed);                      // included Siege markup
-                price = AOS.Scale(price, 80);                           // refunds 80% of the purchase price
-
-                if (price > 0 && Core.RuleSets.CanBuyHouseRules())      // check the Publish
-                {
-                    if (Banker.Deposit(from, price))
-                    {
-                        // For the deed I have placed gold in your bankbox : 
-                        PublicOverheadMessage(MessageType.Regular, 0x3B2, 1008000, AffixType.Append, price.ToString("N0")/*(price.ToString()*/, "");
-
-                        deed.Delete();
-                        return true;
-                    }
-                    else
-                    {
-                        PublicOverheadMessage(MessageType.Regular, 0x3B2, 500390); // Your bank box is full.
-                        return false;
-                    }
-                }
-                else
-                {
-                    PublicOverheadMessage(MessageType.Regular, 0x3B2, 500607); // I'm not interested in that.
-                    return false;
-                }
-            }
-
-            return base.OnDragDrop(from, dropped);
+            return deed != null
+                   && deed is not TentBag
+                   && deed is not SiegeTentBag
+                   && !deed.Deleted;
         }
 
+        private static bool IsValidDragDropState(HouseDeed deed)
+        {
+            // belt and suspenders: only accept a deed that is not in the world and not contained
+            return deed.Map == Map.Internal
+                   && deed.Parent == null;
+        }
+
+        public override bool OnDragDrop(Mobile from, Item dropped)
+        {
+            if (!TryGetRefundableDeed(dropped, out HouseDeed deed) || !IsValidDragDropState(deed))
+                return base.OnDragDrop(from, dropped);
+
+            int price = ComputePriceFor(deed);                 // includes Siege markup
+            price = AOS.Scale(price, 80);                      // refunds 80% of the purchase price
+
+            if (price <= 0 || !Core.RuleSets.CanBuyHouseRules())
+            {
+                PublicOverheadMessage(MessageType.Regular, 0x3B2, 500607); // I'm not interested in that.
+                return false;
+            }
+
+            if (!Banker.Deposit(from, price))
+            {
+                PublicOverheadMessage(MessageType.Regular, 0x3B2, 500390); // Your bank box is full.
+                return false;
+            }
+
+            // For the deed I have placed gold in your bankbox :
+            PublicOverheadMessage(MessageType.Regular, 0x3B2, 1008000, AffixType.Append, price.ToString("N0"), "");
+
+            deed.Delete();
+            return true;
+        }
         public void Appraise_OnTarget(Mobile from, object obj)
         {
-            if (obj is HouseDeed)
+            if (obj is Item item
+                && TryGetRefundableDeed(item, out HouseDeed deed)
+                && deed.RootParent is PlayerMobile)
             {
-                HouseDeed deed = (HouseDeed)obj;
                 int price = ComputePriceFor(deed);
                 price = AOS.Scale(price, 80); // refunds 80% of the purchase price
 
@@ -188,36 +206,21 @@ namespace Server.Mobiles
             // houses are 10x the price for Siege from Pub 13.6 on
             // otherwise, apply the regular x3 price hike for Siege
             // http://www.uoguide.com/Publish_13.6_(Siege_Perilous_Shards_Only)
-            if (Core.RuleSets.SiegeStyleRules())
-                price = ComputeHousingMarkupForSiege(price);
+            if (Core.RuleSets.SiegeRules())
+                price = SiegeHelper.ComputeHousingMarkupForSiege(price);
 
             // track the error
             if (price == 0)
             {
                 LogHelper logger = new LogHelper("HousingExceptions.log", false);
                 logger.Log(LogType.Text, string.Format("House price 0 on {0}",
-                    Core.UOTC_CFG ? "Test Center" : Core.Server));
+                    Core.GMNTC_CFG ? "Test Center" : Core.Server));
                 logger.Finish();
             }
 
             return price;
         }
-        public static int ComputeHousingMarkupForSiege(int price)
-        {   // Pub 13.6
-            // houses are 10x the price for Siege from Pub 13.6 on
-            // otherwise, apply the regular x3 price hike for Siege
-            // 1/19/2024, Adam. SiegeII: in order to spur the economy on such a small shard, we are adopting the 3x pricing for houses even though it's not era accurate
-            // http://www.uoguide.com/Publish_13.6_(Siege_Perilous_Shards_Only)
-            if (Core.RuleSets.SiegeStyleRules())
-            {
-                if (PublishInfo.Publish >= 13.6 && !Core.SiegeII_CFG)
-                    price *= 10;
-                else
-                    price *= 3;
-            }
 
-            return price;
-        }
         public override void InitSBInfo()
         {
             m_SBInfos.Add(new SBRealEstateBroker());

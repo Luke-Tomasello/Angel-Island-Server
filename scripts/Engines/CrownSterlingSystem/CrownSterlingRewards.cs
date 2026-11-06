@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -49,7 +49,7 @@ namespace Server.Engines.CrownSterlingSystem
             return hash % 499;
         }
 
-        public CrownSterlingReward(object itemO, int baseCost, int hue, string label)
+        public CrownSterlingReward(object itemO, int baseCost, int hue, string? label)
         {
             m_ItemO = itemO;
             m_Hue = hue;
@@ -68,7 +68,7 @@ namespace Server.Engines.CrownSterlingSystem
                     {
                         int itemID = (int)m_ItemO;
                         ItemData id = TileData.ItemTable[itemID & 0x3FFF];
-                        string itemName = id.Name != null ? id.Name.ToLower() : null;
+                        string? itemName = id.Name != null ? id.Name.ToLower() : null;
 
                         if (itemName != null)
                         {
@@ -146,7 +146,7 @@ namespace Server.Engines.CrownSterlingSystem
                     }
             }
         }
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return (obj is CrownSterlingReward && this.Equals((CrownSterlingReward)obj));
         }
@@ -196,12 +196,12 @@ namespace Server.Engines.CrownSterlingSystem
 
         public abstract Item Construct();
 
-        protected static Item Construct(Type type, object[] args = null)
+        protected static Item? Construct(Type type, object[]? args = null)
         {
             if (!typeof(Item).IsAssignableFrom(type))
                 return null;
 
-            Item item;
+            Item? item;
 
             try
             {
@@ -240,7 +240,7 @@ namespace Server.Engines.CrownSterlingSystem
     {
         private Type[] m_Types;
 
-        public Type[] Types { get { return m_Types; } }
+        public Type[]? Types { get { return m_Types; } }
 
         public RandomReward(params Type[] types)
         {
@@ -274,7 +274,7 @@ namespace Server.Engines.CrownSterlingSystem
 
         public override Item Construct()
         {
-            Item item;
+            Item? item;
 
             try
             {

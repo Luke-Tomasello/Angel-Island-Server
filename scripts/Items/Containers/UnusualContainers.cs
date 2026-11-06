@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -40,7 +40,7 @@
     See Also: Scripts\Engines\Spawner\UnusualContainerSpawner.cs
  */
 
-/* Scripts/Items/Containers/Container.cs
+/* Scripts\Items\Containers\UnusualContainers.cs
  * ChangeLog:
  *  4/22/23, Adam (UnusualChestRules())
  *      For shards other than Angel Island, we simply convert unusual chests to generic dungeon chests.
@@ -81,7 +81,7 @@ namespace Server.Items
                         KeyValue == Loot.YellowKeyValue ? 1 : 0;
             }
         }
-        private Timer m_timer = null;
+        private Timer? m_timer = null;
         [CommandProperty(AccessLevel.GameMaster)]
         public Item OldContainer { get { return m_oldContainer; } }
         public BaseUnusualContainer(int GraphicID, BaseContainer c, uint keyValue)
@@ -160,7 +160,7 @@ namespace Server.Items
             else
                 base.OnSingleClick(from);
         }
-        private Mobile m_Owner = null;
+        private Mobile? m_Owner = null;
         public override void Open(Mobile from)
         {
             base.Open(from);
@@ -220,7 +220,7 @@ namespace Server.Items
             if (m_Owner == null || m == m_Owner)
                 return true;
 
-            Party p = Party.Get(m_Owner);
+            Party? p = Party.Get(m_Owner);
 
             if (p != null && p.Contains(m))
                 return true;
@@ -260,7 +260,7 @@ namespace Server.Items
         public override void OnItemLifted(Mobile from, Item item)
         {
             bool notYetLifted = !m_Lifted.Contains(item);
-            BaseCreature witness = null;
+            BaseCreature? witness = null;
 
             if (notYetLifted)
             {
@@ -576,17 +576,6 @@ namespace Server.Items
             }
             else
                 return string.Format("an unusual {0} (not keyed)", type);
-        }
-        public static void PackScroll(LockableContainer cont, int minCircle, int maxCircle)
-        {
-            PackScroll(cont, Utility.RandomMinMax(minCircle, maxCircle));
-        }
-
-        public static void PackScroll(LockableContainer cont, int circle)
-        {
-            int min = (circle - 1) * 8;
-
-            cont.DropItem(Loot.RandomScroll(min, min + 7, SpellbookType.Regular));
         }
 
         public static void PackMagicItem(LockableContainer cont, int minLevel, int maxLevel, double chance)

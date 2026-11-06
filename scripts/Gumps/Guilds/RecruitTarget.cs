@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -55,16 +55,16 @@ namespace Server.Gumps
 
             if (targeted is Mobile || targeted is Items.CertificateOfIdentity)
             {
-                Mobile m = targeted as Mobile;
+                Mobile? m = targeted as Mobile;
 
-                PlayerState guildState = PlayerState.Find(m_Guild.Leader);
-                PlayerState targetState = PlayerState.Find(m);
+                PlayerState? guildState = PlayerState.Find(m_Guild.Leader);
+                PlayerState? targetState = PlayerState.Find(m);
 
-                Faction guildFaction = (guildState == null ? null : guildState.Faction);
-                Faction targetFaction = (targetState == null ? null : targetState.Faction);
+                Faction? guildFaction = (guildState == null ? null : guildState.Faction);
+                Faction? targetFaction = (targetState == null ? null : targetState.Faction);
 
-                PlayerMobile pm = targeted as PlayerMobile;
-                Items.CertificateOfIdentity coi = null;
+                PlayerMobile? pm = targeted as PlayerMobile;
+                Items.CertificateOfIdentity? coi = null;
 
                 if (targeted is Items.CertificateOfIdentity)
                 {

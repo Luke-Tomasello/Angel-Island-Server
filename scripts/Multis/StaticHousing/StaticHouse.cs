@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,6 +48,7 @@ using Server.Items;
 using Server.Multis.Deeds;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HouseBlueprint = Server.Multis.StaticHousing.StaticHouseHelper.HouseBlueprint;
 
 namespace Server.Multis.StaticHousing
@@ -224,7 +225,12 @@ namespace Server.Multis.StaticHousing
         }
 
         public StaticHouse(Mobile owner, HouseBlueprint blueprint)
-            : base(owner, StaticHouseHelper.GetFoundationID(blueprint.Width, blueprint.Height), 270, 2, 2)
+            : base(
+                owner,
+                StaticHouseHelper.GetFoundationID(blueprint.Width, blueprint.Height),
+                GetInitialLockdowns(blueprint),
+                GetInitialSecures(blueprint),
+                GetInitialLockboxes(blueprint))
         {
             BuildDesign(blueprint);
             BuildFixerAddon(blueprint);
@@ -345,6 +351,122 @@ namespace Server.Multis.StaticHousing
             return new StaticDeed(m_BlueprintID);
         }
 
+        /// <summary>
+        /// Returns the classic OSI storage allocation (lockdowns, secures, lockboxes)
+        /// that most closely matches the supplied foundation size.
+        ///
+        /// Historically, Angel Island custom/static houses received the minimal
+        /// house storage allocation regardless of foundation size. This worked well
+        /// on long-lived shards where players could gradually invest in storage
+        /// upgrades over time.
+        ///
+        /// Seasons is different. Players have only a limited window (approximately
+        /// three months) to build wealth and establish themselves. Requiring players
+        /// to purchase both a house and substantial storage upgrades created an
+        /// unnecessary economic hurdle.
+        ///
+        /// To better match classic UO expectations, Seasons grants newly purchased
+        /// static houses storage based on the nearest matching OSI house footprint.
+        /// Exact matches use the original OSI values. Custom foundation sizes fall
+        /// back to the closest known OSI house size.
+        ///
+        /// Examples:
+        ///     14x14 -> TwoStoryHouse (750 / 5 / 3)
+        ///     15x14 -> LargePatioHouse / GuildHouse (600 / 4 / 2)
+        ///     31x31 -> Castle (1950 / 14 / 7)
+        ///
+        /// This preserves the familiar progression and utility of classic housing
+        /// while avoiding the need for immediate storage upgrades in a seasonal
+        /// environment.
+        /// </summary>
+        public static (int Lockdowns, int Secures, int Lockboxes) GetClassicStorage(int width, int height)
+        {
+            string key = $"{width}x{height}";
+
+            var table = new Dictionary<string, (int lockdowns, int secures, int lockboxes)>
+            {
+                // Small Houses
+                { "7x7",   (270, 2, 2) }, // SmallOldHouse
+                { "8x7",   (300, 2, 2) }, // SmallTower
+                { "7x7s",  (275, 2, 2) }, // SmallShop (same footprint, slightly different storage)
+
+                // Medium Houses
+                { "12x8",  (450, 3, 2) }, // SandStonePatio
+                { "11x11", (600, 4, 2) }, // TwoStoryVilla
+                { "8x13",  (600, 4, 2) }, // LogCabin
+
+                // Large Houses
+                { "14x14", (750, 5, 3) }, // TwoStoryHouse
+                { "15x14", (600, 4, 2) }, // GuildHouse
+                { "15x14m",(600, 4, 2) }, // LargePatioHouse
+                { "15x14l",(750, 5, 3) }, // LargeMarbleHouse
+
+                // Towers / Large Structures
+                { "16x14", (1150, 8, 4) }, // Tower
+
+                // Keeps & Castles (irregular)
+                { "24x24", (1300, 9, 5) }, // Keep
+                { "31x31", (1950, 14, 7) } // Castle
+            };
+
+            if (table.TryGetValue(key, out var values))
+                return values;
+
+            // Smart fallback: closest foundation size
+            string? bestKey = null;
+            int bestDistance = int.MaxValue;
+
+            foreach (var kvp in table)
+            {
+                string[] parts = kvp.Key.Split('x');
+
+                if (parts.Length != 2)
+                    continue;
+
+                if (!int.TryParse(parts[0], out int w))
+                    continue;
+
+                string heightPart = new string(parts[1].TakeWhile(char.IsDigit).ToArray());
+
+                if (!int.TryParse(heightPart, out int h))
+                    continue;
+
+                int distance = Math.Abs(width - w) + Math.Abs(height - h);
+
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestKey = kvp.Key;
+                }
+            }
+
+            if (bestKey != null)
+                return table[bestKey];
+
+            // Default minimal
+            return (270, 2, 2);
+        }
+        private static (int Lockdowns, int Secures, int Lockboxes) GetInitialStorage(HouseBlueprint blueprint)
+        {
+            if (Core.RuleSets.SeasonsRules())
+                return GetClassicStorage(blueprint.Width, blueprint.Height);
+
+            return (270, 2, 2);
+        }
+        private static int GetInitialLockdowns(HouseBlueprint blueprint)
+        {
+            return GetInitialStorage(blueprint).Lockdowns;
+        }
+
+        private static int GetInitialSecures(HouseBlueprint blueprint)
+        {
+            return GetInitialStorage(blueprint).Secures;
+        }
+
+        private static int GetInitialLockboxes(HouseBlueprint blueprint)
+        {
+            return GetInitialStorage(blueprint).Lockboxes;
+        }
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);

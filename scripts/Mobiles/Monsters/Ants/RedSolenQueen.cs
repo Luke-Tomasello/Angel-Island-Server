@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -92,41 +92,23 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // Note: Excludes Solen system/quest items (Bag of Sending, Bracelet of Binding,
+            // Crystal Ball of Pet Summoning, Powder of Translocation)
+
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=100
+            // 250 - 350 Gold
+            // Special: 5-25 Zoogi Fungus, Picnic Basket
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                SolenHelper.PackPicnicBasket(this);
-                PackGold(100, 200);
-                // TODO: 5-25 zoogi fungus
-                // TODO: crystal ball of pet summoning
+                PackGold(250, 350);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        SolenHelper.PackPicnicBasket(this);
+                PackItem(new ZoogiFungus(Utility.RandomMinMax(5, 25)));
 
-                        PackItem(new ZoogiFungus((Utility.RandomDouble() > 0.05) ? 5 : 25));
-
-                        // probably not on siege
-                        //if (Utility.RandomDouble() < 0.05)
-                        //PackItem(new BallOfSummoning());
-                    }
-
-                    AddLoot(LootPack.Rich);
-                }
+                if (Utility.RandomDouble() < 0.02) // 2%
+                    SolenHelper.PackPicnicBasket(this);
             }
         }
 

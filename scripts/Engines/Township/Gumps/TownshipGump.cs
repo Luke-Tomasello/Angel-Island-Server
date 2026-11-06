@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -123,7 +123,7 @@ namespace Server.Gumps
             RevokeBuildingPermit = 4000,
         }
 
-        private object m_State;
+        private object? m_State;
 
         public TownshipGump(TownshipStone stone, Mobile from)
             : this(stone, from, Page.Main)
@@ -679,14 +679,15 @@ namespace Server.Gumps
                         if (index >= 0 && index < npcTypes.Length)
                         {
                             // Allow a township leader to buy deeds to distribute amongst the members of the township
-#if false
-                            TownshipNPCHelper.PurchaseNPC(m_Stone, from, npcTypes[index]);
-#else
-                            TownshipNPCHelper.PurchaseDeed(m_Stone, from, npcTypes[index]);
-#endif
-
+                            //TownshipNPCHelper.PurchaseDeed(m_Stone, from, npcTypes[index]);
                             from.CloseGump(typeof(TownshipGump));
-                            from.SendGump(new TownshipGump(m_Stone, from, Page.NPCPurchase));
+                            from.SendGump(new TownshipNPCPurchaseConfirmGump(
+                                m_Stone,
+                                from,
+                                npcTypes[index]));
+
+
+                            //from.SendGump(new TownshipGump(m_Stone, from, Page.NPCPurchase));
                         }
 
                         break;
@@ -762,4 +763,104 @@ namespace Server.Gumps
             }
         }
     }
+    public class TownshipNPCPurchaseConfirmGump : Gump
+    {
+        private TownshipStone m_Stone;
+        private Type m_NPCType;
+
+        public TownshipNPCPurchaseConfirmGump(
+            TownshipStone stone,
+            Mobile from,
+            Type npcType)
+            : base(50, 50)
+        {
+            from.CloseGump(typeof(TownshipNPCPurchaseConfirmGump));
+
+            m_Stone = stone;
+            m_NPCType = npcType;
+
+            string name = TownshipNPCHelper.GetNPCName(npcType);
+            int price = TownshipNPCHelper.GetNPCCharge(npcType);
+
+            AddPage(0);
+
+            // Approximately 30% larger than the template gump
+            AddBackground(10, 10, 250, 185, 0x242C);
+
+            AddHtml(
+                25,
+                30,
+                220,
+                55,
+                string.Format(
+                    "<center>Are you sure you wish to purchase this {0} for {1:N0} gold?</center>",
+                    name,
+                    price),
+                false,
+                false);
+
+            if (npcType == typeof(TSStableMaster))
+            {
+                AddHtml(
+                    25,
+                    85,
+                    220,
+                    55,
+                    "<basefont color=#FFFF00><center>" +
+                    "This stablemaster is for stabling fertile dragons only. " +
+                    "If this is not what you want, consider the Animal Trainer NPC." +
+                    "</center></basefont>",
+                    false,
+                    false);
+            }
+
+            AddButton(
+                55,
+                150,
+                0x81A,
+                0x81B,
+                1,
+                GumpButtonType.Reply,
+                0); // Okay
+
+            AddButton(
+                155,
+                150,
+                0x819,
+                0x818,
+                2,
+                GumpButtonType.Reply,
+                0); // Cancel
+        }
+
+        public override void OnResponse(NetState state, RelayInfo info)
+        {
+            Mobile from = state.Mobile;
+
+            if (from == null || !from.CheckAlive())
+                return;
+
+            if (m_Stone == null || m_Stone.Deleted || !m_Stone.CheckView(from))
+                return;
+
+            if (!m_Stone.HasAccess(from, TownshipAccess.CoLeader))
+            {
+                from.SendMessage(
+                    "You must be co-leader of the township to access this feature.");
+
+                return;
+            }
+
+            if (info.ButtonID == 1)
+                TownshipNPCHelper.PurchaseDeed(m_Stone, from, m_NPCType);
+
+            from.CloseGump(typeof(TownshipGump));
+            from.SendGump(
+                new TownshipGump(
+                    m_Stone,
+                    from,
+                    TownshipGump.Page.NPCPurchase));
+        }
+    }
+
 }

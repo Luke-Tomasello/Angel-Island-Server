@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -58,7 +58,7 @@ namespace Server.Engines.Quests.Doom
             EquipItem(new ChylothStaff());
         }
 
-        private Mobile m_AngryAt;
+        private Mobile? m_AngryAt;
         private BellOfTheDead m_Bell;
 
         public BellOfTheDead Bell
@@ -67,7 +67,7 @@ namespace Server.Engines.Quests.Doom
             set { m_Bell = value; }
         }
 
-        public Mobile AngryAt
+        public Mobile? AngryAt
         {
             get { return m_AngryAt; }
             set { m_AngryAt = value; }
@@ -208,13 +208,13 @@ namespace Server.Engines.Quests.Doom
                 PublicOverheadMessage(MessageType.Regular, 0x3B2, 1050046, from.Name); // Very well, ~1_NAME~, I accept your token. You may cross.
                 BeginRemove(TimeSpan.FromSeconds(4.0));
 
-                Party p = PartySystem.Party.Get(from);
+                Party? p = PartySystem.Party.Get(from);
 
                 if (p != null)
                 {
                     for (int i = 0; i < p.Members.Count; ++i)
                     {
-                        PartyMemberInfo pmi = (PartyMemberInfo)p.Members[i];
+                        PartyMemberInfo? pmi = (PartyMemberInfo?)p.Members[i];
                         Mobile member = pmi.Mobile;
 
                         if (member != from && member.Map == Map.Malas && member.Region == from.Region)

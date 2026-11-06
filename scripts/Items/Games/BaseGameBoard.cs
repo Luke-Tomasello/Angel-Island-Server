@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -109,14 +109,14 @@ namespace Server.Items
                 return true;
             }
 
-            BasePiece piece = dropped as BasePiece;
+            BasePiece? piece = dropped as BasePiece;
 
             return (piece != null && piece.Board == this && base.OnDragDrop(from, dropped));
         }
 
         public override bool OnDragDropInto(Mobile from, Item dropped, Point3D point)
         {
-            BasePiece piece = dropped as BasePiece;
+            BasePiece? piece = dropped as BasePiece;
 
             if (piece != null && piece.Board == this && base.OnDragDropInto(from, dropped, point))
             {
@@ -182,7 +182,7 @@ namespace Server.Items
             if (board.Deleted || board.Map != from.Map || !from.InRange(board.GetWorldLocation(), 1))
                 return false;
 
-            BaseHouse house = BaseHouse.FindHouseAt(board);
+            BaseHouse? house = BaseHouse.FindHouseAt(board);
 
             return (house != null && house.IsOwner(from));
         }

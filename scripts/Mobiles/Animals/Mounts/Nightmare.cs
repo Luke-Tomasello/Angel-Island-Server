@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -31,6 +31,7 @@
  *		Merged in 1.0RC0 code.
  */
 
+using Server.Engines.Consoles;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -44,8 +45,8 @@ namespace Server.Mobiles
         {
         }
 
-        private static double MareActiveSpeed { get { return Server.Items.Consoles.DragonSpeedMCi.MareActiveSpeed; } }
-        private static double MarePassiveSpeed { get { return Server.Items.Consoles.DragonSpeedMCi.MarePassiveSpeed; } }
+        private static double MareActiveSpeed { get { return DragonSpeedMCi.MareActiveSpeed; } }
+        private static double MarePassiveSpeed { get { return DragonSpeedMCi.MarePassiveSpeed; } }
 
         [Constructable]
         public Nightmare(string name)
@@ -120,48 +121,21 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // note we had to go all the way to june 2002 to get the loot
+            // http://web.archive.org/web/20020607065005/uo.stratics.com/hunters/nightmare.shtml
+            //	250-350 gold, 3-5 Sulphurous Ash, Gems, Scroll, Potion, Arrows
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
                 PackGold(250, 350);
-                PackItem(new SulfurousAsh(Utility.RandomMinMax(3, 5)));
-                PackScroll(1, 5);
-                PackPotion();
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
             }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // note we had to go all the way to june 2002 to get the loot
-                    // http://web.archive.org/web/20020607065005/uo.stratics.com/hunters/nightmare.shtml
-                    //	250-350 gold, 3-5 Sulphurous Ash, Gems, Scroll, Potion, Arrows
 
-                    if (Spawning)
-                    {
-                        PackGold(250, 350);
-                    }
-
-                    PackItem(new SulfurousAsh(Utility.RandomMinMax(3, 5)));
-                    PackGem(1, .9);
-                    PackGem(1, .05);
-                    PackScroll(1, 7);
-                    PackPotion();
-                    PackItem(new Arrow(Utility.RandomMinMax(3, 5)));
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new SulfurousAsh(Utility.RandomMinMax(3, 5)));
-
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.LowScrolls);
-                    AddLoot(LootPack.Potions);
-                }
-            }
+            PackItem(new SulfurousAsh(Utility.RandomMinMax(3, 5)));
+            PackGem(1, .9);
+            PackGem(1, .05);
+            PackScroll(1, 7);
+            PackPotion();
+            PackItem(new Arrow(Utility.RandomMinMax(3, 5)));
         }
 
         public override void Serialize(GenericWriter writer)

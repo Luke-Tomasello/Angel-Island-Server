@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -72,6 +72,7 @@ namespace Server.Mobiles
 
         public override bool HasBreath { get { return true; } } // fire breath enabled
         public override int Meat { get { return 1; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
         public override FoodType FavoriteFood { get { return FoodType.Meat; } }
         public override PackInstinct PackInstinct { get { return PackInstinct.Canine; } }
 
@@ -82,34 +83,15 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021015001544/uo.stratics.com/hunters/hell_hound.shtml
+            // 0-150 gp, 5 Sulphurous Ash, 1 Raw Ribs (carved)
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackItem(new SulfurousAsh(5));
-                PackGold(100, 200);
+                PackGold(0, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021015001544/uo.stratics.com/hunters/hell_hound.shtml
-                    // 0-150 gp, 5 Sulphurous Ash, 1 Raw Ribs (carved)
-                    if (Spawning)
-                    {
-                        PackGold(0, 150);
-                    }
-                    else
-                    {
-                        PackItem(new SulfurousAsh(5));
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new SulfurousAsh(5));
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Meager);
-                }
+                PackItem(new SulfurousAsh(5));
             }
         }
 

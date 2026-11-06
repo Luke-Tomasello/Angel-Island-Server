@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,8 +28,6 @@
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -80,32 +78,14 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020212101250/uo.stratics.com/hunters/giantspider.shtml
+            // None
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackItem(new SpidersSilk(5));
-                PackGold(0, 25);
+
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020212101250/uo.stratics.com/hunters/giantspider.shtml
-                    // None
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new SpidersSilk(5));
-
-                    AddLoot(LootPack.Poor);
-                }
             }
         }
 

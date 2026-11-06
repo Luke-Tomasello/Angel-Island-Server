@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -68,7 +68,7 @@ namespace Server.Engines.Harvest
                     foreach (var key in def.Banks.Keys)
                     {
                         keyCount++;
-                        Hashtable banks = (Hashtable)def.Banks[key];
+                        Hashtable? banks = (Hashtable?)def.Banks[key];
                         if (banks != null)
                         {
                             bankCount++;
@@ -120,7 +120,7 @@ namespace Server.Engines.Harvest
 
         public virtual bool CheckResources(Mobile from, Item tool, HarvestDefinition def, Map map, Point3D loc, bool timed)
         {
-            HarvestBank bank = def.GetBank(map, loc.X, loc.Y);
+            HarvestBank? bank = def.GetBank(map, loc.X, loc.Y);
             bool available = (bank != null && bank.Current >= def.ConsumedPerHarvest);
 
             if (!available)
@@ -195,7 +195,7 @@ namespace Server.Engines.Harvest
             if (SpecialHarvest(from, tool, def, map, loc))
                 return;
 
-            HarvestBank bank = def.GetBank(map, loc.X, loc.Y);
+            HarvestBank? bank = def.GetBank(map, loc.X, loc.Y);
 
             if (bank == null)
                 return;
@@ -215,7 +215,7 @@ namespace Server.Engines.Harvest
             double skillBase = from.Skills[def.Skill].Base;
             double skillValue = from.Skills[def.Skill].Value;
 
-            Type type = null;
+            Type? type = null;
 
             if (skillBase >= resource.ReqSkill && from.CheckSkill(def.Skill, resource.MinSkill, resource.MaxSkill, contextObj: new object[2]))
             {
@@ -341,7 +341,7 @@ namespace Server.Engines.Harvest
 
             for (int i = 0; i < atFeet.Count; ++i)
             {
-                Item check = (Item)atFeet[i];
+                Item? check = (Item?)atFeet[i];
 
                 if (check.StackWith(m, item, false))
                     return true;
@@ -356,7 +356,7 @@ namespace Server.Engines.Harvest
             return from.Region.GetResource(type);
         }
 
-        public virtual Type GetResourceType(Mobile from, Item tool, HarvestDefinition def, Map map, Point3D loc, HarvestResource resource)
+        public virtual Type? GetResourceType(Mobile from, Item tool, HarvestDefinition def, Map map, Point3D loc, HarvestResource resource)
         {
             if (resource.Types.Length > 0)
                 return resource.Types[Utility.Random(resource.Types.Length)];
@@ -440,11 +440,11 @@ namespace Server.Engines.Harvest
 
         public virtual HarvestDefinition GetDefinition(int tileID)
         {
-            HarvestDefinition def = null;
+            HarvestDefinition? def = null;
 
             for (int i = 0; def == null && i < m_Definitions.Count; ++i)
             {
-                HarvestDefinition check = (HarvestDefinition)m_Definitions[i];
+                HarvestDefinition? check = (HarvestDefinition?)m_Definitions[i];
 
                 if (check.Validate(tileID))
                     def = check;
@@ -544,7 +544,7 @@ namespace Server
     [AttributeUsage(AttributeTargets.Class)]
     public class FurnitureAttribute : Attribute
     {
-        public static bool Check(Item item)
+        public static bool Check(Item? item)
         {
             return (item != null && item.GetType().IsDefined(typeof(FurnitureAttribute), false));
         }

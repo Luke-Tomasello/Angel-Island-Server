@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,7 +66,7 @@ namespace Server.Mobiles
         private const int MaxRumors = 64;
 
         private Mobile m_Owner;
-        private string m_TipMessage;
+        private string? m_TipMessage;
 
         private List<KeyValuePair<string, string>> m_Keywords = new();
         public List<KeyValuePair<string, string>> Keywords { get { return m_Keywords; } }
@@ -74,12 +74,34 @@ namespace Server.Mobiles
         [CommandProperty(AccessLevel.GameMaster)]
         public Mobile Owner
         {
-            get { return m_Owner; }
-            set { m_Owner = value; }
+            get => m_Owner;
+            set
+            {
+                m_Owner = value;
+
+                // Estate ownership: this vendor “belongs to” the player’s GUID.
+                base.OwnerGUID = value != null ? value.AcctGUID : 0;
+            }
+        }
+        public override void OnDoubleClick(Mobile from)
+        {
+            if (Core.RuleSets.MortalisRules())
+            {
+                if (from != null)
+                {
+                    bool ownerMissing = (Owner == null || Owner.Deleted);
+
+                    if (ownerMissing && OwnerGUID != 0 && OwnerGUID == from.AcctGUID)
+                    {
+                        Owner = from;
+                        from.SendMessage("You have reclaimed ownership of this barkeep.");
+                    }
+                }
+            }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public string TipMessage
+        public string? TipMessage
         {
             get { return m_TipMessage; }
             set { m_TipMessage = value; }
@@ -100,7 +122,8 @@ namespace Server.Mobiles
         {
             m_IsActiveSeller = !m_IsActiveSeller;
 
-            LoadSBInfo();
+            // 5/19/2026, Adam: Why? 
+            //LoadSBInfo();
         }
 
         public override bool DisallowAllMoves { get { return true; } }
@@ -147,10 +170,11 @@ namespace Server.Mobiles
         public PlayerBarkeeper(Mobile owner)
             : base("the barkeeper")
         {
-            m_Owner = owner;
+            Owner = owner;
             IsInvulnerable = true;
 
-            LoadSBInfo();
+            // 5/19/2026, Adam: Why? already handled in base Vendor
+            //LoadSBInfo();
         }
 
         public override bool HandlesOnSpeech(Mobile from)
@@ -161,7 +185,7 @@ namespace Server.Mobiles
             return base.HandlesOnSpeech(from);
         }
 
-        private Timer m_NewsTimer;
+        private Timer? m_NewsTimer;
 
         private void ShoutNews_Callback(object state)
         {
@@ -188,7 +212,7 @@ namespace Server.Mobiles
             if (!base.OnBeforeDeath())
                 return false;
 
-            Item shoes = this.FindItemOnLayer(Layer.Shoes);
+            Item? shoes = this.FindItemOnLayer(Layer.Shoes);
 
             if (shoes is Sandals)
                 shoes.Hue = 0;
@@ -196,7 +220,7 @@ namespace Server.Mobiles
             return true;
         }
         List<string> Commands = new List<string>() { "manage", "help", "list", "add", "delete", "clear" };
-        private string OwnerCommand(SpeechEventArgs e)
+        private string? OwnerCommand(SpeechEventArgs e)
         {
             string[] chunks = e.Speech.Split();
             foreach (string cmd in Commands)
@@ -256,7 +280,7 @@ namespace Server.Mobiles
 
                 if (m_NewsTimer == null && e.HasKeyword(0x30)) // *news*
                 {
-                    TownCrierEntry tce = GlobalTownCrierEntryList.Instance.GetRandomEntry();
+                    TownCrierEntry? tce = GlobalTownCrierEntryList.Instance.GetRandomEntry();
 
                     if (tce == null)
                     {
@@ -270,7 +294,7 @@ namespace Server.Mobiles
                     }
                 }
 
-                string rumor = GetRumor(e.Speech);
+                string? rumor = GetRumor(e.Speech);
                 if (rumor != null)
                     PublicOverheadMessage(MessageType.Regular, 0x3B2, false, rumor);
             }
@@ -309,7 +333,7 @@ namespace Server.Mobiles
         {   // format: add <keyword> <rumor>
 
             string[] chunks = e.Speech.Split();
-            string key = null;
+            string? key = null;
             string value = string.Empty;
             if (m_Keywords.Count > MaxRumors)
             {
@@ -349,7 +373,7 @@ namespace Server.Mobiles
         private void DeleteRumor(SpeechEventArgs e)
         {   // format: delete <keyword> 
             string[] chunks = e.Speech.Split();
-            string key = null;
+            string? key = null;
 
             if (ArgCount(e) != 2)
             {
@@ -405,7 +429,7 @@ namespace Server.Mobiles
                 e.Mobile.SendMessage(string.Format("Cleared {0} rumors.", count));
             }
         }
-        private string GetRumor(string text)
+        private string? GetRumor(string text)
         {
             string[] chunks = text.Split();
             int index = -1;
@@ -438,7 +462,7 @@ namespace Server.Mobiles
                 }
                 else
                 {
-                    string tip = m_TipMessage;
+                    string? tip = m_TipMessage;
 
                     if (tip == null || (tip = tip.Trim()).Length == 0)
                     {
@@ -574,7 +598,7 @@ namespace Server.Mobiles
                 Body = 401;
                 Name = NameList.RandomName("female");
 
-                Item beard = FindItemOnLayer(Layer.FacialHair);
+                Item? beard = FindItemOnLayer(Layer.FacialHair);
 
                 if (beard != null)
                     beard.Delete();
@@ -670,8 +694,8 @@ namespace Server.Mobiles
                         {
                             if (reader.ReadBool())
                             {
-                                string message = reader.ReadString();
-                                string key = reader.ReadString();
+                                string? message = reader.ReadString();
+                                string? key = reader.ReadString();
                                 m_Keywords.Add(new KeyValuePair<string, string>(key, message));
                             }
                         }

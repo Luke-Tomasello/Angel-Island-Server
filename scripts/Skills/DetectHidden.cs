@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -256,7 +256,7 @@ namespace Server.SkillHandlers
 
                 //pla: if the mobile is in a friended house and targets a spot within the same house
                 //then reveal all mobiles within the housing region regardless of skill checks
-                BaseHouse house = BaseHouse.FindHouseAt(p, src.Map, 16);
+                BaseHouse? house = BaseHouse.FindHouseAt(p, src.Map, 16);
                 if (house != null && house.IsInside(src) && house.IsFriend(src))
                 {
                     MultiComponentList mcl = house.Components;
@@ -317,14 +317,14 @@ namespace Server.SkillHandlers
             if (!CanPassiveDetect(observer))
                 return;
 
-            Party party = Party.Get(observer);
+            Party? party = Party.Get(observer);
 
             if (observer == observed || (party != null && party == Party.Get(observed)))
                 return;
 
             if (observed is BaseCreature)
             {
-                Mobile master = ((BaseCreature)observed).GetMaster();
+                Mobile? master = ((BaseCreature)observed).GetMaster();
 
                 if (master != null && (observer == master || (party != null && party == Party.Get(master))))
                     return;

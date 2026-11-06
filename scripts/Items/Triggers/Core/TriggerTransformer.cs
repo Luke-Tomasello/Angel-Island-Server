@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -163,7 +163,7 @@ namespace Server.Items.Triggers
                         if (from == null)
                             break;
 
-                        Party party = from.Party as Party;
+                        Party? party = from.Party as Party;
 
                         if (party == null)
                             goto case _TransformType.From;
@@ -216,7 +216,7 @@ namespace Server.Items.Triggers
                     }
                 case _TransformType.ControlMaster:
                     {
-                        BaseCreature bc = from as BaseCreature;
+                        BaseCreature? bc = from as BaseCreature;
 
                         if (bc == null || !bc.Controlled || bc.ControlMaster == null)
                             break;
@@ -227,12 +227,12 @@ namespace Server.Items.Triggers
                     }
                 case _TransformType.Herder:
                     {
-                        BaseCreature bc = from as BaseCreature;
+                        BaseCreature? bc = from as BaseCreature;
 
                         if (bc == null)
                             break;
 
-                        Mobile herder = bc.GetHerder();
+                        Mobile? herder = bc.GetHerder();
 
                         if (herder != null)
                             list.Add(herder);
@@ -272,7 +272,7 @@ namespace Server.Items.Triggers
             }
         }
 
-        private InternalTimer m_Timer;
+        private InternalTimer? m_Timer;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public bool Running

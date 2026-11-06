@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -162,7 +162,7 @@ namespace Server.Mobiles
         { }
         public override bool Rummage()
         {
-            Corpse toRummage = null;
+            Corpse? toRummage = null;
 
             IPooledEnumerable eable = this.GetItemsInRange(2);
             foreach (Item item in eable)
@@ -413,7 +413,7 @@ namespace Server.Mobiles
         }
         public void CheckConscript()
         {
-            Mobile candidate = null;
+            Mobile? candidate = null;
             IPooledEnumerable eable = this.Map.GetMobilesInRange(this.Location, 5);
             foreach (Mobile m in eable)
                 if (m is BaseGOTCreature bc && bc.Team != this.Team)
@@ -429,7 +429,7 @@ namespace Server.Mobiles
         private static Utility.LocalTimer ExtraNightKing = new Utility.LocalTimer(0);      // right away
         public bool Reanimate()
         {
-            Corpse toReanimate = null;
+            Corpse? toReanimate = null;
 
             IPooledEnumerable eable = this.GetItemsInRange(2);
             foreach (Item item in eable)
@@ -463,7 +463,7 @@ namespace Server.Mobiles
                         else
                             type = toReanimate.Owner.GetType();
 
-                        object o = Activator.CreateInstance(type);
+                        object? o = Activator.CreateInstance(type);
                         if (o is BaseGOTCreature bgc)
                         {
                             if (type == typeof(GotNightKing))
@@ -618,7 +618,7 @@ namespace Server.Mobiles
         {
             try
             {
-                Item[] items = new Item[21];
+                Item?[] items = new Item?[21];
                 items[0] = m.FindItemOnLayer(Layer.Shoes);
                 items[1] = m.FindItemOnLayer(Layer.Pants);
                 items[2] = m.FindItemOnLayer(Layer.Shirt);
@@ -986,7 +986,7 @@ namespace Server.Mobiles
             }
 
             // he's a hybrid, so he may be casting
-            BaseWeapon bw = FindItemOnLayer(Layer.TwoHanded) as BaseWeapon;
+            BaseWeapon? bw = FindItemOnLayer(Layer.TwoHanded) as BaseWeapon;
             if (bw != null && bw.MagicCharges == 0)
                 bw.MagicCharges = 10;
         }
@@ -1009,7 +1009,7 @@ namespace Server.Mobiles
 
             return "the humans";
         }
-        private Mobile BiggestProblem()
+        private Mobile? BiggestProblem()
         {   // top damager
             List<DamageStore> list = GetLootingRights(this.DamageEntries, this.HitsMax);
             SortedList<Mobile, int> Results = BaseCreature.ProcessDamageStore(list);
@@ -1034,7 +1034,7 @@ namespace Server.Mobiles
         public override bool OnBeforeDeath()
         {
             #region add armor if it was destroyed
-            BaseArmor bm = FindItemOnLayer(Layer.InnerTorso) as BaseArmor;
+            BaseArmor? bm = FindItemOnLayer(Layer.InnerTorso) as BaseArmor;
             if (bm == null)
             {
                 ChainChest chestArmor = new ChainChest();
@@ -1057,7 +1057,7 @@ namespace Server.Mobiles
             this.PlaySound(0x24A);  // spirit speak
 
             Type type = typeof(GotWhiteWalker);
-            object o = Activator.CreateInstance(type);
+            object? o = Activator.CreateInstance(type);
             if (o is BaseGOTCreature bgc)
             {
                 bgc.Name = m.Name;

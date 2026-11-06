@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -98,38 +98,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020810153644/uo.stratics.com/hunters/kirin.shtml
+            // 	200 - 400 Gold, scrolls, potions, gems
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(175, 225);
-                PackScroll(1, 3);
-                PackPotion();
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(200, 400);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020810153644/uo.stratics.com/hunters/kirin.shtml
-                    // 	200 - 400 Gold, scrolls, potions, gems
-                    if (Spawning)
-                    {
-                        PackGold(200, 400);
-                    }
-                    else
-                    {
-                        PackScroll(1, 4);
-                        PackPotion();
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.LowScrolls);
-                    AddLoot(LootPack.Potions);
-                }
+                PackScroll(1, 4);
+                PackPotion();
+                PackGem(1, .9);
+                PackGem(1, .05);
             }
         }
 

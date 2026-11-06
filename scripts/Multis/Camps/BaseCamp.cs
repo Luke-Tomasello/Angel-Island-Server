@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,6 +41,46 @@
  *      We therefore mark such items: item.SetDynamicFeature(FeatureBits.CampComponent);
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
+ */
+
+/* BaseCamp - overview
+ *  Purpose
+ *      A camp is a small, self-contained encounter (statics, a treasure chest, mobiles) built dynamically
+ *      around a BaseMulti anchor. Subclasses (orc, brigand, prisoner, miner, etc.) supply the contents
+ *      by overriding AddComponents(). A camp is static: it does not trickle-respawn its contents. Instead,
+ *      once a camp is 'corrupted' it deletes itself as a whole, and its spawner (if any) spawns a fresh one.
+ *      The spawner tracks only the camp item, never the components.
+ *
+ *  Lifecycle
+ *      1. Constructor: starts the one-minute heartbeat and defers AddComponents() to the next timer slice
+ *          (Timer.DelayCall(TimeSpan.Zero)) so the camp has been placed in the world before it builds.
+ *      2. AddComponents(): each AddItem()/AddMobile() registers the component (m_Items/m_Mobiles,
+ *          component.BaseCamp = this) and increments m_TotalComponents.
+ *      3. Heartbeat (every minute): if CampCorrupted(), start the decay timer (DecayDelay) and stop beating.
+ *          DecayDelay is a random time within the spawner's Min/Max delay, or 30 minutes for a standalone camp.
+ *      4. Decay timer fires: Delete(). OnAfterDelete() deletes the remaining components, except movable
+ *          (stolen) items and escortables that currently have an escorter.
+ *      5. The spawner's Defrag sees the deleted camp and respawns it on its next tick.
+ *
+ *  Corruption model
+ *      Corrupted is sticky (once set it is never cleared) and it is persisted (CampBools). A camp is corrupted when:
+ *          o a registered item is null/deleted, or a registered LockableContainer is unlocked (chest picked/opened)
+ *          o a registered mobile is deleted, or an escortable has acquired an escorter
+ *          o a camp component was stolen (OnAfterStolen), or removed via StealCampItem(), which removes it
+ *              from m_Items without adjusting m_TotalComponents, so it shows up as a mismatch
+ *          o mismatch: m_Items.Count + m_Mobiles.Count != m_TotalComponents. Deleted objects are not
+ *              reloaded from a save, so after a restart this count is the only evidence that something was lost.
+ *          o never built: m_TotalComponents == 0. A valid camp must contain at least one registered
+ *              component. This catches a camp saved before its deferred AddComponents() ran (e.g., spawned,
+ *              then saved and shut down before the next timer slice.) Without it such a camp is never
+ *              corrupted, never deletes, and its spawner never respawns it.
+ *      Known gap: a build that registers some components and then throws partway through is not detected
+ *          (the counts agree.) Detecting that would require a persisted 'built' flag.
+ *
+ *  Persistence
+ *      Saved: CampBools, m_TotalComponents, the item and mobile lists. Not saved: the decay timer.
+ *      Deserialize() restarts the heartbeat, so a camp that was corrupted (or waiting to decay) at save time
+ *      re-arms its decay timer roughly one minute after the server is up. No patch is needed to repair it.
  */
 
 using Server.Items;
@@ -100,7 +140,7 @@ namespace Server.Multis
         private int m_TotalComponents;  // used determine if mobiles or items were removed in load
         public virtual int EventRange { get { return 10; } }
         // 30 minute standard decay time, Spawner.NextSpawn if on a spawner
-        private Timer m_DecayTimer;
+        private Timer? m_DecayTimer;
         private TimeSpan m_DecayDelay = TimeSpan.FromMinutes(30); // default for stand alone (not on a spawner) camps
 
         public BaseCamp(int multiID)
@@ -233,6 +273,12 @@ namespace Server.Multis
                 if (m_Mobiles.Count + m_Items.Count != m_TotalComponents)
                     SetBool(CampBools.Corrupted, true);
 
+                // never built?
+                // a valid camp must contain at least one registered component. This happens if the camp was
+                //  saved before its deferred AddComponents() ran (e.g., spawned then saved and shut down.)
+                if (m_TotalComponents == 0)
+                    SetBool(CampBools.Corrupted, true);
+
                 if (GetBool(CampBools.Corrupted))
                     Utility.Monitor.DebugOut("corrupted", ConsoleColor.DarkRed);
             }
@@ -276,7 +322,7 @@ namespace Server.Multis
             if (m is BaseCreature mob) mob.Lifespan = TimeSpan.FromHours(3000);
 
             Point3D loc = new Point3D(X + xOffset, Y + yOffset, Z + zOffset);
-            BaseCreature bc = m as BaseCreature;
+            BaseCreature? bc = m as BaseCreature;
 
             if (bc != null)
             {
@@ -321,45 +367,47 @@ namespace Server.Multis
         }
         public override void OnAfterDelete()
         {
-            Utility.Monitor.DebugOut("OnAfterDelete", ConsoleColor.DarkRed);
+            //Utility.Monitor.DebugOut("OnAfterDelete", ConsoleColor.DarkRed);
             base.OnAfterDelete();
 
             for (int i = 0; i < m_Items.Count; ++i)
             {
-                Item item = m_Items[i] as Item;
+                Item? item = m_Items[i] as Item;
                 if (item != null && item.Deleted == false)
                 {   // it's movable
                     if (item.Movable == true)
-                        Utility.Monitor.DebugOut("Ignoring stolen item {0}", ConsoleColor.DarkRed, item);
+                    {
+                        //Utility.Monitor.DebugOut("Ignoring stolen item {0}", ConsoleColor.DarkRed, item);
+                    }
                     else
                     {
-                        Utility.Monitor.DebugOut("Deleting {0}", ConsoleColor.DarkRed, item);
+                        //Utility.Monitor.DebugOut("Deleting {0}", ConsoleColor.DarkRed, item);
                         item.Delete();
                     }
                 }
                 else
                 {
-                    Utility.Monitor.DebugOut("No item to delete", ConsoleColor.DarkRed);
+                    //Utility.Monitor.DebugOut("No item to delete", ConsoleColor.DarkRed);
                 }
             }
 
             for (int i = 0; i < m_Mobiles.Count; ++i)
             {
-                Mobile m = m_Mobiles[i] as Mobile;
+                Mobile? m = m_Mobiles[i] as Mobile;
                 if (m != null && m.Deleted == false)
                 {
                     if (m is BaseEscortable be && be.GetEscorterWithSideEffects() != null)
                     {
-                        Utility.Monitor.DebugOut("Ignoring Escortable {0}", ConsoleColor.DarkRed, m);
+                        //Utility.Monitor.DebugOut("Ignoring Escortable {0}", ConsoleColor.DarkRed, m);
                         continue;
                     }
 
-                    Utility.Monitor.DebugOut("Deleting {0}", ConsoleColor.DarkRed, m);
+                    //Utility.Monitor.DebugOut("Deleting {0}", ConsoleColor.DarkRed, m);
                     m.Delete();
                 }
                 else
                 {
-                    Utility.Monitor.DebugOut("No mobile to delete", ConsoleColor.DarkRed);
+                    //Utility.Monitor.DebugOut("No mobile to delete", ConsoleColor.DarkRed);
                 }
             }
 
@@ -367,7 +415,7 @@ namespace Server.Multis
             m_Mobiles.Clear();
             m_TotalComponents = 0;
 
-            Utility.Monitor.DebugOut("Component cleanup complete", ConsoleColor.DarkRed);
+            //Utility.Monitor.DebugOut("Component cleanup complete", ConsoleColor.DarkRed);
         }
         public BaseCamp(Serial serial)
             : base(serial)
@@ -453,7 +501,7 @@ namespace Server.Multis
         }
         public static void LoadCamp(CommandEventArgs e)
         {
-            AddonData AddonData = XmlAddonSystem.GetData(Path.Combine(Core.DataDirectory, "XmlAddon/Camps"), "GolumCamp");
+            AddonData? AddonData = XmlAddonSystem.GetData(Path.Combine(Core.DataDirectory, "XmlAddon/Camps"), "GolumCamp");
         }
 
     }

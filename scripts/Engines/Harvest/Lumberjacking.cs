@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -43,7 +43,7 @@ namespace Server.Engines.Harvest
 {
     public class Lumberjacking : HarvestSystem
     {
-        private static Lumberjacking m_System;
+        private static Lumberjacking? m_System;
 
         public static Lumberjacking System
         {
@@ -111,39 +111,6 @@ namespace Server.Engines.Harvest
             lumber.PackFullMessage = 500497; // You can't place any wood into your backpack!
             lumber.ToolBrokeMessage = 500499; // You broke your axe.
 
-#if false
-            if (Core.RuleSets.MLRules())
-            {
-                res = new HarvestResource[]
-                {
-                    new HarvestResource(  00.0, 00.0, 100.0, 1072540, typeof( Log ) ),
-                    new HarvestResource(  65.0, 25.0, 105.0, 1072541, typeof( OakLog ) ),
-                    new HarvestResource(  80.0, 40.0, 120.0, 1072542, typeof( AshLog ) ),
-                    new HarvestResource(  95.0, 55.0, 135.0, 1072543, typeof( YewLog ) ),
-                    new HarvestResource( 100.0, 60.0, 140.0, 1072544, typeof( HeartwoodLog ) ),
-                    new HarvestResource( 100.0, 60.0, 140.0, 1072545, typeof( BloodwoodLog ) ),
-                    new HarvestResource( 100.0, 60.0, 140.0, 1072546, typeof( FrostwoodLog ) ),
-                };
-
-                veins = new HarvestVein[]
-                {
-                    new HarvestVein( 49.0, 0.0, res[0], null ),	// Ordinary Logs
-                    new HarvestVein( 30.0, 0.5, res[1], res[0] ), // Oak
-                    new HarvestVein( 10.0, 0.5, res[2], res[0] ), // Ash
-                    new HarvestVein( 05.0, 0.5, res[3], res[0] ), // Yew
-                    new HarvestVein( 03.0, 0.5, res[4], res[0] ), // Heartwood
-                    new HarvestVein( 02.0, 0.5, res[5], res[0] ), // Bloodwood
-                    new HarvestVein( 01.0, 0.5, res[6], res[0] ), // Frostwood
-                };
-
-                // TODO: ML bonus resources
-
-                lumber.Resources = res;
-                lumber.Veins = veins;
-
-                lumber.RandomizeVeins = true;
-            }
-#else
             if (BaseLog.NewWoodTypes)
             {
                 res = new HarvestResource[]
@@ -173,7 +140,6 @@ namespace Server.Engines.Harvest
 
                 lumber.RandomizeVeins = true;
             }
-#endif
             else
             {
                 res = new HarvestResource[]
@@ -210,7 +176,7 @@ namespace Server.Engines.Harvest
         {
             // TODO: Move to HarvestSystem?
             #region Harvest Map
-            ResourceMap resourceMap = ResourceMap.Find(from, loc, from.Map, def);
+            ResourceMap? resourceMap = ResourceMap.Find(from, loc, from.Map, def);
 
             if (resourceMap != null)
             {
@@ -232,7 +198,7 @@ namespace Server.Engines.Harvest
 
             if (tool is CarpentersAxe && item is BaseLog)
             {
-                Item boards = null;
+                Item? boards = null;
 
                 switch (((BaseLog)item).Resource)
                 {
@@ -263,7 +229,7 @@ namespace Server.Engines.Harvest
 
             if (item is BaseBoard)
             {
-                string message = null;
+                string? message = null;
 
                 switch (((BaseBoard)item).Resource)
                 {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -81,7 +81,19 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            // no corpse, so see OnBeforeDeath()
+            // http://web.archive.org/web/20020214225651/uo.stratics.com/hunters/spectralarmour.shtml
+            // Loot: None (no gold, no items)
+            // Cut Up: None
+            // See OnBeforeDeath for weapon drop.
+
+            if (Spawning)
+            {
+                // No gold
+            }
+            else
+            {
+                // No loot
+            }
         }
 
         public override bool OnBeforeDeath()
@@ -89,54 +101,23 @@ namespace Server.Mobiles
             if (!base.OnBeforeDeath())
                 return false;
 
-            if (Core.RuleSets.AngelIslandRules())
+            // Spectral Armour: no corpse; drop weapon directly to world
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=334
+            if (Map != null && Map != Map.Internal)
             {
-                Scimitar weapon = new Scimitar();
-#if old
-                weapon.DamageLevel = (WeaponDamageLevel)Utility.Random(0, 5);
-                weapon.DurabilityLevel = (WeaponDurabilityLevel)Utility.Random(0, 5);
-                weapon.AccuracyLevel = (WeaponAccuracyLevel)Utility.Random(0, 5);
-#else
-                // https://uo.stratics.com/database/view.php?db_content=hunters&id=334
-                weapon.DamageLevel = Loot.GetGearForLevel<WeaponDamageLevel>(3/* Not sure if this guy is even supposed to drop weapon*/, upgrade_chance: 0.2);
-                weapon.AccuracyLevel = Utility.RandomEnumValue<WeaponAccuracyLevel>();
-                weapon.DurabilityLevel = Utility.RandomEnumValue<WeaponDurabilityLevel>();
-#endif
-                weapon.MoveToWorld(this.Location, this.Map);
+                Scimitar weapon = new Scimitar
+                {
+                    DamageLevel = Loot.GetGearForLevel<WeaponDamageLevel>(3, upgrade_chance: 0.2),
+                    AccuracyLevel = Utility.RandomEnumValue<WeaponAccuracyLevel>(),
+                    DurabilityLevel = Utility.RandomEnumValue<WeaponDurabilityLevel>()
+                };
 
+                weapon.MoveToWorld(Location, Map);
                 Effects.SendLocationEffect(Location, Map, 0x376A, 10, 1);
             }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {
-                    Scimitar weapon = new Scimitar();
-#if old
-                weapon.DamageLevel = (WeaponDamageLevel)Utility.Random(0, 5);
-                weapon.DurabilityLevel = (WeaponDurabilityLevel)Utility.Random(0, 5);
-                weapon.AccuracyLevel = (WeaponAccuracyLevel)Utility.Random(0, 5);
-#else
-                    // https://uo.stratics.com/database/view.php?db_content=hunters&id=334
-                    weapon.DamageLevel = Loot.GetGearForLevel<WeaponDamageLevel>(3/* Not sure if this guy is even supposed to drop weapon*/, upgrade_chance: 0.2);
-                    weapon.AccuracyLevel = Utility.RandomEnumValue<WeaponAccuracyLevel>();
-                    weapon.DurabilityLevel = Utility.RandomEnumValue<WeaponDurabilityLevel>();
-#endif
-                    weapon.MoveToWorld(this.Location, this.Map);
 
-                    Effects.SendLocationEffect(Location, Map, 0x376A, 10, 1);
-                }
-                else
-                {
-                    // run uo code 
-                    Gold gold = new Gold(Utility.RandomMinMax(240, 375));
-                    gold.MoveToWorld(Location, Map);
-
-                    Effects.SendLocationEffect(Location, Map, 0x376A, 10, 1);
-                }
-            }
-
-            // we don't want a corpse, so refuse the 'death' and just delete the creature
-            this.Delete();
+            // No corpse: delete creature and suppress normal death flow.
+            Delete();
             return false;
         }
     }

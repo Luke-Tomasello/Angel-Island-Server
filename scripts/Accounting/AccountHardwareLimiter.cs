@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -70,7 +70,7 @@ namespace Server.Misc
                     // sanity
                     if (compState.Mobile == null || compState.Mobile.Account == null)
                         continue;
-                    Server.Accounting.Account current = compState.Mobile.Account as Server.Accounting.Account;
+                    Server.Accounting.Account? current = compState.Mobile.Account as Server.Accounting.Account;
                     if (HardwareOk(acct) && HardwareOk(current) && compState.Mobile != null)
                         if (acct.HardwareHashRaw == current.HardwareHashRaw)
                             compState.Mobile.SendMessage(0x35, string.Format("You are only allowed {0} account(s) on this server.", CoreAI.MaxAccountsPerMachine));
@@ -79,13 +79,6 @@ namespace Server.Misc
 
         static bool HardwareOk(Account acct)
         {
-#if false
-            // See if at some point in time we got a good HardwareInfo
-            if (acct.HardwareHashRaw == 0)
-                return false;
-            // okay, we have good hardware info
-            return true;
-#endif
             // See if at some point in time we got a good HardwareInfo
             var newList = acct.Machines.Where(i => i != 0).ToList();
             return newList.Count > 0;
@@ -94,38 +87,30 @@ namespace Server.Misc
         {
             List<Account> list = new List<Account>();
 
-            // staff can always login
-            if (acct.AccessLevel > AccessLevel.Player)
-                return list;
-
-            // can't check what we don't know
+            // Can't check what we don't know.
             if (HardwareOk(acct) == false)
                 // i.e., if they have no hardware info, they can login
-                //  however, as soon as their hardware info IS known, they will only be able to log into the known acct(s)
-                return list;
-
-            // TODO: HACK: 5/11/2023, Adam: Don't know how this value is getting salted away.
-            //  Needs deeper research
-            //  Two accounts have this value, but the guy swears he has nothing to do with the other account.
-            if (acct.Machines.Contains(-1934357564))
+                // however, as soon as their hardware info IS known, they will only be able to log into the known acct(s)
                 return list;
 
             foreach (Accounting.Account current in Accounting.Accounts.Table.Values)
             {
-                if (current.AccessLevel > AccessLevel.Player)
-                    continue; // ignore staff accounts
+                if (current == null)
+                    continue;
 
-                // can't check what we don't know
+                // Can't check what we don't know.
                 if (HardwareOk(current) == false)
                     continue;
 
-                // add up matching accounts (connections by this machine)
+                // Add up matching accounts (connections by this machine).
                 if (acct.Machines.Intersect(current.Machines).Any())
+                {
                     if (!list.Contains(current))
                         list.Add(current);
+                }
             }
 
-            // sort in ascending order - first created account first, etc
+            // Sort in ascending order - first created account first, etc.
             list = list.OrderBy(x => x.Created).ToList();
 
             return list;
@@ -142,42 +127,49 @@ namespace Server.Misc
         }
         public static bool IsOk(Account acct)
         {
-            if (Enabled)
+            if (!Enabled)
+                return true;
+
+            // Staff accounts are always allowed.
+            if (acct.AccessLevel > AccessLevel.Player)
+                return true;
+
+            // Get a list of accounts associated with this machine, ascending by creation date.
+            List<Account> list = GetAccountsByMachine(acct);
+
+            // If any matching account is staff, exempt the entire machine.
+            foreach (Account a in list)
             {
-                // get a list of accounts associated with this machine ascending sorted by date created that match the acct in question
-                List<Account> list = GetAccountsByMachine(acct);
-
-                // no problem, create the account
-                if (list.Count < CoreAI.MaxAccountsPerMachine)
+                if (a != null && a.AccessLevel > AccessLevel.Player)
                     return true;
-                else
-                {
-                    // grab a copy of the illegal accounts sharing machine info - for reporting purposes.
-                    List<Account> illegal = new(list);
-
-                    // trim it to the first N accounts (N = MaxAccountsPerMachine)
-                    // Accounts after MaxAccountsPerMachine were likely created without machine info,
-                    //  then the account's machine info was updated sometime after creation
-                    list = list.Skip(0).Take(CoreAI.MaxAccountsPerMachine).ToList();
-
-                    // remove legal accounts
-                    foreach (Account a in list)
-                        illegal.Remove(a);
-
-                    // they are trying to login on a legit account
-                    if (ListContainsAccount(acct, list))
-                        return true;
-
-                    //Report what's going on
-                    Report(acct, list, illegal);
-
-                    // the account they are trying to login with is not one of the N already created that have machine info
-                    // where N = MaxAccountsPerMachine
-                    return false;
-                }
             }
 
-            return true;
+            // No problem, create/login the account.
+            if (list.Count < CoreAI.MaxAccountsPerMachine)
+                return true;
+
+            // Grab a copy of the illegal accounts sharing machine info - for reporting purposes.
+            List<Account> illegal = new(list);
+
+            // Trim it to the first N accounts (N = MaxAccountsPerMachine).
+            // Accounts after MaxAccountsPerMachine were likely created without machine info,
+            // then the account's machine info was updated sometime after creation.
+            list = list.Take(CoreAI.MaxAccountsPerMachine).ToList();
+
+            // Remove legal accounts.
+            foreach (Account a in list)
+                illegal.Remove(a);
+
+            // They are trying to login on a legit account.
+            if (ListContainsAccount(acct, list))
+                return true;
+
+            // Report what's going on.
+            Report(acct, list, illegal);
+
+            // The account they are trying to login with is not one of the N already created
+            // that have machine info, where N = MaxAccountsPerMachine.
+            return false;
         }
         private static void Report(Account acct, List<Account> legal, List<Account> illegal)
         {
@@ -215,7 +207,8 @@ namespace Server.Misc
             {
                 if (target is PlayerMobile m)
                 {
-                    Account acct = m.Account != null ? m.Account as Account : null;
+                    Account? acct = m.Account != null ? m.Account as Account : null;
+
                     if (acct != null && acct.HardwareHashRaw != 0)
                     {
                         if (acct.AccessLevel > AccessLevel.Player)
@@ -224,10 +217,12 @@ namespace Server.Misc
                             return;
                         }
 
-                        // get a list of accounts associated with this machine ascending sorted by date created that match the acct in question
-                        List<Account> list = GetAccountsByMachine(acct);
+                        // Get all accounts associated with this machine, then remove staff.
+                        List<Account> list = GetAccountsByMachine(acct)
+                            .Where(a => a != null && a.AccessLevel <= AccessLevel.Player)
+                            .ToList();
 
-                        // no authorized accounts to list
+                        // No authorized accounts to list.
                         if (list.Count < CoreAI.MaxAccountsPerMachine)
                         {
                             from.SendMessage("No authorized accounts.");
@@ -235,14 +230,14 @@ namespace Server.Misc
                         }
 
                         // DUMP1
-                        Utility.Monitor.WriteLine(string.Format("all matching users"), ConsoleColor.Red);
+                        Utility.Monitor.WriteLine("all matching users", ConsoleColor.Red);
                         foreach (Account ax in list)
                             Utility.Monitor.WriteLine(string.Format("{0} hash {1}", ax, ax.HardwareHashRaw), ConsoleColor.Red);
 
-                        // trim it to the first N accounts (N = MaxAccountsPerMachine)
+                        // Trim it to the first N accounts (N = MaxAccountsPerMachine)
                         // Accounts after MaxAccountsPerMachine were likely created without machine info,
-                        //  then the account's machine info was updated sometime after creation
-                        list = list.Skip(0).Take(CoreAI.MaxAccountsPerMachine).ToList();
+                        // then the account's machine info was updated sometime after creation.
+                        list = list.Take(CoreAI.MaxAccountsPerMachine).ToList();
 
                         // DUMP2
                         Utility.Monitor.WriteLine(string.Format("{0} Authorized users", CoreAI.MaxAccountsPerMachine), ConsoleColor.Red);
@@ -252,7 +247,9 @@ namespace Server.Misc
                         from.SendMessage("Authorized dumped to console.");
                     }
                     else
+                    {
                         from.SendMessage("Nothing to analyze.");
+                    }
                 }
                 else
                 {

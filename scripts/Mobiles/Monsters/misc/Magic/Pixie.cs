@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,9 +71,9 @@ namespace Server.Mobiles
         }
 
         public override HideType HideType { get { return HideType.Spined; } }
-        public override int Hides { get { return Core.RuleSets.AngelIslandRules() ? 5 : 20; } }
-        public override int Meat { get { return Core.RuleSets.AngelIslandRules() ? 1 : 19; } }
-
+        public override int Hides { get { return 20; } }
+        public override int Meat { get { return 19; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
 
         public override void InitBody()
         {
@@ -91,49 +91,23 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020806152337/uo.stratics.com/hunters/pixie.shtml
+            // gems, scrolls, statues, 20 hides, 19 ribs
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
-                PackGem();
-                PackScroll(1, 7);
-                // TODO: Statue
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020806152337/uo.stratics.com/hunters/pixie.shtml
-                    // gems, scrolls, statues, 20 hides, 19 ribs
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                        PackGem(1, .9);
-                        PackGem(1, .05);
+                PackGem(1, .9);
+                PackGem(1, .05);
 
-                        PackScroll(3, 7);
-                        PackScroll(3, 7, .8);
-                        PackScroll(3, 7, .5);
+                PackScroll(3, 7);
+                PackScroll(3, 7, .8);
+                PackScroll(3, 7, .5);
 
-                        if (0.02 > Utility.RandomDouble())
-                            PackStatue();
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                    {
-                        if (0.02 > Utility.RandomDouble())
-                            PackStatue();
-                    }
-
-                    AddLoot(LootPack.LowScrolls);
-                    AddLoot(LootPack.Gems, 2);
-                }
+                if (0.02 > Utility.RandomDouble())
+                    PackStatue();
             }
         }
 

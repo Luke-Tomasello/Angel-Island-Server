@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -61,10 +61,10 @@ namespace Server.Engines
         #region utils
         public class WealthDomainComparer : IComparer
         {
-            int IComparer.Compare(Object x, Object y)
+            int IComparer.Compare(Object? x, Object? y)
             {   // reverse x and y to get a descending sort (largest to smallest)
-                IPDomain mx = y as IPDomain;
-                IPDomain my = x as IPDomain;
+                IPDomain? mx = y as IPDomain;
+                IPDomain? my = x as IPDomain;
                 if (mx == null || my == null)
                     return 0;
 
@@ -77,7 +77,7 @@ namespace Server.Engines
             }
         }
 
-        public static object GetFirst(Hashtable ht, bool mustBeOnline)
+        public static object? GetFirst(Hashtable ht, bool mustBeOnline)
         {
             foreach (DictionaryEntry dx in ht)
             {   // just return the first thing found
@@ -86,7 +86,7 @@ namespace Server.Engines
                 // else
                 if (dx.Value is AccountDomain)
                 {
-                    AccountDomain ad = dx.Value as AccountDomain;
+                    AccountDomain? ad = dx.Value as AccountDomain;
                     foreach (DictionaryEntry mx in ad.mobileList)
                         if (mx.Value is Mobile)
                             if ((mx.Value as Mobile).NetState != null)
@@ -101,7 +101,7 @@ namespace Server.Engines
             return null;
         }
 
-        public static object GetFirst(Hashtable ht)
+        public static object? GetFirst(Hashtable ht)
         {
             return GetFirst(ht, false);
         }
@@ -206,10 +206,10 @@ namespace Server.Engines
                 for (int ix = 0; ix < list.Length; ix++)
                 {
                     IPDomain node = list[ix] as IPDomain;
-                    AccountDomain ad = GetFirst(node.accountList, mustBeOnline) as AccountDomain;       // just first (online) account
+                    AccountDomain? ad = GetFirst(node.accountList, mustBeOnline) as AccountDomain;       // just first (online) account
                     if (ad != null)
                     {
-                        Mobile m = GetFirst(ad.mobileList, mustBeOnline) as Mobile;                     // just first (online) mobile
+                        Mobile? m = GetFirst(ad.mobileList, mustBeOnline) as Mobile;                     // just first (online) mobile
                         if (m != null)
                             e.Mobile.SendMessage(string.Format("mob:{2}, gold:{0}, loc:{1}", node.gold, node.location, m));
                     }
@@ -315,8 +315,8 @@ namespace Server.Engines
 
             NetState state = e.from.NetState;
             int iphc = state.ToString().GetHashCode();                  // hash code of IP address
-            IPDomain ipd = null;
-            AccountDomain ad = null;
+            IPDomain? ipd = null;
+            AccountDomain? ad = null;
             if (m_IPList.Contains(iphc))                                // if we have it already
             {
                 ipd = m_IPList[iphc] as IPDomain;                       // get the IPDomain at this IP address

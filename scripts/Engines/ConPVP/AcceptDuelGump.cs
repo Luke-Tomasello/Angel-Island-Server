@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -156,14 +156,14 @@ namespace Server.Engines.ConPVP
 
         public static void BeginIgnore(Mobile source, Mobile toIgnore)
         {
-            ArrayList list = (ArrayList)m_IgnoreLists[source];
+            ArrayList? list = (ArrayList?)m_IgnoreLists[source];
 
             if (list == null)
                 m_IgnoreLists[source] = list = new ArrayList();
 
             for (int i = 0; i < list.Count; ++i)
             {
-                IgnoreEntry ie = (IgnoreEntry)list[i];
+                IgnoreEntry? ie = (IgnoreEntry?)list[i];
 
                 if (ie.Ignored == toIgnore)
                 {
@@ -181,14 +181,14 @@ namespace Server.Engines.ConPVP
 
         public static bool IsIgnored(Mobile source, Mobile check)
         {
-            ArrayList list = (ArrayList)m_IgnoreLists[source];
+            ArrayList? list = (ArrayList?)m_IgnoreLists[source];
 
             if (list == null)
                 return false;
 
             for (int i = 0; i < list.Count; ++i)
             {
-                IgnoreEntry ie = (IgnoreEntry)list[i];
+                IgnoreEntry? ie = (IgnoreEntry?)list[i];
 
                 if (ie.Expired)
                     list.RemoveAt(i--);
@@ -211,7 +211,7 @@ namespace Server.Engines.ConPVP
 
             if (info.IsSwitched(1))
             {
-                PlayerMobile pm = m_Challenged as PlayerMobile;
+                PlayerMobile? pm = m_Challenged as PlayerMobile;
 
                 if (pm == null)
                     return;

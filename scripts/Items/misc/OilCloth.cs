@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,7 +77,12 @@ namespace Server.Items
             if (Deleted || !from.CanSee(this))
                 return false;
 
-            base.ScissorHelper(scissors, from, new Bandage(), 1);
+            // we track starting loot with the FamilyID.
+            //  Various restrictions are placed on FamilyID (player does not control this id, vendors don't buy, etc.)
+            Item new_item = new Bandage();
+            new_item.FamilyID = this.FamilyID;
+
+            base.ScissorHelper(scissors, from, new_item, 1);
 
             return true;
         }
@@ -98,9 +103,39 @@ namespace Server.Items
 
         public void OnTarget(Mobile from, object obj)
         {
+            BaseBeverage? beverage = obj as BaseBeverage;
+
             if (!IsChildOf(from.Backpack))
             {
                 from.SendLocalizedMessage(1042001); // That must be in your pack for you to use it.
+            }
+            else if (beverage != null &&
+                     beverage.Content == BeverageType.Liquor &&
+                     beverage.Quantity > 0 &&
+                     (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+            {
+                Firebomb? firebomb = Firebomb.CreateFrom(beverage);
+
+                if (firebomb == null)
+                    return;
+
+                beverage.ReplaceWith(firebomb);
+                Delete();
+
+                from.SendMessage("The oil seeps into the liquor, creating a volatile mixture.");
+                //from.PlaySound(0x243);// ?
+                //from.PlaySound(0xFF); // ?
+                //from.PlaySound(0x2D6);// drinking sound
+                //from.PlaySound(0x2);  // bubbling/alchemy-style sound
+                from.PlaySound(0x258);  // exhale?
+
+                return;
+            }
+            else if (obj is Firebomb bomb)
+            {
+                bomb.Misuse(from);
+                Delete();
+                return;
             }
             else if (obj is BaseWeapon && !Core.RuleSets.AOSRules()) // pre-AOS
             {

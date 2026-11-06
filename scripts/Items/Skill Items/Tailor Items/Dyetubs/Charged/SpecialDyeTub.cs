@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -45,7 +45,6 @@
  */
 
 using Server.Targeting;
-using System;
 
 namespace Server.Items
 {
@@ -271,16 +270,6 @@ namespace Server.Items
                  * because Gold appears earlier in this array than Yellow.
                  * Since we're not adding metal dyes to special dye tubs, let's simply disable them.
                  */
-#if false
-                new ColorInfo( 2419, 6, "Dull Copper" ),     // Dull Copper      2419 - 2424 (6)
-                new ColorInfo( 2406, 7, "Shadow Iron" ),     // Shadow Iron      2406 - 2412 (7)
-                new ColorInfo( 2413, 6, "Copper" ),          // Copper           2413 - 2418 (6)
-                new ColorInfo( 2414, 5, "Bronze" ),          // Bronze           2414 - 2418 (5)
-                new ColorInfo( 2213, 6, "Gold" ),            // Gold             2213 - 2218 (6)
-                new ColorInfo( 2425, 6, "Agapite" ),         // Agapite          2425 - 2430 (6)
-                new ColorInfo( 2207, 6, "Verite" ),          // Verite           2207 - 2212 (6)
-                new ColorInfo( 2219, 6, "Valorite" ),        // Valorite         2219 - 2224 (6)
-#endif
                 new ColorInfo( 2113, 6, "Red" ),             // Red              2113 - 2118 (6)
                 new ColorInfo( 2119, 6, "Blue" ),            // Blue             2119 - 2124 (6)
                 new ColorInfo( 2126, 5, "Green" ),           // Green            2126 - 2130 (5)
@@ -327,7 +316,7 @@ namespace Server.Items
                 return "the lightest";
         }
 
-        public static string FormatDescription(int hue)
+        public static string? FormatDescription(int hue)
         {
             ColorInfo clr = GetColor(hue);
 
@@ -340,7 +329,7 @@ namespace Server.Items
         // Say what colour it is
         public static void Examine(Mobile from, int hue)
         {
-            string name = FormatDescription(hue);
+            string? name = FormatDescription(hue);
 
             if (string.IsNullOrEmpty(name))
                 from.SendMessage("This tub has not yet been used to make any dye.");

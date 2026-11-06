@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -79,6 +79,7 @@ namespace Server.Mobiles
                 Add(new BeverageBuyInfo(typeof(BeverageBottle), BeverageType.Wine, BaseVendor.PlayerPays(7), 20, 0x9C7, 0));
                 Add(new BeverageBuyInfo(typeof(BeverageBottle), BeverageType.Liquor, BaseVendor.PlayerPays(7), 20, 0x99B, 0));
                 Add(new BeverageBuyInfo(typeof(Jug), BeverageType.Cider, BaseVendor.PlayerPays(13), 20, 0x9C8, 0));
+                Add(new BeverageBuyInfo(typeof(Jug), BeverageType.Liquor, BaseVendor.PlayerPays(13), 20, 0x9C8, 0));
                 Add(new BeverageBuyInfo(typeof(Pitcher), BeverageType.Milk, BaseVendor.PlayerPays(7), 20, 0x9F0, 0));
                 Add(new BeverageBuyInfo(typeof(Pitcher), BeverageType.Ale, BaseVendor.PlayerPays(11), 20, 0x1F95, 0));
                 Add(new BeverageBuyInfo(typeof(Pitcher), BeverageType.Cider, BaseVendor.PlayerPays(11), 20, 0x1F97, 0));
@@ -117,7 +118,7 @@ namespace Server.Mobiles
                     Add(new GenericBuyInfo("1041243", typeof(ContractOfEmployment), BaseVendor.PlayerPays(typeof(ContractOfEmployment)), 20, 0x14F0, 0));
                 }
 
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules())
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules())
                 {
                     Add(new GenericBuyInfo("a housesitter contract", typeof(HouseSitterDeed), BaseVendor.PlayerPays(typeof(HouseSitterDeed)), 20, 0x14F0, 0));
                 }

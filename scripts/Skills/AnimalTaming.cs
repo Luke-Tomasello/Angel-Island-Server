@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -82,12 +82,12 @@ namespace Server.SkillHandlers
 
         public static TimeSpan OnUse(Mobile m)
         {
-            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || PublishInfo.Publish >= 13.6)
+            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules() || PublishInfo.Publish >= 13.6)
                 m.RevealingAction();
 
             m.Target = new InternalTarget();
 
-            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || PublishInfo.Publish >= 13.6)
+            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules() || PublishInfo.Publish >= 13.6)
                 m.RevealingAction();
 
             if (!m_DisableMessage)
@@ -159,7 +159,7 @@ namespace Server.SkillHandlers
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || PublishInfo.Publish >= 13.6)
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules() || PublishInfo.Publish >= 13.6)
                     from.RevealingAction();
 
                 if (targeted is Mobile)
@@ -199,7 +199,7 @@ namespace Server.SkillHandlers
                         }
                         else if ((hasMastery = CheckMastery(from, creature)) || from.Skills[SkillName.AnimalTaming].Value >= creature.MinTameSkill)
                         {
-                            FactionWarHorse warHorse = creature as FactionWarHorse;
+                            FactionWarHorse? warHorse = creature as FactionWarHorse;
 
                             if (warHorse != null)
                             {
@@ -223,7 +223,7 @@ namespace Server.SkillHandlers
 
                             // Taming high level monsters (such as nightmares, wyrms, and dragons) will become twice as difficult.
                             //  https://www.uoguide.com/Publish_13.6_(Siege_Perilous_Shards_Only)
-                            double anger = Core.RuleSets.SiegeStyleRules() ? 0.95 + 0.025 : 0.95;
+                            double anger = Core.RuleSets.SiegeRules() ? 0.95 + 0.025 : 0.95;
 
                             if (m_BeingTamed.Contains(targeted))
                             {
@@ -288,7 +288,7 @@ namespace Server.SkillHandlers
 
                     string text = string.Empty;
 
-                    Guild guild = tamer.Guild as Guild;
+                    Guild? guild = tamer.Guild as Guild;
                     if (guild is not null && guild.Alignment == Engines.Alignment.AlignmentType.Orc)
                     {
                         text = Utility.RandomList<string>(new string[]
@@ -401,7 +401,7 @@ namespace Server.SkillHandlers
                     }
                     else
                     {
-                        if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || PublishInfo.Publish >= 13.6)
+                        if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules() || PublishInfo.Publish >= 13.6)
                             m_Tamer.RevealingAction();
 
                         m_Tamer.NextSkillTime = Core.TickCount;
@@ -413,7 +413,7 @@ namespace Server.SkillHandlers
                         bool alreadyOwned = m_Creature.Owners.Contains(m_Tamer);
 
                         if (!alreadyOwned) // Passively check animal lore for gain
-                            m_Tamer.CheckTargetSkill(SkillName.AnimalLore, m_Creature, 0.0, 120.0, new object[2] { m_Creature, null }/*contextObj*/);
+                            m_Tamer.CheckTargetSkill(SkillName.AnimalLore, m_Creature, 0.0, 120.0, new object?[2] { m_Creature, null }/*contextObj*/);
 
                         double minSkill = m_Creature.MinTameSkill + (m_Creature.Owners.Count * 6.0);
 
@@ -422,7 +422,7 @@ namespace Server.SkillHandlers
 
                         minSkill += 24.9;
 
-                        if (alreadyOwned || m_Tamer.CheckTargetSkill(SkillName.AnimalTaming, m_Creature, minSkill - 25.0, minSkill + 25.0, new object[2] { m_Creature, null } /*contextObj*/))
+                        if (alreadyOwned || m_Tamer.CheckTargetSkill(SkillName.AnimalTaming, m_Creature, minSkill - 25.0, minSkill + 25.0, new object?[2] { m_Creature, null } /*contextObj*/))
                         {
                             if (m_Creature.Owners.Count == 0) // First tame
                             {
@@ -474,7 +474,7 @@ namespace Server.SkillHandlers
                              * If your mount stops and refuses to carry you any further because it is too fatigued to move, one piece of food will replenish 30% of it's stamina, with a maximum of 90%. Just make sure you feed three pieces, one at a time.
                              * https://web.archive.org/web/20010805193803fw_/http://uo.stratics.com/strat/tamer.shtml
                              */
-                            if (Core.RuleSets.SiegeStyleRules())
+                            if (Core.RuleSets.SiegeRules())
                             {
                                 m_Creature.LoyaltyValue = PetLoyalty.Confused;
 

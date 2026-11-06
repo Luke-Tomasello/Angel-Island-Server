@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -102,6 +102,11 @@ namespace Server.Mobiles
                     Add(new GenericBuyInfo(typeof(TenjinsNeedle), BaseVendor.PlayerPays(typeof(TenjinsNeedle)), 20, 0xF9D, CraftResources.GetHue(CraftResource.Verite)));
                 }
 
+                if (Core.RuleSets.MortalisStyleRules() || Core.RuleSets.SeasonsRules())
+                {   // MO specials
+                    Add(new GenericBuyInfo(typeof(ClothingBlessDeed), BaseVendor.PlayerPays(typeof(ClothingBlessDeed)), 20, 0x14F0, 0));
+                }
+
                 if (!Core.RuleSets.AngelIslandRules())
                 {
                     // erl : removed for new clothing wear system to involve tailors directly in clothing
@@ -146,13 +151,6 @@ namespace Server.Mobiles
                     foreach (Type type in BBSTypes)
                         if (ResourcePool.IsPooledResource(type))
                             Add(new GenericBuyInfo(type));
-#if false
-                    Add(new GenericBuyInfo(typeof(Cloth)));
-                    Add(new GenericBuyInfo(typeof(Leather)));
-                    Add(new GenericBuyInfo(typeof(SpinedLeather)));
-                    Add(new GenericBuyInfo(typeof(HornedLeather)));
-                    Add(new GenericBuyInfo(typeof(BarbedLeather)));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersSellResourcesRules())
                 {
@@ -177,25 +175,6 @@ namespace Server.Mobiles
                 {   // balanced buyback system
                     foreach (Type type in BBSTypes)
                         AddToResourcePool(type);
-#if false
-                    AddToResourcePool(typeof(Cloth));
-                    AddToResourcePool(typeof(BoltOfCloth));
-                    AddToResourcePool(typeof(UncutCloth));
-                    AddToResourcePool(typeof(Cotton));
-                    AddToResourcePool(typeof(Wool));
-                    AddToResourcePool(typeof(DarkYarn));
-                    AddToResourcePool(typeof(LightYarn));
-                    AddToResourcePool(typeof(LightYarnUnraveled));
-                    AddToResourcePool(typeof(SpoolOfThread));
-                    AddToResourcePool(typeof(Leather));
-                    AddToResourcePool(typeof(SpinedLeather));
-                    AddToResourcePool(typeof(HornedLeather));
-                    AddToResourcePool(typeof(BarbedLeather));
-                    AddToResourcePool(typeof(Hides));
-                    AddToResourcePool(typeof(SpinedHides));
-                    AddToResourcePool(typeof(BarbedHides));
-                    AddToResourcePool(typeof(HornedHides));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersSellResourcesRules())
                 {

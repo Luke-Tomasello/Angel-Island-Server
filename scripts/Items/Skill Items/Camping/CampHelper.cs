@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,7 +36,7 @@ namespace Server.Items
     public class CampHelper
     {
         // static array
-        private static ArrayList m_RestrictedAreas;
+        private static ArrayList? m_RestrictedAreas;
 
         // allow global list to load / save with world
         public static void Configure()
@@ -50,7 +50,10 @@ namespace Server.Items
             // LOAD, GLORIOUS LOAD!
             System.Console.WriteLine("CampHelper Loading...");
 
-            string filePath = Path.Combine("Saves/AngelIsland", "CampHelper.xml");
+            string filePath = Path.Combine(
+                Core.SavesDirectory,
+                Core.Server,
+                "CampHelper.xml");
 
             if (!File.Exists(filePath))
             {
@@ -65,7 +68,7 @@ namespace Server.Items
                 XmlDocument doc = new XmlDocument();
                 doc.Load(filePath);
 
-                XmlElement root = doc["CampHelper"];
+                XmlElement? root = doc["CampHelper"];
                 foreach (XmlElement entry in doc.GetElementsByTagName("RestrictedRect"))
                 {
                     try
@@ -100,15 +103,18 @@ namespace Server.Items
         public static void OnSave(WorldSaveEventArgs e)
         {
             System.Console.WriteLine("CampHelper Saving...");
+
             if (m_RestrictedAreas == null)
                 return;
 
             try
             {
-                if (!Directory.Exists("Saves/AngelIsland"))
-                    Directory.CreateDirectory("Saves/AngelIsland");
+                string saveDirectory = Path.Combine(Core.SavesDirectory, Core.Server);
 
-                string filePath = Path.Combine("Saves/AngelIsland", "CampHelper.xml");
+                if (!Directory.Exists(saveDirectory))
+                    Directory.CreateDirectory(saveDirectory);
+
+                string filePath = Path.Combine(saveDirectory, "CampHelper.xml");
 
                 using (StreamWriter op = new StreamWriter(filePath))
                 {

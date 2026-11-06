@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -37,7 +37,7 @@ namespace Server.Engines.Quests.Necro
 
         public override bool CanDrop(PlayerMobile player)
         {
-            DarkTidesQuest qs = player.Quest as DarkTidesQuest;
+            DarkTidesQuest? qs = player.Quest as DarkTidesQuest;
 
             if (qs == null)
                 return true;
@@ -49,7 +49,7 @@ namespace Server.Engines.Quests.Necro
         {
             base.OnAdded(parent);
 
-            PlayerMobile pm = RootParent as PlayerMobile;
+            PlayerMobile? pm = RootParent as PlayerMobile;
 
             if (pm != null)
             {
@@ -57,7 +57,7 @@ namespace Server.Engines.Quests.Necro
 
                 if (qs is DarkTidesQuest)
                 {
-                    QuestObjective obj = qs.FindObjective(typeof(RetrieveAbraxusScrollObjective));
+                    QuestObjective? obj = qs.FindObjective(typeof(RetrieveAbraxusScrollObjective));
 
                     if (obj != null && !obj.Completed)
                         obj.Complete();
@@ -71,7 +71,7 @@ namespace Server.Engines.Quests.Necro
             {
                 from.SendGump(new ScrollOfAbraxusGump());
 
-                PlayerMobile pm = from as PlayerMobile;
+                PlayerMobile? pm = from as PlayerMobile;
 
                 if (pm != null)
                 {
@@ -79,7 +79,7 @@ namespace Server.Engines.Quests.Necro
 
                     if (qs is DarkTidesQuest)
                     {
-                        QuestObjective obj = qs.FindObjective(typeof(ReadAbraxusScrollObjective));
+                        QuestObjective? obj = qs.FindObjective(typeof(ReadAbraxusScrollObjective));
 
                         if (obj != null && !obj.Completed)
                             obj.Complete();

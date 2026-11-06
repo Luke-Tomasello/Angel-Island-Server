@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -73,12 +73,12 @@ namespace Server.Misc
         public const int REG_RESOURCE_REQUIREMENTS_LIST = 10;
         public const int REG_QWORD = 11;
 
-        public static object RegQueryValue(IntPtr key, string value)
+        public static object? RegQueryValue(IntPtr key, string value)
         {
             return RegQueryValue(key, value, null);
         }
 
-        public static object RegQueryValue(IntPtr key, string value, object defaultValue)
+        public static object? RegQueryValue(IntPtr key, string value, object? defaultValue)
         {
             int error, type = 0, dataLength = 0xfde8;
             int returnLength = dataLength;

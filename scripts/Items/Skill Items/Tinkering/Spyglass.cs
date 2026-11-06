@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -49,7 +49,7 @@ namespace Server.Items
             from.Send(new MessageLocalizedAffix(from.Serial, from.Body, MessageType.Regular, 0x3B2, 3, 1008146 + (int)Clock.GetMoonPhase(Map.Trammel, from.X, from.Y), "", AffixType.Prepend, "Trammel : ", ""));
             from.Send(new MessageLocalizedAffix(from.Serial, from.Body, MessageType.Regular, 0x3B2, 3, 1008146 + (int)Clock.GetMoonPhase(Map.Felucca, from.X, from.Y), "", AffixType.Prepend, "Felucca : ", ""));
 
-            PlayerMobile player = from as PlayerMobile;
+            PlayerMobile? player = from as PlayerMobile;
 
             if (player != null)
             {
@@ -57,7 +57,7 @@ namespace Server.Items
 
                 if (qs is WitchApprenticeQuest)
                 {
-                    FindIngredientObjective obj = qs.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
+                    FindIngredientObjective? obj = qs.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
 
                     if (obj != null && !obj.Completed && obj.Ingredient == Ingredient.StarChart)
                     {

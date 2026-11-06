@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -54,7 +54,7 @@ namespace Server.Items
         }
 
         //Ctor to continue an prevoius gump's state
-        public ChampMobileFactoryGump(ChampEngine champSpawner, List<Spawner> memory)
+        public ChampMobileFactoryGump(ChampEngine champSpawner, List<Spawner>? memory)
             : base(50, 50)
         {
             m_ChampSpawn = champSpawner;

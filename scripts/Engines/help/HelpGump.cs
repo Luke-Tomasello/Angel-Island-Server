@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -228,58 +228,6 @@ namespace Server.Engines.Help
              * 4/23/23, Yoar: Still crashes players using older versions of CUO. Also,
              * it's irrelevant information. Disabling again.
              */
-#if false
-            AddPage(3);
-
-            AddButton(80, 90, 5540, 5541, 7, GumpButtonType.Reply, 0);
-
-            AddHtmlLocalized(110, 90, 450, 145, 1062572, true, true); /* <U><CENTER>Another player is harassing me (or Exploiting).</CENTER></U><BR>
-																		 * VERBAL HARASSMENT<BR>
-																		 * Use this option when another player is verbally harassing your character.
-																		 * Verbal harassment behaviors include but are not limited to, using bad language, threats etc..
-																		 * Before you submit a complaint be sure you understand what constitutes harassment
-																		 * <A HREF="http://uo.custhelp.com/cgi-bin/uo.cfg/php/enduser/std_adp.php?p_faqid=40">� what is verbal harassment? -</A>
-																		 * and that you have followed these steps:<BR>
-																		 * 1. You have asked the player to stop and they have continued.<BR>
-																		 * 2. You have tried to remove yourself from the situation.<BR>
-																		 * 3. You have done nothing to instigate or further encourage the harassment.<BR>
-																		 * 4. You have added the player to your ignore list.
-																		 * <A HREF="http://uo.custhelp.com/cgi-bin/uo.cfg/php/enduser/std_adp.php?p_faqid=138">- How do I ignore a player?</A><BR>
-																		 * 5. You have read and understand Origin�s definition of harassment.<BR>
-																		 * 6. Your account information is up to date. (Including a current email address)<BR>
-																		 * *If these steps have not been taken, GMs may be unable to take action against the offending player.<BR>
-																		 * **A chat log will be review by a GM to assess the validity of this complaint.
-																		 * Abuse of this system is a violation of the Rules of Conduct.<BR>
-																		 * EXPLOITING<BR>
-																		 * Use this option to report someone who may be exploiting or cheating.
-																		 * <A HREF="http://uo.custhelp.com/cgi-bin/uo.cfg/php/enduser/std_adp.php?p_faqid=41">� What constitutes an exploit?</a>
-																		 */
-
-            AddButton(80, 240, 5540, 5541, 8, GumpButtonType.Reply, 0);
-
-            AddHtmlLocalized(110, 240, 450, 145, 1062573, true, true); /* <U><CENTER>Another player is harassing me using game mechanics.</CENTER></U><BR>
-																		  * <BR>
-																		  * PHYSICAL HARASSMENT<BR>
-																		  * Use this option when another player is harassing your character using game mechanics.
-																		  * Physical harassment includes but is not limited to luring, Kill Stealing, and any act that causes a players death in Trammel.
-																		  * Before you submit a complaint be sure you understand what constitutes harassment
-																		  * <A HREF="http://uo.custhelp.com/cgi-bin/uo.cfg/php/enduser/std_adp.php?p_faqid=59"> � what is physical harassment?</A>
-																		  * and that you have followed these steps:<BR>
-																		  * 1. You have asked the player to stop and they have continued.<BR>
-																		  * 2. You have tried to remove yourself from the situation.<BR>
-																		  * 3. You have done nothing to instigate or further encourage the harassment.<BR>
-																		  * 4. You have added the player to your ignore list.
-																		  * <A HREF="http://uo.custhelp.com/cgi-bin/uo.cfg/php/enduser/std_adp.php?p_faqid=138"> - how do I ignore a player?</A><BR>
-																		  * 5. You have read and understand Origin�s definition of harassment.<BR>
-																		  * 6. Your account information is up to date. (Including a current email address)<BR>
-																		  * *If these steps have not been taken, GMs may be unable to take action against the offending player.<BR>
-																		  * **This issue will be reviewed by a GM to assess the validity of this complaint.
-																		  * Abuse of this system is a violation of the Rules of Conduct.
-																		  */
-
-            AddButton(150, 390, 5540, 5541, 0, GumpButtonType.Page, 1);
-            AddHtmlLocalized(180, 390, 335, 40, 1001015, false, false); // NO  - I meant to ask for help with another matter.
-#endif
         }
 
         public override void OnResponse(NetState state, RelayInfo info)
@@ -376,127 +324,4 @@ namespace Server.Engines.Help
         }
     }
 
-#if false
-    public class HelpStuckQuestion : QuestionMenu
-    {
-        private Mobile m_From;
-
-        public HelpStuckQuestion(Mobile from)
-            : base(
-            "Help Stuck Choices",
-            new string[] { "Kill me and give me the town selection gump.", "Auto-move me (best for being stuck in houses).", "Cancel help-stuck request" }
-            )
-        {
-            m_From = from;
-
-            if (m_From.Alive == false) //dead: always allow to transport
-            {
-                Question = "You have two options, you can be teleported to town, or you can choose to use our auto-move option.";
-                Answers[0] = "Transport my spirit away.";
-                Answers[1] = "Auto-move me (best for being stuck in houses).";
-                Answers[2] = "Cancel help-stuck request";
-            }
-            else if (m_From.Region.IsDungeonRules) //alive and in dungeon
-            {
-                Question = "You have two options, you can be killed and be teleported away, or you can choose to use our auto-move option.";
-                Answers[0] = "Kill me and transport my spirit away.";
-                Answers[1] = "Auto-move me.";
-                Answers[2] = "Cancel help-stuck request";
-            }
-            else if (m_From.TotalWeight < StuckMenu.MAXHELPSTUCKALIVEWEIGHT) //alive and out of dungeon and not over weight limit
-            {
-                Question = "With help stuck, since you have little on you, you can be teleported away, or you can use our auto-move option.";
-                Answers[0] = "Transport me away.";
-                Answers[1] = "Auto-move me (best for being stuck in houses).";
-                Answers[2] = "Cancel help-stuck request";
-            }
-            else // alive, out of dungeon, over weight limit
-            {
-                Question = "With help stuck, you have two options, you can be teleported away if you're not holding much, or you can choose to use our auto-move option.";
-                Answers[0] = "Drop most of your belongings if you wish to be transported away.";
-                Answers[1] = "Auto-move me (best for being stuck in houses).";
-                Answers[2] = "Cancel help-stuck request";
-            }
-        }
-
-        public override void OnCancel(NetState state)
-        {
-            //m_From.SendLocalizedMessage( 1005306, "", 0x35 ); // Help request unchanged.
-            m_From.SendMessage("Help Stuck request canceled.");
-        }
-
-        public override void OnResponse(NetState state, int index)
-        {
-            //pla, 03/10/07
-            // Log help stuck attempt
-            if (index != 2)
-            {
-                LogHelper log = new LogHelper("HelpStuck.log");
-                if (log != null)
-                {
-                    log.Log(LogType.Mobile, state.Mobile);
-                    log.Finish();
-                }
-            }
-            if (index == 0)
-            {
-                bool bGood = false;
-                if (m_From.Alive == false) //dead: always allow to transport
-                {
-                    bGood = true;
-                }
-                else if (m_From.Region.IsDungeonRules) //alive and in dungeon
-                {
-                    m_From.SendMessage("You have chosen to die.");
-                    m_From.Kill();
-                    bGood = true;
-                }
-                else if (m_From.TotalWeight < StuckMenu.MAXHELPSTUCKALIVEWEIGHT) //alive and out of dungeon and not over weight limit
-                {
-                    bGood = true;
-                }
-                else // alive, out of dungeon, over weight limit
-                {
-                    m_From.SendMessage("You are too encumbered to be moved, drop most of your stuff and help-stuck again.");
-                }
-
-                if (bGood)
-                {
-                    //auto-choose destination now, so don't give them this message
-                    //m_From.SendMessage("You will now be given the standard help-stuck menu.");
-
-                    StuckMenu menu = new StuckMenu(m_From, m_From, true);
-                    //menu.BeginClose();
-                    //m_From.SendGump(menu);
-                    menu.AutoSelect();
-                }
-            }
-            else if (index == 1)
-            {
-                if (!StuckMenu.TryUnblock(m_From, false))
-                {
-                    int staffonline = 0;
-                    foreach (NetState ns in NetState.Instances)
-                    {
-                        Mobile m = ns.Mobile;
-                        if (m != null && m.AccessLevel >= AccessLevel.Counselor && m.AutoPageNotify)
-                            staffonline++;
-                    }
-
-                    if (staffonline == 0)
-                    {
-                        StuckMenu menu = new StuckMenu(m_From, m_From, true);
-                        //menu.BeginClose();
-                        //m_From.SendGump(menu);
-                        menu.AutoSelect();
-                    }
-                }
-            }
-            else if (index == 2)
-            {
-                m_From.SendMessage("Help Stuck request canceled.");
-            }
-        }
-    }
-#endif
 }

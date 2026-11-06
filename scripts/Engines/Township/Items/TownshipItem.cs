@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -115,7 +115,7 @@ namespace Server.Township
 
         private static void TSItem_OnTarget(Mobile from, object targeted)
         {
-            Item item = targeted as Item;
+            Item? item = targeted as Item;
 
             if (item == null)
             {
@@ -123,7 +123,7 @@ namespace Server.Township
                 return;
             }
 
-            TownshipItemContext c = LookupContext(item);
+            TownshipItemContext? c = LookupContext(item);
 
             if (c == null && item is AddonComponent)
             {
@@ -144,11 +144,11 @@ namespace Server.Township
 
         #endregion
 
-        public static TownshipItemContext LookupContext(Item item)
+        public static TownshipItemContext? LookupContext(Item item)
         {
             foreach (TownshipStone ts in TownshipStone.AllTownshipStones)
             {
-                TownshipItemContext c = ts.ItemRegistry.Lookup(item, false);
+                TownshipItemContext? c = ts.ItemRegistry.Lookup(item, false);
 
                 if (c != null)
                     return c;
@@ -189,7 +189,7 @@ namespace Server.Township
 
         public static void AddContextMenuEntries(Item item, Mobile from, ArrayList list)
         {
-            ITownshipItem tsi = item as ITownshipItem;
+            ITownshipItem? tsi = item as ITownshipItem;
 
             if (tsi == null)
                 return;
@@ -221,7 +221,7 @@ namespace Server.Township
 
         public static void Inspect(Mobile from, ITownshipItem tsi)
         {
-            Item item = tsi as Item;
+            Item? item = tsi as Item;
 
             if (item == null)
                 return;
@@ -251,7 +251,7 @@ namespace Server.Township
 
         #region Damage
 
-        public static TimeSpan DamageDelay { get { return (Core.UOTC_CFG ? TimeSpan.FromMinutes(1.0) : TownshipSettings.WallDamageDelay); } }
+        public static TimeSpan DamageDelay { get { return (Core.GMNTC_CFG ? TimeSpan.FromMinutes(1.0) : TownshipSettings.WallDamageDelay); } }
 
         private class DamageCME : ContextMenuEntry
         {
@@ -278,7 +278,7 @@ namespace Server.Township
 
         public static bool CheckDamageTarget(Mobile from, object targeted)
         {
-            ITownshipItem tsi = targeted as ITownshipItem;
+            ITownshipItem? tsi = targeted as ITownshipItem;
 
             if (tsi == null)
                 return false;
@@ -370,7 +370,7 @@ namespace Server.Township
             m.Direction = m.GetDirectionTo(tsi);
             m.RevealingAction();
             m.Emote("*hits the {0}*", GetObjectName(tsi));
-            m.CriminalAction(!m.Criminal);
+            m.CriminalAction(message: !m.Criminal);
 
             DoWeaponAnimation(m);
             OnUseWeapon(m);
@@ -414,9 +414,9 @@ namespace Server.Township
 
         private static WeaponType GetReqWeapon(ITownshipItem tsi)
         {
-            CraftRes res = DefTownshipCraft.LookupPrimaryResource(tsi);
+            CraftRes? res = DefTownshipCraft.LookupPrimaryResource(tsi);
 
-            Type resType = (res == null ? null : res.ItemType);
+            Type? resType = (res == null ? null : res.ItemType);
 
             if (resType == typeof(Log) || resType == typeof(FertileDirt) || tsi is Engines.Plants.PlantAddon)
                 return WeaponType.Axe;
@@ -424,7 +424,7 @@ namespace Server.Township
                 return WeaponType.Bashing;
         }
 
-        private static string GetWeaponName(WeaponType weaponType)
+        private static string? GetWeaponName(WeaponType weaponType)
         {
             switch (weaponType)
             {
@@ -458,7 +458,7 @@ namespace Server.Township
 
         private static void DoWeaponAnimation(Mobile m)
         {
-            BaseWeapon weapon = m.Weapon as BaseWeapon;
+            BaseWeapon? weapon = m.Weapon as BaseWeapon;
 
             if (weapon != null)
             {
@@ -470,7 +470,7 @@ namespace Server.Township
 
         private static void OnUseWeapon(Mobile m)
         {
-            BaseWeapon weapon = m.Weapon as BaseWeapon;
+            BaseWeapon? weapon = m.Weapon as BaseWeapon;
 
             if (weapon != null && weapon.MaxHitPoints > 0 && Utility.Random(25) == 0)
             {
@@ -516,14 +516,14 @@ namespace Server.Township
 
         private static bool HasWeapon(Mobile m, WeaponType weaponType)
         {
-            BaseWeapon weapon = m.Weapon as BaseWeapon;
+            BaseWeapon? weapon = m.Weapon as BaseWeapon;
 
             return (weapon != null && weapon.Type == weaponType);
         }
 
         private static int GetWeaponDamage(Mobile m)
         {
-            BaseWeapon weapon = m.Weapon as BaseWeapon;
+            BaseWeapon? weapon = m.Weapon as BaseWeapon;
 
             if (weapon == null)
                 return 1;
@@ -571,7 +571,7 @@ namespace Server.Township
 
         public static void OnChop(Item item, Mobile from)
         {
-            ITownshipItem tsi = item as ITownshipItem;
+            ITownshipItem? tsi = item as ITownshipItem;
 
             if (tsi != null && tsi.CanDestroy(from))
             {

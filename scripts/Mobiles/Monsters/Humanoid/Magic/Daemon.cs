@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -47,7 +47,7 @@ namespace Server.Mobiles
     [CorpseName("a daemon corpse")]
     public class Daemon : BaseCreature
     {
-        public override double DispelDifficulty { get { return 125.0; } }
+        public override double DispelDifficulty { get { return 100.0; } }
         public override double DispelFocus { get { return 45.0; } }
 
         public override Faction FactionAllegiance { get { return Shadowlords.Instance; } }
@@ -107,6 +107,7 @@ namespace Server.Mobiles
         public override Poison PoisonImmune { get { return Poison.Regular; } }
         public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 4 : 4; } }
         public override int Meat { get { return 1; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
 
         public override void InitBody()
         {
@@ -125,44 +126,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(300, 400);
-                PackScroll(1, 7);
-                PackScroll(1, 7);
-                PackMagicEquipment(1, 2, 0.40, 0.40);
-                PackMagicEquipment(1, 2, 0.05, 0.05);
+            if (Core.RuleSets.AllShards)
+            {   // http://web.archive.org/web/20020220114823/uo.stratics.com/hunters/daemon.shtml
+                // 	150 to 600 Gold, Magic items, Gems, Scrolls, Level 4 treasure maps, 1 Raw Ribs (carved)
 
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020220114823/uo.stratics.com/hunters/daemon.shtml
-                    // 	150 to 600 Gold, Magic items, Gems, Scrolls, Level 4 treasure maps, 1 Raw Ribs (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(150, 600);
-                    }
-                    else
-                    {
-                        PackMagicStuff(1, 2, 0.40);
-                        PackMagicStuff(1, 2, 0.05);
-                        PackGem(1, .9);
-                        PackGem(1, .5);
-                        PackScroll(1, 6, .9);
-                        PackScroll(1, 6, .5);
-                    }
+                if (Spawning)
+                {
+                    PackGold(150, 600);
                 }
                 else
                 {
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.Average, 2);
-                    AddLoot(LootPack.MedScrolls, 2);
+                    PackMagicStuff(1, 2, 0.40);
+                    PackMagicStuff(1, 2, 0.05);
+                    PackGem(1, .9);
+                    PackGem(1, .5);
+                    PackScroll(1, 6, .9);
+                    PackScroll(1, 6, .5);
                 }
             }
         }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -131,7 +131,7 @@ namespace Server.Items
                 // avoid client crash when setting GMRobes to hue -1 or any value < 0
                 if (value < 0)
                 {
-                    Mobile from = RootParent as Mobile;
+                    Mobile? from = RootParent as Mobile;
 
                     if (from != null)
                         from.SendMessage("Illegal value.");

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,13 +21,16 @@
 
 namespace Server.Items
 {
+    [Aliases("StatueDyeTub")]
     public class StatuetteDyeTub : DyeTub, Engines.VeteranRewards.IRewardItem
     {
         public override bool AllowDyables { get { return false; } }
+        public override bool AllowStatues { get { return true; } }
         public override bool AllowStatuettes { get { return true; } }
         public override int TargetMessage { get { return 1049777; } } // Target the statuette to dye
-        public override int FailMessage { get { return 1049778; } } // You can only dye veteran reward statuettes with this tub.
-        public override int LabelNumber { get { return 1049741; } } // Reward Statuette Dye Tub
+        public override int FailMessage { get { return 1042083; } } // You can not dye that.
+        //public override int LabelNumber { get { return 1049741; } } // Reward Statuette Dye Tub
+        public override string DefaultName => "Statue Dye Tub";
         public override CustomHuePicker CustomHuePicker { get { return CustomHuePicker.LeatherDyeTub; } }
 
         private bool m_IsRewardItem;

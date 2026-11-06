@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -54,7 +54,7 @@ namespace Server.Factions
                 {
                     case 0x00E4: // *i wish to access the city treasury*
                         {
-                            Town town = Town.FromRegion(from.Region);
+                            Town? town = Town.FromRegion(from.Region);
 
                             if (town == null || !town.IsFinance(from) || !from.Alive)
                                 break;
@@ -74,7 +74,7 @@ namespace Server.Factions
                         }
                     case 0x0ED: // *i am sheriff*
                         {
-                            Town town = Town.FromRegion(from.Region);
+                            Town? town = Town.FromRegion(from.Region);
 
                             if (town == null || !town.IsSheriff(from) || !from.Alive)
                                 break;
@@ -94,7 +94,7 @@ namespace Server.Factions
                         }
                     case 0x00EF: // *you are fired*
                         {
-                            Town town = Town.FromRegion(from.Region);
+                            Town? town = Town.FromRegion(from.Region);
 
                             if (town == null)
                                 break;
@@ -106,7 +106,7 @@ namespace Server.Factions
                         }
                     case 0x00E5: // *i wish to resign as finance minister*
                         {
-                            PlayerState pl = PlayerState.Find(from);
+                            PlayerState? pl = PlayerState.Find(from);
 
                             if (pl != null && pl.Finance != null)
                             {
@@ -118,7 +118,7 @@ namespace Server.Factions
                         }
                     case 0x00EE: // *i wish to resign as sheriff*
                         {
-                            PlayerState pl = PlayerState.Find(from);
+                            PlayerState? pl = PlayerState.Find(from);
 
                             if (pl != null && pl.Sheriff != null)
                             {
@@ -130,7 +130,7 @@ namespace Server.Factions
                         }
                     case 0x00E9: // *what is my faction term status*
                         {
-                            PlayerState pl = PlayerState.Find(from);
+                            PlayerState? pl = PlayerState.Find(from);
 
                             if (pl != null && pl.IsLeaving)
                             {
@@ -171,7 +171,7 @@ namespace Server.Factions
                         }
                     case 0x00EC: // *showscore*
                         {
-                            PlayerState pl = PlayerState.Find(from);
+                            PlayerState? pl = PlayerState.Find(from);
 
                             if (pl != null)
                                 Timer.DelayCall(TimeSpan.Zero, new TimerStateCallback(ShowScore_Sandbox), pl);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -63,7 +63,7 @@ namespace Server.Spells.Second
 		 */
         public override bool CheckCast()
         {
-            if (Core.RuleSets.AOSRules() || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+            if (Core.RuleSets.AOSRules() || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
                 return true;
 
             if (m_Registry.ContainsKey(Caster))
@@ -93,7 +93,7 @@ namespace Server.Spells.Second
              * even after dying�until you �turn them off� by casting them again.
              */
 
-            object[] mods = (object[])m_Table[target];
+            object[]? mods = (object[]?)m_Table[target];
 
             if (mods == null)
             {
@@ -134,7 +134,7 @@ namespace Server.Spells.Second
 
         public override void OnCast()
         {
-            if (Core.RuleSets.AOSRules() || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+            if (Core.RuleSets.AOSRules() || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
             {
                 if (CheckSequence())
                     Toggle(Caster, Caster);

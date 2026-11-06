@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -128,13 +128,6 @@ namespace Server.Mobiles
                     Add(new GenericBuyInfo("1060834", typeof(Engines.Plants.PlantBowl), BaseVendor.PlayerPays(2), 20, 0x15FD, 0));
 
                 // 8/21/23, Yoar: Do these work? Either way, we don't need them since we can grow hedges using the plant system
-#if false
-                if (Core.RuleSets.TownshipRules())
-                {
-                    Add(new GenericBuyInfo(typeof(Server.Township.Boxwood), BaseVendor.PlayerPays(700), 20, Server.Township.Boxwood.YoungBoxwood, 0));
-                    //Add(new GenericBuyInfo(typeof(Server.Township.Holly), BaseVendor.PlayerPays(700), 20, Server.Township.Holly.YoungHolly, 0));
-                }
-#endif
 
                 if (Core.RuleSets.AllServerRules())
                 {

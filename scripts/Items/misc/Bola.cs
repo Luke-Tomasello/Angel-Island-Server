@@ -1,11 +1,11 @@
-/***************************************************************************
+﻿/***************************************************************************
  *
  *   RunUO                   : May 1, 2002
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,7 +62,11 @@ namespace Server.Items
         private WeaponQuality m_Quality;
         private int m_Uses;
         private MakersMark m_Crafter;
-
+        private enum BolaOutcome
+        {
+            Entangle,
+            Dismount
+        }
         [Constructable]
         public Bola()
             : base(0x26AC)
@@ -170,19 +174,7 @@ namespace Server.Items
             from.Send(new DisplayEquipmentInfo(this, eqInfo));
         }
 
-#if false
-        private static void ReleaseBolaLock(object state)
-        {
-            ((Mobile)state).EndAction(typeof(Bola));
-        }
-
-        private static void ReleaseMountLock(object state)
-        {
-            ((Mobile)state).EndAction(typeof(BaseMount));
-        }
-#endif
-
-        public static void BeginBolaLock(Mobile m)
+        public static void BeginBolaThrowLock(Mobile m)
         {
             m.BeginAction(typeof(Bola));
 
@@ -226,59 +218,110 @@ namespace Server.Items
             bc.RevealingAction();
             bc.CantWalkLand = false;
 
-            b.Visible = true;
+            if (b.Deleted)
+                return;
 
-            if (b.Checkbreak())
-                bc.NonlocalOverheadMessage(MessageType.Emote, 0x3B2, true, "*" + bc.Name + " frees itself by ripping apart the bola*");
+            if (b.TryBreak(attributedReason: "*" + bc.Name + " frees itself by ripping apart the bola*"))
+            {
+                // Bola broke while entangled - it is destroyed
+                bc.NonlocalOverheadMessage(MessageType.Emote, 0x3B2, true,
+                    "*" + bc.Name + " frees itself by ripping apart the bola*");
+
+                // bola has already been deleted
+            }
             else
-                bc.NonlocalOverheadMessage(MessageType.Emote, 0x3B2, true, "*" + bc.Name + " frees itself from the bola*");
+            {
+                // Bola is still intact - make it visible and recoverable again
+                BolaState(b, visible: true, movable: true);
+
+                bc.NonlocalOverheadMessage(MessageType.Emote, 0x3B2, true,
+                    "*" + bc.Name + " frees itself from the bola*");
+            }
         }
 
         private static bool VerifyThrow(Bola bola, Mobile from, Mobile to)
         {
             if (!bola.IsChildOf(from.Backpack))
             {
-                from.SendLocalizedMessage(1040019); // The bola must be in your pack to use it.
+                from.SendLocalizedMessage(1040019); // The bola must be in your pack to use it. 
+                return false;
             }
-            else if (from.FindItemOnLayer(Layer.OneHanded) != null || from.FindItemOnLayer(Layer.TwoHanded) != null)
+
+            if (from.FindItemOnLayer(Layer.OneHanded) != null || from.FindItemOnLayer(Layer.TwoHanded) != null)
             {
-                from.SendLocalizedMessage(1040015); // Your hands must be free to use this
+                from.SendLocalizedMessage(1040015); // Your hands must be free to use this 
+                return false;
             }
-            else if (from.Mounted)
+
+            if (from.Mounted)
             {
-                from.SendLocalizedMessage(1040016); // You cannot use this while riding a mount
+                from.SendLocalizedMessage(1040016); // You cannot use this while riding a mount 
+                return false;
             }
-            else if (!from.CanSee(to) || !from.InLOS(to))
+
+            if (!from.CanSee(to) || !from.InLOS(to))
             {
-                from.SendLocalizedMessage(1042060); // You cannot see that target!
+                from.SendLocalizedMessage(1042060); // You cannot see that target! 
+                return false;
             }
-            else if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) && !(to is BaseCreature))
+
+            if (!from.CanBeHarmful(to))
             {
-                from.SendLocalizedMessage(1049629); // You cannot throw a bola at that.
+                return false;
             }
-            else if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules() && !to.Mounted)
+
+            if (from == to)
             {
-                from.SendLocalizedMessage(1049628); // You have no reason to throw a bola at that.
+                from.SendMessage("You throw the bola at yourself... truly a master strategist.");
+                return false;
             }
-            else if (to is BaseCreature && ((BaseCreature)to).BolaImmune)
+
+            #region Overpowered Target Check 
+
+            // Block bolas on wild creatures - prevents major taming exploit 
+            if (to is BaseCreature bc && !bc.Controlled && !bc.Summoned)
             {
-                from.SendLocalizedMessage(1049629); // You cannot throw a bola at that.
+                from.SendMessage("That creature is too nimble to be bolaed.");
+                return false;
             }
-            else if (!from.CanBeHarmful(to))
+
+            // Block bolas on unmounted players - prevents overly strong PvP control 
+            if (!to.Mounted && to.Player)
             {
+                from.SendMessage("That human is too nimble to be bolaed.");
+                return false;
             }
-            else
+
+            #endregion Overpowered Target Check 
+
+            // === Hybrid Mode Check === 
+            if (Core.RuleSets.BolaHybridModel())
             {
+                // Hybrid mode still allows: 
+                // - Mounted players 
+                // - Controlled/summoned creatures 
                 return true;
             }
 
-            return false;
+            // === Original Mode Checks === 
+            if (Core.RuleSets.BolaEntanglesCreatures() && !(to is BaseCreature))
+            {
+                from.SendLocalizedMessage(1049629); // You cannot throw a bola at that. 
+                return false;
+            }
+
+            if (Core.RuleSets.BolaKnocksOffRider() && !to.Mounted)
+            {
+                from.SendLocalizedMessage(1049628); // You have no reason to throw a bola at that. 
+                return false;
+            }
+
+            return true;
         }
 
         private static void FinishThrow(object state)
         {
             object[] states = (object[])state;
-
             Mobile from = (Mobile)states[0];
             Mobile to = (Mobile)states[1];
             Bola b = (Bola)states[2];
@@ -291,106 +334,165 @@ namespace Server.Items
 
             from.RevealingAction();
 
-            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+            // === HYBRID MODE ROUTING ===
+            if (Core.RuleSets.BolaHybridModel())
             {
-                #region AI/MO Difficulty Check
-
-                double diff = b.GetDifficultyFor(to);
-
                 if (to.Mounted)
-                    diff -= 25.0; // easier to knock someone off a horse than it is to tie them up
-
-                if (!from.CheckTargetSkill(SkillName.Tactics, to, diff - 25.0, diff + 25.0, new object[2] { to, null } /*contextObj*/) || DateTime.UtcNow < (from.LastMoveTime + TimeSpan.FromSeconds(StandingDelay)))
                 {
-                    from.SendMessage("You throw the bola but miss!");
-
-                    Map map = to.Map;
-
-                    if (map == null || b.Checkbreak())
-                    {
-                        b.Delete();
-                    }
-                    else
-                    {
-                        int x = to.X + Utility.RandomMinMax(-2, +2);
-                        int y = to.Y + Utility.RandomMinMax(-2, +2);
-                        int z = to.Z;
-
-                        Point3D p = new Point3D(x, y, z);
-
-                        if (map.CanFit(p, 16) || map.CanFit(p = new Point3D(p, map.GetAverageZ(x, y)), 16))
-                            b.MoveToWorld(p, map);
-                        else
-                            b.Delete();
-                    }
-
-                    BeginBolaLock(from);
-                    return;
+                    // Mounted target → Knock off rider path
+                    HandleBolaDismount(from, to, b);
                 }
-
-                #endregion
-            }
-
-            if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) && !to.Mounted)
-            {
-                #region AI/MO Freeze Target
-
-                b.MoveToWorld(to.Location, to.Map);
-                b.Visible = false;
-
-                to.CantWalkLand = true;
-                to.NonlocalOverheadMessage(MessageType.Emote, 0x3B2, true, "*" + to.Name + " becomes entangled in the bola*");
-
-                double duration = 7.0 + from.Skills[SkillName.Anatomy].Value * 0.1 + from.Dex * 0.1 - to.Str / 150.0;
-
-                Timer.DelayCall(TimeSpan.FromSeconds(duration), new TimerStateCallback(RestoreCurrentSpeed), new object[] { to, b });
-
-                #endregion
-            }
-            else if (to.Mounted && PublishInfo.Publish < 16.0 && Utility.RandomDouble() >= from.Skills[SkillName.Tactics].Value / 100.0)
-            {
-                from.SendLocalizedMessage(1040022); // You fail to knock the rider from their mount.
-
-                if (b.Checkbreak())
-                    b.Delete();
                 else
-                    b.MoveToWorld(to.Location, to.Map);
+                {
+                    // On foot target → Entangle path
+                    HandleBolaEntangle(from, to, b);
+                }
+                return;
             }
-            else if (to.Mounted)
+
+            // === Original modes (unchanged) ===
+            if (Core.RuleSets.BolaEntanglesCreatures())
+            {
+                HandleBolaEntangle(from, to, b);
+            }
+            else if (Core.RuleSets.BolaKnocksOffRider())
+            {
+                HandleBolaDismount(from, to, b);
+            }
+        }
+        private static void HandleBolaDismount(Mobile from, Mobile to, Bola b)
+        {
+            if (to.Mounted)
             {
                 IMount mt = to.Mount;
-
                 if (mt != null)
                     mt.Rider = null;
 
                 to.SendLocalizedMessage(1040023); // You have been knocked off of your mount!
 
                 if (PublishInfo.Publish >= 16.0)
-                    to.Damage(1, from, b);
+                    to.Damage(1, from, new DamageContext { Source = b });
 
                 BeginMountLock(to);
-
-                if (b.Checkbreak())
-                    b.Delete();
-                else
-                    b.MoveToWorld(to.Location, to.Map);
             }
 
-            BeginBolaLock(from);
+            FinishBolaThrow(from, to, b, BolaOutcome.Dismount);
         }
 
-        private bool Checkbreak()
+        private static void HandleBolaEntangle(Mobile from, Mobile to, Bola b)
         {
-            // TODO: The following is AI/MO behavior. What is the era-accurate behavior?
-            if (++Uses >= MaxUses || Utility.RandomDouble() < 0.30)
+            #region Difficulty Check (existing logic)
+            double diff = b.GetDifficultyFor(to);
+            if (to.Mounted)
+                diff -= 25.0; // easier to knock someone off a horse than it is to tie them up
+
+            if (!from.CheckTargetSkill(SkillName.Tactics, to, diff - 25.0, diff + 25.0, new object?[2] { to, null } /*contextObj*/) ||
+                DateTime.UtcNow < (from.LastMoveTime + TimeSpan.FromSeconds(Bola.StandingDelay)))
             {
-                Delete();
-                return true;
+                from.SendMessage("You throw the bola but miss!");
+                Map map = to.Map;
+
+                if (map == null)
+                {
+                    b.DeleteBola("Map is null");
+                }
+                else if (b.TryBreak(attributedReason: "simple wear and tear"))
+                {
+                    // bola has already been deleted
+                }
+                else
+                {
+                    int x = to.X + Utility.RandomMinMax(-2, +2);
+                    int y = to.Y + Utility.RandomMinMax(-2, +2);
+                    int z = to.Z;
+
+                    Point3D p = new Point3D(x, y, z);
+
+                    if (map.CanFit(p, 16) || map.CanFit(p = new Point3D(p, map.GetAverageZ(x, y)), 16))
+                    {
+                        // you missed, but can pick it up
+                        BolaState(b, visible: true, movable: true);
+                        b.MoveToWorld(p, map);
+                    }
+                    else
+                        b.DeleteBola(attributedReason: "map.CanFit() == false");
+                }
+                BeginBolaThrowLock(from);
+                return;
+            }
+            #endregion
+
+            // Successful entangle
+            BolaState(b, visible: true, movable: false);
+            b.MoveToWorld(to.Location, to.Map);
+
+            to.CantWalkLand = true;
+
+            // NEW
+            BeginMountLock(to);
+
+            to.NonlocalOverheadMessage(MessageType.Emote, 0x3B2, true, "*" + to.Name + " becomes entangled in the bola*");
+
+            double duration = 7.0 + from.Skills[SkillName.Anatomy].Value * 0.1 + from.Dex * 0.1 - to.Str / 150.0;
+
+            Timer.DelayCall(TimeSpan.FromSeconds(duration), new TimerStateCallback(RestoreCurrentSpeed), new object[] { to, b });
+
+            FinishBolaThrow(from, to, b, BolaOutcome.Entangle);
+        }
+
+        private static void FinishBolaThrow(Mobile from, Mobile to, Bola b, BolaOutcome outcome)
+        {
+            if (b.TryBreak(attributedReason: "simple wear and tear"))
+            {
+                // bola has already been deleted
+            }
+            else
+            {
+                if (outcome == BolaOutcome.Entangle)
+                {
+                    // Wrapped around target - visible but not yet recoverable
+                    BolaState(b, visible: true, movable: false);
+                }
+                else // Dismount
+                {
+                    // Normal state after successful dismount
+                    BolaState(b, visible: true, movable: true);
+                }
+
+                b.MoveToWorld(to.Location, to.Map);
             }
 
+            BeginBolaThrowLock(from);
+        }
+
+        private static void BolaState(Bola b, bool visible, bool movable)
+        {
+            b.Visible = visible;
+            b.Movable = movable;
+        }
+        private void ConsumeUse()
+        {
+            m_Uses++;
+        }
+        private bool TryBreak(string attributedReason)
+        {
+            bool atMaxUses = m_Uses >= MaxUses;
+            bool randomBreak = Utility.RandomDouble() < 0.30;
+
+            if (atMaxUses || randomBreak)
+            {
+                DeleteBola(attributedReason + (atMaxUses ? " (max uses)" : " (chance)"));
+                return true;
+            }
             return false;
         }
 
+        public void DeleteBola(string attributedReason)
+        {
+            // *Why* it was deleted
+            Utility.Monitor.DebugOut($"Notice: Bola deleted. Reason: {attributedReason}.", ConsoleColor.DarkRed);
+            Delete();
+        }
         private class BolaTarget : Target
         {
             private Bola m_Bola;
@@ -412,6 +514,8 @@ namespace Server.Items
 
                     if (!VerifyThrow(m_Bola, from, to))
                         return;
+
+                    m_Bola.ConsumeUse();
 
                     if (from.BeginAction(typeof(Bola)))
                     {
@@ -481,12 +585,12 @@ namespace Server.Items
 
         #region Difficulty
 
-        public static bool IsMageryCreature(BaseCreature bc)
+        public static bool IsMageryCreature(BaseCreature? bc)
         {
             return (bc != null && bc.AI == AIType.AI_Mage && bc.Skills[SkillName.Magery].Base > 5.0);
         }
 
-        public static bool IsFireBreathingCreature(BaseCreature bc)
+        public static bool IsFireBreathingCreature(BaseCreature? bc)
         {
             if (bc == null)
                 return false;
@@ -522,7 +626,7 @@ namespace Server.Items
             if (val > 700)
                 val = 700 + ((val - 700) / 3.66667);
 
-            BaseCreature bc = targ as BaseCreature;
+            BaseCreature? bc = targ as BaseCreature;
 
             if (IsMageryCreature(bc))
                 val += 100;

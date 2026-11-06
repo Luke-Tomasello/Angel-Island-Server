@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -157,7 +157,7 @@ namespace Server.PathAlgorithms.Sector
                     Console.WriteLine("done in {0} seconds.", (DateTime.UtcNow - dt).TotalSeconds);
                     Console.Write("Computing SectorNode network...");
                     dt = DateTime.UtcNow;
-                    MovementPath mp = null;
+                    MovementPath? mp = null;
 
                     for (int y = 0; y < (Map.Felucca.Height >> Map.SectorShift); y++)
                     {
@@ -247,7 +247,7 @@ namespace Server.PathAlgorithms.Sector
 
                                 while (open.Count > 0)
                                 {
-                                    SectorNode sn = (SectorNode)open.Dequeue();
+                                    SectorNode? sn = (SectorNode?)open.Dequeue();
                                     closed.Add(sn);
 
                                     sn.Island = island;
@@ -388,11 +388,11 @@ namespace Server.PathAlgorithms.Sector
         private class SearchNode
         {
             public SectorNode SectorNode;
-            public SearchNode Parent;
+            public SearchNode? Parent;
             public int G;
             public double Score;
 
-            public SearchNode(SectorNode sn, SearchNode parent, int g, Point3D goal)
+            public SearchNode(SectorNode sn, SearchNode? parent, int g, Point3D goal)
             {
                 SectorNode = sn;
                 Parent = parent;
@@ -400,9 +400,9 @@ namespace Server.PathAlgorithms.Sector
                 Score = g + Heuristic(goal);
             }
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
-                SearchNode sn = obj as SearchNode;
+                SearchNode? sn = obj as SearchNode;
                 if (sn == null)
                     return false;
 
@@ -472,7 +472,7 @@ namespace Server.PathAlgorithms.Sector
                 }
             }
 
-            public SearchNode Pop()
+            public SearchNode? Pop()
             {
                 if (m_Count == 0)
                     return null;
@@ -492,11 +492,6 @@ namespace Server.PathAlgorithms.Sector
             {
                 for (int i = 0; i < m_Heap.Length; i++)
                     m_Heap[i] = null;
-            }
-
-            public bool ContainsMatch(SearchNode sn)
-            {
-                return IndexOf(sn) != -1;
             }
 
             private int IndexOf(SearchNode sn)
@@ -549,7 +544,7 @@ namespace Server.PathAlgorithms.Sector
                 }
             }
 
-            public SearchNode FindMatch(SearchNode sn)
+            public SearchNode? FindMatch(SearchNode sn)
             {
                 int index = IndexOf(sn);
                 if (index == -1)
@@ -580,7 +575,7 @@ namespace Server.PathAlgorithms.Sector
 
             while (open.Count > 0)
             {
-                SearchNode curnode = open.Pop();
+                SearchNode? curnode = open.Pop();
                 closed.Add(curnode);
 
                 if (curnode.SectorNode == goalnode)
@@ -593,7 +588,7 @@ namespace Server.PathAlgorithms.Sector
                     if (closed.Contains(newnode))
                         continue;
 
-                    SearchNode existing = open.FindMatch(newnode);
+                    SearchNode? existing = open.FindMatch(newnode);
                     if (existing == null)
                         open.Add(newnode);
                     else if (newnode.G < existing.G)
@@ -602,7 +597,7 @@ namespace Server.PathAlgorithms.Sector
                 }
             }
 
-            SearchNode sn = (SearchNode)closed[closed.Count - 1];
+            SearchNode? sn = (SearchNode?)closed[closed.Count - 1];
             if (sn.SectorNode == goalnode)
             {
                 Stack nodes = new Stack();

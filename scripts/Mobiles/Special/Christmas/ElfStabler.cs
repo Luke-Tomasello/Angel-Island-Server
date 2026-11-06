@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -80,9 +80,9 @@ namespace Server.Mobiles
             return 0;
         }
 
-        public override IList<BaseCreature> GetStabledPets(Mobile m, BaseCreature bc = null)
+        public override IList<BaseCreature> GetStabledPets(Mobile m, BaseCreature? bc = null)
         {
-            List<BaseCreature> list;
+            List<BaseCreature>? list;
 
             if (!m_Table.TryGetValue(m, out list))
                 return new BaseCreature[0];
@@ -92,7 +92,7 @@ namespace Server.Mobiles
 
         public override void AddStabledPet(Mobile m, BaseCreature pet)
         {
-            List<BaseCreature> list;
+            List<BaseCreature>? list;
 
             if (!m_Table.TryGetValue(m, out list))
                 m_Table[m] = list = new List<BaseCreature>();
@@ -105,7 +105,7 @@ namespace Server.Mobiles
 
         public override void RemoveStabledPet(Mobile m, BaseCreature pet)
         {
-            List<BaseCreature> list;
+            List<BaseCreature>? list;
 
             if (!m_Table.TryGetValue(m, out list))
                 return;
@@ -115,7 +115,7 @@ namespace Server.Mobiles
             pet.IsElfStabled = false;
             // don't remove from the pet cache here as the previous call to SetControlMaster just set it
         }
-        public override bool CheckPetCondidtion(Mobile from, BaseCreature pet, bool message = true)
+        public override bool CheckPetCondition(Mobile from, BaseCreature pet, bool message = true)
         {
             if (from.AccessLevel >= AccessLevel.GameMaster)
             {
@@ -206,7 +206,7 @@ namespace Server.Mobiles
 
             for (int i = 0; i < count; i++)
             {
-                Mobile m = reader.ReadMobile();
+                Mobile? m = reader.ReadMobile();
                 List<BaseCreature> pets = reader.ReadStrongMobileList<BaseCreature>();
 
                 if (m != null)

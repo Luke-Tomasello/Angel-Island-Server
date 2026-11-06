@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -49,7 +49,7 @@ namespace Server.Items
         public override BaseAddonDeed Deed { get { return new FlourMillEastDeed(); } }
 
         private int m_Flour;
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public int MaxFlour
@@ -99,17 +99,19 @@ namespace Server.Items
                 m_Timer = null;
             }
 
-            Mobile from = state as Mobile;
+            Mobile? from = state as Mobile;
 
             if (from != null && !from.Deleted && !this.Deleted && IsFull)
             {
                 SackFlour flour = new SackFlour();
 
                 flour.ItemID = (Utility.RandomBool() ? 4153 : 4165);
+                Server.Engines.Economy.Provenance.Inherit(this, flour);    // merchant-bought wheat went in (WheatSheaf.OnTarget)
 
                 if (from.PlaceInBackpack(flour))
                 {
                     m_Flour = 0;
+                    StoreBought = false;
                 }
                 else
                 {
@@ -162,7 +164,7 @@ namespace Server.Items
 
             for (int i = 0; i < components.Count; ++i)
             {
-                AddonComponent component = components[i] as AddonComponent;
+                AddonComponent? component = components[i] as AddonComponent;
 
                 if (component == null)
                     continue;

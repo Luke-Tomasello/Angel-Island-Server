@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -53,12 +53,12 @@ namespace Server
             return m_Rect.Contains(loc);
         }
 
-        int IComparable.CompareTo(object obj)
+        int IComparable.CompareTo(object? obj)
         {
             if (obj == null)
                 return 1;
 
-            RegionRect regRect = obj as RegionRect;
+            RegionRect? regRect = obj as RegionRect;
 
             if (regRect == null)
                 throw new ArgumentException("obj is not a RegionRect", "obj");
@@ -73,11 +73,11 @@ namespace Server
         private int m_X, m_Y;
         private Map m_Owner;
         private List<Mobile> m_Mobiles;
-        private List<Mobile> m_Players;
+        private List<Mobile>? m_Players;
         private List<Item> m_Items;
         private List<NetState> m_Clients;
         private List<BaseMulti> m_Multis;
-        private List<RegionRect> m_RegionRects;
+        private List<RegionRect>? m_RegionRects;
         private bool m_Active;
 
         // TODO: Can we avoid this?

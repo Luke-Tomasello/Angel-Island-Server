@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -37,6 +37,8 @@
 using Server.Items;
 using Server.Multis.Deeds;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Server.Multis
 {
@@ -121,7 +123,16 @@ namespace Server.Multis
             m_TentPack.Hue = m_RoofHue;
 
             if (this.Owner != null)
-                Timer.DelayCall(TimeSpan.FromSeconds(1.5), new TimerStateCallback(WarnTick), new object[] { this.Owner, null });
+                Timer.DelayCall(TimeSpan.FromSeconds(1.5), new TimerStateCallback(WarnTick), new object?[] { this.Owner, null });
+        }
+
+        public List<Item> GetItems()
+        {
+            List<Item> list = new();
+            list.AddRange(Addons.OfType<Item>().ToList());
+            list.Add(m_TentBed);
+            list.Add(m_TentPack);
+            return list;
         }
         private void WarnTick(object state)
         {
@@ -134,7 +145,7 @@ namespace Server.Multis
             }
         }
 
-        public override void MoveToWorld(Point3D location, Map map, Mobile responsible = null)
+        public override void MoveToWorld(Point3D location, Map map, Mobile? responsible = null)
         {
             base.MoveToWorld(location, map);
             GenerateTent();

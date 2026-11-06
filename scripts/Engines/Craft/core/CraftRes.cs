@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -38,9 +38,9 @@ namespace Server.Engines.Craft
         private TextDefinition m_Message;
         private TextDefinition m_Name;
 
-        private Predicate<Item> m_Predicate;
+        private Predicate<Item>? m_Predicate;
 
-        public CraftRes(Type type, TextDefinition name, int amount, TextDefinition message, Predicate<Item> predicate)
+        public CraftRes(Type type, TextDefinition name, int amount, TextDefinition message, Predicate<Item>? predicate)
         {
             m_Type = type;
             m_Amount = amount;
@@ -71,7 +71,7 @@ namespace Server.Engines.Craft
             get { return m_Amount; }
         }
 
-        public Predicate<Item> Predicate
+        public Predicate<Item>? Predicate
         {
             get { return m_Predicate; }
         }

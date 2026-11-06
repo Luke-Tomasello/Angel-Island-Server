@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -83,7 +83,7 @@ namespace Server.Mobiles
             return dac;
         }
 
-        public override bool AcquireFocusMobWorker(int iRange, FightMode acqType, FightMode acqFlags, bool bPlayerOnly, bool bFacFriend, bool bFacFoe, List<Mobile> ignore = null)
+        public override bool AcquireFocusMobWorker(int iRange, FightMode acqType, FightMode acqFlags, bool bPlayerOnly, bool bFacFriend, bool bFacFoe, List<Mobile>? ignore = null)
         {
             if (m_Mobile.Deleted)
                 return false;
@@ -149,7 +149,7 @@ namespace Server.Mobiles
 
             return false;
         }
-        public static bool GuardedRegionEvilMonsterRule(Mobile checking, Region r, Mobile beingChecked)
+        public static bool GuardedRegionEvilMonsterRule(Mobile? checking, Region r, Mobile beingChecked)
         {   // special guard logic
             // called from BaseAI and also IsGuardCandidate
 

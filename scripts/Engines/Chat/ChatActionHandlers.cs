@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -86,7 +86,7 @@ namespace Server.Engines.Chat
                 m_Handlers[actionID] = new ChatActionHandler(requireModerator, requireConference, callback);
         }
 
-        public static ChatActionHandler GetHandler(int actionID)
+        public static ChatActionHandler? GetHandler(int actionID)
         {
             if (actionID >= 0 && actionID < m_Handlers.Length)
                 return m_Handlers[actionID];
@@ -457,7 +457,7 @@ namespace Server.Engines.Chat
 
             for (int i = 0; i < list.Count; ++i)
             {
-                Channel c = (Channel)list[i];
+                Channel? c = (Channel?)list[i];
 
                 if (c.AddUser(from))
                     break;

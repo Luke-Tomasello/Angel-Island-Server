@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -82,9 +82,6 @@ namespace Server.Items
             base.OnItemRemoved(item);
 
             // keep the loot item to support dragging the item within the container
-#if false
-            m_Table.Remove(item);
-#endif
         }
 
         public override bool OnDragDrop(Mobile from, Item dropped)
@@ -121,7 +118,7 @@ namespace Server.Items
 
         private void DisplayLootItem(Mobile from, Item item)
         {
-            EventLootItem lootItem;
+            EventLootItem? lootItem;
 
             if (m_Table.TryGetValue(item, out lootItem))
                 from.SendGump(new PropertiesGump(from, lootItem));
@@ -156,7 +153,7 @@ namespace Server.Items
             {
                 Item item = Items[i];
 
-                EventLootItem lootItem;
+                EventLootItem? lootItem;
 
                 if (m_Table.TryGetValue(item, out lootItem) && Utility.RandomDouble() < lootItem.Chance)
                     AppendLoot(list, item);
@@ -171,7 +168,7 @@ namespace Server.Items
             {
                 Item item = Items[i];
 
-                EventLootItem lootItem;
+                EventLootItem? lootItem;
 
                 if (m_Table.TryGetValue(item, out lootItem))
                     total += lootItem.Weight;
@@ -186,7 +183,7 @@ namespace Server.Items
             {
                 Item item = Items[i];
 
-                EventLootItem lootItem;
+                EventLootItem? lootItem;
 
                 if (m_Table.TryGetValue(item, out lootItem))
                 {
@@ -267,7 +264,7 @@ namespace Server.Items
 
                         for (int i = 0; i < count; i++)
                         {
-                            Item item = reader.ReadItem();
+                            Item? item = reader.ReadItem();
 
                             EventLootItem lootItem = new EventLootItem(item);
 
@@ -310,12 +307,12 @@ namespace Server.Items
     [PropertyObject]
     public class EventLootItem
     {
-        private Item m_Owner;
+        private Item? m_Owner;
         private double m_Chance;
         private int m_Weight;
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Item Owner
+        public Item? Owner
         {
             get { return m_Owner; }
         }
@@ -334,7 +331,7 @@ namespace Server.Items
             set { m_Weight = value; }
         }
 
-        public EventLootItem(Item owner)
+        public EventLootItem(Item? owner)
         {
             m_Owner = owner;
             m_Chance = 1.0;

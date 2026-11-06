@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -61,7 +61,7 @@ namespace Server.Engines.ConPVP
         {
             for (int i = 0; i < m_Flavors.Count; ++i)
             {
-                Ruleset flavor = (Ruleset)m_Flavors[i];
+                Ruleset? flavor = (Ruleset?)m_Flavors[i];
 
                 m_Options.Or(flavor.m_Options);
             }
@@ -88,7 +88,7 @@ namespace Server.Engines.ConPVP
 
         public void SetOptionRange(string title, bool value)
         {
-            RulesetLayout layout = m_Layout.FindByTitle(title);
+            RulesetLayout? layout = m_Layout.FindByTitle(title);
 
             if (layout == null)
                 return;
@@ -102,7 +102,7 @@ namespace Server.Engines.ConPVP
         public bool GetOption(string title, string option)
         {
             int index = 0;
-            RulesetLayout layout = m_Layout.FindByOption(title, option, ref index);
+            RulesetLayout? layout = m_Layout.FindByOption(title, option, ref index);
 
             if (layout == null)
                 return true;
@@ -113,7 +113,7 @@ namespace Server.Engines.ConPVP
         public void SetOption(string title, string option, bool value)
         {
             int index = 0;
-            RulesetLayout layout = m_Layout.FindByOption(title, option, ref index);
+            RulesetLayout? layout = m_Layout.FindByOption(title, option, ref index);
 
             if (layout == null)
                 return;

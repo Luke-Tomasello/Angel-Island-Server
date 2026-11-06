@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -22,7 +22,6 @@
 using Server.Commands;
 using Server.Gumps;
 using Server.Items;
-using System;
 using System.Collections;
 using System.IO;
 
@@ -123,14 +122,14 @@ namespace Server
                         if (itemMap == null || itemMap == Map.Internal)
                             continue;
 
-                        Hashtable table = (Hashtable)mapTable[itemMap];
+                        Hashtable? table = (Hashtable?)mapTable[itemMap];
 
                         if (table == null)
                             mapTable[itemMap] = table = new Hashtable();
 
                         Point2D p = new Point2D(item.X >> 3, item.Y >> 3);
 
-                        DeltaState state = (DeltaState)table[p];
+                        DeltaState? state = (DeltaState?)table[p];
 
                         if (state == null)
                             table[p] = state = new DeltaState(p);
@@ -156,14 +155,14 @@ namespace Server
                         if (itemMap == null || itemMap == Map.Internal)
                             continue;
 
-                        Hashtable table = (Hashtable)mapTable[itemMap];
+                        Hashtable? table = (Hashtable?)mapTable[itemMap];
 
                         if (table == null)
                             mapTable[itemMap] = table = new Hashtable();
 
                         Point2D p = new Point2D(item.X >> 3, item.Y >> 3);
 
-                        DeltaState state = (DeltaState)table[p];
+                        DeltaState? state = (DeltaState?)table[p];
 
                         if (state == null)
                             table[p] = state = new DeltaState(p);
@@ -188,7 +187,7 @@ namespace Server
             foreach (DictionaryEntry de in mapTable)
             {
                 Map map = (Map)de.Key;
-                Hashtable table = (Hashtable)de.Value;
+                Hashtable? table = (Hashtable?)de.Value;
 
                 TileMatrix matrix = map.Tiles;
 
@@ -220,7 +219,7 @@ namespace Server
 
                             for (int i = 0; i < state.m_List.Count; ++i)
                             {
-                                Item item = (Item)state.m_List[i];
+                                Item? item = (Item?)state.m_List[i];
 
                                 int xOffset = item.X - (state.m_X * 8);
                                 int yOffset = item.Y - (state.m_Y * 8);
@@ -498,7 +497,7 @@ namespace Server
                 from.SendGump(new NoticeGump(1060637, 30720, string.Format("Unfreeze operation completed successfully.<br><br>{0} item{1} unfrozen.<br><br>You must restart your client and update it's data files to see the changes.", totalUnfrozen, totalUnfrozen != 1 ? "s were" : " was"), 0xFFC000, 320, 240, null, null));
         }
 
-        private static FileStream OpenWrite(FileStream orig)
+        private static FileStream? OpenWrite(FileStream orig)
         {
             if (orig == null)
                 return null;
@@ -507,7 +506,7 @@ namespace Server
             catch { return null; }
         }
 
-        private static byte[] m_Buffer;
+        private static byte[]? m_Buffer;
 
         private static StaticTile[] m_TileBuffer = new StaticTile[128];
 

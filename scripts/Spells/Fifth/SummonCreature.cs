@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -53,22 +53,29 @@ namespace Server.Spells.Fifth
         {
         }
 
-        // TODO: Get real list
+        // NOTE: Creature list based on 1hr of summon/release on OSI.
+
         private static Type[] m_Types = new Type[]
-            {
-                typeof( PolarBear ),
-                typeof( GrizzlyBear ),
-                typeof( BlackBear ),
-                typeof( BrownBear ),
-                typeof( Horse ),
-                typeof( Walrus ),
-                typeof( GreatHart ),
-                typeof( Hind ),
-                typeof( Dog ),
-                typeof( Boar ),
-                typeof( Chicken ),
-                typeof( Rabbit )
-            };
+        {
+            typeof( PolarBear ),
+            typeof( GrizzlyBear ),
+            typeof( BlackBear ),
+            typeof( Horse ),
+            typeof( Walrus ),
+            typeof( Chicken ),
+            typeof( Scorpion ),
+            typeof( GiantSerpent ),
+            typeof( Llama ),
+            typeof( Alligator ),
+            typeof( GreyWolf ),
+            typeof( Slime ),
+            typeof( Eagle ),
+            typeof( Gorilla ),
+            typeof( SnowLeopard ),
+            typeof( Pig ),
+            typeof( Hind ),
+            typeof( Rabbit )
+        };
 
         public override bool CheckCast()
         {
@@ -91,7 +98,7 @@ namespace Server.Spells.Fifth
             {
                 try
                 {
-                    BaseCreature creature = null;
+                    BaseCreature? creature = null;
                     if ((Core.RuleSets.AngelIslandRules()) && Caster.Skills.SpiritSpeak.Value > 50 && (Caster.Skills.SpiritSpeak.Value / 100) >= Utility.RandomDouble())
                     {
                         creature = new HordeMinionFamiliar();

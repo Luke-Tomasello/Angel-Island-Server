@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -73,32 +73,20 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-                PackGold(25, 50);
+            // http://web.archive.org/web/20020213041111/uo.stratics.com/hunters/lizardman.shtml
+            // 0 to 50 Gold, Weapon Carried, 1 Raw Ribs (carved), 12 Hides (carved)
+
+            if (Spawning)
+            {
+                PackGold(0, 50);
+            }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020213041111/uo.stratics.com/hunters/lizardman.shtml
-                    // 0 to 50 Gold, Weapon Carried, 1 Raw Ribs (carved), 12 Hides (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(0, 50);
-                    }
-                    else
-                    {
-                        // Weapon Carried
-                        if (this.Body == 0x23)
-                            PackItem(new ShortSpear());
-                        else if (this.Body == 0x24)
-                            PackItem(new WarMace());
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Meager);
-                    // TODO: weapon
-                }
+                // Weapon Carried
+                if (this.Body == 0x23)
+                    PackItem(new ShortSpear());
+                else if (this.Body == 0x24)
+                    PackItem(new WarMace());
             }
         }
 

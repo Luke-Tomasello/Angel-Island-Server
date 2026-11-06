@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -38,7 +38,6 @@ using Server.Gumps;
 using Server.Items;
 using Server.Network;
 using Server.Regions;
-using System;
 using System.Collections.Generic;
 
 namespace Server.Commands
@@ -57,7 +56,7 @@ namespace Server.Commands
         private static void GetRegion_OnCommand(CommandEventArgs e)
         {
             Mobile from = e.Mobile;
-            Region region = from.Region;
+            Region? region = from.Region;
 
             if (e.Arguments.Length >= 2)
             {
@@ -87,7 +86,7 @@ namespace Server.Commands
         private static void RegionBounds_OnCommand(CommandEventArgs e)
         {
             Mobile from = e.Mobile;
-            Region region = from.Region;
+            Region? region = from.Region;
 
             if (e.Arguments.Length >= 2)
             {
@@ -181,7 +180,7 @@ namespace Server.Commands
             }
         }
 
-        private static Region FindRegion(Map map, string name)
+        private static Region? FindRegion(Map map, string name)
         {
             if (map == null)
                 return null;

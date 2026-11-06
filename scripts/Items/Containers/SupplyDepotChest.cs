@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,8 +48,8 @@ namespace Server.Items
     {
         private int m_Level;
         private DateTime m_DeleteTime;
-        private Timer m_Timer;
-        private Mobile m_Owner;
+        private Timer? m_Timer;
+        private Mobile? m_Owner;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public int Level { get { return m_Level; } set { m_Level = value; } }
@@ -66,7 +66,7 @@ namespace Server.Items
         {
         }
 
-        public SupplyDepotChest(Mobile owner)
+        public SupplyDepotChest(Mobile? owner)
             : base(0x9A9) /*base( 0xE41 )*/
         {
             m_Owner = owner;
@@ -102,7 +102,7 @@ namespace Server.Items
             int regs = CoreAI.SpiritDepotReagents;
             int trpots = CoreAI.SpiritDepotTRPots;
 
-            Item item = null;
+            Item? item = null;
 
             // add a couple lesser explosion potions
             //	these are for batteling hiders in the cave and not for damage
@@ -133,7 +133,8 @@ namespace Server.Items
             cont.DropItem(new BagOfReagents(regs));
 
             // drop res scroll
-            cont.DropItem(new ResurrectionScroll());
+            if (!(Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+                cont.DropItem(new ResurrectionScroll());
 
             return;
         }

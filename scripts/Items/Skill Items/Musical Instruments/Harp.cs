@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,8 @@
 
 /* Scripts\Items\Skill Items\Musical Instruments\Harp.cs
  * ChangeLog
+ *  10/24/26, Adam (AIMusicSystem consolidation)
+ *      AwardHarp moved unchanged to Scripts/Engines/AIMusicSystem/Instruments/LegacyAwardInstruments.cs.
  *  2/19/22, Adam
  *      Obsoleting the specific Award instruments (AwardHarp, AwardLapHarp, and AwardLute) in favor of AwardInstrument
  *  12/8/21, Adam (AwardHarp)
@@ -59,38 +61,6 @@ namespace Server.Items
         }
 
         public Harp(Serial serial)
-            : base(serial)
-        {
-        }
-
-        public override void Serialize(GenericWriter writer)
-        {
-            base.Serialize(writer);
-
-            writer.Write((int)0); // version
-        }
-
-        public override void Deserialize(GenericReader reader)
-        {
-            base.Deserialize(reader);
-
-            int version = reader.ReadInt();
-
-            if (Weight == 3.0)
-                Weight = 35.0;
-        }
-    }
-
-    public class AwardHarp : RazorInstrument
-    {
-        //[Constructable]
-        public AwardHarp()
-            : base(0xEB1, 0x43, 0x44)
-        {
-            Weight = 35.0;
-        }
-
-        public AwardHarp(Serial serial)
             : base(serial)
         {
         }

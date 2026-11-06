@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -324,13 +324,8 @@ namespace Server.Engines.Plants
                     }
                 case 6: // Water
                     {
-#if false
-                        from.Target = new PlantPourTarget(m_Plant);
-                        from.SendLocalizedMessage(1060808, "#" + m_Plant.GetLocalizedPlantStatus().ToString()); // Target the container you wish to use to water the ~1_val~.
-#else
                         // 10/30/23, Yoar: QOL change. Does OSI not do this?
                         AddWater(from);
-#endif
 
                         break;
                     }
@@ -377,7 +372,7 @@ namespace Server.Engines.Plants
 
         private void AddWater(Mobile from)
         {
-            Item item = GetWater(from);
+            Item? item = GetWater(from);
 
             if (item != null)
             {
@@ -394,7 +389,7 @@ namespace Server.Engines.Plants
             from.SendGump(new MainPlantGump(m_Plant));
         }
 
-        public static Item GetWater(Mobile from)
+        public static Item? GetWater(Mobile from)
         {
             if (from.Backpack == null)
                 return null;
@@ -414,7 +409,7 @@ namespace Server.Engines.Plants
 
         private void AddPotion(Mobile from, params PotionEffect[] effects)
         {
-            Item item = GetPotion(from, effects);
+            Item? item = GetPotion(from, effects);
 
             if (item != null)
             {
@@ -441,7 +436,7 @@ namespace Server.Engines.Plants
             from.SendGump(new MainPlantGump(m_Plant));
         }
 
-        public static Item GetPotion(Mobile from, PotionEffect[] effects)
+        public static Item? GetPotion(Mobile from, PotionEffect[] effects)
         {
             if (from.Backpack == null)
                 return null;

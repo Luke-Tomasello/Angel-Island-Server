@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,22 @@
 
 /* Scripts/Items/Maps/TreasureMap.cs
  * ChangeLog
+ *  10/21/2026, Adam
+ *  OnLoad: when there is no Angel Island Treasure.json, the generator prints the progress message
+ *  ("Generating Treasure Map Locations. This may take a while...") instead of OnLoad. Loading is unchanged.
+ *  1/31/2026, Adam
+ * TreasureMap: remove inline location generation; delegate to TreasureMapLocations helper
+ * Body:
+ * Removes legacy treasure location generation logic from TreasureMap.cs and delegates all location loading/generation to a new helper
+ * (static class TreasureMapLocations). TreasureMap is now a pure consumer of the precomputed Locations array, eliminating ad-hoc generation,
+ * embedded constants, and shard-specific logic from the item class itself. This simplifies TreasureMap, reduces coupling, and makes the
+ * location model easier to reason about, test, and evolve independently.
+ * Model overview:
+ * TreasureMap.cs no longer knows how locations are produced. It simply relies on TreasureMapLocations to provide a validated,
+ * shuffled Point2D[] pool at startup. TreasureMapLocations owns the full lifecycle of treasure locations:
+ * loading from cache, generating from world spawners when needed, filtering invalid regions/houses, deduping,
+ * randomizing, and persisting results. This clean separation improves maintainability and avoids future brittleness as world rules or
+ * placement heuristics evolve.
  *  5/5/2024, Adam (TreasureMapQuest)
  *      Add TreasureMapQuest maps. These maps have two distinct differences over regular treasure maps.
  *          1. They load their locations from a special table located in \data\Binary Map Data
@@ -80,7 +96,6 @@
  */
 
 using Server.Commands;
-using Server.Diagnostics;
 using Server.Misc;
 using Server.Mobiles;
 using Server.Network;
@@ -91,63 +106,6 @@ using System.Collections.Generic;
 using System.IO;
 using static Server.Utility;
 
-namespace Server.Commands
-{
-    #region COMMANDS and SUPPORT
-    public class LoadTreasureMapLocations
-    {
-        public static void Initialize()
-        {
-            Server.CommandSystem.Register("LoadTreasureMapLocations", AccessLevel.Owner, new CommandEventHandler(LoadTreasureMapLocations_OnCommand));
-            Server.CommandSystem.Register("ReportBadTile", AccessLevel.GameMaster, new CommandEventHandler(ReportBadTile_OnCommand));
-        }
-
-        [Usage("LoadTreasureMapLocations <?>")]
-        [Description("Loads all OSI and custom AI treasure map locations.")]
-        public static void LoadTreasureMapLocations_OnCommand(CommandEventArgs e)
-        {
-            Console.Write("Loading treasure map locations...");
-            int lcount = Server.Items.TreasureMap.LoadLocations();
-            Mobiles.PlayerMobile pm = e.Mobile as Mobiles.PlayerMobile;
-            pm.JumpIndex = 0;
-            pm.JumpList = new System.Collections.ArrayList();
-            foreach (Point2D px in Server.Items.TreasureMap.Locations)
-            {
-                pm.JumpList.Add(px);
-            }
-            Console.WriteLine("done ({0} locations loaded.)", lcount.ToString());
-        }
-
-
-        [Usage("ReportBadTile")]
-        [Description("Records the tile you are standing and writes it to \"BadTiles.log\".")]
-        public static void ReportBadTile_OnCommand(CommandEventArgs e)
-        {
-            try
-            {
-                int count = ReportBadTileWorker(e);
-                e.Mobile.SendMessage("Reported bad tile. Please see: {0}.", "BadTiles.log");
-            }
-            catch (Exception ex)
-            {
-                LogHelper.LogException(ex);
-            }
-        }
-
-        private static int ReportBadTileWorker(CommandEventArgs e)
-        {
-
-            // get the land tile at our location and recore it in the BadSpawnTiles.log
-            LandTile landTile = Server.Items.TreasureMap.BadTile(e.Mobile.Location);
-            Console.WriteLine(string.Format("0x{0:X}", landTile.ID));
-            LogHelper TileLogger = new LogHelper("BadTiles.log", false);
-            TileLogger.Log(LogType.Text, string.Format("0x{0:X},", landTile.ID));
-            TileLogger.Finish();
-            return 0;
-        }
-    }
-    #endregion COMMANDS and SUPPORT
-}
 namespace Server.Items
 {
     public class TreasureMap : MapItem
@@ -160,77 +118,20 @@ namespace Server.Items
 
         public static void OnLoad()
         {
-            if (SpawnerCache.Spawners.Count == 0)
-            {   // we use the spawner cache to help with treasure map locations
-                Console.Write("Loading spawner cache...");
-                int count = SpawnerCache.LoadSpawnerCache();
-                Console.WriteLine("done ({0} spawners loaded.)", count.ToString());
-                // since we just loaded the spawner cache, now is  good time to look for broken template spawners
-                int bcount = Commands.FindSpawner.LogBrokenTemplateSpawners();
-                if (bcount > 0)
-                {
-                    Utility.Monitor.WriteLine("Warning: {0} Broken Template Spawners detected. Please see: {1}", ConsoleColor.Red, bcount, "FindBrokenTemplateSpawners.log");
-                }
-                // now see if there are any spawners that are trying to spawn something that doesn't exist
-                LogHelper logger = new LogHelper("badspawn.log", false);
-                int kcount = 0;
-                foreach (Spawner sx in SpawnerCache.Spawners)
-                {
-                    if (sx == null) continue;
-                    if (sx.ObjectNames == null) continue;
-                    if (sx.Running == false) continue;
-
-                    foreach (string typeName in sx.ObjectNames)
-                    {
-                        if (SpawnerType.GetType(typeName) == null)
-                        {
-                            kcount++;
-                            logger.Log(LogType.Text, string.Format("Spawner at location {0}, on map {1}, was trying to spawn {2} (which is not a valid type)", sx.Location, sx.Map, typeName));
-                        }
-                    }
-                }
-                logger.Finish();
-
-                if (kcount > 0)
-                {
-                    Utility.Monitor.WriteLine("Warning: {0} Bad Spawners detected. Please see: {1}", ConsoleColor.Red, kcount, "badspawn.log");
-                }
-
-            }
-
-            // now check ChestItemSpawners
-            //LogHelper logger2 = new LogHelper("badspawn.log", false);
-            //int ccount = 0;
-            //foreach (Item ix in World.Items.Values)
-            //{
-            //    if (ix == null) continue;
-            //    if (!(ix is ChestItemSpawner)) continue;
-            //    ChestItemSpawner cis = ix as ChestItemSpawner;
-            //    if (cis.ItemsName == null) continue;
-            //    foreach (string typeName in cis.ItemsName)
-            //    {
-            //        if (ChestItemSpawnerType.GetType(typeName) == null && ChestItemSpawnerType.GetLootPack(typeName) == null)
-            //        {
-            //            ccount++;
-            //            logger2.Log(LogType.Text, string.Format("Chest Item Spawner at location {0}, on map {1}, was trying to spawn {2} (if it looks like a serial it's probably a loot pack)", cis.Location, cis.Map, typeName));
-            //        }
-            //    }
-            //}
-            //logger2.Finish();
-
-            //if (ccount > 0)
-            //{
-            //    Utility.PushColor(ConsoleColor.Red);
-            //    Console.WriteLine("Warning: {0} Bad Chest Item Spawners detected. Please see: {1}", ccount, "badspawn.log");
-            //    Utility.PopColor();
-            //}
-
             /*
              * treasure map stuffs
              */
-            Console.Write("Loading treasure map locations...");
-            int lcount = LoadLocations();
-            Console.WriteLine("done ({0} locations loaded.)", lcount.ToString());
+            // No database: LoadLocations generates one, and the generator prints its own progress message
+            bool generating = !File.Exists(Path.Combine(Core.DataDirectory, "Angel Island Treasure.json"));
+            if (!generating)
+                Console.Write("Loading treasure map locations...");
+
+            Utility.TimeCheck tc = new Utility.TimeCheck();
+            tc.Start();
+            int lcount = TreasureMapLocations.LoadLocations();
+            tc.End();
+            string s = string.Format("{0} Done. {1} locations {2} in: {3}", generating ? "Treasure map locations:" : "", lcount, generating ? "generated" : "loaded", tc.TimeTaken);
+            Console.WriteLine(s);
         }
         #endregion SETUP
 
@@ -271,7 +172,11 @@ namespace Server.Items
         [CommandProperty(AccessLevel.GameMaster)]
         public static double LootChance { get { return CoreAI.TreasureMapDrop; } }
         #endregion Command Props
-        public static Point2D[] Locations { get { return m_Locations; } }
+        public static Point2D[] Locations
+        {
+            get { return m_Locations; }
+            set { m_Locations = value; }
+        }
 
         private static Point2D[] m_Locations;
         #endregion DATA
@@ -282,13 +187,13 @@ namespace Server.Items
         public static Point2D GetRandomTreasureMapLocation(Map map)
         {
             if (m_Locations == null)
-                LoadLocations();
+                TreasureMapLocations.LoadLocations();
 
             if (m_Locations.Length > 0)
                 for (int test = 0; test < 100; test++)
                 {   // make sure a witch hasn't dropped a house on poor Dorthy
                     Point2D p2d = m_Locations[Utility.Random(m_Locations.Length)];
-                    BaseMulti bm = BaseMulti.Find(new Point3D(p2d.X, p2d.Y, Utility.GetAverageZ(map, p2d.X, p2d.Y)), map);
+                    BaseMulti? bm = BaseMulti.Find(new Point3D(p2d.X, p2d.Y, Utility.GetAverageZ(map, p2d.X, p2d.Y)), map);
                     if (bm == null)
                         return p2d;
                 }
@@ -297,380 +202,7 @@ namespace Server.Items
 
             return Point2D.Zero;
         }
-        #region TOOLS
-        public static int LoadLocations()
-        {
-            string OSIFileName = Path.Combine(Core.DataDirectory, "treasure.cfg");
-            string AIFileName = Path.Combine(Core.DataDirectory, "Angel Island Treasure.cfg");
-            if (File.Exists(Path.Combine(Core.BaseDirectory, OSIFileName)) == false)
-            {
-                Core.LoggerShortcuts.BootError(string.Format("\nError while reading Treasure map data from \"{0}\".", OSIFileName));
-                return 0;
-            }
-            else if (File.Exists(Path.Combine(Core.BaseDirectory, AIFileName)) == false)
-            {
-                Core.LoggerShortcuts.BootError(string.Format("Error while reading Treasure map data from \"{0}\".", AIFileName));
-                // we'll continue and generate one (with this warning)
-            }
 
-            ArrayList OSI_Locations = new ArrayList();
-
-            // first load up the standard OSI locations (we will still randomize around this point)
-            string filePath = Path.Combine(Core.BaseDirectory, OSIFileName);
-            if (File.Exists(filePath))
-            {
-                using (StreamReader ip = new StreamReader(filePath))
-                {
-                    string line;
-
-                    while ((line = ip.ReadLine()) != null)
-                    {
-                        try
-                        {
-                            string[] split = line.Split(' ');
-
-                            int x = Convert.ToInt32(split[0]), y = Convert.ToInt32(split[1]);
-
-                            OSI_Locations.Add(new Point2D(x, y));
-                        }
-                        catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                    }
-                }
-            }
-
-            string treasurePath = Path.Combine(Core.BaseDirectory, AIFileName);
-            ArrayList AI_Locations = new ArrayList();
-            if (File.Exists(treasurePath))
-            {
-                using (StreamReader ip = new StreamReader(treasurePath))
-                {
-                    string line;
-
-                    while ((line = ip.ReadLine()) != null)
-                    {
-                        try
-                        {
-                            string[] split = line.Split(' ');
-
-                            int x = Convert.ToInt32(split[0]), y = Convert.ToInt32(split[1]);
-
-                            AI_Locations.Add(new Point2D(x, y));
-                        }
-                        catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                    }
-                }
-
-                m_Locations = (Point2D[])AI_Locations.ToArray(typeof(Point2D));
-                return m_Locations.Length;
-            }
-
-            // No AI treasure map, generate one
-            Console.WriteLine("\n{0} does not exist. Generating... This may make 10 minutes", treasurePath);
-            AI_Locations = GenAITreasureMapLocations(OSI_Locations);
-            m_Locations = (Point2D[])AI_Locations.ToArray(typeof(Point2D));
-            LogLocations(); // Finally, we will write a log file with all treasuremap locations - for diagnostic purposes only
-
-            using (StreamWriter ip = new StreamWriter(treasurePath))
-            {
-                foreach (Point2D px in AI_Locations)
-                {
-                    try
-                    {
-                        ip.WriteLine(string.Format("{0} {1}", px.X, px.Y));
-                    }
-                    catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                }
-            }
-
-            return m_Locations.Length;
-
-        }
-
-        public static ArrayList GenAITreasureMapLocations(ArrayList OSI_Locations)
-        {
-            ArrayList temp_list = new ArrayList();
-            /// Phase 1
-            // now load up the spawner locations. We do this as an enhanced map of treasure map locations.
-            // The basic idea is that if there is a spawner there, it's not in town or green acres, it's not a dungeon or T2A,
-            //	then it's a legit place for a treasure chest.
-            Console.Write("\n-Phase 1. Loading Felucca spawner locations...");
-            temp_list = LoadSpawnerSpawnPoints();
-            Console.WriteLine("({0}) points created.", temp_list.Count);
-
-            // expand the list of spawner locations by selecting up to 10 locations around the spawner
-            Console.Write("-Phase 1.a. Expand points up to 10x...");
-            temp_list = ExpandList(temp_list);
-            Console.WriteLine("({0}) total points thus far.", temp_list.Count);
-
-            /// Phase 2
-            // now test all to see if we have any invalid locations.
-            //	if so, add them to a 'bad' list and remove them from the clean list
-            // Utility.BritWrap contains T2A and dungeons and is not compatible with treasure maps
-            Console.Write("-Phase 2. Remove bad regions...");
-            temp_list = RemoveBadRegions(temp_list);
-            Console.WriteLine("({0}) points remaining.", temp_list.Count);
-
-            // Phase 3
-            // remove duplicate locations
-            Console.Write("-Phase 3. Remove duplicate points...");
-            temp_list = RemoveDuplicates(temp_list);
-            Console.WriteLine("({0}) points remaining.", temp_list.Count);
-
-            // Phase 4
-            // remove locations that point to bad tiles (usually floor tiles, docks, water, etc.)
-            Console.Write("-Phase 4. Remove bad tiles...");
-            temp_list = RemoveBadTiles(temp_list);
-            Console.WriteLine("({0}) points remaining.", temp_list.Count);
-
-            // Phase 4a
-            // remove locations that point to a location that an NPC could not reasonably 'path' to
-            //  If an NPC cannot 'path' there, a player is likely to have trouble as well
-            Console.Write("-Phase 4a (EXPENSIVE). Remove inaccessible points...");
-            temp_list = RemoveInaccessible(temp_list);
-            Console.WriteLine("({0}) points remaining.", temp_list.Count);
-
-            // Phase 5
-            // combine the original OSI locations with our expanded list
-            //  Note we convert from 3D to 2D here
-            Console.Write("-Phase 5. Combining OSI and AI Lists...");
-            ArrayList Point2D_list = new ArrayList();
-            foreach (Point3D px in temp_list)
-                Point2D_list.Add(new Point2D(px));
-            Point2D_list.AddRange(OSI_Locations);
-            //m_Locations = (Point2D[])Point2D_list.ToArray(typeof(Point2D));
-            Console.WriteLine("({0}) total Angel Island treasure map locations", Point2D_list.Count);
-
-            return Point2D_list;
-        }
-
-        // load the locations of all spawners
-        public static ArrayList LoadSpawnerSpawnPoints()
-        {
-            ArrayList list = new ArrayList();
-            foreach (Spawner sx in SpawnerCache.Spawners)
-            {
-                // add the point which 'fanned out' from the spawner, but still legal.
-                list.Add(sx.Location);
-            }
-
-            return list;
-        }
-        // expand of the list of spawner locations, with up to 10 locations around the spawner.
-        public static ArrayList ExpandList(ArrayList points)
-        {
-            ArrayList pointList = new ArrayList();
-            foreach (Point3D px in points)
-            {
-                for (int ix = 0; ix < 10; ix++)
-                {
-                    Point3D px3 = FanOut(px);
-                    if (pointList.Contains(px3))
-                        continue;
-                    else
-                        pointList.Add(px3);
-                }
-            }
-
-            return pointList;
-        }
-        public static ArrayList RemoveBadRegions(ArrayList points)
-        {
-            ArrayList filteredPoints = new ArrayList();
-            foreach (Point3D location in points)
-            {
-                Region region = Server.Region.Find(location, Map.Felucca);
-
-                if (region != null)
-                {   // No Guarded Towns
-                    if (SpawnerCache.IsTown(region.Name))
-                        if (region.IsGuarded)
-                            continue;
-
-                    // no green acres, inside houses, etc..
-                    // BTW - SpawnerCache.IsValidRegion() is too restrictive 
-                    if (region.IsAngelIslandRules) continue;
-                    if (region.IsGreenAcresRules) continue;
-                    if (region.IsHouseRules) continue;
-                    if (region.IsJailRules) continue;
-                    if (region.IsDungeonRules) continue;
-                    if (region.Name == "Broken ML Map") continue;
-                    if (region.Name == "Britannia Royal Zoo") continue;
-                    if (region.Name == "Restricted Area") continue;
-                    if (region.Name == "Misc Dungeons") continue;
-                    if (region.Name == "Terathan Keep") continue;
-                    //if (!(Map.Felucca.Bound.Contains(new Point2D (location)))) continue;
-                    //Rectangle2D rect = new Rectangle2D()
-
-                }
-
-                // This filters out all dungeons + green acres and whatnot
-                if (location.X >= 5120)
-                    continue;
-
-                // remove other illegal areas
-                Point2D px3 = new Point2D(location.X, location.Y);
-                // Utility.BritWrap[1] contains T2A and is not compatible with treasure maps
-                if (Utility.World.BritWrap[1].Contains(new Point2D(px3.X, px3.Y)))
-                    continue;
-
-                // The Solen Hive
-                if (new Rectangle2D(new Point2D(5650, 1786), new Point2D(5925, 2030)).Contains(px3))
-                    continue;
-
-                filteredPoints.Add(location);
-            }
-
-            return filteredPoints;
-        }
-        public static ArrayList RemoveDuplicates(ArrayList points)
-        {
-            ArrayList temp_list = new ArrayList(); // remove any duplicates
-            foreach (Point3D px in points)
-            {
-                if (temp_list.Contains(px))
-                    continue;
-
-                temp_list.Add(px);
-            }
-
-            return temp_list;
-        }
-        public static ArrayList RemoveBadTiles(ArrayList list)
-        {
-            ArrayList temp_list = new ArrayList(); // remove any duplicates
-            ArrayList bad_tile_list = new ArrayList(); // exclude and bad tiles
-            foreach (Point3D p in list)
-            {
-                // check placement rules
-                if (!CheckPlacement(new Point2D(p.X, p.Y), bad_tile_list))
-                    continue;
-
-                temp_list.Add(p);
-            }
-
-            // debug
-            LogHelper TileLogger = new LogHelper("BadTileSkip.log", true);
-            foreach (int tile in bad_tile_list) { TileLogger.Log(LogType.Text, string.Format("0x{0:X}", tile)); }
-            TileLogger.Finish();
-
-            return temp_list;
-        }
-        public static ArrayList RemoveInaccessible(ArrayList points)
-        {
-            ArrayList AccessiblePoints = new ArrayList();
-            int count = 0;
-            foreach (Point3D px3 in points)
-            {
-                // look for spawners in the local area. If we can walk to any of them, then we are likely not in a blocked location
-                //  We do this check in case the 'valid' location(road, land, grass, etc.) we have now is itself blocked, like within a wall,
-                //  like at serpent's hold (hollow walls)
-                ArrayList spawners = new ArrayList(Server.Commands.FindSpawner.FindLocalSpawners(new Point2D(px3.X, px3.Y), 32));
-                if (spawners == null || spawners.Count == 0)
-                    continue;
-
-                // okay, now we have a list of spawners in the general vicinity of px3/px2
-                //  we will get the location, validate it, and see if a human could march there.
-                //  again, if an NPC could pathfind there, a player is probably not blocked from getting there in the first place.
-                foreach (FindSpawner.SpawnerMatch spawner_match in spawners)
-                {
-                    if (count++ % 500 == 0)
-                        Console.Write(".");
-
-                    Point3D temp_location = new Point3D(Point3D.Zero);
-                    if ((spawner_match.Sp is Spawner))
-                        temp_location = (spawner_match.Sp as Spawner).Location;
-                    else if ((spawner_match.Sp is ChestItemSpawner))
-                        temp_location = (spawner_match.Sp as ChestItemSpawner).Location;
-                    else if (temp_location == Point3D.Zero) // likely a different kind of spawner, maybe EventSpawner
-                        continue;
-
-                    // can we get there from here?
-                    // that is, could a human walk from the proposed treasure map location to this nearby spawner.
-                    Movement.MovementObject obj_start = new Movement.MovementObject(px3, temp_location, null);
-                    if (!MovementPath.PathTo(obj_start))
-                        continue;   // can't get there from here
-
-                    // okay, looks like we're not blocked
-                    AccessiblePoints.Add(px3);
-                    break;
-                }
-            }
-
-            return AccessiblePoints;
-        }
-        public static void LogLocations()
-        {
-            /* log all locations */
-            // for diagnostic purposes only
-            {
-                LogHelper Logger = new LogHelper("TreasureMapLocations.log", true);
-                ArrayList locations = new ArrayList(TreasureMap.Locations);
-                foreach (Point2D loc in locations)
-                {
-                    Region rx = Region.Find(new Point3D(loc as IPoint2D, 0), Map.Felucca);
-                    if (rx == null)
-                        Logger.Log(LogType.Text, "region is null at :" + loc.ToString());
-                    else
-                        Logger.Log(LogType.Text, string.Format("Region: '{0}', Coords: {1}", (rx == Map.Felucca.DefaultRegion) ? "DefaultRegion" : rx.Name, loc.ToString()));
-                }
-                Logger.Finish();
-            }
-        }
-
-        // BadTile is called by [ReportBadTile command to simply return the tile I am standing on
-        //  we then record it for later processing
-        public static LandTile BadTile(Point3D p)
-        {
-            LandTile landTile = Map.Felucca.Tiles.GetLandTile(p.X, p.Y);
-            return landTile;
-        }
-        public static bool CheckPlacement(Point2D p, ArrayList bad_tile_list)
-        {
-            int[] bad_tiles = new int[] { 0x3, 0x4, 0x5, 0x6, 0x5A, 0x64, 0x78, 0x8A, 0x22C, 0x22F, 0x406, 0x407, 0x408, 0x409, 0x411, 0x40A, 0x40B, 0x40C, 0x40D, 0x40E, 0x40F, 0x410, 0x412, 0x414, 0x415, 0x41E, 0x428, 0x436, 0x437, 0x43A, 0x43B, 0x43C, 0x43D, 0x43E, 0x43F, 0x440, 0x441, 0x486, 0x487, 0x488, 0x489, 0xC5 };
-
-            int tileX = p.X;
-            int tileY = p.Y;
-            // look at the land tiles (water etc.)
-            LandTile landTile = Map.Felucca.Tiles.GetLandTile(tileX, tileY);
-            int landID = landTile.ID & 0x3FFF;
-
-            for (int ix = 0; ix < bad_tiles.Length; ix++)
-            {
-                if (bad_tiles[ix].CompareTo(landID) == 0 || bad_tiles[0].CompareTo(landTile.ID) == 0)
-                {
-                    bad_tile_list.Add(landTile.ID);
-                    return false;
-                }
-            }
-
-            return true;
-        }
-        // Look for locations adjacent to the spawner, a location that can be spawned on (item or mobile)
-        public static Point3D FanOut(Point3D px2)
-        {
-            Point3D px3;
-            // even though GetSpawnPosition will retry 10x to get a legal spawn position, we will 
-            //  will try up to an additional 10x to get a position which isn't a bad tile for a treasure chest
-            //  we will also force a retry is we can't actually put a mobile there (CanFit() basically)
-            for (int ix = 0; ix < 10; ix++)
-            {
-                // find a location where a mobile MIGHT be spawned
-                px3 = Spawner.GetSpawnPosition(Map.Felucca, px2, 45, SpawnFlags.None, null);
-
-                // did we get good place other than the starting point?
-                if (px3 == Point3D.Zero || px3 == px2)
-                    continue;
-
-                // now see of a mobile can ACTUALLY be spawned there
-                if (!Map.Felucca.CanSpawnLandMobile(px3))
-                    continue;
-
-                return px3;     // new spawn point
-            }
-
-            return px2;     // we will accept this case.
-        }
-        #endregion TOOLS
         #region CONSTRUCRORS
         // [add treasuremap <level>
         [Constructable]
@@ -697,7 +229,7 @@ namespace Server.Items
         {
             if (level > 5 || level < 0)
             {
-                Timer.DelayCall(TimeSpan.FromSeconds(1), new TimerStateCallback(MapLevelErrorTick), new object[] { null });
+                Timer.DelayCall(TimeSpan.FromSeconds(1), new TimerStateCallback(MapLevelErrorTick), new object?[] { null });
                 m_Level = 0;    // Youthful treasure map ( < 100 gold)
             }
             else
@@ -711,7 +243,7 @@ namespace Server.Items
         #region Map Level Error
         private void MapLevelErrorTick(object state)
         {
-            this.SendSystemMessage("Illegal map level", AccessLevel.GameMaster, 0x33);
+            this.SendMessageNearby("Illegal map level", AccessLevel.GameMaster, 0x33);
         }
         #endregion Map Level Error
         #endregion CONSTRUCRORS
@@ -835,7 +367,7 @@ namespace Server.Items
                 }
                 else
                 {
-                    IPoint3D p = targeted as IPoint3D;
+                    IPoint3D? p = targeted as IPoint3D;
 
                     if (p is Item)
                         p = ((Item)p).GetWorldLocation();
@@ -992,19 +524,19 @@ namespace Server.Items
                         if (m_TreasureMap.Level >= 2)
                         {
                             //generates 1 of the highest mobs for pirate or undead iob chests
-                            TreasureTheme.Spawn(m_TreasureMap.Level, m_Chest.Location, m_Chest.Map, null, themed, type, true, true);
+                            TreasureTheme.Spawn(m_Chest, m_TreasureMap.Level, m_Chest.Location, m_Chest.Map, null, themed, type, true, true);
                             //generates guardian spawn numbers based on if themed or not
                             for (int i = 0; i < TreasureTheme.GetGuardianSpawn(themed, type); ++i)
                             {
                                 if (type == ChestThemeType.Undead || type == ChestThemeType.Pirate)
                                 {
                                     //spawns rest of pirate or undead initial guardian spawn with our highest rank mobs appearing
-                                    TreasureTheme.Spawn(m_TreasureMap.Level, m_Chest.Location, m_Chest.Map, null, themed, type, true, false);
+                                    TreasureTheme.Spawn(m_Chest, m_TreasureMap.Level, m_Chest.Location, m_Chest.Map, null, themed, type, true, false);
                                 }
                                 else
                                 {
                                     //not pirate or undead chest spawn as per normal random guardians
-                                    TreasureTheme.Spawn(m_TreasureMap.Level, m_Chest.Location, m_Chest.Map, null, themed, type, false, false);
+                                    TreasureTheme.Spawn(m_Chest, m_TreasureMap.Level, m_Chest.Location, m_Chest.Map, null, themed, type, false, false);
                                 }
                             }
 
@@ -1156,7 +688,7 @@ namespace Server.Items
             else if (m_Decoder != null)
             {   // non tattered
                 // "an adeptly drawn treasure map";
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || Core.RuleSets.RenaissanceRules() || (Core.RuleSets.SiegeRules() && PublishInfo.Publish >= 13))
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules() || (Core.RuleSets.SiegeRules() && PublishInfo.Publish >= 13))
                     LabelTo(from, 1041516 + m_Level);
                 else
                     LabelTo(from, string.Format("a treasure map"));
@@ -1164,7 +696,7 @@ namespace Server.Items
             else
             {   // tattered
                 // "a tattered, adeptly drawn treasure map"
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || Core.RuleSets.RenaissanceRules() || (Core.RuleSets.SiegeRules() && PublishInfo.Publish >= 13))
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules() || (Core.RuleSets.SiegeRules() && PublishInfo.Publish >= 13))
                 {
                     LabelTo(from, 1041510 + m_Level);
                     LabelTo(from, m_Map == Map.Felucca ? 1041502 : 1041503);
@@ -1241,7 +773,7 @@ namespace Server.Items
             set
             {
                 m_DecodedMsg = value;
-                SendSystemMessage("Hint: you can use the {decoder} macro to substitute in the decoder's name.");
+                SendMessageNearby("Hint: you can use the {decoder} macro to substitute in the decoder's name.");
             }
         }
 
@@ -1257,7 +789,7 @@ namespace Server.Items
             set
             {
                 m_CompletedMsg = value;
-                SendSystemMessage("Hint: you can use the {decoder} macro to substitute in the decoder's name.");
+                SendMessageNearby("Hint: you can use the {decoder} macro to substitute in the decoder's name.");
             }
         }
 
@@ -1286,7 +818,7 @@ namespace Server.Items
                 goto done;
             }
 
-            Item pack = World.FindItem(RaresPackSerial);
+            Item? pack = World.FindItem(RaresPackSerial);
             if (pack is Container cont)
             {
                 if (cont.Items.Count == 0)
@@ -1355,7 +887,7 @@ namespace Server.Items
         private void Warning(object o)
         {
             if (o is string s)
-                SendSystemMessage(s, AccessLevel.GameMaster, 0x33);
+                SendMessageNearby(s, AccessLevel.GameMaster, 0x33);
         }
         //private void Fail(object o)
         //{
@@ -1500,7 +1032,7 @@ namespace Server.Items
                 ArrayList alist = c.GetDeepItems();
                 if (alist.Count > 0)
                 {
-                    Item reward = (Item)alist[Utility.Random(alist.Count)];
+                    Item? reward = (Item?)alist[Utility.Random(alist.Count)];
                     if (reward != null)
                     {
                         if ((reward = Utility.Dupe(reward)) != null)

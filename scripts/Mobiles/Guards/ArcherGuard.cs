@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -144,7 +144,7 @@ namespace Server.Mobiles
                         if (value.Body.IsHuman)
                             Say(500131); // Thou wilt regret thine actions, swine!
                         else
-                            Say("There is place for you here, vile beast.");
+                            Say("There is no place for you here, vile beast.");
 
 
                     if (m_AttackTimer != null)
@@ -307,7 +307,7 @@ namespace Server.Mobiles
                     if (target is BaseCreature)
                         ((BaseCreature)target).NoKillAwards = true;
 
-                    target.Damage(target.HitsMax, m_Owner, this);
+                    target.Damage(target.HitsMax, m_Owner, new DamageContext { Source = this });
                     target.Kill(); // just in case, maybe Damage is overriden on some shard
 
                     if (target.Corpse != null && !target.Player)

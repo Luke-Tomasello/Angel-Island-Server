@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -42,8 +42,11 @@ namespace Server.Engines.Chat
         {
             CommandSystem.Register("SetChat", AccessLevel.GameMaster, new CommandEventHandler(SetChat_OnCommand));
 
-            CommandSystem.Register("ToggleChat", AccessLevel.Player, new CommandEventHandler(ToggleChat_OnCommand));
-            CommandSystem.Register("Chat", AccessLevel.Player, new CommandEventHandler(ToggleChat_OnCommand));
+            if (!Core.RuleSets.MortalisStyleRules())
+            {
+                CommandSystem.Register("ToggleChat", AccessLevel.Player, new CommandEventHandler(ToggleChat_OnCommand));
+                CommandSystem.Register("Chat", AccessLevel.Player, new CommandEventHandler(ToggleChat_OnCommand));
+            }
 
             EventSink.Connected += new ConnectedEventHandler(EventSink_OnConnected);
             EventSink.Disconnected += new DisconnectedEventHandler(EventSink_OnDisconnected);
@@ -151,19 +154,19 @@ namespace Server.Engines.Chat
 
         public static bool GetChatOff(Mobile from)
         {
-            Account acct = from.Account as Account;
+            Account? acct = from.Account as Account;
 
             if (acct == null)
                 return false;
 
-            string tag = acct.GetTag("ChatOff");
+            string? tag = acct.GetTag("ChatOff");
 
             return (tag != null && Utility.ToBoolean(tag));
         }
 
         public static void SetChatOff(Mobile from, bool value)
         {
-            Account acct = from.Account as Account;
+            Account? acct = from.Account as Account;
 
             if (acct == null)
                 return;
@@ -176,19 +179,19 @@ namespace Server.Engines.Chat
 
         public static bool GetChatBan(Mobile from)
         {
-            Account acct = from.Account as Account;
+            Account? acct = from.Account as Account;
 
             if (acct == null)
                 return false;
 
-            string tag = acct.GetTag("ChatBan");
+            string? tag = acct.GetTag("ChatBan");
 
             return (tag != null && Utility.ToBoolean(tag));
         }
 
         public static void SetChatBan(Mobile from, bool value)
         {
-            Account acct = from.Account as Account;
+            Account? acct = from.Account as Account;
 
             if (acct == null)
                 return;

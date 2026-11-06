@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -22,6 +22,14 @@
 /*
  * Scripts\Items\Books\Defined\StorageUpgradeInfo.cs
  * CHANGELOG:
+ * 10/18/2026, Adam
+ *  The shard is named by Core.Server (author line and text) instead of "Angel Island" or "Siege", so Upheaval,
+ *  Mortalis and Seasons players see their own shard. New page after "Custom Housing": the starting storage (270
+ *  lockdowns, 2 secures, 2 lockboxes) and that each secure container uses 125 lockdowns. On Seasons, where custom
+ *  houses start at the storage of the closest classic house, both pages say so instead.
+ * 10/15/26, Adam
+ *  Building permits now stack on top of storage upgrades: replaced the outdated "double your lockbox allowance" text,
+ *  and corrected the message players see when a contract cannot upgrade their house.
  * 11/5/21, Yoar
  *  Disabled the information regarding storage tax credits.
  * 9/26/21, Adam
@@ -39,10 +47,10 @@ namespace Server.Items
 
         public static readonly BookContent Content = new BookContent
             (
-                "Storage Upgrade Info", Core.RuleSets.AngelIslandRules() ? "Angel Island" : "Siege",
+                "Storage Upgrade Info", Core.Server,
                 new BookPageInfo
                 (
-                    Core.RuleSets.AngelIslandRules() ? "On Angel Island there are " : "On Siege there are ",
+                    "On " + Core.Server + " there are ",
                     "two different ways to ",
                     "increase your house's ",
                     "storage capacity. Storage ",
@@ -134,10 +142,10 @@ namespace Server.Items
                     "house already has equal ",
                     "to or greater than the ",
                     "amount that the upgrade ",
-                    "is for, you will get the ",
-                    "message \"You may not ",
-                    "add to or downgrade your ",
-                    "existing storage.\""
+                    "is for, the contract ",
+                    "cannot be used. Your ",
+                    "storage is never ",
+                    "downgraded."
                 ),
                 new BookPageInfo
                 (
@@ -153,13 +161,13 @@ namespace Server.Items
                 new BookPageInfo
                 (
                      "lockboxes will not decay. ",
-                    "Using these deeds you ",
-                    "can double your lockbox ",
-                    "allowance. If you use a ",
-                    "storage upgrade deed to ",
-                    "increase your base max ",
-                    "storage, you will be able ",
-                    "to use more of these. "
+                    "Each permit adds one ",
+                    "lockbox, with no limit on ",
+                    "how many you may use. ",
+                    "Permits are added on top ",
+                    "of your storage upgrade, ",
+                    "so upgrading never takes ",
+                    "them away. "
                 ),
                 new BookPageInfo
                 (
@@ -168,62 +176,53 @@ namespace Server.Items
                     "costs associated with these ",
                     "contracts are not refundable."
                 ),
-#if false
-                new BookPageInfo
-                (
-                    "Tax Credits: Storage:",
-                    "",
-                    "Tax only applies to extra ",
-                    "lockboxes. When you use ",
-                    "a building permit for an ",
-                    "extra lockbox, you will ",
-                    "receive 120 tax credits ",
-                    "for storage. These "
-                ),
-                new BookPageInfo
-                (
-                    "credits decay at a rate ",
-                    "of one per hour per ",
-                    "extra lockbox. ",
-                    "*Important* If you run ",
-                    "out of tax storage ",
-                    "credits, your extra ",
-                    "lockboxes will decay at a ",
-                    "rate of one per hour. "
-                ),
-                new BookPageInfo
-                (
-                     "You can add extra tax ",
-                    "credits for storage with ",
-                    "a Tax Credits: Storage ",
-                    "deed. Each one of these ",
-                    "deeds will add 720 tax ",
-                    "credits to your house. ",
-                    "",
-                    "You can view how many "
-                ),
-                new BookPageInfo
-                (
-                    "tax credits for storage ",
-                    "that you have remaining ",
-                    "on your house sign just ",
-                    "underneath your number ",
-                    "of lockboxes, so be sure ",
-                    "to keep a close eye on ",
-                    "them as long as you are ",
-                    "using your extra storage. "
-                ),
-#endif
-                new BookPageInfo
+                // Seasons starts custom houses at the storage of the nearest classic house footprint
+                //  (StaticHouse.GetClassicStorage); every other shard starts them at small house storage
+                Core.RuleSets.SeasonsRules()
+                ? new BookPageInfo
                 (
                     "Custom Housing:",
                     "",
-                    Core.RuleSets.AngelIslandRules() ? "On Angel Island, custom " : "On Siege, custom ",
+                    "On " + Core.Server + ", custom ",
+                    "housing starts with the ",
+                    "storage of the classic ",
+                    "house closest to its ",
+                    "size, so larger homes ",
+                    "begin with more storage. "
+                )
+                : new BookPageInfo
+                (
+                    "Custom Housing:",
+                    "",
+                    "On " + Core.Server + ", custom ",
                     "housing of any size will ",
                     "always start with the ",
                     "lowest possible storage ",
                     "rating in the game; the ",
                     "same as a small house. "
+                ),
+                Core.RuleSets.SeasonsRules()
+                ? new BookPageInfo
+                (
+                    "For example, a 14x14 ",
+                    "house starts like a two ",
+                    "story house: 750 ",
+                    "lockdowns, 5 secure ",
+                    "containers, 3 lockboxes. ",
+                    "Each secure container ",
+                    "uses 125 of your ",
+                    "lockdowns. "
+                )
+                : new BookPageInfo
+                (
+                    "That is 270 lockdowns, ",
+                    "2 secure containers and ",
+                    "2 lockboxes, whatever ",
+                    "the size of the house. ",
+                    "Each secure container ",
+                    "uses 125 of your ",
+                    "lockdowns. Storage ",
+                    "upgrades expand these. "
                 ),
                 new BookPageInfo
                 (
@@ -264,7 +263,7 @@ namespace Server.Items
                     "everything there is to ",
                     "know about increasing ",
                     "your houses storage ",
-                    Core.RuleSets.AngelIslandRules() ? "capacity on Angel Island. " : "capacity on Siege. "
+                    "capacity on " + Core.Server + ". "
                 )
             );
 

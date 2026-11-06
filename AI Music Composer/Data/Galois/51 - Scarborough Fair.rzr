@@ -1,0 +1,123 @@
+#
+# Scarborough Fair
+# Author: Galois
+# Song: Scarborough Fair
+# Instrument: lapharp
+# Price: 5000
+# NewTimer: true
+# Prefetch: true
+# Tempo: 90
+#
+# (Intro arpeggios)
+say '[play cl 0.19 gh 0.19 as 0.19 a 0.19 fh 0.19 as 0.19 f 0.19 gh 0.19 as 0.19 a 0.19 fh 0.19 as 0.19'
+wait 2400
+say '[play ds 0.19 dh 0.19 as 0.19 a 0.19 d 0.19 as 0.19 cl 0.19 gh 0.19 as 0.19 g 0.19 dh 0.19 c 0.19'
+wait 2400
+say '[play cl 0.19 gh 0.19 as 0.19 a 0.19 fh 0.19 as 0.19 cl 0.19 gh 0.19 as 0.19 g 0.19 dh 0.19 c 0.19'
+wait 2400
+# Are you
+say '[play cl 0.19 gh 0.19 as 0.19 a 0.19 fh 0.19 as 0.15 ds 0.03 c 0.19 g 0.19 as 0.19 a 0.15 g 0.03 c 0.19 g 0.15'
+wait 2400
+# Going to Scarborough
+say '[play as 0.03 gh 0.19 gh 0.19 cl 0.19 g 0.15 d 0.03 gh 0.19 g 0.15 as 0.03 dh 0.19 as 0.19 f 0.19 dsh 0.19 dh 0.19 d 0.15'
+wait 2400
+# Fair?
+say '[play g 0.03 c 0.19 g 0.19 dsh 0.19 a 0.19 f 0.19 c 0.19 cl 0.19 g 0.19 dh 0.19 g 0.19 d 0.19 as 0.19'
+wait 2400
+# Parsely
+say '[play ds 0.19 g 0.15 dh 0.03 gh 0.19 g 0.15 dh 0.03 ash 0.19 as 0.15'
+wait 1200
+# Sage, Rose-
+say '[play dsh 0.03 ch 0.19 g 0.19 ds 0.19 c 0.15 dsh 0.03 ash 0.19 g 0.15'
+wait 1200
+# -mary and
+say '[play as 0.03 gh 0.19 as 0.09 c 0.09 ah 0.19 c 0.15 a 0.03 fh 0.19 cl 0.15'
+wait 1200
+# Thyme
+say '[play c 0.03 gh 0.19 g 0.19 eh 0.19 a 0.19 f 0.19 c 0.19 cl 0.19 g 0.19 dh 0.19 g 0.19 d 0.19 as 0.19'
+wait 2400
+# Re-
+say '[play cl 0.19 g 0.19 c 0.19 g 0.15 dsh 0.03 ch 0.19 c 0.15'
+wait 1200
+# -member
+say '[play gh 0.03 ch 0.19 g 0.19 cl 0.19 g 0.15 c 0.03 ch 0.19 dh 0.15'
+wait 1200
+# me to
+say '[play dsh 0.03 ash 0.19 g 0.19 as 0.19 g 0.15 dsh 0.03 gh 0.19 as 0.15'
+wait 1200
+# one who lives
+say '[play dsh 0.03 gh 0.19 g 0.15 dh 0.03 fh 0.19 f 0.15 c 0.03 dsh 0.19 ds 0.15'
+wait 1200
+# there,
+say '[play as 0.03 dh 0.19 as 0.19 f 0.19 as 0.19 dsh 0.19 dh 0.19 dsh 0.19 a 0.19 dh 0.41 as 0.41'
+wait 2400
+# She once
+say '[play ds 0.03 c 0.19 g 0.19 cl 0.19 g 0.15 as 0.03 gh 0.19 as 0.15'
+wait 1200
+# was a
+say '[play dh 0.03 fh 0.19 as 0.19 f 0.19 as 0.15 g 0.03 dsh 0.37'
+wait 1200
+# true love of
+say '[play as 0.03 dh 0.19 as 0.19 f 0.03 c 0.09 g 0.09 f 0.15 d 0.03 as 0.35'
+wait 1200
+# mine
+say '[play cl 0.02 ds 0.02 c 0.19 g 0.19 as 0.19 c 0.19 f 0.19 as 0.19 dh 0.19 g 0.19 cl 0.19 as 0.19 d 0.19 c 0.19'
+wait 2400
+say '[play cl 0.19 g 0.19 as 0.09 g 0.09 a 0.19 f 0.19 as 0.19 cl 0.19 g 0.09 cl 0.09 g 0.09 c 0.09 g 0.19 d 0.19 cl 0.15'
+wait 2400
+# Are you
+say '[play ds 0.03 c 0.09 ds 0.09 g 0.09 d 0.09 as 0.09 ds 0.09 a 0.15 g 0.03 c 0.19 g 0.15'
+wait 1200
+# Going to 
+say '[play as 0.03 gh 0.19 gh 0.09 f 0.09 cl d 0.09 g 0.15 d 0.03 gh 0.09 d 0.09 g 0.15'
+wait 1200
+# Scarborough
+say '[play as 0.03 dh 0.19 as 0.09 d 0.09 f 0.09 c 0.09 g 0.03 dsh 0.19 dh 0.19 d 0.15'
+wait 1200
+# Fair?
+say '[play g 0.03 c 0.09 g 0.09 dsh 0.09 fh 0.09 dsh 0.09 g 0.09'
+wait 1000
+say '[play dh 0.09 f 0.09 dsh 0.19 as 0.19 cl 0.19 g 0.09 ash 0.09 gh 0.09 c 0.09 fh 0.19 gh 0.19 as 0.19'
+wait 1800
+# Parsely
+say '[play ds 0.09 as 0.09 g 0.15 dh 0.03 gh 0.09 d 0.09 f 0.15 dh 0.03 ash 0.19 as 0.15'
+wait 1300
+# Sage, Rose-
+say '[play dsh 0.03 ch 0.19 g 0.09 fh 0.09 dsh 0.09 g 0.09 dh 0.15 dsh 0.03 ash 0.19 g 0.15'
+wait 1300
+# -mary and
+say '[play as 0.03 gh 0.09 as 0.09 g 0.09 c 0.09 ah 0.09 f 0.09 c 0.15 a 0.03 fh 0.09 f 0.09 cl 0.15'
+wait 1300
+# Thyme                          1       +              2                +       3        +     
+say '[play c 0.03 gh 0.19 g 0.09 fh 0.09 dsh 0.09 as 0.09 dh 0.19 dsh 0.19 c 0.19'
+wait 1300
+say '[play cl 0.19 g 0.09 ash 0.09 gh 0.09 c 0.09 fh 0.19 gh 0.19 as 0.15'
+wait 1300
+say '[play cl 0.03 dh 0.19 g 0.15 f 0.03 a 0.19 cl 0.15 d 0.03 f 0.19 as 0.15'
+wait 1300
+# Re-                             1      +    2     +   
+say '[play d 0.03 g 0.19 g 0.09 c 0.09 dsh 0.09 f 0.09 dh 0.15 dsh 0.03 ch 0.19 as 0.19'
+wait 1300
+# -member
+say '[play gh 0.03 ch 0.09 ds 0.09 g 0.09 ds 0.09 cl 0.19 g 0.15 c 0.03 ch 0.09 g 0.09 dh 0.15'
+wait 1300
+# me to
+say '[play dsh 0.03 ash 0.09 ds 0.09 g 0.19 g 0.09 ds 0.09 f 0.09 d 0.05 dsh 0.03 gh 0.19 as 0.15'
+wait 1300
+# one who lives
+say '[play dsh 0.03 gh 0.19 g 0.15 dh 0.03 fh 0.19 f 0.09 g 0.05 c 0.03 dsh 0.19 ds 0.15'
+wait 1300
+# there,
+say '[play as 0.03 dh 0.19 as 0.19 f 0.19 as 0.19 dsh 0.19 dh 0.19 dsh 0.19 a 0.19 dh 0.41 as 0.41'
+wait 2600
+# She once
+say '[play ds 0.03 c 0.19 g 0.09 c 0.09 cl 0.19 g 0.15 as 0.03 gh 0.19 as 0.15'
+wait 1300
+# was a
+say '[play dh 0.03 fh 0.19 as 0.19 f 0.19 as 0.15 g 0.03 dsh 0.37'
+wait 1300
+# true love of
+say '[play as 0.03 dh 0.19 as 0.19 f 0.03 c 0.09 g 0.09 f 0.15 d 0.03 as 0.41'
+wait 1300
+# mine
+say '[play cl 0.05 ds 0.05 g 0.05 c'

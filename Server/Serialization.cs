@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,42 @@
 
 /* Server\Serialization.cs
  * Changelog
+ *  1/8/2026, Adam
+ *  Serialization.cs – Corrected and unified DateTime/DeltaTime serialization
+   
+   - Fixed a bug where DateTime.MinValue was being converted to local time during
+     Write(DateTime), resulting in unintended tick drift after save/load. Updated
+     all writers so MinValue/MaxValue are always preserved exactly as sentinels.
+   
+   - All absolute DateTime values are now written as UTC ticks. Local time is never
+     serialized. ReadDateTime constructs DateTime using DateTimeKind.Utc.
+   
+   - Hardened WriteDeltaTime/ReadDeltaTime:
+       * Delta times always computed relative to DateTime.UtcNow.
+       * Saturating arithmetic used to clamp overflow/underflow to Min/Max.
+       * Added defensive guards against invalid tick ranges.
+   
+   - Ensured consistency across GenericWriter, BinaryFileWriter, and AsyncWriter so
+     all writers follow the same rules:
+         • Absolute times = UTC ticks
+         • Delta times = UTC-relative offsets
+         • Min/Max preserved exactly
+         • No implicit local-time conversions
+   
+   - Added internal helper utilities (where appropriate) to keep the three writer
+     implementations synchronized and avoid future divergence.
+   
+   These changes stabilize all time-based fields across the engine and eliminate
+   timezone-related drift introduced by previous Write(DateTime) behavior.
+   
+ *  1/2/2026, Adam
+ *  Time serialization: normalize to UTC; remove legacy patch logic; fix Min/Max handling
+ *  Refactored DateTime serialization helpers to enforce a single invariant: all persisted times are UTC.
+ *  Removed legacy dynamic patch gating and Local/UTC round-trip conversions.
+ *  Made DateTime.MinValue / DateTime.MaxValue safe, explicit sentinels that round-trip correctly without identity loss.
+ *  Simplified delta-time math with deterministic, saturating behavior.
+ *  Preserved existing wire format (Int64 ticks) and call-site behavior.
+ *  General cleanup of 20-year accumulated defensive hacks around time handling.
  *  9/15/22, Yoar
  *      Added Read/Write Rectangle3D
  * 9/13/22, Adam
@@ -83,11 +119,121 @@ using System.Threading;
 
 namespace Server
 {
+    /// <summary>
+    /// Centralized DateTime / delta-time serialization helpers.
+    /// All persisted DateTime values are UTC ticks (Int64).
+    /// MinValue / MaxValue are explicit sentinels and must round-trip exactly.
+    /// Delta-times are stored as ticks relative to DateTime.UtcNow at write/read time.
+    /// </summary>
+    internal static class DateTimeSerialization
+    {
+        // ------------------------------------------------------------
+        // Absolute DateTime <-> UTC ticks
+        // ------------------------------------------------------------
+
+        public static long ToUtcTicks(DateTime value)
+        {
+            long ticks = value.Ticks;
+
+            // Preserve sentinel ticks exactly; no conversion.
+            if (ticks == DateTime.MinValue.Ticks || ticks == DateTime.MaxValue.Ticks)
+                return ticks;
+
+            if (value.Kind != DateTimeKind.Utc)
+                value = value.ToUniversalTime();
+
+            return value.Ticks;
+        }
+
+        public static DateTime FromUtcTicks(long ticks)
+        {
+            // Preserve / clamp sentinels.
+            if (ticks <= DateTime.MinValue.Ticks)
+                return DateTime.MinValue;
+
+            if (ticks >= DateTime.MaxValue.Ticks)
+                return DateTime.MaxValue;
+
+            try
+            {
+                return new DateTime(ticks, DateTimeKind.Utc);
+            }
+            catch
+            {
+                // Defensive clamp if corrupted data slips through.
+                return (ticks >= 0) ? DateTime.MaxValue : DateTime.MinValue;
+            }
+        }
+
+        // ------------------------------------------------------------
+        // Delta DateTime <-> delta ticks vs UtcNow
+        // ------------------------------------------------------------
+
+        public static long ToDeltaTicksFromUtcNow(DateTime value)
+        {
+            // Sentinels: map absolute Min/Max to explicit delta sentinels.
+            if (value == DateTime.MinValue)
+                return long.MinValue;
+
+            if (value == DateTime.MaxValue)
+                return long.MaxValue;
+
+            DateTime utc = (value.Kind == DateTimeKind.Utc)
+                ? value
+                : value.ToUniversalTime();
+
+            long nowTicks = DateTime.UtcNow.Ticks;
+
+            try
+            {
+                checked
+                {
+                    return utc.Ticks - nowTicks;
+                }
+            }
+            catch
+            {
+                // Saturate on overflow.
+                return (utc.Ticks > nowTicks) ? long.MaxValue : long.MinValue;
+            }
+        }
+
+        public static DateTime FromDeltaTicksRelativeToUtcNow(long deltaTicks)
+        {
+            // Sentinels: reconstruct absolute Min/Max.
+            if (deltaTicks == long.MinValue)
+                return DateTime.MinValue;
+
+            if (deltaTicks == long.MaxValue)
+                return DateTime.MaxValue;
+
+            long nowTicks = DateTime.UtcNow.Ticks;
+
+            // Saturating add: nowTicks + deltaTicks with clamp to DateTime range.
+            if (deltaTicks > 0 && nowTicks > DateTime.MaxValue.Ticks - deltaTicks)
+                return DateTime.MaxValue;
+
+            if (deltaTicks < 0 && nowTicks < DateTime.MinValue.Ticks - deltaTicks)
+                return DateTime.MinValue;
+
+            long resultTicks = nowTicks + deltaTicks;
+
+            try
+            {
+                return new DateTime(resultTicks, DateTimeKind.Utc);
+            }
+            catch
+            {
+                return (deltaTicks > 0) ? DateTime.MaxValue : DateTime.MinValue;
+            }
+        }
+    }
+
     public abstract class GenericReader
     {
         public GenericReader() { }
 
-        public abstract string ReadString();
+        public abstract string? ReadString();
         public abstract DateTime ReadDateTime();
         public abstract TimeSpan ReadTimeSpan();
         public abstract DateTime ReadDeltaTime();
@@ -113,9 +259,9 @@ namespace Server
         public abstract Rectangle3D ReadRect3D();
         public abstract Map ReadMap();
 
-        public abstract Item ReadItem();
-        public abstract Mobile ReadMobile();
-        public abstract BaseGuild ReadGuild();
+        public abstract Item? ReadItem();
+        public abstract Mobile? ReadMobile();
+        public abstract BaseGuild? ReadGuild();
 
         public abstract List<Rectangle2D> ReadRectangle2DList();
 
@@ -147,7 +293,7 @@ namespace Server
 
         public abstract long Position { get; }
 
-        public abstract void Write(string value);
+        public abstract void Write(string? value);
         public abstract void Write(DateTime value);
         public abstract void Write(TimeSpan value);
         public abstract void Write(decimal value);
@@ -174,9 +320,9 @@ namespace Server
         public abstract void Write(Rectangle3D value);
         public abstract void Write(Map value);
 
-        public abstract void Write(Item value);
-        public abstract void Write(Mobile value);
-        public abstract void Write(BaseGuild value);
+        public abstract void Write(Item? value);
+        public abstract void Write(Mobile? value);
+        public abstract void Write(BaseGuild? value);
 
         public abstract void Write(byte[] buf, int offset, int length);
 
@@ -282,7 +428,7 @@ namespace Server
             m_Buffer[m_Index++] = (byte)v;
         }
 
-        private byte[] m_CharacterBuffer;
+        private byte[]? m_CharacterBuffer;
         private int m_MaxBufferChars;
         private const int LargeByteBufferSize = 256;
 
@@ -330,7 +476,7 @@ namespace Server
             }
         }
 
-        public override void Write(string value)
+        public override void Write(string? value)
         {
             if (PrefixStrings)
             {
@@ -353,32 +499,22 @@ namespace Server
             }
             else
             {
-                InternalWriteString(value);
+                InternalWriteString(value!); // non-prefixed writers (.idx/.tdb) only write non-null type names; null throws here, as before
             }
         }
 
         public override void Write(DateTime value)
         {
-            // MinValue workaround
-            if (value == DateTime.MinValue)
-                value = DateTime.MinValue.ToUniversalTime();
-            else
-                value = value.ToUniversalTime();
-            // all saves are in UTC
-            Write(value.Ticks);
+            // Persist absolute UTC ticks as Int64; preserve Min/Max sentinels.
+            long ticks = DateTimeSerialization.ToUtcTicks(value);
+            Write(ticks);
         }
 
         public override void WriteDeltaTime(DateTime value)
-        {   // all saves are in UTC
-            long ticks = value.Ticks;
-            long now = DateTime.UtcNow.Ticks;
-
-            TimeSpan d;
-
-            try { d = new TimeSpan(ticks - now); }
-            catch { if (ticks < now) d = TimeSpan.MaxValue; else d = TimeSpan.MaxValue; }
-
-            Write(d);
+        {
+            // Delta-times as Int64 ticks relative to DateTime.UtcNow.
+            long deltaTicks = DateTimeSerialization.ToDeltaTicksFromUtcNow(value);
+            Write(deltaTicks);
         }
 
         public override void Write(IPAddress value)
@@ -586,7 +722,7 @@ namespace Server
                 Write((byte)0xFF);
         }
 
-        public override void Write(Item value)
+        public override void Write(Item? value)
         {
             if (value == null || value.Deleted)
                 Write(Serial.MinusOne);
@@ -594,7 +730,7 @@ namespace Server
                 Write(value.Serial);
         }
 
-        public override void Write(Mobile value)
+        public override void Write(Mobile? value)
         {
             if (value == null || value.Deleted)
                 Write(Serial.MinusOne);
@@ -602,7 +738,7 @@ namespace Server
                 Write(value.Serial);
         }
 
-        public override void Write(BaseGuild value)
+        public override void Write(BaseGuild? value)
         {
             if (value == null)
                 Write(0);
@@ -631,7 +767,7 @@ namespace Server
             Write(list.Count);
 
             for (int i = 0; i < list.Count; ++i)
-                Write((Mobile)list[i]);
+                Write((Mobile?)list[i]);
         }
 
         public override void WriteMobileList(ArrayList list)
@@ -655,7 +791,7 @@ namespace Server
             Write(list.Count);
 
             for (int i = 0; i < list.Count; ++i)
-                Write((Mobile)list[i]);
+                Write((Mobile?)list[i]);
         }
         public override void WriteRectangle2DList(List<Rectangle2D> list)
         {
@@ -685,7 +821,7 @@ namespace Server
             Write(list.Count);
 
             for (int i = 0; i < list.Count; ++i)
-                Write((Item)list[i]);
+                Write((Item?)list[i]);
         }
 
         public override void WriteItemList(ArrayList list)
@@ -709,7 +845,7 @@ namespace Server
             Write(list.Count);
 
             for (int i = 0; i < list.Count; ++i)
-                Write((Item)list[i]);
+                Write((Item?)list[i]);
         }
 
         public override void WriteGuildList<T>(List<T> list)
@@ -733,7 +869,7 @@ namespace Server
             Write(list.Count);
 
             for (int i = 0; i < list.Count; ++i)
-                Write((BaseGuild)list[i]);
+                Write((BaseGuild?)list[i]);
         }
 
         public override void WriteGuildList(ArrayList list)
@@ -757,7 +893,7 @@ namespace Server
             Write(list.Count);
 
             for (int i = 0; i < list.Count; ++i)
-                Write((BaseGuild)list[i]);
+                Write((BaseGuild?)list[i]);
         }
     }
 
@@ -785,36 +921,23 @@ namespace Server
             return m_File.BaseStream.Seek(offset, origin);
         }
 
-        public override string ReadString()
+        public override string? ReadString()
         {
             if (ReadByte() != 0)
                 return m_File.ReadString();
             else
                 return null;
         }
+        public override DateTime ReadDateTime()
+        {
+            long ticks = m_File.ReadInt64();
+            return DateTimeSerialization.FromUtcTicks(ticks);
+        }
 
         public override DateTime ReadDeltaTime()
         {
-            long ticks = m_File.ReadInt64();
-            long now;
-            if (CoreAI.IsDynamicPatchSet(CoreAI.PatchIndex.HasPatchedTime) == false)
-            {
-                now = DateTime.UtcNow.Ticks;
-                try { return new DateTime(now + ticks); }
-                catch { if (ticks > 0) return DateTime.MaxValue; else return DateTime.MinValue; }
-            }
-
-            now = DateTime.UtcNow.Ticks;
-
-            if (ticks > 0 && (ticks + now) < 0)
-                return DateTime.MaxValue;
-            else if (ticks < 0 && (ticks + now) < 0)
-                return DateTime.MinValue;
-            else if (ticks + now > DateTime.MaxValue.Ticks)
-                return DateTime.MaxValue;
-
-            try { return new DateTime(now + ticks); }
-            catch { if (ticks > 0) return DateTime.MaxValue; else return DateTime.MinValue; }
+            long deltaTicks = m_File.ReadInt64();
+            return DateTimeSerialization.FromDeltaTicksRelativeToUtcNow(deltaTicks);
         }
 
         public override IPAddress ReadIPAddress()
@@ -835,21 +958,6 @@ namespace Server
             } while (b >= 0x80);
 
             return v;
-        }
-
-        public override DateTime ReadDateTime()
-        {
-            long ticks = m_File.ReadInt64();
-            DateTime value = new DateTime(ticks);
-            if (CoreAI.IsDynamicPatchSet(CoreAI.PatchIndex.HasPatchedTime) == false)
-                return value;
-
-            // MinValue workaround
-            if (value == DateTime.MinValue.ToUniversalTime())
-                return DateTime.MinValue;
-
-            // we wrote in UTC, we will read the UTC and return Local
-            return new DateTime(ticks).ToLocalTime();
         }
 
         public override TimeSpan ReadTimeSpan()
@@ -947,17 +1055,17 @@ namespace Server
             return Map.Maps[ReadByte()];
         }
 
-        public override Item ReadItem()
+        public override Item? ReadItem()
         {
             return World.FindItem(ReadInt());
         }
 
-        public override Mobile ReadMobile()
+        public override Mobile? ReadMobile()
         {
             return World.FindMobile(ReadInt());
         }
 
-        public override BaseGuild ReadGuild()
+        public override BaseGuild? ReadGuild()
         {
             return BaseGuild.Find(ReadInt());
         }
@@ -982,7 +1090,7 @@ namespace Server
 
             for (int i = 0; i < count; ++i)
             {
-                T item = ReadItem() as T;
+                T? item = ReadItem() as T;
 
                 if (item != null)
                     list.Add(item);
@@ -1000,7 +1108,7 @@ namespace Server
 
             for (int i = 0; i < count; ++i)
             {
-                Item item = ReadItem();
+                Item? item = ReadItem();
 
                 if (item != null)
                     list.Add(item);
@@ -1017,7 +1125,7 @@ namespace Server
 
             for (int i = 0; i < count; ++i)
             {
-                T m = ReadMobile() as T;
+                T? m = ReadMobile() as T;
 
                 if (m != null)
                     list.Add(m);
@@ -1034,7 +1142,7 @@ namespace Server
 
             for (int i = 0; i < count; ++i)
             {
-                Mobile m = ReadMobile();
+                Mobile? m = ReadMobile();
 
                 if (m != null)
                     list.Add(m);
@@ -1051,7 +1159,7 @@ namespace Server
 
             for (int i = 0; i < count; ++i)
             {
-                T g = ReadGuild() as T;
+                T? g = ReadGuild() as T;
 
                 if (g != null)
                     list.Add(g);
@@ -1068,7 +1176,7 @@ namespace Server
 
             for (int i = 0; i < count; ++i)
             {
-                BaseGuild g = ReadGuild();
+                BaseGuild? g = ReadGuild();
 
                 if (g != null)
                     list.Add(g);
@@ -1092,7 +1200,7 @@ namespace Server
 
                 for (int i = 0; i < count; ++i)
                 {
-                    T item = ReadItem() as T;
+                    T? item = ReadItem() as T;
 
                     if (item != null)
                     {
@@ -1123,7 +1231,7 @@ namespace Server
 
                 for (int i = 0; i < count; ++i)
                 {
-                    T m = ReadMobile() as T;
+                    T? m = ReadMobile() as T;
 
                     if (m != null)
                     {
@@ -1170,7 +1278,7 @@ namespace Server
         private FileStream m_File;
 
         private Queue m_WriteQueue;
-        private Thread m_WorkerThread;
+        private Thread? m_WorkerThread;
 
         public AsyncWriter(string filename, bool prefix)
             : this(filename, 1048576, prefix)//1 mb buffer
@@ -1215,7 +1323,7 @@ namespace Server
                 AsyncWriter.m_ThreadCount++;
                 while (m_Owner.m_WriteQueue.Count > 0)
                 {
-                    MemoryStream mem = (MemoryStream)m_Owner.m_WriteQueue.Dequeue();
+                    MemoryStream? mem = (MemoryStream?)m_Owner.m_WriteQueue.Dequeue();
 
                     if (mem != null && mem.Length > 0)
                         mem.WriteTo(m_Owner.m_File);
@@ -1280,7 +1388,7 @@ namespace Server
             OnWrite();
         }
 
-        public override void Write(string value)
+        public override void Write(string? value)
         {
             if (PrefixStrings)
             {
@@ -1301,29 +1409,19 @@ namespace Server
             OnWrite();
         }
 
-        public override void WriteDeltaTime(DateTime value)
-        {
-            // all saves are in UTC
-            value = value.ToUniversalTime();
-            long ticks = value.Ticks;
-            long now = DateTime.UtcNow.ToUniversalTime().Ticks;
-
-            TimeSpan d;
-
-            try { d = new TimeSpan(ticks - now); }
-            catch { if (ticks < now) d = TimeSpan.MaxValue; else d = TimeSpan.MaxValue; }
-
-            Write(d);
-        }
-
         public override void Write(DateTime value)
         {
-            // MinValue workaround
-            if (value == DateTime.MinValue)
-                value = DateTime.MinValue.ToUniversalTime();
-            // all saves are in UTC
-            value = value.ToUniversalTime();
-            m_Bin.Write(value.Ticks);
+            // Persist absolute UTC ticks as Int64; preserve Min/Max sentinels.
+            long ticks = DateTimeSerialization.ToUtcTicks(value);
+            m_Bin.Write(ticks);
+            OnWrite();
+        }
+
+        public override void WriteDeltaTime(DateTime value)
+        {
+            // Delta-times as Int64 ticks relative to DateTime.UtcNow.
+            long deltaTicks = DateTimeSerialization.ToDeltaTicksFromUtcNow(value);
+            m_Bin.Write(deltaTicks);
             OnWrite();
         }
 
@@ -1458,7 +1556,7 @@ namespace Server
                 Write((byte)0xFF);
         }
 
-        public override void Write(Item value)
+        public override void Write(Item? value)
         {
             if (value == null || value.Deleted)
                 Write(Serial.MinusOne);
@@ -1466,7 +1564,7 @@ namespace Server
                 Write(value.Serial);
         }
 
-        public override void Write(Mobile value)
+        public override void Write(Mobile? value)
         {
             if (value == null || value.Deleted)
                 Write(Serial.MinusOne);
@@ -1474,7 +1572,7 @@ namespace Server
                 Write(value.Serial);
         }
 
-        public override void Write(BaseGuild value)
+        public override void Write(BaseGuild? value)
         {
             if (value == null)
                 Write(0);
@@ -1533,7 +1631,7 @@ namespace Server
             Write(list.Count);
 
             for (int i = 0; i < list.Count; ++i)
-                Write((Mobile)list[i]);
+                Write((Mobile?)list[i]);
         }
         public override void WriteRectangle2DList(List<Rectangle2D> list)
         {
@@ -1587,7 +1685,7 @@ namespace Server
             Write(list.Count);
 
             for (int i = 0; i < list.Count; ++i)
-                Write((Item)list[i]);
+                Write((Item?)list[i]);
         }
 
         public override void WriteGuildList<T>(List<T> list)
@@ -1635,7 +1733,7 @@ namespace Server
             Write(list.Count);
 
             for (int i = 0; i < list.Count; ++i)
-                Write((BaseGuild)list[i]);
+                Write((BaseGuild?)list[i]);
         }
     }
 

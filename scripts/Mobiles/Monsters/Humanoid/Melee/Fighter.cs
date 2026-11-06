@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -139,40 +139,27 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // ai special
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(100, 150);
+                int gold = Utility.RandomMinMax(100, 150);
 
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                // if we are in our own stronghold, add 1/3 more gold+
+                // if we are in our own stronghold, add 1/3 more gold
                 if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
                 {
                     // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
+                    gold += gold / 3;
                 }
+
+                PackGold(gold);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
+                // Froste: 12% random IOB drop
+                if (0.12 > Utility.RandomDouble())
                 {
-                    // ai special
+                    Item? iob = Loot.RandomIOB();
+                    PackItem(iob);
                 }
             }
         }

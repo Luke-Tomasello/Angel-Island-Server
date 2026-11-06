@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -228,7 +228,7 @@ namespace Server.Items
 
         private void MoveComponent(int index, Point3D offset)
         {
-            AddonComponent c = GetComponent(index);
+            AddonComponent? c = GetComponent(index);
 
             if (c != null)
             {
@@ -240,13 +240,13 @@ namespace Server.Items
 
         private void SetComponentID(int index, int itemID)
         {
-            AddonComponent c = GetComponent(index);
+            AddonComponent? c = GetComponent(index);
 
             if (c != null)
                 c.ItemID = itemID;
         }
 
-        private AddonComponent GetComponent(int index)
+        private AddonComponent? GetComponent(int index)
         {
             if (index >= 0 && index < Components.Count)
                 return Components[index] as AddonComponent;

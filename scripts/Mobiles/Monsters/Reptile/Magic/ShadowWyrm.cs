@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,7 +77,7 @@ namespace Server.Mobiles
 
         public override bool HasBreath { get { return true; } } // fire breath enabled
                                                                 // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override Poison PoisonImmune { get { return Poison.Deadly; } }
         public override Poison HitPoison { get { return Poison.Deadly; } }
         public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 5 : 5; } }
@@ -95,52 +95,26 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                for (int i = 0; i < 5; ++i)
-                    PackGem();
+            // http://web.archive.org/web/20021014225931/uo.stratics.com/hunters/shadowwyrm.shtml
+            // 1800 to 2400 Gold, Gems, Magic items, 10 Black Scales, 19 Raw Ribs (carved), 20 Barbed Hides (carved), Level 5 treasure maps
+            // https://web.archive.org/web/20010808121033fw_/http://uo.stratics.com/hunters/shadowwyrm.shtml
+            // 	1200 to 2000 gold, Gems, Magic items, 19 Raw Ribs (carved), 20 Hides (carved), Level 5 treasure maps
 
-                PackGold(850, 1100);
-                PackMagicEquipment(1, 3, 0.50, 0.50);
-                PackMagicEquipment(1, 3, 0.20, 0.20);
-                PackScroll(6, 8);
-                PackScroll(6, 8);
-                // Category 5 MID
-                PackMagicItem(3, 3, 0.20);
-                PackMagicItem(3, 3, 0.10);
-                PackMagicItem(3, 3, 0.05);
+            if (Spawning)
+            {
+                PackGold(1200, 2000);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021014225931/uo.stratics.com/hunters/shadowwyrm.shtml
-                    // 1800 to 2400 Gold, Gems, Magic items, 10 Black Scales, 19 Raw Ribs (carved), 20 Barbed Hides (carved), Level 5 treasure maps
-                    // https://web.archive.org/web/20010808121033fw_/http://uo.stratics.com/hunters/shadowwyrm.shtml
-                    // 	1200 to 2000 gold, Gems, Magic items, 19 Raw Ribs (carved), 20 Hides (carved), Level 5 treasure maps
+                PackGem(Utility.Random(4, 6), .9);  // TODO: no idea as to the level and rate
+                PackGem(Utility.Random(4, 6), .5);
 
-                    if (Spawning)
-                    {
-                        PackGold(1200, 2000);
-                    }
-                    else
-                    {
-                        PackGem(Utility.Random(4, 6), .9);  // TODO: no idea as to the level and rate
-                        PackGem(Utility.Random(4, 6), .5);
+                PackMagicEquipment(1, 3);           // TODO: no idea as to the level and rate
+                PackMagicEquipment(1, 3);
+                PackMagicItem(3, 3);
+                PackMagicItem(3, 3, 0.10);
 
-                        PackMagicEquipment(1, 3);           // TODO: no idea as to the level and rate
-                        PackMagicEquipment(1, 3);
-                        PackMagicItem(3, 3);
-                        PackMagicItem(3, 3, 0.10);
-
-                        // We handle TreasureMaps generically in BaseCreature
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.FilthyRich, 3);
-                    AddLoot(LootPack.Gems, 5);
-                }
+                // We handle TreasureMaps generically in BaseCreature
             }
         }
 

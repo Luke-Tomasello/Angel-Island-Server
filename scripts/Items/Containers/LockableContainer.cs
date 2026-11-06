@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,17 @@
 
 /* Scripts/Items/Containers/LockableContainer.cs
  * CHANGELOG:
+ *  12/17/25, Adam
+ *  Refactored container lock/trap behavior to explicitly distinguish trap provenance and era rules.
+ *   
+ *   - Introduced TrapKind classification to separate player-crafted tinker traps from world containers.
+ *   - Corrected lockpicking semantics:
+ *     - Old-style tinker traps remain pickable (trap fires on open).
+ *     - New-style tinker traps cannot be picked while armed; must be disarmed first.
+ *     - World containers (fillable, dungeon, treasure map) allow pick-first, disarm-before-open flow.
+ *   - Restored trap-on-open behavior for world containers while preserving owner/key bypass rules.
+ *   - Verified dungeon and treasure map chests correctly self-destruct and respawn with fresh lock/trap state.
+ *   - Ensured tinker trap behavior no longer leaks globally via era flags.
  *	3/28/10, adam
  *		Added an auto-reset mechanism for resetting the trap and lock after a timeout period.
  *		Note: because of the way trapped containers are untrapped via RemoveTrap (power and traptype are cleared)
@@ -32,9 +43,11 @@
  */
 
 using Server.Engines.Craft;
+using Server.Multis;
 using Server.Network;
 using Server.Spells.Third;
 using System;
+using System.Collections.Generic;
 
 namespace Server.Items
 {
@@ -43,50 +56,20 @@ namespace Server.Items
         private bool m_Locked;
         private int m_LockLevel, m_MaxLockLevel, m_RequiredSkill;
         private uint m_KeyValue;
-        private Mobile m_Picker;
+        private Mobile? m_Picker;
         private bool m_AutoReset_unused_pending_delete;
         private TimeSpan m_AutoResetTime_unused_pending_delete;
-        AutoResetTimer m_AutoResetTimer_unused_pending_delete;
+        AutoResetTimer? m_AutoResetTimer_unused_pending_delete;
 
-#if false
-        [CommandProperty(AccessLevel.GameMaster)]
-        public bool AutoReset
+        public int GetLootGold()
         {
-            get { return m_AutoReset; }
-            set
-            {
-                if (m_AutoReset != value)
-                {
-                    if (value == true && Locked == false)
-                    {
-                        if (m_AutoResetTimer == null || m_AutoResetTimer.Running == false)
-                        {
-                            m_AutoResetTimer = new AutoResetTimer(this, m_AutoResetTime);
-                            m_AutoResetTimer.Start();
-                        }
-                    }
-                    else
-                    {
-                        if (m_AutoResetTimer != null && m_AutoResetTimer.Running == true)
-                        {
-                            m_AutoResetTimer.Flush();
-                            m_AutoResetTimer.Stop();
-                        }
-                    }
-                }
+            // Gate conditions for actual dungeon/treasure style chests
+            if (BaseHouse.FindHouseAt(this, parcel: true) != null || Movable || PlayerCrafted)
+                return 0;
 
-                // ask the traped chest to remember it's power settings
-                //	these are the values we will restore
-                if (value == true)
-                    this.RememberTrap();
-
-                m_AutoReset = value;
-            }
+            return TotalGold;
         }
 
-        [CommandProperty(AccessLevel.GameMaster)]
-        public TimeSpan AutoResetTime { get { return m_AutoResetTime_unused_pending_delete; } set { m_AutoResetTime_unused_pending_delete = value; } }
-#endif
         [CommandProperty(AccessLevel.GameMaster)]
         public Mobile Picker
         {
@@ -182,18 +165,35 @@ namespace Server.Items
         public override bool TrapOnOpen
         {
             get
-            {   // old style tinker traps always trap on open
-                return Core.OldStyleTinkerTrap;
+            {
+                // Trap-on-open behavior is determined by the container's trap kind.
+                // - Old-style tinker traps: trap fires on open.
+                // - New-style tinker traps: trap does NOT fire on lockpick; it fires on illegal open
+                //   attempts (and on failed disarm), but lockpicking is blocked while armed.
+                // - World chests (fillable/dungeon/treasure map): trap fires on open (classic UO behavior).
+                switch (GetTrapKind())
+                {
+                    case TrapKind.OldStyleTinkerTrap:
+                        return true;
+
+                    case TrapKind.NewStyleTinkerTrap:
+                        return true; // still trapped on illegal open; owner/key bypass is handled in TrapableContainer.Open()
+
+                    case TrapKind.FillableContainer:
+                    case TrapKind.DungeonChest:
+                    case TrapKind.TreasureMapChest:
+                        return true;
+
+                    default:
+                        return true;
+                }
             }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
         public bool TrapOnLockpick
-        {
-            get
-            {   // new style tinker traps always trap on pick
-                return Core.NewStyleTinkerTrap;
-            }
+        {   // new style tinker traps always trap on pick
+            get { return GetTrapKind() == TrapKind.NewStyleTinkerTrap; }
         }
 
         public override bool TryDropItem(Mobile from, Item dropped, bool sendFullMessage)
@@ -385,7 +385,7 @@ namespace Server.Items
                 {
                     number = 502502; // That is locked, but you open it with your godly powers.
                 }
-                else if (Core.NewStyleTinkerTrap && base.TrapEnabled && from == this.Owner)
+                else if (GetTrapKind() == TrapKind.NewStyleTinkerTrap && base.TrapEnabled && from == this.Owner)
                 {   // the last to lock a tinker trap map auto open it.
                     // See comments in Scripts\Engines\Craft\DefTinkering.cs
                     // TODO: what message goes here?
@@ -440,40 +440,125 @@ namespace Server.Items
 
             base.OnSnoop(from);
         }
-
         public virtual void LockPick(Mobile from)
         {
-            // old style traps can be picked
-            if (Core.OldStyleTinkerTrap)
-            {
-                Locked = false; // unlock
-                Picker = from;  // give credit
-            }
-            // new style tinker traps can't be picked.
-            else
-            {
-                if (TrapEnabled)
-                {
-                    bool bAutoReset = true;         // new style tinker traps auto reset
-                    ExecuteTrap(from, bAutoReset);  // execute trap
-                }
-                else
-                {   // if the trap has been disabled, the lock can now be picked
-                    Locked = false; // unlock
-                    Picker = from;  // give credit
-                }
-            }
 
-#if old
-			if (this.TrapOnLockpick && ExecuteTrap(from))
-			{
-				// RunUO has this, but I think it is wrong for new style tinker traps as they are unpickable, i.e.,
-				//	the blowup on pick, and auto-reset (meaning they never unlock)
-				this.TrapOnLockpick = false;
-			}
-#endif
+            switch (GetTrapKind())
+            {
+                // OLD-STYLE TINKER TRAPS (Publish < ~4):
+                // These traps allow the lock to be picked.
+                // Picking the lock does NOT disarm the trap; opening may still detonate it.
+                case TrapKind.OldStyleTinkerTrap:
+                    // Pickable; does not disarm.
+                    Locked = false;
+                    Picker = from;
+                    return;
 
+                // NEW-STYLE TINKER TRAPS:
+                // The lock on a trapped chest cannot be picked until the trap is disarmed.
+                // Lockpicking an armed trap does NOT detonate it; detonation occurs on
+                // illegal open attempts or failed disarm attempts.
+                case TrapKind.NewStyleTinkerTrap:
+                    // Unpickable while trap is armed. (No detonation on pick.)
+                    if (this is TrapableContainer tc && tc.TrapEnabled)
+                    {
+                        ((Item)this).SendMessageTo(from, ascii: true,
+                            "The lock cannot be picked while the trap is armed.");
+                        return;
+                    }
+
+                    Locked = false;
+                    Picker = from;
+                    return;
+
+                case TrapKind.FillableContainer:
+                case TrapKind.DungeonChest:
+                case TrapKind.TreasureMapChest:
+                default:
+                    // World containers: leave existing semantics as-is (or make explicit later).
+                    Locked = false;
+                    Picker = from;
+                    return;
+            }
         }
+
+        #region Scrolls
+
+        public static void PackScroll(LockableContainer cont, int minCircle, int maxCircle, double chance)
+        {
+            if (chance <= Utility.RandomDouble())
+                return;
+
+            PackScroll(cont, minCircle, maxCircle);
+        }
+
+        public static void PackScroll(Container cont, int minCircle, int maxCircle)
+        {
+            PackScroll(cont, Utility.RandomMinMax(minCircle, maxCircle));
+        }
+
+        public static void PackScroll(Container cont, int circle)
+        {
+            if (cont == null)
+                return;
+
+            //if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+            //{
+            //    PackNoMagicScrollReplacement(cont, circle);
+            //    return;
+            //}
+
+            int min = (circle - 1) * 8;
+
+            cont.DropItem(Loot.RandomScroll(min, min + 7, SpellbookType.Regular));
+        }
+
+        private static void PackNoMagicScrollReplacement(LockableContainer cont, int circle)
+        {
+            if (cont == null)
+                return;
+
+            List<Item> loot = Utility.GetNoMagicScrollReplacementLoot(circle);
+
+            foreach (Item item in loot)
+                cont.DropItem(item);
+        }
+        /// <summary>
+        /// Seasons 2 specific container formatting for treasure chests.
+        /// 
+        /// Changes:
+        ///   1. Removes all SpellScrolls (replaced by blank scrolls in this ruleset)
+        ///   2. Adds BlankScrolls with the following distribution:
+        /// 
+        ///   Level | Min | Max | Range          | Average
+        ///   ------|-----|-----|----------------|--------
+        ///     1   |  1  | 15  | 1  - 15        |   8
+        ///     2   |  2  | 30  | 2  - 30        |  16
+        ///     3   |  3  | 45  | 3  - 45        |  24
+        ///     4   |  4  | 60  | 4  - 60        |  32
+        ///     5   |  5  | 75  | 5  - 75        |  40
+        /// 
+        ///   Each value in the range is equally likely (uniform distribution).
+        /// </summary>
+        internal static void ApplySeasons2Loot(Container cont, int level)
+        {
+            // Seasons 2 specific formatting:
+            // 1. Remove all SpellScrolls (they are replaced by blank scrolls in this ruleset)
+            // 2. Add BlankScrolls in the new quantity range
+
+            // Remove existing spell scrolls
+            foreach (Item item in new List<Item>(cont.Items))
+            {
+                if (item is SpellScroll || item is BlankScroll)
+                    item.Delete();
+            }
+
+            // Add blank scrolls - quantity between level and level * multiplier
+            int blankCount = Utility.RandomMinMax(level, level * CoreAI.BlankScrollMultiplier);
+            if (blankCount > 0)
+                cont.DropItem(new BlankScroll(blankCount));
+        }
+        #endregion Scrolls
 
         #region ICraftable Members
 

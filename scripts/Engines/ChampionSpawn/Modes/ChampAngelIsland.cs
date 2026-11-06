@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,8 @@
 
 /* Scripts/Engines/ChampionSpawn/Modes/ChampAngelIsland.cs
  *	ChangeLog:
+ *  10/27/2026, Adam
+ *      SpawnTypes enum removed: AI_Guard / AI_Escape are definition names (ChampNames), DefinitionName replaces SpawnType.
  *  28/12/06, plasma
  *      Overrode the RestartDelay property to allow read/write from
  *      the static/xml global values in CoreAI.cs
@@ -50,18 +52,18 @@ namespace Server.Engines.ChampionSpawn
         {
             get
             {
-                if (m_Type == ChampLevelData.SpawnTypes.AI_Guard)
+                if (m_DefinitionName == ChampNames.AI_Guard)
                     return TimeSpan.FromMinutes(CoreAI.GuardSpawnRestartDelay);
-                else if (m_Type == ChampLevelData.SpawnTypes.AI_Escape)
+                else if (m_DefinitionName == ChampNames.AI_Escape)
                     return TimeSpan.FromMinutes(CoreAI.SpiritRestartDelay);
                 else
                     return base.RestartDelay;
             }
             set
             {
-                if (m_Type == ChampLevelData.SpawnTypes.AI_Guard)
+                if (m_DefinitionName == ChampNames.AI_Guard)
                     CoreAI.GuardSpawnRestartDelay = value.Minutes;
-                else if (m_Type == ChampLevelData.SpawnTypes.AI_Escape)
+                else if (m_DefinitionName == ChampNames.AI_Escape)
                     CoreAI.SpiritRestartDelay = value.Minutes;
 
                 base.RestartDelay = value;
@@ -76,7 +78,7 @@ namespace Server.Engines.ChampionSpawn
             m_bRestart = true;
 
             // set deault spawn type to AI_Guard
-            SpawnType = ChampLevelData.SpawnTypes.AI_Guard;
+            DefinitionName = ChampNames.AI_Guard;
         }
 
         public ChampAngelIsland(Serial serial)
@@ -112,7 +114,7 @@ namespace Server.Engines.ChampionSpawn
             if (IsFinalLevel)
             {
                 // make exit gate (old code)
-                if (SpawnType == ChampLevelData.SpawnTypes.AI_Escape)
+                if (DefinitionName == ChampNames.AI_Escape)
                 {
                     Item aiExit = new AIEscapeExit();
                     Item prettyshiney = new PrettyShiney();
@@ -122,7 +124,7 @@ namespace Server.Engines.ChampionSpawn
 
                     new DeletionTimera(aiExit, prettyshiney, TimeSpan.FromSeconds(CoreAI.SpiritPortalAvailablity)).Start();
                 }
-                else if (SpawnType == ChampLevelData.SpawnTypes.AI_Guard)
+                else if (DefinitionName == ChampNames.AI_Guard)
                 {
                     Item CaveTele = new AICaveEntrance();
                     Item prettyshiney = new PrettyShiney();

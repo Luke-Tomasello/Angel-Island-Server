@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -153,7 +153,7 @@ namespace Server.Mobiles
             {
                 if (Spawning)
                 {
-                    PackGold(0);
+
                 }
                 else
                 {
@@ -177,7 +177,7 @@ namespace Server.Mobiles
                     }
                     else
                     {
-                        Item weapon = FindItemOnLayer(Layer.TwoHanded);
+                        Item? weapon = FindItemOnLayer(Layer.TwoHanded);
                         if (weapon != null)
                         {
                             weapon.Movable = true;
@@ -193,7 +193,7 @@ namespace Server.Mobiles
                 {   // ai special 
                     if (Spawning)
                     {
-                        PackGold(0);
+
                     }
                     else
                     {
@@ -219,11 +219,11 @@ namespace Server.Mobiles
         public override bool ShowFameTitle { get { return false; } }
         public override bool ClickTitle { get { return false; } }
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
 
-            Mobile m = VerifyValidMobile(from, 9);
+            Mobile? m = VerifyValidMobile(from, 9);
 
             if (m != null)
             {
@@ -232,7 +232,7 @@ namespace Server.Mobiles
             }
         }
 
-        public Mobile VerifyValidMobile(Mobile m, int tileRange)
+        public Mobile? VerifyValidMobile(Mobile m, int tileRange)
         {
             if (m != null && m is PlayerMobile && m.AccessLevel == AccessLevel.Player || m != null && m is BaseCreature && ((BaseCreature)m).Controlled)
             {
@@ -245,7 +245,7 @@ namespace Server.Mobiles
 
         private void ThrowBola(Mobile target, int range)
         {
-            Mobile m = VerifyValidMobile(target, range);
+            Mobile? m = VerifyValidMobile(target, range);
 
             if (m != null && !(m is BaseCreature))
             {

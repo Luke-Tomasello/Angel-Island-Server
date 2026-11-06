@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -65,13 +65,13 @@ namespace Server.Accounting
     {
         private class ParamPack
         {
-            public ArrayList m_distributionList = null;
-            public string m_toAddress = null;
+            public ArrayList? m_distributionList = null;
+            public string? m_toAddress = null;
             public string m_subject = null;
             public string m_body = null;
             public bool m_ccRegistration = false;
 
-            public ParamPack(string toAddress, string subject, string body, bool ccRegistration)
+            public ParamPack(string? toAddress, string subject, string body, bool ccRegistration)
             {
                 m_toAddress = toAddress;
                 m_subject = subject;
@@ -103,7 +103,7 @@ namespace Server.Accounting
         {
         }
 
-        public bool SendEmail(string toAddress, string subject, string body, bool ccRegistration)
+        public bool SendEmail(string? toAddress, string subject, string body, bool ccRegistration)
         {
             ParamPack parms = new ParamPack(toAddress, subject, body, ccRegistration);
 
@@ -147,7 +147,7 @@ namespace Server.Accounting
             {
                 try
                 {
-                    ParamPack px = parms as ParamPack;
+                    ParamPack? px = parms as ParamPack;
 
                     // hmm.. badness
                     if (px == null || px.m_toAddress == null)
@@ -182,7 +182,7 @@ namespace Server.Accounting
             {
                 try
                 {
-                    ParamPack px = parms as ParamPack;
+                    ParamPack? px = parms as ParamPack;
 
                     // hmm.. badness
                     if (px == null || px.m_distributionList == null)
@@ -200,7 +200,7 @@ namespace Server.Accounting
                         //	eat all our bandwidth
                         System.Threading.Thread.Sleep(1000);
 
-                        string addy = px.m_distributionList[ix] as string;
+                        string? addy = px.m_distributionList[ix] as string;
                         if (addy == null) continue;             // may not be null
 
                         // Adam: bacause recipient is specified, we do not allow distribution lists

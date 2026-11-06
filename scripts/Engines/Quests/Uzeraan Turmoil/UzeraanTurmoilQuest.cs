@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -164,7 +164,7 @@ namespace Server.Engines.Quests.Haven
 
         public static bool HasLostScrollOfPower(Mobile from)
         {
-            PlayerMobile pm = from as PlayerMobile;
+            PlayerMobile? pm = from as PlayerMobile;
 
             if (pm == null)
                 return false;
@@ -186,7 +186,7 @@ namespace Server.Engines.Quests.Haven
 
         public static bool HasLostFertileDirt(Mobile from)
         {
-            PlayerMobile pm = from as PlayerMobile;
+            PlayerMobile? pm = from as PlayerMobile;
 
             if (pm == null)
                 return false;
@@ -208,7 +208,7 @@ namespace Server.Engines.Quests.Haven
 
         public static bool HasLostDaemonBlood(Mobile from)
         {
-            PlayerMobile pm = from as PlayerMobile;
+            PlayerMobile? pm = from as PlayerMobile;
 
             if (pm == null)
                 return false;
@@ -230,7 +230,7 @@ namespace Server.Engines.Quests.Haven
 
         public static bool HasLostDaemonBone(Mobile from)
         {
-            PlayerMobile pm = from as PlayerMobile;
+            PlayerMobile? pm = from as PlayerMobile;
 
             if (pm == null)
                 return false;

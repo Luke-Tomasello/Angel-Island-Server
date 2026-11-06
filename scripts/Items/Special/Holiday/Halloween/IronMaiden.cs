@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -133,7 +133,7 @@ namespace Server.Items
                     from.PlaySound(Utility.RandomMinMax(0x15A, 0x15D));
 
                 from.LocalOverheadMessage(MessageType.Regular, 0, 501777); // Hmm... you suspect that if you used this again, it might hurt.
-                from.Damage(Utility.Dice(2, 10, 5), from, null);
+                from.Damage(Utility.Dice(2, 10, 5), from, new DamageContext { Source = this });
 
                 Timer.DelayCall(TimeSpan.FromSeconds(1), new TimerStateCallback(Deactivate), c);
             }

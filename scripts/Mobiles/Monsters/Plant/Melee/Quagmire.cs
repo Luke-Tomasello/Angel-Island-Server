@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,39 +71,25 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // 02 2002 no page
+            // http://web.archive.org/web/20020806154029/uo.stratics.com/hunters/quagmire.shtml
+            // unknown
+            // http://web.archive.org/web/20021014232959/uo.stratics.com/hunters/quagmire.shtml
+            // unknown
+            // http://web.archive.org/web/20021215191936/uo.stratics.com/hunters/quagmire.shtml
+            // unknown
+            // http://web.archive.org/web/20030210141933/uo.stratics.com/hunters/quagmire.shtml
+            // unknown
+            // http://web.archive.org/web/20030415180157/uo.stratics.com/database/view.php?db_content=hunters&id=281
+            // unknown
+            // http://uo.stratics.com/database/view.php?db_content=hunters&id=281
+            // 125 - 175 Gold.
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(60, 90);
+                PackGold(125, 175);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // 02 2002 no page
-                    // http://web.archive.org/web/20020806154029/uo.stratics.com/hunters/quagmire.shtml
-                    // unknown
-                    // http://web.archive.org/web/20021014232959/uo.stratics.com/hunters/quagmire.shtml
-                    // unknown
-                    // http://web.archive.org/web/20021215191936/uo.stratics.com/hunters/quagmire.shtml
-                    // unknown
-                    // http://web.archive.org/web/20030210141933/uo.stratics.com/hunters/quagmire.shtml
-                    // unknown
-                    // http://web.archive.org/web/20030415180157/uo.stratics.com/database/view.php?db_content=hunters&id=281
-                    // unknown
-                    // http://uo.stratics.com/database/view.php?db_content=hunters&id=281
-                    // 125 - 175 Gold.
-                    if (Spawning)
-                    {
-                        PackGold(125, 175);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    AddLoot(LootPack.Average);
-                }
             }
         }
 

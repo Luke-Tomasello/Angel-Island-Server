@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -120,7 +120,7 @@ namespace Server.Mobiles
         public override bool AlwaysMurderer { get { return true; } }
         public override Poison PoisonImmune { get { return Poison.Deadly; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override bool ShowFameTitle { get { return false; } }
         public override bool ClickTitle { get { return false; } }
 
@@ -139,7 +139,7 @@ namespace Server.Mobiles
 
             if (m.BeginAction(typeof(PolymorphSpell)))
             {
-                Item disarm = m.FindItemOnLayer(Layer.OneHanded);
+                Item? disarm = m.FindItemOnLayer(Layer.OneHanded);
 
                 if (disarm != null && disarm.Movable)
                     m.AddToBackpack(disarm);
@@ -152,7 +152,7 @@ namespace Server.Mobiles
                 m.BodyMod = 42;
                 m.HueMod = 0;
 
-                new ExpirePolymorphTimer(m).Start();
+                PolymorphSpell.StartTimer(m, new ExpirePolymorphTimer(m));
             }
         }
 
@@ -234,6 +234,7 @@ namespace Server.Mobiles
                         }
 
                         rat.MoveToWorld(loc, map);
+                        rat.OnAfterSpawn();
 
                         rat.Combatant = target;
                     }
@@ -260,9 +261,9 @@ namespace Server.Mobiles
                 Polymorph(this);
         }
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
 
             DoSpecialAbility(from);
         }

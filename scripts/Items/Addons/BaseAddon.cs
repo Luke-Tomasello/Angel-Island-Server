@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,10 @@
 
 /* Scripts/Items/Addons/BaseAddon.cs
  * ChangeLog
+ *  10/25/26, Adam (AIMusicSystem Phase 4 Step 1: shared device playback)
+ *      The music play lock, start and "playing elsewhere" check now come from CalypsoMusicPlayer (NextMusicTime,
+ *      ReadyToPlay, StartPerformance, UserBlocked); EndMusic is gone (the player restarts the lock with DelayBetween
+ *      when the performance ends). No behavior change.
  *  4/10/2024, Adam (Timed load of components)
  *      (Moved here from XMLAddon)
  *      For more than a year we've seen periodic client crashes when loading very large addons.
@@ -151,7 +155,7 @@ namespace Server.Items
         }
         #endregion
         #region Music Management
-        private string m_RazorFile;
+        private string? m_RazorFile;
         [CommandProperty(AccessLevel.GameMaster)]
         public string RazorFile
         {
@@ -165,14 +169,14 @@ namespace Server.Items
                 else
                 {
                     CalypsoMusicPlayer.Metadata data = CalypsoMusicPlayer.GetMetaData(value);
-                    SendSystemMessage(string.Format("Adding music {0}", data?.Song));
+                    SendMessageNearby(string.Format("Adding music {0}", data?.Song));
 
                     m_RazorFile = value;
                     // delete the rolled up sheet music if it exists
-                    RolledUpSheetMusic rsm = GetRSM();
+                    RolledUpSheetMusic? rsm = GetRSM();
                     if (rsm != null)
                     {
-                        SendSystemMessage(string.Format("Deleting music {0}", rsm));
+                        SendMessageNearby(string.Format("Deleting music {0}", rsm));
                         RemoveItem(rsm);
                         rsm.Delete();
                     }
@@ -180,7 +184,7 @@ namespace Server.Items
             }
         }
         [CommandProperty(AccessLevel.Seer)]
-        public virtual Item SheetMusic
+        public virtual Item? SheetMusic
         {
             get
             {
@@ -191,11 +195,11 @@ namespace Server.Items
             }
             set
             {
-                Item musicObject = null;
+                Item? musicObject = null;
 
                 if (value != null && value is not RolledUpSheetMusic)
                 {
-                    this.SendSystemMessage("That is not rolled up sheet music");
+                    this.SendMessageNearby("That is not rolled up sheet music");
                     return;
                 }
 
@@ -212,12 +216,12 @@ namespace Server.Items
                     if (m_RazorFile != null)
                     {
                         if (GetRZR() != null)
-                            SendSystemMessage(string.Format("Deleting music {0}", m_RazorFile));
+                            SendMessageNearby(string.Format("Deleting music {0}", m_RazorFile));
                         m_RazorFile = null;
                     }
                     if (musicObject != null)
                     {
-                        SendSystemMessage(string.Format("Deleting music {0}", musicObject));
+                        SendMessageNearby(string.Format("Deleting music {0}", musicObject));
                         RemoveItem(musicObject);
                         musicObject.Delete();
                     }
@@ -226,9 +230,9 @@ namespace Server.Items
 
                     if (musicObject != null)
                     {
-                        Item item = Utility.Dupe(musicObject);
+                        Item? item = Utility.Dupe(musicObject);
                         item.SetItemBool(ItemBoolTable.StaffOwned, false);
-                        SendSystemMessage(string.Format("Adding music {0}", item));
+                        SendMessageNearby(string.Format("Adding music {0}", item));
                         AddItem(item);
                     }
                 }
@@ -252,7 +256,7 @@ namespace Server.Items
             }
         }
         [CommandProperty(AccessLevel.Seer)]
-        public string Song
+        public string? Song
         {
             get
             {
@@ -280,20 +284,20 @@ namespace Server.Items
         {
             get
             {
-                this.SendSystemMessage("RangeExit: I get this far away and the music stops. -1 means no range checking");
+                this.SendMessageNearby("RangeExit: I get this far away and the music stops. -1 means no range checking");
                 //this.SendSystemMessage("RangeExit: Currently disabled for BaseAddon");
                 return m_range_exit;
             }
             set { m_range_exit = value; }
         }
-        private RolledUpSheetMusic GetRSM()
+        private RolledUpSheetMusic? GetRSM()
         {
             foreach (Item item in PeekItems)
                 if (item is RolledUpSheetMusic rsm)
                     return rsm;
             return null;
         }
-        private string GetRZR()
+        private string? GetRZR()
         {
             if (m_RazorFile != null && m_RazorFile.EndsWith(".rzr") && File.Exists(Path.Combine(Core.DataDirectory, "song files", m_RazorFile)))
                 return m_RazorFile;
@@ -301,33 +305,26 @@ namespace Server.Items
         }
         private object GetMusic()
         {
-            object music = GetRSM();
+            object? music = GetRSM();
             if (music == null)
                 music = GetRZR();
             return music;
         }
         private CalypsoMusicPlayer m_MusicPlayer = new CalypsoMusicPlayer();
-        private Utility.LocalTimer NextMusicTime = new Utility.LocalTimer();
+        private Utility.LocalTimer NextMusicTime { get { return m_MusicPlayer.NextMusicTime; } }   // the play lock
 
         public override bool HandlesOnMovement { get { return GetMusic() != null; } }
 
         public override void OnMovement(Mobile m, Point3D oldLocation)
         {   // CanPlay blocks if: the player is already playing, OR another player nearby (15 tiles) is playing
-            bool all_good = PlayMobile(m) && NextMusicTime.Triggered && !IsPlayLocked() && m.InRange(this, m_range_enter) && m.InLOS(this) && m_MusicPlayer.CanPlay(this);
+            bool all_good = PlayMobile(m) && m_MusicPlayer.ReadyToPlay && m.InRange(this, m_range_enter) && m.InLOS(this) && m_MusicPlayer.CanPlay(this);
             // check if this user is playing music elsewhere
-            bool blocked = SystemMusicPlayer.IsUserBlocked(m_MusicPlayer.MusicContextMobile);
+            bool blocked = m_MusicPlayer.UserBlocked;
             if (all_good && !blocked)
             {
                 object song = GetMusic();
                 if (song != null)
-                {
-                    // some music devices use a fake mobile for music context. This will be the mobile we check for distance etc.
-                    m_MusicPlayer.PlayerMobile = m;
-                    m_MusicPlayer.RangeExit = m_range_exit;         // how far the mobile can be from this
-                    //m_MusicPlayer.Play(m, this, song);
-                    m_MusicPlayer.Play(Utility.MakeTempMobile(), this, song);
-                    NextMusicTime.Stop();                           // just to block us. See EndMusic
-                }
+                    m_MusicPlayer.StartPerformance(m, this, song, m_range_exit, () => m_time_between);
             }
             else if (Core.Debug && all_good && blocked)
                 Utility.SendSystemMessage(m, 5, "Debug message: music not started because this player has initiated music elsewhere.");
@@ -355,13 +352,9 @@ namespace Server.Items
             }
             return false;
         }
-        private void EndMusic(Mobile from)
-        {
-            NextMusicTime.Start(m_time_between);
-        }
         private bool IsPlayLocked()
         {
-            return !NextMusicTime.Running;
+            return m_MusicPlayer.IsPlayLocked;
         }
         #endregion
         private ArrayList m_Components;
@@ -389,8 +382,8 @@ namespace Server.Items
             try
             {
                 object[] aState = (object[])state;
-                BaseAddon addon = aState[0] as BaseAddon;
-                AddonComponent c = aState[1] as AddonComponent;
+                BaseAddon? addon = aState[0] as BaseAddon;
+                AddonComponent? c = aState[1] as AddonComponent;
                 int x = (int)aState[2];
                 int y = (int)aState[3];
                 int z = (int)aState[4];
@@ -408,8 +401,6 @@ namespace Server.Items
             Visible = false;
 
             m_Components = new ArrayList();
-            NextMusicTime.Start(0);                 // we can play now
-            m_MusicPlayer.AllDone = EndMusic;
         }
         public override Item Dupe(int amount)
         {
@@ -480,7 +471,7 @@ namespace Server.Items
         public virtual void OnChop(Mobile from)
         {
             bool valid = false;
-            BaseHouse house = null;
+            BaseHouse? house = null;
             house = BaseHouse.FindHouseAt(this);
 
             if (!GetItemBool(Item.ItemBoolTable.Preview))
@@ -499,7 +490,7 @@ namespace Server.Items
 
                 if (Redeedable)
                 {
-                    BaseAddonDeed deed = Redeed(this) as BaseAddonDeed;
+                    BaseAddonDeed? deed = Redeed(this) as BaseAddonDeed;
                     if (deed != null)
                     {
                         deed.RazorFile = m_RazorFile;
@@ -543,7 +534,7 @@ namespace Server.Items
         }
         public static Item Redeed(Item item)
         {
-            Item deed = null;
+            Item? deed = null;
 
             if (item is BaseAddon)
             {
@@ -569,10 +560,6 @@ namespace Server.Items
 
             // this is where RunUO would delete the addon
             // however, we delete the addon after calling the Redeed method
-#if false
-            if (deed != null)
-                item.Delete();
-#endif
 
             return deed;
         }
@@ -632,7 +619,7 @@ namespace Server.Items
 
                 for (int i = 0; i < doors.Count; ++i)
                 {
-                    BaseDoor door = doors[i] as BaseDoor;
+                    BaseDoor? door = doors[i] as BaseDoor;
 
                     if (door != null && door.Open)
                         return AddonFitResult.DoorsNotClosed;
@@ -814,9 +801,6 @@ namespace Server.Items
 
             if (version < 1 && Weight == 0)
                 Weight = -1;
-
-            NextMusicTime.Start(0);                     // we can play now
-            m_MusicPlayer.AllDone = EndMusic;
         }
 
         #region Preview Addons
@@ -830,18 +814,6 @@ namespace Server.Items
 
             list.Sort();
             return list[0];
-        }
-        public static int ImpliedPreviewCancelation()
-        {   // server restart, everything must go!
-            int count = PreviewAddons.Count;
-            foreach (var kvp in PreviewAddons)
-            {
-                System.Diagnostics.Debug.Assert(!kvp.Key.Deleted);
-                System.Diagnostics.Debug.Assert(kvp.Value != null && !kvp.Value.Deleted);
-                RemovePreview(kvp.Key, kvp.Value);
-                ReturnDeed(kvp.Key, kvp.Value);
-            }
-            return count;
         }
         public static void ReturnDeed(BaseAddon addon, Mobile m)
         {
@@ -887,8 +859,8 @@ namespace Server.Items
                             int count = reader.ReadEncodedInt();
                             for (int ix = 0; ix < count; ix++)
                             {
-                                Item addon = reader.ReadItem();
-                                Mobile mobile = reader.ReadMobile();
+                                Item? addon = reader.ReadItem();
+                                Mobile? mobile = reader.ReadMobile();
                                 if (addon is null || addon.Deleted || mobile == null || mobile.Deleted)
                                     continue;
                                 PreviewAddons.Add(addon as BaseAddon, mobile);

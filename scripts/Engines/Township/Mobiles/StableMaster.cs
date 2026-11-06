@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -82,7 +82,7 @@ namespace Server.Mobiles
             NameHue = CalcInvulNameHue();
             InitOutfit();
         }
-        public override bool CheckPetCondidtion(Mobile from, BaseCreature pet, bool message = true)
+        public override bool CheckPetCondition(Mobile from, BaseCreature pet, bool message = true)
         {
             if (BreedersOnly && pet.BreedingParticipant)
                 return true;
@@ -112,13 +112,13 @@ namespace Server.Mobiles
 
             return false;
         }
-        private StableMasterClaimCheck GetCheck(Mobile from)
+        private StableMasterClaimCheck? GetCheck(Mobile from)
         {
             System.Diagnostics.Debug.Assert(!UseChecks);    // GetCheck not used when UseChecks == true
             if (!UseChecks)
             {
                 // backwards compatibility. If they come up to us with a check in their backpack, convert it to a 'no checks' model
-                Item temp = from.Backpack.FindItemByType(typeof(StableMasterClaimCheck));
+                Item? temp = from.Backpack.FindItemByType(typeof(StableMasterClaimCheck));
                 if (temp != null)
                 {
                     from.Backpack.RemoveItem(temp);
@@ -190,7 +190,7 @@ namespace Server.Mobiles
                 else
                     TimeSpan.FromMinutes(10);
             }
-            StableMasterClaimCheck check = null;
+            StableMasterClaimCheck? check = null;
             if (!UseChecks)
             {
                 check = GetCheck(from);
@@ -218,7 +218,7 @@ namespace Server.Mobiles
             }
             else
             {
-                StableMasterClaimCheck smc = pet as StableMasterClaimCheck;
+                StableMasterClaimCheck? smc = pet as StableMasterClaimCheck;
                 System.Diagnostics.Debug.Assert(smc != null);
                 if (smc != null)
                 {
@@ -247,7 +247,7 @@ namespace Server.Mobiles
                 SayTo(from, 1049612, pet.Name); // ~1_NAME~ remained in the stables because you have too many followers.
             else if (allowed == Allowed.Unredeemed)
             {
-                Mobile m = from.Pets.Where(p => (p as BaseCreature).GetCreatureBool(CreatureBoolTable.IsSMDeeded)).FirstOrDefault<Mobile>();
+                Mobile? m = from.Pets.Where(p => (p as BaseCreature).GetCreatureBool(CreatureBoolTable.IsSMDeeded)).FirstOrDefault<Mobile>();
                 SayTo(from, "You must first redeem your claim check for {0}", m.Name);
             }
             else
@@ -274,11 +274,11 @@ namespace Server.Mobiles
             AddItem(item);
             EquipItem(item);
         }
-        public override int GetStableSlots(Mobile m, BaseCreature bc = null)
+        public override int GetStableSlots(Mobile m, BaseCreature? bc = null)
         {
             return base.GetStableSlots(m);
         }
-        public override IList<BaseCreature> GetStabledPets(Mobile m, BaseCreature bc = null)
+        public override IList<BaseCreature> GetStabledPets(Mobile m, BaseCreature? bc = null)
         {
 
             return GetStabledPets(m, StableMaster.Table, bc);
@@ -292,7 +292,7 @@ namespace Server.Mobiles
         }
         public override void AddStabledPet(Mobile m, BaseCreature pet)
         {
-            List<BaseCreature> list;
+            List<BaseCreature>? list;
 
             if (!m_Table.TryGetValue(m, out list))
                 m_Table[m] = list = new List<BaseCreature>();
@@ -305,7 +305,7 @@ namespace Server.Mobiles
         }
         public override void RemoveStabledPet(Mobile m, BaseCreature pet)
         {
-            List<BaseCreature> list;
+            List<BaseCreature>? list;
 
             if (!m_Table.TryGetValue(m, out list))
                 return;
@@ -317,12 +317,12 @@ namespace Server.Mobiles
         }
         public override bool OnDragDrop(Mobile from, Item dropped)
         {
-            StableMasterClaimCheck check = dropped as StableMasterClaimCheck;
+            StableMasterClaimCheck? check = dropped as StableMasterClaimCheck;
             if (check != null)
             {
                 if (DateTime.UtcNow >= check.RedeemableOn || !UseChecks)
                 {
-                    if (check.Pet != null && check.Pet.ControlMasterGUID == from.GUID)
+                    if (check.Pet != null && check.Pet.ControlMasterGUID == from.AcctGUID)
                     {
                         // Warn the player about grandfathered pets
                         if (check.Pet.BreedingParticipant == false)
@@ -334,7 +334,7 @@ namespace Server.Mobiles
                         check.Delete();
                         return true;
                     }
-                    else if (check.Pet != null && check.Pet.ControlMasterGUID != from.GUID)
+                    else if (check.Pet != null && check.Pet.ControlMasterGUID != from.AcctGUID)
                     {
                         SayTo(from, "I'm sorry, but this is not your pet.");
                         return false;
@@ -480,7 +480,7 @@ namespace Server.Mobiles
 
             for (int i = 0; i < count; i++)
             {
-                Mobile m = reader.ReadMobile();
+                Mobile? m = reader.ReadMobile();
                 List<BaseCreature> pets = reader.ReadStrongMobileList<BaseCreature>();
 
                 if (m != null)
@@ -502,7 +502,7 @@ namespace Server.Mobiles
     {
         public override string DefaultName { get { return "a pet claim check"; } }
 
-        private BaseCreature m_Pet;
+        private BaseCreature? m_Pet;
         private DateTime m_RedeemableOn = DateTime.MaxValue;
         public DateTime RedeemableOn => m_RedeemableOn;
         [CommandProperty(AccessLevel.GameMaster)]
@@ -512,7 +512,7 @@ namespace Server.Mobiles
             set { m_Pet = value; }
         }
         [Constructable]
-        public StableMasterClaimCheck(BaseCreature pet, DateTime redeemableOn)
+        public StableMasterClaimCheck(BaseCreature? pet, DateTime redeemableOn)
             : base(0x14F0)
         {
             Hue = 0x6C9;
@@ -525,7 +525,7 @@ namespace Server.Mobiles
             : this(null, DateTime.MaxValue)
         {
         }
-        public BaseCreature Redeem(Mobile from)
+        public BaseCreature? Redeem(Mobile from)
         {
             if (m_Pet != null)
             {

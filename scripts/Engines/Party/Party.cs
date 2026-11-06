@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,7 +71,7 @@ namespace Server.Engines.PartySystem
         {
             if (obj is Mobile)
             {
-                Party p = Party.Get((Mobile)obj);
+                Party? p = Party.Get((Mobile)obj);
 
                 if (p == null)
                 {
@@ -93,7 +93,7 @@ namespace Server.Engines.PartySystem
         public static void EventSink_PlayerDeath(PlayerDeathEventArgs e)
         {
             Mobile from = e.Mobile;
-            Party p = Party.Get(from);
+            Party? p = Party.Get(from);
 
             if (p != null)
             {
@@ -120,7 +120,7 @@ namespace Server.Engines.PartySystem
 
             protected override void OnTick()
             {
-                Party p = Party.Get(m_Mobile);
+                Party? p = Party.Get(m_Mobile);
 
                 if (p == null)
                     return;
@@ -153,7 +153,7 @@ namespace Server.Engines.PartySystem
         public static void EventSink_Login(LoginEventArgs e)
         {
             Mobile from = e.Mobile;
-            Party p = Party.Get(from);
+            Party? p = Party.Get(from);
 
             if (p != null)
                 new RejoinTimer(from).Start();
@@ -164,7 +164,7 @@ namespace Server.Engines.PartySystem
         public static void EventSink_Logout(LogoutEventArgs e)
         {
             Mobile from = e.Mobile;
-            Party p = Party.Get(from);
+            Party? p = Party.Get(from);
 
             if (p != null)
                 p.Remove(from);
@@ -172,7 +172,7 @@ namespace Server.Engines.PartySystem
             from.Party = null;
         }
 
-        public static Party Get(Mobile m)
+        public static Party? Get(Mobile? m)
         {
             if (m == null)
                 return null;
@@ -205,7 +205,7 @@ namespace Server.Engines.PartySystem
 
                 for (int i = 0; i < m_Members.Count; ++i)
                 {
-                    Mobile f = ((PartyMemberInfo)m_Members[i]).Mobile;
+                    Mobile? f = ((PartyMemberInfo)m_Members[i]).Mobile;
 
                     f.Send(memberList);
 
@@ -308,7 +308,7 @@ namespace Server.Engines.PartySystem
             }
         }
 
-        public bool Contains(Mobile m)
+        public bool Contains(Mobile? m)
         {
             return (this[m] != null);
         }
@@ -354,7 +354,7 @@ namespace Server.Engines.PartySystem
             //    return;
             //}
 
-            Party p = Party.Get(from);
+            Party? p = Party.Get(from);
 
             if (p == null)
                 from.Party = p = new Party(from);
@@ -394,7 +394,7 @@ namespace Server.Engines.PartySystem
 
             for (int i = 0; i < m_Listeners.Count; ++i)
             {
-                Mobile mob = (Mobile)m_Listeners[i];
+                Mobile? mob = (Mobile?)m_Listeners[i];
 
                 if (mob.Party != this)
                     ((Mobile)m_Listeners[i]).SendMessage("[{0}]: {1}", from.Name, text);
@@ -410,7 +410,7 @@ namespace Server.Engines.PartySystem
 
             for (int i = 0; i < m_Listeners.Count; ++i)
             {
-                Mobile mob = (Mobile)m_Listeners[i];
+                Mobile? mob = (Mobile?)m_Listeners[i];
 
                 if (mob.Party != this)
                     ((Mobile)m_Listeners[i]).SendMessage("[{0}]->[{1}]: {2}", from.Name, to.Name, text);
@@ -422,7 +422,7 @@ namespace Server.Engines.PartySystem
 
         private void SendToStaffMessage(Mobile from, string text)
         {
-            Packet p = null;
+            Packet? p = null;
 
             IPooledEnumerable eable = from.GetClientsInRange(8);
             foreach (NetState ns in eable)
@@ -465,7 +465,7 @@ namespace Server.Engines.PartySystem
             {
                 for (int i = 0; i < m_Listeners.Count; ++i)
                 {
-                    Mobile mob = (Mobile)m_Listeners[i];
+                    Mobile? mob = (Mobile?)m_Listeners[i];
 
                     if (mob.Party != this)
                         mob.Send(p);
@@ -477,11 +477,11 @@ namespace Server.Engines.PartySystem
 
         public void OnStamChanged(Mobile m)
         {
-            Packet p = null;
+            Packet? p = null;
 
             for (int i = 0; i < m_Members.Count; ++i)
             {
-                Mobile c = ((PartyMemberInfo)m_Members[i]).Mobile;
+                Mobile? c = ((PartyMemberInfo)m_Members[i]).Mobile;
 
                 if (c != m && m.Map == c.Map && Utility.InUpdateRange(c, m) && c.CanSee(m))
                 {
@@ -497,11 +497,11 @@ namespace Server.Engines.PartySystem
 
         public void OnManaChanged(Mobile m)
         {
-            Packet p = null;
+            Packet? p = null;
 
             for (int i = 0; i < m_Members.Count; ++i)
             {
-                Mobile c = ((PartyMemberInfo)m_Members[i]).Mobile;
+                Mobile? c = ((PartyMemberInfo)m_Members[i]).Mobile;
 
                 if (c != m && m.Map == c.Map && Utility.InUpdateRange(c, m) && c.CanSee(m))
                 {
@@ -530,10 +530,10 @@ namespace Server.Engines.PartySystem
         public bool Active { get { return m_Members.Count > 1; } }
         public Mobile Leader { get { return m_Leader; } }
         public ArrayList Members { get { return m_Members; } }
-        public ArrayList Candidates { get { return m_Candidates; } }
+        public ArrayList? Candidates { get { return m_Candidates; } }
 
         public PartyMemberInfo this[int index] { get { return (PartyMemberInfo)m_Members[index]; } }
-        public PartyMemberInfo this[Mobile m]
+        public PartyMemberInfo this[Mobile? m]
         {
             get
             {

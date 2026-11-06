@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,10 +21,16 @@
 
 /* Items/Misc/BulletinBoards.cs
  * ChangeLog:
+ *  11/3/26, Adam (a music composition book's Paste)
+ *      BBClientRequest: a post to a MusicCompositionBook in the poster's backpack goes into the book
+ *      (MusicCompositionBook.OnPost): its Paste opens the client's board gump for the book itself
+ *      (BBDisplayBoard(serial, name): ClassicUO needs only an item it knows, not a board), whose Post Message takes a
+ *      long composition in one paste, line breaks and all. Not a message: no cooldown, no thread.
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
 
+using Server.Misc;
 using Server.Network;
 using System;
 using System.Collections;
@@ -35,6 +41,12 @@ namespace Server.Items
     [Flipable(0x1E5E, 0x1E5F)]
     public class BulletinBoard : BaseBulletinBoard
     {
+        public override Item Dupe(int amount)
+        {
+            BulletinBoard new_item = new BulletinBoard();
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
         [Constructable]
         public BulletinBoard()
             : base(0x1E5E)
@@ -116,7 +128,7 @@ namespace Server.Items
                 if (i >= items.Count)
                     continue;
 
-                BulletinMessage msg = items[i] as BulletinMessage;
+                BulletinMessage? msg = items[i] as BulletinMessage;
 
                 if (msg == null)
                     continue;
@@ -139,7 +151,7 @@ namespace Server.Items
                 if (i >= items.Count)
                     continue;
 
-                BulletinMessage check = items[i] as BulletinMessage;
+                BulletinMessage? check = items[i] as BulletinMessage;
 
                 if (check == null)
                     continue;
@@ -162,7 +174,7 @@ namespace Server.Items
 
             for (int i = 0; i < items.Count; ++i)
             {
-                BulletinMessage msg = items[i] as BulletinMessage;
+                BulletinMessage? msg = items[i] as BulletinMessage;
 
                 if (msg == null || msg.Poster != poster)
                     continue;
@@ -208,7 +220,7 @@ namespace Server.Items
             return (from.Map == this.Map && from.InRange(GetWorldLocation(), 2));
         }
 
-        public void PostMessage(Mobile from, BulletinMessage thread, string subject, string[] lines)
+        public void PostMessage(Mobile from, BulletinMessage? thread, string subject, string[] lines)
         {
             if (thread != null)
                 thread.LastPostTime = DateTime.UtcNow;
@@ -256,7 +268,17 @@ namespace Server.Items
             Mobile from = state.Mobile;
 
             int packetID = pvSrc.ReadByte();
-            BaseBulletinBoard board = World.FindItem(pvSrc.ReadInt32()) as BaseBulletinBoard;
+            Item? target = World.FindItem(pvSrc.ReadInt32());
+
+            // a post to a music composition book in the poster's backpack (its Paste opened the board gump for it)
+            if (target is MusicCompositionBook book)
+            {
+                if (packetID == 5 && from.Backpack != null && book.IsChildOf(from.Backpack))
+                    book.OnPost(from, pvSrc);
+                return;
+            }
+
+            BaseBulletinBoard? board = target as BaseBulletinBoard;
 
             if (board == null || !board.CheckRange(from))
                 return;
@@ -272,7 +294,7 @@ namespace Server.Items
 
         public static void BBRequestContent(Mobile from, BaseBulletinBoard board, PacketReader pvSrc)
         {
-            BulletinMessage msg = World.FindItem(pvSrc.ReadInt32()) as BulletinMessage;
+            BulletinMessage? msg = World.FindItem(pvSrc.ReadInt32()) as BulletinMessage;
 
             if (msg == null || msg.Parent != board)
                 return;
@@ -282,7 +304,7 @@ namespace Server.Items
 
         public static void BBRequestHeader(Mobile from, BaseBulletinBoard board, PacketReader pvSrc)
         {
-            BulletinMessage msg = World.FindItem(pvSrc.ReadInt32()) as BulletinMessage;
+            BulletinMessage? msg = World.FindItem(pvSrc.ReadInt32()) as BulletinMessage;
 
             if (msg == null || msg.Parent != board)
                 return;
@@ -292,7 +314,7 @@ namespace Server.Items
 
         public static void BBPostMessage(Mobile from, BaseBulletinBoard board, PacketReader pvSrc)
         {
-            BulletinMessage thread = World.FindItem(pvSrc.ReadInt32()) as BulletinMessage;
+            BulletinMessage? thread = World.FindItem(pvSrc.ReadInt32()) as BulletinMessage;
 
             if (thread != null && thread.Parent != board)
                 thread = null;
@@ -335,7 +357,7 @@ namespace Server.Items
 
         public static void BBRemoveMessage(Mobile from, BaseBulletinBoard board, PacketReader pvSrc)
         {
-            BulletinMessage msg = World.FindItem(pvSrc.ReadInt32()) as BulletinMessage;
+            BulletinMessage? msg = World.FindItem(pvSrc.ReadInt32()) as BulletinMessage;
 
             if (msg == null || msg.Parent != board)
                 return;
@@ -361,6 +383,7 @@ namespace Server.Items
 
     public class BulletinMessage : Item
     {
+
         private Mobile m_Poster;
         private string m_Subject;
         private DateTime m_Time, m_LastPostTime;
@@ -385,7 +408,15 @@ namespace Server.Items
         {
             return false;
         }
+        public override Item Dupe(int amount)
+        {
+            if (m_Poster == null)
+                return null;
 
+            BulletinMessage new_item = new BulletinMessage(m_Poster, m_Thread, m_Subject, m_Lines);
+            Utility.CopyProperties(this, new_item);
+            return base.Dupe(new_item, amount);
+        }
         public BulletinMessage(Mobile poster, BulletinMessage thread, string subject, string[] lines)
             : base(0xEB0)
         {
@@ -493,8 +524,18 @@ namespace Server.Items
                         for (int i = 0; i < m_Lines.Length; ++i)
                             m_Lines[i] = reader.ReadString();
 
-                        if (hasThread && m_Thread == null)
+                        // 4/28/2026, Adam: protection against trying to 'Dupe' corrupt BulletinMessages
+                        if (m_Poster == null)
+                        {
                             Delete();
+                            break;
+                        }
+
+                        if (hasThread && m_Thread == null)
+                        {
+                            Delete();
+                            break;
+                        }
 
                         break;
                     }
@@ -505,10 +546,14 @@ namespace Server.Items
     public class BBDisplayBoard : Packet
     {
         public BBDisplayBoard(BaseBulletinBoard board)
+            : this(board.Serial, board.BoardName)
+        {
+        }
+
+        // the client's board gump for any item it knows (ClassicUO uses only the serial): a music composition book's Paste
+        public BBDisplayBoard(Serial serial, string name)
             : base(0x71)
         {
-            string name = board.BoardName;
-
             if (name == null)
                 name = "";
 
@@ -517,7 +562,7 @@ namespace Server.Items
             byte[] buffer = Utility.UTF8.GetBytes(name);
 
             m_Stream.Write((byte)0x00); // PacketID
-            m_Stream.Write((int)board.Serial); // Bulletin board serial
+            m_Stream.Write((int)serial); // Bulletin board serial
 
             // Bulletin board name
             if (buffer.Length >= 29)
@@ -573,7 +618,7 @@ namespace Server.Items
             m_Stream.Write((byte)0);
         }
 
-        public string SafeString(string v)
+        public string SafeString(string? v)
         {
             if (v == null)
                 return string.Empty;
@@ -643,7 +688,7 @@ namespace Server.Items
             m_Stream.Write((byte)0);
         }
 
-        public string SafeString(string v)
+        public string SafeString(string? v)
         {
             if (v == null)
                 return string.Empty;

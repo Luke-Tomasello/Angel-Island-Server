@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -39,7 +39,7 @@ namespace Server.Misc
     {
         public static void Initialize()
         {
-            if (!Core.RuleSets.SiegeStyleRules()) //we don't do this for SP.
+            if (!Core.RuleSets.SiegeRules()) //we don't do this for SP.
             {
                 EventSink.Movement += new MovementEventHandler(EventSink_Movement);
             }
@@ -48,7 +48,7 @@ namespace Server.Misc
 
         public static void EventSink_Movement(MovementEventArgs e)
         {
-            if (!Core.RuleSets.SiegeStyleRules()) //we don't do this for SP.
+            if (!Core.RuleSets.SiegeRules()) //we don't do this for SP.
             {
                 Mobile from = e.Mobile;
 
@@ -57,7 +57,7 @@ namespace Server.Misc
 
                 if (from is PlayerMobile)
                 {
-                    Account acct = from.Account as Account;
+                    Account? acct = from.Account as Account;
 
                     if (acct.m_STIntervalStart + TimeSpan.FromMinutes(20.0) > DateTime.UtcNow)
                     {//within 20 minutes from last step - count step
@@ -71,7 +71,7 @@ namespace Server.Misc
                         if (acct.m_STSteps > 50)
                         {
                             //Add an house to the house's refresh time
-                            BaseHouse house = null;
+                            BaseHouse? house = null;
                             for (int i = 0; i < 5; i++)
                             {
                                 Mobile m = acct[i];

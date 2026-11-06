@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -44,34 +44,37 @@
 
 using Server.Mobiles;
 using Server.Targeting;
-using System;
 using System.Collections.Generic;
 
 namespace Server.Spells.Fourth
 {
     public class ArchCureSpell : Spell
     {
-        private static SpellInfo m_Info = new SpellInfo(
-                "Greater Cure", "An Vas Nox [Greater Cure]",
-                SpellCircle.Fourth,
-                215,
-                9061,
-                Reagent.Garlic,
-                Reagent.Ginseng,
-                Reagent.MandrakeRoot
-            );
-        private static SpellInfo m_InfoIS = new SpellInfo(
-                "Arch Cure", "Vas An Nox",
-                SpellCircle.Fourth,
-                215,
-                9061,
-                Reagent.Garlic,
-                Reagent.Ginseng,
-                Reagent.MandrakeRoot
-            );
+        // Siege: traditional Arch Cure (area effect).
+        private static readonly SpellInfo m_InfoSiege = new SpellInfo(
+            "Arch Cure", "Vas An Nox",
+            SpellCircle.Fourth,
+            215,
+            9061,
+            Reagent.Garlic,
+            Reagent.Ginseng,
+            Reagent.MandrakeRoot
+        );
 
-        public ArchCureSpell(Mobile caster, Item scroll)
-            : base(caster, scroll, Core.RuleSets.SiegeStyleRules() ? m_InfoIS : m_Info)
+        // Angel Island + Mortalis: this spell is treated as "Greater Cure" behavior (single target),
+        // but uses OSI Arch Cure chance math for historical accuracy.
+        private static readonly SpellInfo m_InfoNonSiege = new SpellInfo(
+            "Greater Cure", "An Vas Nox [Greater Cure]",
+            SpellCircle.Fourth,
+            215,
+            9061,
+            Reagent.Garlic,
+            Reagent.Ginseng,
+            Reagent.MandrakeRoot
+        );
+
+        public ArchCureSpell(Mobile caster, Item? scroll)
+            : base(caster, scroll, Core.RuleSets.SiegeRules() ? m_InfoSiege : m_InfoNonSiege)
         {
         }
 
@@ -80,251 +83,192 @@ namespace Server.Spells.Fourth
             Caster.Target = new InternalTarget(this);
         }
 
+        // --------------------------------------------------------------------
+        // OSI-style Arch Cure chance:
+        // chanceToCure = 10000 + (Magery * 75) - ((PoisonLevel) * 1750)
+        // chanceToCure /= 100
+        // chanceToCure -= 1
+        //
+        // PoisonLevel here is 1..5, so we map Poison.Level (0..4) -> (Level + 1).
+        // This matches the commonly emulated OSI-era behavior and is used for both
+        // Siege (area) and Non-Siege (single target) variants.
+        // --------------------------------------------------------------------
+        private static double GetArchCureChancePercent(Mobile caster, Poison poison)
+        {
+            if (caster == null || poison == null)
+                return 0.0;
+
+            double magery = caster.Skills[SkillName.Magery].Value;
+            int poisonLevel = poison.Level + 1;
+
+            double chance = (10000.0 + (magery * 75.0) - (poisonLevel * 1750.0)) / 100.0;
+            chance -= 1.0;
+
+            if (chance < 0.0) chance = 0.0;
+            else if (chance > 100.0) chance = 100.0;
+
+            return chance;
+        }
+
+        private static bool RollPercent(double chancePercent)
+        {
+            if (chancePercent <= 0.0) return false;
+            if (chancePercent >= 100.0) return true;
+            return Utility.RandomDouble() < (chancePercent / 100.0);
+        }
+
+        // --------------------------------------------------------------------
+        // Angel Island + Mortalis: single-target behavior (Greater Cure style).
+        // --------------------------------------------------------------------
         public void Target(Mobile m)
         {
             if (!Caster.CanSee(m))
             {
                 Caster.SendLocalizedMessage(500237); // Target can not be seen.
+                FinishSequence();
+                return;
             }
-            else if (CheckBSequence(m))
+
+            if (!CheckBSequence(m))
             {
-                SpellHelper.Turn(Caster, m);
-                //chance to cure poison is ((caster's magery/poison level) - 20%)
-
-                double chance = 100;
-                try //I threw this try-catch block in here because Poison is whacky... there'll be a tiny 
-                {   //race condition if multiple people are casting cure on the same target... 
-                    if (m.Poison != null)
-                    {
-                        //desired is: LP: 50%, DP: 90% GP-: 100%
-                        double multiplier = 0.5 + 0.4 * (4 - m.Poison.Level);
-                        chance = Caster.Skills[SkillName.Magery].Value * multiplier;
-                    }
-
-                    if (Caster.AccessLevel > AccessLevel.Player)
-                    {
-                        Caster.SendMessage("Chance to cure is " + chance + "%");
-                    }
-                }
-                catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-
-                /*
-                //new cure rates
-                int chance = 100;
-                Poison p = m.Poison;
-                try
-                {
-                    if( p != null )
-                    {
-                        chance = 10000 
-                            + (int)(Caster.Skills[SkillName.Magery].Value * 75) 
-                            - ((p.Level + 1) * 1750);
-                        chance /= 100;
-                        if( p.Level > 3 ) //lethal poison further penalty
-                        {
-                            chance -= 35; //@ GM magery, chance will be 52%
-                        }
-                    }
-
-                    if( Caster.AccessLevel > AccessLevel.Player )
-                    {
-                        Caster.SendMessage("Chance to cure is " + chance + "%");
-                    }
-                }
-                catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                */
-
-                if (!m.Incurable && Utility.Random(0, 100) <= chance)
-                {
-                    if (m.CurePoison(Caster))
-                    {
-                        if (Caster != m)
-                            Caster.SendLocalizedMessage(1010058); // You have cured the target of all poisons!
-
-                        m.SendLocalizedMessage(1010059); // You have been cured of all poisons.
-                    }
-                }
-                else
-                {
-                    Caster.SendLocalizedMessage(1010060); // You have failed to cure your target!
-                }
-
-                m.FixedParticles(0x373A, 10, 15, 5012, EffectLayer.Waist);
-                m.PlaySound(0x1E0);
+                FinishSequence();
+                return;
             }
+
+            SpellHelper.Turn(Caster, m);
+
+            bool success = false;
+            Poison p = m.Poison;
+
+            if (p != null && !m.Incurable)
+            {
+                double chance = GetArchCureChancePercent(Caster, p);
+
+                if (Caster.AccessLevel > AccessLevel.Player)
+                    Caster.SendMessage("Chance to cure is {0:0.##}%", chance);
+
+                if (RollPercent(chance) && m.CurePoison(Caster))
+                {
+                    success = true;
+
+                    if (Caster != m)
+                        Caster.SendLocalizedMessage(1010058); // You have cured the target of all poisons!
+
+                    m.SendLocalizedMessage(1010059); // You have been cured of all poisons.
+                }
+            }
+
+            if (!success)
+                Caster.SendLocalizedMessage(1010060); // You have failed to cure your target!
+
+            m.FixedParticles(0x373A, 10, 15, 5012, EffectLayer.Waist);
+            m.PlaySound(0x1E0);
 
             FinishSequence();
         }
 
+        // --------------------------------------------------------------------
+        // Siege: traditional area Arch Cure (target point/mobile, cures in radius).
+        // --------------------------------------------------------------------
         public void TargetOnIslandSiege(IPoint3D p)
         {
             if (!Caster.CanSee(p))
             {
                 Caster.SendLocalizedMessage(500237); // Target can not be seen.
+                FinishSequence();
+                return;
             }
 
-            #region OBSOLET AI implementation
-#if false
-            else if (CheckSequence())
+            if (!CheckSequence())
             {
-                SpellHelper.Turn(Caster, p);
-
-                SpellHelper.GetSurfaceTop(ref p);
-
-                List<Mobile> targets = new List<Mobile>();
-
-                Map map = Caster.Map;
-                Mobile m_directtarget = p as Mobile;
-
-                if (map != null)
-                {
-                    //you can target directly someone/something and become criminal if it's a criminal action
-                    if (m_directtarget != null)
-                        targets.Add(m_directtarget);
-
-                    IPooledEnumerable eable = map.GetMobilesInRange(new Point3D(p), 2);
-
-                    foreach (Mobile m in eable)
-                    {
-                        //Pix - below is the current RunUO code - change it to be simpler :)
-                        //                        // Archcure area effect won't cure aggressors or victims, nor murderers, criminals or monsters 
-                        //                        // plus Arch Cure Area will NEVER work on summons/pets if you are in Felucca facet
-                        //                        // red players can cure only themselves and guildies with arch cure area.
-                        //
-                        //                        if (map.Rules == MapRules.FeluccaRules)
-                        //                        {
-                        //                            if (Caster.CanBeBeneficial(m, false) && (!Core.AOS || !IsAggressor(m) && !IsAggressed(m) && ((IsInnocentTo(Caster, m) && IsInnocentTo(m, Caster)) || (IsAllyTo(Caster, m))) && m != m_directtarget && m is PlayerMobile || m == Caster && m != m_directtarget))
-                        //                                targets.Add(m);
-                        //                        }
-                        //                        else if (Caster.CanBeBeneficial(m, false) && (!Core.AOS || !IsAggressor(m) && !IsAggressed(m) && ((IsInnocentTo(Caster, m) && IsInnocentTo(m, Caster)) || (IsAllyTo(Caster, m))) && m != m_directtarget || m == Caster && m != m_directtarget))
-                        //                            targets.Add(m);
-                        if (Caster.CanBeBeneficial(m, false))
-                        {
-                            targets.Add(m);
-                        }
-                    }
-
-                    eable.Free();
-                }
-
-                Effects.PlaySound(p, Caster.Map, 0x299);
-
-                if (targets.Count > 0)
-                {
-                    int cured = 0;
-
-                    for (int i = 0; i < targets.Count; ++i)
-                    {
-                        Mobile m = targets[i];
-
-                        Caster.DoBeneficial(m);
-
-                        Poison poison = m.Poison;
-
-                        if (poison != null)
-                        {
-                            int chanceToCure = 10000 + (int)(Caster.Skills[SkillName.Magery].Value * 75) - ((poison.Level + 1) * 1750);
-                            chanceToCure /= 100;
-                            chanceToCure -= 1;
-
-                            if (chanceToCure > Utility.Random(100) && m.CurePoison(Caster))
-                                ++cured;
-                        }
-
-                        m.FixedParticles(0x373A, 10, 15, 5012, EffectLayer.Waist);
-                        m.PlaySound(0x1E0);
-                    }
-
-                    if (cured > 0)
-                        Caster.SendLocalizedMessage(1010058); // You have cured the target of all poisons!
-                }
+                FinishSequence();
+                return;
             }
-#endif
-            #endregion OBSOLET AI implementation
 
-            else if (CheckSequence())
+            SpellHelper.Turn(Caster, p);
+            SpellHelper.GetSurfaceTop(ref p);
+
+            List<Mobile> targets = new List<Mobile>();
+
+            Map map = Caster.Map;
+            Mobile? directTarget = p as Mobile;
+
+            if (map != null)
             {
-                SpellHelper.Turn(Caster, p);
+                bool feluccaRules = (map.Rules == MapRules.FeluccaRules);
 
-                SpellHelper.GetSurfaceTop(ref p);
+                // Direct target is allowed if beneficial checks pass.
+                if (directTarget != null && Caster.CanBeBeneficial(directTarget, false))
+                    targets.Add(directTarget);
 
-                List<Mobile> targets = new List<Mobile>();
+                IPooledEnumerable eable = map.GetMobilesInRange(new Point3D(p), 2);
 
-                Map map = Caster.Map;
-                Mobile directTarget = p as Mobile;
-
-                if (map != null)
+                foreach (Mobile m in eable)
                 {
-                    bool feluccaRules = (map.Rules == MapRules.FeluccaRules);
+                    if (m == directTarget)
+                        continue;
 
-                    // You can target any living mobile directly, beneficial checks apply
-                    if (directTarget != null && Caster.CanBeBeneficial(directTarget, false))
-                        targets.Add(directTarget);
-
-                    IPooledEnumerable eable = map.GetMobilesInRange(new Point3D(p), 2);
-
-                    foreach (Mobile m in eable)
-                    {
-                        if (m == directTarget)
-                            continue;
-
-                        if (AreaCanTarget(m, feluccaRules))
-                            targets.Add(m);
-                    }
-
-                    eable.Free();
+                    if (AreaCanTarget(m, feluccaRules))
+                        targets.Add(m);
                 }
 
-                Effects.PlaySound(p, Caster.Map, 0x299);
+                eable.Free();
+            }
 
-                if (targets.Count > 0)
+            Effects.PlaySound(p, Caster.Map, 0x299);
+
+            if (targets.Count > 0)
+            {
+                int cured = 0;
+
+                for (int i = 0; i < targets.Count; ++i)
                 {
-                    int cured = 0;
+                    Mobile m = targets[i];
 
-                    for (int i = 0; i < targets.Count; ++i)
+                    if (m.Incurable)
+                        continue;
+
+                    Caster.DoBeneficial(m);
+
+                    Poison poison = m.Poison;
+
+                    if (poison != null)
                     {
-                        Mobile m = targets[i];
+                        double chance = GetArchCureChancePercent(Caster, poison);
 
-                        if (m.Incurable)
-                            continue;
+                        if (Caster.AccessLevel > AccessLevel.Player)
+                            Caster.SendMessage("Chance to cure ({0}) is {1:0.##}%", m.Name, chance);
 
-                        Caster.DoBeneficial(m);
-
-                        Poison poison = m.Poison;
-
-                        if (poison != null)
-                        {
-                            int chanceToCure = 10000 + (int)(Caster.Skills[SkillName.Magery].Value * 75) - ((poison.Level + 1) * 1750);
-                            chanceToCure /= 100;
-                            chanceToCure -= 1;
-
-                            if (chanceToCure > Utility.Random(100) && m.CurePoison(Caster))
-                                ++cured;
-                        }
-
-                        m.FixedParticles(0x373A, 10, 15, 5012, EffectLayer.Waist);
-                        m.PlaySound(0x1E0);
+                        if (RollPercent(chance) && m.CurePoison(Caster))
+                            ++cured;
                     }
 
-                    if (cured > 0)
-                        Caster.SendLocalizedMessage(1010058); // You have cured the target of all poisons!
+                    m.FixedParticles(0x373A, 10, 15, 5012, EffectLayer.Waist);
+                    m.PlaySound(0x1E0);
                 }
+
+                if (cured > 0)
+                    Caster.SendLocalizedMessage(1010058); // You have cured the target of all poisons!
             }
 
             FinishSequence();
         }
+
         private bool AreaCanTarget(Mobile target, bool feluccaRules)
         {
-            /* Arch cure area effect won't cure aggressors, victims, murderers, criminals or monsters.
-			 * In Felucca, it will also not cure summons and pets.
-			 * For red players it will only cure themselves and guild members.
-			 */
+            /* Siege Arch Cure (area) restrictions:
+             * - Will not cure aggressors or aggressed targets.
+             * - Requires mutual innocence OR ally status.
+             * - In Felucca rulesets, only cures players (no monsters/pets/summons).
+             *
+             * Note: Our historical note is that older implementations could allow curing
+             * enemies/monsters and flagging gray; we keep these restrictions for safety.
+             */
 
             if (!Caster.CanBeBeneficial(target, false))
                 return false;
-            // 5/15/23, Adam: I think ArchCure was just broken in our Pun13.6 era as you would heal enemies and monsters
-            //  whereby flagging yourself gray. We will adopt the AOS style of ArchCure under the 95% rule
-            if (/*Core.AOS &&*/ target != Caster)
+
+            if (target != Caster)
             {
                 if (IsAggressor(target) || IsAggressed(target))
                     return false;
@@ -363,17 +307,17 @@ namespace Server.Spells.Fourth
 
         private static bool IsInnocentTo(Mobile from, Mobile to)
         {
-            return (Notoriety.Compute(from, (Mobile)to) == Notoriety.Innocent);
+            return (Notoriety.Compute(from, to) == Notoriety.Innocent);
         }
 
         private static bool IsAllyTo(Mobile from, Mobile to)
         {
-            return (Notoriety.Compute(from, (Mobile)to) == Notoriety.Ally);
+            return (Notoriety.Compute(from, to) == Notoriety.Ally);
         }
 
         public class InternalTarget : Target
         {
-            private ArchCureSpell m_Owner;
+            private readonly ArchCureSpell m_Owner;
 
             public InternalTarget(ArchCureSpell owner)
                 : base(12, false, TargetFlags.Beneficial)
@@ -383,20 +327,16 @@ namespace Server.Spells.Fourth
 
             protected override void OnTarget(Mobile from, object o)
             {
-                if (Core.RuleSets.SiegeStyleRules()) //switch targetting for Siege
+                if (Core.RuleSets.SiegeRules())
                 {
-                    IPoint3D p = o as IPoint3D;
+                    IPoint3D? p = o as IPoint3D;
                     if (p != null)
-                    {
                         m_Owner.TargetOnIslandSiege(p);
-                    }
                 }
                 else
                 {
                     if (o is Mobile)
-                    {
                         m_Owner.Target((Mobile)o);
-                    }
                 }
             }
 

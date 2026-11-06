@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -78,8 +78,8 @@ namespace Server
                 if (m_publish == 64) return new DateTime(2010, 2, 10);
                 // Substantial Item Insurance changes, new Gardening resources, Stygian Abyss encounter buffs, Seed Trading Box introduced, Mysticism changes.
                 if (m_publish == 63.00) return new DateTime(2010, 1, 12); // mysteriously out of order Publish number
-                                                                          // Introduced skin-rehue NPC vendor, fixed vendor skill/stat exploit.
-                                                                          // 2009
+                // Introduced skin-rehue NPC vendor, fixed vendor skill/stat exploit.
+                // 2009
                 if (m_publish == 63.2) return new DateTime(2009, 12, 18);
                 // Bug fixes for Paroxymus Swamp Dragons, auto-rezzing at login, various character appearance issues
                 if (m_publish == 63.1) return new DateTime(2009, 12, 18);
@@ -201,28 +201,28 @@ namespace Server
                 // Resource/Crafting changes, Felucca Champion Spawns and Powerscrolls, Barding/Taming changes, Felucca enhancements/changes, House Ownership changes, the GGS system, the Justice Virtue, Siege Perilous ruleset changes
                 if (m_publish == 15) return new DateTime(2002, 1, 9); // 
                 /* http://www.uoguide.com/List_of_BNN_Articles_(2002)#Scenario_4:_Plague_of_Despair
-				 * Scenario 5: When Ants Attack
-				 *	Workers - October 3
-				 *	Scientific Discussion - September 26
-				 *	Orcs and Bombs - September 19
-				 *	Crazy Miggie - September 12
-				 *	I Think, Therefore I Dig - September 5
-				 * Scenario 4: Plague of Despair
-				 *	Epilogue - May 30
-				 *	Plague of Despair - May 16
-				 *	Preparations - May 9
-				 *	Symptoms - May 2
-				 *	Seeds - April 25
-				 *	The Casting - April 18
-				 *		(Dragon Scale Armor was introduced into the game during the first week of Scenerio Four.)
-				 *		(http://noctalis.com/dis/uo/n-smit3.shtml)
-				 *	Enemies and Allies - April 11 
-				 * Scenario 3: Blackthorn's Damnation
-				 *	The Watcher - January 25
-				 *	Downfall to Power - January 17
-				 *	Change - January 10
-				 *	Inferno - January 2
-				 */
+                 * Scenario 5: When Ants Attack
+                 *	Workers - October 3
+                 *	Scientific Discussion - September 26
+                 *	Orcs and Bombs - September 19
+                 *	Crazy Miggie - September 12
+                 *	I Think, Therefore I Dig - September 5
+                 * Scenario 4: Plague of Despair
+                 *	Epilogue - May 30
+                 *	Plague of Despair - May 16
+                 *	Preparations - May 9
+                 *	Symptoms - May 2
+                 *	Seeds - April 25
+                 *	The Casting - April 18
+                 *		(Dragon Scale Armor was introduced into the game during the first week of Scenerio Four.)
+                 *		(http://noctalis.com/dis/uo/n-smit3.shtml)
+                 *	Enemies and Allies - April 11
+                 * Scenario 3: Blackthorn's Damnation
+                 *	The Watcher - January 25
+                 *	Downfall to Power - January 17
+                 *	Change - January 10
+                 *	Inferno - January 2
+                 */
                 // Housing/Lockdown fixes, NPC and hireling fixes, various skill gump fixes, Faction updates, miscellaneous localizations
                 // 2001
                 if (m_publish == 14) return new DateTime(2001, 11, 30);

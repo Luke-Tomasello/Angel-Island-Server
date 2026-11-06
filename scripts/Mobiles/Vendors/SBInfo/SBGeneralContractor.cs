@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -74,16 +74,17 @@ namespace Server.Mobiles
         {
             public InternalBuyInfo()
             {
-                if (Core.RuleSets.AngelIslandRules() || Core.SiegeII_CFG)
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules() || Core.RuleSets.SiegeRules(2) || (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
                 {
                     // this book may contain irrelevant information depending on the lockbox system settings
-                    Add(new GenericBuyInfo("Hello", typeof(StorageUpgradeInfo), BaseVendor.PlayerPays(typeof(StorageUpgradeInfo), siege_factor: 0.33334), 20, 0xFF2, 0));
-                    // we give them the base price since this cost (the deed's ACTUAL cost) is added to the houses upgrades, which is later refunded.
-                    Add(new GenericBuyInfo(typeof(ModestUpgradeContract), BaseVendor.PlayerPays(typeof(ModestUpgradeContract), siege_factor: 0.33334), 20, 0x14F0, 0));
-                    Add(new GenericBuyInfo(typeof(ModerateUpgradeContract), BaseVendor.PlayerPays(typeof(ModerateUpgradeContract), siege_factor: 0.33334), 20, 0x14F0, 0));
-                    Add(new GenericBuyInfo(typeof(PremiumUpgradeContract), BaseVendor.PlayerPays(typeof(PremiumUpgradeContract), siege_factor: 0.33334), 20, 0x14F0, 0));
-                    Add(new GenericBuyInfo(typeof(LavishUpgradeContract), BaseVendor.PlayerPays(typeof(LavishUpgradeContract), siege_factor: 0.33334), 20, 0x14F0, 0));
-                    Add(new GenericBuyInfo(typeof(DeluxeUpgradeContract), BaseVendor.PlayerPays(typeof(DeluxeUpgradeContract), siege_factor: 0.33334), 20, 0x14F0, 0));
+                    Add(new GenericBuyInfo("Hello", typeof(StorageUpgradeInfo), BaseVendor.PlayerPays(typeof(StorageUpgradeInfo)), 20, 0xFF2, 0));
+                    // the deed's cost is added to the houses upgrades, which is later refunded.
+                    // for siege style shard (3x pricing), we need to adjust the deed cost in BuildingUpgradeContracts.cs
+                    Add(new GenericBuyInfo(typeof(ModestUpgradeContract), BaseVendor.PlayerPays(typeof(ModestUpgradeContract)), 20, 0x14F0, 0));
+                    Add(new GenericBuyInfo(typeof(ModerateUpgradeContract), BaseVendor.PlayerPays(typeof(ModerateUpgradeContract)), 20, 0x14F0, 0));
+                    Add(new GenericBuyInfo(typeof(PremiumUpgradeContract), BaseVendor.PlayerPays(typeof(PremiumUpgradeContract)), 20, 0x14F0, 0));
+                    Add(new GenericBuyInfo(typeof(LavishUpgradeContract), BaseVendor.PlayerPays(typeof(LavishUpgradeContract)), 20, 0x14F0, 0));
+                    Add(new GenericBuyInfo(typeof(DeluxeUpgradeContract), BaseVendor.PlayerPays(typeof(DeluxeUpgradeContract)), 20, 0x14F0, 0));
 
                     if (BaseHouse.LockboxSystem)
                     {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -38,7 +38,14 @@ namespace Server.Engines.Craft
         private int m_LastGroupIndex;
         private bool m_DoNotColor;
         private CraftMarkOption m_MarkOption;
-
+        private int m_FamilyID;
+        public int FamilyID
+        {
+            get { return m_FamilyID; }
+            set { m_FamilyID = value; }
+        }
+        // per craft attempt: a consumed resource was bought from an NPC (Item.StoreBought)
+        public bool StoreBought { get; set; }
         public ArrayList Items { get { return m_Items; } }
         public int LastResourceIndex { get { return m_LastResourceIndex; } set { m_LastResourceIndex = value; } }
         public int LastResourceIndex2 { get { return m_LastResourceIndex2; } set { m_LastResourceIndex2 = value; } }
@@ -52,9 +59,10 @@ namespace Server.Engines.Craft
             m_LastResourceIndex = -1;
             m_LastResourceIndex2 = -1;
             m_LastGroupIndex = -1;
+            m_FamilyID = 0;
         }
 
-        public CraftItem LastMade
+        public CraftItem? LastMade
         {
             get
             {

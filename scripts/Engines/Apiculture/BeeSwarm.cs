@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -47,7 +47,7 @@ namespace Server.Engines.Apiculture
 
         public static void EndEffect(Mobile m, bool message)
         {
-            Timer timer;
+            Timer? timer;
 
             if (m_Registry.TryGetValue(m, out timer))
             {
@@ -72,7 +72,7 @@ namespace Server.Engines.Apiculture
                 return;
             }
 
-            Torch torch = m.FindItemOnLayer(Layer.TwoHanded) as Torch;
+            Torch? torch = m.FindItemOnLayer(Layer.TwoHanded) as Torch;
 
             if (torch != null && torch.Burning)
             {
@@ -96,7 +96,7 @@ namespace Server.Engines.Apiculture
             m.PlaySound(0x00E);
             m.PlaySound(0x1BC);
 
-            m.Damage(Utility.RandomMinMax(3, 6), null, null);
+            m.Damage(Utility.RandomMinMax(3, 6), null, new DamageContext());
 
             if (!m.Alive)
                 EndEffect(m, false);

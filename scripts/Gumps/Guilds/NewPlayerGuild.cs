@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -46,7 +46,8 @@ namespace Server.Gumps
     {
         public static void Initialize()
         {
-            CommandSystem.Register("New", AccessLevel.Player, new CommandEventHandler(New_OnCommand));
+            if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.NewPlayerGuild))
+                CommandSystem.Register("New", AccessLevel.Player, new CommandEventHandler(New_OnCommand));
         }
 
         [Usage("New")]
@@ -80,12 +81,12 @@ namespace Server.Gumps
             if (!CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.NewPlayerGuild))
                 return;
 
-            Guild g = Find();
+            Guild? g = Find();
 
             if (g == null)
                 return;
 
-            Accounting.Account a = m.Account as Accounting.Account;
+            Accounting.Account? a = m.Account as Accounting.Account;
 
             if (a == null)
                 return;
@@ -104,7 +105,7 @@ namespace Server.Gumps
 
         private static void OnCommand_Internal(Mobile m)
         {
-            Guild g = Find();
+            Guild? g = Find();
 
             if (g == null)
             {
@@ -165,7 +166,7 @@ namespace Server.Gumps
 
         private static void AcceptJoin(Mobile m)
         {
-            Guild g = Find();
+            Guild? g = Find();
 
             if (g == null)
             {
@@ -220,7 +221,7 @@ namespace Server.Gumps
             }
         }
 
-        private static Guild Find()
+        private static Guild? Find()
         {
             foreach (BaseGuild g in BaseGuild.List.Values)
             {

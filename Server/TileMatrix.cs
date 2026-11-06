@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -42,7 +42,7 @@ namespace Server
         private StaticTile[][][] m_EmptyStaticBlock;
 
         private FileStream m_Map;
-        private UOPIndex m_MapIndex;
+        private UOPIndex? m_MapIndex;
 
         private FileStream m_Index;
         private BinaryReader m_IndexReader;
@@ -263,7 +263,7 @@ namespace Server
             if (m_StaticTiles[x] == null)
                 m_StaticTiles[x] = new StaticTile[m_BlockHeight][][][];
 
-            StaticTile[][][] tiles = m_StaticTiles[x][y];
+            StaticTile[][][]? tiles = m_StaticTiles[x][y];
 
             if (tiles == null)
             {
@@ -375,7 +375,7 @@ namespace Server
             if (m_LandTiles[x] == null)
                 m_LandTiles[x] = new LandTile[m_BlockHeight][];
 
-            LandTile[] tiles = m_LandTiles[x][y];
+            LandTile[]? tiles = m_LandTiles[x][y];
 
             if (tiles == null)
             {
@@ -422,7 +422,7 @@ namespace Server
             return tiles[((y & 0x7) << 3) + (x & 0x7)];
         }
 
-        private TileList[][] m_Lists;
+        private TileList[][]? m_Lists;
 
         private StaticTile[] m_TileBuffer = new StaticTile[128];
 
@@ -702,7 +702,7 @@ namespace Server
                 m_Order = 0;
             }
 
-            public int CompareTo(UOPEntry other)
+            public int CompareTo(UOPEntry? other)
             {
                 return m_Order.CompareTo(other.m_Order);
             }
@@ -716,7 +716,7 @@ namespace Server
             {
             }
 
-            public int Compare(UOPEntry x, UOPEntry y)
+            public int Compare(UOPEntry? x, UOPEntry? y)
             {
                 return x.m_Offset.CompareTo(y.m_Offset);
             }

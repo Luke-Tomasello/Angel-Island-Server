@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -124,7 +124,7 @@ namespace Server.Mobiles
             int iHue = 20 + Team * 40;
             int jHue = 25 + Team * 40;
 
-            Item item = FindItemOnLayer(Layer.OuterTorso);
+            Item? item = FindItemOnLayer(Layer.OuterTorso);
 
             if (item != null)
                 item.Hue = jHue;

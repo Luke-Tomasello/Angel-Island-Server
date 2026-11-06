@@ -1,11 +1,11 @@
-/***************************************************************************
+﻿/***************************************************************************
  *
  *   RunUO                   : May 1, 2002
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -16,6 +16,91 @@
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation; either version 2 of the License, or
  *   (at your option) any later version.
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *                      Startup Switch Processing
+ *
+ *  OVERVIEW
+ *  --------
+ *  Main.cs provides a centralized mechanism for assembling, validating,
+ *  applying, and preserving the server's startup arguments.
+ *
+ *  The effective argument list may come from more than one source:
+ *
+ *      1. The process command line.
+ *      2. Temporary out-of-band switches supplied through:
+ *
+ *             <drive>:\GMN\switches.txt
+ *
+ *      3. Interactive server selection when no shard was specified.
+ *
+ *  These sources are combined into a single authoritative string[] before
+ *  startup configuration is applied. Subsequent switch processing should
+ *  operate on this final argument array rather than reconstructing or
+ *  reparsing the Arguments string.
+ *
+ *
+ *  OUT-OF-BAND SWITCHES
+ *  --------------------
+ *  switches.txt provides a convenient way to temporarily inject startup
+ *  switches across multiple shards without modifying their individual
+ *  launch scripts.
+ *
+ *  This is intended primarily for exceptional operations such as migrations,
+ *  transitions, or other one-time administrative startup requirements.
+ *
+ *  When switches.txt contains switches not already present on the command
+ *  line, the administrator is prompted:
+ *
+ *      (A)pply  - apply the additional switches to this shard
+ *      (S)kip   - ignore them for this shard
+ *      (D)elete - delete switches.txt and globally retire the switches
+ *
+ *  The file itself is authoritative. A shard waiting at the prompt checks
+ *  that switches.txt still exists before applying its previously-read
+ *  contents. Consequently, deleting the file from one shard prevents other
+ *  waiting shards from subsequently applying those switches.
+ *
+ *
+ *  PROCESSING FLOW
+ *  ---------------
+ *
+ *      original command line
+ *              |
+ *              v
+ *      AddGMNSwitches()          // called once
+ *              |
+ *              v
+ *      ParseArgs()               // validates/selects shard
+ *              |
+ *              +-- prompt for shard if necessary
+ *              |
+ *              v
+ *      final string[] args       // authoritative argument set
+ *              |
+ *              v
+ *      SetSwitches()             // applies Core/RuleSet state
+ *              |
+ *              v
+ *      variant processing, etc.
+ *
+ *
+ *  ARGUMENTS
+ *  ---------
+ *  The Arguments string is derived from the final argument array for later
+ *  display/relaunch purposes. It is not the authoritative source for switch
+ *  processing.
+ *
+ *  Ephemeral state switches such as -restarted and -crashed are consumed
+ *  during the current startup but deliberately omitted from Arguments so
+ *  they are not propagated indefinitely through subsequent relaunches.
+ *
+ *  When adding a new startup switch, normally add its interpretation to
+ *  SetSwitches(). If it affects argument assembly, shard selection, or
+ *  out-of-band processing itself, modify the appropriate earlier stage
+ *  instead.
  *
  ***************************************************************************/
 
@@ -30,19 +115,20 @@
 
 using Server.Accounting;
 using Server.Diagnostics;
+using Server.Engines.Seasons;
 using Server.Items;
 using Server.Misc;
 using Server.Mobiles;
-using Server.Multis;
-using Server.Multis.Deeds;
 using Server.Network;
+using Server.Regions;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Server
 {
@@ -56,15 +142,22 @@ namespace Server
         Beta,
         Production
     }
+
+    public enum ServerID
+    {
+        Unknown,
+        AngelIsland,
+        SiegePerilous,
+        Mortalis,
+        Seasons,
+        Upheaval,
+        LoginServer
+    }
     public class Core
     {
         private static bool m_Crashed;
         private static Thread timerThread;
-        private static string m_BaseDirectory;
-        private static string m_DataDirectory;
-        private static string m_LogsDirectory;
-        private static string m_SharedDirectory;
-        private static string m_ExePath;
+
         private static ArrayList m_DataDirectories = new ArrayList();
         private static Assembly m_Assembly;
         private static Process m_Process;
@@ -95,7 +188,8 @@ namespace Server
         private static bool m_Building;                 // gives GMs access to certain world building commands during world construction
 
         // Disabling developer mode for now (for custom house building)
-        //private static bool m_Developer;                // developers machine, allows derect login to any server
+        //private static bool m_Developer;              // developers machine, allows derect login to any server
+        private static bool m_EnableDbgSaves = false;   // normally debug turns off saves. this enables saves for debug
 
         private static bool m_Profiling;
         private static DateTime m_ProfileStart;
@@ -122,7 +216,7 @@ namespace Server
             set { m_MessagePump = value; }
         }
 
-        public static Slice Slice;
+        public static Slice? Slice;
 
         public static bool Profiling
         {
@@ -169,16 +263,16 @@ namespace Server
         public static Thread Thread { get { return m_Thread; } }
         public static MultiTextWriter MultiConsoleOut { get { return m_MultiConOut; } }
 
-        // import a non-encrypted world
-        private static bool m_Import = false;
-        public static bool Import { get { return m_Import; } }
+        // true if the server auto-restarted
+        private static bool m_Restarted = false;
+        // true if the server auto-restarted due to crash
+        private static bool m_CrashRecovery = false;
 
-        private static string m_Server;
+        private static string m_Server = "Unknown Configuration";
+        private static ServerID m_serverID = ServerID.Unknown;
         public static string Server { get { return m_Server; } }
 
-        // perform a onetime upgrade from old non-locking boat holds to the new locking ones
-        private static bool m_BoatHoldUpgrade = false;
-        public static bool BoatHoldUpgrade { get { return m_BoatHoldUpgrade; } }
+        public static bool MigratePatchHistory { get; set; } = false;
         #region Time Management
         /* 
         * DateTime.Now and DateTime.UtcNow are based on actual system clock time.
@@ -233,7 +327,7 @@ namespace Server
             if (m_DataDirectories.Count == 0)
                 throw new InvalidOperationException("Attempted to FindDataFile before DataDirectories list has been filled.");
 
-            string fullPath = null;
+            string? fullPath = null;
 
             for (int i = 0; i < m_DataDirectories.Count; ++i)
             {
@@ -427,7 +521,7 @@ namespace Server
         {
             get
             {   // add your Era Accurate shards here
-                return RuleSets.SiegeRules() || RuleSets.RenaissanceRules();
+                return RuleSets.SiegeRules() || RuleSets.SeasonsRules() || RuleSets.UpheavalRules();
             }
         }
 
@@ -435,7 +529,7 @@ namespace Server
         {
             get
             {
-                return Core.RuleSets.SiegeStyleRules() && PublishInfo.Publish < 13.6;
+                return Core.RuleSets.SiegeRules() && PublishInfo.Publish < 13.6;
             }
         }
 
@@ -447,29 +541,29 @@ namespace Server
             }
         }
 
-        public static bool RedsInTown
+        public static bool DefaultRedsInTown
         {
             get
             {   // add your 'reds in town' shards here:
-                return Core.RuleSets.SiegeStyleRules();
+                return Core.RuleSets.SiegeRules() || Core.RuleSets.UpheavalRules();
             }
         }
         #region RunUO2.6 Port compatibility functions
-#if false
-        public static bool T2A
-        {   // is T2A available to this shard?
-            get
-            {
-                return Core.RuleSets.SiegeStyleRules();
-            }
-        }
-#endif
         #endregion RunUO2.6 Port compatibility functions
         public static bool OldStyleTinkerTrap
         {
             get
-            {   // enabling this for siege is not era accurate, but we'll make the exception here
-                return PublishInfo.Publish < 4 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules();
+            {
+                // Old-style tinker traps are enabled for pre-Publish 4, Angel Island,
+                // Seasons 2, and Upheaval.
+                //
+                // Siege uses new-style traps for era accuracy.
+                // Season 3 uses new-style traps because it is PvE.
+                // Mortalis uses new-style traps because it is permanent death.
+                return PublishInfo.Publish < 4 ||
+                       Core.RuleSets.AngelIslandRules() ||
+                       Core.RuleSets.SeasonsRules(2) ||
+                       Core.RuleSets.UpheavalRules();
             }
         }
 
@@ -488,7 +582,8 @@ namespace Server
                 // 4/14/23, Adam: Turn off Factions for all shards
                 // 8/31/23, Yoar: Enabled Factions for all shards
                 // 8/31/23, Adam: Enabled Factions for Siege
-                return (Core.RuleSets.SiegeStyleRules() && PublishInfo.Publish >= 8.0);
+                // 1/9/2026, Adam: remove named shards, and leave it up to dynamic config
+                return (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.FactionsEnabled) && PublishInfo.Publish >= 8.0);
             }
         }
 
@@ -500,7 +595,8 @@ namespace Server
                 // 4/14/23, Adam: Turn off Ethics for all shards
                 // 8/31/23, Yoar: Enabled Ethics for all shards
                 // 8/31/23, Adam: Enabled Ethics for Siege
-                return (Core.RuleSets.SiegeStyleRules() && PublishInfo.PublishDate >= new DateTime(1999, 7, 15));
+                // 1/9/2026, Adam: remove named shards, and leave it up to dynamic config
+                return (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.EthicsEnabled) && PublishInfo.PublishDate >= new DateTime(1999, 7, 15));
             }
         }
         #region Damage Tracker
@@ -533,28 +629,38 @@ namespace Server
             get { return m_releasePhase; }
             set { m_releasePhase = value; }
         }
+        public static ServerID ServerID
+        {
+            get { return m_serverID; }
+            set { m_serverID = value; }
+        }
         #region server configurations
-        private static bool m_UOTC_CFG;                     // Test Center
-        private static bool m_UOBETA_CFG;                   // BETA AI, allows most test center funcionality without the free loot
-        private static bool m_UOEV_CFG;                     // Event Shard
+        private static bool m_GMNTC_CFG;                     // Test Center
+        private static bool m_GMNBETA_CFG;                   // BETA AI, allows most test center funcionality without the free loot
+        private static bool m_GMNEV_CFG;                     // Event Shard
         private static bool m_USERP_CFG = true;             // Use Resource Pool. Default to 'true'
-        private static bool m_SiegeII_CFG;                  // SiegeII developer switch
         private static bool m_Tribute_CFG;                  // Special player tribute shard
+        public static int SeasonVariant { get; set; } = SeasonManager.ReadSeason();
+        public static int SiegeVariant { get; set; } = 1;
         #endregion server configurations
 
         #region Rule Sets
         public static class RuleSets
         {
             #region SERVERS
-            private static bool m_AOS_SVR;
-            private static bool m_SE_SVR;
-            private static bool m_ML_SVR;
-            private static bool m_UOSP_SVR;                 // Siege
-            private static bool m_UOAI_SVR;                 // Angel Island
-            private static bool m_UOMO_SVR;                 // Mortalis
-            private static bool m_UOREN_SVR;                // Renaissance
-            private static bool m_UOLS_SVR;                 // Login Server
+            // OSI
+            private static bool m_OSIAOS_SVR;
+            private static bool m_OSISE_SVR;
+            private static bool m_OSIML_SVR;
+            // GMN
+            private static bool m_GMNSP_SVR;                 // Siege
+            private static bool m_GMNAI_SVR;                 // Angel Island
+            private static bool m_GMNMO_SVR;                 // Mortalis
+            private static bool m_GMNSE_SVR;                 // Seasons
+            private static bool m_GMNUP_SVR;                 // Upheaval   
+            private static bool m_GMNLS_SVR;                 // Login Server
             #endregion SERVERS
+
             #region SERVERS Variables
             public static bool AllShards
             {
@@ -569,7 +675,7 @@ namespace Server
             {
                 get
                 {   // used only for dedicated a login server (no player account info)
-                    return UOLS_SVR;
+                    return GMNLS_SVR;
                 }
             }
             public static bool DatabaseMaster
@@ -578,172 +684,299 @@ namespace Server
                 {   // used only for dedicated a database master 
                     // since the *_CFG options can be applied to any *, we exclude this as
                     // a valid database master.
-                    return Core.RuleSets.AngelIslandRules() && !UOEV_CFG && !UOTC_CFG;
+                    return Core.RuleSets.AngelIslandRules() && !GMNEV_CFG && !GMNTC_CFG;
                     // Note: UOBETA_CFG is special since it can be applied to beta versions of the DatabaseMaster.
                 }
             }
-            public static bool UOLS_SVR
+            public static bool GMNLS_SVR
             {
-                get { return m_UOLS_SVR; }
-                set { m_UOLS_SVR = value; }
+                get { return m_GMNLS_SVR; }
+                set
+                {
+                    if (value)
+                    {
+                        m_Server = "Login Server";
+                        m_serverID = ServerID.LoginServer;
+                        m_releasePhase = ReleasePhase.Production;
+                        PublishInfo.Publish = 15;
+                    }
+                    m_GMNLS_SVR = value;
+                }
             }
-            public static bool UOAI_SVR
+            public static bool GMNAI_SVR
             {   // January 9, 2002: killing shopkeepers in Felucca will now give a murder count, etc.
                 // https://www.uoguide.com/Publish_15
                 // (before the destruction of UO)
                 get
-                { return m_UOAI_SVR; }
+                { return m_GMNAI_SVR; }
                 set
                 {
-                    PublishInfo.Publish = 15;
-                    m_UOAI_SVR = value;
+                    if (value)
+                    {
+                        m_Server = "Angel Island";
+                        m_serverID = ServerID.AngelIsland;
+                        m_releasePhase = ReleasePhase.Production;
+                        PublishInfo.Publish = 15;
+                    }
+
+                    m_GMNAI_SVR = value;
                 }
             }
-            public static bool UOSP_SVR
+            public static bool GMNSP_SVR
             {   /* Publish 13.6 (Siege Perilous Shards Only) - October 25, 2001
                  * Publish 13.5 - October 11, 2001
                  * Commodity Deeds, Repair Contracts, Secure House Trades
                  * https://www.uoguide.com/Publishes
                  */
                 get
-                { return m_UOSP_SVR; }
+                { return m_GMNSP_SVR; }
                 set
                 {
-                    PublishInfo.Publish = 13.6;
-                    m_UOSP_SVR = value;
+                    if (value)
+                    {
+                        m_Server = "Siege Perilous";
+                        m_serverID = ServerID.SiegePerilous;
+                        m_releasePhase = ReleasePhase.Production;
+                        PublishInfo.Publish = 13.6;
+                    }
+                    m_GMNSP_SVR = value;
                 }
             }
-            public static bool UOMO_SVR
-            {   /* Publish 13.6 (Siege Perilous Shards Only) - October 25, 2001
-                 * Publish 13.5 - October 11, 2001
-                 * Commodity Deeds, Repair Contracts, Secure House Trades
-                 * https://www.uoguide.com/Publishes
-                 */
+            public static bool GMNMO_SVR
+            {
+                // January 9, 2002: killing shopkeepers in Felucca will now give a murder count, etc.
+                // https://www.uoguide.com/Publish_15
+                // (before the destruction of UO)
                 get
-                { return m_UOMO_SVR; }
+                { return m_GMNMO_SVR; }
                 set
                 {
-                    PublishInfo.Publish = 13.6;
-                    m_UOMO_SVR = value;
+                    if (value)
+                    {
+                        m_Server = "Mortalis";
+                        m_serverID = ServerID.Mortalis;
+                        m_releasePhase = ReleasePhase.Production;
+                        PublishInfo.Publish = 15;
+                    }
+                    m_GMNMO_SVR = value;
                 }
             }
-            public static bool UOREN_SVR
-            {   /* Publish 13.6 (Siege Perilous Shards Only) - October 25, 2001
-                 * Publish 13.5 - October 11, 2001
-                 * Commodity Deeds, Repair Contracts, Secure House Trades
-                 * https://www.uoguide.com/Publishes
-                 */
-                get { return m_UOREN_SVR; }
+            public static bool GMNSE_SVR
+            {
+                // January 9, 2002: killing shopkeepers in Felucca will now give a murder count, etc.
+                // https://www.uoguide.com/Publish_15
+                // (before the destruction of UO)
+                get { return m_GMNSE_SVR; }
                 set
                 {
-                    PublishInfo.Publish = 13.5;
-                    m_UOREN_SVR = value;
+                    if (value)
+                    {
+                        m_Server = "Seasons";
+                        m_serverID = ServerID.Seasons;
+                        m_releasePhase = ReleasePhase.Production;
+                        PublishInfo.Publish = 15;
+                    }
+                    m_GMNSE_SVR = value;
                 }
             }
-            public static bool AOS_SVR
+            public static bool GMNUP_SVR
+            {
+                // January 9, 2002: killing shopkeepers in Felucca will now give a murder count, etc.
+                // https://www.uoguide.com/Publish_15
+                // (before the destruction of UO)
+                get { return m_GMNUP_SVR; }
+                set
+                {
+                    if (value)
+                    {
+                        m_Server = "Upheaval";
+                        m_serverID = ServerID.Upheaval;
+                        m_releasePhase = ReleasePhase.Production;
+                        PublishInfo.Publish = 15;
+                    }
+                    m_GMNUP_SVR = value;
+                }
+            }
+            #region OSI Servers
+            public static bool OSIAOS_SVR
             {
                 get
                 {
-                    return m_AOS_SVR || m_SE_SVR;
+                    return m_OSIAOS_SVR || m_OSISE_SVR;
                 }
                 set
                 {
-                    m_AOS_SVR = value;
+                    m_OSIAOS_SVR = value;
                 }
             }
-            public static bool SE_SVR
+            public static bool OSISE_SVR
             {
                 get
                 {
-                    return m_SE_SVR;
+                    return m_OSISE_SVR;
                 }
                 set
                 {
-                    m_SE_SVR = value;
+                    m_OSISE_SVR = value;
                 }
             }
-            public static bool ML_SVR
+            public static bool OSIML_SVR
             {
                 get
                 {
-                    return m_ML_SVR;
+                    return m_OSIML_SVR;
                 }
                 set
                 {
-                    m_ML_SVR = value;
+                    m_OSIML_SVR = value;
                 }
             }
+            #endregion OSI Servers
             #endregion SERVERS Variables
             #region Server Enablement
+            #region OSI Servers
+            public static bool AOSRules()
+            {
+                return (OSIAOS_SVR);
+            }
+            public static bool SamuraiEmpireRules()
+            {   // UO Samurai Empire (Not to be confused with GMN Seasons shard (UOSE_SVR))
+                return (OSISE_SVR);
+            }
+            public static bool MondainsLegacyRules()
+            {
+                return (OSIML_SVR);
+            }
+            #endregion OSI Servers
+
             public static bool AllServerRules()
             {   // typically used to denote an Angel Island feature that should be available everywhere
-                return (m_AOS_SVR || m_SE_SVR || m_ML_SVR || m_UOSP_SVR || m_UOAI_SVR || m_UOMO_SVR || m_UOREN_SVR);
-            }
-            public static bool RenaissanceRules()
-            {
-                return (UOREN_SVR);
-            }
-            public static bool SERules()
-            {
-                return (SE_SVR);
-            }
-            public static bool MLRules()
-            {
-                return (ML_SVR);
+                return
+                    // OSI Servers (don't really care about these as we never run them)
+                    (m_OSIAOS_SVR || m_OSISE_SVR || m_OSIML_SVR) ||
+                    // GMN Servers
+                    (m_GMNAI_SVR || m_GMNSP_SVR || m_GMNMO_SVR || m_GMNSE_SVR || m_GMNUP_SVR);
             }
             public static bool LoginServerRules()
             {
-                return (UOLS_SVR);
-            }
-            public static bool AOSRules()
-            {
-                return (AOS_SVR);
-            }
-            public static bool SiegeRules()
-            {
-                return (UOSP_SVR);
-            }
-            public static bool SiegeIIRules()
-            {
-                return SiegeRules() && SiegeII_CFG;
-            }
-            public static bool SiegeStyleRules()
-            {
-                return (UOSP_SVR || MortalisRules());
+                return (GMNLS_SVR);
             }
             public static bool AngelIslandRules()
             {
-                return (UOAI_SVR);
+                return (GMNAI_SVR);
             }
+            public static bool SiegeRules()
+            {
+                return (GMNSP_SVR);
+            }
+            public static bool SiegeRules(params int[] configurations)
+            {
+                if (!GMNSP_SVR)
+                    return false;
+
+                // SiegeVersion is the effective siege configuration:
+                // configured normally, or overridden by command line.
+                return configurations.Contains(SiegeVariant);
+            }
+            public static bool MortalisRules()
+            {
+                return (GMNMO_SVR);
+            }
+            public static bool MortalisStyleRules()
+            {   // Mortalis, Seasons, and Upheaval
+                return (GMNMO_SVR || GMNSE_SVR || GMNUP_SVR);
+            }
+            public static bool SeasonsRules()
+            {
+                // Core Seasons functionality, common to all seasons.
+                return GMNSE_SVR;
+            }
+
+            public static bool SeasonsRules(params int[] seasons)
+            {
+                if (GMNSE_SVR)
+                    return seasons.Contains(SeasonVariant);
+
+                return false;
+            }
+
+            public static bool UpheavalRules()
+            {   // GMN Upheaval
+                return (GMNUP_SVR);
+            }
+            #region GMN Server Modes
             public static bool TestCenterRules()
             {
-                return UOTC_CFG;
+                return GMNTC_CFG;
             }
             public static bool EventShardRules()
             {
-                return UOEV_CFG;
+                return GMNEV_CFG;
+            }
+            #endregion GMN Server Modes
+
+
+            #endregion Server Enablement
+            #region Enabled Server Rules
+            public static bool CanTeach()
+            {
+                return !(SiegeRules() || SeasonsRules(2));
+            }
+
+            public static bool UseDoppelgangers()
+            {
+                return MortalisRules() || SeasonsRules(2, 3) || UpheavalRules();
+            }
+
+            /* Publish 15 behavior:
+             * - Angel Island and Mortalis use the shard-specific creature entangle mechanic.
+             * - All other shards use the classic mounted-rider dismount mechanic.
+             */
+            public static bool BolaKnocksOffRider()
+            {
+                return !BolaEntanglesCreatures();
+            }
+
+            public static bool BolaEntanglesCreatures()
+            {
+                return AngelIslandRules() || MortalisRules();
+            }
+            public static bool BolaHybridModel()
+            {
+                return SeasonsRules(2, 3) || UpheavalRules();
+            }
+            public static bool PoisonedArrowsRules()
+            {
+                return AngelIslandRules() || SeasonsRules(2, 3) || UpheavalRules();
+            }
+
+            public static bool UsesReservedNames()
+            {
+                return MortalisRules() || SeasonsRules() || UpheavalRules();
+            }
+            public static bool AIPrisonSystem()
+            {
+                return AngelIslandRules() || SeasonsRules() || UpheavalRules();
             }
             public static bool PackUpStructureRules()
             {
                 return CoreAI.EnablePackUp;
             }
-            public static bool MortalisRules()
-            {
-                return (UOMO_SVR);
-            }
-            #endregion Server Enablement
-            #region Enabled Server Rules
 
+            public static bool StackablePotions()
+            { return MortalisRules() || SeasonsRules() || UpheavalRules(); }
             public static bool TentAnnexation()
-            { return AngelIslandRules(); }
+            { return AngelIslandRules() || MortalisRules() || SeasonsRules() || UpheavalRules(); }
             public static bool MiniBossArmor()
-            { return AngelIslandRules() || Core.SiegeII_CFG; }
+            { return AngelIslandRules() || SiegeRules(2) || MortalisRules() || SeasonsRules() || UpheavalRules(); }
+            public static bool SlayerInstruments()
+            { return AllShards; }
             public static bool InstaDeathGuards()
             { return AngelIslandRules(); }
             public static bool ModifiedMindBlast()
-            { return AngelIslandRules() || MortalisRules(); }
+            { return AngelIslandRules() || MortalisRules() || SeasonsRules() || UpheavalRules(); }
             public static bool AllowGhostBlindness()
-            { return AngelIslandRules() || MortalisRules(); }
+            { return AngelIslandRules() || MortalisRules() || SeasonsRules() || UpheavalRules(); }
             public static bool AllowLostLandsAccess()
             {   // we currently have no shards that allow this access.
                 return Core.T2A && false;
@@ -754,7 +987,7 @@ namespace Server
             }
             public static int ShardStableMinimum()
             {
-                if (SiegeIIRules())
+                if (SiegeRules(2))
                     return 6;
 
                 return 0;
@@ -762,7 +995,7 @@ namespace Server
 
             public static int ShardStableBonus()
             {
-                if (SiegeIIRules())
+                if (SiegeRules(2))
                     return 12;
 
                 return 0;
@@ -771,8 +1004,11 @@ namespace Server
             {
                 if (from is PlayerMobile pm)
                 {
-                    if (Core.RuleSets.AngelIslandRules())
+                    if (AngelIslandRules())
                         return true;
+
+                    if (SeasonsRules() || UpheavalRules())
+                        return false;
 
                     // minimum skill to be, and maintain grandfather status
                     bool enoughSkill = pm.Skills[SkillName.Herding].Base > 70.0;
@@ -824,13 +1060,121 @@ namespace Server
             }
             public static bool PlantSystem()
             {
-                return (PublishInfo.Publish >= 14.0 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || Core.RuleSets.SiegeStyleRules());
+                return (PublishInfo.Publish >= 14.0 || AngelIslandRules() || MortalisRules() || SiegeRules() || SeasonsRules() || UpheavalRules());
             }
-            public static bool AutoDispelChance()
+            /*
+             * Auto-Dispel (server-side passive dispelling) existed in OSI-era UO well before AoS.
+             * This implementation is based on the behavior documented in:
+             *   - The UO Demo AI (leaked OSI server logic from the Renaissance period)
+             *   - Stratics-era monster behavior archives (1999–2002)
+             *   - Publish 15–era field reports from OSI shards
+             *   - Early RunUO 1.0 AI (which directly mirrored the UO Demo)
+             *
+             * In OSI’s system, auto-dispel was not a spell cast, had no mana cost, and fired as part
+             * of the creature’s “Evaluate Target” routine. Chance to dispel depended on two primary factors:
+             *
+             *   1. The creature’s Magery skill (scaled)
+             *   2. A hidden per-creature “anti-summon strength” modifier used by Dragons, Balrons,
+             *      Lich Lords, Elemental Lords, and similar high-end casters
+             *
+             * This method reconstructs that logic in a simplified, transparent form that preserves
+             * the original feel without reproducing every quirk of the old AI tables.
+             *
+             * Result:
+             *   - Low-tier monsters rarely auto-dispel
+             *   - Mid-tier casters can sometimes auto-dispel
+             *   - High-end creatures (Balrons, Ancient Wyrms, Elemental Lords, etc.)
+             *     aggressively and almost instantly remove EVs/BS as in OSI Renaissance.
+             */
+            public static bool AutoDispelChance(Mobile m)
             {
-                // 7/22/2023, Adam: Incorporate the Auto Dispel chance Introduced in Samurai Empire.
-                return Core.RuleSets.AngelIslandRules() ? false : PublishInfo.PublishDate >= Core.EraREN ? Utility.Chance(0.1) : false;
+                // Defensive: no creature, no auto-dispel.
+                if (m == null || m.Deleted)
+                    return false;
+
+                // If Angel Island rules explicitly disable auto-dispel, honor that.
+                if (Core.RuleSets.AngelIslandRules())
+                    return false;
+
+                // Auto-dispel is a Renaissance-and-later mechanic for our purposes.
+                if (PublishInfo.PublishDate < Core.EraREN)
+                    return false;
+
+                // Only meaningful for creatures with magery (and only if they are set up to auto-dispel elsewhere).
+                double magery = 0.0;
+
+                try
+                {
+                    magery = m.Skills[SkillName.Magery].Value;
+                }
+                catch
+                {
+                    magery = 0.0;
+                }
+
+                // Normalize magery into a 0.0–1.0 factor (0 at 0 skill, ~0.83 at GM).
+                double mageryFactor = Math.Max(0.0, Math.Min(1.0, magery / 120.0));
+
+                // Per-creature anti-summon emphasis (dragons, balrons, lich lords, etc.).
+                double creatureBonus = GetAutoDispelBonus(m); // 0.0–0.5 range
+
+                // Base chance: half from magery, half from the specific creature flag.
+                // Example:
+                //   GM magery (factor ~0.83) + strong bonus (0.40) → ~0.82 chance before clamping.
+                double chance = (mageryFactor * 0.5) + creatureBonus;
+
+                // Clamp to [0,1]
+                if (chance < 0.0)
+                    chance = 0.0;
+                else if (chance > 1.0)
+                    chance = 1.0;
+
+                return Utility.RandomDouble() < chance;
             }
+
+            /// <summary>
+            /// Returns an additional auto-dispel emphasis for "anti-summon" creatures.
+            /// This is intentionally simple and easy to tune per shard.
+            /// </summary>
+            private static double GetAutoDispelBonus(Mobile m)
+            {
+                // Strongest anti-summon mobs: near-instantly delete EV/BS most of the time.
+                if (m is Balron
+                    || m is AncientWyrm
+                    || m is ShadowWyrm)
+                {
+                    return 0.40; // 40%
+                }
+
+                // Very strong: dragons, wyrms, top casters, elemental lords, avengers.
+                if (m is Dragon
+                    || m is WhiteWyrm
+                    || m is Daemon
+                    || m is LichLord
+                    || m is ElderGazer
+                    || m is Titan
+                    || m is PoisonElemental
+                    //|| m is OphidianAvenger
+                    || m is TerathanAvenger)
+                {
+                    return 0.30; // 30%
+                }
+
+                // Moderate: standard lich, elemental casters, reapers.
+                if (m is Lich
+                    || m is FireElemental
+                    || m is AirElemental
+                    || m is EarthElemental
+                    || m is WaterElemental
+                    || m is Reaper)
+                {
+                    return 0.20; // 20%
+                }
+
+                // Default: no special bias beyond magery.
+                return 0.0;
+            }
+
             public static bool MurderersGetOneThirdGold()
             {   // An additional penalty for being red on Siege Perilous includes the amount of gold found on the corpse of a creature 
                 //	which they have killed will be one-third. For example, if a player would normally receive 600 gold off a monster, 
@@ -839,46 +1183,40 @@ namespace Server
                 // 5/12/23, Adam: We are discontinuing this for our Siege shard. There was pretty much a blowup
                 //  on the forums, and several Siege vets swore this was never implemented. Not sure I believe this
                 //  but it's not worth losing players over.
-                return !SiegeStyleRules();
-            }
-            public static bool StealableAtSpawnLoot()
-            {   // Note Angel Island blocks this in another way - custom loot table
-                // For other shards, i.e., Siege, this article says 'yes', you can steal from monsters
-                // https://web.archive.org/web/20011027063305/http://guide.uo.com/skill_33.html
-                return !SiegeStyleRules();
+                return !SiegeRules();
             }
             public static bool ThemedTreasureMaps()
             {   // 7/13/2023, Adam: Enabling themed treasure map chests. See SpecialMibRares() for the MIB equivalent.)
-                return Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules();
+                return AngelIslandRules() || SiegeRules() || SeasonsRules() || UpheavalRules();
             }
             public static bool SpecialMibRares()
             {   // 7/13/2023, Adam: See ThemedTreasureMaps() for the treasure map equivalent.)
-                return Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules();
+                return AngelIslandRules() || SiegeRules() || SeasonsRules() || UpheavalRules();
             }
             public static bool SpecialMonsterRares()
             {   // 7/13/2023, Adam: Allow rare drops on dungeon monsters
-                return Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules();
-            }
-            public static bool FillableContainerRares()
-            {   // 7/13/2023, Adam: Allow rare drops in FillableContainer
-                return Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules();
+                return AngelIslandRules() || SiegeRules() || SeasonsRules() || UpheavalRules();
             }
             public static bool DecorativeFurniture()
             {   // 7/14/2023, Adam: seems good for all shards
-                return Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules();
+                return AngelIslandRules() || SiegeRules() || MortalisRules() || SeasonsRules() || UpheavalRules();
             }
             public static bool KinSystemEnabled()
             {   // 3/28/23, Adam: allow kin on Siege.. we'll see how it goes.
                 // 4/13/23, Yoar: disabled the Kin system in favor of the new Alignment system.
-                return false;//Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules();
+                return false;//Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules();
+            }
+            public static bool AlignmentSystemEnabled()
+            {
+                return (AngelIslandRules() || SiegeRules() || SeasonsRules(2, 3) || UpheavalRules());
             }
             public static bool EnchantedScrollsEnabled()
             {
-                return Core.RuleSets.SiegeStyleRules();
+                return Core.RuleSets.SiegeRules();
             }
             public static bool RoTShardEnabled()
             {
-                return SiegeRules() || MortalisRules();
+                return SiegeRules();
             }
             public static bool UsingRoT(Mobile m, Skill skill)
             {
@@ -929,36 +1267,13 @@ namespace Server
                  */
                 return (PublishInfo.Publish >= 14) && PublishInfo.PublishDate >= new DateTime(2001, 11, 30);
             }
-            public static int SiegePriceRules(Type type, int price)
-            {
-                if (Core.RuleSets.SiegeStyleRules())
-                {   // Pub 13.6
-                    // houses are 10x the price for Siege from Pub 13.6 on
-                    // otherwise, apply the regular x3 price hike for Siege
-                    // 1/19/2024, Adam. SiegeII: in order to spur the economy on such a small shard, we are adopting the 3x pricing for houses even though it's not era accurate
-                    // http://www.uoguide.com/Publish_13.6_(Siege_Perilous_Shards_Only)
-                    if (typeof(HouseDeed).IsAssignableFrom(type))
-                        price = RealEstateBroker.ComputeHousingMarkupForSiege(price);
-                    // https://www.uoguide.com/Publish_16#Update_1
-                    // Houses and boats on Siege Perilous and Mugen are now 9 times regular shard prices (rather than the previous 10 times or recent 30 times prices).
-                    // https://www.uoguide.com/Publish_13.6_(Siege_Perilous_Shards_Only)
-                    // The cost of house deeds when purchased from NPC shopkeepers on Siege Perilous will be 10x the prices seen on "normal" shards. All other NPC shopkeeper sales on Siege Perilous will remain at 3x normal.
-                    // Our siege is 13.6, so my interpretation of this data is that boats are 3x
-                    else if (typeof(BaseBoatDeed).IsAssignableFrom(type) && PublishInfo.Publish >= 16)
-                        price *= 10;
-                    else
-                        price *= 3;
-                }
-
-                return price;
-            }
             public static bool StandardShardRules()
             {
-                return (SiegeRules() || MortalisRules() || RenaissanceRules());
+                return (SiegeRules() || MortalisRules() || SeasonsRules() || UpheavalRules());
             }
             public static bool AnyAIShardRules()
             {
-                return (AngelIslandRules() || SiegeRules() || MortalisRules() || RenaissanceRules());
+                return (AngelIslandRules() || SiegeRules() || MortalisRules() || SeasonsRules() || UpheavalRules());
             }
             public static bool TownshipRules()
             {   // currently all shards may have townships
@@ -974,15 +1289,15 @@ namespace Server
             }
             public static bool ShopkeepersSellResourcesRules()
             {
-                return !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.SiegeStyleRules();
+                return !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.SiegeRules();
             }
             public static bool ShopkeepersBuyResourcesRules()
             {
-                return !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.SiegeStyleRules();
+                return !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.SiegeRules();
             }
             public static bool ShopkeepersBuyItemsRules()
             {
-                return !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.SiegeStyleRules();
+                return !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.SiegeRules();
             }
             public static bool UnusualChestRules()
             {   // note: turning off unusual chests simply converts existing chests to
@@ -1001,7 +1316,7 @@ namespace Server
             /// </summary>
             public static bool StaticHousingRules()
             {
-                return Core.UOTC_CFG || Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules();
+                return GMNTC_CFG || AngelIslandRules() || SiegeRules();
             }
             public static bool UseToggleSpecialAbility()
             {   // not sure what the cutoff is here. Angel Island is 15 and uses the toggle, Siege does not
@@ -1014,9 +1329,28 @@ namespace Server
                     (StandardShardRules() && PublishInfo.Publish >= 13.5) ||
                     ResourcePoolRules();
             }
-            public static bool AllowMountRules()
-            {   // currently all shards may have mounts except Angel Island
-                return !AngelIslandRules();
+            public static bool AllowMountRules(Mobile from)
+            {
+                Region region = from.Region;
+
+                // Angel Island never allows mounts anywhere.
+                if (AngelIslandRules() || UpheavalRules())
+                    return false;
+
+                // On other shards, region-level NoMounts overrides general allowance.
+                if (region is StaticRegion sr)
+                    if (sr.NoMounts)
+                        return false;
+
+                // Season 2 does not allow mounts in dungeons
+                if ((SeasonsRules(2)) && from is PlayerMobile)
+                    if (Utility.WorldMap.Dungeons.Contains(from.Location) &&
+                        !Utility.TeleporterRuleHelpers.InRegion(from, "Green Acres") &&
+                        !Utility.TeleporterRuleHelpers.InRegion(from, "Custom Housing Area"))
+                        return false;
+
+                // Default for non-Angel Island shards: mounts allowed.
+                return true;
             }
             public static bool ShardAllowsItemRules(Type type)
             {   // special items, usually custom allowance rules
@@ -1067,44 +1401,44 @@ namespace Server
         }
         #endregion Rule Sets
         #region SERVER CONFIGURATIONS
-        public static bool UOEV_CFG
+        public static bool GMNEV_CFG
         {
             get
             {
-                return m_UOEV_CFG;
+                return m_GMNEV_CFG;
             }
         }
 
-        public static bool UOTC_CFG
+        public static bool GMNTC_CFG
         {
             get
             {
-                return m_UOTC_CFG;
-            }
-        }
-        public static bool SiegeII_CFG
-        {
-            get
-            {
-                return m_SiegeII_CFG;
+                return m_GMNTC_CFG;
             }
         }
         public static bool Tribute_CFG
         {
             get
             {   // tribute shard is run under the EV port number
-                return m_Tribute_CFG && m_UOEV_CFG;
+                return m_Tribute_CFG && m_GMNEV_CFG;
             }
         }
-        public static bool UOBETA_CFG
+        public static bool GMNBETA_CFG
         {
             get
             {
-                return m_UOBETA_CFG;
+                return m_GMNBETA_CFG;
             }
         }
         #endregion SERVER CONFIGURATIONS
 
+        public static bool Developing
+        {
+            get
+            {   // put your local development machine name here to automatically flip the switch for development-only features.
+                return Environment.MachineName.Equals(CoreAI.OwnerLocalMachine, StringComparison.OrdinalIgnoreCase);
+            }
+        }
         public static bool Building
         {
             get
@@ -1112,104 +1446,95 @@ namespace Server
                 return m_Building;
             }
         }
+
+        #region Where
+        private static string m_ExeDirectory;
+        private static string m_DataDirectory;
+        private static string m_LogsDirectory;
+        private static string m_SharedDirectory;
+        private static string m_ExePath;
+        private static string m_RootDirectory;
+        private static string m_SavesDirectory;
+        private static void InitializePaths()
+        {
+            m_ExePath = Process.GetCurrentProcess().MainModule.FileName.Replace("vshost.", "");
+
+            m_ExeDirectory = Path.GetDirectoryName(m_ExePath);
+
+            if (String.IsNullOrEmpty(m_ExeDirectory))
+                throw new ApplicationException("Cannot establish executable directory.");
+
+            m_ExeDirectory = Path.GetFullPath(m_ExeDirectory);
+
+            m_RootDirectory = DiscoverRoot(m_ExeDirectory);
+
+            m_DataDirectory = Path.Combine(m_RootDirectory, "Data");
+            m_LogsDirectory = Path.Combine(m_RootDirectory, "Logs");
+            m_SavesDirectory = Path.Combine(m_RootDirectory, "Saves");
+
+            m_SharedDirectory = Path.GetFullPath(
+                Path.Combine(m_RootDirectory, "..", "Shared"));
+        }
+        private static string DiscoverRoot(string exeDirectory)
+        {
+            DirectoryInfo? directory = new DirectoryInfo(exeDirectory);
+
+            while (directory != null)
+            {
+                if ((directory.Name.Equals("Debug", StringComparison.OrdinalIgnoreCase) ||
+                     directory.Name.Equals("Release", StringComparison.OrdinalIgnoreCase)) &&
+                    directory.Parent != null &&
+                    directory.Parent.Name.Equals("bin", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (directory.Parent.Parent == null)
+                        break;
+
+                    return directory.Parent.Parent.FullName;
+                }
+
+                directory = directory.Parent;
+            }
+
+            // No bin\Debug or bin\Release structure.
+            // Therefore the executable directory itself is the root.
+            return Path.GetFullPath(exeDirectory);
+        }
         public static string ExePath
         {
-            get
-            {
-                if (m_ExePath == null)
-                    m_ExePath = Process.GetCurrentProcess().MainModule.FileName.Replace("vshost.", "");
-
-                return m_ExePath;
-            }
+            get { return m_ExePath; }
         }
-        public static string BaseDirectory
+
+        public static string ExeDirectory
         {
-            get
-            {
-                if (m_BaseDirectory == null)
-                {
-                    try
-                    {
-                        m_BaseDirectory = ExePath;
-
-                        if (m_BaseDirectory.Length > 0)
-                            m_BaseDirectory = Path.GetDirectoryName(m_BaseDirectory);
-                    }
-                    catch
-                    {
-                        m_BaseDirectory = ".";
-                    }
-                }
-
-                return m_BaseDirectory;
-            }
+            get { return m_ExeDirectory; }
         }
+
+        public static string RootDirectory
+        {
+            get { return m_RootDirectory; }
+        }
+
         public static string DataDirectory
         {
-            get
-            {
-                if (m_DataDirectory == null)
-                {
-                    try
-                    {
-                        bool isDevelopmerMachine = false;
-                        if (m_BaseDirectory.Contains(@"\debug\", StringComparison.OrdinalIgnoreCase) || m_BaseDirectory.Contains(@"\release\", StringComparison.OrdinalIgnoreCase))
-                            isDevelopmerMachine = true;
-
-                        if (isDevelopmerMachine)
-                            m_DataDirectory = Path.GetFullPath(Path.Combine(m_BaseDirectory, "../../../", "Data"));
-                        else
-                            m_DataDirectory = Path.GetFullPath(Path.Combine(m_BaseDirectory, "Data"));
-                    }
-                    catch
-                    {
-                        // don't default this. we want the system to blow up if either the developer's or production machine is not setup correctly
-                    }
-                }
-
-                return m_DataDirectory;
-            }
+            get { return m_DataDirectory; }
         }
+
         public static string LogsDirectory
         {
-            get
-            {
-                if (m_LogsDirectory == null)
-                {
-                    try
-                    {
-                        return m_LogsDirectory = Path.Combine(m_BaseDirectory, "Logs");
-                    }
-                    catch
-                    {
-                        // don't default this. we want the system to blow up if either the developer's or production machine is not setup correctly
-                    }
-                }
-
-                return m_LogsDirectory;
-            }
+            get { return m_LogsDirectory; }
         }
+
+        public static string SavesDirectory
+        {
+            get { return m_SavesDirectory; }
+        }
+
         public static string SharedDirectory
         {
-            get
-            {
-                if (m_SharedDirectory == null)
-                {
-#if DEBUG
-                    string path = Path.Combine(m_BaseDirectory, "../../../../");
-#else
-                    string path = Path.Combine(m_BaseDirectory, "../");
-#endif
-                    path = Path.GetFullPath(path);
-                    if (Directory.Exists(path))
-                        m_SharedDirectory = path;
-                    else
-                        throw new ApplicationException(string.Format("Cannot establish shared folder at: {0}", path));
-                }
-
-                return m_SharedDirectory;
-            }
+            get { return m_SharedDirectory; }
         }
+        #endregion Where
+
         private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             Console.WriteLine(e.IsTerminating ? "Error:" : "Warning:");
@@ -1293,7 +1618,7 @@ namespace Server
         internal const uint MF_BYCOMMAND = 0x00000000;
         #endregion HIDE_CLOSEBOX
 
-        private static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+        private static void CurrentDomain_ProcessExit(object? sender, EventArgs e)
         {
             HandleClosed();
         }
@@ -1311,7 +1636,32 @@ namespace Server
             HandleClosed();
 
             if (restart)
-                Process.Start(ExePath, Arguments);
+            {
+                string args = Arguments ?? string.Empty;
+
+                // Append -restarted (avoid duplicates)
+                bool hasRestarted = args
+                    .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Any(t => string.Equals(t, "-restarted", StringComparison.OrdinalIgnoreCase));
+
+                if (!hasRestarted)
+                {
+                    if (!string.IsNullOrWhiteSpace(args))
+                        args += " ";
+
+                    args += "-restarted";
+                }
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = ExePath,
+                    Arguments = args,
+                    UseShellExecute = false,
+                    WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory
+                };
+
+                Process.Start(psi);
+            }
 
             m_Process.Kill();
         }
@@ -1346,6 +1696,8 @@ namespace Server
 #endif
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
 
+            InitializePaths();
+
             #region HIDE_CLOSEBOX
 #if !DEBUG
             IntPtr hMenu = Process.GetCurrentProcess().MainWindowHandle;
@@ -1354,82 +1706,68 @@ namespace Server
             RemoveMenu(hSystemMenu, SC_CLOSE, MF_BYCOMMAND);
 #endif
             #endregion HIDE_CLOSEBOX
-            #region ARG PARSING
-            Arguments = "";
-            for (int i = 0; i < args.Length; ++i)
-            {
-                //if (Insensitive.Equals(args[i], "-debug"))
-                //m_Debug = true;
-                if (Insensitive.Equals(args[i], "-service"))
-                    m_Service = true;
-                else if (Insensitive.Equals(args[i], "-profile"))
-                    Profiling = true;
-                else if (Insensitive.Equals(args[i], "-haltonwarning"))
-                    m_HaltOnWarning = true;
-                else if (Insensitive.Equals(args[i], "-vb"))
-                    m_VBdotNET = true;
-                else if (Insensitive.Equals(args[i], "-import"))
-                    m_Import = true;
-                else if (Insensitive.Equals(args[i], "-boatholdupgrade"))
-                    m_BoatHoldUpgrade = true;
-                else if (Insensitive.Equals(args[i], "-usedb"))
-                    m_useLoginDB = true;
-                else if (Insensitive.Equals(args[i], "-uotc"))
-                    m_UOTC_CFG = true;
-                else if (Insensitive.Equals(args[i], "-uos2"))
-                    m_SiegeII_CFG = true;
-                else if (Insensitive.Equals(args[i], "-uopt"))
-                    m_Tribute_CFG = true;
-                else if (Insensitive.Equals(args[i], "-uols"))
-                    RuleSets.UOLS_SVR = true;
-                else if (Insensitive.Equals(args[i], "-uois"))
-                    RuleSets.UOSP_SVR = true;
-                else if (Insensitive.Equals(args[i], "-uosp"))
-                    RuleSets.UOSP_SVR = true;
-                else if (Insensitive.Equals(args[i], "-uomo"))
-                    RuleSets.UOMO_SVR = true;
-                else if (Insensitive.Equals(args[i], "-uoai"))
-                    RuleSets.UOAI_SVR = true;
-                else if (Insensitive.Equals(args[i], "-uoren"))
-                    RuleSets.UOREN_SVR = true;
-                else if (Insensitive.Equals(args[i], "-norp"))
-                    m_USERP_CFG = false;
-                else if (Insensitive.Equals(args[i], "-uoev"))
-                    m_UOEV_CFG = true;
-                else if (Insensitive.Equals(args[i], "-build"))
-                    m_Building = true;
-                else if (Insensitive.Equals(args[i], "-nopatch"))
-                    m_Patching = false;
-                // Disabling developer mode for now (for custom house building)
-                //else if (Insensitive.Equals(args[i], "-developer"))
-                //m_Developer = true;
-                else if (Insensitive.Equals(args[i], "-uobeta"))
-                    m_UOBETA_CFG = true;
-                else if (Insensitive.Equals(args[i], "-red"))
-                    Utility.PushColor(ConsoleColor.Red);
 
-                Arguments += args[i] + " ";
-            }
-            Arguments += "-red ";    // 6/29/2021, Adam: if we restart due to a crash, all text will be red.
-            #endregion
-            #region VERIFY ARGS
-            int server_count = 0;
-            if (RuleSets.UOAI_SVR == true) server_count++;
-            if (RuleSets.UOSP_SVR == true) server_count++;
-            if (RuleSets.UOMO_SVR == true) server_count++;
-            if (RuleSets.UOLS_SVR == true) server_count++;
-            if (RuleSets.UOREN_SVR == true) server_count++;
-            if (server_count == 0)
-            {
-                Utility.Monitor.WriteLine("Core: No server specified, defaulting to Angel Island", ConsoleColorInformational());
-                RuleSets.UOAI_SVR = true;
-            }
-            if (server_count > 1)
-            {
-                Utility.Monitor.WriteLine("Core: Too many servers specified.", ConsoleColorWarning());
+            // Reset console colors at startup because console color state persists across process restarts.
+            // Ensures a clean boot does not inherit the previous instance’s crash (red) foreground setting.
+            // btw, Console.ResetColor() does not work in this context.
+            Utility.ResetColor();
+
+            #region PARSE ARGS
+
+            args = ParseArgs(args);
+
+            if (args.Length == 0)
                 return;
+
+            SetSwitches(args);
+
+            // Arguments is now only a display/restart representation
+            // of the authoritative argument array.
+            Arguments = string.Join(" ",
+                args.Where(arg =>
+                    !Insensitive.Equals(arg, "-restarted") &&
+                    !Insensitive.Equals(arg, "-crashed")));
+
+            #endregion PARSE ARGS
+
+            #region Override Versions
+
+            int overrideVariant = 0;
+
+            if (TryGetVariantOverride(args, "-season", out overrideVariant))
+            {
+                // If the command line includes a "season" argument followed by a number,
+                // use that number as the season variant.
+                SeasonVariant = overrideVariant;
             }
-            #endregion
+
+            if (TryGetVariantOverride(args, "-siege", out overrideVariant))
+            {
+                // If the command line includes a "siege" argument followed by a number,
+                // use that number as the siege variant.
+                SiegeVariant = overrideVariant;
+            }
+
+            bool TryGetVariantOverride(string[] args, string baseName, out int variant)
+            {
+                variant = 0;
+
+                foreach (string arg in args)
+                {
+                    if (!arg.StartsWith(baseName, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    string suffix = arg.Substring(baseName.Length);
+
+                    if (int.TryParse(suffix, out variant))
+                        return true;
+                }
+
+                return false;
+            }
+
+            #endregion Override Versions
+
             #region LOG SETUP
             try
             {
@@ -1448,6 +1786,7 @@ namespace Server
             catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
             #endregion
 
+
             m_Thread = Thread.CurrentThread;
             m_Process = Process.GetCurrentProcess();
             m_Assembly = Assembly.GetEntryAssembly();
@@ -1455,55 +1794,45 @@ namespace Server
             if (m_Thread != null)
                 m_Thread.Name = "Core Thread";
 
-            if (BaseDirectory.Length > 0)
-                Directory.SetCurrentDirectory(BaseDirectory);
+            if (ExeDirectory.Length > 0)
+                Directory.SetCurrentDirectory(ExeDirectory);
 
-            Version ver = m_Assembly.GetName().Version;
+            Version? ver = m_Assembly.GetName().Version;
             bool state = false;
 
-            #region Server Name
+            #region Header
+            string phase = Core.ReleasePhase < ReleasePhase.Production
+                ? $" ({Utility.GetCustomEnumNames(typeof(ReleasePhase))[(int)m_releasePhase]})" : string.Empty;
 
-            if (Core.RuleSets.SiegeRules())
-            {
-                m_Server = "Siege Perilous";
-                m_releasePhase = ReleasePhase.Production;
-            }
-            else if (Core.RuleSets.MortalisRules())
-            {
-                m_Server = "Mortalis";
-                m_releasePhase = ReleasePhase.Pre_Alpha;
-            }
-            else if (Core.RuleSets.LoginServerRules())
-            {
-                m_Server = "Login Server";
-                m_releasePhase = ReleasePhase.Production;
-            }
-            else if (Core.RuleSets.RenaissanceRules())
-            {
-                m_Server = "Renaissance";
-                m_releasePhase = ReleasePhase.Pre_Alpha;
-            }
-            else if (Core.RuleSets.AngelIslandRules())
-            {
-                m_Server = "Angel Island";
-                m_releasePhase = ReleasePhase.Production;
-            }
-            else
-                m_Server = "Unknown Configuration";
-            #endregion Server Name
+            string seasonSuffix = string.Empty;
 
+            // Display persisted version number during startup before world load occurs.
+            if (RuleSets.SeasonsRules())
+                seasonSuffix = $" {SeasonVariant}";
+            if (RuleSets.SiegeRules())
+                seasonSuffix = $" {SiegeVariant}";
 
-            Utility.Monitor.WriteLine("{0}{5} - [www.game-master.net] Version {1}.{2}.{3}, Build {4}",
-                Utility.BuildColor(Utility.BuildRevision()), m_Server, Utility.BuildMajor(), Utility.BuildMinor(),
-                Utility.BuildRevision(), Utility.BuildBuild(),
-                Core.ReleasePhase < ReleasePhase.Production ? string.Format(" ({0})",
-                Utility.GetCustomEnumNames(typeof(ReleasePhase))[(int)m_releasePhase]) : "");
+            // Precedence: Crashed overrides Restarted (no redundancy)
+            string stateSuffix = m_CrashRecovery
+                ? " (Crashed)"
+                : (m_Restarted ? " (Restarted)" : string.Empty);
 
-            if (RuleSets.UOSP_SVR)
-                Utility.Monitor.WriteLine("[Siege II is {0}.]", ConsoleColorEnabled(Core.SiegeII_CFG), TextEnabled(Core.SiegeII_CFG));
+            string version = $"{Utility.BuildMajor()}.{Utility.BuildMinor()}.{Utility.BuildRevision()}";
+
+            string text =
+                $"{m_Server}{seasonSuffix}{stateSuffix} - [www.game-master.net] Version {version}, Build {Utility.BuildBuild()}";
+
+            ConsoleColor color = Utility.BuildColor(Utility.BuildRevision()); // same color selection behavior as before
+
+            Utility.Monitor.WriteLine($"{phase} {text}".TrimStart(), color);
+            #endregion Header
+
+            if (RuleSets.SiegeRules())
+                Utility.Monitor.WriteLine("[Siege II is {0}.]", ConsoleColorEnabled(Core.RuleSets.SiegeRules(2)), TextEnabled(Core.RuleSets.SiegeRules(2)));
+
             Utility.Monitor.WriteLine("[UO Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(DataPath.GetUOPath("Ultima Online")));
             Utility.Monitor.WriteLine("[Current Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(Directory.GetCurrentDirectory()));
-            Utility.Monitor.WriteLine("[Base Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(BaseDirectory));
+            Utility.Monitor.WriteLine("[Base Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(ExeDirectory));
             Utility.Monitor.WriteLine("[Data Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(DataDirectory));
             //Utility.Monitor.WriteLine("[Shared Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(SharedDirectory));
             Utility.Monitor.WriteLine("[Game Time Zone: {0}]", ConsoleColorInformational(), AdjustedDateTime.GameTimezone);
@@ -1530,6 +1859,20 @@ namespace Server
             else
                 Utility.Monitor.WriteLine("[Some or all of the required Email environment variables are not set.]", ConsoleColorWarning());
             #endregion Email
+
+            #region Patcher
+            Utility.Monitor.WriteLine("[Patch Library Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(ExeDirectory));
+            if (!CoreAI.ReportStatus())
+            {
+                //Core.LoggerShortcuts.BootError(
+                //    string.Format("Patch system validation failed. Startup aborted."));
+                //return;
+                Core.Halt("Patch system validation failed. Startup aborted.");
+            }
+            Utility.Monitor.WriteLine(
+                "[All patch libraries are valid and ready to load.]",
+                ConsoleColorInformational());
+            #endregion Patcher
 
             #region Ports
             if (PortsCheck() == false)
@@ -1617,7 +1960,7 @@ namespace Server
 
 #if DEBUG
             //  Turn off saves for DEBUG builds
-            AutoSave.SavesEnabled = false;
+            AutoSave.SavesEnabled = m_EnableDbgSaves;
 #endif
             state = AutoSave.SavesEnabled;
             Utility.Monitor.WriteLine("[Saves are {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
@@ -1626,15 +1969,13 @@ namespace Server
             Utility.Monitor.WriteLine("[Shard configuration is {0}.]", ConsoleColorInformational(), m_Server);
             state = RuleSets.ResourcePoolRules();
             Utility.Monitor.WriteLine("[Resource Pool is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
-            state = Core.UOTC_CFG;
+            state = Core.GMNTC_CFG;
             Utility.Monitor.WriteLine("[Test Center functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = Core.RuleSets.LoginServerRules();
             Utility.Monitor.WriteLine("[Login Server functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
-            state = Core.UOBETA_CFG;
+            state = Core.GMNBETA_CFG;
             Utility.Monitor.WriteLine("[Beta functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
-            state = World.FreezeDryEnabled;
-            Utility.Monitor.WriteLine("[Freeze dry system is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
-            state = Core.UOEV_CFG;
+            state = Core.GMNEV_CFG;
             Utility.Monitor.WriteLine("[Event Shard functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             Utility.Monitor.WriteLine("[Publish {0} enabled ({1}).]", ConsoleColorInformational(), PublishInfo.Publish, PublishInfo.PublishDate);
             state = Core.Building;
@@ -1648,6 +1989,13 @@ namespace Server
             Utility.Monitor.WriteLine("[Factions are {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = Core.T2A;
             Utility.Monitor.WriteLine("[T2A is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+
+            #region Map Rules
+            if (Core.RuleSets.SeasonsRules(3))
+                Utility.Monitor.WriteLine("[Default map configuration: Trammel rules (PvE).]", ConsoleColorInformational());
+            else
+                Utility.Monitor.WriteLine("[Default map configuration: Felucca rules (PvP).]", ConsoleColorInformational());
+            #endregion Map Rules
 
             if (Arguments.Length > 0)
                 Console.WriteLine("Core: Running with arguments: {0}", Arguments);
@@ -1671,21 +2019,6 @@ namespace Server
                 m_ConsoleEventHandler = new ConsoleEventHandler(OnConsoleEvent);
                 SetConsoleCtrlHandler(m_ConsoleEventHandler, true);
             }
-#if false
-            // we don't use the RunUO system for debugging scripts
-            while (!ScriptCompiler.Compile(Core.Debug))
-            {
-                if (m_Quiet) //abort and exit if compile scripts failed
-                    return;
-
-                Console.WriteLine("Scripts: One or more scripts failed to compile or no script files were found.");
-                Console.WriteLine(" - Press return to exit, or R to try again.");
-
-                string line = Console.ReadLine();
-                if (line == null || line.ToLower() != "r")
-                    return;
-            }
-#endif
 
             // adam: I believe the new startup logic is more robust as it attempts to prevent timers from firing 
             //  before the shard is fully up and alive.
@@ -1698,7 +2031,7 @@ namespace Server
 
             // this timer (and output) simply proves timers created during Configure, WorldLoad, and Initialize will be
             // respected, and processed as planned. 
-            Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object?[] { null });
 
             SocketPool.Create();
 
@@ -1746,6 +2079,359 @@ namespace Server
 #endif
         }
 
+
+        public static string[] ParseArgs(string[] args)
+        {
+            // Add out-of-band switches exactly once.
+            string[] effectiveArgs = AddGMNSwitches(args);
+
+            int serverCount = CountServers(effectiveArgs);
+
+            if (serverCount == 1)
+                return effectiveArgs;
+
+            if (serverCount > 1)
+            {
+                Utility.Monitor.WriteLine(
+                    "Core: Too many servers specified in arguments.",
+                    ConsoleColorWarning());
+
+                return Array.Empty<string>();
+            }
+
+            // Zero servers → prompt.
+            Utility.Monitor.WriteLine(
+                "Core: No server specified.",
+                ConsoleColorWarning());
+
+            Console.Write(
+                "Enter server (-uoai / -uosp [-Siege[1|2]] / -uomo / -uols / -uose [-Season[1|2|...]] / -uoup): ");
+
+            string input = Console.ReadLine()?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                Utility.Monitor.WriteLine(
+                    "Core: No input received.",
+                    ConsoleColorWarning());
+
+                return Array.Empty<string>();
+            }
+
+            string[] promptTokens = input.Split(
+                new[] { ' ', '\t', ',' },
+                StringSplitOptions.RemoveEmptyEntries);
+
+            int newServerCount = CountServers(promptTokens);
+
+            if (newServerCount == 0)
+            {
+                Utility.Monitor.WriteLine(
+                    "Core: No valid server selected from prompt.",
+                    ConsoleColorWarning());
+
+                return Array.Empty<string>();
+            }
+
+            if (newServerCount > 1)
+            {
+                Utility.Monitor.WriteLine(
+                    "Core: Too many servers selected from prompt.",
+                    ConsoleColorWarning());
+
+                return Array.Empty<string>();
+            }
+
+            return effectiveArgs.Concat(promptTokens).ToArray();
+        }
+
+        /*
+         * AddGMNSwitches
+         *
+         * Provides an out-of-band mechanism for supplying temporary startup switches
+         * to one or more shards without modifying their individual launch scripts.
+         *
+         * Additional switches are read from \GMN\switches.txt on the current drive
+         * and presented to the administrator before being applied.
+         *
+         *      (A)pply  - append the switches to this shard's command line
+         *      (S)kip   - ignore the switches for this shard
+         *      (D)elete - delete switches.txt and globally retire the switches
+         *
+         * The file itself is authoritative. Before applying previously-read switches,
+         * its existence is checked again. This allows one shard to delete the file
+         * while other shards are waiting at the prompt; those shards will then ignore
+         * their cached copy regardless of the administrator's response.
+         *
+         * File deletion is retried briefly to tolerate another shard concurrently
+         * reading the file.
+         *
+         * Intended primarily for temporary migration/transition switches.
+         */
+        private static string[] AddGMNSwitches(string[] tokens)
+        {
+            try
+            {
+                string? root = Path.GetPathRoot(Environment.CurrentDirectory);
+                string path = Path.Combine(root, "GMN", "switches.txt");
+
+                if (!File.Exists(path))
+                    return tokens;
+
+                string[] lines = File.ReadAllLines(path);
+
+                List<string> switches = new List<string>();
+
+                foreach (string line in lines)
+                {
+                    string text = line.Trim();
+
+                    if (string.IsNullOrEmpty(text))
+                        continue;
+
+                    switches.AddRange(
+                        text.Split(
+                            new char[] { ' ', '\t' },
+                            StringSplitOptions.RemoveEmptyEntries));
+                }
+
+                if (switches.Count == 0)
+                    return tokens;
+
+                Utility.Monitor.WriteLine(
+                    $"Additional startup switches found in {path}:",
+                    ConsoleColor.Yellow);
+
+                foreach (string value in switches)
+                {
+                    Utility.Monitor.WriteLine(
+                        $"  {value}",
+                        ConsoleColor.Yellow);
+                }
+
+                Utility.Monitor.WriteLine(
+                    "",
+                    ConsoleColor.Yellow);
+
+                Utility.Monitor.WriteLine(
+                    "(A)pply, (S)kip, or (D)elete these startup switches?",
+                    ConsoleColor.Yellow);
+
+                while (true)
+                {
+                    ConsoleKeyInfo key = Console.ReadKey(intercept: true);
+
+                    switch (char.ToUpperInvariant(key.KeyChar))
+                    {
+                        case 'A':
+                            {
+                                Utility.Monitor.WriteLine(
+                                    "Apply selected.",
+                                    ConsoleColor.Green);
+
+                                // The file is authoritative. Another shard may have
+                                // deleted it while this shard was waiting for input.
+                                if (!File.Exists(path))
+                                {
+                                    Utility.Monitor.WriteLine(
+                                        "Startup switches file has been deleted; switches will NOT be applied.",
+                                        ConsoleColor.Yellow);
+
+                                    return tokens;
+                                }
+
+                                List<string> result = new List<string>(tokens);
+
+                                foreach (string value in switches)
+                                {
+                                    string clean = value.TrimStart('-');
+
+                                    bool exists = result.Any(token =>
+                                        string.Equals(
+                                            token.TrimStart('-'),
+                                            clean,
+                                            StringComparison.OrdinalIgnoreCase));
+
+                                    if (exists)
+                                    {
+                                        Utility.Monitor.WriteLine(
+                                            $"  {value} already present; skipped.",
+                                            ConsoleColor.Yellow);
+
+                                        continue;
+                                    }
+
+                                    result.Add(value);
+                                }
+
+                                Utility.Monitor.WriteLine(
+                                    "Additional startup switches applied.",
+                                    ConsoleColor.Green);
+
+                                return result.ToArray();
+                            }
+
+                        case 'S':
+                            {
+                                Utility.Monitor.WriteLine(
+                                    "Skip selected; additional startup switches will NOT be applied.",
+                                    ConsoleColor.Yellow);
+
+                                return tokens;
+                            }
+
+                        case 'D':
+                            {
+                                Utility.Monitor.WriteLine(
+                                    "Delete selected; retiring additional startup switches.",
+                                    ConsoleColor.Yellow);
+
+                                const int retries = 10;
+                                const int delay = 100;
+
+                                for (int attempt = 0; attempt < retries; attempt++)
+                                {
+                                    try
+                                    {
+                                        if (File.Exists(path))
+                                            File.Delete(path);
+
+                                        if (!File.Exists(path))
+                                        {
+                                            Utility.Monitor.WriteLine(
+                                                $"Deleted {path}",
+                                                ConsoleColor.Green);
+
+                                            return tokens;
+                                        }
+                                    }
+                                    catch (IOException)
+                                    {
+                                        // Another shard may momentarily be reading the file.
+                                    }
+                                    catch (UnauthorizedAccessException)
+                                    {
+                                        // May also be transient; retry before giving up.
+                                    }
+
+                                    System.Threading.Thread.Sleep(delay);
+                                }
+
+                                Utility.Monitor.WriteLine(
+                                    $"Unable to delete {path}; startup switches remain active.",
+                                    ConsoleColor.Red);
+
+                                return tokens;
+                            }
+
+                        default:
+                            {
+                                Utility.Monitor.WriteLine(
+                                    "Please enter (A)pply, (S)kip, or (D)elete.",
+                                    ConsoleColor.Yellow);
+
+                                break;
+                            }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                EventSink.InvokeLogException(new LogExceptionEventArgs(ex));
+                return tokens;
+            }
+        }
+        /// <summary>
+        /// Parses tokens and sets flags. Returns number of servers activated in this call.
+        /// Normalizes arguments to always use -X format when appending to Arguments.
+        /// </summary>
+        private static void SetSwitches(string[] tokens)
+        {
+            foreach (string raw in tokens)
+            {
+                // Normalize to lowercase for comparison, but keep original for appending
+                string token = raw.Trim();
+                string lower = token.ToLowerInvariant();
+
+                // Strip leading - for comparison if present
+                string clean = lower.StartsWith("-") ? lower.Substring(1) : lower;
+
+                // ── General / config flags ─────────────────────────────────────
+                if (lower == "-service") m_Service = true;
+                else if (lower == "-profile") Profiling = true;
+                else if (lower == "-haltonwarning") m_HaltOnWarning = true;
+                else if (lower == "-vb") m_VBdotNET = true;
+                else if (lower == "-migratepatchhistory") MigratePatchHistory = true;
+                else if (lower == "-usedb") m_useLoginDB = true;
+                else if (lower == "-uotc") m_GMNTC_CFG = true;
+                else if (lower == "-uopt") m_Tribute_CFG = true;
+                else if (lower == "-norp") m_USERP_CFG = false;
+                else if (lower == "-uoev") m_GMNEV_CFG = true;
+                else if (lower == "-build") m_Building = true;
+                else if (lower == "-nopatch") m_Patching = false;
+                else if (lower == "-saves") m_EnableDbgSaves = true;
+                else if (lower == "-uobeta") m_GMNBETA_CFG = true;
+                else if (lower == "-restarted") m_Restarted = true;
+                else if (lower == "-crashed")
+                {
+                    m_CrashRecovery = true;
+                    Utility.PushColor(ConsoleColor.Red);
+                }
+
+                // ── uos2 is only meaningful with uosp ──────────────────────────
+                else if (clean == "uos2" || lower == "-uos2")
+                {
+                    Core.Halt("uos2 is obsolete. Use -Siege[1|2] instead");
+                }
+
+                // ── Servers (only count real server selection) ─────────────────
+                else if (clean == "uols" || lower == "-uols")
+                {
+                    RuleSets.GMNLS_SVR = true;
+                }
+                else if (clean == "uoai" || lower == "-uoai")
+                {
+                    RuleSets.GMNAI_SVR = true;
+                }
+                else if (clean == "uosp" || lower == "-uosp")
+                {
+                    RuleSets.GMNSP_SVR = true;
+                }
+                else if (clean == "uomo" || lower == "-uomo")
+                {
+                    RuleSets.GMNMO_SVR = true;
+                }
+                else if (clean == "uose" || lower == "-uose")
+                {
+                    RuleSets.GMNSE_SVR = true;
+                }
+                else if (clean == "uoup" || lower == "-uoup")
+                {
+                    RuleSets.GMNUP_SVR = true;
+                }
+            }
+        }
+        private static int CountServers(string[] tokens)
+        {
+            int serverCount = 0;
+
+            foreach (string raw in tokens)
+            {
+                string clean = raw.Trim().TrimStart('-').ToLowerInvariant();
+
+                if (clean == "uols" ||
+                    clean == "uoai" ||
+                    clean == "uosp" ||
+                    clean == "uomo" ||
+                    clean == "uose" ||
+                    clean == "uoup")
+                {
+                    serverCount++;
+                }
+            }
+
+            return serverCount;
+        }
         public static ConsoleColor ConsoleColorEnabled(bool enabled)
         {
             if (enabled)
@@ -1797,8 +2483,8 @@ namespace Server
             {
                 File.Copy("Data/Ports.json", "./Ports.json");
             }
-            catch 
-            { 
+            catch
+            {
                 return false;
             }
             return true;
@@ -1809,11 +2495,14 @@ namespace Server
             {
                 int port;
                 port = SocketOptions.AngelIslandPort;
-                port = SocketOptions.TestCenterPort;
                 port = SocketOptions.SiegePerilousPort;
                 port = SocketOptions.MortalisPort;
-                port = SocketOptions.RenaissancePort;
+                port = SocketOptions.SeasonsPort;
+                port = SocketOptions.UpheavalPort;
+
                 port = SocketOptions.EventShardPort;
+                port = SocketOptions.TestCenterPort;
+
                 port = SocketOptions.LoginServerPortBase;
             }
             catch
@@ -1824,16 +2513,16 @@ namespace Server
         }
         public static bool EmailCheck()
         {
-            string noreply_password = Environment.GetEnvironmentVariable("AI.NOREPLY.PASSWORD");                // = (your email password. For this I use an AppPassword generated by Google)
-            string noreply_address = Environment.GetEnvironmentVariable("AI.NOREPLY.ADDRESS");                  // = example: noreply @game-master.net
-            string email_host = Environment.GetEnvironmentVariable("AI.EMAIL.HOST");                            //  = example: smtp.gmail.com
-            string email_user = Environment.GetEnvironmentVariable("AI.EMAIL.USER");                            //  = example: luke.tomasello@gmail.com
-            string email_port = Environment.GetEnvironmentVariable("AI.EMAIL.HOST.PORT");                       //  = 587
-            string email_accounting = Environment.GetEnvironmentVariable("AI.EMAIL.ACCOUNTING");                // = example: aiaccounting @game - master.net    // new account created etc.
-            string email_announcements = Environment.GetEnvironmentVariable("AI.EMAIL.ANNOUNCEMENTS");          // = announcements@game-master.net				// announce shard wide events
-            string email_devnotify = Environment.GetEnvironmentVariable("AI.EMAIL.DEVNOTIFY");                  // = devnotify@game-master.net					// sent on server crash
-            string email_distlist_password = Environment.GetEnvironmentVariable("AI.EMAIL.DISTLIST.PASSWORD");  //  = (your email password.For this I use an AppPassword generated by Google) ;
-            string email_shardowner = Environment.GetEnvironmentVariable("AI.EMAIL.SHARDOWNER");                // = shard owners email address, certain private information
+            string? noreply_password = Environment.GetEnvironmentVariable("AI.NOREPLY.PASSWORD");                // = (your email password. For this I use an AppPassword generated by Google)
+            string? noreply_address = Environment.GetEnvironmentVariable("AI.NOREPLY.ADDRESS");                  // = example: noreply @game-master.net
+            string? email_host = Environment.GetEnvironmentVariable("AI.EMAIL.HOST");                            //  = example: smtp.gmail.com
+            string? email_user = Environment.GetEnvironmentVariable("AI.EMAIL.USER");                            //  = example: luke.tomasello@gmail.com
+            string? email_port = Environment.GetEnvironmentVariable("AI.EMAIL.HOST.PORT");                       //  = 587
+            string? email_accounting = Environment.GetEnvironmentVariable("AI.EMAIL.ACCOUNTING");                // = example: aiaccounting @game - master.net    // new account created etc.
+            string? email_announcements = Environment.GetEnvironmentVariable("AI.EMAIL.ANNOUNCEMENTS");          // = announcements@game-master.net				// announce shard wide events
+            string? email_devnotify = Environment.GetEnvironmentVariable("AI.EMAIL.DEVNOTIFY");                  // = devnotify@game-master.net					// sent on server crash
+            string? email_distlist_password = Environment.GetEnvironmentVariable("AI.EMAIL.DISTLIST.PASSWORD");  //  = (your email password.For this I use an AppPassword generated by Google) ;
+            string? email_shardowner = Environment.GetEnvironmentVariable("AI.EMAIL.SHARDOWNER");                // = shard owners email address, certain private information
 
             if (noreply_password == null || noreply_address == null || email_host == null || email_user == null || email_port == null ||
                 email_accounting == null || email_announcements == null || email_devnotify == null || email_distlist_password == null || email_shardowner == null)
@@ -1845,8 +2534,8 @@ namespace Server
         }
         public static bool GeoIPCheck()
         {
-            string MMAccountId = Environment.GetEnvironmentVariable("AI.MMAccountId");
-            string MMlicenseKey = Environment.GetEnvironmentVariable("AI.MMlicenseKey");
+            string? MMAccountId = Environment.GetEnvironmentVariable("AI.MMAccountId");
+            string? MMlicenseKey = Environment.GetEnvironmentVariable("AI.MMlicenseKey");
 
             if (MMAccountId == null || MMlicenseKey == null)
             {
@@ -1956,7 +2645,7 @@ namespace Server
 
         public class AIWorldBoot
         {
-            Assembly m_scripts = null;
+            Assembly? m_scripts = null;
             ArrayList m_invoke = new ArrayList();
             Type[] m_types;
             public AIWorldBoot()
@@ -1970,7 +2659,7 @@ namespace Server
             {
                 for (int i = 0; i < m_types.Length; ++i)
                 {
-                    MethodInfo m = m_types[i].GetMethod("Configure", BindingFlags.Static | BindingFlags.Public);
+                    MethodInfo? m = m_types[i].GetMethod("Configure", BindingFlags.Static | BindingFlags.Public);
 
                     if (m != null)
                         m_invoke.Add(m);
@@ -2010,7 +2699,7 @@ namespace Server
             {
                 for (int i = 0; i < m_types.Length; ++i)
                 {
-                    MethodInfo m = m_types[i].GetMethod("Initialize", BindingFlags.Static | BindingFlags.Public);
+                    MethodInfo? m = m_types[i].GetMethod("Initialize", BindingFlags.Static | BindingFlags.Public);
 
                     if (m != null)
                         m_invoke.Add(m);
@@ -2021,6 +2710,19 @@ namespace Server
                 for (int i = 0; i < m_invoke.Count; ++i)
                     ((MethodInfo)m_invoke[i]).Invoke(null, null);
             }
+        }
+
+        public static void Halt(string message, int exitCode = 1)
+        {
+            Core.LoggerShortcuts.BootError(string.Format(message));
+
+            if (Environment.UserInteractive)
+            {
+                Utility.Monitor.WriteLine("Press any key to exit...", ConsoleColor.Red);
+                Console.ReadKey(true);
+            }
+
+            Environment.Exit(exitCode);
         }
     }
 
@@ -2060,7 +2762,7 @@ namespace Server
             }
         }
 
-        public override void Write(string str)
+        public override void Write(string? str)
         {
             using (StreamWriter writer = new StreamWriter(new FileStream(m_FileName, FileMode.Append, FileAccess.Write, FileShare.Read)))
             {
@@ -2073,7 +2775,7 @@ namespace Server
             }
         }
 
-        public override void WriteLine(string line)
+        public override void WriteLine(string? line)
         {
             using (StreamWriter writer = new StreamWriter(new FileStream(m_FileName, FileMode.Append, FileAccess.Write, FileShare.Read)))
             {
@@ -2118,13 +2820,13 @@ namespace Server
                 ((TextWriter)m_Streams[i]).Write(ch);
         }
 
-        public override void WriteLine(string line)
+        public override void WriteLine(string? line)
         {
             for (int i = 0; i < m_Streams.Count; i++)
                 ((TextWriter)m_Streams[i]).WriteLine(line);
         }
 
-        public override void WriteLine(string line, params object[] args)
+        public override void WriteLine(string line, params object?[] args)
         {
             WriteLine(string.Format(line, args));
         }

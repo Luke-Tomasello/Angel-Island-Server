@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,29 +76,16 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-                PackGold(0, 25);
+            // http://web.archive.org/web/20020214230233/uo.stratics.com/hunters/bullfrog.shtml
+            // 4 Hides (carved)
+
+            if (Spawning)
+            {
+
+            }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020214230233/uo.stratics.com/hunters/bullfrog.shtml
-                    // 4 Hides (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Poor);
-                }
             }
-
-
         }
 
         public override void Serialize(GenericWriter writer)

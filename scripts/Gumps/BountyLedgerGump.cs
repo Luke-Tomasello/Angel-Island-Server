@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -44,8 +44,8 @@
  *
  */
 
-using Server.BountySystem;
 using Server.Diagnostics;
+using Server.Engines;
 using Server.Items;
 using Server.Mobiles;
 using Server.Network;
@@ -125,7 +125,7 @@ namespace Server.Gumps
 
                     for (int i = 0; i < 16; ++i)
                     {
-                        string desc;
+                        string? desc;
                         int hue;
 
                         if (i < entries.Count)
@@ -176,7 +176,7 @@ namespace Server.Gumps
 
             if (index < m_Book.Entries.Count)
             {
-                LedgerEntry e = (LedgerEntry)m_Book.Entries[index];
+                LedgerEntry? e = (LedgerEntry?)m_Book.Entries[index];
 
                 name = GetName(((Mobile)e.Mob).Name);
 
@@ -300,8 +300,8 @@ namespace Server.Gumps
 
                 if (index >= 0 && index < m_Book.Entries.Count)
                 {
-                    LedgerEntry e = (LedgerEntry)m_Book.Entries[index];
-                    Mobile target = ((LedgerEntry)m_Book.Entries[index]).Mob;
+                    LedgerEntry? e = (LedgerEntry?)m_Book.Entries[index];
+                    Mobile? target = ((LedgerEntry)m_Book.Entries[index]).Mob;
 
                     switch (type)
                     {
@@ -631,7 +631,7 @@ namespace Server.Gumps
             else if (target != null && target is Corpse)
             {
                 // Looters ----
-                if (from.CheckTargetSkill(SkillName.Forensics, target, 25.0, 100.0, new object[2] { (target as Corpse).Owner, null } /*contextObj*/))
+                if (from.CheckTargetSkill(SkillName.Forensics, target, 25.0, 100.0, new object?[2] { (target as Corpse).Owner, null } /*contextObj*/))
                 {
                     Corpse c = (Corpse)target;
                     ArrayList looters = new ArrayList();

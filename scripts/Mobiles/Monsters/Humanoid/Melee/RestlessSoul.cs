@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -94,7 +94,7 @@ namespace Server.Mobiles
 
         public override bool IsEnemy(Mobile m, RelationshipFilter filter)
         {
-            PlayerMobile player = m as PlayerMobile;
+            PlayerMobile? player = m as PlayerMobile;
 
             if (player != null && Map == Map.Trammel && X >= 5199 && X <= 5271 && Y >= 1812 && Y <= 1865) // Schmendrick's cave
             {
@@ -116,24 +116,17 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-                PackGold(0, 25);
+            // http://web.archive.org/web/20020214225651/uo.stratics.com/hunters/restlesssoul.shtml
+            // Loot: None (no gold, no items)
+            // Cut Up: None
+
+            if (Spawning)
+            {
+                // No gold
+            }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // non era
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Poor);
-                }
+                // No loot
             }
         }
 

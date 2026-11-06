@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -25,7 +25,6 @@
  *      Check if the player is in a BadRegion (Prison or Jail)
  */
 
-using System;
 using System.Collections;
 
 namespace Server.Engines.Chat
@@ -33,7 +32,7 @@ namespace Server.Engines.Chat
     public class Channel
     {
         private string m_Name;
-        private string m_Password;
+        private string? m_Password;
         private ArrayList m_Users, m_Banned, m_Moderators, m_Voices;
         private bool m_VoiceRestricted;
         private bool m_AlwaysAvailable;
@@ -48,7 +47,7 @@ namespace Server.Engines.Chat
             m_Voices = new ArrayList();
         }
 
-        public Channel(string name, string password)
+        public Channel(string name, string? password)
             : this(name)
         {
             m_Password = password;
@@ -69,7 +68,7 @@ namespace Server.Engines.Chat
             }
         }
 
-        public string Password
+        public string? Password
         {
             get
             {
@@ -77,7 +76,7 @@ namespace Server.Engines.Chat
             }
             set
             {
-                string newValue = null;
+                string? newValue = null;
 
                 if (value != null)
                 {
@@ -108,7 +107,7 @@ namespace Server.Engines.Chat
 
         public bool BadRegion(ChatUser user)
         {
-            if (user.Mobile.Region != null && user.Mobile.Region.IsAngelIslandRules || user.Mobile.Region.IsJailRules)
+            if (user.Mobile.Region != null && user.Mobile.Region.IsPrisonRules || user.Mobile.Region.IsJailRules)
                 return true;
             return false;
         }
@@ -122,12 +121,12 @@ namespace Server.Engines.Chat
             return m_Voices.Contains(user);
         }
 
-        public bool ValidatePassword(string password)
+        public bool ValidatePassword(string? password)
         {
             return (m_Password == null || Insensitive.Equals(m_Password, password));
         }
 
-        public bool ValidateModerator(ChatUser user)
+        public bool ValidateModerator(ChatUser? user)
         {
             if (user != null && !IsModerator(user))
             {
@@ -138,7 +137,7 @@ namespace Server.Engines.Chat
             return true;
         }
 
-        public bool ValidateAccess(ChatUser from, ChatUser target)
+        public bool ValidateAccess(ChatUser? from, ChatUser target)
         {
             if (from != null && target != null && from.Mobile.AccessLevel < target.Mobile.AccessLevel)
             {
@@ -154,7 +153,7 @@ namespace Server.Engines.Chat
             return AddUser(user, null);
         }
 
-        public bool AddUser(ChatUser user, string password)
+        public bool AddUser(ChatUser user, string? password)
         {
             if (Contains(user))
             {
@@ -219,7 +218,7 @@ namespace Server.Engines.Chat
             AddBan(user, null);
         }
 
-        public void AddBan(ChatUser user, ChatUser moderator)
+        public void AddBan(ChatUser user, ChatUser? moderator)
         {
             if (!ValidateModerator(moderator) || !ValidateAccess(moderator, user))
                 return;
@@ -241,12 +240,12 @@ namespace Server.Engines.Chat
             Kick(user, null);
         }
 
-        public void Kick(ChatUser user, ChatUser moderator)
+        public void Kick(ChatUser user, ChatUser? moderator)
         {
             Kick(user, moderator, false);
         }
 
-        public void Kick(ChatUser user, ChatUser moderator, bool wasBanned)
+        public void Kick(ChatUser user, ChatUser? moderator, bool wasBanned)
         {
             if (!ValidateModerator(moderator) || !ValidateAccess(moderator, user))
                 return;
@@ -305,7 +304,7 @@ namespace Server.Engines.Chat
             AddVoiced(user, null);
         }
 
-        public void AddVoiced(ChatUser user, ChatUser moderator)
+        public void AddVoiced(ChatUser user, ChatUser? moderator)
         {
             if (!ValidateModerator(moderator))
                 return;
@@ -344,7 +343,7 @@ namespace Server.Engines.Chat
             AddModerator(user, null);
         }
 
-        public void AddModerator(ChatUser user, ChatUser moderator)
+        public void AddModerator(ChatUser user, ChatUser? moderator)
         {
             if (!ValidateModerator(moderator))
                 return;
@@ -369,7 +368,7 @@ namespace Server.Engines.Chat
             RemoveModerator(user, null);
         }
 
-        public void RemoveModerator(ChatUser user, ChatUser moderator)
+        public void RemoveModerator(ChatUser user, ChatUser? moderator)
         {
             if (!ValidateModerator(moderator) || !ValidateAccess(moderator, user))
                 return;
@@ -411,11 +410,11 @@ namespace Server.Engines.Chat
             SendMessage(number, initiator, param1, null);
         }
 
-        public void SendMessage(int number, ChatUser initiator, string param1, string param2)
+        public void SendMessage(int number, ChatUser? initiator, string? param1, string? param2)
         {
             for (int i = 0; i < m_Users.Count; ++i)
             {
-                ChatUser user = (ChatUser)m_Users[i];
+                ChatUser? user = (ChatUser?)m_Users[i];
 
                 if (user == initiator)
                     continue;
@@ -431,7 +430,7 @@ namespace Server.Engines.Chat
         {
             for (int i = 0; i < m_Users.Count; ++i)
             {
-                ChatUser user = (ChatUser)m_Users[i];
+                ChatUser? user = (ChatUser?)m_Users[i];
 
                 if (user.IsIgnored(from))
                     continue;
@@ -468,11 +467,11 @@ namespace Server.Engines.Chat
             SendCommand(command, initiator, param1, null);
         }
 
-        public void SendCommand(ChatCommand command, ChatUser initiator, string param1, string param2)
+        public void SendCommand(ChatCommand command, ChatUser? initiator, string? param1, string? param2)
         {
             for (int i = 0; i < m_Users.Count; ++i)
             {
-                ChatUser user = (ChatUser)m_Users[i];
+                ChatUser? user = (ChatUser?)m_Users[i];
 
                 if (user == initiator)
                     continue;
@@ -488,7 +487,7 @@ namespace Server.Engines.Chat
         {
             for (int i = 0; i < m_Users.Count; ++i)
             {
-                ChatUser user = (ChatUser)m_Users[i];
+                ChatUser? user = (ChatUser?)m_Users[i];
 
                 ChatSystem.SendCommandTo(to.Mobile, ChatCommand.AddUserToChannel, user.GetColorCharacter() + user.Username);
             }
@@ -508,7 +507,7 @@ namespace Server.Engines.Chat
         {
             for (int i = 0; i < m_Channels.Count; ++i)
             {
-                Channel channel = (Channel)m_Channels[i];
+                Channel? channel = (Channel?)m_Channels[i];
 
                 if (!channel.IsBanned(user))
                     ChatSystem.SendCommandTo(user.Mobile, ChatCommand.AddChannel, channel.Name, "0");
@@ -520,9 +519,9 @@ namespace Server.Engines.Chat
             return AddChannel(name, null);
         }
 
-        public static Channel AddChannel(string name, string password)
+        public static Channel AddChannel(string name, string? password)
         {
-            Channel channel = FindChannelByName(name);
+            Channel? channel = FindChannelByName(name);
 
             if (channel == null)
             {
@@ -540,7 +539,7 @@ namespace Server.Engines.Chat
             RemoveChannel(FindChannelByName(name));
         }
 
-        public static void RemoveChannel(Channel channel)
+        public static void RemoveChannel(Channel? channel)
         {
             if (channel == null)
                 return;
@@ -556,11 +555,11 @@ namespace Server.Engines.Chat
             }
         }
 
-        public static Channel FindChannelByName(string name)
+        public static Channel? FindChannelByName(string name)
         {
             for (int i = 0; i < m_Channels.Count; ++i)
             {
-                Channel channel = (Channel)m_Channels[i];
+                Channel? channel = (Channel?)m_Channels[i];
 
                 if (channel.m_Name == name)
                     return channel;

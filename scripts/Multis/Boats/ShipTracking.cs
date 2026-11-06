@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,14 +77,14 @@ namespace Server.Multis
 
             if (Insensitive.Equals(e.Speech, "start tracking"))
             {
-                BaseBoat boat = BaseBoat.FindBoatAt(m);
+                BaseBoat? boat = BaseBoat.FindBoatAt(m);
 
                 if (boat != null && !IsTracking(boat, m) && ValidateTracker(boat, m))
                     AddTracker(boat, m);
             }
             else if (Insensitive.Equals(e.Speech, "stop tracking"))
             {
-                BaseBoat boat = BaseBoat.FindBoatAt(m);
+                BaseBoat? boat = BaseBoat.FindBoatAt(m);
 
                 if (boat != null)
                     BeginRemoveTracker(boat, m);
@@ -106,7 +106,7 @@ namespace Server.Multis
 
         private static bool IsTracking(BaseBoat boat, Mobile m)
         {
-            TrackTimer timer;
+            TrackTimer? timer;
 
             return m_Timers.TryGetValue(boat, out timer) && timer.Trackers.ContainsKey(m);
         }
@@ -119,7 +119,7 @@ namespace Server.Multis
                 return false;
             }
 
-            MapItem mapItem = null;
+            MapItem? mapItem = null;
 
             if (NeedsPackMap)
             {
@@ -146,7 +146,7 @@ namespace Server.Multis
 
             RemoveTracker(boat, m); // sanity
 
-            TrackTimer timer;
+            TrackTimer? timer;
 
             if (!m_Timers.TryGetValue(boat, out timer))
                 (m_Timers[boat] = timer = new TrackTimer(boat)).Start();
@@ -159,7 +159,7 @@ namespace Server.Multis
 
         private static void BeginRemoveTracker(BaseBoat boat, Mobile m)
         {
-            TrackTimer timer;
+            TrackTimer? timer;
 
             if (!m_Timers.TryGetValue(boat, out timer) || !timer.Trackers.ContainsKey(m))
                 return;
@@ -170,12 +170,12 @@ namespace Server.Multis
 
         private static bool RemoveTracker(BaseBoat boat, Mobile m)
         {
-            TrackTimer timer;
+            TrackTimer? timer;
 
             if (!m_Timers.TryGetValue(boat, out timer))
                 return false;
 
-            MapItem mapItem;
+            MapItem? mapItem;
 
             if (!timer.Trackers.TryGetValue(m, out mapItem))
                 return false;
@@ -351,7 +351,7 @@ namespace Server.Multis
             }
         }
 
-        private static MapItem RegisterMapItem(Mobile from, MapItem mapItem)
+        private static MapItem RegisterMapItem(Mobile from, MapItem? mapItem)
         {
             if (mapItem == null)
             {
@@ -371,7 +371,7 @@ namespace Server.Multis
 
         private class TransientMapItem : MapItem
         {
-            private static TransientMapItem[] m_Pool;
+            private static TransientMapItem[]? m_Pool;
             private static int m_Index = -1;
 
             public static MapItem Get()

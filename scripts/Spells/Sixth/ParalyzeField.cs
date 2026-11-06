@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -125,8 +125,8 @@ namespace Server.Spells.Sixth
         [DispellableField]
         private class InternalItem : Item
         {
-            private Timer m_Timer;
-            private Mobile m_Caster;
+            private Timer? m_Timer;
+            private Mobile? m_Caster;
             private DateTime m_End;
 
             public override bool BlocksFit { get { return true; } }

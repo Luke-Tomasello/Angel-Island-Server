@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,6 +19,8 @@
  *
  ***************************************************************************/
 
+using Server.Items;
+using Server.Mobiles;
 using System;
 
 namespace Server.Spells
@@ -69,7 +71,7 @@ namespace Server.Spells
 
         private static object[] m_Params = new object[2];
 
-        public static Spell NewSpell(int spellID, Mobile caster, Item scroll)
+        public static Spell? NewSpell(int spellID, Mobile caster, Item scrollOrWand)
         {
             if (spellID < 0 || spellID >= m_Types.Length)
                 return null;
@@ -79,8 +81,17 @@ namespace Server.Spells
             if (t == null)
                 return null;
 
+            // Season 2 disables player spellcasting.
+            if (Core.RuleSets.SeasonsRules(2) && caster is PlayerMobile)
+            {
+                if (scrollOrWand is Wand)
+                    caster.SendMessage("Player magic is disabled for this season.");
+                // otherwise they recieve a message from the caller
+                return null;
+            }
+
             m_Params[0] = caster;
-            m_Params[1] = scroll;
+            m_Params[1] = scrollOrWand;
 
             return (Spell)Activator.CreateInstance(t, m_Params);
         }
@@ -99,7 +110,7 @@ namespace Server.Spells
                 "Chivalry"
             };
 
-        public static Spell NewSpell(string name, Mobile caster, Item scroll)
+        public static Spell? NewSpell(string name, Mobile caster, Item scrollOrWand)
         {
             for (int i = 0; i < m_CircleNames.Length; ++i)
             {
@@ -108,7 +119,7 @@ namespace Server.Spells
                 if (t != null)
                 {
                     m_Params[0] = caster;
-                    m_Params[1] = scroll;
+                    m_Params[1] = scrollOrWand;
 
                     try
                     {

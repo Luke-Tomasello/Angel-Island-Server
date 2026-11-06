@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,29 @@
 
 /* Scripts\Engines\CronScheduler\CronTasks.cs
  * CHANGELOG:
+ *  10/31/2026, Adam
+ *      The end of the Pumpkin King event: ThePumpkinKingShutdownShell (Nov 1 3:00 AM Pacific, gated to 2026; 6 hours after
+ *      the last start, clear of the end of daylight saving time at 2:00 AM) calls ThePumpkinKingShutdown (on demand, [Run):
+ *      the champ engine at (1434, 1389, 0) stops (Running off, RestartTimer off) and its monsters are removed
+ *      (ClearMonsters), any town crier announcement is taken down, and the pumpkin patch grid spawner (PatchV259, Felucca
+ *      and Test Center) stops. A spawn nobody finished would otherwise run forever (it rolls back to level 0 and keeps
+ *      spawning). Each start (ThePumpkinKing) now also makes sure the pumpkin patch is running.
+ *  10/28/2026, Adam
+ *      ThePumpkinKingCrier (minute 55, Pacific): 5 minutes before each scheduled start, if the champ is not already running,
+ *      the town criers announce the invasion for 25 minutes (GlobalTownCrierEntryList).
+ *  10/28/2026, Adam
+ *      CThePumpkinKing: Halloween 2026. Every 5 hours from Oct 28 8:00 AM through Oct 31 (Pacific), the ChampEngine at
+ *      (1434, 1389, 0) gets RestartTimer off and, if not running, is set to ThePumpkinKing and started.
+ *      ThePumpkinKingShell (scheduled) does the window gating; ThePumpkinKing (on demand, [Run) does the work ungated.
+ *  10/27/2026, Adam
+ *      SpawnTypes enum removed: ChampHelpers finds the seasonal champs by DefinitionName (ChampNames).
+ *  10/24/2026, Adam (AIMusicSystem Phase 3, Stage 1)
+ *      CMusicConfigCleanup releases a deleted mobile's music context with SystemMusicPlayer.ReleaseContext() instead of
+ *      MusicConfig.Remove(), so the context's three virtual RazorInstruments are deleted rather than orphaned in internal storage.
+ *  10/18/2026, Adam (confinement Stage 5)
+ *      CJailClones runs TestCenterPolicy.Sweep (the same pending-violation and clone checks and penalties; someone already
+ *      confined is left there and a pending violation on them is recorded for staff). InmateManagement's parole kick asks
+ *      the release vetoes (ConfinementVetoes) first: a refused kick leaves the inmate where they are, GameMaster+ told.
  *  7/12/2023, Adam
  *      Calculate the largest stack of each gem held by players.
  *          The Treasure Hunter NPC will then base their demands on this number.
@@ -205,6 +228,8 @@ using Server.Accounting;				// Emailer
 using Server.Commands;
 using Server.Diagnostics;               // log helper
 using Server.Engines.ChampionSpawn;		// champs
+using Server.Engines.DataRecorder;
+using Server.Engines.Seasons;
 using Server.Guilds;
 using Server.Gumps;
 using Server.Items;
@@ -219,6 +244,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static Server.Accounting.Account;
 using static Server.Utility;
 // look here for cron specifications https://crontab.guru/
 namespace Server.Engines.CronScheduler
@@ -230,13 +256,36 @@ namespace Server.Engines.CronScheduler
             EventSink.WorldLoad += new Server.WorldLoadEventHandler(OnWorldLoad);
             EventSink.WorldSave += new Server.WorldSaveEventHandler(OnWorldSave);
         }
+
         public static void OnWorldLoad()
         {
             Console.WriteLine("World Load Cron Tasks...");
             // careful here... don't call anything that depends on other data stores having been loaded.
             // Leader board for example needs the accounts database to be loaded.
+
+            // On world load, ensure all patrol guards are repositioned to their spawner posts.
+            foreach (var m in World.Mobiles.Values)
+            {
+                PatrolGuard? guard = m as PatrolGuard;
+
+                if (guard == null)
+                    continue;
+
+                // for events, we may stash guards on the internal map
+                if (guard.IsIntMapStorage)
+                    continue;
+
+                Spawner spawner = guard.Spawner;
+
+                if (spawner == null || spawner.Map == null)
+                    continue;
+
+                guard.MoveToWorld(spawner.Location, spawner.Map);
+            }
+
             Console.WriteLine("World Load Cron Tasks Complete.");
         }
+
         public static void OnWorldSave(WorldSaveEventArgs e)
         {
             Console.WriteLine("World Save Cron Tasks...");
@@ -249,11 +298,12 @@ namespace Server.Engines.CronScheduler
             if (!Core.RuleSets.LoginServerRules())
             {
                 // make sure all our champ engines are present and accounted for
-                Cron.QueuePriorityTask(new CCheckChamps().CheckChamps);             // once on startup, and...
-                Cron.Register(new CCheckChamps().CheckChamps, "? 6 * * *");         // random minute of 6 o'clock hour
+                Cron.QueuePriorityTask(new CCheckChamps().CheckChamps); // once on startup, and...
+                Cron.Register(new CCheckChamps().CheckChamps, "? 6 * * *"); // random minute of 6 o'clock hour
 
                 // command for resetting all champs ([run resetchamps)
-                Cron.Register(new CResetChamps().ResetChamps, null);                // a NULL cron spec never runs, but is available for [Run <command>
+                Cron.Register(new CResetChamps().ResetChamps,
+                    null); // a NULL cron spec never runs, but is available for [Run <command>
             }
 
             // LoginServer special tasks
@@ -263,14 +313,8 @@ namespace Server.Engines.CronScheduler
                 // We simply wipe the LoginServer of everything every 24 hours
                 // We do it here since we have no ability to log in, and the 'shard' is likely a clone of some game-server
                 Utility.Monitor.WriteLine("Shard wipe in progress. This may take several minutes...", ConsoleColor.Red);
-                new CWipeShard().WipeShard();                                       // ASAP
-                Cron.Register(new CWipeShard().WipeShard, "* 3 * * *");             // 3 AM
-#if false
-                // Login Server AutoSave (accounts, ip exceptions, firewall)
-                double minutes = TimeSpan.FromMinutes(CoreAI.WorldSaveFrequency).TotalMinutes;
-                string autoSaveDelay = string.Format("*/{0} * * * *", (int)minutes);
-                Cron.Register(new CLSAutoSave().AutoSave, autoSaveDelay);
-#else
+                new CWipeShard().WipeShard(); // ASAP
+                Cron.Register(new CWipeShard().WipeShard, "* 3 * * *"); // 3 AM
                 /*
                  * 9/4/22, Adam
                  *   resuming normal saves for login in server.
@@ -281,16 +325,25 @@ namespace Server.Engines.CronScheduler
                 double minutes = TimeSpan.FromMinutes(CoreAI.WorldSaveFrequency).TotalMinutes;
                 string autoSaveDelay = string.Format("*/{0} * * * *", (int)minutes);
                 Cron.Register(new CAutoSave().AutoSave, autoSaveDelay);
-#endif
 
                 // Backup database cleanup - on demand
                 Cron.Register(new CBackupDatabaseCleanup().BackupDatabaseCleanup, null);
             }
             else
             {
+                // Cleanup wild creatures in houses - random minute of every hour
+                Cron.Register(new CHouseCreatureCleanup().HouseCreatureCleanup, "? * * * *"); // random minute of every hour
+
+                // Cleanup our Substitute mobiles - every 30 minutes
+                Cron.Register(new CSubstituteCleanup().SubstituteCleanup, "*/30 * * * *");
+
                 // kick players that are in violation of our machine limit (HardwareInfo,) but were able to slip through
                 //  due to the MachineInfo coming in after login, and during character creation - every 5 minutes
                 Cron.Register(new CKickPlayers().KickPlayers, "*/5 * * * *");
+
+                // jail player clones that have somehow exited the TestCenter region
+                //   - every 5 minutes
+                Cron.Register(new CJailClones().JailClones, "*/5 * * * *");
 
                 // Prison players that come to our shard over a Tor Exit Node.
                 //  Anonymous access like a VPN, Proxy, or other  anonymous access mechanism gets you watch listed.
@@ -316,7 +369,7 @@ namespace Server.Engines.CronScheduler
                 // Stable Charges - every 10 minutes
                 if (Core.RuleSets.AngelIslandRules())
                 {
-                    Cron.Register(new CStableCharge().StableCharge, "? 3 * * *");  // random minute of 3 o'clock hour
+                    Cron.Register(new CStableCharge().StableCharge, "? 3 * * *"); // random minute of 3 o'clock hour
                 }
                 // Auto add players to Fight Broker - every 10 minutes
                 // remove auto fightbroker feature as it's just too damn harsh
@@ -344,34 +397,42 @@ namespace Server.Engines.CronScheduler
                 Cron.Register(new CTownCrier().TownCrier, "*/10 * * * *");
 
                 #region Cleanup functions
+
                 // Account cleanup - daily (7:? AM)
-                Cron.Register(new CAccountCleanup().AccountCleanup, "? 7 * * *");           // random minute the 7th hour
+                Cron.Register(new CAccountCleanup().AccountCleanup, "? 7 * * *"); // random minute the 7th hour
 
                 // internal map mobile/item cleanup - every 60 minutes
-                Cron.Register(new CIntMapMobileCleanup().IntMapMobileCleanup, "? * * * *"); // random minute of every hour
+                Cron.Register(new CIntMapMobileCleanup().IntMapMobileCleanup,
+                    "? * * * *"); // random minute of every hour
 
-                Cron.Register(new CIntMapItemCleanup().IntMapItemCleanup, "? * * * *");     // random minute of every hour
+                Cron.Register(new CIntMapItemCleanup().IntMapItemCleanup, "? * * * *"); // random minute of every hour
 
                 // expire old mobiles - every 10 minutes
                 Cron.Register(new CMobileLifespanCleanup().MobileLifespanCleanup, "*/10 * * * *"); // every 10 minutes
 
                 // remove deleted mobiles from music config database - every 60 minutes
-                Cron.Register(new CMusicConfigCleanup().MusicConfigCleanup, "? * * * *");       // random minute of every hour
+                Cron.Register(new CMusicConfigCleanup().MusicConfigCleanup, "? * * * *"); // random minute of every hour
 
                 // every 24 hours cleanup orphaned guildstones (6:00 AM)
-                Cron.Register(new CGuildstoneCleanup().GuildstoneCleanup, "0 6 * * *");         // at exactly 6 (because players depend on this to loot the township.)
+                Cron.Register(new CGuildstoneCleanup().GuildstoneCleanup,
+                    "0 6 * * *"); // at exactly 6 (because players depend on this to loot the township.)
 
                 // every 24 hours cleanup orphaned Player NPCs (6:? AM)
-                Cron.Register(new CPlayerNPCCleanup().PlayerNPCCleanup, "? 6 * * *");           // random minute of the 6 o'clock hour
+                Cron.Register(new CPlayerNPCCleanup().PlayerNPCCleanup,
+                    "? 6 * * *"); // random minute of the 6 o'clock hour
 
                 // every 24 hours 'standard' cleanup (6:? AM)
-                Cron.Register(new CStandardCleanup().StandardCleanup, "? 6 * * *");             // random minute of the 6 o'clock hour
+                Cron.Register(new CStandardCleanup().StandardCleanup,
+                    "? 6 * * *"); // random minute of the 6 o'clock hour
 
                 // every 24 hours Strongbox cleanup (6:? AM)
-                Cron.Register(new CStrongboxCleanup().StrongboxCleanup, "? 6 * * *");           // random minute of the 6 o'clock hour
+                Cron.Register(new CStrongboxCleanup().StrongboxCleanup,
+                    "? 6 * * *"); // random minute of the 6 o'clock hour
+
                 #endregion Cleanup functions
+
                 // find players using the robot skills - every 60 minutes
-                Cron.Register(new CFindSkill().FindSkill, "? * * * *");                         // random minute of every hour
+                Cron.Register(new CFindSkill().FindSkill, "? * * * *"); // random minute of every hour
 
                 // Killer time cleanup - every 30 minutes
                 Cron.Register(new CKillerTimeCleanup().KillerTimeCleanup, "*/30 * * * *");
@@ -388,7 +449,7 @@ namespace Server.Engines.CronScheduler
                     if (Plants.PlantSystem.Enabled)
                     {
                         Utility.Monitor.WriteLine("Plant System Enabled.", ConsoleColor.Green);
-                        Cron.Register(new CPlantGrowth().PlantGrowth, "0 0 * * *");                 // every night at exactly midnight
+                        Cron.Register(new CPlantGrowth().PlantGrowth, "0 0 * * *"); // every night at exactly midnight
                     }
                 }
 
@@ -400,17 +461,17 @@ namespace Server.Engines.CronScheduler
                 //  4/28/23, Adam. Lets save this for a content patch. Loot will need to be adjusted.
                 if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.AllShards)
                 {
-                    Cron.Register(new COverlandSystem().OverlandSystem, "? * * * *");           // random minute of every hour
-                    Cron.Register(new CCountGems().CountGems, "0 */4 * * *");			        // every 4 hours
+                    Cron.Register(new COverlandSystem().OverlandSystem, "? * * * *"); // random minute of every hour
+                    Cron.Register(new CCountGems().CountGems, "0 */4 * * *"); // every 4 hours
                 }
 
                 // track staff owned items
-                Cron.Register(new CTrackStaffOwned().TrackStaffOwned, "0 */4 * * *");           // every 4 hours
+                Cron.Register(new CTrackStaffOwned().TrackStaffOwned, "0 */4 * * *"); // every 4 hours
 
                 // Dynamic camps - every 30 minutes
                 if (!Core.RuleSets.AngelIslandRules())
                 {
-                    Cron.Register(new CDynamicCampSystem().DynamicCampSystem, "*/30 * * * *");  // every 30 minutes
+                    Cron.Register(new CDynamicCampSystem().DynamicCampSystem, "*/30 * * * *"); // every 30 minutes
                 }
 
                 // Reload the Spawner Cache - daily (6:19 AM)
@@ -425,9 +486,11 @@ namespace Server.Engines.CronScheduler
                 //Cron.Register(new CTestJob().TestJob, "* * * * *");	
 
                 // email a report of weapon distribution among players
-                Cron.Register(new CWeaponDistribution().WeaponDistribution, "? 3 * * *");           // now random minute of 3 o'clock hour
+                Cron.Register(new CWeaponDistribution().WeaponDistribution,
+                    "? 3 * * *"); // now random minute of 3 o'clock hour
 
                 #region Automated Event System (Not on Siege, yet)
+
                 // for now, make AES Angel Island only
                 if (Core.RuleSets.AngelIslandRules())
                 {
@@ -436,38 +499,40 @@ namespace Server.Engines.CronScheduler
                     // Adam: turn off untill we have players :\
                     //if (Core.UOAI || Core.UOAR)
                     //Cron.Register(null, new CServerWarsAES().ServerWarsAES, "0 12 * * 6",
-                    //  true, new Cron.CronLimit(5, DayOfWeek.Saturday, Cron.CronLimit.isldom.must_not_be_ldom)/*, useGameTime: true*/);
+                    //  true, new Cron.CronLimit(5, DayOfWeek.Saturday, Cron.CronLimit.IsLastDayOfMonth.must_not_be_ldom)/*, useGameTime: true*/);
                     Cron.Register(new CServerWarsAES().ServerWarsAES, null); // on demand
 
                     // Town Invasion - Automated Event System (12:00 noon on 3rd Sunday)
                     // Note: set 24 hour advance notice
                     Cron.Register(new CTownInvasionAES().TownInvasionAES, "0 12 * * 6",
-                        true, new Cron.CronLimit(3, DayOfWeek.Saturday, Cron.CronLimit.isldom.must_not_be_ldom)/*, useGameTime: true*/);
-
-                    // Kin Ransom Quest - Automated Event System (12:00 noon on 4th Sunday)
-                    // Note: set 24 hour advance notice
-                    //Cron.Register(null, new CKinRansomAES().KinRansomAES, "0 12 * * 6",
-                    //  true, new Cron.CronLimit(4, DayOfWeek.Saturday, Cron.CronLimit.isldom.must_not_be_ldom)/*, useGameTime: true*/);
-                    Cron.Register(new CKinRansomAES().KinRansomAES, null); // on demand
+                        true,
+                        new Cron.CronLimit(3, DayOfWeek.Saturday,
+                            Cron.CronLimit.IsLastDayOfMonth.must_not_be_ldom) /*, useGameTime: true*/);
 
                     // Crazy Map Day - Automated Event System (12:00 noon on 5th Sunday)
                     // Note: set 24 hour advance notice
                     Cron.Register(new CCrazyMapDayAES().CrazyMapDayAES, "0 12 * * 6",
-                        true, new Cron.CronLimit(5, DayOfWeek.Saturday, Cron.CronLimit.isldom.must_not_be_ldom)/*, useGameTime: true*/);
+                        true,
+                        new Cron.CronLimit(5, DayOfWeek.Saturday,
+                            Cron.CronLimit.IsLastDayOfMonth.must_not_be_ldom) /*, useGameTime: true*/);
                 }
+
                 #endregion Automated Event System
+
                 // every 10 minutes collect account statistics
                 Cron.Register(new CAccountStatistics().AccountStatistics, "*/10 * * * *");
 
                 // every hour run through guild fealty checks
-                Cron.Register(new CGuildFealty().GuildFealty, "? * * * *");                         // random minute of each hour
+                Cron.Register(new CGuildFealty().GuildFealty, "? * * * *"); // random minute of each hour
 
                 // every hour run through PlayerQuestCleanup checks
                 //  10/15/22 Adam: Allowing this for all shards. I don't think it hurts the Siege experience.
                 if (Core.RuleSets.AngelIslandRules() || true)
                 {
-                    Cron.Register(new CPlayerQuestCleanup().PlayerQuestCleanup, "? * * * *");       // random minute of each hour
+                    Cron.Register(new CPlayerQuestCleanup().PlayerQuestCleanup,
+                        "? * * * *"); // random minute of each hour
                 }
+
                 //  10/15/22 Adam: Allowing this for all shards. I don't think it hurts the Siege experience.
                 if (Core.RuleSets.AngelIslandRules() || true)
                 {
@@ -476,10 +541,10 @@ namespace Server.Engines.CronScheduler
                 }
 
                 // every 24 hours rotate player command logs (12 AM - midnight)
-                Cron.Register(new CLogRotation().LogRotation, "0 0 * * *");                         // every night at exactly midnight
+                Cron.Register(new CLogRotation().LogRotation, "0 0 * * *"); // every night at exactly midnight
 
                 // every month archive logs (12 AM - midnight)
-                Cron.Register(new CLogArchive().LogArchive, "0 0 1 * *");                           // every month at exactly midnight
+                Cron.Register(new CLogArchive().LogArchive, "0 0 1 * *"); // every month at exactly midnight
 
                 // 8/21/21, Adam: not using any more. All backups are done server-side now.
                 // at 2AM backup the complete RunUO directory (~8min)
@@ -493,22 +558,25 @@ namespace Server.Engines.CronScheduler
 
                 //Townships
                 {
-                    Cron.Register(new CTownshipCharges().TownshipCharges, "0 0 * * *");        // 12:00 AM - midnight (visits rollover weekly, so we want to be as close as possible to the change in weeks)
-                    Cron.Register(new CTownshipWallDecay().TownshipWallDecay, "5 9 * * *");    // 9:05 AM every day
+                    Cron.Register(new CTownshipCharges().TownshipCharges,
+                        "0 0 * * *"); // 12:00 AM - midnight (visits rollover weekly, so we want to be as close as possible to the change in weeks)
+                    Cron.Register(new CTownshipWallDecay().TownshipWallDecay, "5 9 * * *"); // 9:05 AM every day
                     Cron.Register(new CTownshipItemDefrag().TownshipItemDefrag, "10 9 * * *"); // 9:10 AM every day
                 }
 
                 // WealthTracker - 3 AM daily
-                Cron.Register(new CWealthTracker().WealthTracker, "? 3 * * *");                 // random minute of the 3AM hour
+                Cron.Register(new CWealthTracker().WealthTracker, "? 3 * * *"); // random minute of the 3AM hour
 
                 // ConsumerPriceIndex - 3 AM daily
-                Cron.Register(new CConsumerPriceIndex().ConsumerPriceIndex, "? 3 * * *");       // random minute of the 3AM hour
+                Cron.Register(new CConsumerPriceIndex().ConsumerPriceIndex,
+                    "? 3 * * *"); // random minute of the 3AM hour
 
                 // need to ask Yoar about this. Didn't know we had Kin Factions!
                 //  if so, we'll probably want this for Siege as well
                 if (Core.RuleSets.AngelIslandRules())
                 {
                     #region KIN_FACTIONS
+
 #if KIN_FACTIONS
 			// Kin Sigils - bi-hourly 
 			Cron.Register(new CKinFactions().KinFactions, "0 */2 * * *");			// every 2 hours
@@ -516,38 +584,337 @@ namespace Server.Engines.CronScheduler
 			// Kin Logging - 1AM daily
 			Cron.Register(new CKinFactionsLogging().KinFactionsLogging, "0 1 * * *");		// 1 AM Every day
 #endif
+
                     #endregion KIN_FACTIONS
                 }
-                // 1/23/23, Adam: Probably okay for all shards. We'll leave it off for now. Maybe a content patch for later
-                if (Core.RuleSets.AngelIslandRules())
+
+                if (Core.RuleSets.AllShards)
                 {
                     // http://www.infoplease.com/ce6/weather/A0844225.html
-                    Cron.Register(new CSpringChamp().SpringChamp, "0 0 21 3 *");    // spring (vamp), about Mar. 21, (12:00 AM)
-                    Cron.Register(new CSummerChamp().SummerChamp, "0 0 22 6 *");    // summer (pirate), about June 22, (12:00 AM)
-                    Cron.Register(new CAutumnChamp().AutumnChamp, "0 0 23 9 *");    // autumn (bob), about Sept. 23, (12:00 AM)
-                    Cron.Register(new CWinterChamp().WinterChamp, "0 0 22 12 *");   // winter (Azothu), about Dec. 22, (12:00 AM)
+                    Cron.Register(new CSpringChamp().SpringChamp,
+                        "0 0 21 3 *"); // spring (vamp), about Mar. 21, (12:00 AM)
+                    Cron.Register(new CSummerChamp().SummerChamp,
+                        "0 0 22 6 *"); // summer (pirate), about June 22, (12:00 AM)
+                    Cron.Register(new CAutumnChamp().AutumnChamp,
+                        "0 0 23 9 *"); // autumn (bob), about Sept. 23, (12:00 AM)
+                    Cron.Register(new CWinterChamp().WinterChamp,
+                        "0 0 22 12 *"); // winter (Azothu), about Dec. 22, (12:00 AM)
+
+                    // Halloween 2026: The Pumpkin King, every 5 hours from Oct 28 8:00 AM through Oct 31 (Pacific)
+                    Cron.RegisterPacific(new CThePumpkinKing().ThePumpkinKingShell, "0 * * 10 *"); // hourly in October; the shell gates the window
+                    Cron.Register(new CThePumpkinKing().ThePumpkinKing, null); // on demand only ([Run ThePumpkinKing), no gating
+                    Cron.RegisterPacific(new CThePumpkinKing().ThePumpkinKingCrier, "55 * * 10 *"); // 5 minutes before each start: town criers, 25 minutes
+            Cron.RegisterPacific(new CThePumpkinKing().ThePumpkinKingShutdownShell, "0 3 1 11 *"); // Nov 1, 3:00 AM Pacific: the event ends (gated to 2026)
+            Cron.Register(new CThePumpkinKing().ThePumpkinKingShutdown, null); // on demand only ([Run ThePumpkinKingShutdown), no gating
+                }
+
+                if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+                {
+                    Cron.Register(
+                        new COrcEnemies().OrcEnemies,
+                        Core.Debug ? "*/5 * * * *" : "*/30 * * * *");
+                }
+
+                // seasonal wipe
+                if (Core.RuleSets.SeasonsRules())
+                {
+                    Cron.Register(new CSeasonalWipe().SeasonalWipe,
+                        "0 0 21 3 *"); // spring, Mar. 21, (12:00 AM)
+                    Cron.Register(new CSeasonalWipe().SeasonalWipe,
+                        "0 0 22 6 *"); // summer, June 22, (12:00 AM)
+                    Cron.Register(new CSeasonalWipe().SeasonalWipe,
+                        "0 0 23 9 *"); // autumn, Sept. 23, (12:00 AM)
+                    Cron.Register(new CSeasonalWipe().SeasonalWipe,
+                        "0 0 22 12 *"); // winter,Dec. 22, (12:00 AM)
+
+
+                    //// Fires at 11:10 AM Pacific time (direct – using Pacific helper)
+                    //Cron.RegisterPacific(new CTestJob().TestJob, "10 11 * * *");
+
+                    //// Fires at 11:10 AM Pacific time (but registered via Netherlands helper – offset spec)
+                    //Cron.RegisterNetherlands(new CTestJob().TestJob, "10 19 * * *"); // 19:10 NL = 11:10 Pacific
+
+                    //// Fires at 11:15 AM Pacific time (direct – using Pacific helper)
+                    //Cron.RegisterPacific(new CTestJob().TestJob, "15 11 * * *");
+
+                    //// Fires at 11:15 AM Pacific time (via Netherlands helper – offset spec)
+                    //Cron.RegisterNetherlands(new CTestJob().TestJob, "15 19 * * *"); // 19:15 NL = 11:15 Pacific
+
+                    /* Server Wars - Pacific Time (your local time) */
+
+                    // Pre-announcement / reminder at 6:30 PM Pacific every Friday
+                    Cron.RegisterPacific(
+                        new CServerWars().Notification,
+                        "30 18 * * 5" // 18:30 = 6:30 PM Pacific
+                    );
+
+                    // Main Server Wars start at 7:00 PM Pacific every Friday
+                    Cron.RegisterPacific(
+                        new CServerWars().ServerWars,
+                        "0 19 * * 5" // 19:00 = 7:00 PM Pacific
+                    );
+
+
+                    /* Server Wars - Netherlands Time (CET/CEST) */
+
+                    // Pre-announcement / reminder at 6:30 PM Netherlands local every Friday
+                    Cron.RegisterNetherlands(
+                        new CServerWars().Notification,
+                        "30 18 * * 5" // 18:30 local NL time
+                    );
+
+                    // Main Server Wars start at 7:00 PM Netherlands local every Friday
+                    Cron.RegisterNetherlands(
+                        new CServerWars().ServerWars,
+                        "0 19 * * 5" // 19:00 local NL time
+                    );
+
+                    //// Fires **immediately-ish** (or next minute after registration) — 35-minute warning / pre-announcement
+                    //Cron.RegisterPacific(
+                    //    new CServerWars().Notification,
+                    //    "* * * * *"   // every minute — just for testing today; change to a real spec after
+                    //);
+
+                    //// Fires 5 minutes after the notification — kicks off Server Wars with its built-in 5-min countdown
+                    //Cron.RegisterPacific(
+                    //    new CServerWars().ServerWars,
+                    //    "* * * * *"   // every minute — again, temporary for testing
+                    //);
                 }
 
                 // Check InmateManagement - every 15 minutes
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
                     Cron.Register(new CInmateManagement().InmateManagement, "*/15 * * * *");
+
             } // if not LoginServer
         }
     }
 
     /* ---------------------------------------------------------------------------------------------------
-	 * Above are the scheduled jobs, and below are the scheduled jobs' implementations.
-	 * Please follow convention!
-	 * The convention is:
-	 * 1. The class name for job Foo is CFoo, and the main wraper function in CFoo is Foo(), and the worker function is FooWorker().
-	 *    (This allows the built-in reporting system to accurately report what's running and when, and how long it took.)
-	 * 2. Each implementation is wrapped in a so named #region
-	 * 3. Each implementation displays the elapsed time and any other meaningful status. (No spamming the console)
-	 * 4. Even though the CronScheduler wraps all calls in a try-catch block, you should add a try-catch block to your implementation so that detailed errors can be logged.
-	 * 5. As always, all catch blocks MUST make use of LogHelper.LogException(e) to log the exception.
-	 * Note: You should never need to touch CronScheduler.cs. If you think you need to muck around in there, please let Adam know first.
-	 * ---------------------------------------------------------------------------------------------------
-	 */
+     * Above are the scheduled jobs, and below are the scheduled jobs' implementations.
+     * Please follow convention!
+     * The convention is:
+     * 1. The class name for job Foo is CFoo, and the main wraper function in CFoo is Foo(), and the worker function is FooWorker().
+     *    (This allows the built-in reporting system to accurately report what's running and when, and how long it took.)
+     * 2. Each implementation is wrapped in a so named #region
+     * 3. Each implementation displays the elapsed time and any other meaningful status. (No spamming the console)
+     * 4. Even though the CronScheduler wraps all calls in a try-catch block, you should add a try-catch block to your implementation so that detailed errors can be logged.
+     * 5. As always, all catch blocks MUST make use of LogHelper.LogException(e) to log the exception.
+     * Note: You should never need to touch CronScheduler.cs. If you think you need to muck around in there, please let Adam know first.
+     * ---------------------------------------------------------------------------------------------------
+     */
+
+    #region ServerWars
+    class CServerWars
+    {
+        public void ServerWars()
+        {
+            if (CoreAI.ServerWarsIgnore)
+                return;
+
+            // Use a fake admin mobile from World.GetAdminAcct() so the command has a valid source
+            Mobile admin = World.GetAdminAcct();  // or World.Mobiles.Values.FirstOrDefault(m => m.AccessLevel >= AccessLevel.Administrator);
+
+            if (admin == null)
+            {
+                Console.WriteLine("[CServerWars] Warning: No admin mobile found for Server Wars command.");
+                return;
+            }
+
+            // Prepare command arguments — minimal version: just "serverwars"
+            // You can add "restart" or a specific datetime string if desired
+            // Minimal: just "serverwars" (triggers default 5-min countdown)
+            string[] arguments = new string[] { "serverwars", "restart" };
+
+            // Optional variations you might want later:
+            // string[] arguments = new string[] { "serverwars", "restart" };          // restart instead of shutdown
+            // string[] arguments = new string[] { "serverwars", "15" };               // 15-minute countdown
+            // string[] arguments = new string[] { "serverwars", "2026-03-22 19:00" }; // specific datetime
+
+            // Step 3: Build the full CommandEventArgs using the proper constructor
+            CommandEventArgs e = new CommandEventArgs(
+                mobile: admin,                      // required: the "user" executing the command
+                target: null,                       // usually null for global commands
+                command: "maintenance",             // the root command name (as seen in CommandSystem)
+                argString: string.Join(" ", arguments),  // full arg string (helps with parsing in some cases)
+                arguments: arguments                // the split array that the handler actually uses
+            );
+
+            try
+            {
+                Server.Misc.Maintenance.Maintenance_OnCommand(e);
+                Console.WriteLine("[CServerWars] Server Wars scheduled via Maintenance_OnCommand.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("[CServerWars] Failed to schedule Server Wars:");
+                Console.WriteLine(ex);
+            }
+        }
+
+        public void Notification()
+        {
+            if (CoreAI.ServerWarsIgnore)
+                return;
+
+            World.Broadcast(0x35, true, "Server Wars begins in 35 minutes!");
+        }
+    }
+    #endregion ServerWars
+
+    #region Cron Local Test
+    class CTestJob
+    {
+        public void TestJob()
+        {
+            var nowUtc = DateTime.UtcNow;
+
+            // Basic confirmation
+            Console.WriteLine("═══════════════════════════════════════════════");
+            Console.WriteLine($"[Cron TestJob] Executed at {nowUtc:yyyy-MM-dd HH:mm:ss} UTC");
+
+            // Show local time in Netherlands (CET/CEST)
+            try
+            {
+                var nlTime = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time"));
+                Console.WriteLine($"  → Netherlands local time: {nlTime:yyyy-MM-dd HH:mm:ss} (CET/CEST)");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  → Netherlands time: (timezone lookup failed: {ex.Message})");
+            }
+
+            // Show local time in Pacific (PST/PDT)
+            try
+            {
+                var ptTime = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time"));
+                Console.WriteLine($"  → Pacific local time:     {ptTime:yyyy-MM-dd HH:mm:ss} (PST/PDT)");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  → Pacific time: (timezone lookup failed: {ex.Message})");
+            }
+
+            Console.WriteLine("═══════════════════════════════════════════════");
+            Console.WriteLine();
+        }
+    }
+    #endregion Cron Local Test
+
+    #region WildHouseCreatureCleanup
+    class CHouseCreatureCleanup
+    {
+        public void HouseCreatureCleanup()
+        {
+            System.Console.WriteLine("Wild creatures in house cleanup running...");
+            Utility.TimeCheck tc = new Utility.TimeCheck();
+            tc.Start();
+            int deleted = HouseCreatureCleanupWorker();
+            tc.End();
+            Console.WriteLine("Creature Cleanup in {0}", tc.TimeTaken);
+            if (deleted > 0)
+                Console.WriteLine("{0} Creatures deleted.", deleted);
+        }
+        private int HouseCreatureCleanupWorker()
+        {
+            ArrayList toRemove = new ArrayList();
+
+            foreach (Mobile m in World.Mobiles.Values)
+            {
+                if (m is not BaseCreature c || c.Map != Map.Felucca)
+                    continue;
+
+                if (DeleteCreatureRules(c))
+                {
+                    c.CreatureIsInHouse++;
+
+                    // this task is called once per hour, so keep the count small
+                    //  We don't intend this to be an immediate eject, but rather a cleanup pass
+                    if (c.CreatureIsInHouse >= 2)
+                        toRemove.Add(c);
+                }
+                else
+                {
+                    c.CreatureIsInHouse = 0;
+                }
+            }
+
+            foreach (BaseCreature c in toRemove)
+                c.Delete();
+
+            return toRemove.Count;
+        }
+        private static bool DeleteCreatureRules(BaseCreature bc)
+        {
+            // not controlled && can be damaged
+            bool rule0 = !bc.Controlled && bc.CanBeDamaged();
+
+            // must be INSIDE the house
+            bool rule1 = bc.Region is HouseRegion hr && hr.House != null && hr.House.Contains(bc);
+
+            // not a township NPC
+            bool rule2 = !TownshipNPCHelper.IsTownshipNPC(bc);
+
+            // base camp inhabitants may wander in, out and around their house/tent
+            bool rule3 = !NearMyBasecamp(bc);
+
+            return rule0 && rule1 && rule2 && rule3;
+        }
+
+        private static bool NearMyBasecamp(BaseCreature bc)
+        {
+            if (bc.BaseCamp == null)
+                return false;
+
+            if (bc.Region is HouseRegion hr && hr.House != null && hr.House.GetDistanceToSqrt(bc) < 10)
+                return true;
+
+            return false;
+        }
+    }
+    #endregion WildHouseCreatureCleanup
+    #region SubstituteCleanup
+    class CSubstituteCleanup
+    {
+        public void SubstituteCleanup()
+        {
+            System.Console.WriteLine("SubstituteCleanup running...");
+            Utility.TimeCheck tc = new Utility.TimeCheck();
+            tc.Start();
+            int deleted = SubstituteCleanupWorker();
+            tc.End();
+            Console.WriteLine("SubstituteCleanup in {0}", tc.TimeTaken);
+            if (deleted > 0)
+                Console.WriteLine("{0} Substitute deleted.", deleted);
+        }
+        private int SubstituteCleanupWorker()
+        {
+            int deleted = 0;
+
+            // Collect all Substitutes currently referenced by any bounty field we care about.
+            HashSet<Substitute> inUse = Substitute.InUse();
+
+            List<Substitute> toDelete = new List<Substitute>();
+
+            foreach (Substitute sub in Substitute.Instances)
+            {
+                if (sub.Deleted)
+                    continue;
+
+                if (!inUse.Contains(sub))
+                    toDelete.Add(sub);
+            }
+
+            deleted = toDelete.Count;
+
+            foreach (Substitute sub in toDelete)
+                sub.Delete();
+
+            return deleted;
+        }
+
+    }
+    #endregion SubstituteCleanup
     #region HiveGrowth
     class CHiveGrowth
     {
@@ -613,7 +980,7 @@ namespace Server.Engines.CronScheduler
                 if (current.AccessLevel > AccessLevel.Player)
                     continue; // ignore staff accounts
 
-                if (current.GetFlag(Account.AccountFlag.ExceedsMachineInfoLimit))
+                if (current.GetFlag(Account.AccountFlags.ExceedsMachineInfoLimit))
                 {
                     for (int ix = 0; ix < current.Length; ix++)
                     {
@@ -633,7 +1000,7 @@ namespace Server.Engines.CronScheduler
                                 count++;
                             }
                             else
-                                current.SetFlag(Account.AccountFlag.ExceedsMachineInfoLimit, false);
+                                current.SetFlag(Account.AccountFlags.ExceedsMachineInfoLimit, false);
 
                         }
                     }
@@ -643,6 +1010,27 @@ namespace Server.Engines.CronScheduler
         }
     }
     #endregion KickPlayers
+    #region JailClones
+    class CJailClones
+    {
+        public void JailClones()
+        {
+            System.Console.WriteLine("JailClones running...");
+            Utility.TimeCheck tc = new Utility.TimeCheck();
+            tc.Start();
+            int jailed = JailClonesWorker();
+            tc.End();
+            Console.WriteLine("JailClones in {0}", tc.TimeTaken);
+            if (jailed > 0)
+                Console.WriteLine("{0} Clones Jailed!", jailed);
+        }
+        private int JailClonesWorker()
+        {   // the Test Center policy owns the deferred enforcement (pending violations, clones outside Test Center, and
+            //  first confinement wins for anyone already confined)
+            return TestCenterPolicy.Sweep();
+        }
+    }
+    #endregion JailClones
     #region AutoSave
     class CAutoSave
     {
@@ -669,50 +1057,6 @@ namespace Server.Engines.CronScheduler
             return true;
         }
     }
-#if false
-    class CLSAutoSave
-    {
-        public void AutoSave()
-        {
-            System.Console.WriteLine("Login Server AutoSave: ");
-            Utility.TimeCheck tc = new Utility.TimeCheck();
-            tc.Start();
-            bool saved = AutoSaveWorker();
-            tc.End();
-            if (saved)
-                Console.WriteLine("Login Server AutoSave in {0}", tc.TimeTaken);
-            else
-                Console.WriteLine("Login Server AutoSave disabled.");
-        }
-        private bool AutoSaveWorker()
-        {
-            // final check to see if we should save
-            if (!Server.Misc.AutoSave.SavesEnabled || AutoRestart.Restarting)
-                return false;
-
-            // backup the saves folder - must be first
-            Server.Misc.AutoSave.Backup();
-            /*
-            // Backup file manager
-            Misc.AutoSave.Save(new WorldSaveEventArgs(false));
-
-            */
-            // save shard config data
-            CoreAI.OnSave(new WorldSaveEventArgs(false));
-
-            // save accounts
-            Accounts.Save(new WorldSaveEventArgs(false));
-
-            // save ip exceptions
-            Server.Accounting.IPException.EventSink_OnWorldSave(new WorldSaveEventArgs(false));
-
-            // save firewall
-            Server.Firewall.EventSink_OnWorldSave(new WorldSaveEventArgs(false));
-
-            return true;
-        }
-    }
-#endif
     #endregion AutoSave
     #region Backup Database Cleanup
     class CBackupDatabaseCleanup
@@ -731,11 +1075,11 @@ namespace Server.Engines.CronScheduler
         {
             int defragged = 0;
 
-            string root = Path.Combine(Core.BaseDirectory, "Backups\\Automatic");
+            string root = Path.Combine(Core.ExeDirectory, "Backups\\Automatic");
             while (AutoSave.FileManagerDatabase.Count > CoreAI.BackupCount)
             {
                 string[] existing = Directory.GetDirectories(root);
-                DirectoryInfo dir;
+                DirectoryInfo? dir;
                 string toDelete = AutoSave.FileManagerDatabase.Dequeue();
                 dir = Match(existing, toDelete);
                 Console.WriteLine("File Manager: Dequeuing {0}", toDelete);
@@ -753,7 +1097,7 @@ namespace Server.Engines.CronScheduler
 
             return defragged;
         }
-        private DirectoryInfo Match(string[] paths, string match)
+        private DirectoryInfo? Match(string[] paths, string match)
         {
             for (int i = 0; i < paths.Length; ++i)
             {
@@ -817,35 +1161,33 @@ namespace Server.Engines.CronScheduler
             tc.Start();
             int PlayersAdded = 0;
             int LeaderBoardsChecked = LeaderBoardWorker(out PlayersAdded);
+            Console.WriteLine("Processing leaderboard snapshot...");
             tc.End();
-            System.Console.WriteLine("checked {0} LeaderBoards in {1}", LeaderBoardsChecked, tc.TimeTaken);
+            System.Console.WriteLine($"checked {LeaderBoardsChecked} LeaderBoards in {tc.TimeTaken}");
         }
         public enum LeaderBoardJob
         {
-            farmed,
-            pvm,
-            wealth,
+            GoldEarned,
+            PvM,
+            AccountWealth,
             BodPoints,
             BodGold,
             Music, // musicGold & musicSales
-            prisonQuest,
+            PrisonQuest,
             PrisonSpawn,
+            Seasons,
+
+            // Major launch / seasonal event points
+            LaunchEvent
         }
         private int LeaderBoardWorker(out int added)
         {
-            int iChecked = 0;
             added = 0;
             try
             {
-                // order displayed is determined by order created
-                Timer.DelayCall(TimeSpan.FromSeconds(1), new TimerStateCallback(LBJobTick), new object[] { LeaderBoardJob.pvm }); iChecked++;
-                Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(LBJobTick), new object[] { LeaderBoardJob.farmed }); iChecked++;
-                Timer.DelayCall(TimeSpan.FromSeconds(3), new TimerStateCallback(LBJobTick), new object[] { LeaderBoardJob.wealth }); iChecked++;
-                Timer.DelayCall(TimeSpan.FromSeconds(4), new TimerStateCallback(LBJobTick), new object[] { LeaderBoardJob.BodPoints }); iChecked++;
-                Timer.DelayCall(TimeSpan.FromSeconds(5), new TimerStateCallback(LBJobTick), new object[] { LeaderBoardJob.BodGold }); iChecked++;
-                Timer.DelayCall(TimeSpan.FromSeconds(6), new TimerStateCallback(LBJobTick), new object[] { LeaderBoardJob.Music }); iChecked++; iChecked++;
-                Timer.DelayCall(TimeSpan.FromSeconds(7), new TimerStateCallback(LBJobTick), new object[] { LeaderBoardJob.prisonQuest }); iChecked++;
-                Timer.DelayCall(TimeSpan.FromSeconds(8), new TimerStateCallback(LBJobTick), new object[] { LeaderBoardJob.PrisonSpawn }); iChecked++;
+                // Ensure seasonal accounting is up-to-date before rendering leaderboards
+                SeasonalHelper.UpdateSeasonalCreditsFromSnapshot();
+                RunAllLeaderBoardJobs(out added);
             }
             catch (Exception e)
             {
@@ -854,346 +1196,318 @@ namespace Server.Engines.CronScheduler
                 System.Console.WriteLine(e.StackTrace);
             }
 
-            return iChecked;
+            return Enum.GetValues<LeaderBoardJob>().Length;
         }
 
-        private void LBJobTick(object state)
+        private void RunAllLeaderBoardJobs(out int added)
         {
-            try
+            added = 0;
+
+            // Allow staff/GMs during development and testing (also remove deleted mobiles)
+            PreprocessLeaderboardSources();
+
+            foreach (LeaderBoardJob job in Enum.GetValues(typeof(LeaderBoardJob)))
             {
-                object[] aState = (object[])state;
-                LeaderBoardJob job = (LeaderBoardJob)aState[0];
-                switch (job)
+                if (!ShouldRunLeaderboard(job))
+                    continue;
+
+                try
                 {
-                    case LeaderBoardJob.pvm:
-                        {
-                            #region Initialize
-                            const string pvm = "PvM Stats";
-                            LeaderboardTab tab = LeaderboardTracker.GetTab(pvm);
-                            if (tab == null)
-                                tab = LeaderboardTracker.AddTab(pvm);
-                            tab.Clear();
-                            #endregion Initialize
-                            #region PvM
-                            List<KeyValuePair<Mobile, int>> PvM = DataRecorder.DataRecorder.TopPvMers(DataRecorder.DataRecorder.GeneralPvMRankings);
-                            if (PvM != null)
-                            {
-                                int rank = 0;
-                                foreach (KeyValuePair<Mobile, int> kvp in PvM)
-                                {
-                                    if (kvp.Key == null)
-                                        continue;
+                    bool wasPopulated = job switch
+                    {
+                        LeaderBoardJob.Seasons => BuildSeasonsLeaderboard(),
+                        LeaderBoardJob.PvM => BuildPvMLeaderboard(),
+                        LeaderBoardJob.GoldEarned => BuildGoldEarnedLeaderboard(),
+                        LeaderBoardJob.AccountWealth => BuildAccountWealthLeaderboard(),
+                        LeaderBoardJob.BodPoints => BuildBODPointsLeaderboard(),
+                        LeaderBoardJob.BodGold => BuildBODGoldLeaderboard(),
+                        LeaderBoardJob.Music => BuildMusicLeaderboard(),
+                        LeaderBoardJob.PrisonQuest => BuildPrisonQuestLeaderboard(),
+                        LeaderBoardJob.PrisonSpawn => BuildPrisonSpawnLeaderboard(),
+                        LeaderBoardJob.LaunchEvent => BuildLaunchEventLeaderboard(),
+                        _ => false
+                    };
 
-                                    if (!(Core.Debug || Core.UOTC_CFG))
-                                        if (kvp.Key.AccessLevel > AccessLevel.Player)
-                                            continue;
-
-                                    tab.AddLine(string.Format("#{2} {0} has dealt {1} damage points.", kvp.Key.Name, kvp.Value, ++rank));
-                                    if (rank == 10)
-                                        break;
-                                }
-                            }
-                            #endregion PvM
-                            break;
-                        }
-                    case LeaderBoardJob.farmed:
-                        {
-                            #region Initialize
-                            const string farmed = "Gold Earned";
-                            LeaderboardTab tab = LeaderboardTracker.GetTab(farmed);
-                            if (tab == null)
-                                tab = LeaderboardTracker.AddTab(farmed);
-                            tab.Clear();
-                            #endregion Initialize
-                            #region GoldFarmed
-                            {
-                                int rank = 0;
-                                foreach (KeyValuePair<Mobile, double> kvp in DataRecorder.DataRecorder.GoldEarned)
-                                {
-                                    if (kvp.Key == null)
-                                        continue;
-
-                                    tab.AddLine(string.Format("#{2} {0} earned {1} gold points.", kvp.Key.Name, (int)kvp.Value, ++rank));
-                                    if (rank == 10)
-                                        break;
-                                }
-                            }
-                            #endregion GoldFarmed
-                            break;
-                        }
-                    case LeaderBoardJob.wealth:
-                        {
-                            #region Initialize
-                            const string wealth = "Wealthiest";
-                            LeaderboardTab tab = LeaderboardTracker.GetTab(wealth);
-                            if (tab == null)
-                                tab = LeaderboardTracker.AddTab(wealth);
-                            tab.Clear();
-                            #endregion Initialize
-                            #region Account Wealth
-                            // Do total account wealth here
-                            GoldTracker.GoldTotaller[] gt = GoldTracker.GetSortedWealthArray((Core.Debug || Core.UOTC_CFG) ? false : true);
-                            if (gt != null && gt.Length > 0)
-                            {
-                                int rank = 0;
-                                foreach (GoldTracker.GoldTotaller gte in gt)
-                                {
-                                    tab.AddLine(string.Format("#{2} {0} is worth {1} gold.", gte.CharacterName, gte.TotalGold, ++rank));
-                                    if (rank == 10)
-                                        break;
-                                }
-                            }
-                            #endregion Account Wealth
-                            break;
-                        }
-                    case LeaderBoardJob.BodPoints:
-                        {
-                            #region Initialize
-                            const string BodPoints = "BOD Points";
-                            LeaderboardTab tab = LeaderboardTracker.GetTab(BodPoints);
-                            if (tab == null)
-                                tab = LeaderboardTracker.AddTab(BodPoints);
-                            tab.Clear();
-                            #endregion Initialize
-                            #region BOD Points
-                            Dictionary<Mobile, int> BODPoints = DataRecorder.DataRecorder.GetBODPoints;
-
-                            List<KeyValuePair<Mobile, int>> new_list = new List<KeyValuePair<Mobile, int>>();
-                            foreach (KeyValuePair<Mobile, int> kvp in BODPoints)
-                                new_list.Add(kvp);
-
-                            new_list.Sort((e1, e2) =>
-                            {
-                                return e2.Value.CompareTo(e1.Value);
-                            });
-
-                            if (BODPoints != null)
-                            {
-                                int rank = 0;
-                                foreach (KeyValuePair<Mobile, int> kvp in new_list)
-                                {
-                                    if (kvp.Key == null)
-                                        continue;
-
-                                    if (!(Core.Debug || Core.UOTC_CFG))
-                                        if (kvp.Key.AccessLevel > AccessLevel.Player)
-                                            continue;
-
-                                    tab.AddLine(string.Format("#{2} {0} has earned {1} BOD points.", kvp.Key.Name, kvp.Value, ++rank));
-                                    if (rank == 10)
-                                        break;
-                                }
-                            }
-                            #endregion BOD Points
-                            break;
-                        }
-                    case LeaderBoardJob.BodGold:
-                        {
-                            #region Initialize
-                            const string BodGold = "BOD Gold";
-                            LeaderboardTab tab = LeaderboardTracker.GetTab(BodGold);
-                            if (tab == null)
-                                tab = LeaderboardTracker.AddTab(BodGold);
-                            tab.Clear();
-                            #endregion Initialize
-                            #region BOD Gold
-                            Dictionary<Mobile, int> BODGold = DataRecorder.DataRecorder.GetBODGold;
-
-                            List<KeyValuePair<Mobile, int>> new_gold_list = new List<KeyValuePair<Mobile, int>>();
-                            foreach (KeyValuePair<Mobile, int> kvp in BODGold)
-                                new_gold_list.Add(kvp);
-
-                            new_gold_list.Sort((e1, e2) =>
-                            {
-                                return e2.Value.CompareTo(e1.Value);
-                            });
-
-                            if (BODGold != null)
-                            {
-                                int rank = 0;
-                                foreach (KeyValuePair<Mobile, int> kvp in new_gold_list)
-                                {
-                                    if (kvp.Key == null)
-                                        continue;
-
-                                    if (!(Core.Debug || Core.UOTC_CFG))
-                                        if (kvp.Key.AccessLevel > AccessLevel.Player)
-                                            continue;
-
-                                    tab.AddLine(string.Format("#{2} {0} has earned {1} in BOD gold.", kvp.Key.Name, kvp.Value, ++rank));
-                                    if (rank == 10)
-                                        break;
-                                }
-                            }
-                            #endregion BOD Gold
-                            break;
-                        }
-                    case LeaderBoardJob.Music:
-                        {
-                            #region Initialize
-                            const string musicGold = "Music Gold";
-                            LeaderboardTab tabMGold = LeaderboardTracker.GetTab(musicGold);
-                            if (tabMGold == null)
-                                tabMGold = LeaderboardTracker.AddTab(musicGold);
-                            tabMGold.Clear();
-
-                            const string musicSales = "Music Sales";
-                            LeaderboardTab tabMSold = LeaderboardTracker.GetTab(musicSales);
-                            if (tabMSold == null)
-                                tabMSold = LeaderboardTracker.AddTab(musicSales);
-                            tabMSold.Clear();
-                            #endregion Initialize
-                            #region Music Sales
-                            Dictionary<Mobile, int[]> MusicSales = DataRecorder.DataRecorder.GetMusicSales;
-
-                            List<KeyValuePair<Mobile, int[]>> music_gold_list = new List<KeyValuePair<Mobile, int[]>>();
-                            List<KeyValuePair<Mobile, int[]>> music_sold_list = new List<KeyValuePair<Mobile, int[]>>();
-                            foreach (KeyValuePair<Mobile, int[]> kvp in MusicSales)
-                            {
-                                music_gold_list.Add(kvp);
-                                music_sold_list.Add(kvp);
-                            }
-
-                            // sort by gold
-                            music_gold_list.Sort((e1, e2) =>
-                            {
-                                return e2.Value[0].CompareTo(e1.Value[0]);
-                            });
-
-                            // sort by units sold
-                            music_sold_list.Sort((e1, e2) =>
-                            {
-                                return e2.Value[1].CompareTo(e1.Value[1]);
-                            });
-                            if (MusicSales.Count > 0)
-                            {
-                                int rank = 0;
-                                // go music gold page
-                                foreach (KeyValuePair<Mobile, int[]> kvp in music_gold_list)
-                                {
-                                    if (kvp.Key == null)
-                                        continue;
-
-                                    if (!(Core.Debug || Core.UOTC_CFG))
-                                        if (kvp.Key.AccessLevel > AccessLevel.Player)
-                                            continue;
-
-                                    tabMGold.AddLine(string.Format("#{2} {0} has earned {1} gold.", kvp.Key.Name, kvp.Value[0], ++rank));
-                                    if (rank == 10)
-                                        break;
-                                }
-
-                                rank = 0;
-                                // do music sold page
-                                foreach (KeyValuePair<Mobile, int[]> kvp in music_sold_list)
-                                {
-                                    if (kvp.Key == null)
-                                        continue;
-
-                                    if (!(Core.Debug || Core.UOTC_CFG))
-                                        if (kvp.Key.AccessLevel > AccessLevel.Player)
-                                            continue;
-
-                                    tabMSold.AddLine(string.Format("#{2} {0} has sold {1} songs.", kvp.Key.Name, kvp.Value[1], ++rank));
-                                    if (rank == 10)
-                                        break;
-                                }
-                            }
-                            #endregion Music Sales
-                            break;
-                        }
-                    case LeaderBoardJob.prisonQuest:
-                        {
-                            #region Initialize
-                            const string prisonQuest = "Prison Quest";
-                            LeaderboardTab tab = LeaderboardTracker.GetTab(prisonQuest);
-                            if (tab == null)
-                                tab = LeaderboardTracker.AddTab(prisonQuest);
-                            tab.Clear();
-                            #endregion Initialize
-                            #region Prison Quest Points
-                            Dictionary<Mobile, int[]> PrisonQuestPoints = DataRecorder.DataRecorder.GetPQuestPoints;
-
-                            List<KeyValuePair<Mobile, int[]>> sorted_list = new List<KeyValuePair<Mobile, int[]>>();
-                            foreach (KeyValuePair<Mobile, int[]> kvp in PrisonQuestPoints)
-                                sorted_list.Add(kvp);
-
-                            sorted_list = sorted_list.OrderByDescending(x => x.Value[2]).ThenByDescending(x => x.Value[1]).ToList();
-
-                            if (PrisonQuestPoints.Count > 0)
-                            {
-                                int rank = 0;
-                                foreach (KeyValuePair<Mobile, int[]> kvp in sorted_list)
-                                {
-                                    if (kvp.Key == null)
-                                        continue;
-
-                                    if (!(Core.Debug || Core.UOTC_CFG))
-                                        if (kvp.Key.AccessLevel > AccessLevel.Player)
-                                            continue;
-
-                                    tab.AddLine(string.Format("#{0} {1} {2} escape{3} {4} rare{5} {6} sterling.",
-                                        ++rank,             // rank
-                                        kvp.Key.Name,       // name
-
-                                        // escapes
-                                        kvp.Value[0],
-                                        kvp.Value[0] > 1 ? "s" : "",
-
-                                        // rares
-                                        kvp.Value[1],
-                                        kvp.Value[1] > 1 ? "s" : "",
-
-                                        // sterling
-                                        kvp.Value[2]
-                                        ));
-
-                                    if (rank == 10)
-                                        break;
-                                }
-                            }
-                            #endregion Prison Quest Points
-                            break;
-                        }
-                    case LeaderBoardJob.PrisonSpawn:
-                        {
-                            #region Initialize
-                            const string PrisonSpawn = "Prison Spawn";
-                            LeaderboardTab tab = LeaderboardTracker.GetTab(PrisonSpawn);
-                            if (tab == null)
-                                tab = LeaderboardTracker.AddTab(PrisonSpawn);
-                            tab.Clear();
-                            #endregion Initialize
-                            #region Prison Spawn
-                            List<KeyValuePair<Mobile, int>> ChampPvM = DataRecorder.DataRecorder.TopPvMers(DataRecorder.DataRecorder.ChampPvMRankings);
-                            if (ChampPvM != null)
-                            {
-                                int rank = 0;
-                                foreach (KeyValuePair<Mobile, int> kvp in ChampPvM)
-                                {
-                                    if (kvp.Key == null)
-                                        continue;
-
-                                    if (!(Core.Debug || Core.UOTC_CFG))
-                                        if (kvp.Key.AccessLevel > AccessLevel.Player)
-                                            continue;
-
-                                    tab.AddLine(string.Format("#{2} {0} has dealt {1} damage points.", kvp.Key.Name, kvp.Value, ++rank));
-                                    if (rank == 10)
-                                        break;
-                                }
-                            }
-                            #endregion Prison Spawn
-                            break;
-                        }
+                    if (wasPopulated)
+                        added++;
+                }
+                catch (Exception ex)
+                {
+                    LogHelper.LogException(ex);
+                    Console.WriteLine($"Exception in LeaderBoardJob.{job}: {ex.Message}");
                 }
             }
-            catch (Exception e)
+        }
+        private static bool ShouldRunLeaderboard(LeaderBoardJob job)
+        {
+            return job switch
             {
-                LogHelper.LogException(e);
-                System.Console.WriteLine("Exception Caught in LeaderBoard code: " + e.Message);
-                System.Console.WriteLine(e.StackTrace);
+                LeaderBoardJob.Seasons => Core.RuleSets.SeasonsRules(),
+                LeaderBoardJob.LaunchEvent => (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()),
+                LeaderBoardJob.Music => !(Core.RuleSets.SeasonsRules() || Core.RuleSets.UpheavalRules()),
+                _ => true
+            };
+        }
+        private bool BuildSeasonsLeaderboard()
+        {
+            const string title = "Seasons";
+            LeaderboardTab? tab = LeaderboardTracker.GetTab(title) ?? LeaderboardTracker.AddTab(title);
+            tab.Clear();
+
+            var accounts = SeasonalAccounts.GetAllAccounts()
+                .Where(a => a != null && !string.IsNullOrWhiteSpace(a.DisplayName))
+                .OrderByDescending(a => a.LifetimeEarnedPoints)
+                .Take(10)
+                .ToList();
+
+            if (accounts.Count == 0)
+                return false;
+
+            int rank = 0;
+            foreach (var acct in accounts)
+            {
+                tab.AddLine($"#{++rank} {acct.DisplayName}: {acct.SeasonPoints} season points, {acct.LifetimeEarnedPoints} lifetime points");
             }
+
+            return rank > 0;
+        }
+        private bool BuildPvMLeaderboard()
+        {
+            const string title = "PvM Stats";
+            LeaderboardTab? tab = LeaderboardTracker.GetTab(title) ?? LeaderboardTracker.AddTab(title);
+            tab.Clear();
+
+            var list = DataRecorder.DataRecorder.GetTopPlayers(RecorderDomain.PvMPoints, 10);
+            if (list.Count == 0)
+                return false;
+
+            int rank = 0;
+            foreach (var kvp in list)
+            {
+                if (kvp.Key == null || kvp.Key.Deleted)
+                    continue;
+
+                tab.AddLine($"#{++rank} {kvp.Key.Name} has dealt {kvp.Value} damage points.");
+            }
+
+            return rank > 0;
+        }
+        private bool BuildGoldEarnedLeaderboard()
+        {
+            const string title = "Gold Earned";
+            LeaderboardTab? tab = LeaderboardTracker.GetTab(title) ?? LeaderboardTracker.AddTab(title);
+            tab.Clear();
+
+            var list = DataRecorder.DataRecorder.GetEarnedGoldLeaderboard(10);
+            if (list.Count == 0)
+                return false;
+
+            int rank = 0;
+            foreach (var kvp in list)
+            {
+                if (kvp.Key == null) continue;
+                tab.AddLine($"#{++rank} {kvp.Key.Name} earned {kvp.Value} gold.");
+            }
+
+            return rank > 0;
+        }
+        private bool BuildAccountWealthLeaderboard()
+        {
+            const string title = "Wealthiest";
+            LeaderboardTab? tab = LeaderboardTracker.GetTab(title) ?? LeaderboardTracker.AddTab(title);
+            tab.Clear();
+
+            GoldTracker.GoldTotaller[] gt = GoldTracker.GetSortedWealthArray((Core.Debug || Core.GMNTC_CFG) ? false : true);
+            if (gt == null || gt.Length == 0)
+                return false;
+
+            int rank = 0;
+            foreach (var gte in gt)
+            {
+                tab.AddLine($"#{++rank} {gte.CharacterName} is worth {gte.TotalGold} gold.");
+                if (rank == 10) break;
+            }
+
+            return rank > 0;
+        }
+        private bool BuildBODPointsLeaderboard()
+        {
+            const string title = "BOD Points";
+            LeaderboardTab? tab = LeaderboardTracker.GetTab(title) ?? LeaderboardTracker.AddTab(title);
+            tab.Clear();
+
+            var list = DataRecorder.DataRecorder.GetTopPlayers(RecorderDomain.BODPoints, 10);
+            if (list.Count == 0)
+                return false;
+
+            int rank = 0;
+            foreach (var kvp in list)
+            {
+                if (kvp.Key == null) continue;
+                if (!(Core.Debug || Core.GMNTC_CFG) && kvp.Key.AccessLevel > AccessLevel.Player)
+                    continue;
+
+                tab.AddLine($"#{++rank} {kvp.Key.Name} has earned {kvp.Value} BOD points.");
+            }
+
+            return rank > 0;
+        }
+        private bool BuildBODGoldLeaderboard()
+        {
+            const string title = "BOD Gold";
+            LeaderboardTab? tab = LeaderboardTracker.GetTab(title) ?? LeaderboardTracker.AddTab(title);
+            tab.Clear();
+
+            var list = DataRecorder.DataRecorder.GetBODGoldLeaderboard(10);
+            if (list.Count == 0)
+                return false;
+
+            int rank = 0;
+            foreach (var kvp in list)
+            {
+                if (kvp.Key == null) continue;
+                if (!(Core.Debug || Core.GMNTC_CFG) && kvp.Key.AccessLevel > AccessLevel.Player)
+                    continue;
+
+                tab.AddLine($"#{++rank} {kvp.Key.Name} has earned {kvp.Value} in BOD gold.");
+            }
+
+            return rank > 0;
+        }
+        private bool BuildMusicLeaderboard()
+        {
+            // Music Gold tab
+            const string goldTitle = "Music Gold";
+            LeaderboardTab? tabGold = LeaderboardTracker.GetTab(goldTitle) ?? LeaderboardTracker.AddTab(goldTitle);
+            tabGold.Clear();
+
+            // Music Sales tab
+            const string salesTitle = "Music Sales";
+            LeaderboardTab? tabSales = LeaderboardTracker.GetTab(salesTitle) ?? LeaderboardTracker.AddTab(salesTitle);
+            tabSales.Clear();
+
+            var goldList = DataRecorder.DataRecorder.GetTopPlayers(RecorderDomain.MusicGold, 10);
+            var soldList = DataRecorder.DataRecorder.GetTopPlayers(RecorderDomain.MusicPoints, 10);
+
+            int rank = 0;
+            foreach (var kvp in goldList)
+            {
+                if (kvp.Key == null) continue;
+                if (!(Core.Debug || Core.GMNTC_CFG) && kvp.Key.AccessLevel > AccessLevel.Player)
+                    continue;
+                tabGold.AddLine($"#{++rank} {kvp.Key.Name} has earned {kvp.Value} gold.");
+            }
+
+            rank = 0;
+            foreach (var kvp in soldList)
+            {
+                if (kvp.Key == null) continue;
+                if (!(Core.Debug || Core.GMNTC_CFG) && kvp.Key.AccessLevel > AccessLevel.Player)
+                    continue;
+                tabSales.AddLine($"#{++rank} {kvp.Key.Name} has sold {kvp.Value} songs.");
+            }
+
+            return goldList.Count > 0 || soldList.Count > 0;
+        }
+        private bool BuildPrisonQuestLeaderboard()
+        {
+            const string title = "Prison Quest";
+            LeaderboardTab? tab = LeaderboardTracker.GetTab(title) ?? LeaderboardTracker.AddTab(title);
+            tab.Clear();
+
+            var pqData = new List<(Mobile player, int escapes, int rares, int sterling)>();
+
+            foreach (var entry in DataRecorder.DataRecorder.Database)
+            {
+                Mobile m = entry.Key;
+                if (m == null) continue;
+
+                int escapes = (int)DataRecorder.DataRecorder.Get(m, RecorderDomain.PQEscapes);
+                int rares = (int)DataRecorder.DataRecorder.Get(m, RecorderDomain.PQRares);
+                int sterling = (int)DataRecorder.DataRecorder.Get(m, RecorderDomain.PQSterling);
+
+                if (escapes > 0 || rares > 0 || sterling > 0)
+                    pqData.Add((m, escapes, rares, sterling));
+            }
+
+            var sortedList = pqData
+                .OrderByDescending(x => x.sterling)
+                .ThenByDescending(x => x.rares)
+                .ThenByDescending(x => x.escapes)
+                .ToList();
+
+            if (sortedList.Count == 0)
+                return false;
+
+            int rank = 0;
+            foreach (var item in sortedList)
+            {
+                if (item.player == null) continue;
+                if (!(Core.Debug || Core.GMNTC_CFG) && item.player.AccessLevel > AccessLevel.Player)
+                    continue;
+
+                tab.AddLine($"#{++rank} {item.player.Name} {item.escapes} escape{(item.escapes > 1 ? "s" : "")} " +
+                            $"{item.rares} rare{(item.rares > 1 ? "s" : "")} {item.sterling} sterling.");
+
+                if (rank == 10) break;
+            }
+
+            return rank > 0;
+        }
+        private bool BuildPrisonSpawnLeaderboard()
+        {
+            const string title = "Prison Spawn";
+            LeaderboardTab? tab = LeaderboardTracker.GetTab(title) ?? LeaderboardTracker.AddTab(title);
+            tab.Clear();
+
+            var list = DataRecorder.DataRecorder.GetTopPlayers(RecorderDomain.PQChamps, 10);
+            if (list.Count == 0)
+                return false;
+
+            int rank = 0;
+            foreach (var kvp in list)
+            {
+                if (kvp.Key == null) continue;
+                if (!(Core.Debug || Core.GMNTC_CFG) && kvp.Key.AccessLevel > AccessLevel.Player)
+                    continue;
+
+                tab.AddLine($"#{++rank} {kvp.Key.Name} has dealt {kvp.Value} damage points.");
+            }
+
+            return rank > 0;
+        }
+        private bool BuildLaunchEventLeaderboard()
+        {
+            const string title = "Reclaiming the Realm";
+            LeaderboardTab? tab = LeaderboardTracker.GetTab(title) ?? LeaderboardTracker.AddTab(title);
+            tab.Clear();
+
+            var list = DataRecorder.DataRecorder.GetTopPlayers(RecorderDomain.LaunchEventPoints, 10);
+
+            if (list.Count == 0)
+                return false;
+
+            int rank = 0;
+            foreach (var kvp in list)
+            {
+                if (kvp.Key == null || kvp.Key.Deleted)
+                    continue;
+
+                tab.AddLine($"#{++rank} {kvp.Key.Name} earned {kvp.Value} reclamation points.");
+            }
+
+            return rank > 0;
+        }
+        private void PreprocessLeaderboardSources()
+        {
+            // Allow staff/GMs during development and testing
+            if (!Core.Developing && !Core.RuleSets.TestCenterRules())
+            {
+                DataRecorder.DataRecorder.RemoveStaffEntries();
+                SeasonalAccounts.RemoveStaffEntries();
+            }
+
+            DataRecorder.DataRecorder.RemoveDeletedEntries();
         }
     }
     #endregion LeaderBoard
@@ -1280,7 +1594,7 @@ namespace Server.Engines.CronScheduler
                     return 0;
             }
             processed = true;
-            Cron.ServerMessage message;
+            Cron.ServerMessage? message;
             lock (Cron.MessageQueue.SyncRoot)
                 message = Cron.MessageQueue.Dequeue() as Cron.ServerMessage;
 
@@ -1301,8 +1615,8 @@ namespace Server.Engines.CronScheduler
 
         private int DoGblOreSpawn(Cron.ServerMessage message)
         {   // args for DoGblOreSpawn are the mobile, the resource type, and target
-            PlayerMobile miner = message.Args[0] as PlayerMobile;
-            Type resourceType = message.Args[1] as Type;
+            PlayerMobile? miner = message.Args[0] as PlayerMobile;
+            Type? resourceType = message.Args[1] as Type;
             object target = message.Args[2] as object;
             Point3D location = Point3D.Zero;
             bool boat = BaseBoat.FindBoatAt(miner) != null;
@@ -1421,7 +1735,7 @@ namespace Server.Engines.CronScheduler
                     miner.SendMessage(string.Format("Found a spawn location at: {0} in {1} tries", new_location, homeRange));
 
                 // build our camp!
-                Add.Invoke(miner, new_location, new_location, new string[] { camp, resourceType, level.ToString() });
+                Server.Commands.Add.Invoke(miner, new_location, new_location, new string[] { camp, resourceType, level.ToString() });
 
                 // the angry miner aren't quite available yet, so set a short timer to anger them
                 Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(AngryMinerTick), new object[] { miner, (IPoint3D)new_location });
@@ -1465,8 +1779,8 @@ namespace Server.Engines.CronScheduler
         private static void AngryMinerTick(object state)
         {
             object[] aState = (object[])state;
-            PlayerMobile miner = aState[0] as PlayerMobile;
-            IPoint3D location = aState[1] as IPoint3D;
+            PlayerMobile? miner = aState[0] as PlayerMobile;
+            IPoint3D? location = aState[1] as IPoint3D;
 
             // now, tell our Angry Miners where to go and who to attack
             List<Mobile> list = new List<Mobile>();
@@ -1517,7 +1831,7 @@ namespace Server.Engines.CronScheduler
                 if (m is PlayerMobile)
                 {
                     iChecked++;
-                    PlayerMobile pm = m as PlayerMobile;
+                    PlayerMobile? pm = m as PlayerMobile;
                     if (AnimalTrainer.Table.ContainsKey(pm))
                         if (AnimalTrainer.Table[pm] != null && AnimalTrainer.Table[pm].Count > 0)
                             foreach (object ox in AnimalTrainer.Table[pm])
@@ -1532,7 +1846,7 @@ namespace Server.Engines.CronScheduler
         {
             object[] aState = (object[])state;
             object om = aState[0];
-            PlayerMobile pm = aState[1] as PlayerMobile;
+            PlayerMobile? pm = aState[1] as PlayerMobile;
             if (om is BaseCreature ox)
             {
                 if (AnimalTrainer.Table.ContainsKey(pm))
@@ -1754,7 +2068,7 @@ namespace Server.Engines.CronScheduler
             Console.WriteLine("Restocking {0} vendors", restock.Count);
             for (int i = 0; i < restock.Count; i++)
             {
-                Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object[] { restock[i], null });
+                Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object?[] { restock[i], null });
             }
 
             return iChecked;
@@ -1799,7 +2113,7 @@ namespace Server.Engines.CronScheduler
         }
         private void LogItemInHouseDecay(LogHelper logger, Item item)
         {
-            BaseHouse bh = null;
+            BaseHouse? bh = null;
             if (logger != null && item != null && ((bh = BaseHouse.Find(item.GetWorldLocation(), item.Map)) != null))
             {
                 logger.Log(string.Format("{0}:{1}", item, item.SafeName));
@@ -1841,7 +2155,7 @@ namespace Server.Engines.CronScheduler
                 // decay tagged items
                 for (int i = 0; i < decaying.Count; ++i)
                 {
-                    Item item = (Item)decaying[i];
+                    Item? item = (Item?)decaying[i];
 
                     if (item.OnDecay())
                     {
@@ -1871,7 +2185,7 @@ namespace Server.Engines.CronScheduler
 
         private void ItemDecayWorkerTick(object state)
         {
-            Item item = state as Item;
+            Item? item = state as Item;
             if (item != null && item.Deleted == false)
                 item.Delete();
         }
@@ -1963,7 +2277,7 @@ namespace Server.Engines.CronScheduler
 
             // RULE4 - TestCenter only
             // trim all non-staff account and not logged in for 30 days
-            if (TestCenter.Enabled == true && staff == false)
+            if (TestCenterServer.Enabled == true && staff == false)
             {
                 TimeSpan delta = DateTime.UtcNow - acct.LastLogin;
                 if (delta.TotalDays > CoreAI.TCAcctCleanupDays)
@@ -1997,6 +2311,7 @@ namespace Server.Engines.CronScheduler
 									}
 			*/
 
+            /* Replaced with [PreLaunch in OwnerTools.cs
             // RULE6;
             // trim all non-staff accounts now - shard wipe
             if (staff == false)
@@ -2006,6 +2321,7 @@ namespace Server.Engines.CronScheduler
                     return 6;
                 }
             }
+            */
 
             // this account should not be deleted
             return 0;
@@ -2015,7 +2331,7 @@ namespace Server.Engines.CronScheduler
         {
             try
             {   // only on the production shard
-                if (TestCenter.Enabled == false)
+                if (TestCenterServer.Enabled == false)
                     if (a.EmailAddress != null && SmtpDirect.CheckEmailAddy(a.EmailAddress, false) == true)
                     {
                         string subject = "Angel Island: Your account will be deleted in about 5 days";
@@ -2032,12 +2348,7 @@ namespace Server.Engines.CronScheduler
 
         private bool AccountCleanupEnabled()
         {
-            if (CoreAI.TCAcctCleanupEnable == false && TestCenter.Enabled == true)
-            {
-                System.Console.WriteLine("while CoreAI.TCAcctCleanupEnable is false, accounts will not be cleaned up on Test Center.");
-                return false;
-            }
-            else if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.FreezeHouseDecay))
+            if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.FreezeHouseDecay))
             {   // this account should not be deleted because house decay is frozen, accounts must remain!
                 // (when an account is deleted, the associated houses are deleted.)
                 System.Console.WriteLine("while global house decay is suspended, accounts will not be cleaned up.");
@@ -2077,7 +2388,7 @@ namespace Server.Engines.CronScheduler
                     for (int i = 0; i < results.Count; i++)
                     {
                         AcctsDeleted++;
-                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object[] { results[i], null });
+                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object?[] { results[i], null });
                     }
                 }
             }
@@ -2153,7 +2464,7 @@ namespace Server.Engines.CronScheduler
                         iChecked++;
                         BaseCreature bc = (BaseCreature)m;
 
-                        if (!bc.Controlled && !bc.IOBFollower && !bc.Blessed && !bc.IsAnyStabled && !bc.IsHumanInTown())
+                        if (!bc.Controlled && !bc.Blessed && !bc.IsAnyStabled && !bc.IsHumanInTown())
                         {
                             // no nonger in the base class. Each creature is responsible for their own CheckWork()
                             /*if (bc.CheckWork())
@@ -2189,6 +2500,60 @@ namespace Server.Engines.CronScheduler
         }
     }
     #endregion NPCWork
+
+    #region Orc Enemies - Season 2
+    // see if any NPCs need to work (recall to spawner)
+    class COrcEnemies
+    {
+        public void OrcEnemies()
+        {
+            System.Console.Write("Orc enemies check started ... ");
+            Utility.TimeCheck tc = new Utility.TimeCheck();
+            tc.Start();
+            int EnimiesTouched = 0;
+            int mobileschecked = OrcEnemiesWorker(out EnimiesTouched);
+            tc.End();
+            System.Console.WriteLine("checked {0} in {1} - {2} enemies touched", mobileschecked, tc.TimeTaken, EnimiesTouched);
+        }
+
+        private int OrcEnemiesWorker(out int enemiesTouched)
+        {
+            int checkedCount = 0;
+            enemiesTouched = 0;
+
+            try
+            {
+                foreach (PlayerMobile pm in PlayerMobile.Instances)
+                {
+                    if (pm == null || pm.Deleted)
+                        continue;
+
+                    checkedCount++;
+
+                    if (pm.Account is not Accounting.Account acct)
+                        continue;
+
+                    if ((acct.Flags & AccountFlags.OrcEnemy) == 0)
+                        continue;
+
+                    if (acct.IsOrcEnemy)
+                        continue;
+
+                    acct.ClearOrcEnemy();
+                    enemiesTouched++;
+                }
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogException(e);
+                System.Console.WriteLine("Exception Caught in Orc Enemies code: " + e.Message);
+                System.Console.WriteLine(e.StackTrace);
+            }
+
+            return checkedCount;
+        }
+    }
+    #endregion Orc Enemies - Season 2
 
     #region InmateManagement (updated)
     // see if any NPCs need to work (recall to spawner)
@@ -2226,11 +2591,11 @@ namespace Server.Engines.CronScheduler
                         //continue;
 
                         // leave staff alone
-                        PlayerMobile pm = compState.Mobile as PlayerMobile;
+                        PlayerMobile? pm = compState.Mobile as PlayerMobile;
                         if (pm == null || pm.AccessLevel != AccessLevel.Player)
                             continue;
 
-                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object[] { pm, null });
+                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object?[] { pm, null });
                     }
                 }
             }
@@ -2247,7 +2612,7 @@ namespace Server.Engines.CronScheduler
         private void Tick(object state)
         {
             object[] aState = (object[])state;
-            PlayerMobile pm = aState[0] as PlayerMobile;
+            PlayerMobile? pm = aState[0] as PlayerMobile;
             try
             {
                 // look for inmates
@@ -2257,10 +2622,14 @@ namespace Server.Engines.CronScheduler
                         return;
 
                     // if they are on Angel Island, make sure they have a reason to be there
-                    if (pm.Region != null && pm.Region.IsAngelIslandRules)
+                    if (pm.Region != null && pm.Region.IsPrisonRules)
                     {
                         if (pm.ShortTermCriminalCounts == 0 && pm.ShortTermMurders == 0 && DateTime.UtcNow > pm.MinimumSentence)
-                        {   // kick them from the island
+                        {   // kick them from the island, unless a release veto (ConfinementVetoes) refuses it: then they stay,
+                            //  and GameMaster+ staff are told
+                            if (Server.Engines.ConfinementSystem.ConfinementVetoes.RefuseAutomated(pm, pm.Map, "the prison's parole kick"))
+                                return;
+
                             AIParoleExit pe = new AIParoleExit();
                             pe.DoTeleport(pm);
                             pe.Delete();
@@ -2297,7 +2666,7 @@ namespace Server.Engines.CronScheduler
                 }
                 else
                 {   // visitors can hang out here
-                    if (pm.Region != null && pm.Region.IsAngelIslandRules && !pm.PrisonVisitor)
+                    if (pm.Region != null && pm.Region.IsPrisonRules && !pm.PrisonVisitor)
                     {
                         // you cannot be on Angel Island without your inmate flag set
                         // the system is automatically jailing this player.
@@ -2347,7 +2716,7 @@ namespace Server.Engines.CronScheduler
 
             try
             {
-                CrierMessages = TCCS.TheList.Count;
+                CrierMessages = TownCrierBulletinSystem.TheList.Count;
                 if (CrierMessages > 0)
                 {
                     //jumpstart the town criers if they're not already going.
@@ -2406,7 +2775,7 @@ namespace Server.Engines.CronScheduler
                 foreach (var m in list)
                 {
                     recordsDeleted++;
-                    SystemMusicPlayer.MusicConfig.Remove(m);
+                    SystemMusicPlayer.ReleaseContext(m);    // removes the context and deletes its virtual instruments
                 }
             }
             catch (Exception e)
@@ -2432,7 +2801,7 @@ namespace Server.Engines.CronScheduler
             object[] aState = (object[])state;
             if (aState[0] != null && aState[0] is Mobile && (aState[0] as Mobile).Deleted == false && (aState[0] as Mobile).ToDelete == true)
             {
-                Mobile from = aState[0] as Mobile;
+                Mobile? from = aState[0] as Mobile;
                 from.Delete();
             }
         }
@@ -2489,7 +2858,7 @@ namespace Server.Engines.CronScheduler
                                 // if rider ignore
                                 if (mob is BaseMount)
                                 {
-                                    BaseMount bm = mob as BaseMount;
+                                    BaseMount? bm = mob as BaseMount;
                                     if (bm.Rider != null)
                                     {   // don't even think about it
                                         mob.ToDelete = false;
@@ -2500,7 +2869,7 @@ namespace Server.Engines.CronScheduler
                                 // if stabled ignore
                                 if (mob is BaseCreature)
                                 {
-                                    BaseCreature bc = mob as BaseCreature;
+                                    BaseCreature? bc = mob as BaseCreature;
                                     if (bc.IsAnyStabled == true)
                                     {   // don't even think about it
                                         mob.ToDelete = false;
@@ -2537,7 +2906,7 @@ namespace Server.Engines.CronScheduler
                 foreach (Mobile m in list)
                 {
                     mobsdeleted++;
-                    Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object[] { m, null });
+                    Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object?[] { m, null });
                 }
             }
             catch (Exception e)
@@ -2563,7 +2932,7 @@ namespace Server.Engines.CronScheduler
             object[] aState = (object[])state;
             if (aState[0] != null && aState[0] is Mobile && (aState[0] as Mobile).Deleted == false && (aState[0] as Mobile).ToDelete == true)
             {
-                Mobile from = aState[0] as Mobile;
+                Mobile? from = aState[0] as Mobile;
                 from.Delete();
             }
         }
@@ -2644,7 +3013,7 @@ namespace Server.Engines.CronScheduler
                 foreach (Mobile m in list)
                 {
                     NumberDeleted++;
-                    Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object[] { m, null });
+                    Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object?[] { m, null });
                 }
 
                 Logger.Finish();
@@ -2664,7 +3033,7 @@ namespace Server.Engines.CronScheduler
             object[] aState = (object[])state;
             if (aState[0] != null && aState[0] is Mobile && (aState[0] as Mobile).Deleted == false && (aState[0] as Mobile).ToDelete == true)
             {
-                Mobile from = aState[0] as Mobile;
+                Mobile? from = aState[0] as Mobile;
                 from.Delete();
             }
         }
@@ -2674,7 +3043,7 @@ namespace Server.Engines.CronScheduler
             // player vendors, regular and rented: probably never GM Placed
             if (m is PlayerVendor)
             {
-                PlayerVendor cx = m as PlayerVendor;
+                PlayerVendor? cx = m as PlayerVendor;
                 if (cx.Owner != null && cx.Owner.AccessLevel > AccessLevel.Player)
                     return true;
             }
@@ -2682,7 +3051,7 @@ namespace Server.Engines.CronScheduler
             // PlayerBarkeeper: Used for work deco and player statues
             if (m is PlayerBarkeeper)
             {
-                PlayerBarkeeper cx = m as PlayerBarkeeper;
+                PlayerBarkeeper? cx = m as PlayerBarkeeper;
                 if (cx.Owner != null && cx.Owner.AccessLevel > AccessLevel.Player)
                     return true;
             }
@@ -2690,7 +3059,7 @@ namespace Server.Engines.CronScheduler
             // HouseSitter: Don't know why we would ever have one of these GM placed
             if (m is HouseSitter)
             {
-                HouseSitter cx = m as HouseSitter;
+                HouseSitter? cx = m as HouseSitter;
                 if (cx.Owner != null && cx.Owner.AccessLevel > AccessLevel.Player)
                     return true;
             }
@@ -2698,7 +3067,7 @@ namespace Server.Engines.CronScheduler
             // Barkeeps on a spawner are protected. like the Warden in prison
             if (m is BaseCreature)
             {
-                BaseCreature cx = m as BaseCreature;
+                BaseCreature? cx = m as BaseCreature;
                 if (cx.Spawner != null)
                     return true;
             }
@@ -2712,8 +3081,8 @@ namespace Server.Engines.CronScheduler
 
         private bool InHouse(object k)
         {
-            Mobile m = k as Mobile;
-            Item i = k as Item;
+            Mobile? m = k as Mobile;
+            Item? i = k as Item;
 
             if (i != null)
                 return (Region.Find(i.Location, i.Map) is HouseRegion);
@@ -2795,7 +3164,7 @@ namespace Server.Engines.CronScheduler
                 foreach (Item item in list)
                 {
                     NumberDeleted++;
-                    Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object[] { item, null });
+                    Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object?[] { item, null });
                 }
 
                 Logger.Finish();
@@ -2823,8 +3192,8 @@ namespace Server.Engines.CronScheduler
 
         private bool InHouse(object k)
         {
-            Mobile m = k as Mobile;
-            Item i = k as Item;
+            Mobile? m = k as Mobile;
+            Item? i = k as Item;
 
             if (i != null)
                 return (Region.Find(i.Location, i.Map) is HouseRegion);
@@ -2874,7 +3243,7 @@ namespace Server.Engines.CronScheduler
                     else if (item is BankBox)
                     {
                         BankBox box = (BankBox)item;
-                        Mobile owner = box.Owner;
+                        Mobile? owner = box.Owner;
 
                         if (owner == null)
                         {
@@ -2932,7 +3301,7 @@ namespace Server.Engines.CronScheduler
 
                     for (int i = 0; i < items.Count; ++i)
                         // there is often tens of thousands of items, so we *really* spread it out (1.5, 30.5)
-                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(1.5, 30.5)), new TimerStateCallback(Tick), new object[] { items[i], null });
+                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(1.5, 30.5)), new TimerStateCallback(Tick), new object?[] { items[i], null });
                 }
             }
             catch (Exception e)
@@ -2948,7 +3317,7 @@ namespace Server.Engines.CronScheduler
         private void Tick(object state)
         {
             object[] aState = (object[])state;
-            Item item = aState[0] as Item;
+            Item? item = aState[0] as Item;
             if (item != null && item.Deleted == false)
                 item.Delete();
         }
@@ -3006,7 +3375,7 @@ namespace Server.Engines.CronScheduler
                 {
                     // only look at guildstones
                     if (!(i is StrongBox)) continue;
-                    StrongBox sb = i as StrongBox;
+                    StrongBox? sb = i as StrongBox;
 
                     iChecked++;
                     if (i.Map != Map.Internal)          // not internal (internal cleanup done elsewhere)
@@ -3044,7 +3413,7 @@ namespace Server.Engines.CronScheduler
                 foreach (Item item in list)
                 {
                     NumberDeleted++;
-                    Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object[] { item, null });
+                    Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object?[] { item, null });
                 }
 
                 Logger.Finish();
@@ -3062,7 +3431,7 @@ namespace Server.Engines.CronScheduler
         private void Tick(object state)
         {
             object[] aState = (object[])state;
-            Item item = aState[0] as Item;
+            Item? item = aState[0] as Item;
 
             if (item != null && item.Deleted == false && item.ToDelete == true)
                 item.Delete();
@@ -3181,7 +3550,7 @@ namespace Server.Engines.CronScheduler
                 foreach (Item item in list)
                 {
                     ItemsDeleted++;
-                    Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object[] { item, null });
+                    Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object?[] { item, null });
                 }
             }
             catch (Exception e)
@@ -3205,7 +3574,7 @@ namespace Server.Engines.CronScheduler
         private void Tick(object state)
         {
             object[] aState = (object[])state;
-            Item item = aState[0] as Item;
+            Item? item = aState[0] as Item;
             if (item != null && item.Deleted == false && item.ToDelete == true)
                 item.Delete();
         }
@@ -3269,7 +3638,7 @@ namespace Server.Engines.CronScheduler
         private void Tick(object state)
         {
             object[] aState = (object[])state;
-            PlayerMobile pm = aState[0] as PlayerMobile;
+            PlayerMobile? pm = aState[0] as PlayerMobile;
             SkillName? LastSkill = (aState[1] != null) ? (SkillName)aState[1] : null; // SkillName.Null;
 
             if (pm != null && LastSkill != null /*SkillName.Null*/)
@@ -3316,6 +3685,14 @@ namespace Server.Engines.CronScheduler
             return false;
         }
 
+        private bool IsHarrower(BaseCreature bc)
+        {
+            return (bc != null && !bc.Deleted && bc.GetType() == typeof(Harrower));
+        }
+        private bool IsChampion(BaseCreature bc)
+        {
+            return bc is BaseChampion;
+        }
         private int MobileLifespanCleanupWorker(out int mobsdeleted, double timeout)
         {
             int iChecked = 0;
@@ -3325,6 +3702,7 @@ namespace Server.Engines.CronScheduler
                 ArrayList ToDelete = new ArrayList();
                 foreach (Mobile m in World.Mobiles.Values)
                 {
+
                     // mobiles on the internal map are handled elsewhere (includes stabled)
                     // Note: PlayerVendors are not BaseCreature, and are handled elsewhere
                     if (m is BaseCreature bc && bc.Map != Map.Internal && !bc.Deleted)
@@ -3338,12 +3716,13 @@ namespace Server.Engines.CronScheduler
                             && !bc.IsStaffOwned         // placed by staff,  no deleting!
                             && !bc.SpawnerTempMob       // spawner template mobs, no deleting
                             && !(bc is BaseVendor)      // house sitters, barkeeps, auctioneers (Idea: exclude if Admin owned or InHouseRegion only. Others could be deleted.)
-                            && !bc.IOBFollower          // probably handled by !bc.Controled
                             && !bc.Blessed              // Zoo animals etc.
                             && !Exhibit(bc)             // special exhibit mobiles
                             && !Utility.LinkedTo(bc)    // linked to from one of our controllers
                             && !bc.GetCreatureBool(CreatureBoolTable.IsTownshipLivestock)
                             && !(bc is ITownshipNPC)    // township NPC
+                            && !IsHarrower(bc)          // you may live as long as need be
+                            && !IsChampion(bc)          // you may live as long as need be
                             )
                         {
                             // if it's time to die, and if he's not been attacked recently...
@@ -3371,7 +3750,7 @@ namespace Server.Engines.CronScheduler
                     for (int i = 0; i < ToDelete.Count; i++)
                     {
                         mobsdeleted++;
-                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(MobileLifespanCleanupWorkerTick), new object[] { ToDelete[i], null });
+                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(MobileLifespanCleanupWorkerTick), new object?[] { ToDelete[i], null });
 
                         // Adam: do not spend too much time here
                         //	this is no longer an issue as we fixed the very slow region.InternalExit and sector.OnLeave
@@ -3444,7 +3823,7 @@ namespace Server.Engines.CronScheduler
                     if (m is PlayerMobile && (m as PlayerMobile).KillerTimes != null)
                     {
                         mobileschecked++;
-                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object[] { m, null });
+                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object?[] { m, null });
                     }
                 }
             }
@@ -3511,11 +3890,11 @@ namespace Server.Engines.CronScheduler
                 // even when a house sitter refreshes a house (one day,) we still to then do normal decay processing
                 foreach (Mobile mob in World.Mobiles.Values)
                 {
-                    Mobiles.HouseSitter hs = mob as Mobiles.HouseSitter;
+                    Mobiles.HouseSitter? hs = mob as Mobiles.HouseSitter;
 
                     if (hs != null)
                     {
-                        DoHouseDecay(new object[] { hs, null });
+                        DoHouseDecay(new object?[] { hs, null });
                     }
                 }
 
@@ -3524,17 +3903,17 @@ namespace Server.Engines.CronScheduler
                 {
                     for (int i = 0; i < list.Count; i++)
                     {
-                        Server.Multis.BaseHouse house = list[i] as Server.Multis.BaseHouse;
+                        Server.Multis.BaseHouse? house = list[i] as Server.Multis.BaseHouse;
                         if (house != null)
                         {
-                            DoHouseDecay(new object[] { house, null });
+                            DoHouseDecay(new object?[] { house, null });
                             numberchecked++;
                         }
                     }
                 }
 
                 // record the 'last' check - sets HouseDecayLast
-                DoHouseDecay(new object[] { null, null });
+                DoHouseDecay(new object?[] { null, null });
             }
             catch (Exception e)
             {
@@ -3608,13 +3987,13 @@ namespace Server.Engines.CronScheduler
         private void DoHouseDecay(object state)
         {
             object[] aState = (object[])state;
-            HouseSitter houseSitter = aState[0] as HouseSitter;
-            BaseHouse house = aState[0] as BaseHouse;
+            HouseSitter? houseSitter = aState[0] as HouseSitter;
+            BaseHouse? house = aState[0] as BaseHouse;
             if (houseSitter != null && houseSitter.Deleted == false)
             {
                 try
                 {
-                    Server.Multis.BaseHouse sittersHouse = Server.Multis.BaseHouse.FindHouseAt(houseSitter);
+                    Server.Multis.BaseHouse? sittersHouse = Server.Multis.BaseHouse.FindHouseAt(houseSitter);
                     // sitterHouse
                     if (sittersHouse != null)
                     {
@@ -3624,7 +4003,7 @@ namespace Server.Engines.CronScheduler
                             {
                                 if (!sittersHouse.NeverDecay && ((sittersHouse.StructureDecayTime - DateTime.UtcNow) < TimeSpan.FromDays(houseSitter.RefreshUntilDays)))
                                 {
-                                    int costperday = sittersHouse.MaxSecures * houseSitter.ChargPerSecure;
+                                    int costperday = sittersHouse.MaxSecureContainers * houseSitter.ChargPerSecure;
                                     Container cont = houseSitter.Owner.BankBox;
                                     if (cont != null)
                                     {
@@ -3780,12 +4159,12 @@ namespace Server.Engines.CronScheduler
             {
                 foreach (Item item in World.Items.Values)
                 {
-                    Plants.PlantItem plant = item as Plants.PlantItem;
+                    Plants.PlantItem? plant = item as Plants.PlantItem;
 
                     if (plant != null && plant.IsGrowable && plant.ValidGrowthLocation)
                     {
                         plantschecked++;
-                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object[] { plant, null });
+                        Timer.DelayCall(TimeSpan.FromSeconds(Utility.RandomDouble(.75, 1.5)), new TimerStateCallback(Tick), new object?[] { plant, null });
                     }
                 }
 
@@ -3806,7 +4185,7 @@ namespace Server.Engines.CronScheduler
             try
             {
                 object[] aState = (object[])state;
-                Plants.PlantItem plant = aState[0] as Plants.PlantItem;
+                Plants.PlantItem? plant = aState[0] as Plants.PlantItem;
                 if (plant != null && plant.Deleted == false)
                 {
                     plant.PlantSystem.NextGrowth = DateTime.UtcNow;
@@ -3887,7 +4266,8 @@ namespace Server.Engines.CronScheduler
             max = 0;
             try
             {
-                max = OverlandTreasureHunter.CountGems();
+                // 1/26/2026, Adam: don't like this method. We will just reasonable numbers so we don't get treasure hunters looking for ~2 gems
+                //max = OverlandTreasureHunter.CountGems();
             }
             catch (Exception e)
             {
@@ -3948,7 +4328,7 @@ namespace Server.Engines.CronScheduler
             List<Point3D> allocated = new();
             foreach (var px in seeds)
             {
-                BaseMulti bm = BaseMulti.FindAt(px, Map.Felucca);
+                BaseMulti? bm = BaseMulti.FindAt(px, Map.Felucca);
                 if (bm != null && bm.GetType().IsAssignableFrom(type))
                     allocated.Add(px);
             }
@@ -3962,10 +4342,6 @@ namespace Server.Engines.CronScheduler
                     // too close
                     return false;
             return true;
-        }
-        private void MarkAsDynamic()
-        {
-
         }
         private bool DynamicCampSystemWorker(List<Point3D> seeds, int Want, Type type, List<Point3D> locations)
         {
@@ -3982,7 +4358,7 @@ namespace Server.Engines.CronScheduler
                         if (MinDistance(Have, location) && !Have.Contains(location))
                             if (CampManager.CheckLocation(ref location, Map.Felucca, retries: 1))
                             {
-                                BaseMulti camp = (BaseMulti)Activator.CreateInstance(type);
+                                BaseMulti? camp = (BaseMulti?)Activator.CreateInstance(type);
                                 camp.MoveToWorld(location, Map.Felucca);
                                 Have.Add(location);
                                 locations.Add(location);
@@ -4035,7 +4411,7 @@ namespace Server.Engines.CronScheduler
             try
             {
                 OverlandSpawner.OverlandSpawner om = new OverlandSpawner.OverlandSpawner();
-                Mobile m = null;
+                Mobile? m = null;
                 if (om != null)
                 {
                     switch (Utility.Random(3))
@@ -4104,7 +4480,7 @@ namespace Server.Engines.CronScheduler
     {
         public void EmailDonationReminder()
         {
-            if (TestCenter.Enabled == false)
+            if (TestCenterServer.Enabled == false)
             {
                 System.Console.Write("Building list of donation reminders ... ");
                 Utility.TimeCheck tc = new Utility.TimeCheck();
@@ -4137,7 +4513,7 @@ namespace Server.Engines.CronScheduler
 
                 // Adam: lets keep the above code around for future needs, but for now lets use our mailing list
                 //	NOTE: If you change this make sure to remove the password from the subject line
-                string password = Environment.GetEnvironmentVariable("AI.EMAIL.DISTLIST.PASSWORD");
+                string? password = Environment.GetEnvironmentVariable("AI.EMAIL.DISTLIST.PASSWORD");
                 if (password == null || password.Length == 0)
                     throw new ApplicationException("the password for distribution list access is not set.");
                 Reminders = 1;
@@ -4170,7 +4546,7 @@ namespace Server.Engines.CronScheduler
     {
         public void WeaponDistribution()
         {
-            if (TestCenter.Enabled == false)
+            if (TestCenterServer.Enabled == false)
             {
                 System.Console.Write("Emailing a report of weapon distribution among players ... ");
                 Utility.TimeCheck tc = new Utility.TimeCheck();
@@ -4202,7 +4578,7 @@ namespace Server.Engines.CronScheduler
             for (int i = 0; i < toCatalog.Count; i++)
             {
                 // Catalog online players only
-                PlayerMobile pm = toCatalog[i] as PlayerMobile;
+                PlayerMobile? pm = toCatalog[i] as PlayerMobile;
                 if (pm != null)
                 {
                     int PrevTotal = Archery + Fencing + Macing + Magery + Swords;
@@ -4253,7 +4629,10 @@ namespace Server.Engines.CronScheduler
                 toCatalog.Count);
 
             // okay, now send this report off
-            new Emailer().SendEmail("luke@tomasello.com", "weapon distribution among players", body, false);
+            new Emailer().SendEmail("luke@tomasello.com",
+                $"Weapon distribution among players for {Core.Server}",
+                body,
+                false);
 
             return toCatalog.Count;
         }
@@ -4277,7 +4656,7 @@ namespace Server.Engines.CronScheduler
             tc.Start();
             ServerWarsAES ServerWars = new ServerWarsAES();
             int Reminders = 0;
-            if (TestCenter.Enabled == false && ServerWars != null)
+            if (TestCenterServer.Enabled == false && ServerWars != null)
                 ServerWarsReminders(ServerWars, out Reminders);
             tc.End();
             System.Console.WriteLine("AES Server Wars scheduled.");
@@ -4304,7 +4683,7 @@ namespace Server.Engines.CronScheduler
 
                 // Adam: lets keep the above code around for future needs, but for now lets use our mailing list
                 //	NOTE: If you change this make sure to remove the password from the subject line
-                string password = Environment.GetEnvironmentVariable("AI.EMAIL.DISTLIST.PASSWORD");
+                string? password = Environment.GetEnvironmentVariable("AI.EMAIL.DISTLIST.PASSWORD");
                 if (password == null || password.Length == 0)
                     throw new ApplicationException("the password for distribution list access is not set.");
                 Reminders = 1;
@@ -4371,86 +4750,6 @@ namespace Server.Engines.CronScheduler
         }
     }
     #endregion TownInvasionAES
-
-    #region KinRansomAES (off)
-    // Kick off an automated Kin Ransom Quest (AES)
-    class CKinRansomAES
-    {
-        public void KinRansomAES()
-        {   // 4nd Sunday of the month. However, we schedule it 24 hours prior!!
-            System.Console.Write("AES Kin Ransom Quest initiated ... ");
-            Utility.TimeCheck tc = new Utility.TimeCheck();
-            tc.Start();
-            KinRansomAES KinRansom = new KinRansomAES();
-            int Reminders = 0;
-            if (TestCenter.Enabled == false && KinRansom != null)
-                RansomQuestReminders(KinRansom, out Reminders);
-            tc.End();
-            System.Console.WriteLine("AES Kin Ransom Quest scheduled with {0} reminders sent.", Reminders);
-        }
-
-        private int RansomQuestReminders(KinRansomAES KinRansom, out int Reminders)
-        {
-            int iChecked = 0;
-            Reminders = 0;
-            try
-            {
-                // loop through the accouints looking for current users
-                ArrayList results = new ArrayList();
-                /*foreach (Account acct in Accounts.Table.Values)
-				{
-					iChecked++;
-					if (acct.DoNotSendEmail == false)
-						if (EmailHelpers.RecentLogin(acct, 120) == true)
-						{
-							Reminders++;
-							results.Add(acct.EmailAddress);
-						}
-				}*/
-
-                // Adam: lets keep the above code around for future needs, but for now lets use our mailing list
-                //	NOTE: If you change this make sure to remove the password from the subject line
-                string password = Environment.GetEnvironmentVariable("AI.EMAIL.DISTLIST.PASSWORD");
-                if (password == null || password.Length == 0)
-                    throw new ApplicationException("the password for distribution list access is not set.");
-                Reminders = 1;
-                iChecked = 1;
-                results.Clear();
-                results.Add(Environment.GetEnvironmentVariable("AI.EMAIL.ANNOUNCEMENTS"));
-
-                if (Reminders > 0)
-                {
-                    Server.Engines.CronScheduler.RansomQuestReminderMsg er = new Server.Engines.CronScheduler.RansomQuestReminderMsg();
-
-                    // from Ransome AES
-                    DateTime EventStartTime = KinRansom.EventStartTime;     // DateTime.UtcNow.AddDays(1.0);		// 24 hours from now
-                    DateTime EventEndTime = KinRansom.EventEndTime;         // EventStartTime.AddHours(3.0);	// 3 hour event
-                                                                            //DateTime ChestOpenTime = KinRansom.ChestOpenTime;		// EventEndTime.AddMinutes(-15.0);	// at 2hrs and 45 min, open the chest
-
-                    // Sunday, November 20th
-                    string subject = string.Format(password + er.m_subject,
-                        EventStartTime);                // Sunday, November 20th
-
-                    string body = string.Format(er.m_body,
-                        EventStartTime                  // Sunday, November 20th
-                        );
-
-                    // okay, now hand the list of users off to our mailer daemon
-                    new Emailer().SendEmail(results, subject, body, false);
-                }
-
-            }
-            catch (Exception e)
-            {
-                LogHelper.LogException(e);
-                System.Console.WriteLine("Exception Caught in Ransome Quest Donation Reminder code: " + e.Message);
-                System.Console.WriteLine(e.StackTrace);
-            }
-            return iChecked;
-        }
-
-    }
-    #endregion KinRansomAES
 
     #region CrazyMapDayAES (off)
     // Kick off an automated Crazy Map Day (AES)
@@ -4669,7 +4968,7 @@ namespace Server.Engines.CronScheduler
         {
             PlayerQuestsDeleted = 0;
             int count = 0;
-            LogHelper Logger = null;
+            LogHelper? Logger = null;
             try
             {
                 ArrayList ToDelete = new ArrayList();
@@ -4678,7 +4977,7 @@ namespace Server.Engines.CronScheduler
                 foreach (Item ix in World.Items.Values)
                 {
                     if (ix is PlayerQuestDeed == false) continue;
-                    PlayerQuestDeed pqd = ix as PlayerQuestDeed;    // get the deed
+                    PlayerQuestDeed? pqd = ix as PlayerQuestDeed;    // get the deed
                     if (pqd.Expired == false) continue;             // do nothing, it's still in play
                     if (pqd.Deleted == true) continue;              // already been deleted (and the container along with it.)
                                                                     // we have a container that belongs to an expired quest
@@ -4698,7 +4997,7 @@ namespace Server.Engines.CronScheduler
                 // cleanup
                 for (int i = 0; i < ToDelete.Count; i++)
                 {
-                    BaseContainer bc = ToDelete[i] as BaseContainer;
+                    BaseContainer? bc = ToDelete[i] as BaseContainer;
                     if (bc != null)
                     {
                         // record the expiring quest chest
@@ -4810,7 +5109,7 @@ namespace Server.Engines.CronScheduler
         {
             try
             {
-                RotateLogs.ArchiveNow();
+                RotateLogs.RotateNow();
                 return true;
             }
             catch (Exception e)
@@ -4870,6 +5169,9 @@ namespace Server.Engines.CronScheduler
             Utility.TimeCheck tc = new Utility.TimeCheck();
             tc.Start();
             int townshipcount = TownshipStone.AllTownshipStones.Count;
+            // FreezeTownshipDecay is handled within DoAllTownshipFees
+            if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.FreezeTownshipDecay))
+                System.Console.WriteLine("while global township decay is suspended, townships will not be cleaned up.");
             int townshipsremoved = TownshipStone.DoAllTownshipFees();
             tc.End();
             System.Console.WriteLine("removed {0} of {1} townships in: {2}.", townshipsremoved, townshipcount, tc.TimeTaken);
@@ -4909,50 +5211,6 @@ namespace Server.Engines.CronScheduler
     }
     #endregion TownshipCharges
 
-    #region FreezeDryInit
-    // freezedry containers that need it after startup .. run once after startup
-#if false
-    class CFreezeDryInit
-    {
-        public void FreezeDryInit()
-        {
-            System.Console.Write("Freeze Dry starup init...");
-            Utility.TimeCheck tc = new Utility.TimeCheck();
-            tc.Start();
-            int scheduled = FreezeDryInitWorker();
-            tc.End();
-            System.Console.WriteLine("{0} containers scheduled for freeze drying in: {1}.", scheduled, tc.TimeTaken);
-        }
-
-        private int FreezeDryInitWorker()
-        {
-            int scheduled = 0;
-
-            try
-            {
-                foreach (Item i in World.Items.Values)
-                {
-                    if (i as Container != null)
-                    {
-                        Container cx = i as Container;
-                        if (cx.ScheduleFreeze())
-                            scheduled++;
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                LogHelper.LogException(e);
-                System.Console.WriteLine("FreezeDryInit code: " + e.Message);
-                System.Console.WriteLine(e.StackTrace);
-            }
-
-            return scheduled;
-        }
-    }
-#endif
-    #endregion FreezeDryInit
-
     #region WealthTracker
     // see who's making all the money on the shard (look for exploits)
     class CWealthTracker
@@ -4984,8 +5242,8 @@ namespace Server.Engines.CronScheduler
                 for (int ix = 0; ix < list.Length; ix++)
                 {
                     Server.Engines.WealthTracker.IPDomain node = list[ix] as Server.Engines.WealthTracker.IPDomain;
-                    Server.Engines.WealthTracker.AccountDomain ad = Server.Engines.WealthTracker.GetFirst(node.accountList) as Server.Engines.WealthTracker.AccountDomain; // just first account
-                    Mobile m = Server.Engines.WealthTracker.GetFirst(ad.mobileList) as Mobile;                   // just first mobile
+                    Server.Engines.WealthTracker.AccountDomain? ad = Server.Engines.WealthTracker.GetFirst(node.accountList) as Server.Engines.WealthTracker.AccountDomain; // just first account
+                    Mobile? m = Server.Engines.WealthTracker.GetFirst(ad.mobileList) as Mobile;                   // just first mobile
                     string sx = string.Format("mob:{2}, gold:{0}, loc:{1}", node.gold, node.location, m);
                     Logger1.Log(LogType.Text, sx);
                     Logger2.Log(LogType.Text, sx);
@@ -5213,6 +5471,356 @@ namespace Server.Engines.CronScheduler
     }
     #endregion WinterChamp
 
+    #region ThePumpkinKing
+    // Halloween 2026: start The Pumpkin King every 5 hours (continuous), Oct 28 8:00 AM through Oct 31 Pacific.
+    //  ThePumpkinKingShell is registered hourly (Pacific) and calls ThePumpkinKing only at the 5-hour marks inside the window.
+    //  ThePumpkinKing is ungated (on demand via [Run). An active spawn is never interrupted.
+    class CThePumpkinKing
+    {
+        private static readonly Point3D ChampLocation = new Point3D(1434, 1389, 0);
+        private static readonly DateTime WindowStart = new DateTime(2026, 10, 28, 8, 0, 0);   // Pacific wall clock
+        private static readonly DateTime WindowEnd = new DateTime(2026, 11, 1, 0, 0, 0);      // exclusive
+        private const int IntervalHours = 5;
+
+        public void ThePumpkinKingShell()
+        {
+            try
+            {
+                DateTime now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time"));
+                if (now < WindowStart || now >= WindowEnd)
+                    return;
+
+                int hours = (int)Math.Round((now - WindowStart).TotalHours);
+                if (hours % IntervalHours != 0)
+                    return;
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogException(e);
+                System.Console.WriteLine("The Pumpkin King cron: " + e.Message);
+                System.Console.WriteLine(e.StackTrace);
+                return;
+            }
+
+            ThePumpkinKing();
+        }
+
+        public void ThePumpkinKing()
+        {
+            try
+            {
+                ChampEngine? champ = null;
+                foreach (ChampEngine ce in ChampEngine.Instances)
+                    if (!ce.Deleted && ce.Map == Map.Felucca && ce.Location == ChampLocation)
+                    {
+                        champ = ce;
+                        break;
+                    }
+
+                if (champ == null)
+                {
+                    System.Console.WriteLine("The Pumpkin King: no ChampEngine at {0}.", ChampLocation);
+                    return;
+                }
+
+                champ.RestartTimer = false;
+
+                if (champ.Running == false)
+                {
+                    if (!string.Equals(champ.DefinitionName, "ThePumpkinKing", StringComparison.OrdinalIgnoreCase))
+                        champ.DefinitionName = "ThePumpkinKing";
+                    champ.Running = true;
+                    System.Console.WriteLine("The Pumpkin King has risen.");
+                }
+
+                // the pumpkin patch grows while the event runs
+                SetPumpkinPatch(true);
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogException(e);
+                System.Console.WriteLine("The Pumpkin King cron: " + e.Message);
+                System.Console.WriteLine(e.StackTrace);
+            }
+        }
+
+        // Registered at minute 55 (Pacific): if the next hour is a 5-hour mark inside the window and the champ is not already
+        //  running, the town criers announce the invasion for 25 minutes (5 before the start, 20 after).
+        private static TownCrierEntry? m_CrierEntry;
+        private static readonly string[] CrierLines =
+        {
+            "Creeping vines overrun the fields beyond Britain!",
+            "They wear our faces: the living and the fallen!",
+            "A king crowned in burning gourds rises.",
+            "Take up arms, and beware the faces you trust!",
+        };
+
+        public void ThePumpkinKingCrier()
+        {
+            try
+            {
+                DateTime now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time"));
+                DateTime start = new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0).AddHours(1);   // the coming hour
+                if (start < WindowStart || start >= WindowEnd)
+                    return;
+
+                int hours = (int)Math.Round((start - WindowStart).TotalHours);
+                if (hours % IntervalHours != 0)
+                    return;
+
+                foreach (ChampEngine ce in ChampEngine.Instances)
+                    if (!ce.Deleted && ce.Map == Map.Felucca && ce.Location == ChampLocation && ce.Running)
+                        return;     // still running: the cron will not restart it, so no announcement
+
+                if (m_CrierEntry != null)
+                    GlobalTownCrierEntryList.Instance.RemoveEntry(m_CrierEntry);
+
+                m_CrierEntry = new TownCrierEntry(CrierLines, TimeSpan.FromMinutes(25), Serial.MinusOne);
+                GlobalTownCrierEntryList.Instance.AddEntry(m_CrierEntry);
+                System.Console.WriteLine("The Pumpkin King: town crier announcement posted.");
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogException(e);
+                System.Console.WriteLine("The Pumpkin King crier: " + e.Message);
+                System.Console.WriteLine(e.StackTrace);
+            }
+        }
+
+        // The end of the event, Nov 1 2026 3:00 AM Pacific: 6 hours after the last start (Oct 31 9:00 PM), clear of the end of
+        //  daylight saving time (2:00 AM that night). A spawn nobody finishes never stops on its own (it rolls back to level 0
+        //  and keeps spawning), and a finished one leaves its last monsters standing.
+        //  ThePumpkinKingShutdownShell (scheduled) runs only on that date; ThePumpkinKingShutdown (on demand, [Run) is ungated.
+        private static readonly DateTime ShutdownDay = new DateTime(2026, 11, 1);                // Pacific wall clock
+
+        public void ThePumpkinKingShutdownShell()
+        {
+            try
+            {
+                DateTime now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time"));
+                if (now.Date != ShutdownDay)
+                    return;
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogException(e);
+                System.Console.WriteLine("The Pumpkin King shutdown: " + e.Message);
+                System.Console.WriteLine(e.StackTrace);
+                return;
+            }
+
+            ThePumpkinKingShutdown();
+        }
+
+        // stops The Pumpkin King and removes its monsters, takes down any town crier announcement, and stops the pumpkin patch
+        public void ThePumpkinKingShutdown()
+        {
+            try
+            {
+                foreach (ChampEngine ce in ChampEngine.Instances)
+                    if (!ce.Deleted && ce.Map == Map.Felucca && ce.Location == ChampLocation)
+                    {
+                        ce.RestartTimer = false;
+                        ce.Running = false;
+                        ce.ClearMonsters = true;
+                        System.Console.WriteLine("The Pumpkin King has fallen: the event is over.");
+                    }
+
+                if (m_CrierEntry != null)
+                {
+                    GlobalTownCrierEntryList.Instance.RemoveEntry(m_CrierEntry);
+                    m_CrierEntry = null;
+                }
+
+                SetPumpkinPatch(false);
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogException(e);
+                System.Console.WriteLine("The Pumpkin King shutdown: " + e.Message);
+                System.Console.WriteLine(e.StackTrace);
+            }
+        }
+
+        // The pumpkin patch: the 8x8 PumpkinPatchVine grid spawner beside the champ (PatchV259), on Felucca and Test Center.
+        //  Turned on with each start, off at the end of the event; pumpkins already grown stay until they are picked.
+        private static readonly Point3D PatchLocation = new Point3D(1436, 1395, 0);
+
+        private static void SetPumpkinPatch(bool on)
+        {
+            foreach (Map map in new Map[] { Map.Felucca, Map.TestCenter })
+            {
+                if (map == null || map == Map.Internal)
+                    continue;
+
+                List<GridSpawner> patches = new List<GridSpawner>();
+                IPooledEnumerable eable = map.GetItemsInRange(PatchLocation, 0);
+                foreach (Item item in eable)
+                    if (item is GridSpawner gs && !gs.Deleted && gs.X == PatchLocation.X && gs.Y == PatchLocation.Y)
+                        patches.Add(gs);
+                eable.Free();
+
+                foreach (GridSpawner patch in patches)
+                    if (patch.Running != on)
+                    {
+                        patch.Running = on;
+                        if (on)
+                            patch.ScheduleRespawn = true;       // grow now (1-15 seconds), not at the next respawn
+                        System.Console.WriteLine("The Pumpkin King: pumpkin patch {0} on {1}.", on ? "started" : "stopped", map);
+                    }
+            }
+        }
+    }
+    #endregion ThePumpkinKing
+
+    #region Seasonal Wipe
+    // Reset the Seasons world
+    class CSeasonalWipe
+    {
+        public void SeasonalWipe()
+        {
+            if (!Core.RuleSets.SeasonsRules())
+            {
+                System.Console.Write($"Seasonal wipe not available on {Core.Server}...\n");
+                return;
+            }
+            System.Console.Write("Wiping shard...\n");
+            Utility.TimeCheck tc = new Utility.TimeCheck();
+            tc.Start();
+            SeasonalWipeWorker();
+            tc.End();
+            System.Console.WriteLine("Seasonal shard wipe complete : {0}.", tc.TimeTaken);
+        }
+
+        private void RespawnTick(object state)
+        {
+            // Unpack and validate the start time
+            if (state is not DateTime utcStart)
+            {
+                Console.WriteLine("RespawnTick: Invalid state object (expected DateTime).");
+                return;
+            }
+
+            Console.WriteLine("Seasonal respawn started.");
+
+            // Run the actual respawn work
+            var respawnResult = TotalRespawnCommand.TotalRespawnWorker(null);
+
+            // Calculate elapsed time
+            DateTime utcEnd = DateTime.UtcNow;
+            TimeSpan elapsed = utcEnd - utcStart;
+            string elapsedFormatted = $"{(int)elapsed.TotalMinutes}m {elapsed.Seconds:D2}s";
+
+            // Output respawn results
+            Console.WriteLine("Seasonal respawn finished.");
+            Console.WriteLine($" - Objects processed: {respawnResult.TotalCount:N0}");
+            Console.WriteLine($" - Spawners:          {respawnResult.SpawnerCount:N0}");
+            Console.WriteLine($" - Fillables:         {respawnResult.FillableCount:N0}");
+            Console.WriteLine($" - Duration:          {elapsedFormatted} ({elapsed.TotalSeconds:F2} seconds total)");
+            Console.WriteLine();
+
+            if (Core.Developing)
+            {
+                // === SAFETY PROMPT BEFORE FINAL SAVE + RESTART ===
+                Console.WriteLine("=== FINAL STEP ===");
+                Console.WriteLine("The server is about to SAVE the world and RESTART.");
+                Console.WriteLine("This will lock in all changes from the seasonal wipe.");
+                Console.Write("Type 'yes' to continue (or anything else to abort): ");
+
+                string? response = Console.ReadLine()?.Trim().ToLowerInvariant();
+
+                if (response != "yes")
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Aborted by user. Server will NOT save or restart.");
+                    Console.WriteLine("You can manually save and restart later if desired.");
+                    return;
+                }
+
+                Console.WriteLine();
+                Console.WriteLine("User confirmed. Saving world and restarting server...");
+            }
+
+            // Final save and restart
+            World.Save();
+            /* Must be run again after final save - it was done previously for reporting reasons */
+            Console.WriteLine("PreLaunch: Initializing resource pool (final)...");
+            OwnerTools.InitializeResourcePool();
+            Console.WriteLine("PreLaunch: Wiping leaderboards (final) ...");
+            OwnerTools.WipeLeaderboards();
+            Core.Kill(restart: true);
+        }
+        private void SeasonalWipeWorker()
+        {
+            try
+            {
+                var result = OwnerTools.WipeDriver(null);
+
+                // ───────────────────────────────────────────────
+                // Seasonal Wipe Results (Programmatic)
+                // ───────────────────────────────────────────────
+                Console.WriteLine("Seasonal Wipe completed successfully.");
+                Console.WriteLine("----------------------------------------");
+                Console.WriteLine($"Boats deleted:                  {result.BoatsCount,6:N0}");
+                Console.WriteLine($"Player vendors deleted:         {result.VendorsCount,6:N0}");
+                Console.WriteLine($"Player-owned pets deleted:      {result.PlayerPetsCount,6:N0}");
+                Console.WriteLine($"Accounts deleted (non-owners):  {result.AccountsDeletedCount,6:N0}");
+                Console.WriteLine($"Items deleted from containers:  {result.ItemsEmptiedCount,6:N0}");
+                Console.WriteLine($"Items decayed:                  {result.ItemsDecayedCount,6:N0}");
+                Console.WriteLine($"Doppelganger corpses deleted:   {result.DoppelgangerCorpsesCount,6:N0}");
+                Console.WriteLine($"Quest givers deactivated:       {result.QuestGiversDeactivatedCount,6:N0}");
+                Console.WriteLine($"Custom house deeds repriced:    {result.HousingDeedsRepriced,6:N0}");
+                /* Must be run again after final save - it's really only done here for reporting purposes */
+                Console.WriteLine($"Resource consignments deleted:  {result.ResourcePoolConsignmentsDeleted,6:N0}");
+                Console.WriteLine($"Leaderboards wiped:             {result.LeaderboardsWiped}");
+                Console.WriteLine("----------------------------------------");
+
+                int totalDeleted =
+                    result.BoatsCount +
+                    result.VendorsCount +
+                    result.PlayerPetsCount +
+                    result.AccountsDeletedCount +
+                    result.ItemsEmptiedCount +
+                    result.ItemsDecayedCount +
+                    result.DoppelgangerCorpsesCount +
+                    result.QuestGiversDeactivatedCount +
+                    result.ResourcePoolConsignmentsDeleted +
+                    result.HousingDeedsRepriced;
+
+                Console.WriteLine($"TOTAL ITEMS / ENTITIES DELETED: {totalDeleted,6:N0}");
+                Console.WriteLine("Wipe finished at: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                Console.WriteLine();
+
+                // Reset seasonal accounts and earning baselines,
+                // then advance to the next season.
+                Console.WriteLine("SeasonEnding: begin");
+
+                int oldSeason = SeasonManager.Season;
+                int accountsReset = SeasonManager.SeasonEnding();
+
+                Console.WriteLine($"SeasonEnding: advanced Season {oldSeason} -> {SeasonManager.Season}.");
+                Console.WriteLine($"SeasonEnding: reset {accountsReset} seasonal accounts.");
+                Console.WriteLine("SeasonEnding: reset all seasonal earning baselines.");
+                Console.WriteLine("SeasonEnding: complete");
+
+                World.Broadcast(0x35, true, $"The {Core.Server} world is respawning, please wait...");
+                Console.WriteLine($"The {Core.Server} world is respawning, please wait...");
+
+                Timer.DelayCall(TimeSpan.Zero, new TimerStateCallback(RespawnTick), DateTime.UtcNow);
+            }
+            catch (Exception e)
+            {
+                LogHelper.LogException(e);
+                Console.WriteLine("Seasonal wipe FAILED");
+                Console.WriteLine("Error: " + e.Message);
+                Console.WriteLine("StackTrace:");
+                Console.WriteLine(e.StackTrace);
+                Console.WriteLine();
+            }
+        }
+    }
+    #endregion Seasonal Wipe
+
     #region CheckChamps
     // eg. turn on winter champ / turn off autumn champ
     class CCheckChamps
@@ -5237,7 +5845,7 @@ namespace Server.Engines.CronScheduler
                 {
                     if (World.FindItem(serial) as ChampEngine != null)
                     {
-                        ChampEngine champ = World.FindItem(serial) as ChampEngine;
+                        ChampEngine? champ = World.FindItem(serial) as ChampEngine;
                         Console.WriteLine("{0} seasonal champ found.", champ.Name);
                         if (champ.RestartTimer == true)
                             Utility.Monitor.WriteLine("{0} seasonal champ is running.", ConsoleColor.Green, champ.Name);
@@ -5285,7 +5893,7 @@ namespace Server.Engines.CronScheduler
                 {
                     if (World.FindItem(serial) as ChampEngine != null)
                     {
-                        ChampEngine champ = World.FindItem(serial) as ChampEngine;
+                        ChampEngine? champ = World.FindItem(serial) as ChampEngine;
                         champ.Name = names[index++];
                         Console.WriteLine("Resetting seasonal champ {0}.", champ.Name);
                         ChampHelpers.ToggleChamp(serial, false);
@@ -5311,13 +5919,13 @@ namespace Server.Engines.CronScheduler
     public class ChampHelpers
     {
         #region Champ Codes
-        public static Serial Summer_Pirate 
+        public static Serial Summer_Pirate
         {
-            get 
-            { 
+            get
+            {
                 foreach (ChampEngine ce in ChampEngine.Instances)
-                    if (ce.SpawnType == ChampLevelData.SpawnTypes.Pirate_Full_Sea)
-                        return ce.Serial; 
+                    if (ce.DefinitionName == ChampNames.Pirate_Full_Sea)
+                        return ce.Serial;
                 return Serial.Zero;
             }
         }
@@ -5326,7 +5934,7 @@ namespace Server.Engines.CronScheduler
             get
             {
                 foreach (ChampEngine ce in ChampEngine.Instances)
-                    if (ce.SpawnType == ChampLevelData.SpawnTypes.Bob)
+                    if (ce.DefinitionName == ChampNames.Bob)
                         return ce.Serial;
                 return Serial.Zero;
             }
@@ -5336,7 +5944,7 @@ namespace Server.Engines.CronScheduler
             get
             {
                 foreach (ChampEngine ce in ChampEngine.Instances)
-                    if (ce.SpawnType == ChampLevelData.SpawnTypes.FrozenHost)
+                    if (ce.DefinitionName == ChampNames.FrozenHost)
                         return ce.Serial;
                 return Serial.Zero;
             }
@@ -5346,7 +5954,7 @@ namespace Server.Engines.CronScheduler
             get
             {
                 foreach (ChampEngine ce in ChampEngine.Instances)
-                    if (ce.SpawnType == ChampLevelData.SpawnTypes.Vampire)
+                    if (ce.DefinitionName == ChampNames.Vampire)
                         return ce.Serial;
                 return Serial.Zero;
             }
@@ -5357,7 +5965,7 @@ namespace Server.Engines.CronScheduler
             try
             {
                 // turn on a Champ
-                ChampEngine Champ = World.FindItem(champ) as ChampEngine;
+                ChampEngine? Champ = World.FindItem(champ) as ChampEngine;
                 if (Champ == null)
                     new ApplicationException(string.Format("World.FindItem({0:X}) as ChampEngine", champ));
                 else
@@ -5386,10 +5994,6 @@ namespace Server.Engines.CronScheduler
                         {
                             if (state == true)
                             {
-#if false
-                                // champ goes on, guards go off
-                                rx.IsGuarded = false;
-#endif
                             }
                             else
                             {   // champ goes off, guards go on
@@ -5410,7 +6014,7 @@ namespace Server.Engines.CronScheduler
         }
         public static string ChampName(Serial serial)
         {
-            ChampEngine Champ = World.FindItem(serial) as ChampEngine;
+            ChampEngine? Champ = World.FindItem(serial) as ChampEngine;
             if (Champ != null)
                 return Champ.Name;
             else

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,7 +36,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -83,82 +82,39 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021014234922/uo.stratics.com/hunters/zombie.shtml
+            // Body Parts, Sometimes Bone Armor
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackItem(new Bone());
-                PackGold(25, 50);
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
 
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021014234922/uo.stratics.com/hunters/zombie.shtml
-                    // Body Parts, Sometimes Bone Armor
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                        switch (Utility.Random(10))
-                        {
-                            case 0: PackItem(new LeftArm()); break;
-                            case 1: PackItem(new RightArm()); break;
-                            case 2: PackItem(new Torso()); break;
-                            case 3: PackItem(new Bone()); break;
-                            case 4: PackItem(new RibCage()); break;
-                            case 5: PackItem(new RibCage()); break;
-                            case 6: PackItem(new BonePile()); break;
-                            case 7: PackItem(new BonePile()); break;
-                            case 8: PackItem(new BonePile()); break;
-                            case 9: PackItem(new BonePile()); break;
-                        }
-
-                        if (0.12 > Utility.RandomDouble())
-                            switch (Utility.Random(5))
-                            {
-                                case 0: PackItem(new BoneArms()); break;
-                                case 1: PackItem(new BoneChest()); break;
-                                case 2: PackItem(new BoneGloves()); break;
-                                case 3: PackItem(new BoneLegs()); break;
-                                case 4: PackItem(new BoneHelm()); break;
-                            }
-                    }
-                }
-                else
+                switch (Utility.Random(10))
                 {
-                    if (Spawning)
-                    {
-                        switch (Utility.Random(10))
-                        {
-                            case 0: PackItem(new LeftArm()); break;
-                            case 1: PackItem(new RightArm()); break;
-                            case 2: PackItem(new Torso()); break;
-                            case 3: PackItem(new Bone()); break;
-                            case 4: PackItem(new RibCage()); break;
-                            case 5: PackItem(new RibCage()); break;
-                            case 6: PackItem(new BonePile()); break;
-                            case 7: PackItem(new BonePile()); break;
-                            case 8: PackItem(new BonePile()); break;
-                            case 9: PackItem(new BonePile()); break;
-                        }
-                    }
-
-                    AddLoot(LootPack.Meager);
+                    case 0: PackItem(new LeftArm()); break;
+                    case 1: PackItem(new RightArm()); break;
+                    case 2: PackItem(new Torso()); break;
+                    case 3: PackItem(new Bone()); break;
+                    case 4: PackItem(new RibCage()); break;
+                    case 5: PackItem(new RibCage()); break;
+                    case 6: PackItem(new BonePile()); break;
+                    case 7: PackItem(new BonePile()); break;
+                    case 8: PackItem(new BonePile()); break;
+                    case 9: PackItem(new BonePile()); break;
                 }
+
+                if (0.12 > Utility.RandomDouble())
+                    switch (Utility.Random(5))
+                    {
+                        case 0: PackItem(new BoneArms()); break;
+                        case 1: PackItem(new BoneChest()); break;
+                        case 2: PackItem(new BoneGloves()); break;
+                        case 3: PackItem(new BoneLegs()); break;
+                        case 4: PackItem(new BoneHelm()); break;
+                    }
             }
+
         }
 
         public override OppositionGroup OppositionGroup

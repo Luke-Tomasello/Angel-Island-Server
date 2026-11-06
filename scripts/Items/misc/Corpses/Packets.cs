@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -38,7 +38,7 @@ namespace Server.Network
 
             for (int i = 0; i < list.Count; ++i)
             {
-                Item item = (Item)list[i];
+                Item? item = (Item?)list[i];
 
                 if (!item.Deleted && beholder.CanSee(item) && item.Parent == beheld)
                 {
@@ -69,7 +69,7 @@ namespace Server.Network
 
             for (int i = 0; i < count; ++i)
             {
-                Item child = (Item)items[i];
+                Item? child = (Item?)items[i];
 
                 if (!child.Deleted && child.Parent == beheld && beholder.CanSee(child))
                 {
@@ -126,7 +126,7 @@ namespace Server.Network
 
             for (int i = 0; i < items.Count; ++i)
             {
-                Item child = (Item)items[i];
+                Item? child = (Item?)items[i];
 
                 if (!child.Deleted && child.Parent == beheld && beholder.CanSee(child))
                 {

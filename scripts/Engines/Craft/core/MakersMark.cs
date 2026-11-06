@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -60,7 +60,7 @@ namespace Server.Engines.Craft
             m_Name = name;
         }
 
-        public static implicit operator MakersMark(Mobile m)
+        public static implicit operator MakersMark(Mobile? m)
         {
             if (m != null)
                 return new MakersMark(m, Utility.Intern(Server.Misc.Titles.FormatShort(m)));
@@ -78,7 +78,7 @@ namespace Server.Engines.Craft
             return mm.ToString();
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return (obj is MakersMark && this.Equals((MakersMark)obj));
         }
@@ -103,17 +103,6 @@ namespace Server.Engines.Craft
             return result;
         }
 
-#if false
-        public static bool operator ==(MakersMark l, MakersMark r)
-        {
-            return (l.m_Mobile == r.m_Mobile && l.m_Name == r.m_Name);
-        }
-
-        public static bool operator !=(MakersMark l, MakersMark r)
-        {
-            return (l.m_Mobile != r.m_Mobile || l.m_Name != r.m_Name);
-        }
-#endif
 
         [Flags]
         private enum SaveFlag : byte

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -46,7 +46,7 @@ namespace Server.SkillHandlers
             SkillInfo.Table[46].Callback = new SkillUseCallback(OnUse);
         }
 
-        public static bool CheckOkayHolding(Item item)
+        public static bool CheckOkayHolding(Item? item)
         {
             if (item == null)
                 return true;
@@ -63,7 +63,7 @@ namespace Server.SkillHandlers
             return false;
         }
 
-        public static bool IsMeddableArmor(BaseArmor ba)
+        public static bool IsMeddableArmor(BaseArmor? ba)
         {
             try
             {
@@ -122,8 +122,8 @@ namespace Server.SkillHandlers
             }
             else
             {
-                Item oneHanded = m.FindItemOnLayer(Layer.OneHanded);
-                Item twoHanded = m.FindItemOnLayer(Layer.TwoHanded);
+                Item? oneHanded = m.FindItemOnLayer(Layer.OneHanded);
+                Item? twoHanded = m.FindItemOnLayer(Layer.TwoHanded);
 
                 if (Core.RuleSets.AOSRules())
                 {

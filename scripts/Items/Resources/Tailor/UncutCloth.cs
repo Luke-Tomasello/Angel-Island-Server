@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -20,7 +20,6 @@
  ***************************************************************************/
 
 using Server.Network;
-using System;
 
 namespace Server.Items
 {
@@ -95,7 +94,12 @@ namespace Server.Items
         {
             if (Deleted || !from.CanSee(this)) return false;
 
-            base.ScissorHelper(scissors, from, new Bandage(), 1);
+            // we track starting loot with the FamilyID.
+            //  Various restrictions are placed on FamilyID (player does not control this id, vendors don't buy, etc.)
+            Item new_item = new Bandage();
+            new_item.FamilyID = this.FamilyID;
+
+            base.ScissorHelper(scissors, from, new_item, 1);
 
             return true;
         }

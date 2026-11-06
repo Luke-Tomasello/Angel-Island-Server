@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -135,7 +135,7 @@ namespace Server.Mobiles
 
             if (c.Int > 70 && m_Mobile.MagicDamageAbsorb <= 0 && m_Mobile.Mana > 20 && m_Mobile.Hits > 60 && m_Mobile.CanBeginAction(typeof(DefensiveSpell)))
             {
-                Spell temp = c.Spell as Spell;
+                Spell? temp = c.Spell as Spell;
 
                 if (temp == null || (temp != null && temp.IsCasting && (int)temp.Circle <= (int)SpellCircle.Fourth))
                     return new MagicReflectSpell(m_Mobile, null);
@@ -145,7 +145,7 @@ namespace Server.Mobiles
                 return new ReactiveArmorSpell(m_Mobile, null);
 
 
-            Spell spell = null;
+            Spell? spell = null;
 
             int healChance = (m_Mobile.Hits == 0 ? m_Mobile.HitsMax : (m_Mobile.HitsMax / m_Mobile.Hits));
 
@@ -154,7 +154,7 @@ namespace Server.Mobiles
                 default:
                 case 0: // Heal ourself
                     {
-                        if (HealPotCount >= 1 && m_Mobile.Hits < (m_Mobile.HitsMax - 30))
+                        if (UsesPotions && HealPotCount >= 1 && m_Mobile.Hits < (m_Mobile.HitsMax - 30))
                             DrinkHeal(m_Mobile);
                         else if (m_Mobile.Hits < (m_Mobile.HitsMax - 35) && m_Mobile.Hits >= 45)
                             spell = new GreaterHealSpell(m_Mobile, null);
@@ -250,7 +250,7 @@ namespace Server.Mobiles
                 m_EnemyCountersPara = true;
             }
 
-            Spell spell = null;
+            Spell? spell = null;
 
             if (Combo == 0)
             {
@@ -341,7 +341,7 @@ namespace Server.Mobiles
         public override bool DoActionCombat(MobileInfo info)
         {
             m_Mobile.DebugSay(DebugFlags.AI, "doing HumanMageAI combat action");
-            Mobile combatant = info.target;
+            Mobile? combatant = info.target;
             m_Mobile.Warmode = true;
 
             if (combatant == null || info.gone || info.dead || info.hidden || info.fled)
@@ -456,11 +456,11 @@ namespace Server.Mobiles
             if (m_Mobile.Spell == null && DateTime.UtcNow > m_NextCastTime && m_Mobile.InRange(combatant, 12))
             {
                 // We are ready to cast a spell
-                Spell spell = null;
-                Mobile toDispel = FindDispelTarget(true);
+                Spell? spell = null;
+                Mobile? toDispel = FindDispelTarget(true);
 
                 //try an cure with a pot first if the poison is serious or where in the middle of dumping
-                if (UsesPotions && (m_Mobile.Poisoned && m_Mobile.Poison.Level >= 3) || m_Mobile.Poisoned && Combo != -1)
+                if (UsesPotions && ((m_Mobile.Poisoned && m_Mobile.Poison.Level >= 3) || m_Mobile.Poisoned && Combo != -1))
                 {
                     DrinkCure(m_Mobile);
                 }
@@ -548,11 +548,11 @@ namespace Server.Mobiles
             bool isTrap = (targ is MagicTrapSpell.InternalTarget);
             bool teleportAway = false;
 
-            Mobile toTarget = null;
+            Mobile? toTarget = null;
 
             if (isTrap)
             {
-                Pouch p = FindPouch(m_Mobile);
+                Pouch? p = FindPouch(m_Mobile);
                 if (p != null)
                 {
                     targ.Invoke(m_Mobile, p);

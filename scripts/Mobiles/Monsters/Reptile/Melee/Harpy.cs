@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -86,7 +86,7 @@ namespace Server.Mobiles
         }
 
         public override bool CanRummageCorpses { get { return Core.RuleSets.AngelIslandRules() ? true : true; } }
-        public override int Meat { get { return Core.RuleSets.AngelIslandRules() ? 4 : 2; } }
+        public override int Meat { get { return 2; } }
         public override MeatType MeatType { get { return MeatType.Bird; } }
         public override int Feathers { get { return 50; } }
 
@@ -97,27 +97,16 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-                PackGold(50, 100);
+            // http://web.archive.org/web/20020403074327/uo.stratics.com/hunters/harpy.shtml
+            // 50 to 150 Gold, 2 raw bird (carved), 50 Feathers (carved)
+
+            if (Spawning)
+            {
+                PackGold(50, 150);
+            }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020403074327/uo.stratics.com/hunters/harpy.shtml
-                    // 50 to 150 Gold, 2 raw bird (carved), 50 Feathers (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(50, 150);
-                    }
-                    else
-                    {
-                        // no lootz
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Meager, 2);
-                }
+                // no lootz
             }
         }
 

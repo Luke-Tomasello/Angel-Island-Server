@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,33 +19,26 @@
  *
  ***************************************************************************/
 
-/* OVERVIEW
- * This module controls those settings which are common to both Siege and Mortalis.
- *  Unlike ItemManagementConsole which controls items globally and specifically for Angel Island
- */
-
-/* Scripts\Engines\CoreManagement\SiegeManagementConsole .cs
+/* Scripts\Engines\CoreManagement\SiegeManagementConsole.cs
  * ChangeLog
  *  9/6/22, Yoar
  *      Add a switch for EnableIslandSiegeZone
- * First time check in
  *  8/26/22, Adam (SiegeBless)
  *      Add toggle for siege bless.
+ *  3/18/26, Luke
+ *      Refactored to inherit from BaseConsole.
  */
 
-namespace Server.Items
+namespace Server.Engines.Consoles
 {
-    [FlipableAttribute(0x1f14, 0x1f15, 0x1f16, 0x1f17)]
-    public class SiegeManagementConsole : Item
+    public class SiegeManagementConsole : BaseConsole
     {
         [Constructable]
         public SiegeManagementConsole()
-            : base(0x1F14)
+            : base("Siege Management Console")
         {
-            Weight = 1.0;
-            Hue = 0x534;
-            Name = "Siege Management Console";
         }
+
         public SiegeManagementConsole(Serial serial)
             : base(serial)
         {
@@ -54,14 +47,10 @@ namespace Server.Items
         [CommandProperty(AccessLevel.Administrator)]
         public bool EnableSiegeBless
         {
-            //SiegeBless
-            get
-            {
-                return CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.SiegeBless);
-            }
+            get => CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.SiegeBless);
             set
             {
-                if (value == true)
+                if (value)
                     CoreAI.SetDynamicFeature(CoreAI.FeatureBits.SiegeBless);
                 else
                     CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.SiegeBless);
@@ -71,7 +60,7 @@ namespace Server.Items
         [CommandProperty(AccessLevel.Administrator)]
         public bool EnableIslandSiegeZone
         {
-            get { return WorldZone.ActiveZone != null; }
+            get => WorldZone.ActiveZone != null;
             set
             {
                 if (value)
@@ -84,9 +73,7 @@ namespace Server.Items
         public override void OnDoubleClick(Mobile from)
         {
             if (from.AccessLevel > AccessLevel.Administrator)
-            {
                 from.SendGump(new Server.Gumps.PropertiesGump(from, this));
-            }
         }
 
         public override void Serialize(GenericWriter writer)

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -47,7 +47,7 @@ namespace Server
 
     public class Entity : IEntity, IComparable<Entity>
     {
-        public int CompareTo(IEntity other)
+        public int CompareTo(IEntity? other)
         {
             if (other == null)
                 return -1;
@@ -55,15 +55,15 @@ namespace Server
             return m_Serial.CompareTo(other.Serial);
         }
 
-        public int CompareTo(Entity other)
+        public int CompareTo(Entity? other)
         {
-            return this.CompareTo((IEntity)other);
+            return this.CompareTo((IEntity?)other);
         }
 
-        public int CompareTo(object other)
+        public int CompareTo(object? other)
         {
             if (other == null || other is IEntity)
-                return this.CompareTo((IEntity)other);
+                return this.CompareTo((IEntity?)other);
 
             throw new ArgumentException();
         }

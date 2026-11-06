@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,9 +36,9 @@ namespace Server.Engines.ConPVP
         private Mobile m_From;
         private Ruleset m_Ruleset;
         private RulesetLayout m_Page;
-        private DuelContext m_DuelContext;
+        private DuelContext? m_DuelContext;
         private bool m_ReadOnly;
-        private RulesetClosedHandler m_OnRulesetClosed;
+        private RulesetClosedHandler? m_OnRulesetClosed;
 
         public void AddGoldenButton(int x, int y, int bid)
         {
@@ -54,7 +54,7 @@ namespace Server.Engines.ConPVP
         {
         }
 
-        public RulesetGump(Mobile from, Ruleset ruleset, RulesetLayout page, DuelContext duelContext, bool readOnly, RulesetClosedHandler onRulesetClosed) : base(readOnly ? 310 : 50, 50)
+        public RulesetGump(Mobile from, Ruleset ruleset, RulesetLayout page, DuelContext? duelContext, bool readOnly, RulesetClosedHandler? onRulesetClosed) : base(readOnly ? 310 : 50, 50)
         {
             m_From = from;
             m_Ruleset = ruleset;

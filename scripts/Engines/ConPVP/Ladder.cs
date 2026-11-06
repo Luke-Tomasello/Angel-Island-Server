@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -226,7 +226,7 @@ namespace Server.Engines.ConPVP
 
         private int Swap(int idx, int newIdx)
         {
-            object hold = m_Entries[idx];
+            object? hold = m_Entries[idx];
 
             m_Entries[idx] = m_Entries[newIdx];
             m_Entries[newIdx] = hold;
@@ -257,7 +257,7 @@ namespace Server.Engines.ConPVP
 
         public LadderEntry Find(Mobile mob)
         {
-            LadderEntry entry = (LadderEntry)m_Table[mob];
+            LadderEntry? entry = (LadderEntry?)m_Table[mob];
 
             if (entry == null)
             {
@@ -267,11 +267,6 @@ namespace Server.Engines.ConPVP
             }
 
             return entry;
-        }
-
-        public LadderEntry FindNoCreate(Mobile mob)
-        {
-            return m_Table[mob] as LadderEntry;
         }
 
         private static Ladder m_Instance;
@@ -316,7 +311,7 @@ namespace Server.Engines.ConPVP
 
                             for (int i = 0; i < m_Entries.Count; ++i)
                             {
-                                LadderEntry entry = (LadderEntry)m_Entries[i];
+                                LadderEntry? entry = (LadderEntry?)m_Entries[i];
 
                                 entry.Index = i;
                             }
@@ -396,7 +391,7 @@ namespace Server.Engines.ConPVP
             writer.WriteEncodedInt((int)m_Losses);
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             return ((LadderEntry)obj).m_Experience - m_Experience;
         }

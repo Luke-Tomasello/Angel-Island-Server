@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -87,7 +87,7 @@ namespace Server.Targets
 
                 if (itemID == 0xD15 || itemID == 0xD16) // red mushroom
                 {
-                    PlayerMobile player = from as PlayerMobile;
+                    PlayerMobile? player = from as PlayerMobile;
 
                     if (player != null)
                     {
@@ -95,7 +95,7 @@ namespace Server.Targets
 
                         if (qs is WitchApprenticeQuest)
                         {
-                            FindIngredientObjective obj = qs.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
+                            FindIngredientObjective? obj = qs.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
 
                             if (obj != null && !obj.Completed && obj.Ingredient == Ingredient.RedMushrooms)
                             {
@@ -125,7 +125,7 @@ namespace Server.Targets
                     }
                     else
                     {
-                        HarvestBank bank = def.GetBank(map, loc.X, loc.Y);
+                        HarvestBank? bank = def.GetBank(map, loc.X, loc.Y);
 
                         if (bank == null)
                             return;

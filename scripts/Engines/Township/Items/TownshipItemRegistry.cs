@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -69,9 +69,9 @@ namespace Server.Township
             m_Table[item] = c;
         }
 
-        public TownshipItemContext Lookup(Item item, bool create = false)
+        public TownshipItemContext? Lookup(Item item, bool create = false)
         {
-            TownshipItemContext context;
+            TownshipItemContext? context;
 
             if (m_Table.TryGetValue(item, out context))
                 return context;
@@ -84,7 +84,7 @@ namespace Server.Township
 
         #region FindItem
 
-        public Item FindItem(Type type)
+        public Item? FindItem(Type type)
         {
             foreach (KeyValuePair<Item, TownshipItemContext> kvp in m_Table)
             {
@@ -174,7 +174,7 @@ namespace Server.Township
 
             for (int i = 0; i < count; i++)
             {
-                Item item = reader.ReadItem();
+                Item? item = reader.ReadItem();
                 TownshipItemContext context = new TownshipItemContext(reader, item, version);
 
                 if (item != null)

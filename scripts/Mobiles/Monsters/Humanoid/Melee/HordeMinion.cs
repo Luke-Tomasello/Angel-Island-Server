@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -94,39 +94,23 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // 02 2002 - no page. We'll go with the horde daemon
+            // http://web.archive.org/web/20020806230925/uo.stratics.com/hunters/hordedaemon.shtml
+            // body parts
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackItem(new Bone(3));
-                // TODO: Body parts
+
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // 02 2002 - no page
-                    // http://web.archive.org/web/20020806230925/uo.stratics.com/hunters/hordedaemon.shtml
-                    // body parts
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                        switch (Utility.Random(6))
-                        {
-                            case 0: PackItem(new Head()); break;
-                            case 1: PackItem(new Torso()); break;
-                            case 2: PackItem(new LeftArm()); break;
-                            case 3: PackItem(new LeftLeg()); break;
-                            case 4: PackItem(new RightArm()); break;
-                            case 5: PackItem(new RightLeg()); break;
-                        }
-                    }
-                }
-                else
+                switch (Utility.Random(6))
                 {
-                    PackItem(new Bone(3));
-                    // TODO: Body parts
+                    case 0: PackItem(new Head()); break;
+                    case 1: PackItem(new Torso()); break;
+                    case 2: PackItem(new LeftArm()); break;
+                    case 3: PackItem(new LeftLeg()); break;
+                    case 4: PackItem(new RightArm()); break;
+                    case 5: PackItem(new RightLeg()); break;
                 }
             }
         }

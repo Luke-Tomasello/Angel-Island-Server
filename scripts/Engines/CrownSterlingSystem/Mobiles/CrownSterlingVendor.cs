@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -225,7 +225,7 @@ namespace Server.Engines.CrownSterlingSystem
 
             protected override void OnTarget(Mobile from, object target)
             {
-                Item duped = null;
+                Item? duped = null;
                 if (target is Item item)
                 {
                     duped = Utility.DeepDupe(item);
@@ -309,7 +309,7 @@ namespace Server.Prompts
             m_RemoveFromRewardsDatabase = removeDb;
         }
 
-        private void SetInfo(Mobile from, int itemId, int basePrice, int hue, string label)
+        private void SetInfo(Mobile from, int itemId, int basePrice, int hue, string? label)
         {
             CrownSterlingReward reward = new CrownSterlingReward(itemId, basePrice, hue, label);
 
@@ -338,7 +338,7 @@ namespace Server.Prompts
             int itemID = 0;
             int basePrice = 0;
             int hue = 0;
-            string label = null;
+            string? label = null;
             try
             {
                 string[] tokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -393,7 +393,7 @@ namespace Server.Prompts
             m_RemoveFromRewardsDatabase = removeDb;
         }
 
-        private void SetInfo(Mobile from, int itemId, int basePrice, int hue, string label)
+        private void SetInfo(Mobile from, int itemId, int basePrice, int hue, string? label)
         {
             CrownSterlingReward reward = new CrownSterlingReward(itemId, basePrice, hue, label);
 
@@ -423,7 +423,7 @@ namespace Server.Prompts
             int itemID = 0;
             int basePrice = 0;
             int hue = 0;
-            string label = null;
+            string? label = null;
             try
             {
                 string[] tokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -480,7 +480,7 @@ namespace Server.Prompts
             m_RemoveFromRewardsDatabase = removeDb;
         }
 
-        private void SetInfo(Mobile from, Item item, int basePrice, int hue, string label)
+        private void SetInfo(Mobile from, Item item, int basePrice, int hue, string? label)
         {   // sets DeleteOnRestart, we will explicitly clear this
             CrownSterlingReward reward = new CrownSterlingReward(item, basePrice, hue, label);
 
@@ -516,7 +516,7 @@ namespace Server.Prompts
             int itemID = 0;
             int basePrice = 0;
             int hue = 0;
-            string label = null;
+            string? label = null;
             try
             {
                 string[] tokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

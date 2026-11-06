@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -73,59 +73,31 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021215144938/uo.stratics.com/hunters/vorpalbunny.shtml
+            // 600-700 Gold, Carrots, Gems, Scrolls, Magic Items, Statue, Brightly Colored Eggs
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(250, 350);
-                PackItem(new Carrot());
-                // TODO: statue, eggs
+                PackGold(600, 700);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021215144938/uo.stratics.com/hunters/vorpalbunny.shtml
-                    // 600-700 Gold, Carrots, Gems, Scrolls, Magic Items, Statue, Brightly Colored Eggs
-                    if (Spawning)
-                    {
-                        PackGold(600, 700);
-                    }
-                    else
-                    {
-                        PackItem(new Carrot(Utility.RandomMinMax(5, 10)));
+                PackItem(new Carrot(Utility.RandomMinMax(5, 10)));
 
-                        PackGem(1, .9);
-                        PackGem(1, .05);
+                PackGem(1, .9);
+                PackGem(1, .05);
 
-                        PackScroll(1, 7);
-                        PackScroll(1, 7, 0.2);
+                PackScroll(1, 7);
+                PackScroll(1, 7, 0.2);
 
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 2);
-                        else
-                            PackMagicItem(1, 2, 0.30);
-
-                        PackStatue(0.02);
-
-                        if (Utility.Random(5) == 0)
-                            PackItem(new BrightlyColoredEggs());
-                    }
-                }
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 2);
                 else
-                {
-                    if (Spawning)
-                    {
-                        int carrots = Utility.RandomMinMax(5, 10);
-                        PackItem(new Carrot(carrots));
+                    PackMagicItem(1, 2, 0.30);
 
-                        if (Utility.Random(5) == 0)
-                            PackItem(new BrightlyColoredEggs());
+                PackStatue(0.02);
 
-                        PackStatue(0.02);
-                    }
-
-                    AddLoot(LootPack.FilthyRich);
-                    AddLoot(LootPack.Rich, 2);
-                }
+                if (Utility.Random(5) == 0)
+                    PackItem(new BrightlyColoredEggs());
             }
         }
 

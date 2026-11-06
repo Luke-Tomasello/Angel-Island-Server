@@ -36,14 +36,18 @@
       </PackagePath>
     </None>
   </ItemGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-    <DefineConstants>HAVE_SPAN</DefineConstants>
-  </PropertyGroup>
 
 <PropertyGroup>
 	<OutputPath>..\</OutputPath>
 	<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	<PlatformTarget>AnyCPU</PlatformTarget>
+</PropertyGroup>
+
+<!-- ZLR.VM is frozen third-party code: suppress only the warning codes it currently produces, so new categories still surface.
+     CS1591 missing XML doc comment; CS0618 obsolete member; CS8602/CS8603/CS8604/CS8618/CS8622/CS8714/CS8765 nullable;
+     MSB3884 rule set file ..\ZLR.ruleset not found -->
+<PropertyGroup>
+	<NoWarn>$(NoWarn);CS1591;CS0618;CS8602;CS8603;CS8604;CS8618;CS8622;CS8714;CS8765;MSB3884</NoWarn>
 </PropertyGroup>
 </Project>

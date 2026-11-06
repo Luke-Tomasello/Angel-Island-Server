@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -119,7 +119,7 @@ namespace Server.Engines.Help
             }
         }
 
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         public void Stop()
         {
@@ -202,7 +202,7 @@ namespace Server.Engines.Help
 
         public static bool CheckAllowedToPage(Mobile from)
         {
-            PlayerMobile pm = from as PlayerMobile;
+            PlayerMobile? pm = from as PlayerMobile;
 
             if (pm == null)
                 return true;
@@ -234,7 +234,7 @@ namespace Server.Engines.Help
         [Description("Opens the page queue menu.")]
         private static void Pages_OnCommand(CommandEventArgs e)
         {
-            PageEntry entry = (PageEntry)m_KeyedByHandler[e.Mobile];
+            PageEntry? entry = (PageEntry?)m_KeyedByHandler[e.Mobile];
 
             if (entry != null)
             {
@@ -270,7 +270,7 @@ namespace Server.Engines.Help
             Remove((PageEntry)m_KeyedBySender[sender]);
         }
 
-        public static void Remove(PageEntry e)
+        public static void Remove(PageEntry? e)
         {
             if (e == null)
                 return;

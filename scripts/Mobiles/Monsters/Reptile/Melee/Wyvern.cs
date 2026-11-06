@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,8 +30,6 @@
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -107,47 +105,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // 02 2002 docs won't load
+            // http://web.archive.org/web/20020414130048/http://uo.stratics.com/hunters/wyvern.shtml
+            // 100 to 250 Gold, Potions, Scrolls (circles 4-7), Treasure Maps
+            // I can't find info on the treasure map level, but RunUO says 2, so we'll use that
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackItem(new LesserPoisonPotion());
-
-                PackGold(100, 130);
-                PackScroll(4, 7);
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(100, 250);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // 02 2002 docs won't load
-                    // http://web.archive.org/web/20020806212404/uo.stratics.com/hunters/wyvern.shtml
-                    // 100 to 250 Gold, Potions, Scrolls (circles 4-7), Treasure Maps
-                    // I can't find info on the treasure map level, but RunUO says 2, so we'll use that
-                    if (Spawning)
-                    {
-                        PackGold(100, 250);
-                    }
-                    else
-                    {
-                        PackPotion(0.9);
-                        PackPotion(0.6);
+                PackPotion(0.9);
+                PackPotion(0.6);
 
-                        PackScroll(4, 7);
-                        PackScroll(4, 7, 0.8);
-                        PackScroll(4, 7, 0.2);
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                        PackItem(new LesserPoisonPotion());
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Meager);
-                    AddLoot(LootPack.MedScrolls);
-                }
+                PackScroll(4, 7);
+                PackScroll(4, 7, 0.8);
+                PackScroll(4, 7, 0.2);
             }
         }
 

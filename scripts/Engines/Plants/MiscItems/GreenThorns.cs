@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -161,7 +161,7 @@ namespace Server.Items
                 }
                 else
                 {
-                    LandTarget land = targeted as LandTarget;
+                    LandTarget? land = targeted as LandTarget;
 
                     if (land == null)
                     {
@@ -169,7 +169,7 @@ namespace Server.Items
                     }
                     else
                     {
-                        GreenThornsEffect effect = GreenThornsEffect.Create(from, land);
+                        GreenThornsEffect? effect = GreenThornsEffect.Create(from, land);
 
                         if (effect == null)
                         {
@@ -222,7 +222,7 @@ namespace Server.Items
                         goto fail;
 
                     List<IEntity> list = new() { targeted as Item, targeted as Mobile };
-                    IEntity ent = list.Where(e => e != null).FirstOrDefault();
+                    IEntity? ent = list.Where(e => e != null).FirstOrDefault();
 
                     if (ent != null)
                     {
@@ -304,48 +304,6 @@ namespace Server.Items
         }
 
 
-#if false
-        public class GreenThornsFTargetTarget : Target
-        {
-            GreenThorns m_thorn;
-            public GreenThornsFTargetTarget(object o) : base(12, true, TargetFlags.None) 
-            {
-                m_thorn = o as GreenThorns; 
-            }
-            protected override void OnTarget(Mobile from, object targeted)
-            {
-                #region do we want to support all these target types? 
-                //LandTarget tl = targeted as LandTarget;
-                //Item it = targeted as Item;
-                //Mobile mt = targeted as Mobile;
-                //StaticTarget st = targeted as StaticTarget;
-                #endregion do we want to support all these target types? 
-
-                if (m_thorn == null || m_thorn.PointDestination == Point3D.Zero || m_thorn.TargetLocation == Point3D.Zero || m_thorn.Map == null)
-                    goto fail;
-
-                List<IEntity> list = new() { targeted as Item, targeted as Mobile };
-                IEntity ent = list.Where(e => e != null).FirstOrDefault();
-
-                if (ent == null)
-                {
-                    if (ent.Location == m_thorn.TargetLocation)
-                    {
-                        BaseCreature.TeleportPets(from, m_thorn.PointDestination, m_thorn.MapDestination);
-                        from.MoveToWorld(m_thorn.PointDestination, m_thorn.MapDestination);
-                        from.Send(new PlaySound(0x20E, from.Location));
-                        m_thorn.Delete();
-                    }
-                    else 
-                        from.SendMessage("Hmm, that doesn't seem to be the place.");
-                    return;
-                }
-
-                fail:
-                from.SendMessage("Hmm, that doesn't seem to go anywhere.");
-            }
-        }
-#endif
     }
 
     public abstract class GreenThornsEffect : Timer
@@ -356,7 +314,7 @@ namespace Server.Items
             private Type m_Effect;
 
             public int[] Tiles { get { return m_Tiles; } }
-            public Type Effect { get { return m_Effect; } }
+            public Type? Effect { get { return m_Effect; } }
 
             public TilesAndEffect(int[] tiles, Type effect)
             {
@@ -469,7 +427,7 @@ namespace Server.Items
                 typeof( SandGreenThornsEffect ) )
             };
 
-        public static GreenThornsEffect Create(Mobile from, LandTarget land)
+        public static GreenThornsEffect? Create(Mobile from, LandTarget land)
         {
             if (!from.Map.CanSpawnLandMobile(land.Location))
                 return null;
@@ -485,7 +443,7 @@ namespace Server.Items
 
                 if (contains)
                 {
-                    GreenThornsEffect effect = (GreenThornsEffect)Activator.CreateInstance(taep.Effect, new object[] { land.Location, from.Map, from });
+                    GreenThornsEffect? effect = (GreenThornsEffect?)Activator.CreateInstance(taep.Effect, new object[] { land.Location, from.Map, from });
                     return effect;
                 }
             }
@@ -874,7 +832,7 @@ namespace Server.Items
             Point3D px = (Point3D)aState[0];
             Map map = (Map)aState[1];
             Sungate moongate = (Sungate)aState[2];
-            GreenThornsSHTeleporter it = (GreenThornsSHTeleporter)Utility.FindOneItemAt(px, map, typeof(GreenThornsSHTeleporter));
+            GreenThornsSHTeleporter? it = (GreenThornsSHTeleporter?)Utility.FindOneItemAt(px, map, typeof(GreenThornsSHTeleporter));
             if (it != null)
             {   // wait for their teleporter to get deleted
                 Timer.DelayCall(TimeSpan.FromSeconds(.75), new TimerStateCallback(DeleteGateTick), new object[] { px, map, moongate });

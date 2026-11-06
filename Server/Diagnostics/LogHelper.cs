@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -89,6 +89,7 @@
  *		Initial creation
  */
 
+using Server.Regions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -97,7 +98,7 @@ using System.Linq;
 
 namespace Server.Diagnostics
 {
-    public class LogHelper
+    public class LogHelper : IDisposable
     {
         private ArrayList m_LogFile;
         private string m_LogFilename;
@@ -130,78 +131,100 @@ namespace Server.Diagnostics
             }
         }
 
+        // Existing fields you already have
         private bool m_Overwrite;
         private bool m_SingleLine;
         private bool m_Quiet;
         private DateTime m_StartTime;
         private bool m_Finished;
+        private Mobile? m_Person;
 
-        private Mobile m_Person;
+        // NEW: rollover size in MB (optional). Implement later.
+        // Null or <= 0 means "disabled".
+        private int? m_RolloverMb;
+        // Default log rollover size in MB (null or <=0 disables rollover).
+        private const int DefaultRolloverMb = 10;
 
-
-        // Construct with : LogHelper(string filename (, Mobile mobile ) (, bool overwrite) )
-
-        // Default append, no mobile constructor
-        public LogHelper(string filename)
+        // Canonical constructor: every other ctor forwards to this.
+        // NOTE: Start() is called exactly once here.
+        public LogHelper(string filename, Mobile? from, bool overwrite, bool singleLine, bool quiet, int? rolloverMb)
         {
-            m_Overwrite = false;
             m_LogFilename = filename;
-            m_SingleLine = false;
+            m_Person = from;
+
+            m_Overwrite = overwrite;
+            m_SingleLine = singleLine;
+            m_Quiet = quiet;
+
+            m_RolloverMb =
+                (rolloverMb.HasValue && rolloverMb.Value > 0)
+                    ? rolloverMb
+                    : DefaultRolloverMb;
 
             Start();
         }
 
-        // Mob spec. constructor
-        public LogHelper(string filename, Mobile from)
-        {
-            m_Overwrite = false;
-            m_Person = from;
-            m_LogFilename = filename;
-            m_SingleLine = false;
+        // ---------------------------
+        // Existing constructors (unchanged signatures) now forward here.
+        // ---------------------------
 
-            Start();
+        // Filename-only convenience constructor
+        public LogHelper(string filename)
+            : this(filename, null, overwrite: false, singleLine: false, quiet: false, rolloverMb: null)
+        {
         }
 
         // Overwrite spec. constructor
         public LogHelper(string filename, bool overwrite)
+            : this(filename, null, overwrite, singleLine: false, quiet: false, rolloverMb: null)
         {
-            m_Overwrite = overwrite;
-            m_LogFilename = filename;
-            m_SingleLine = false;
-
-            Start();
         }
 
         // Overwrite and singleline constructor
         public LogHelper(string filename, bool overwrite, bool sline, bool quiet = false)
+            : this(filename, null, overwrite, singleLine: sline, quiet: quiet, rolloverMb: null)
         {
-            m_Overwrite = overwrite;
-            m_LogFilename = filename;
-            m_SingleLine = sline;
-            m_Quiet = quiet;
-            Start();
         }
 
         // Overwrite + mobile spec. constructor
-        public LogHelper(string filename, Mobile from, bool overwrite)
+        public LogHelper(string filename, Mobile? from, bool overwrite)
+            : this(filename, from, overwrite, singleLine: false, quiet: false, rolloverMb: null)
         {
-            m_Overwrite = overwrite;
-            m_Person = from;
-            m_LogFilename = filename;
-            m_SingleLine = false;
-
-            Start();
         }
 
         // Overwrite, mobile spec. and singleline constructor
-        public LogHelper(string filename, Mobile from, bool overwrite, bool sline)
+        public LogHelper(string filename, Mobile? from, bool overwrite, bool sline)
+            : this(filename, from, overwrite, singleLine: sline, quiet: false, rolloverMb: null)
         {
-            m_Overwrite = overwrite;
-            m_Person = from;
-            m_LogFilename = filename;
-            m_SingleLine = sline;
+        }
 
-            Start();
+        // ---------------------------
+        // NEW overloads with rollover MB.
+        // ---------------------------
+
+        // Filename-only + rollover
+        public LogHelper(string filename, bool overwrite, bool sline, int rolloverMb, bool quiet = false)
+            : this(filename, null, overwrite, singleLine: sline, quiet: quiet, rolloverMb: rolloverMb)
+        {
+        }
+
+        // Filename + Mobile + rollover
+        public LogHelper(string filename, Mobile from, bool overwrite, bool sline, int rolloverMb, bool quiet = false)
+            : this(filename, from, overwrite, singleLine: sline, quiet: quiet, rolloverMb: rolloverMb)
+        {
+        }
+        // ======================
+        // IDisposable support
+        // ======================
+        public void Dispose()
+        {
+            Finish();                    // safe even if already called
+            GC.SuppressFinalize(this);
+        }
+
+        ~LogHelper()                     // optional safety net
+        {
+            Dispose();
         }
         public static string DataFolder(string filename)
         {
@@ -212,20 +235,6 @@ namespace Server.Diagnostics
             try
             {
                 LogHelper Logger = new LogHelper("BlockedConnection.log", false);
-                Logger.Log(LogType.Text, text);
-                Logger.Finish();
-                Utility.Monitor.WriteLine(text, ConsoleColor.Red);
-            }
-            catch
-            {
-                Utility.Monitor.WriteLine(text, ConsoleColor.Red);
-            }
-        }
-        public static void LogLogicError(string text)
-        {
-            try
-            {
-                LogHelper Logger = new LogHelper("LogicError.log", false);
                 Logger.Log(LogType.Text, text);
                 Logger.Finish();
                 Utility.Monitor.WriteLine(text, ConsoleColor.Red);
@@ -366,9 +375,18 @@ namespace Server.Diagnostics
             m_LogFile = new ArrayList();
 
             if (!m_SingleLine && !m_Quiet)
-                m_LogFile.Add(string.Format("Log start : {0}", m_StartTime));
+                m_LogFile.Add($"Log start : {GetTimeString(m_StartTime)}");
 
             m_OpenLogs.Add(this);
+        }
+        public static string GetTimeString(DateTime utcTime)
+        {
+            DateTime local = utcTime.ToLocalTime();
+            // 2/4/2026 6:43:18 PM (UTC 2/5/2026 2:43:18)
+            return string.Format(
+                "{0:M/d/yyyy h:mm:ss tt} (UTC {1:M/d/yyyy H:mm:ss})",
+                local,
+                utcTime);
         }
 
         // Log all the data and close the file
@@ -385,7 +403,7 @@ namespace Server.Diagnostics
                 // Report
                 string sFilename = string.Empty;
 
-                string path = Path.GetDirectoryName(m_LogFilename);
+                string? path = Path.GetDirectoryName(m_LogFilename);
                 if (string.IsNullOrEmpty(path))
                 {   // default to "logs" directory
                     sFilename = Path.Combine(Core.LogsDirectory, m_LogFilename);
@@ -397,10 +415,22 @@ namespace Server.Diagnostics
 
                 path = Path.GetDirectoryName(sFilename);
 
+                // Optional log rollover (size-based).
+                // If enabled and the current log exceeds the rollover limit, rename it to a dated archive:
+                //   foo.log -> foo.MM-DD-YY.log
+                // If that exists:
+                //   foo.MM-DD-YY-01.log, foo.MM-DD-YY-02.log, ...
+                //
+                // NOTE: This is a rename on the same volume (fast). No file contents are copied.
+                if (m_RolloverMb.HasValue && m_RolloverMb.Value > 0)
+                {
+                    TryRolloverIfNeeded(sFilename, m_RolloverMb.Value);
+                }
+
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
 
-                StreamWriter LogFile = null;
+                StreamWriter? LogFile = null;
 
                 try
                 {
@@ -449,6 +479,74 @@ namespace Server.Diagnostics
             }
         }
 
+        private static void TryRolloverIfNeeded(string currentFilename, int rolloverMb)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(currentFilename))
+                    return;
+
+                long limitBytes = (long)rolloverMb * 1024L * 1024L;
+                if (limitBytes <= 0)
+                    return;
+
+                FileInfo fi = new FileInfo(currentFilename);
+
+                // If no file exists yet, nothing to roll.
+                if (!fi.Exists)
+                    return;
+
+                // Under threshold, do nothing.
+                if (fi.Length < limitBytes)
+                    return;
+
+                string archiveName = BuildArchiveName(currentFilename);
+
+                // Ensure target directory exists (should already, but safe).
+                string? dir = Path.GetDirectoryName(currentFilename);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                // Rename current -> archive.
+                // If file is locked (Windows), this may throw; we swallow and continue logging into existing file.
+                File.Move(currentFilename, archiveName);
+            }
+            catch
+            {
+                // Intentionally quiet: rollover should never break logging.
+                // If needed later, you can add optional console output when m_Quiet == false.
+            }
+        }
+
+        private static string BuildArchiveName(string currentFilename)
+        {
+            string dir = Path.GetDirectoryName(currentFilename) ?? string.Empty;
+
+            string baseName = Path.GetFileNameWithoutExtension(currentFilename);
+            string ext = Path.GetExtension(currentFilename);
+
+            // Short rollover stamp format: yy + DDD (day-of-year).
+            // Example: "26048" = year 2026, day 48 of the year.
+            // This keeps filenames compact while remaining reversible to a calendar date.
+            string stamp = DateTime.Now.ToString("yy") + DateTime.Now.DayOfYear.ToString("D3"); // "26048"
+
+            // First attempt: foo.26048.log
+            string candidate = Path.Combine(dir, string.Format("{0}.{1}{2}", baseName, stamp, ext));
+            if (!File.Exists(candidate))
+                return candidate;
+
+            // Collision: foo.26048-1.log, foo.26048-2.log, ...
+            for (int i = 1; i <= 99; i++)
+            {
+                candidate = Path.Combine(dir, string.Format("{0}.{1}-{2}{3}", baseName, stamp, i, ext));
+                if (!File.Exists(candidate))
+                    return candidate;
+            }
+
+            // Worst case: guarantee uniqueness (still not huge)
+            return Path.Combine(dir, string.Format("{0}.{1}-{2}{3}", baseName, stamp, DateTime.Now.Ticks, ext));
+        }
+
         // Add data to list to be logged : Log( (LogType ,) object (, additional) )
 
         // Default to mixed type
@@ -458,13 +556,13 @@ namespace Server.Diagnostics
         }
 
         // Default to no additional
-        public void Log(LogType logtype, object data)
+        public void Log(LogType logtype, object? data)
         {
             this.Log(logtype, data, null);
         }
 
         // Specify LogType
-        public void Log(LogType logtype, object data, string additional)
+        public void Log(LogType logtype, object? data, string? additional)
         {
             string LogLine = Format(logtype, data, additional);
 
@@ -474,7 +572,7 @@ namespace Server.Diagnostics
                 LogLine = LogLine.Replace("\r\n", " || ");
                 LogLine = LogLine.Replace("\r", " || ");
                 LogLine = LogLine.Replace("\n", " || ");
-                LogLine = m_StartTime.ToString() + ": " + LogLine;
+                LogLine = GetTimeString(m_StartTime) + ": " + LogLine;
             }
 
             m_LogFile.Add(LogLine);
@@ -486,7 +584,7 @@ namespace Server.Diagnostics
             return Format(logtype, data, null);
         }
 
-        public string Format(LogType logtype, object data, string additional)
+        public string Format(LogType logtype, object? data, string? additional)
         {
             string LogLine = "";
             additional = (additional == null) ? "" : additional;
@@ -508,61 +606,89 @@ namespace Server.Diagnostics
             {
 
                 case LogType.Mobile:
-
-                    Mobile mob = data as Mobile;
-                    if (mob != null)
                     {
-                        LogLine = string.Format("{0}:Loc({1},{2},{3}):{4}:Mob({5})({6}):{7}:{8}:{9}",
-                                    mob.GetType().Name,
-                                    mob.Location.X, mob.Location.Y, mob.Location.Z,
-                                    mob.Map,
-                                    mob.Name,
-                                    mob.Serial,
-                                    string.Format("{0}[{1}]", mob.Region.Name != null && mob.Region.Name.Length > 0 ? mob.Region.Name : "Unnamed region", mob.Region.UId),
-                                    mob.Account,
-                                    additional);
-                    }
-                    else
-                        LogLine = "Mobile (null)" + additional;
-                    break;
+                        if (data is Mobile mob)
+                        {
+                            string regionName;
+                            if (mob.Region is HouseRegion)
+                                regionName = "HouseRegion";
+                            else if (!string.IsNullOrEmpty(mob.Region?.Name))
+                                regionName = mob.Region.Name;
+                            else
+                                regionName = "Unnamed region";
 
-                case LogType.ItemSerial:
+                            LogLine =
+                                $"{mob.GetType().Name}:" +
+                                $"Body({mob.BodyValue}):" +
+                                $"Loc({mob.Location.X},{mob.Location.Y},{mob.Location.Z}):" +
+                                $"{mob.Map}:" +
+                                $"Mob({mob.Name})({mob.Serial}):" +
+                                $"{regionName}[{mob.Region?.UId}]:" +
+                                $"{mob.Account}:" +
+                                $"{additional}";
+                        }
+                        else
+                        {
+                            LogLine = $"Mobile (null){additional}";
+                        }
+
+                        break;
+                    }
+
                 case LogType.Item:
-
-                    Item item = data as Item;
-                    if (item != null)
                     {
-                        object root = item.RootParent;
-                        //if (root is Mobile)
-                        // Item loc, map, root type, root name
-                        LogLine = string.Format("{0}:Loc{1}:{2}:{3}({4}):Parent({5})({6}):{7}",
-                            item.GetType().Name,
-                            item.GetWorldLocation(),
-                            item.Map,
-                            item.Name,
-                            item.Serial,
-                            root is Mobile mobile1 ? mobile1.SafeName : root is Item item1 ? item1.SafeName : null,
-                            root is Mobile mobile2 ? mobile2.Serial : root is Item item2 ? item2.Serial : null,
-                            additional
-                        );
-                        /*else
-                            // Item loc, map
-                            LogLine = string.Format("{0}:Loc{1}:{2}:{3}({4}):{5}",
-                                item.GetType().Name,
-                                new Point3D(item.GetWorldLocation()),
-                                item.Map,
-                                item.Name,
-                                item.Serial,
-                                additional
-                            );*/
+                        if (data is Item item)
+                        {
+                            object root = item.RootParent;
+
+                            string parentName =
+                                root is Mobile m ? m.SafeName :
+                                root is Item i ? i.SafeName :
+                                null;
+
+                            object parentSerial =
+                                root is Mobile m2 ? m2.Serial :
+                                root is Item i2 ? i2.Serial :
+                                null;
+
+                            Point3D worldLoc = item.GetWorldLocation();
+                            Map map = item.Map;
+
+                            Region region = (map != null && map != Map.Internal)
+                                ? Region.Find(worldLoc, map)
+                                : null;
+
+                            string regionName;
+                            if (region is HouseRegion)
+                                regionName = "HouseRegion";
+                            else if (!string.IsNullOrEmpty(region?.Name))
+                                regionName = region.Name;
+                            else
+                                regionName = "Unnamed region";
+
+                            string itemName = !string.IsNullOrEmpty(item.Name) ? item.Name : item.GetType().Name;
+
+                            LogLine =
+                                $"{item.GetType().Name}:" +
+                                $"Graphic({item.ItemID}):" +
+                                $"Loc({worldLoc.X},{worldLoc.Y},{worldLoc.Z}):" +
+                                $"{map}:" +
+                                $"Item({itemName})({item.Serial}):" +
+                                $"{regionName}[{region?.UId}]:" +
+                                $"Parent({parentName})({parentSerial}):" +
+                                $"{additional}";
+                        }
+                        else
+                        {
+                            LogLine = $"Item (null){additional}";
+                        }
+
+                        break;
                     }
-                    else
-                        LogLine = "Item (null)" + additional;
-                    break;
 
                 case LogType.Text:
 
-                    LogLine = data.ToString();
+                    LogLine = $"{data}{(string.IsNullOrWhiteSpace(additional) ? "" : ", " + additional)}";
                     break;
             }
 
@@ -573,7 +699,7 @@ namespace Server.Diagnostics
         {
             for (int ix = 0; ix < LogHelper.OpenLogs.Count; ix++)
             {
-                LogHelper lh = LogHelper.OpenLogs[ix] as LogHelper;
+                LogHelper? lh = LogHelper.OpenLogs[ix] as LogHelper;
                 if (lh != null)
                     lh.Finish();
             }
@@ -583,16 +709,39 @@ namespace Server.Diagnostics
         {
             for (int ix = 0; ix < LogHelper.OpenLogs.Count; ix++)
             {
-                LogHelper lh = LogHelper.OpenLogs[ix] as LogHelper;
+                LogHelper? lh = LogHelper.OpenLogs[ix] as LogHelper;
                 if (lh != null)
                     lh.Finish();
             }
         }
-
+        // 2/22/2026 7:07:27 AM (UTC 2/22/2026 15:07:27): PlayerMobile:Loc(3738,2221,20):Felucca:Mob(Tabby)(0x00002028):Magincia[715]:StaffTabby:Used [Add Item to create ItemID:8271, Serial:0x40077B1F
         private static void EventSink_AddItem(AddItemEventArgs e)
         {
-            LogHelper lh = new LogHelper("AddItem.log", false, true);
-            lh.Log(LogType.Mobile, e.from, string.Format("Used [Add Item to create ItemID:{0}, Serial:{1}", e.item.ItemID.ToString(), e.item.Serial.ToString()));
+            if (e?.from == null || e.item == null)
+                return;
+
+            var from = e.from;
+            var acct = from.Account as Accounting.Account;
+
+            string access = from.AccessLevel.ToString();
+            string username = acct?.Username ?? "Unknown";
+
+            string path = Path.Combine(
+                Core.LogsDirectory,
+                "Commands",
+                access,
+                username,
+                "AddItem.log");
+
+            LogHelper lh = new LogHelper(path, overwrite: false, sline: false);
+
+            // First line: mobile header (generated by LogHelper)
+            lh.Log(LogType.Mobile, from);
+
+            // Second line: clean item descriptor
+            lh.Log(LogType.Text,
+                $"Used [Add to create Item({e.item.Serial}) [{e.item.GetType().Name}]");
+
             lh.Finish();
         }
 
@@ -602,16 +751,59 @@ namespace Server.Diagnostics
             catch { Console.WriteLine("Nested exception while processing: {0}", e.Exception.Message); } // do not call LogException
         }
 
-        public static void BroadcastMessage(AccessLevel ac, int hue, string message)
-        {
-            foreach (Server.Network.NetState state in Server.Network.NetState.Instances)
-            {
-                Mobile m = state.Mobile;
+        //public static void BroadcastMessage(AccessLevel ac, int hue, string message)
+        //{
+        //    foreach (Server.Network.NetState state in Server.Network.NetState.Instances)
+        //    {
+        //        Mobile m = state.Mobile;
 
-                if (m != null && m.AccessLevel >= ac)
-                    m.SendMessage(hue, message);
+        //        if (m != null && m.AccessLevel >= ac)
+        //            m.SendMessage(hue, message);
+        //    }
+        //}
+
+        public static class Broadcaster
+        {
+            private static string _lastBMMessage;
+            private static DateTime _lastBMTime = DateTime.MinValue;
+
+            public static void BroadcastMessage(
+                AccessLevel ac,
+                int hue,
+                string message,
+                TimeSpan spamDelay)
+            {
+                // Spam suppression (exact-message only)
+                if (spamDelay > TimeSpan.Zero)
+                {
+                    DateTime now = DateTime.UtcNow;
+
+                    if (_lastBMMessage == message &&
+                        now - _lastBMTime < spamDelay)
+                    {
+                        return; // suppressed
+                    }
+
+                    _lastBMMessage = message;
+                    _lastBMTime = now;
+                }
+
+                foreach (Server.Network.NetState state in Server.Network.NetState.Instances)
+                {
+                    Mobile m = state.Mobile;
+
+                    if (m != null && m.AccessLevel >= ac)
+                        m.SendMessage(hue, message);
+                }
+            }
+
+            // Backward-compatible overload
+            public static void BroadcastMessage(AccessLevel ac, int hue, string message)
+            {
+                BroadcastMessage(ac, hue, message, TimeSpan.Zero);
             }
         }
+
     }
 
     public enum LogType

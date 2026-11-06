@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,8 +30,6 @@
  *      
  *      Fixed the name of bola balls.
  */
-
-using System;
 
 namespace Server.Items
 {
@@ -101,7 +99,7 @@ namespace Server.Items
                 int itemID = 0x1F2D + offset;
                 int cliloc = 1027981 + offset;
 
-                string clilocStr;
+                string? clilocStr;
 
                 if (Server.Text.Cliloc.Lookup.TryGetValue(cliloc, out clilocStr))
                 {

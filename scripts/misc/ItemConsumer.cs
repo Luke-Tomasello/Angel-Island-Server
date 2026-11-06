@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -25,6 +25,7 @@
  *	    Initial version.
  */
 
+using Server.Mobiles;
 using System;
 using System.Collections.Generic;
 
@@ -34,7 +35,7 @@ namespace Server.Items
     {
         public delegate int GroupItem(Item a, Item b);
 
-        public static int ConsumeGrouped(Container cont, Type[][] types, int[] amounts, bool consume = true, bool recurse = true, Predicate<Item> predicate = null, GroupItem grouper = null, OnItemConsumed callback = null)
+        public static int ConsumeGrouped(Container cont, Type[][] types, int[] amounts, bool consume = true, bool recurse = true, Predicate<Item>? predicate = null, GroupItem? grouper = null, OnItemConsumed? callback = null)
         {
             Item[][] groups = new Item[types.Length][];
 
@@ -62,29 +63,29 @@ namespace Server.Items
 
         private enum GroupingType : byte { First, Best };
 
-        public static bool HasTotal(Container cont, Type[] types, int needs, bool recurse = true, Predicate<Item> predicate = null, GroupItem grouper = null)
+        public static bool HasTotal(Container cont, Type[] types, int needs, bool recurse = true, Predicate<Item>? predicate = null, GroupItem? grouper = null)
         {
             Item[] group;
             return Group(cont, types, needs, out group, GroupingType.First, recurse, predicate, grouper) >= needs;
         }
 
-        public static bool Group(Container cont, Type[] types, int needs, out Item[] group, bool recurse = true, Predicate<Item> predicate = null, GroupItem grouper = null)
+        public static bool Group(Container cont, Type[] types, int needs, out Item[] group, bool recurse = true, Predicate<Item>? predicate = null, GroupItem? grouper = null)
         {
             return Group(cont, types, needs, out group, GroupingType.First, recurse, predicate, grouper) >= needs;
         }
 
-        public static int GetBestGroupAmount(Container cont, Type[] types, bool recurse = true, Predicate<Item> predicate = null, GroupItem grouper = null)
+        public static int GetBestGroupAmount(Container cont, Type[] types, bool recurse = true, Predicate<Item>? predicate = null, GroupItem? grouper = null)
         {
             Item[] group;
             return Group(cont, types, 0, out group, GroupingType.Best, recurse, predicate, grouper);
         }
 
-        public static int GetBestGroup(Container cont, Type[] types, out Item[] group, bool recurse = true, Predicate<Item> predicate = null, GroupItem grouper = null)
+        public static int GetBestGroup(Container cont, Type[] types, out Item[] group, bool recurse = true, Predicate<Item>? predicate = null, GroupItem? grouper = null)
         {
             return Group(cont, types, 0, out group, GroupingType.Best, recurse, predicate, grouper);
         }
 
-        private static int Group(Container cont, Type[] types, int needs, out Item[] group, GroupingType type, bool recurse = true, Predicate<Item> predicate = null, GroupItem grouper = null)
+        private static int Group(Container cont, Type[] types, int needs, out Item[] group, GroupingType type, bool recurse = true, Predicate<Item>? predicate = null, GroupItem? grouper = null)
         {
             if (predicate == null)
                 predicate = DefaultPredicate;
@@ -92,7 +93,7 @@ namespace Server.Items
             if (grouper == null)
                 grouper = DefaultGrouper;
 
-            Item[] found = cont.FindItemsByType(types, recurse);
+            Item[] found = cont.FindItemsByType(types, recurse, actor: cont.RootParent as PlayerMobile, enforceOwnership: true, out int filtered);
 
             int[] totals = new int[found.Length]; // how much quantity does each item hold?
 
@@ -158,10 +159,13 @@ namespace Server.Items
                 }
             }
 
+            if (total < needs && filtered > 0 && cont.RootParent is PlayerMobile pm)
+                pm.SendMessage("Some provisions are bound to another soul.");
+
             return total;
         }
 
-        public static void Consume(Item[] group, int needs, OnItemConsumed callback = null)
+        public static void Consume(Item[] group, int needs, OnItemConsumed? callback = null)
         {
             for (int i = 0; i < group.Length && needs > 0; i++)
             {

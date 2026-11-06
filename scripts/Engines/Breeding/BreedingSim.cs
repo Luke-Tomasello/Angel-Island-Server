@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -87,7 +87,7 @@ namespace Server.Engines.Breeding
                 return defaultValue;
         }
 
-        private static OutResult Run(Type type, string gene, int batchSize, int reproductiveFactor, int iterations)
+        private static OutResult Run(Type? type, string gene, int batchSize, int reproductiveFactor, int iterations)
         {
             if (type == null)
                 throw new ArgumentNullException("The value of \"type\" cannot be null.");
@@ -145,7 +145,7 @@ namespace Server.Engines.Breeding
 
                             for (int k = 0; k < reproductiveFactor; k++)
                             {
-                                BaseCreature child = Construct(type);
+                                BaseCreature? child = Construct(type);
 
                                 if (child != null)
                                 {
@@ -162,7 +162,7 @@ namespace Server.Engines.Breeding
                     // for every child, also add a fresh specimen
                     for (int j = nextGen.Count - 1; j >= 0; j--)
                     {
-                        BaseCreature fresh = Construct(type);
+                        BaseCreature? fresh = Construct(type);
 
                         if (fresh != null)
                             nextGen.Add(fresh);
@@ -223,7 +223,7 @@ namespace Server.Engines.Breeding
             return new OutResult(outIter, outValue);
         }
 
-        private static BaseCreature Construct(Type type)
+        private static BaseCreature? Construct(Type type)
         {
             try
             {
@@ -245,7 +245,7 @@ namespace Server.Engines.Breeding
                 m_Gene = gene;
             }
 
-            public int Compare(BaseCreature a, BaseCreature b)
+            public int Compare(BaseCreature? a, BaseCreature? b)
             {
                 return Genetics.GetValue(a, m_Gene).CompareTo(Genetics.GetValue(b, m_Gene));
             }

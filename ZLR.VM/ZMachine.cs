@@ -4,7 +4,7 @@
  *   implementation          : (C) 2007-2023 Tara McGrew
  *   repository url          : https://foss.heptapod.net/zilf/zlr
  *   
- *   Angel Island UO Shard   : March 25, 2004
+ *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
@@ -32,6 +32,7 @@
 #define DISABLE_CACHE
 #endif
 
+using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -40,10 +41,8 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 using ZLR.IFF;
 using ZLR.VM.Debugging;
-
 using SystemDebugger = System.Diagnostics.Debugger;
 
 namespace ZLR.VM
@@ -886,7 +885,7 @@ namespace ZLR.VM
             StackLocal = null;
             LocalsLocal = null;
 
-            return new CompileResult((ZCodeDelegate) dm.CreateDelegate(typeof(ZCodeDelegate), this), pc, instructionCount);
+            return new CompileResult((ZCodeDelegate)dm.CreateDelegate(typeof(ZCodeDelegate), this), pc, instructionCount);
         }
 
         [NotNull]
@@ -1224,7 +1223,7 @@ namespace ZLR.VM
                 if (io.VariablePitchAvailable)
                     flags1 |= 64;
                 else
-                    flags1 &= unchecked((byte) ~64);
+                    flags1 &= unchecked((byte)~64);
             }
             else
             {
@@ -1394,7 +1393,7 @@ namespace ZLR.VM
                 return 0;
 
             var len = (ushort)GetWord(headerExt);
-            return num > len ? (short) 0 : GetWord(headerExt + 2 * num);
+            return num > len ? (short)0 : GetWord(headerExt + 2 * num);
         }
 
         internal int UnpackAddress(short packedAddr, bool forString)
@@ -1404,19 +1403,19 @@ namespace ZLR.VM
                 case 1:
                 case 2:
                 case 3:
-                    return 2*(ushort) packedAddr;
+                    return 2 * (ushort)packedAddr;
 
                 case 4:
                 case 5:
-                    return 4*(ushort) packedAddr;
+                    return 4 * (ushort)packedAddr;
 
                 case 6:
                 case 7:
                     var offset = forString ? stringStart : codeStart;
-                    return offset + 4*(ushort) packedAddr;
+                    return offset + 4 * (ushort)packedAddr;
 
                 case 8:
-                    return 8*(ushort) packedAddr;
+                    return 8 * (ushort)packedAddr;
 
                 default:
                     throw new NotImplementedException();
@@ -1478,7 +1477,7 @@ namespace ZLR.VM
             private readonly int savedPC;
             private readonly byte savedDest;
 
-            public UndoState([NotNull] byte[] zmem, int ramLength, [NotNull] Stack<short> stack, [ItemNotNull] [NotNull] Stack<CallFrame> callStack,
+            public UndoState([NotNull] byte[] zmem, int ramLength, [NotNull] Stack<short> stack, [ItemNotNull][NotNull] Stack<CallFrame> callStack,
                 int pc, byte dest)
             {
                 ram = new byte[ramLength];
@@ -1493,7 +1492,7 @@ namespace ZLR.VM
                 savedDest = dest;
             }
 
-            public void Restore([NotNull] byte[] zmem, [NotNull] Stack<short> stack, [ItemNotNull] [NotNull] Stack<CallFrame> callStack,
+            public void Restore([NotNull] byte[] zmem, [NotNull] Stack<short> stack, [ItemNotNull][NotNull] Stack<CallFrame> callStack,
                 out int pc, out byte dest)
             {
                 Array.Copy(ram, zmem, ram.Length);

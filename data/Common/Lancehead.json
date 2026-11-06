@@ -1,0 +1,26 @@
+{
+  "Type": "Lancehead",
+  "SavedLocal": "2026-03-05 16:31:26",
+  "Stats": {
+    "Str": 45,
+    "Dex": 34,
+    "Int": 9,
+    "Hits": 70,
+    "VirtualArmor": 18,
+    "Damage": 1
+  },
+  "Behavior": {
+    "UsesHumanWeapons": false,
+    "UsesBandages": false,
+    "UsesPotions": false,
+    "CanRun": false,
+    "CanReveal": false
+  },
+  "Skills": {
+    "Meditation": 0.6,
+    "MagicResist": 22.9,
+    "Tactics": 25.8,
+    "Wrestling": 35.5,
+    "Poisoning": 67.2
+  }
+}

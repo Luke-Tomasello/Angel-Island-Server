@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -254,11 +254,11 @@ namespace Server.Engines
                         // Is it a string?
                         if (prop.PropertyType == typeof(string))
                         {   // need to check for the null property value
-                            object temp = prop.GetValue(RareTemplate, null);
+                            object? temp = prop.GetValue(RareTemplate, null);
                             if (temp != null)
                             {
                                 // Grab the value, substitute and re-set
-                                string sVal = temp.ToString();
+                                string? sVal = temp.ToString();
 
                                 sVal = sVal.Replace("%StartIndex%", m_StartIndex.ToString());
                                 sVal = sVal.Replace("%LastIndex%", m_LastIndex.ToString());
@@ -297,7 +297,7 @@ namespace Server.Engines
             // Find it in the group lists + remove
             for (int i = 0; i < RareFactory.DODGroup.Count; i++)
             {
-                DODGroup dg = (DODGroup)RareFactory.DODGroup[i];
+                DODGroup? dg = (DODGroup?)RareFactory.DODGroup[i];
                 for (int ir = 0; ir < dg.DODInst.Count; ir++)
                     if (((DODInstance)dg.DODInst[ir]) == this)
                     {   // There should never be more than one of these right?
@@ -309,33 +309,12 @@ namespace Server.Engines
             // Find it in the main rare list + remove
             for (int i = 0; i < RareFactory.DODInst.Count; i++)
             {
-                DODInstance di = (DODInstance)RareFactory.DODInst[i];
+                DODInstance? di = (DODInstance?)RareFactory.DODInst[i];
                 if (di == this)
                 {   // There should never be more than one of these right?
                     RareFactory.DODInst.RemoveAt(i);
                     break;
                 }
-            }
-        }
-
-        // Dump a copy of the object's properties to console
-        // (really for debugging purposes)
-        public void DumpImage()
-        {
-            Type t = RareTemplate.GetType();
-            try
-            {
-                PropertyInfo[] allProps = t.GetProperties(BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public);
-
-                foreach (PropertyInfo prop in allProps)
-                {
-                    //Console.WriteLine("[{0}] Property : {1}", m_Name, prop);
-                    //Console.WriteLine("[{0}] Value    : {1}", m_Name, prop.GetValue(m_Item, null));
-                }
-            }
-            catch (Exception e)
-            {
-                LogHelper.LogException(e);
             }
         }
 

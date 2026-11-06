@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -130,7 +130,7 @@ namespace Server
         }
         public static void Path_OnTarget(Mobile from, object obj)
         {
-            IPoint3D goal = obj as IPoint3D;
+            IPoint3D? goal = obj as IPoint3D;
 
             if (goal == null)
                 return;
@@ -143,7 +143,7 @@ namespace Server
         }
         public static void PathSlow_OnTarget(Mobile from, object obj)
         {
-            IPoint3D goal = obj as IPoint3D;
+            IPoint3D? goal = obj as IPoint3D;
 
             if (goal == null)
                 return;
@@ -155,7 +155,7 @@ namespace Server
         }
         public static void PathFast_OnTarget(Mobile from, object obj)
         {
-            IPoint3D goal = obj as IPoint3D;
+            IPoint3D? goal = obj as IPoint3D;
 
             if (goal == null)
                 return;
@@ -221,9 +221,9 @@ namespace Server
             catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
         }
 
-        private static PathAlgorithm m_OverrideAlgorithm;
+        private static PathAlgorithm? m_OverrideAlgorithm;
 
-        public PathAlgorithm OverrideAlgorithm
+        public PathAlgorithm? OverrideAlgorithm
         {
             get { return m_OverrideAlgorithm; }
             set { m_OverrideAlgorithm = value; }
@@ -243,7 +243,7 @@ namespace Server
 
             try
             {
-                PathAlgorithm alg = m_OverrideAlgorithm;
+                PathAlgorithm? alg = m_OverrideAlgorithm;
 
                 if (alg == null)
                 {
@@ -280,7 +280,7 @@ namespace Server
 
             try
             {
-                PathAlgorithm alg = m_OverrideAlgorithm;
+                PathAlgorithm? alg = m_OverrideAlgorithm;
                 Movement.MovementObject obj_start = new Movement.MovementObject(m, goal);
                 if (alg == null)
                 {

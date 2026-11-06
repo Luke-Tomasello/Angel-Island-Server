@@ -1,0 +1,8 @@
+#
+# Song: Ode to Joy (opening phrase)
+# Author: Primer example (classic timer)
+# Instrument: lapharp
+#
+say '[play eh 0.3 eh 0.3 fh 0.3 gh 0.3 gh 0.3 fh 0.3 eh 0.3 dh 0.3'
+say '[play c 0.3 c 0.3 dh 0.3 eh 0.3 eh 0.45 dh 0.15 dh 0.6'
+say 'Joy, bright spark of divinity...'

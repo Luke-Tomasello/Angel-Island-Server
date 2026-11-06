@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -105,7 +105,7 @@ namespace Server.Mobiles
         {
             base.OnGaveMeleeAttack(defender);
 
-            defender.Damage(Utility.Random(10, 10), this, this);
+            defender.Damage(Utility.Random(10, 10), this, new DamageContext { Source = this });
             defender.Stam -= Utility.Random(10, 10);
             defender.Mana -= Utility.Random(10, 10);
         }
@@ -114,7 +114,7 @@ namespace Server.Mobiles
         {
             base.OnGotMeleeAttack(attacker);
 
-            attacker.Damage(Utility.Random(10, 10), this, this);
+            attacker.Damage(Utility.Random(10, 10), this, new DamageContext { Source = this });
             attacker.Stam -= Utility.Random(10, 10);
             attacker.Mana -= Utility.Random(10, 10);
         }
@@ -126,42 +126,17 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020806193108/uo.stratics.com/hunters/etherealwarrior.shtml
+            // 400-700 Gold, Gems, 100 Feathers
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGem();
-                PackGem();
-                PackMagicEquipment(1, 3, 0.50, 0.50);
-                PackMagicEquipment(1, 3, 0.15, 0.15);
-                PackGold(550, 650);
-                PackItem(new Feather(100));
-                // Category 4 MID
-                PackMagicItem(2, 3, 0.10);
-                PackMagicItem(2, 3, 0.05);
-                PackMagicItem(2, 3, 0.02);
+                PackGold(400, 700);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020806193108/uo.stratics.com/hunters/etherealwarrior.shtml
-                    // 400-700 Gold, Gems, 100 Feathers
-                    if (Spawning)
-                    {
-                        PackGold(400, 700);
-                    }
-                    else
-                    {
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                        PackItem(new Feather(100));
-                    }
-                }
-                else
-                {   // standard RunUO
-                    // standard runuo
-                    AddLoot(LootPack.Rich, 3);
-                    AddLoot(LootPack.Gems);
-                }
+                PackGem(1, .9);
+                PackGem(1, .05);
+                PackItem(new Feather(100));
             }
         }
 

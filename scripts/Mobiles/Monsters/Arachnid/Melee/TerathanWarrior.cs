@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,34 +76,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020213035914/uo.stratics.com/hunters/terwarr.shtml
+            // 50 to 150 Gold, Potions, Arrows, Magic Items
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(60, 90);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(50, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   //http://web.archive.org/web/20020213035914/uo.stratics.com/hunters/terwarr.shtml
-                    // 50 to 150 Gold, Potions, Arrows, Magic Items
-                    if (Spawning)
-                    {
-                        PackGold(50, 150);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackPotion(.5);
-                        PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
-                        PackMagicItem(1, 1, 0.05);
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Average);
-                }
+                PackPotion();
+                PackPotion(.5);
+                PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
+                PackMagicItem(1, 1, 0.05);
             }
         }
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -2195,9 +2195,6 @@ namespace Server.Items
         public SeahorseStatuette() : base(MonsterStatuetteType.SeaHorse)
         {
             LootType = LootType.Regular;
-#if false
-            Hue = Utility.RandomList(0, 0x482, 0x489, 0x495, 0x4F2);
-#endif
         }
 
         public SeahorseStatuette(Serial serial) : base(serial)

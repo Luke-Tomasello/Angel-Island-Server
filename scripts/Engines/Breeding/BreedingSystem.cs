@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,9 +77,6 @@ namespace Server.Engines.Breeding
         public static void Initialize()
         {
             TargetCommands.Register(new GrowCommand());
-#if false
-            TargetCommands.Register(new GrowProgressCommand());
-#endif
         }
 
         public class GrowCommand : BaseCommand
@@ -96,7 +93,7 @@ namespace Server.Engines.Breeding
 
             public override void Execute(CommandEventArgs e, object obj)
             {
-                BaseCreature bc = obj as BaseCreature;
+                BaseCreature? bc = obj as BaseCreature;
 
                 if (bc == null)
                 {
@@ -113,38 +110,6 @@ namespace Server.Engines.Breeding
             }
         }
 
-#if false
-        public class GrowProgressCommand : BaseCommand
-        {
-            public GrowProgressCommand()
-            {
-                AccessLevel = AccessLevel.GameMaster;
-                Supports = CommandSupport.Simple;
-                Commands = new string[] { "GrowProgress" };
-                ObjectTypes = ObjectTypes.Mobiles;
-                Usage = "GrowProgress";
-                Description = "Checks the growth progress of the targeted creature.";
-            }
-
-            public override void Execute(CommandEventArgs e, object obj)
-            {
-                BaseCreature bc = obj as BaseCreature;
-
-                if (bc == null)
-                {
-                    LogFailure("That is not a creature.");
-                    return;
-                }
-                else if (bc.Maturity < Maturity.Egg || bc.Maturity > Maturity.Adult)
-                {
-                    LogFailure("That doesn't grow.");
-                    return;
-                }
-
-                e.Mobile.SendMessage("Growth progress: {0:F6} weeks.", GetGrowthProgress(bc));
-            }
-        }
-#endif
 
         public static void OnHatch(BaseCreature bc)
         {
@@ -169,7 +134,7 @@ namespace Server.Engines.Breeding
 
             if (ChicksFindMaster && bc.Tamable && !bc.Controlled)
             {
-                Mobile closest = null;
+                Mobile? closest = null;
                 double distMin = double.MaxValue;
 
                 foreach (Mobile m in bc.GetMobilesInRange(6))
@@ -231,7 +196,7 @@ namespace Server.Engines.Breeding
 
             double weeks = (DateTime.UtcNow - bc.Birthdate).TotalDays / 7.0;
 
-            if (Core.UOTC_CFG)
+            if (Core.GMNTC_CFG)
                 weeks *= 24.0; // speed up 24x
 
             // progress is a double between 0.0 and 1.0
@@ -283,7 +248,7 @@ namespace Server.Engines.Breeding
 
         public static void MatedWith(BaseCreature mom, BaseCreature dad, bool stillBorn)
         {
-            BaseCreature child = null;
+            BaseCreature? child = null;
 
             try
             {
@@ -297,7 +262,7 @@ namespace Server.Engines.Breeding
             if (child != null)
                 Genetics.Recombination(child, mom, dad);
 
-            Item egg = null;
+            Item? egg = null;
 
             if (mom.EggType != null)
             {

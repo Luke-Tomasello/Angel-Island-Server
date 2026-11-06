@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -55,7 +55,7 @@ namespace Server.Mobiles
             SetSkill(SkillName.Wrestling, 60.1, 80.0);
 
             Fame = 0;
-            Karma = 300;
+            Karma = 0;
 
             VirtualArmor = 22;
 
@@ -71,7 +71,7 @@ namespace Server.Mobiles
                 {
                     if (m is PlayerMobile pm)
                     {
-                        Server.Memory.ObjectMemory o = FarmableCrop.Pickers.Recall(m as object);
+                        Server.Memory.ObjectMemory? o = FarmableCrop.Pickers.Recall(m as object);
                         if (o == null || o.Context == null || o.Context is not Server.Mobiles.Spawner || m.GetDistanceToSqrt((o.Context as Spawner)) > 20)
                             // maybe the teleported to a field where they have not picked anything yet
                             continue;

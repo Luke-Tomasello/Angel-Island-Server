@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -122,7 +122,7 @@ namespace Server.Factions
             {
                 Direction = GetDirectionTo(m);
 
-                string warning = null;
+                string? warning = null;
 
                 switch (Utility.Random(6))
                 {
@@ -152,7 +152,7 @@ namespace Server.Factions
 
         private DateTime m_OrdersEnd;
 
-        private void ChangeReaction(Faction faction, ReactionType type)
+        private void ChangeReaction(Faction? faction, ReactionType type)
         {
             if (faction == null)
             {
@@ -165,7 +165,7 @@ namespace Server.Factions
             }
             else
             {
-                TextDefinition def = null;
+                TextDefinition? def = null;
 
                 switch (type)
                 {

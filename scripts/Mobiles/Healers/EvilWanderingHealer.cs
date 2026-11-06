@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -32,12 +32,53 @@
  */
 
 using Server.Items;
+using System.Collections;
 
 namespace Server.Mobiles
 {
     public class EvilWanderingHealer : BaseHealer
     {
-        public override bool CanTeach { get { return Core.RuleSets.SiegeStyleRules() ? false : true; } }
+        public override bool CanTeach { get { return Core.RuleSets.CanTeach(); } }
+
+        #region Mortalis
+        private ArrayList m_SBInfos = new ArrayList();
+
+        protected override ArrayList SBInfos { get { return m_SBInfos; } }
+        public override void InitSBInfo()
+        {
+            if (Core.RuleSets.MortalisRules() && Region is Region r && !r.IsPrisonRules)
+                SBInfos.Add(new SBWanderingHealer());
+        }
+        public override bool HandlesOnSpeech(Mobile from)
+        {
+            return Core.RuleSets.MortalisRules()
+                   && Region is Region region
+                   && !region.IsPrisonRules;
+        }
+        public override void OnSpeech(SpeechEventArgs e)
+        {
+            if (Core.RuleSets.MortalisRules())
+            {
+                if (AIObject != null && !AIObject.VendorInConflict())
+                {
+                    AI = AIType.AI_Vendor; // so we can process buy commands
+                    base.OnSpeech(e);
+                    AI = AIType.AI_Mage;    // so we can kick ass if needed
+                }
+            }
+            else
+                base.OnSpeech(e);
+        }
+        public override bool IsActiveVendor
+        {
+            get
+            {
+                return Core.RuleSets.MortalisRules()
+                       && Region is Region region
+                       && !region.IsPrisonRules;
+            }
+        }
+        #endregion Mortalis
 
         public override bool CheckTeach(SkillName skill, Mobile from)
         {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -140,7 +140,7 @@ namespace Server.Items
             if (!IsLockedDown || m.AccessLevel >= AccessLevel.GameMaster)
                 return true;
 
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             if (house != null)
             {
@@ -150,7 +150,7 @@ namespace Server.Items
                 return (house != null && house.HasSecureAccess(m, m_Level));
             }
 
-            TownshipRegion tsr = TownshipRegion.GetTownshipAt(this);
+            TownshipRegion? tsr = TownshipRegion.GetTownshipAt(this);
 
             if (tsr != null && tsr.TStone != null && tsr.TStone.HasAccess(m, Township.TownshipAccess.Member))
                 return true;
@@ -289,7 +289,7 @@ namespace Server.Items
                 return false;
             }
 
-            BaseHouse house = BaseHouse.FindHouseAt(from);
+            BaseHouse? house = BaseHouse.FindHouseAt(from);
 
             if (house != null && house.IsLockedDown(this) && house.SumLockDownSecureCount >= house.MaxLockDowns)
             {
@@ -299,7 +299,7 @@ namespace Server.Items
 
             AddSeed(seed.PlantType, seed.PlantHue);
 
-            Container cont = Parent as Container;
+            Container? cont = Parent as Container;
 
             // calling the full version with (-itemcount - 1) prevents double-counting the seedbox
             if (cont != null && !cont.CheckHold(from, this, true, true, -TotalItems - 1, (int)(-TotalWeight - Weight)))
@@ -443,7 +443,7 @@ namespace Server.Items
 
         #region Utility
 
-        public TypeInfo GetTypeInfo(int index)
+        public TypeInfo? GetTypeInfo(int index)
         {
             TypeInfo[] typeTable = TypeTable;
 
@@ -453,7 +453,7 @@ namespace Server.Items
             return null;
         }
 
-        public TypeInfo GetTypeInfo(PlantType plantType)
+        public TypeInfo? GetTypeInfo(PlantType plantType)
         {
             TypeInfo[] typeTable = TypeTable;
 
@@ -468,7 +468,7 @@ namespace Server.Items
 
         public PlantType IndexToPlantType(int index)
         {
-            TypeInfo typeInfo = GetTypeInfo(index);
+            TypeInfo? typeInfo = GetTypeInfo(index);
 
             if (typeInfo != null)
                 return typeInfo.PlantType;
@@ -494,7 +494,7 @@ namespace Server.Items
             return (GetTypeInfo(plantType) != null);
         }
 
-        public static HueInfo GetHueInfo(int index)
+        public static HueInfo? GetHueInfo(int index)
         {
             if (index >= 0 && index < m_HueTable.Length)
                 return m_HueTable[index];
@@ -502,7 +502,7 @@ namespace Server.Items
             return null;
         }
 
-        public static HueInfo GetHueInfo(PlantHue plantHue)
+        public static HueInfo? GetHueInfo(PlantHue plantHue)
         {
             for (int i = 0; i < m_HueTable.Length; i++)
             {
@@ -515,7 +515,7 @@ namespace Server.Items
 
         public static PlantHue IndexToPlantHue(int index)
         {
-            HueInfo hueInfo = GetHueInfo(index);
+            HueInfo? hueInfo = GetHueInfo(index);
 
             if (hueInfo != null)
                 return hueInfo.PlantHue;
@@ -591,7 +591,7 @@ namespace Server.Items
                 m_HueIndex = hueIndex;
             }
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 return (obj is SeedIndex && Equals((SeedIndex)obj));
             }

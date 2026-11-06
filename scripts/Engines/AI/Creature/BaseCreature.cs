@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,11 @@
 
 /* Scripts/Engines/AI/Creature/BaseCreature.cs
  * ChangeLog
+ *  11/4/2026, Adam (Upheaval pet bonding)
+ *      IsBondable: Upheaval (Publish 15) bonds pets too, as Angel Island does; Publish 16 brought bonding to OSI.
+ *  10/19/2026, Adam (pets eat human meat)
+ *      Added Jerky (human/orc meat carved from body parts, raw or cooked) to the meat food list.
+ *      Pets already ate the whole body parts, but refused the meat carved from them.
  *  3/2/2024, Adam (stable slots)
  *      SiegeII:
  *          6 starting slots +
@@ -711,26 +716,66 @@ using Server.Engines;
 using Server.Engines.Alignment;
 using Server.Engines.Breeding;
 using Server.Engines.CrownSterlingSystem;
-using Server.Engines.DataRecorder;
-using Server.Engines.IOBSystem;
 using Server.Engines.PartySystem;
 using Server.Engines.Quests;
 using Server.Factions;
 using Server.Items;
 using Server.Misc;
+using Server.Multis;
 using Server.Network;
 using Server.Regions;
 using Server.Spells;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using static Server.Utility;
 
 namespace Server.Mobiles
 {
     #region flags and stuff
+    [Flags]
+    public enum DefensiveSlayer
+    {
+        None = 0,
+
+        Silver = 1 << 0,
+        Repond = 1 << 1,
+        OgreTrashing = 1 << 2,
+        OrcSlaying = 1 << 3,
+        TrollSlaughter = 1 << 4,
+
+        ElementalBan = 1 << 5,
+        BloodDrinking = 1 << 6,
+        EarthShatter = 1 << 7,
+        ElementalHealth = 1 << 8,
+        FlameDousing = 1 << 9,
+        SummerWind = 1 << 10,
+        Vacuum = 1 << 11,
+        WaterDissipation = 1 << 12,
+
+        Exorcism = 1 << 13,
+        DaemonDismissal = 1 << 14,
+        GargoylesFoe = 1 << 15,
+        BalronDamnation = 1 << 16,
+
+        ArachnidDoom = 1 << 17,
+        ScorpionsBane = 1 << 18,
+        SpidersDeath = 1 << 19,
+        Terathan = 1 << 20,
+
+        ReptilianDeath = 1 << 21,
+        DragonSlaying = 1 << 22,
+        LizardmanSlaughter = 1 << 23,
+        Ophidian = 1 << 24,
+        SnakesBane = 1 << 25,
+
+        Fey = 1 << 26
+    }
     /// <summary>
     /// Summary description for MobileAI.
     /// </summary>
@@ -901,9 +946,9 @@ namespace Server.Mobiles
             m_Damage = damage;
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
-            DamageStore ds = (DamageStore)obj;
+            DamageStore? ds = (DamageStore?)obj;
 
             return ds.m_Damage - m_Damage;
         }
@@ -937,7 +982,7 @@ namespace Server.Mobiles
         IsTownshipLivestock = 0x00200000,   // township livestock
         IsWinterHolidayPet = 0x00400000,   // Winter Holiday Pet
         IsStableMasterStabled = 0x00800000,   // stable master stabler
-        GuardIgnore = 0x01000000,       // this creature is ignored by guards
+        __open = 0x01000000,            // GuardIgnore moved down to Mobile
         IsElfStabled = 0x02000000,      // elf stabler 
         IsCoopStabled = 0x04000000,     // chicken coop
         IsInnStabled = 0x08000000,      // hirelings stable in the inn
@@ -960,7 +1005,7 @@ namespace Server.Mobiles
         void GenerateLoot(BaseCreature bc);
     }
 
-    public class BaseCreature : Mobile
+    public partial class BaseCreature : Mobile
     {
         #region Sterling System
         private ushort m_SterlingMin = 0;
@@ -992,7 +1037,7 @@ namespace Server.Mobiles
         public override Mobile Dupe()
         {
             // sets the skills and other basics
-            BaseCreature creature_mobile = base.Dupe() as BaseCreature;
+            BaseCreature? creature_mobile = base.Dupe() as BaseCreature;
 
             // now set creature specific
             creature_mobile.SetStr(this.RawStr);
@@ -1090,7 +1135,7 @@ namespace Server.Mobiles
 
             // if we don't have an objective, just attack this mobile
             // TODO
-            NavBeacon objective = NavBeacon.FindObjective(this, NavDestination);
+            NavBeacon? objective = NavBeacon.FindObjective(this, NavDestination);
             if (objective == null)
                 return true;
 
@@ -1126,7 +1171,7 @@ namespace Server.Mobiles
         }
         public virtual void DoDraggingMitigation(Mobile m)
         {
-            List<Mobile> helpers = GetDraggingMitigationHelpers();
+            List<Mobile>? helpers = GetDraggingMitigationHelpers();
             if (helpers == null || helpers.Count == 0)
                 return;
 
@@ -1138,8 +1183,8 @@ namespace Server.Mobiles
         private void DragStopTick(object state)
         {
             object[] aState = (object[])state;
-            BaseCreature helper = aState[0] as BaseCreature;
-            Mobile target = aState[1] as Mobile;
+            BaseCreature? helper = aState[0] as BaseCreature;
+            Mobile? target = aState[1] as Mobile;
 
             if (helper == null || target == null)
                 return;
@@ -1148,14 +1193,15 @@ namespace Server.Mobiles
             helper.Home = target.Location;
             helper.Combatant = target;
             helper.MoveToWorld(target.Location, target.Map);
+            helper.OnAfterSpawn();
         }
-        public virtual List<Mobile> GetDraggingMitigationHelpers()
+        public virtual List<Mobile>? GetDraggingMitigationHelpers()
         {
             return null;
         }
         #endregion DraggingMitigation
         #region Who Gets What
-        public static ArrayList WhoGetsWhat(BaseCreature champ, LogHelper logger)
+        public static ArrayList GetQualifiedParticipantsAndLog(BaseCreature champ, LogHelper logger)
         {
             ArrayList toGive = new ArrayList();
 
@@ -1200,7 +1246,7 @@ namespace Server.Mobiles
                                     bool bFound = false;
                                     for (int j = 0; j < allNonExpiredPMDamageEntries.Count; j++)
                                     {
-                                        DamageEntry de2 = (DamageEntry)allNonExpiredPMDamageEntries[j];
+                                        DamageEntry? de2 = (DamageEntry?)allNonExpiredPMDamageEntries[j];
                                         if (de2.Damager == de.Damager)
                                         {
                                             logger.Log(LogType.Text, string.Format("DE[{0}]: PM Found, adding damage", i));
@@ -1228,7 +1274,7 @@ namespace Server.Mobiles
             ArrayList toRemove = new ArrayList();
             for (int i = 0; i < allNonExpiredPMDamageEntries.Count; i++)
             {
-                DamageEntry de = (DamageEntry)allNonExpiredPMDamageEntries[i];
+                DamageEntry? de = (DamageEntry?)allNonExpiredPMDamageEntries[i];
                 if (de.Damager.GetDistanceToSqrt(champ.Location) > 100)
                 {
                     logger.Log(LogType.Text, string.Format("Removing {0} for being too far away at death", de.Damager.Name));
@@ -1244,7 +1290,7 @@ namespace Server.Mobiles
             int minDamage = 0;
             for (int i = 0; i < allNonExpiredPMDamageEntries.Count; i++)
             {
-                DamageEntry de = (DamageEntry)allNonExpiredPMDamageEntries[i];
+                DamageEntry? de = (DamageEntry?)allNonExpiredPMDamageEntries[i];
                 if (de.DamageGiven > topDamage) topDamage = de.DamageGiven;
 
                 logger.Log(LogType.Text, string.Format("Non-Expired[{0}]: {1} (damage: {2})", i, de.Damager.Name, de.DamageGiven));
@@ -1262,7 +1308,7 @@ namespace Server.Mobiles
 
             for (int i = 0; i < allNonExpiredPMDamageEntries.Count; i++)
             {
-                DamageEntry de = (DamageEntry)allNonExpiredPMDamageEntries[i];
+                DamageEntry? de = (DamageEntry?)allNonExpiredPMDamageEntries[i];
                 if (de.DamageGiven >= minDamage)
                 {
                     toGive.Add(de.Damager);
@@ -1272,20 +1318,14 @@ namespace Server.Mobiles
             if (toGive.Count > 0)
             {
 
-                // Randomize
-                for (int i = 0; i < toGive.Count; ++i)
-                {
-                    int rand = Utility.Random(toGive.Count);
-                    object hold = toGive[i];
-                    toGive[i] = toGive[rand];
-                    toGive[rand] = hold;
-                }
+                //  Fisher-Yates shuffle
+                Utility.Shuffle(toGive);
 
                 logger.Log(LogType.Text, ""); // new line
                 logger.Log(LogType.Text, "Randomized list of players:");
                 for (int i = 0; i < toGive.Count; ++i)
                 {
-                    Mobile mob = toGive[i] as Mobile;
+                    Mobile? mob = toGive[i] as Mobile;
                     logger.Log(LogType.Mobile, mob, "alive:" + mob.Alive.ToString());
                 }
 
@@ -1295,35 +1335,6 @@ namespace Server.Mobiles
 
             return toGive;
 
-#if false
-            List<Item> gifts = ChampLootPack.HarrowerRewardLoot(MaxGifts);
-
-            // Loop goes until we've generated MaxGifts items.
-            for (int i = 0; i < gifts.Count; ++i)
-            {
-                Item reward = gifts[i];
-                Mobile m = (Mobile)toGive[i % toGive.Count];
-
-                if (reward != null)
-                {
-                    // Drop the new weapon into their backpack and send them a message.
-                    m.SendMessage("You have received a special item!");
-
-                    if (reward.GetFlag(LootType.Rare))
-                        m.RareAcquisitionLog(reward, "Harrower loot");
-
-                    m.AddToBackpack(reward);
-
-                    Logger.Log(LogType.Mobile, m, "alive:" + m.Alive.ToString());
-                    Logger.Log(LogType.Item, reward, string.Format("Hue:{0}:Rare:{1}",
-                        reward.Hue,
-                        (reward is BaseWeapon || reward is BaseArmor || reward is BaseClothing || reward is BaseJewel) ? "False" : "True"));
-                }
-            }
-
-            // done logging
-            Logger.Finish();
-#endif
         }
         public static void LogWhoGotWhat(LogHelper logger, int item_number, Mobile m, Item item)
         {
@@ -1352,7 +1363,7 @@ namespace Server.Mobiles
             }
             catch { }
         }
-        public static void LogLootLevelForThisPlayer(LogHelper logger, int item_number, Mobile m, Item item)
+        public static void LogLootLevelForThisPlayer(LogHelper logger, int item_number, Mobile? m, Item item)
         {
             try
             {
@@ -1422,6 +1433,9 @@ namespace Server.Mobiles
             //if (AlignmentSystem.Enabled)
             //AlignmentSystem.HandleSpawn(this);
             m_GuildAlignment = DefaultGuildAlignment;
+
+            // recalculate this creatures power
+            InvalidatePower();
         }
         public enum EquipmentDisposition
         {
@@ -1438,7 +1452,7 @@ namespace Server.Mobiles
                 m_EquipmentDisposition = value;
                 if (m_EquipmentDisposition == EquipmentDisposition.NormalizeOnLift)
                 {
-                    List<Item> list = Utility.GetLayers(this);
+                    List<Item> list = Utility.GetLayerItems(this, includeHair: true);
                     foreach (Item item in list)
                     {
                         if (item.LootType == LootType.Regular)
@@ -1451,7 +1465,7 @@ namespace Server.Mobiles
                 }
                 else if (m_EquipmentDisposition == EquipmentDisposition.None)
                 {
-                    List<Item> list = Utility.GetLayers(this);
+                    List<Item> list = Utility.GetLayerItems(this, includeHair: true);
                     foreach (Item item in list)
                     {
                         if (item.LootType == LootType.Regular)
@@ -1489,7 +1503,7 @@ namespace Server.Mobiles
 
 
         private CreatureBoolTable m_BoolTable;          // flags.
-        private BaseAI m_AI;                    // THE AI
+        private BaseAI? m_AI;                    // THE AI
 
         private AIType m_CurrentAI;         // The current AI
         private AIType m_DefaultAI;         // The default AI
@@ -1513,8 +1527,8 @@ namespace Server.Mobiles
         ArrayList m_arSpellDefense;     // Liste of defensive spell/power
 
         private bool m_bControlled;     // Is controled
-        private Mobile m_ControlMaster; // My master
-        private Mobile m_ControlTarget; // My target mobile
+        private Mobile? m_ControlMaster; // My master
+        private Mobile? m_ControlTarget; // My target mobile
         private Point3D m_ControlDest;      // My target destination (patrol)
         private OrderType m_ControlOrder;       // My order
 
@@ -1531,9 +1545,10 @@ namespace Server.Mobiles
         private bool m_bBardProvoked = false;
         private bool m_bBardPacified = false;
         private Mobile m_bBardMaster = null;
-        private Mobile m_bBardTarget = null;
+        private Mobile? m_bBardTarget = null;
         private DateTime m_timeBardEnd;
-        private WayPoint m_CurrentWayPoint = null;
+        private DateTime m_timeBardStart;
+        private WayPoint? m_CurrentWayPoint = null;
         private Point2D m_TargetLocation = Point2D.Zero;
         private IOBAlignment m_IOBAlignment; //Pigpen - Addition for IOB Sytem
         private Mobile m_SummonMaster;
@@ -1581,7 +1596,7 @@ namespace Server.Mobiles
             set { m_HerdTime = value; }
         }
 
-        public Mobile GetHerder()
+        public Mobile? GetHerder()
         {
             if (DateTime.UtcNow < m_HerdTime + TimeSpan.FromMinutes(1.0))
                 return m_Herder;
@@ -1650,6 +1665,16 @@ namespace Server.Mobiles
             }
             set
             {
+                if (ControlMaster is BaseCreature bc &&
+                    bc.Spawner is Spawner spawner &&
+                    !string.IsNullOrWhiteSpace(spawner.Followers))
+                {
+                    DebugSay(DebugFlags.Loyalty,
+                        "Skipping loyalty decay: follower of NPC master {0}.",
+                        bc.SafeName);
+                    return;
+                }
+
                 if (m_LoyaltyValue != value)
                 {
                     PetLoyalty oldLoyaltyValue = m_LoyaltyValue;
@@ -1705,18 +1730,6 @@ namespace Server.Mobiles
                 return closest;
 
             #region OBSLOETE
-#if false
-            Array values = Enum.GetValues(typeof(PetLoyalty));
-            for (int ix = 0; ix < values.Length; ix++)
-            {
-                if (LoyaltyValue > (PetLoyalty)values.GetValue(ix))
-                    continue;
-                // round up: if ExtremelyUnhappy==20 and RatherUnhappy==30, and LoyaltyValue==25, return RatherUnhappy
-                return (PetLoyalty)values.GetValue(ix);
-            }
-            // something weird happened. default to WonderfullyHappy
-            return PetLoyalty.WonderfullyHappy;
-#endif
             #endregion OBSLOETE
         }
         public int PetLoyaltyIndex()
@@ -1960,8 +1973,8 @@ namespace Server.Mobiles
         #region Bonding
         public const bool BondingEnabled = true;
 
-        public virtual bool IsBondable { get { return (BondingEnabled && (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules()) && !Summoned); } }
-        public virtual TimeSpan BondingDelay { get { return Core.UOBETA_CFG ? TimeSpan.FromHours(1.0) : TimeSpan.FromDays(7.0); } }
+        public virtual bool IsBondable { get { return (BondingEnabled && (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.UpheavalRules()) && !Summoned); } }
+        public virtual TimeSpan BondingDelay { get { return Core.GMNBETA_CFG ? TimeSpan.FromHours(1.0) : TimeSpan.FromDays(7.0); } }
         public virtual TimeSpan BondingAbandonDelay { get { return TimeSpan.FromDays(1.0); } }
 
         public override bool CanRegenHits { get { return !m_IsDeadPet && base.CanRegenHits; } }
@@ -2021,9 +2034,6 @@ namespace Server.Mobiles
             get { return m_IsBonded; }
             set
             {
-                if (value == true && this.IOBFollower)
-                    value = false; // Don't bond if it's a bretheren!
-
                 if (m_IsBonded != value)
                 {
                     m_IsBonded = value;
@@ -2068,7 +2078,7 @@ namespace Server.Mobiles
 
         public virtual double WeaponAbilityChance { get { return 0.4; } }
 
-        public virtual WeaponAbility GetWeaponAbility()
+        public virtual WeaponAbility? GetWeaponAbility()
         {
             return null;
         }
@@ -2112,7 +2122,7 @@ namespace Server.Mobiles
 
                 if (Utility.RandomBool())
                     // need to wait for this new spawn to come off the internal map
-                    Timer.DelayCall(TimeSpan.FromSeconds(2.0), new TimerStateCallback(GetConstantFocus), new object[] { null });
+                    Timer.DelayCall(TimeSpan.FromSeconds(2.0), new TimerStateCallback(GetConstantFocus), new object?[] { null });
 
                 if (Utility.RandomBool() && AIObject is MageAI)
                     CanReveal = true;
@@ -2221,6 +2231,14 @@ namespace Server.Mobiles
             }
         }
 
+        public override bool IsOnBoatDeck
+        {
+            get
+            {
+                BaseBoat boat = BaseBoat.FindBoatAt(new Point2D(Location), Map);
+                return boat != null && boat.Contains(this);
+            }
+        }
         [CommandProperty(AccessLevel.GameMaster)]
         public bool HerdingImmune
         {
@@ -2228,19 +2246,6 @@ namespace Server.Mobiles
             set { SetCreatureBool(CreatureBoolTable.HerdingImmune, value); }
         }
 
-        //  12/28/22, Adam: guards ignore these baddass creatures in town (town invasions)
-        [CommandProperty(AccessLevel.GameMaster)]
-        public virtual bool GuardIgnore
-        {
-            get { return GetCreatureBool(CreatureBoolTable.GuardIgnore) && CheckGuardIgnore(); }
-            set { SetCreatureBool(CreatureBoolTable.GuardIgnore, value); }
-        }
-        private bool CheckGuardIgnore()
-        {   // 9/8/2023, Adam: We had this for the Taking Back Sosaria event. I.e., we didn't want invasion mobs in brit
-            // It is no longer needed.
-            //return (this.Region != null && this.Region.RespectGuardIgnore);
-            return true;
-        }
         // you no longer override this function, and instead set the value.
         //	example: BardImmune = true;
         //  8/24/21, Adam: Overriding to make all human body creatures bardimmune
@@ -2323,12 +2328,12 @@ namespace Server.Mobiles
 
         public virtual int BreathRange { get { return RangePerception; } }
 
-        // Damage types
-        public virtual int BreathPhysicalDamage { get { return 0; } }
-        public virtual int BreathFireDamage { get { return 100; } }
-        public virtual int BreathColdDamage { get { return 0; } }
-        public virtual int BreathPoisonDamage { get { return 0; } }
-        public virtual int BreathEnergyDamage { get { return 0; } }
+        //// Damage types
+        //public virtual int BreathPhysicalDamage { get { return 0; } }
+        //public virtual int BreathFireDamage { get { return 100; } }
+        //public virtual int BreathColdDamage { get { return 0; } }
+        //public virtual int BreathPoisonDamage { get { return 0; } }
+        //public virtual int BreathEnergyDamage { get { return 0; } }
 
         // Effect details and sound
         public virtual int BreathEffectItemID { get { return 0x36D4; } }
@@ -2410,17 +2415,11 @@ namespace Server.Mobiles
 
         public virtual void BreathDealDamage(Mobile target)
         {
-            int physDamage = BreathPhysicalDamage;
-            int fireDamage = BreathFireDamage;
-            int coldDamage = BreathColdDamage;
-            int poisDamage = BreathPoisonDamage;
-            int nrgyDamage = BreathEnergyDamage;
-
-            if (physDamage == 0 && fireDamage == 0 && coldDamage == 0 && poisDamage == 0 && nrgyDamage == 0)
-            {   // Unresistable damage even in AOS
-                target.Damage(BreathComputeDamage(), this, this);
-            }
-            else
+            //if (physDamage == 0 && fireDamage == 0 && coldDamage == 0 && poisDamage == 0 && nrgyDamage == 0)
+            //{   // Unresistable damage even in AOS
+            //    target.Damage(BreathComputeDamage(), this, context);
+            //}
+            //else
             {
                 // dragon's HP * BreathDamageScalar (so like 850 * .05 = 42 damage)
                 double damage = (double)BreathComputeDamage();
@@ -2430,7 +2429,7 @@ namespace Server.Mobiles
                     damage -= damage * (.1 * distance);
                     if (damage <= 0.0) damage = 1.0;
                 }
-                AOS.Damage(target, this, (int)damage, physDamage, fireDamage, coldDamage, poisDamage, nrgyDamage, this);
+                AOS.Damage(target, this, (int)damage, new DamageContext { Source = this });
             }
         }
 
@@ -2468,10 +2467,6 @@ namespace Server.Mobiles
             return true;
         }
 
-        public virtual void BeginFlee(TimeSpan maxDuration)
-        {
-            m_EndFlee = DateTime.UtcNow + maxDuration;
-        }
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public override bool IsInvulnerable
         {
@@ -2530,6 +2525,7 @@ namespace Server.Mobiles
 
             return base.AcceptingCombatantChange();
         }
+
         private bool CloseEnough(Mobile m)
         {
             return (this.GetDistanceToSqrt(m) < 2.0 && Math.Abs(this.Z - m.Z) < 2);
@@ -2564,35 +2560,13 @@ namespace Server.Mobiles
 
         public bool IsOpposition(Mobile m)
         {
-            if (m != null)
-            {
-                // Adam: check for PC opposition
-                // some good aligned kin may not want enemy players around
-                if (m is PlayerMobile && m.Player && IsOpposedToPlayers())
-                    if (IOBSystem.IsEnemy(this, m) == true)
-                        return true;
-
-                // Adam: check for PC Pet opposition
-                // some good aligned kin may not want enemy pets around
-                BaseCreature bc = m as BaseCreature;
-                if (IsOpposedToPlayersPets() && bc != null)
-                    if (bc.m_bControlled == true && bc.m_bTamable == true)
-                        if (bc.m_ControlMaster != null)
-                            if (IOBSystem.IsEnemy(this, bc) == true)
-                                return true;
-
-                // Adam: check for NPC opposition
-                if (bc != null && IOBSystem.IsEnemy(this, m))
-                    return true;
-            }
-
             return false;
         }
 
         //add in test center evil logging of specific baski
         public override void Delete()
         {
-            LogHelper Logger = null;
+            LogHelper? Logger = null;
             try
             {
                 if (this.Backpack != null)
@@ -2693,19 +2667,11 @@ namespace Server.Mobiles
                 if (IsOpposition(m))
                     return false;
 
-            // Adam: If you are an ememy, you are not a friend (PC)
-            if (IOBSystem.IsEnemy(this, m) == true)
-                return false;
-
             // Adam: different teams are always waring (NPC)
             if (IsTeamOpposition(m) == true)
                 return false;
 
-            // Adam: Is this an IOB kinship? (PC)
-            if (IOBSystem.IsFriend(this, m) == true)
-                return true;
-
-            BaseCreature c = m as BaseCreature;
+            BaseCreature? c = m as BaseCreature;
             if (c != null)
             {
                 //if both are tamed pets dont attack each other
@@ -2819,7 +2785,7 @@ namespace Server.Mobiles
             #endregion
 
             Ethics.Ethic ourEthic = EthicAllegiance;
-            Ethics.Player pl = Ethics.Player.Find(m, true);
+            Ethics.Player? pl = Ethics.Player.Find(m, true);
 
             // new ethics system
             if (pl != null && pl.IsShielded && (ourEthic == null || ourEthic == pl.Ethic))
@@ -2838,22 +2804,24 @@ namespace Server.Mobiles
                 if (IsOpposition(m))
                     return true;
 
-            // Adam: Is this an IOB kinship? (PC)
-            if (IOBSystem.IsEnemy(this, m) == true)
-                return true;
-
             // Adam: different teams are always waring (NPC)
             if (IsTeamOpposition(m) == true)
                 return true;
-
-            // Adam: If you are a friend, you are not an enemy (PC)
-            if (IOBSystem.IsFriend(this, m) == true)
-                return false;
 
             // don't hate PCs just because they are PCs
             if ((filter & RelationshipFilter.IgnorePCHate) == 0)
                 if (!(m is BaseCreature))
                     return true;
+
+            // NPC-controlled followers inherit their master's enemy relationships.
+            // This prevents pack animals and other follower creatures from being treated as independent hostile targets.
+            if (m is BaseCreature pet &&
+                pet.ControlMaster is BaseCreature master &&
+                master != this &&
+                master != m)
+            {
+                return IsEnemy(master);
+            }
 
             // don't hate summoned or controlled NPCs just because
             if ((filter & RelationshipFilter.Faction) == 0)
@@ -2893,7 +2861,7 @@ namespace Server.Mobiles
             {
                 // 9/22/23, Yoar: Since we have the loyalty drop on failed commands, let's include the loyalty increase on succesful commands.
                 // This is also consistent with RunUO.
-                if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules())
+                if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules())
                     LoyaltyValue += 1;
 
                 return true;
@@ -2906,7 +2874,7 @@ namespace Server.Mobiles
             else if (Body.IsMonster)
                 Animate(18, 5, 1, true, false, 0);
 
-            if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules())
+            if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules())
                 LoyaltyValue -= 3;
 
             return false;
@@ -2987,11 +2955,11 @@ namespace Server.Mobiles
             }
         }
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
             int oldHits = this.Hits;
 
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
 
             if (SubdueBeforeTame && !Controlled)
             {
@@ -3058,7 +3026,7 @@ namespace Server.Mobiles
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public WayPoint CurrentWayPoint
+        public WayPoint? CurrentWayPoint
         {
             get
             {
@@ -3293,7 +3261,7 @@ namespace Server.Mobiles
             }
         }
 
-        public override void OnDamage(int amount, Mobile from, bool willKill, object source_weapon)
+        public override void OnDamage(int amount, Mobile from, bool willKill, DamageContext context)
         {
             try
             {
@@ -3310,7 +3278,46 @@ namespace Server.Mobiles
                 if (m_AI != null)
                     m_AI.Activate();
 
-                base.OnDamage(amount, from, willKill, source_weapon);
+                #region ShouldBreakPacifyOnDamage
+                // If we’re dead anyway, don’t bother with state transitions.
+                if (!willKill)
+                {
+                    if (BardPacified)
+                    {
+                        DateTime now = DateTime.UtcNow;
+
+                        // If peace has naturally expired, let normal aggression resume.
+                        if (now >= BardEndTime)
+                        {
+                            Unpacify();
+                        }
+                        else
+                        {   // angel island uses the old broken mechanic
+                            // Siege was quietly updated, Mortalis is explicitly so
+                            if (!Core.RuleSets.AngelIslandRules())
+                            {
+                                // Damage applies pressure against the pacify effect; sustained or meaningful injury
+                                // eventually overwhelms the bard’s control, especially as the effect weakens over time.
+                                if (ShouldBreakPacifyOnDamage(now, amount, from))
+                                {
+                                    DebugSay(DebugFlags.Mobile, "Pacify failed to hold under damage.");
+                                    Unpacify();
+                                }
+                                else
+                                {
+                                    // Optional: you can explicitly re-affirm pacify here if you have other code
+                                    // that tries to set combatants on damage. In many AI stacks, simply remaining
+                                    // BardPacified is enough.
+                                    //
+                                    // e.g. Combatant = null; Warmode = false; etc (depending on your architecture)
+                                }
+                            }
+                        }
+                    }
+                }
+                #endregion
+
+                base.OnDamage(amount, from, willKill, context);
             }
             catch (Exception ex)
             {
@@ -3480,7 +3487,7 @@ namespace Server.Mobiles
                 // 9/17/23, Yoar: Carvable rares
                 if (Core.RuleSets.AllShards && RareCarvableChance > 0.0 && Utility.RandomDouble() < RareCarvableChance)
                 {
-                    Item carveRare = CarveEntry.Generate(RareCarvables);
+                    Item? carveRare = CarveEntry.Generate(RareCarvables);
 
                     if (carveRare != null)
                     {
@@ -3493,7 +3500,7 @@ namespace Server.Mobiles
                 corpse.Carved = true;
 
                 if (corpse.IsCriminalAction(from))
-                    from.CriminalAction(true);
+                    from.CriminalAction(message: true);
             }
         }
 
@@ -3504,7 +3511,7 @@ namespace Server.Mobiles
         {
             public static readonly CarveEntry[] Empty = new CarveEntry[0];
 
-            public static Item Generate(CarveEntry[] table)
+            public static Item? Generate(CarveEntry[] table)
             {
                 int total = 0;
 
@@ -3527,12 +3534,12 @@ namespace Server.Mobiles
                 return null;
             }
 
-            private Item Construct()
+            private Item? Construct()
             {
                 if (!typeof(Item).IsAssignableFrom(m_Type))
                     return null;
 
-                Item item;
+                Item? item;
 
                 try
                 {
@@ -3625,11 +3632,33 @@ namespace Server.Mobiles
             if (speechType != null)
                 speechType.OnConstruct(this);
 
-            // our different shards handle 'at spawn time' loot differently
-            // For Angel Island, we don't drop it at all, for Siege, some is placed in the creatures bankbox (thieves can't touch it.)
-            //  We added the Siege case to work this way as it was minimum code. Otherwise we would need to rewrite about 100+ monster
-            //  loot tables. Yuck!
-            if (!Core.RuleSets.AngelIslandRules())  // no 'at spawn' loot on angel island
+            // Defer loot generation by one tick.
+            // During construction, ChampEngine/Spawner may not yet be assigned.
+            // Delaying ensures GenerateLoot() can detect proper spawn context.
+            Timer.DelayCall(TimeSpan.FromSeconds(0.5),
+                new TimerStateCallback(SpawnLootTick), new object?[] { null });
+
+            // Override mobiles stats/skills etc with a per shard, per mobile override patch
+            Timer.DelayCall(TimeSpan.Zero,
+                new TimerCallback(ApplyMobileOverrides));
+
+            //new creature, give it a lifespan
+            RefreshLifespan();
+
+            Genetics.InitGenes(this);
+
+            // default for all creatures
+            // pay special attention to the (version < 28) case in Deserialize()
+            IsScaredOfScaryThings = true;
+
+            // See OnAfterSpawn for configuration
+            m_GuildAlignment = AlignmentType.None;
+        }
+
+        // Delayed spawn-phase loot generation to allow ChampEngine/Spawner assignment.
+        private void SpawnLootTick(object state)
+        {
+            if (!this.Deleted)
                 GenerateLoot(spawning: true);
 
             // 11/15/22, Adam
@@ -3650,22 +3679,273 @@ namespace Server.Mobiles
              */
             if (this is BaseVendor)
             {
-                Timer.DelayCall(TimeSpan.FromSeconds(1),
-                new TimerStateCallback(PatchLootTick), new object[] { null });
+                Timer.DelayCall(TimeSpan.Zero,
+                    new TimerCallback(PatchLootTick));
+            }
+        }
+        #region Apply Mobile Overrides
+        private void ApplyMobileOverrides()
+        {
+            if (Deleted)
+                return;
+
+            string path = Path.Combine("Data", "Common", GetType().Name + ".json");
+
+            if (!File.Exists(path))
+                return;
+
+            string jsonText;
+
+            try
+            {
+                jsonText = File.ReadAllText(path);
+            }
+            catch
+            {
+                return;
             }
 
-            //new creature, give it a lifespan
-            RefreshLifespan();
-
-            Genetics.InitGenes(this);
-
-            // default for all creatures
-            // pay special attention to the (version < 28) case in Deserialize()
-            IsScaredOfScaryThings = true;
-
-            // See OnAfterSpawn for configuration
-            m_GuildAlignment = AlignmentType.None;
+            try
+            {
+                using (JsonDocument doc = JsonDocument.Parse(jsonText))
+                {
+                    ApplyMobileOverrides(doc.RootElement);
+                }
+            }
+            catch
+            {
+                // Optional: log if you want visibility on bad JSON
+                // Console.WriteLine("ApplyMobileOverrides failed for {0} from {1}", GetType().Name, path);
+                return;
+            }
         }
+        public static class CreatureBands
+        {
+            private const double StrBand = 0.15;     // ~15%
+            private const double DexBand = 0.13;     // ~13%
+            private const double IntBand = 0.12;     // ~12%
+            private const double HitsBand = 0.15;    // ~15%
+            private const double DamageBand = 0.08;  // ~8%
+
+            public static int GetStrLower(int max)
+            {
+                return ComputeLower(max, StrBand);
+            }
+
+            public static int GetDexLower(int max)
+            {
+                return ComputeLower(max, DexBand);
+            }
+
+            public static int GetIntLower(int max)
+            {
+                return ComputeLower(max, IntBand);
+            }
+
+            public static int GetHitsLower(int max)
+            {
+                return ComputeLower(max, HitsBand);
+            }
+
+            public static int GetDamageLower(int max)
+            {
+                return ComputeLower(max, DamageBand);
+            }
+
+            private static int ComputeLower(int max, double band)
+            {
+                int spread = (int)Math.Round(max * band);
+
+                int min = max - spread;
+
+                if (min < 1)
+                    min = 1;
+
+                if (min >= max)
+                    min = max - 1;
+
+                return min;
+            }
+
+            public static double GetSkillLowerOSI(double max)
+            {
+                // OSI-ish skill variance bands:
+                // - High skills tend to be tighter (reliable performance)
+                // - Mid skills get a moderate band
+                // - Low/mid skills get the classic ~20-ish band
+                double spread;
+
+                if (max >= 100.0)
+                    spread = 0.0;    // OSI often uses fixed 100.0 (e.g., EvalInt 100.0)
+                else if (max >= 95.0)
+                    spread = 10.0;   // common on elite caster utility skills (e.g., 85.1-95.0)
+                else if (max >= 80.0)
+                    spread = 15.0;   // frequent on strong skills
+                else
+                    spread = 22.5;   // very common humanoid band (e.g., 60.0-82.5, 57.5-80.0)
+
+                double min = max - spread;
+
+                // OSI ranges frequently use .1 on mins (70.1, 80.1, 85.1) to avoid exact 70/80/85 boundaries.
+                // Apply that "min+.1" flavor only when we actually have a range.
+                if (spread > 0.0)
+                    min = Math.Floor(min) + 0.1;
+
+                if (min < 0.0)
+                    min = 0.0;
+
+                // Ensure min < max when we intended a range
+                if (spread > 0.0 && min >= max)
+                    min = Math.Max(0.0, Math.Floor(max - 1.0) + 0.1);
+
+                // Clamp to shard skill cap bounds
+                if (min > 120.0) min = 120.0;
+
+                return min;
+            }
+
+        }
+        private void ApplyMobileOverrides(JsonElement root)
+        {
+            // Stats
+            if (TryGetObject(root, "Stats", out JsonElement stats))
+            {
+                if (TryGetInt(stats, "Str", out int str))
+                    SetStr(CreatureBands.GetStrLower(str), str);
+
+                if (TryGetInt(stats, "Dex", out int dex))
+                    SetDex(CreatureBands.GetDexLower(dex), dex);
+
+                if (TryGetInt(stats, "Int", out int intel))
+                    SetInt(CreatureBands.GetIntLower(intel), intel);
+
+                // IMPORTANT: no translation for tuning files (tune-to-max convention; apply band rule here)
+                if (TryGetInt(stats, "Hits", out int hits))
+                    SetHits(CreatureBands.GetHitsLower(hits), hits, translate: false);
+
+                if (TryGetInt(stats, "VirtualArmor", out int va))
+                    VirtualArmor = va;
+
+                // Tune-to-max convention; apply band rule here.
+                if (TryGetInt(stats, "Damage", out int dmgMax))
+                    SetDamage(CreatureBands.GetDamageLower(dmgMax), dmgMax);
+            }
+
+            // Behavior
+            if (TryGetObject(root, "Behavior", out JsonElement beh))
+            {
+                if (TryGetBool(beh, "UsesHumanWeapons", out bool uhw)) UsesHumanWeapons = uhw;
+                if (TryGetBool(beh, "UsesBandages", out bool ub)) UsesBandages = ub;
+                if (TryGetBool(beh, "UsesPotions", out bool up)) UsesPotions = up;
+                if (TryGetBool(beh, "CanRun", out bool cr)) CanRun = cr;
+                if (TryGetBool(beh, "CanReveal", out bool crev)) CanReveal = crev;
+            }
+
+            // Skills (keys are SkillName enum strings)
+            if (TryGetObject(root, "Skills", out JsonElement skillsObj))
+            {
+                foreach (JsonProperty p in skillsObj.EnumerateObject())
+                {
+                    SkillName sn;
+
+                    try
+                    {
+                        sn = (SkillName)Enum.Parse(typeof(SkillName), p.Name, true);
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+
+                    if (!TryGetDouble(p.Value, out double v))
+                        continue;
+
+                    // Clamp to sane bounds
+                    if (v < 0.0) v = 0.0;
+                    if (v > 120.0) v = 120.0;
+
+                    Skill sk = Skills[sn];
+                    if (sk == null)
+                        continue;
+
+                    // Tune-to-max convention; reconstruct OSI-style range.
+                    double max = v;
+                    double min = CreatureBands.GetSkillLowerOSI(max);
+
+                    // NOTE: If you prefer SetSkill(min,max) during construction, store these and apply there.
+                    // Here, we pick a random value within the reconstructed band to mimic spawn variance.
+                    if (min < max)
+                        sk.Base = Utility.RandomMinMax((int)Math.Round(min * 10.0), (int)Math.Round(max * 10.0)) / 10.0;
+                    else
+                        sk.Base = max;
+                }
+            }
+        }
+
+        private static bool TryGetObject(JsonElement root, string name, out JsonElement obj)
+        {
+            obj = default;
+
+            if (root.ValueKind != JsonValueKind.Object)
+                return false;
+
+            if (!root.TryGetProperty(name, out obj))
+                return false;
+
+            return obj.ValueKind == JsonValueKind.Object;
+        }
+
+        private static bool TryGetInt(JsonElement obj, string name, out int value)
+        {
+            value = 0;
+
+            if (obj.ValueKind != JsonValueKind.Object)
+                return false;
+
+            if (!obj.TryGetProperty(name, out JsonElement e))
+                return false;
+
+            if (e.ValueKind == JsonValueKind.Number && e.TryGetInt32(out value))
+                return true;
+
+            if (e.ValueKind == JsonValueKind.String)
+                return int.TryParse(e.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value);
+
+            return false;
+        }
+
+        private static bool TryGetBool(JsonElement obj, string name, out bool value)
+        {
+            value = false;
+
+            if (obj.ValueKind != JsonValueKind.Object)
+                return false;
+
+            if (!obj.TryGetProperty(name, out JsonElement e))
+                return false;
+
+            if (e.ValueKind == JsonValueKind.True) { value = true; return true; }
+            if (e.ValueKind == JsonValueKind.False) { value = false; return true; }
+
+            if (e.ValueKind == JsonValueKind.String)
+                return bool.TryParse(e.GetString(), out value);
+
+            return false;
+        }
+
+        private static bool TryGetDouble(JsonElement e, out double value)
+        {
+            value = 0.0;
+
+            if (e.ValueKind == JsonValueKind.Number)
+                return e.TryGetDouble(out value);
+
+            if (e.ValueKind == JsonValueKind.String)
+                return double.TryParse(e.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out value);
+
+            return false;
+        }
+        #endregion Apply Mobile Overrides
 
         /* 11/15/22, Adam
          * it is impossible to generically generate loot for towns people without implementing
@@ -3675,7 +3955,7 @@ namespace Server.Mobiles
          * UO Second Age and UO Renaissance.
          * UO Second Age loot Publish < 4, UO Renaissance no loot Publish >= 4
          */
-        private void PatchLootTick(object state)
+        private void PatchLootTick()
         {
             List<Type> loots = new() { typeof(BreadLoaf), typeof(Torch), typeof(Candle), typeof(CheeseWheel),
             typeof(Pitcher), typeof(BeverageBottle), typeof(Jug)};
@@ -3687,7 +3967,7 @@ namespace Server.Mobiles
                 if (PublishInfo.Publish < 4)
                 {
                     // regions not included 
-                    Region rx = Region.FindByName("angel island", this.Map);    // prison
+                    Region? rx = Region.FindByName("angel island", this.Map);    // prison
                     if (rx != null && rx.Contains(this.Location))
                         return;
                     // mobiles not included
@@ -3713,7 +3993,7 @@ namespace Server.Mobiles
                         {   // oddly, this NPC only had gold, and a fair bit more than other NPCs
                             if (Utility.InventoryHas(alreadyHas, typeof(Gold)))
                             {   // fix gold
-                                Item gold = Utility.InventoryFind(alreadyHas, typeof(Gold));
+                                Item? gold = Utility.InventoryFind(alreadyHas, typeof(Gold));
                                 if (gold != null)
                                     gold.Amount = Utility.RandomMinMax(150, 200);
                             }
@@ -3724,7 +4004,7 @@ namespace Server.Mobiles
                         {
                             if (Utility.InventoryHas(alreadyHas, typeof(Gold)))
                             {   // standardize gold
-                                Item gold = Utility.InventoryFind(alreadyHas, typeof(Gold));
+                                Item? gold = Utility.InventoryFind(alreadyHas, typeof(Gold));
                                 if (gold != null)
                                     gold.Amount = Utility.RandomMinMax(15, 80);
                             }
@@ -3745,7 +4025,7 @@ namespace Server.Mobiles
                                 }
                                 else
                                 {
-                                    Item item = (Item)Activator.CreateInstance(type);
+                                    Item? item = (Item?)Activator.CreateInstance(type);
                                     if (item.Stackable)
                                         item.Amount = Utility.RandomMinMax(1, 3);
                                     PackItem(item);
@@ -3757,7 +4037,7 @@ namespace Server.Mobiles
                             if (Utility.InventoryHas(this, typeof(BaseWeapon), BackpackOnly: true))
                                 Console.WriteLine("{0}({1}) got one of our special weapon drops", this, this.Location);
 
-                        if (Core.RuleSets.SiegeStyleRules())
+                        if (Core.RuleSets.SiegeRules())
                         {   // no 'at spawn' gold for Siege
                             List<Item> list = Utility.Inventory(this);
                             foreach (Item item in list)
@@ -3801,13 +4081,18 @@ namespace Server.Mobiles
         [Flags]
         enum SaveFlags
         {
-            None = 0x0,
-            HasControlMasterGUID = 0x01,
-            HasLastControlMaster = 0x02,
-            HasNavDestination = 0x04,
-            HasSusceptibleTo = 0x08,
-            MutateEquipment = 0x10,
-            DropsSterling = 0x20
+            None = 0,
+            HasControlMasterGUID = 1 << 0,
+            HasLastControlMaster = 1 << 1,
+            HasNavDestination = 1 << 2,
+            HasSusceptibleTo = 1 << 3,
+            MutateEquipment = 1 << 4,
+            DropsSterling = 1 << 5,
+            HasDefensiveSlayers = 1 << 6,
+            HasGoldPacked = 1 << 7,
+            HasGoldHidden = 1 << 8,
+            HasGoldVisible = 1 << 9,
+            HasCorpseLootExclusions = 1 << 9,
         }
         private SaveFlags m_SaveFlags = SaveFlags.None;
         private void SetFlag(SaveFlags flag, bool value)
@@ -3832,12 +4117,22 @@ namespace Server.Mobiles
         private void WriteSaveFlags(GenericWriter writer)
         {
             m_SaveFlags = SaveFlags.None;
-            SetFlag(SaveFlags.HasControlMasterGUID, ControlMasterGUID != 0 ? true : false);
+            // This save flag is now obsolete as of version 51.
+            // ControlMasterGUID storage has been migrated to Mobile.OwnerGuid,
+            // and BaseCreature no longer persists a local GUID.
+            // Force the flag off to ensure no legacy data is written.
+            SetFlag(SaveFlags.HasControlMasterGUID, false); // obsolete
             SetFlag(SaveFlags.HasLastControlMaster, LastControlMaster != null ? true : false);
             SetFlag(SaveFlags.HasNavDestination, !string.IsNullOrEmpty(m_dest));
             SetFlag(SaveFlags.HasSusceptibleTo, SusceptibleTo != CraftResource.None);
             SetFlag(SaveFlags.MutateEquipment, m_EquipmentDisposition != EquipmentDisposition.None);
             SetFlag(SaveFlags.DropsSterling, GetCreatureBool(CreatureBoolTable.DropsSterling));
+            SetFlag(SaveFlags.HasDefensiveSlayers, SlayersDefensive != DefensiveSlayer.None);
+
+            SetFlag(SaveFlags.HasGoldPacked, GoldPacked > 0);
+            SetFlag(SaveFlags.HasGoldHidden, GoldHidden > 0);
+            SetFlag(SaveFlags.HasGoldVisible, GoldVisible > 0);
+            SetFlag(SaveFlags.HasCorpseLootExclusions, CorpseLootExclusions != null && CorpseLootExclusions.Count > 0);
             writer.Write((int)m_SaveFlags);
         }
         private void ReadCreatureBools(GenericReader reader, int version)
@@ -3862,7 +4157,7 @@ namespace Server.Mobiles
         {
             base.Serialize(writer);
 
-            int version = 50;
+            int version = 55;
             writer.Write((int)version); // version
             #region Save flags & Creature Bools
             WriteSaveFlags(writer);                 // always follows version
@@ -3871,6 +4166,42 @@ namespace Server.Mobiles
 
             switch (version)
             {
+                case 55:
+                    {   // version 55: retired IOBAlignment, IOBFollower and IOBLeader are no longer written (see default)
+                        goto case 54;
+                    }
+                case 54:
+                    {
+                        if (GetFlag(SaveFlags.HasCorpseLootExclusions))
+                        {
+                            writer.Write((int)CorpseLootExclusions.Count);
+                            foreach (Type t in CorpseLootExclusions)
+                                writer.Write(t.FullName);
+                        }
+
+                        goto case 53;
+                    }
+                case 53:
+                    {
+                        if (GetFlag(SaveFlags.HasGoldPacked))
+                            writer.Write((int)GoldPacked);
+                        if (GetFlag(SaveFlags.HasGoldHidden))
+                            writer.Write((int)GoldHidden);
+                        if (GetFlag(SaveFlags.HasGoldVisible))
+                            writer.Write((int)GoldVisible);
+                        goto case 52;
+                    }
+                case 52:
+                    {
+                        if (GetFlag(SaveFlags.HasDefensiveSlayers))
+                            writer.Write((int)SlayersDefensive);
+                        goto case 51;
+                    }
+                case 51:
+                    {
+                        // pushing m_ControlMasterGUID down to Mobile as OwnerGuid
+                        goto case 50;
+                    }
                 case 50:
                     {
                         if (GetFlag(SaveFlags.DropsSterling))
@@ -3925,7 +4256,7 @@ namespace Server.Mobiles
                     }
                 case 42:
                     {
-                        writer.Write((int)m_Slayer);
+                        writer.Write((int)SlayerOffensive);
                         goto case 41;
                     }
                 case 41:
@@ -3937,12 +4268,13 @@ namespace Server.Mobiles
                     goto case 39;
                 case 39:
                     {
-                        //  the ControlMasterGUID uniquely identifies a pet even when the ControlMaster is set to null (for instance, when stabled.)
-                        //if (GetFlagData(m_flagData, FlagData.HasControlMasterGUID))
-                        if (GetFlag(SaveFlags.HasControlMasterGUID))
-                            writer.Write(m_ControlMasterGUID);
+                        // Obsolete as of version 51.
+                        // BaseCreature no longer writes a local ControlMasterGUID.
+                        // The GUID is now owned and serialized by Mobile (OwnerGuid).
+                        // Nothing is written here for new saves.
                         goto default;
                     }
+
                 default:
                     // version 34 m_SuppressNormalLoot
                     // version 33, preferred focus 
@@ -3954,7 +4286,8 @@ namespace Server.Mobiles
                     writer.Write(m_ObjectiveInRange);
 
                     // version 35, record gold droped for new leader board stats
-                    writer.Write(m_PackedGold);
+                    // Now written in version 53
+                    //writer.Write(GoldPacked);
 
                     writer.Write((int)m_CurrentAI);
                     writer.Write((int)m_DefaultAI);
@@ -4052,12 +4385,9 @@ namespace Server.Mobiles
                     // Version 12 (Pix: statloss timer)
                     writer.Write((DateTime)m_StatLossTime);
 
-                    // Version 13 (Pigpen: IOBAlignment)
-                    writer.Write((int)m_IOBAlignment);
+                    // Version 13 (Pigpen: IOBAlignment) - retired in version 55, no longer written
 
-                    // Version 14 (Pix: IOBFollower/IOBLeader)
-                    writer.Write((bool)m_IOBFollower);
-                    writer.Write(m_IOBLeader);
+                    // Version 14 (Pix: IOBFollower/IOBLeader) - retired in version 55, no longer written
 
                     // Version 15 (Pix: Spawner)
                     //  Version 40 moves this down to the Mobile
@@ -4153,6 +4483,47 @@ namespace Server.Mobiles
 
             switch (version)
             {
+                case 55:
+                    {   // version 55: retired IOBAlignment, IOBFollower and IOBLeader are no longer read (see default)
+                        goto case 54;
+                    }
+                case 54:
+                    {
+                        if (GetFlag(SaveFlags.HasCorpseLootExclusions))
+                        {
+                            int count = reader.ReadInt();
+                            CorpseLootExclusions = new List<Type>(count);
+                            for (int ix = 0; ix < count; ix++)
+                            {
+                                string? typeName = reader.ReadString();
+                                Type t = ScriptCompiler.FindTypeByFullName(typeName);
+                                if (t != null)
+                                    CorpseLootExclusions.Add(t);
+                            }
+                        }
+                        goto case 53;
+                    }
+                case 53:
+                    {
+                        if (GetFlag(SaveFlags.HasGoldPacked))
+                            GoldPacked = reader.ReadInt();
+                        if (GetFlag(SaveFlags.HasGoldHidden))
+                            GoldHidden = reader.ReadInt();
+                        if (GetFlag(SaveFlags.HasGoldVisible))
+                            GoldVisible = reader.ReadInt();
+                        goto case 52;
+                    }
+                case 52:
+                    {
+                        if (GetFlag(SaveFlags.HasDefensiveSlayers))
+                            SlayersDefensive = (DefensiveSlayer)reader.ReadInt();
+                        goto case 51;
+                    }
+                case 51:
+                    {
+                        // pushing m_ControlMasterGUID down to Mobile as OwnerGuid
+                        goto case 50;
+                    }
                 case 50:
                     {
                         if (GetFlag(SaveFlags.DropsSterling))
@@ -4211,7 +4582,7 @@ namespace Server.Mobiles
                             /*
                              * HerdingImmune = 0x01,           // moved to creature bools
                              * HasControlMasterGUID = 0x02,
-                             * GuardIgnore = 0x04,             // moved to creature bools
+                             * GuardIgnore = 0x04,             // moved to Mobile bools
                              * HasLastControlMaster = 0x08,
                              */
 
@@ -4221,7 +4592,7 @@ namespace Server.Mobiles
                             bool hasLastControlMaster = (flagData & 0x08) != 0;
 
                             SetCreatureBool(CreatureBoolTable.HerdingImmune, herdingImmune);    // moved to creature bools
-                            SetCreatureBool(CreatureBoolTable.GuardIgnore, guardIgnore);        // moved to creature bools
+                            SetMobileBool(MobileBoolTable.GuardIgnore, guardIgnore);        // moved to Mobile bools
                             SetFlag(SaveFlags.HasControlMasterGUID, hasControlMasterGUID);      // remains as a save flag
                             SetFlag(SaveFlags.HasLastControlMaster, hasLastControlMaster);      // remains as a save flag
                         }
@@ -4233,7 +4604,7 @@ namespace Server.Mobiles
                     }
                 case 42:
                     {
-                        m_Slayer = (SlayerName)reader.ReadInt();
+                        SlayerOffensive = (SlayerName)reader.ReadInt();
                         goto case 41;
                     }
                 case 41:
@@ -4245,12 +4616,26 @@ namespace Server.Mobiles
                     // version 40 moves Spawner down to Mobile
                     //  Check 
                     goto case 39;
+
                 case 39:
                     {
-                        //  the ControlMasterGUID uniquely identifies a pet even when the ControlMaster is set to null (for instance, when stabled.)
-                        //if (GetFlagData(m_flagData, FlagData.HasControlMasterGUID))
-                        if (GetFlag(SaveFlags.HasControlMasterGUID))
-                            m_ControlMasterGUID = reader.ReadUInt();
+                        // Version 50 and below:
+                        //  - We used to serialize ControlMasterGUID via SaveFlags.HasControlMasterGUID.
+                        //  - Migrate that value into Mobile.OwnerGuid on load.
+                        if (version <= 50)
+                        {
+                            // GetFlag will also be using the old SaveFlags bitfield that was written for v50 and below.
+                            if (GetFlag(SaveFlags.HasControlMasterGUID))
+                            {
+                                // This used to set m_ControlMasterGUID; now we migrate directly into Mobile.OwnerGuid.
+                                OwnerGUID = reader.ReadUInt();
+                            }
+                        }
+                        // Version 51+:
+                        //  - We no longer write ControlMasterGUID here at all.
+                        //  - OwnerGuid should be serialized/deserialized by Mobile itself.
+                        //  - Do NOT read from the stream here, or you’ll desync.
+
                         goto default;
                     }
                 default:
@@ -4258,9 +4643,9 @@ namespace Server.Mobiles
                     if (version >= 36)
                         m_ObjectiveInRange = reader.ReadBool();
 
-                    // version 35
-                    if (version >= 35)
-                        m_PackedGold = reader.ReadInt();
+                    // version 35 (re-added in version 53)
+                    if (version >= 35 && version < 53)
+                        GoldPacked = reader.ReadInt();
 
                     m_CurrentAI = (AIType)reader.ReadInt();
                     m_DefaultAI = (AIType)reader.ReadInt();
@@ -4311,8 +4696,8 @@ namespace Server.Mobiles
                         iCount = reader.ReadInt();
                         for (i = 0; i < iCount; i++)
                         {
-                            string str = reader.ReadString();
-                            Type type = Type.GetType(str);
+                            string? str = reader.ReadString();
+                            Type? type = Type.GetType(str);
 
                             if (type != null)
                             {
@@ -4323,8 +4708,8 @@ namespace Server.Mobiles
                         iCount = reader.ReadInt();
                         for (i = 0; i < iCount; i++)
                         {
-                            string str = reader.ReadString();
-                            Type type = Type.GetType(str);
+                            string? str = reader.ReadString();
+                            Type? type = Type.GetType(str);
 
                             if (type != null)
                             {
@@ -4443,22 +4828,22 @@ namespace Server.Mobiles
                         m_StatLossTime = reader.ReadDateTime();
                     }
 
-                    if (version >= 13) //Pigpen - Addition for IOB Sytem
-                    {
-                        m_IOBAlignment = (IOBAlignment)reader.ReadInt();
+                    if (version >= 13 && version < 55) //Pigpen - Addition for IOB Sytem
+                    {   // Retired IOBAlignment; consume legacy value for save compatibility.
+                        reader.ReadInt();
                     }
 
-                    if (version >= 14) //Pix: IOBLeader/IOBFollower
-                    {
-                        m_IOBFollower = reader.ReadBool();
-                        m_IOBLeader = reader.ReadMobile();
+                    if (version >= 14 && version < 55) //Pix: IOBLeader/IOBFollower
+                    {   // Retired IOBFollower/IOBLeader; consume legacy values for save compatibility.
+                        reader.ReadBool();
+                        reader.ReadMobile();
                     }
 
                     if (version >= 15) //Pix: Spawner
                     {   // 1/29/23, Adam: Version 40 pushes this down to the mobile
                         if (version <= 39)
                         {
-                            Item item = reader.ReadItem();
+                            Item? item = reader.ReadItem();
                             if (item is Spawner spawner)
                                 base.Spawner = spawner;
                         }
@@ -4640,6 +5025,7 @@ namespace Server.Mobiles
             // After all the reading is done
             // -------------------------------
 
+            InvalidatePower();  // recalculate this creatures power
             RefreshLifespan();
             CheckStatTimers();
             AddFollowers();
@@ -4665,7 +5051,13 @@ namespace Server.Mobiles
 
             return false;
         }
+        public virtual bool CheckVoucher(Mobile from, Item dropped)
+        {
+            if (dropped is UnemploymentCheck || dropped is TrainingVoucher || dropped is CivicBond)
+                return OnVoucherGiven(from, dropped);
 
+            return false;
+        }
         public virtual bool OnGoldGiven(Mobile from, Gold dropped)
         {
             if (CheckTeachingMatch(from))
@@ -4701,6 +5093,112 @@ namespace Server.Mobiles
 
             return false;
         }
+        public virtual bool OnVoucherGiven(Mobile from, Item dropped)
+        {
+            if (from == null || dropped == null)
+                return false;
+
+            if (!(IsHumanInTown() && this is BaseVendor))
+                return false;
+
+            // Voucher type resolution -------------------------------------------------
+            TrainingVoucher? tv = dropped as TrainingVoucher;
+            UnemploymentCheck? uc = dropped as UnemploymentCheck;
+            CivicBond? bond = dropped as CivicBond;
+
+            bool isTrainingVoucher = tv != null || (bond != null && bond.BondKey == CivicBondKeys.TrainingVoucher);
+            bool isUnemploymentVoucher = uc != null || (bond != null && bond.BondKey == CivicBondKeys.UnemploymentCheck);
+
+            // Neither voucher type? Bounce.
+            if (!isTrainingVoucher && !isUnemploymentVoucher)
+                return false;
+
+            // Normalize through a single interface-like block ------------------------
+            Serial owner = Serial.MinusOne;
+            int worth = 0;
+
+            if (bond != null)
+            {
+                owner = bond.OwnerSerial;
+                worth = bond.Worth;
+            }
+            else if (tv != null)
+            {
+                owner = tv.OwnerSerial;
+                worth = tv.Worth;
+            }
+            else // uc != null
+            {
+                owner = uc.OwnerSerial;
+                worth = uc.Worth;
+            }
+
+            // Wrong owner → message + Guards(), but do not accept
+            if (owner != from.Serial)
+            {
+                if (isTrainingVoucher)
+                    Say(ascii: true, "This is not your training voucher.");
+                else
+                    Say(ascii: true, "This is not your unemployment check.");
+
+                Say(ascii: true, "Guards!");
+                return false;
+            }
+
+            if (worth <= 0)
+                return false;
+
+            // Teaching context must match
+            if (!CheckTeachingMatch(from))
+                return false;
+
+            // Determine how many points can be applied this cycle --------------------
+            int pointsToLearn = 0;
+
+            TeachResult res = CheckTeachSkills(
+                m_Teaching,
+                from,
+                worth,            // maxPointsToLearn = voucher/bond balance
+                ref pointsToLearn,
+                doTeach: false
+            );
+
+            if (res != TeachResult.Success || pointsToLearn <= 0)
+                return false;
+
+            // Clamp to voucher worth (should already be true)
+            int toSpend = Math.Min(pointsToLearn, worth);
+            if (toSpend <= 0)
+                return false;
+
+            // Apply teaching
+            if (!Teach(m_Teaching, from, toSpend, true))
+                return false;
+
+            // Debit the instrument ----------------------------------------------------
+            if (bond != null)
+            {
+                bond.Worth -= toSpend;
+                if (bond.Worth <= 0)
+                    bond.Delete();
+            }
+            else if (tv != null)
+            {
+                tv.Worth -= toSpend;
+                if (tv.Worth <= 0)
+                    tv.Delete();
+            }
+            else // uc != null
+            {
+                uc.Worth -= toSpend;
+                if (uc.Worth <= 0)
+                    uc.Delete();
+            }
+
+            // DO NOT signal acceptance; bounce the item.
+            // Teaching is applied, but the NPC never keeps the voucher/bond.
+            return false;
+        }
 
         public override bool ShouldCheckStatTimers { get { return false; } }
 
@@ -4732,7 +5230,10 @@ namespace Server.Mobiles
 
 				/* Body Parts */
 				typeof( Head ), typeof( LeftArm ), typeof( LeftLeg ),
-                typeof( Torso ), typeof( RightArm ), typeof( RightLeg )
+                typeof( Torso ), typeof( RightArm ), typeof( RightLeg ),
+
+				/* Carved from body parts: human/orc meat, raw or cooked into jerky */
+				typeof( Jerky )
             };
 
         private static Type[] m_FruitsAndVegies = new Type[]
@@ -4844,6 +5345,7 @@ namespace Server.Mobiles
 
                         bool resetLoyalty = false;
                         int itemsConsumed = 0;
+                        int startLoyaltyValue = (int)LoyaltyValue; // Passive Taming Gains
                         for (int i = 0; i < amount; ++i)
                         {
                             if (0.5 >= Utility.RandomDouble())
@@ -4867,6 +5369,17 @@ namespace Server.Mobiles
                             }
                         }
 
+                        #region Passive Taming Gains
+                        int endLoyaltyValue = (int)LoyaltyValue;
+
+                        // Trigger ONLY on actual loyalty improvement (not merely resetting LoyaltyCheck)
+                        if (itemsConsumed > 0 && endLoyaltyValue > startLoyaltyValue)
+                        {
+                            // Passive taming gain framework hook (no-op unless enabled on PlayerMobile)
+                            NotifyFeedingLoyaltyImproved(from, dropped, startLoyaltyValue, endLoyaltyValue, itemsConsumed);
+                        }
+                        #endregion Passive Taming Gains
+
                         if (resetLoyalty)
                         {
                             LoyaltyCheck = DateTime.UtcNow + TimeSpan.FromHours(1.0);
@@ -4885,7 +5398,7 @@ namespace Server.Mobiles
 
                         if (IsBondable && !IsBonded)
                         {
-                            Mobile master = m_ControlMaster;
+                            Mobile? master = m_ControlMaster;
 
                             if (master != null)
                             {
@@ -5010,6 +5523,8 @@ namespace Server.Mobiles
                 return true;
             else if (CheckGold(from, dropped))
                 return true;
+            else if (CheckVoucher(from, dropped))
+                return true;
             else if (BreedingSystem.Enabled && BreedingSystem.OnDragDrop(this, from, dropped))
                 return true;
 
@@ -5115,13 +5630,6 @@ namespace Server.Mobiles
             }
         }
 
-        public void ForceTarget(Mobile from)
-        {
-            if (from == null || from.Deleted || !from.Alive) return;
-            Combatant = from;
-            PreferredFocus = from;
-        }
-
         [CommandProperty(AccessLevel.GameMaster)]
         public AIType AI
         {
@@ -5141,58 +5649,6 @@ namespace Server.Mobiles
                 ChangeAIType(m_CurrentAI);
             }
         }
-#if false
-        [CommandProperty(AccessLevel.Administrator)]
-        public bool base.Debug
-        {
-            get
-            {
-                return GetFlag(CreatureFlags.base.Debug);
-            }
-            set
-            {
-                SetFlag(CreatureFlags.base.Debug, value);
-            }
-        }
-
-        [CommandProperty(AccessLevel.Administrator)]
-        public bool DebugMob
-        {
-            get
-            {
-                return GetFlag(CreatureFlags.DebugMob);
-            }
-            set
-            {
-                SetFlag(CreatureFlags.DebugMob, value);
-            }
-        }
-
-        [CommandProperty(AccessLevel.Administrator)]
-        public bool DebugSpeed
-        {
-            get
-            {
-                return GetFlag(CreatureFlags.DebugSpeed);
-            }
-            set
-            {
-                SetFlag(CreatureFlags.DebugSpeed, value);
-            }
-        }
-        [CommandProperty(AccessLevel.Administrator)]
-        public bool DebugSee
-        {
-            get
-            {
-                return GetFlag(CreatureFlags.DebugSee);
-            }
-            set
-            {
-                SetFlag(CreatureFlags.DebugSee, value);
-            }
-        }
-#endif
         [CommandProperty(AccessLevel.GameMaster)]
         public int Team
         {
@@ -5211,17 +5667,14 @@ namespace Server.Mobiles
         public virtual void OnTeamChange()
         {
         }
-        private SlayerName m_Slayer = SlayerName.None;
+
+        // Slayer : Useful for arming champs with slayer weapons
         [CommandProperty(AccessLevel.GameMaster)]
-        public SlayerName Slayer         // Slayer : Useful for arming champs with slayer weapons
-        {
-            get { return m_Slayer; }
-            set
-            {
-                if (value != m_Slayer)
-                    m_Slayer = value;
-            }
-        }
+        public virtual SlayerName SlayerOffensive { get; set; } = SlayerName.None;
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public virtual DefensiveSlayer SlayersDefensive { get; set; } = DefensiveSlayer.None;
+
         [CommandProperty(AccessLevel.GameMaster)]
         public Mobile FocusMob
         {
@@ -5409,9 +5862,9 @@ namespace Server.Mobiles
                 m_bControlled = value;
 
                 if (m_ControlMaster != null)
-                    ControlMasterGUID = m_ControlMaster.GUID;
+                    ControlMasterGUID = m_ControlMaster.AcctGUID;
                 else if (m_SummonMaster != null)
-                    ControlMasterGUID = m_SummonMaster.GUID;
+                    ControlMasterGUID = m_SummonMaster.AcctGUID;
 
                 Delta(MobileDelta.Noto);
                 InvalidateProperties();
@@ -5483,7 +5936,7 @@ namespace Server.Mobiles
 
                 if (value != null)
                 {
-                    ControlMasterGUID = value.GUID; // set/refresh our ControlMasterGUID
+                    ControlMasterGUID = value.AcctGUID; // set/refresh our ControlMasterGUID
                     if (!PetCache.Contains(this))
                         PetCache.Add(this);
                 }
@@ -5496,22 +5949,15 @@ namespace Server.Mobiles
             }
         }
         /// <summary>
-        /// ControlMasterGUID  identifies the control master even when the creature is stabled. 
-        ///     control master is cleared when stabled.
+        /// ControlMasterGUID  identifies the control master even when the creature is stabled.
+        ///     ControlMaster is cleared when stabled.
         /// </summary>
-        private uint m_ControlMasterGUID = 0;
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
+        [Obsolete("Use OwnerGuid (Mobile) instead.")]
         public uint ControlMasterGUID
         {
-            get
-            {
-                return m_ControlMasterGUID;
-            }
-            set
-            {   // should never be set by mere humans.
-                m_ControlMasterGUID = value;
-                //SetFlagData(ref m_flagData, FlagData.HasControlMasterGUID, value != 0);
-            }
+            get => OwnerGUID;
+            set => OwnerGUID = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -5578,7 +6024,7 @@ namespace Server.Mobiles
                 {
                     if (AI == AIType.AI_Robot)
                     {
-                        object o = Activator.CreateInstance(this.GetType());
+                        object? o = Activator.CreateInstance(this.GetType());
                         if (o != null && o is BaseCreature bc)
                         {
                             AI = bc.AI;
@@ -5651,7 +6097,7 @@ namespace Server.Mobiles
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Mobile BardTarget
+        public Mobile? BardTarget
         {
             get
             {
@@ -5675,7 +6121,18 @@ namespace Server.Mobiles
                 m_timeBardEnd = value;
             }
         }
-
+        [CommandProperty(AccessLevel.GameMaster)]
+        public DateTime BardStartTime
+        {
+            get
+            {
+                return m_timeBardStart;
+            }
+            set
+            {
+                m_timeBardStart = value;
+            }
+        }
         [CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
         public double MinTameSkill
         {
@@ -5744,28 +6201,6 @@ namespace Server.Mobiles
         {
             get
             {
-                if (this.IOBFollower)
-                {
-                    if (IOBLeader is PlayerMobile)
-                    {
-                        PlayerMobile pm = (PlayerMobile)IOBLeader;
-                        if (pm.IOBRank >= IOBRank.SecondTier)
-                        {
-                            return m_iControlSlots;
-                        }
-                        else if (pm.IOBRank == IOBRank.FirstTier)
-                        {
-                            return (m_iControlSlots + ((m_iControlSlots + 1) / 2)); //round up for 1.5X
-                        }
-                        else
-                        {
-                            return (m_iControlSlots * 2);
-                        }
-                    }
-                }
-
-                //default is standard if !IOBFollower (or if IOBLeader ! PlayerMobile)
-
                 return (int)Math.Max(1, m_iControlSlots + Math.Floor(m_ControlSlotModifier));
                 //return m_iControlSlots;
             }
@@ -5841,6 +6276,9 @@ namespace Server.Mobiles
             }
         }
         public virtual bool CanRummageCorpses { get { return false; } }
+
+
+
         //return if creature is immune to the weapon
         public virtual void CheckWeaponImmunity(BaseWeapon wep, int damagein, out int damage)
         {
@@ -5900,6 +6338,17 @@ namespace Server.Mobiles
             //if ( IsAnimatedDead )
             //Spells.Necromancy.AnimateDeadSpell.Unregister( m_SummonMaster, this );
 
+            #region Followers
+
+            if (Spawner is Spawner spawner &&
+                !string.IsNullOrEmpty(spawner.Followers))
+            {
+                foreach (BaseCreature bc in this.Followers)
+                    bc.Delete();
+            }
+
+            #endregion Followers
+
             base.OnAfterDelete();
         }
 
@@ -5951,68 +6400,6 @@ namespace Server.Mobiles
         public bool IsHurt()
         {
             return (Hits != HitsMax);
-        }
-
-        public double GetHomeDistance()
-        {
-            return GetDistanceToSqrt(m_pHome);
-        }
-
-        public virtual int GetTeamSize(int iRange)
-        {
-            int iCount = 0;
-
-            IPooledEnumerable eable = this.GetMobilesInRange(iRange);
-            foreach (Mobile m in eable)
-            {
-                if (m is BaseCreature)
-                {
-                    if (((BaseCreature)m).Team == Team)
-                    {
-                        if (!m.Deleted)
-                        {
-                            if (m != this)
-                            {
-                                if (CanSee(m))
-                                {
-                                    iCount++;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            eable.Free();
-
-            return iCount;
-        }
-
-        private class IOBLeadEntry : ContextMenuEntry
-        {
-            private BaseCreature m_Mobile;
-
-            public IOBLeadEntry(Mobile from, BaseCreature creature)
-                : base(6116, 6) // join
-            {
-                m_Mobile = creature;
-                Enabled = true;
-            }
-            public override void OnClick()
-            {
-                if (!Owner.From.CheckAlive())
-                {
-                    return;
-                }
-
-                if (Owner.From is PlayerMobile)
-                {
-                    PlayerMobile pm = (PlayerMobile)Owner.From;
-                    if (m_Mobile.IOBAlignment == pm.IOBAlignment)
-                    {
-                        m_Mobile.AttemptIOBJoin(pm);
-                    }
-                }
-            }
         }
 
         private class TameEntry : ContextMenuEntry
@@ -6249,7 +6636,7 @@ namespace Server.Mobiles
         }
 
 
-        public override void AggressiveAction(Mobile aggressor, bool criminal, object source = null)
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
         {
             RefreshLifespan();
 
@@ -6274,77 +6661,6 @@ namespace Server.Mobiles
                 }
             }
 
-            if (aggressor is PlayerMobile) //IOB check!
-            {
-                PlayerMobile pm = (PlayerMobile)aggressor; //Pigpen - Addition for IOB System. Addition End at next Pigpen Comment.
-
-                //Only punish actions towards Non-Controlled NPCS (no tames, no summons, no hires)
-                if (IOBSystem.IsFriend(this, pm)
-                    && !Tamable
-                    && !Summoned
-                    && !(this is BaseHire)
-                    )
-                {
-                    //reset Kin Aggression time
-                    pm.OnKinAggression();
-
-                    //IF we have a IOBItem equipped, delete it
-                    if (pm.IOBEquipped)
-                    {
-                        Item[] items = new Item[14];
-                        items[0] = aggressor.FindItemOnLayer(Layer.Shoes);
-                        items[1] = aggressor.FindItemOnLayer(Layer.Pants);
-                        items[2] = aggressor.FindItemOnLayer(Layer.Shirt);
-                        items[3] = aggressor.FindItemOnLayer(Layer.Helm);
-                        items[4] = aggressor.FindItemOnLayer(Layer.Gloves);
-                        items[5] = aggressor.FindItemOnLayer(Layer.Neck);
-                        items[6] = aggressor.FindItemOnLayer(Layer.Waist);
-                        items[7] = aggressor.FindItemOnLayer(Layer.InnerTorso);
-                        items[8] = aggressor.FindItemOnLayer(Layer.MiddleTorso);
-                        items[9] = aggressor.FindItemOnLayer(Layer.Arms);
-                        items[10] = aggressor.FindItemOnLayer(Layer.Cloak);
-                        items[11] = aggressor.FindItemOnLayer(Layer.OuterTorso);
-                        items[12] = aggressor.FindItemOnLayer(Layer.OuterLegs);
-                        items[13] = aggressor.FindItemOnLayer(Layer.InnerLegs);
-
-                        bool bDeleteItem = false;
-                        for (int i = 0; i <= 13; i++)
-                        {
-                            bDeleteItem = false;
-                            if (items[i] is BaseClothing)
-                            {
-                                if (((BaseClothing)items[i]).IOBAlignment == this.IOBAlignment)
-                                {
-                                    bDeleteItem = true;
-                                    pm.IOBEquipped = false;
-                                }
-                            }
-                            if (items[i] is BaseArmor)
-                            {
-                                if (((BaseArmor)items[i]).IOBAlignment == this.IOBAlignment)
-                                {
-                                    bDeleteItem = true;
-                                    pm.IOBEquipped = false;
-                                }
-                            }
-
-                            if (bDeleteItem)
-                            {
-                                items[i].Delete();
-                            }
-                        }
-
-                        AOS.Damage(aggressor, 50, 0, 100, 0, 0, 0, aggressor);
-                        aggressor.FixedParticles(0x36BD, 20, 10, 5044, EffectLayer.Head);
-                        aggressor.PlaySound(0x307);
-
-                        //Force into peace mode
-                        aggressor.Warmode = false;
-                    }
-                }
-
-            }
-
             StopFlee();
 
             ForceReAcquire();
@@ -6353,18 +6669,6 @@ namespace Server.Mobiles
              * WTF. controlled pets are not supposed to attack in these modes.
              * Hack is right, and only servers to subvert the whole control order thing
              */
-#if false
-            OrderType ct = ControlOrder;
-
-            //erl: % chance to ignore re-aggressive acts (no change of combatant) when not in fight mode
-            if ((m_ControlMaster != aggressor) &&
-                (aggressor.ChangingCombatant || Utility.RandomDouble() > CoreAI.ReaggressIgnoreChance) &&
-                (m_bControlled || m_bSummoned) &&
-                (ct == OrderType.Come || ct == OrderType.Stay || ct == OrderType.Stop || ct == OrderType.None || ct == OrderType.Follow))
-            {
-                AttackOrderHack(aggressor);
-            }
-#endif
             return;
         }
 
@@ -6397,133 +6701,6 @@ namespace Server.Mobiles
         {
         }
 
-        public void IOBDismiss(bool bSuicide)
-        {
-            try
-            {
-                if (this.Spawner != null)
-                {
-                    if ((DateTime.UtcNow - IOBTimeAcquired) < (this.Spawner.MaxDelay))
-                    {
-                        ((PlayerMobile)IOBLeader).IOBJoinRestrictionTime = (IOBTimeAcquired + this.Spawner.MaxDelay);
-                    }
-                }
-            }
-            catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-
-            Controlled = false;
-            ControlMaster = null;
-            ControlOrder = OrderType.None;
-            //note! Controled/ControlMaster MUST be set to false/none before IOBFollower/IOBLeader
-            IOBFollower = false;
-            IOBLeader = null;
-
-            if (bSuicide)
-            {
-                new SuicideTimer(this).Start();
-            }
-        }
-
-        private class SuicideTimer : Timer
-        {
-            private int m_tick;
-            BaseCreature m_Creature;
-
-            public SuicideTimer(BaseCreature bc)
-                : base(TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(2.0))
-            {
-                Priority = TimerPriority.OneSecond;
-                m_tick = 0;
-                m_Creature = bc;
-
-                m_Creature.FightMode = FightMode.None;
-                m_Creature.AI = AIType.AI_Animal;
-            }
-
-            protected override void OnTick()
-            {
-                switch (m_tick)
-                {
-                    case 0:
-                        m_Creature.Say("So you find my services unsatisfactory?");
-                        break;
-                    case 1:
-                        m_Creature.Say("Then I can not go on living...");
-                        break;
-                    case 2:
-                        m_Creature.Emote("*takes poison*");
-                        break;
-                    case 3:
-                        m_Creature.AI = AIType.AI_Robot;
-                        break;
-                    default:
-                        this.Stop();
-                        break;
-                }
-                m_tick++;
-            }
-        }
-
-        public void AttemptIOBDismiss()
-        {
-            ControlMaster.SendMessage("You have dismissed " + Name);
-            IOBDismiss(true);
-        }
-
-        public void AttemptIOBJoin(PlayerMobile pm)
-        {
-            if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.IOBJoinEnabled) == false)
-                return;
-
-            if (this.Tamable == false && this.AI != AIType.AI_Robot) //safety check
-            {
-                if (pm.IOBEquipped) //MUST have IOB Equipped
-                {
-                    int modifiedcontrolslots = m_iControlSlots;
-                    if (pm.IOBRank >= IOBRank.SecondTier)
-                    {
-                        modifiedcontrolslots = m_iControlSlots;
-                    }
-                    else if (pm.IOBRank == IOBRank.FirstTier)
-                    {
-                        modifiedcontrolslots = (m_iControlSlots + ((m_iControlSlots + 1) / 2)); //round up for 1.5X
-                    }
-                    else
-                    {
-                        modifiedcontrolslots = (m_iControlSlots * 2);
-                    }
-
-                    if ((modifiedcontrolslots + pm.FollowerCount <= pm.FollowersMax) &&
-                        (this.IOBAlignment == pm.IOBAlignment) && //safety check
-                        (this.IOBFollower == false)) //safety check
-                    {
-                        if (pm.IOBJoinRestrictionTime < DateTime.UtcNow)
-                        {
-                            this.IOBFollower = true;
-                            this.IOBLeader = pm;
-                            this.ControlMaster = pm;
-                            this.Controlled = true;
-
-                            pm.SendMessage(this.Name + " has joined you.");
-                            this.IOBTimeAcquired = DateTime.UtcNow;
-                        }
-                        else
-                        {
-                            pm.SendMessage(this.Name + " refuses to join right now.");
-                        }
-                    }
-                    else
-                    {
-                        pm.SendMessage("Your rank is not high enough to control this bretheren.");
-                    }
-                }
-                else
-                {
-                    pm.SendMessage("This bretheren isn't fooled into following you.");
-                }
-            }
-        }
-
         public override void GetContextMenuEntries(Mobile from, ArrayList list)
         {
             base.GetContextMenuEntries(from, list);
@@ -6533,20 +6710,6 @@ namespace Server.Mobiles
 
             if (m_bTamable && !m_bControlled && from.Alive)
                 list.Add(new TameEntry(from, this));
-
-            if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.IOBJoinEnabled))
-            {
-                if (this.IOBAlignment != IOBAlignment.None && !this.IOBFollower && !this.Tamable && !this.Summoned)
-                {
-                    if (from is PlayerMobile)
-                    {
-                        if (((PlayerMobile)from).IOBAlignment == this.IOBAlignment && ((PlayerMobile)from).IOBEquipped)
-                        {
-                            list.Add(new IOBLeadEntry(from, this));
-                        }
-                    }
-                }
-            }
 
             AddCustomContextEntries(from, list);
 
@@ -6573,6 +6736,31 @@ namespace Server.Mobiles
             }
         }
 
+        // we allow players to issue *move* commands to others pets under very constrained scenarios
+        // usually in a response to blocking/griefing
+        // See BaseAI OnSpeech for the rules
+        public override bool HandlesGlobalOrder(Mobile from)
+        {
+            // Only players may issue global orders
+            PlayerMobile? pm = from as PlayerMobile;
+            if (pm == null)
+                return false;
+
+            // Player must be alive
+            if (!pm.Alive)
+                return false;
+
+            // Player must NOT be the control master
+            if (ControlMaster == pm)
+                return false;
+
+            // the global order only applies to creatures that are not controlled
+            if (!Controlled)
+                return false;
+
+            return true;
+        }
+
         public override bool HandlesOnSpeech(Mobile from)
         {
             InhumanSpeech speechType = this.SpeechType;
@@ -6585,15 +6773,31 @@ namespace Server.Mobiles
 
         public override void OnSpeech(SpeechEventArgs e)
         {
-            InhumanSpeech speechType = this.SpeechType;
-
+            // 1) Inhuman speech (animals, monsters, etc.) gets first crack.
+            // If it handles the speech, stop processing.
+            InhumanSpeech speechType = SpeechType;
             if (speechType != null && speechType.OnSpeech(this, e.Mobile, e.Speech))
+            {
                 e.Handled = true;
-            else if (!e.Handled && m_AI != null && e.Mobile.InRange(this, m_iRangePerception))
-                m_AI.OnSpeech(e);               // all the standard RunUO/OSI vendor dialog processing
-            if (!e.Handled && m_AI != null && e.Mobile.InRange(this, m_iRangePerception))
-                m_AI.OnIntelligentSpeech(e);    // Add Angel Island Intelligent speech processing
+                return;
+            }
+
+            // 2) No further processing if already handled or no AI present.
+            if (e.Handled || m_AI == null)
+                return;
+
+            // 3) Range gate once (shared by both AI handlers).
+            if (!e.Mobile.InRange(this, m_iRangePerception))
+                return;
+
+            // 4) Standard RunUO / OSI vendor dialog processing.
+            m_AI.OnSpeech(e);
+
+            // 5) Angel Island intelligent speech processing.
+            if (!e.Handled)
+                m_AI.OnIntelligentSpeech(e);
         }
+
         Utility.LocalTimer MountDelay = new Utility.LocalTimer(0);
         public bool CommandMount()
         {
@@ -6601,7 +6805,7 @@ namespace Server.Mobiles
             {
                 SortedDictionary<double, BaseMount> nearby = new();
                 MountDelay.Start(2000);
-                BaseMount mount = null;
+                BaseMount? mount = null;
                 // find the nearby mounts
                 IPooledEnumerable eable = this.GetMobilesInRange(12);
                 foreach (Mobile mt in eable)
@@ -6690,13 +6894,13 @@ namespace Server.Mobiles
             if ((Controlled || Summoned))
             {
                 if (m_ControlMaster != null && m_ControlMaster.Player)
-                    m_ControlMaster.CriminalAction(false);
+                    m_ControlMaster.CriminalAction(message: false);
                 else if (m_SummonMaster != null && m_SummonMaster.Player)
-                    m_SummonMaster.CriminalAction(false);
+                    m_SummonMaster.CriminalAction(message: false);
             }
         }
 
-        public override void DoHarmful(Mobile target, bool indirect, object source = null)
+        public override void DoHarmful(Mobile target, bool indirect, object? source = null)
         {
             base.DoHarmful(target, indirect, source);
 
@@ -6731,7 +6935,7 @@ namespace Server.Mobiles
             }
         }
 
-        private static Mobile m_NoDupeGuards;
+        private static Mobile? m_NoDupeGuards;
 
         public void ReleaseGuardDupeLock()
         {
@@ -6846,12 +7050,14 @@ namespace Server.Mobiles
                 return;
 
             if (CanBandage && this.AI != AIType.AI_Robot)
-                doHeal();
+                // Pacified creatures refrain from active self-preservation actions like bandaging.
+                if (!BardPacified)
+                    doHeal();
 
             // these rules specify who cannot call guards
             // 8/21/21, Adam: I think this test is wrong (m.LongTermMurders < 5). What if they are criminal? They should still go through the IsGuardCandidate() check
             // 8/10/22 Adam: I don't think we should check Core.RedsInTown in this location. You're still a murderer, you shouldn't be able to call guards
-            // 12/28/22, Adam: GuardIgnore: if you ignored by guards, you should not be able to call guards
+            // 12/28/22, Adam: GuardIgnore: if you are ignored by guards, you should not be able to call guards
             if (!Body.IsHuman || this is BaseGuard || Red || AlwaysMurderer || AlwaysAttackable /* || m.LongTermMurders < 5*/ || GuardIgnore)
                 return;
 
@@ -6924,61 +7130,6 @@ namespace Server.Mobiles
         public void AddSpellDefense(Type type)
         {
             m_arSpellDefense.Add(type);
-        }
-
-        public Spell GetAttackSpellRandom()
-        {
-            if (m_arSpellAttack.Count > 0)
-            {
-                Type type = (Type)m_arSpellAttack[Utility.Random(m_arSpellAttack.Count)];
-
-                object[] args = { this, null };
-                return Activator.CreateInstance(type, args) as Spell;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        public Spell GetDefenseSpellRandom()
-        {
-            if (m_arSpellDefense.Count > 0)
-            {
-                Type type = (Type)m_arSpellDefense[Utility.Random(m_arSpellDefense.Count)];
-
-                object[] args = { this, null };
-                return Activator.CreateInstance(type, args) as Spell;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        public Spell GetSpellSpecific(Type type)
-        {
-            int i;
-
-            for (i = 0; i < m_arSpellAttack.Count; i++)
-            {
-                if ((Type)m_arSpellAttack[i] == type)
-                {
-                    object[] args = { this, null };
-                    return Activator.CreateInstance(type, args) as Spell;
-                }
-            }
-
-            for (i = 0; i < m_arSpellDefense.Count; i++)
-            {
-                if ((Type)m_arSpellDefense[i] == type)
-                {
-                    object[] args = { this, null };
-                    return Activator.CreateInstance(type, args) as Spell;
-                }
-            }
-
-            return null;
         }
 
         public void SetDamage(int val)
@@ -7143,14 +7294,7 @@ namespace Server.Mobiles
             PackItem(Loot.RandomPotion());
         }
 
-        public void PackNecroScroll(int index)
-        {
-            if (!Core.RuleSets.AOSRules() || 0.05 <= Utility.RandomDouble())
-                return;
-
-            PackItem(Loot.Construct(Loot.NecromancyScrollTypes, index));
-        }
-
+        #region Scrolls
         public void PackScroll(int minCircle, int maxCircle, double chance)
         {
             if (chance <= Utility.RandomDouble())
@@ -7165,10 +7309,25 @@ namespace Server.Mobiles
 
         public void PackScroll(int circle)
         {
+            if (Core.RuleSets.SeasonsRules(2))
+            {
+                PackNoMagicScrollReplacement(circle);
+                return;
+            }
+
             int min = (circle - 1) * 8;
 
             PackItem(Loot.RandomScroll(min, min + 7, SpellbookType.Regular));
         }
+
+        private void PackNoMagicScrollReplacement(int circle)
+        {
+            List<Item> loot = Utility.GetNoMagicScrollReplacementLoot(circle);
+
+            foreach (Item item in loot)
+                PackItem(item);
+        }
+        #endregion Scrolls
 
         public void PackMagicStuff(int minLevel, int maxLevel, double chance)
         {
@@ -7212,7 +7371,7 @@ namespace Server.Mobiles
             //  PackMagicStuff(1, 2, 0.02);
             //  Not sure where we derived these drop chances, and it was never really used (because it's not used for Angel Island.)
             //  As it stands, most high end creatures RARELY drop any magic items because of this (on Siege.)
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
                 return chance * CoreAI.SiegeGearDropFactor;
             else
                 return chance;
@@ -7222,7 +7381,7 @@ namespace Server.Mobiles
             if (chance <= Utility.RandomDouble())
                 return;
 
-            Item item = null;
+            Item? item = null;
             // 2%(?) chance for magic casters to drop a magic wand
             if (Int >= 100 && Utility.Chance(CoreAI.MagicWandDropChance) && !Core.RuleSets.AngelIslandRules())
             {   // not sure where to weave wands into the system, but this seems reasonable
@@ -7274,20 +7433,14 @@ namespace Server.Mobiles
             if (!spawning)
                 m_KillersLuck = LootPack.GetLuckChanceForKiller(this);
 
-            // our different shards handle 'at spawn time' loot differently
-            // For Angel Island, we don't drop it at all, for Siege, it is placed in the creatures bankbox (thieves can't touch it.)
-            //  We added the Siege case to work this way as it was minimum code. Otherwise we would need to rewrite about 100+ monster
-            //  loot tables. Yuck!
-            if (spawning == true && (Core.RuleSets.AngelIslandRules())) // no 'at spawn' loot on angel island
-                throw new ApplicationException("You cannot call GenerateLoot() at spawn time for Angel Island.");
-
             GenerateLoot();
+            GenerateNonStandardLoot();
 
             m_Spawning = false;
             m_KillersLuck = 0;
         }
 
-        public virtual List<string[]> GetAnimalLorePages()
+        public virtual List<string[]>? GetAnimalLorePages()
         {
             return null;
         }
@@ -7295,7 +7448,9 @@ namespace Server.Mobiles
         public virtual void GenerateLoot()
         {
         }
-
+        public virtual void GenerateNonStandardLoot()
+        {
+        }
         public virtual int GetGold()
         {
             Container pack = Backpack;
@@ -7318,7 +7473,7 @@ namespace Server.Mobiles
 
         public virtual void SpawnerLoot(Spawner spawner)
         {
-            LogHelper Logger = null;
+            LogHelper? Logger = null;
 
             if (spawner != null && !spawner.Deleted)
             {
@@ -7327,7 +7482,7 @@ namespace Server.Mobiles
                     if (Logger == null)
                         Logger = new LogHelper("LootString.log", false, true);
 
-                    Item loot = null;
+                    Item? loot = null;
                     string reason = string.Empty;
                     try
                     {   // make sure it's valid at this level
@@ -7411,7 +7566,7 @@ namespace Server.Mobiles
 
         public virtual bool SpawnerCarve(Spawner spawner, Mobile from, Corpse corpse)
         {
-            LogHelper Logger = null;
+            LogHelper? Logger = null;
 
             if (spawner != null && !spawner.Deleted && spawner.CarvePack != null && !spawner.CarvePack.Deleted)
             {
@@ -7487,7 +7642,7 @@ namespace Server.Mobiles
                 else
                 {   // check drop all items
                     // we use the drop rates held by the individual items
-                    List<Item> list = null;
+                    List<Item>? list = null;
                     foreach (Item item in cont.Items)
                     {
                         if (Utility.RandomDouble() < item.DropRate)
@@ -7650,7 +7805,7 @@ namespace Server.Mobiles
             return true;
         }
 
-        public BaseWeapon PackSlayerWeapon(double chance)
+        public BaseWeapon? PackSlayerWeapon(double chance)
         {
             if (chance > CoreAI.SlayerWeaponDropRate)
                 chance = CoreAI.SlayerWeaponDropRate;
@@ -7661,7 +7816,7 @@ namespace Server.Mobiles
             return PackSlayerWeapon();
         }
 
-        public BaseWeapon PackSlayerWeapon()
+        public BaseWeapon? PackSlayerWeapon()
         {
             BaseWeapon weapon = Loot.RandomWeapon();
             if (weapon != null)
@@ -7675,7 +7830,7 @@ namespace Server.Mobiles
 
 
         // adam: Pack a random slayer Instrument, not tied to the current creature.
-        public BaseInstrument PackSlayerInstrument(double chance)
+        public BaseInstrument? PackSlayerInstrument(double chance)
         {
             if (chance > CoreAI.SlayerInstrumentDropRate)
                 chance = CoreAI.SlayerInstrumentDropRate;
@@ -7685,7 +7840,7 @@ namespace Server.Mobiles
 
             return PackSlayerInstrument();
         }
-        public BaseInstrument PackSlayerInstrument()
+        public BaseInstrument? PackSlayerInstrument()
         {
             BaseInstrument instrument = Loot.RandomInstrument();
 
@@ -7744,57 +7899,61 @@ namespace Server.Mobiles
 
             return true;
         }
+        #region Pack Gold
+
         #region DataRecorder
-        // 9/7/21, Adam: Don't use these functions/values for anything
-        //  they are intended for DataRecorder purposes only
-        private int m_PackedGold = 0;
-        public int PackedGold
-        {
-            get { return m_PackedGold; }
-            set { m_PackedGold = value; }
-        }
+        // 9/7/21, Adam: since some mobs 'hide' some of their loot (not in backpack,) we have this field to show true
+        //  'total' gold dropped
+        [CopyableAttribute(CopyType.DoNotCopy)]
+        [CommandProperty(AccessLevel.Owner)]
+        public int GoldPacked { get; set; } = 0;
         #endregion DataRecorder
-        private void PackGoldManaged(int amount)
+
+        [CopyableAttribute(CopyType.DoNotCopy)]
+        [CommandProperty(AccessLevel.Owner)]
+        public int GoldHidden { get; set; } = 0;
+        [CopyableAttribute(CopyType.DoNotCopy)]
+        [CommandProperty(AccessLevel.Owner)]
+        public int GoldVisible { get; set; } = 0;
+
+        private int CalcGoldSplit(int amount)
+        {
+            if (amount <= 0)
+                return 0;
+
+            System.Diagnostics.Debug.Assert(GoldVisible == 0);
+            System.Diagnostics.Debug.Assert(GoldHidden == 0);
+
+            GoldVisible = amount * 30 / 100;
+            GoldHidden = amount - GoldVisible;
+
+            System.Diagnostics.Debug.Assert(GoldVisible >= 0);
+            System.Diagnostics.Debug.Assert(GoldHidden >= 0);
+            System.Diagnostics.Debug.Assert(GoldVisible + GoldHidden == amount);
+
+            return GoldVisible;
+        }
+        public void PackGold(int amount)
         {
             if (amount <= 0)
                 return;
 
-            // AngelIsland handles 'at spawn loot' differently
-            if (!Core.RuleSets.StealableAtSpawnLoot())
-            {
-                if (m_Spawning == true)
-                {
-                    // Conveniently, we will store some 'at spawn' loot here Hidden from thieves
-                    // We didn't want to completely hose thieves, so they can steal 1/2 the loot, the other half
-                    //  drops to the corpse.
-                    //amount /= 2;
+            // Track total gold for kill crediting (DataRecorder)
+            GoldPacked += amount;
 
-                    double thief_gold = amount * .3;                            // thief gets 30%
-                    double player_gold = amount - thief_gold;                   // player gets the rest
-                    double fraction = thief_gold - Math.Truncate(thief_gold);   // grab the leftover fraction
-                    player_gold += fraction;                                    // player gets the leftover fraction
-                    amount = (int)player_gold;                                  // how much the player can get (protected)
-                    if (amount > 0)
-                        this.BankBox.AddItem(new Gold(amount));
-                    amount = (int)thief_gold;                                   // how much the thief can get (available to steal)
-                    /*fall through*/
-                }
-            }
-            // okay drop the (rest of) gold
-            if (amount > 0)
-                PackItem(new Gold(amount));
-        }
-        public void PackGold(int amount)
-        {
-            PackedGold += amount;
-            PackGoldManaged(amount);
+            // During spawn, split into visible (now) and hidden (released on death)
+            if (Spawning)
+                amount = CalcGoldSplit(amount);
+
+            // Pack visible gold into the creature
+            PackItem(new Gold(amount));
         }
         public void PackGold(int min, int max)
         {
             int amount = Utility.RandomMinMax(min, max);
             PackGold(amount);
         }
-
+        #endregion Pack Gold
         public void PackStatue(int min, int max)
         {
             PackStatue(Utility.RandomMinMax(min, max));
@@ -7905,16 +8064,11 @@ namespace Server.Mobiles
 
             for (int yx = 0; yx < amount; yx++)
             {
-                Item item = Loot.Construct(type);
+                Item? item = Loot.Construct(type);
                 PackItem(item, no_scroll, lootType: lootType);
             }
         }
-        public void PackRare(Item item, bool no_scroll = false)
-        {
-            if (item != null)
-                PackItem(item, no_scroll, lootType: LootType.Rare);
-        }
-        public void PackItem(Item item, bool no_scroll = false, LootType lootType = LootType.Unspecified)
+        public void PackItem(Item? item, bool no_scroll = false, LootType lootType = LootType.Unspecified)
         {
             if (Summoned || item == null)
             {
@@ -7949,12 +8103,33 @@ namespace Server.Mobiles
             if (!item.Stackable || !pack.TryDropItem(this, item, false)) // try stack
                 pack.DropItem(item); // failed, drop it anyway
         }
-        // called when we are repacking an item that has already been packed and likely already has flags configured.
-        public void RePackItem(Item item)
+        /// <summary>
+        /// Packs multiple items into the creature's backpack by calling PackItem on each.
+        /// </summary>
+        public void PackItems(IEnumerable<Item> items, bool no_scroll = false, LootType lootType = LootType.Unspecified)
         {
-            Item.ItemBoolTable flags = item.GetItemBools();
-            PackItem(item);
-            item.SetItemBools(flags);
+            if (items == null)
+                return;
+
+            foreach (Item item in items)
+            {
+                if (item != null)
+                    PackItem(item, no_scroll, lootType);
+            }
+        }
+        /// <summary>
+        /// Packs any number of items into the creature's backpack.
+        /// </summary>
+        public void PackItems(bool no_scroll = false, LootType lootType = LootType.Unspecified, params Item[] items)
+        {
+            if (items == null)
+                return;
+
+            foreach (Item item in items)
+            {
+                if (item != null)
+                    PackItem(item, no_scroll, lootType);
+            }
         }
         public override void OnDoubleClick(Mobile from)
         {
@@ -7984,32 +8159,6 @@ namespace Server.Mobiles
             }
         }
 
-        private bool m_IOBFollower;
-
-        [CommandProperty(AccessLevel.GameMaster)]
-        public bool IOBFollower
-        {
-            get { return m_IOBFollower; }
-            set { m_IOBFollower = value; }
-        }
-
-        private Mobile m_IOBLeader;
-
-        [CommandProperty(AccessLevel.GameMaster)]
-        public Mobile IOBLeader
-        {
-            get { return m_IOBLeader; }
-            set { m_IOBLeader = value; }
-        }
-
-        private DateTime m_IOBTimeAcquired;
-        [CommandProperty(AccessLevel.GameMaster)]
-        public DateTime IOBTimeAcquired
-        {
-            get { return m_IOBTimeAcquired; }
-            set { m_IOBTimeAcquired = value; }
-        }
-
         public override void OnSignal(SignalType signal)
         {
             if (this.AIObject != null)
@@ -8019,21 +8168,16 @@ namespace Server.Mobiles
 
         public override void OnSingleClick(Mobile from)
         {
-            if (m_IOBFollower)
+            if (this.Spawner is Spawner spawner)
             {
-                if (m_IOBLeader == from)
+                if (spawner.HandlesOnSingleClick)
                 {
-                    PrivateOverheadMessage(MessageType.Regular, 0x3B2, true, "(following)", from.NetState);
-                }
-                else if (from.AccessLevel > AccessLevel.Player)
-                {
-                    if (m_IOBLeader != null)
-                    {
-                        PrivateOverheadMessage(MessageType.Regular, 0x3B2, true, "(following - " + IOBLeader.Name + ")", from.NetState);
-                    }
+                    spawner.OnSingleClickSpawned(from, this);
+                    return;
                 }
             }
-            else if (Controlled && Commandable)
+
+            if (Controlled && Commandable)
             {
                 int number;
 
@@ -8063,80 +8207,17 @@ namespace Server.Mobiles
         {
             try
             {
-                //make sure cloths/weapons are newbied so they don't drop
-                Item[] items = new Item[19];
-                items[0] = this.FindItemOnLayer(Layer.Shoes);
-                items[1] = this.FindItemOnLayer(Layer.Pants);
-                items[2] = this.FindItemOnLayer(Layer.Shirt);
-                items[3] = this.FindItemOnLayer(Layer.Helm);
-                items[4] = this.FindItemOnLayer(Layer.Gloves);
-                items[5] = this.FindItemOnLayer(Layer.Neck);
-                items[6] = this.FindItemOnLayer(Layer.Waist);
-                items[7] = this.FindItemOnLayer(Layer.InnerTorso);
-                items[8] = this.FindItemOnLayer(Layer.MiddleTorso);
-                items[9] = this.FindItemOnLayer(Layer.Arms);
-                items[10] = this.FindItemOnLayer(Layer.Cloak);
-                items[11] = this.FindItemOnLayer(Layer.OuterTorso);
-                items[12] = this.FindItemOnLayer(Layer.OuterLegs);
-                items[13] = this.FindItemOnLayer(Layer.InnerLegs);
-                items[14] = this.FindItemOnLayer(Layer.Bracelet);
-                items[15] = this.FindItemOnLayer(Layer.Ring);
-                items[16] = this.FindItemOnLayer(Layer.Earrings);
-                items[17] = this.FindItemOnLayer(Layer.OneHanded);
-                items[18] = this.FindItemOnLayer(Layer.TwoHanded);
-                for (int i = 0; i < 19; i++)
+                // make sure clothes/weapons are newbied so they do not drop
+                foreach (Item item in Utility.GetLayerItems(this))
                 {
-                    if (items[i] != null)
-                    {
-                        items[i].LootType = LootType.Newbied;
-                    }
+                    item.LootType = LootType.Newbied;
                 }
             }
             catch (Exception exc)
             {
                 LogHelper.LogException(exc);
             }
-
         }
-        //public void NormalizeOnLiftAllLayers()
-        //{
-        //    try
-        //    {
-        //        //make sure cloths/weapons are newbied so they don't drop
-        //        Item[] items = new Item[19];
-        //        items[0] = this.FindItemOnLayer(Layer.Shoes);
-        //        items[1] = this.FindItemOnLayer(Layer.Pants);
-        //        items[2] = this.FindItemOnLayer(Layer.Shirt);
-        //        items[3] = this.FindItemOnLayer(Layer.Helm);
-        //        items[4] = this.FindItemOnLayer(Layer.Gloves);
-        //        items[5] = this.FindItemOnLayer(Layer.Neck);
-        //        items[6] = this.FindItemOnLayer(Layer.Waist);
-        //        items[7] = this.FindItemOnLayer(Layer.InnerTorso);
-        //        items[8] = this.FindItemOnLayer(Layer.MiddleTorso);
-        //        items[9] = this.FindItemOnLayer(Layer.Arms);
-        //        items[10] = this.FindItemOnLayer(Layer.Cloak);
-        //        items[11] = this.FindItemOnLayer(Layer.OuterTorso);
-        //        items[12] = this.FindItemOnLayer(Layer.OuterLegs);
-        //        items[13] = this.FindItemOnLayer(Layer.InnerLegs);
-        //        items[14] = this.FindItemOnLayer(Layer.Bracelet);
-        //        items[15] = this.FindItemOnLayer(Layer.Ring);
-        //        items[16] = this.FindItemOnLayer(Layer.Earrings);
-        //        items[17] = this.FindItemOnLayer(Layer.OneHanded);
-        //        items[18] = this.FindItemOnLayer(Layer.TwoHanded);
-        //        for (int i = 0; i < 19; i++)
-        //        {
-        //            if (items[i] != null)
-        //            {
-        //                items[i].SetItemBool(Item.ItemBoolTable.NormalizeOnLift, true);
-        //            }
-        //        }
-        //    }
-        //    catch (Exception exc)
-        //    {
-        //        LogHelper.LogException(exc);
-        //    }
-
-        //}
 
         // We want to ab able to suppress loot on GM created creatures  (we may be giving them a LootPack)
         [CommandProperty(AccessLevel.Administrator)]
@@ -8178,7 +8259,7 @@ namespace Server.Mobiles
                     double nonPetDamage = 0.0;
                     double petDamage = 0.0;
                     double totalDamage = 0.0;
-                    Item rare = Loot.RareFactoryItem(CalcRareFactoryDropChance(ref nonPetDamage, ref petDamage, ref totalDamage));
+                    Item? rare = Loot.RareFactoryItem(CalcRareFactoryDropChance(ref nonPetDamage, ref petDamage, ref totalDamage));
                     if (rare != null)
                     {
                         if (LastKiller != null)
@@ -8216,11 +8297,32 @@ namespace Server.Mobiles
                     }
                 }
                 else
-                    GenerateLoot(spawning: false);
+                {
+                    if (GoldHidden > 0)
+                        PackItem(new Gold(GoldHidden));
 
-                // Siege currently use this system of hidden loot
-                if (!Core.RuleSets.StealableAtSpawnLoot())
-                    DropHiddenLoot();
+                    GenerateLoot(spawning: false);
+                }
+
+                // Validate gold integrity:
+                // Total gold carried by the creature should never be less than what we explicitly accounted for.
+                // - GoldHidden + GoldVisible represents the designed spawn allocation
+                // - GoldPacked represents total gold credited for reward tracking (may differ slightly in flow)
+                System.Diagnostics.Debug.Assert(GetGold() >= GoldHidden + GoldVisible);
+                System.Diagnostics.Debug.Assert(GetGold() >= GoldPacked);
+
+                // Detect surplus gold beyond our bookkeeping model.
+                // This can occur when creatures loot gold from other creatures or external sources.
+                int accounted = GoldPacked;
+                int actual = GetGold();
+                int extra = actual - accounted;
+
+                // If extra gold exists, broadcast for diagnostics/visibility.
+                if (extra > 0)
+                {
+                    Console.WriteLine("{0} has {1} extra gold (Total: {2}, Accounted: {3})",
+                        GetType().Name, extra, actual, accounted);
+                }
 
                 #region Paragon (Angel Island Only)
                 // give a little boost in loot for paragon creatures
@@ -8236,20 +8338,6 @@ namespace Server.Mobiles
                 #endregion Paragon (Angel Island Only)
 
                 #region KIN SYSTEM (Angel Island Only)
-#if false
-                if (Core.UOAI || Core.UOAR)
-				{
-					// Is kin silver enabled?
-					if (Engines.IOBSystem.KinSystemSettings.KinAwards == true)
-					{
-						// adjust gold drop and add silved for IOB Kin System
-						int Silver, NewGold;
-						if (KinAwards.CalcAwardInSilver(this, out Silver, out NewGold) == true)
-							// delete old gold, add new gold and silver
-							KinAwards.AdjustLootForKinAward(this, Silver, NewGold);
-					}
-				}
-#endif
                 #endregion KIN SYSTEM (Angel Island Only)
 
                 #region Murderer gold adjust (Siege Perilous)
@@ -8261,7 +8349,7 @@ namespace Server.Mobiles
                 //  on the forums, and several Siege vets swore this was never implemented. Not sure I believe this
                 //  but it's not worth losing players over.
                 // See: MurderersGetOneThirdGold()
-                if (Core.RuleSets.SiegeStyleRules() && PublishInfo.Publish >= 13.6)
+                if (Core.RuleSets.SiegeRules() && PublishInfo.Publish >= 13.6)
                 {   // calc new award amount if the damager is red
 
                     //creature must not be controlled 
@@ -8285,7 +8373,7 @@ namespace Server.Mobiles
                             //  (see above text: Murderer gold adjust (Siege Perilous))
                             if (ds.m_HasRight && ds.m_Mobile is PlayerMobile && (ds.m_Mobile.Red && Core.RuleSets.MurderersGetOneThirdGold()))
                             {   // first delete all dropped gold
-                                Container pack = this.Backpack;
+                                Container? pack = this.Backpack;
                                 if (pack != null)
                                 {
                                     // how much gold is on the creature?
@@ -8333,6 +8421,18 @@ namespace Server.Mobiles
             if (speechType != null)
                 speechType.OnDeath(this);
 
+            #region Followers
+            if (Spawner is Spawner spawner &&
+                !string.IsNullOrEmpty(spawner.Followers))
+            {
+                foreach (BaseCreature bc in this.Followers)
+                {
+                    bc.Controlled = false;
+                    bc.ControlMaster = null;
+                }
+            }
+            #endregion Followers
+
             return base.OnBeforeDeath();
         }
         // dropChance = baseDropChance * (nonPetDamage + petScalar * petDamage) / totalDamage
@@ -8357,51 +8457,13 @@ namespace Server.Mobiles
 
             return baseDropChance * (nonPetDamage + petScalar * petDamage) / totalDamage;
         }
-        private void DropHiddenLoot()
-        {   // hidden is 'at spawn' loot that was stashed in the creature's bankbox.
-            // this protects it from thieves, but makes it available on death
-            try
-            {
-                if (this.BankBox != null && this.BankBox.Items != null && this.BankBox.Items.Count > 0)
-                {
-                    if (this.Backpack == null)
-                    {
-                        Backpack backpack = new Backpack();
-                        backpack.Movable = false;
-                        this.AddItem(backpack);
-                    }
 
-                    List<Item> bbl = new();
-                    foreach (Item item in this.BankBox.Items)
-                        bbl.Add(item);
-                    foreach (Item item in bbl)
-                        this.BankBox.RemoveItem(item);
-
-                    List<Item> bp = new();
-                    foreach (Item item in this.Backpack.Items)
-                        bp.Add(item);
-                    foreach (Item item in bp)
-                        this.Backpack.RemoveItem(item);
-
-                    // coalesce stackable loot
-                    List<Item> all = Utility.StackItems(bbl.Concat(bp).ToList());
-
-                    // RePackItem preserves the flags that were established when the item was originally packed via PackItem
-                    foreach (Item item in all)
-                        RePackItem(item);
-                }
-            }
-            catch (Exception ex)
-            {
-                LogHelper.LogException(ex);
-            }
-        }
         #region Mobile Kill and Cleanup
         /// <summary>
         /// Every 10 minutes temporary mobiles are deleted.
         /// The only condition is that they are at least 15 minutes old
         /// </summary>
-        [CommandProperty(AccessLevel.GameMaster)]  
+        [CommandProperty(AccessLevel.GameMaster)]
         public bool TempMob
         {
             get { return GetMobileBool(MobileBoolTable.TempObject); }
@@ -8412,13 +8474,13 @@ namespace Server.Mobiles
         /// Look for an opportunity to disappear as soon as the time expires.
         /// The opportunity is when there no players around to see it
         /// </summary>
-        Timer DeleteQuietlyTimer = null;    // not serialized
+        Timer? DeleteQuietlyTimer = null;    // not serialized
         [CopyableAttribute(CopyType.DoNotCopy)]
         [CommandProperty(AccessLevel.GameMaster)]
         public bool DeleteQuietly
         {
             get { return DeleteQuietlyTimer == null; }
-            set 
+            set
             {
                 if (value == true && DeleteQuietlyTimer == null)
                 {
@@ -8473,7 +8535,7 @@ namespace Server.Mobiles
             get { return GetCreatureBool(CreatureBoolTable.IsBoss); }
             set { SetCreatureBool(CreatureBoolTable.IsBoss, value); }
         }
-        public Mobile GetMaster()
+        public Mobile? GetMaster()
         {
             if (Controlled && ControlMaster != null)
                 return ControlMaster;
@@ -8493,32 +8555,6 @@ namespace Server.Mobiles
             }
         }
 
-        public int ComputeBonusDamage(ArrayList list, Mobile m)
-        {
-            int bonus = 0;
-
-            for (int i = list.Count - 1; i >= 0; --i)
-            {
-                DamageEntry de = (DamageEntry)list[i];
-
-                if (de.Damager == m || !(de.Damager is BaseCreature))
-                    continue;
-
-                BaseCreature bc = (BaseCreature)de.Damager;
-                Mobile master = null;
-
-                if (bc.Controlled && bc.ControlMaster != null)
-                    master = bc.ControlMaster;
-                else if (bc.Summoned && bc.SummonMaster != null)
-                    master = bc.SummonMaster;
-
-                if (master == m)
-                    bonus += de.DamageGiven;
-            }
-
-            return bonus;
-        }
-
         private class FKEntry
         {
             public Mobile m_Mobile;
@@ -8530,188 +8566,6 @@ namespace Server.Mobiles
                 m_Damage = damage;
             }
         }
-
-        #region LootingRights
-        public static List<DamageStore> GetLootingRights(List<DamageEntry> damageEntries, int hitsMax)
-        {
-            List<DamageStore> rights = new List<DamageStore>();
-
-            for (int i = damageEntries.Count - 1; i >= 0; --i)
-            {
-                if (i >= damageEntries.Count)
-                    continue;
-
-                DamageEntry de = damageEntries[i];
-
-                if (de.HasExpired)
-                {
-                    damageEntries.RemoveAt(i);
-                    continue;
-                }
-
-                int damage = de.DamageGiven;
-
-                List<DamageEntry> respList = de.Responsible;
-
-                if (respList != null)
-                {
-                    for (int j = 0; j < respList.Count; ++j)
-                    {
-                        DamageEntry subEntry = respList[j];
-                        Mobile master = subEntry.Damager;
-
-                        if (master == null || master.Deleted || !master.Player)
-                            continue;
-
-                        bool needNewSubEntry = true;
-
-                        for (int k = 0; needNewSubEntry && k < rights.Count; ++k)
-                        {
-                            DamageStore ds = rights[k];
-
-                            if (ds.m_Mobile == master)
-                            {
-                                ds.m_Damage += subEntry.DamageGiven;
-                                needNewSubEntry = false;
-                            }
-                        }
-
-                        if (needNewSubEntry)
-                            rights.Add(new DamageStore(master, subEntry.DamageGiven));
-
-                        damage -= subEntry.DamageGiven;
-                    }
-                }
-
-                Mobile m = de.Damager;
-
-                if (m == null || m.Deleted || !m.Player)
-                    continue;
-
-                if (damage <= 0)
-                    continue;
-
-                bool needNewEntry = true;
-
-                for (int j = 0; needNewEntry && j < rights.Count; ++j)
-                {
-                    DamageStore ds = rights[j];
-
-                    if (ds.m_Mobile == m)
-                    {
-                        ds.m_Damage += damage;
-                        needNewEntry = false;
-                    }
-                }
-
-                if (needNewEntry)
-                    rights.Add(new DamageStore(m, damage));
-            }
-
-            if (rights.Count > 0)
-            {
-                rights[0].m_Damage = (int)(rights[0].m_Damage * 1.25);  //This would be the first valid person attacking it.  Gets a 25% bonus.  Per 1/19/07 Five on Friday
-
-                if (rights.Count > 1)
-                    rights.Sort(); //Sort by damage
-
-                int topDamage = rights[0].m_Damage;
-                int minDamage;
-
-                if (hitsMax >= 3000)
-                    minDamage = topDamage / 16;
-                else if (hitsMax >= 1000)
-                    minDamage = topDamage / 8;
-                else if (hitsMax >= 200)
-                    minDamage = topDamage / 4;
-                else
-                    minDamage = topDamage / 2;
-
-                for (int i = 0; i < rights.Count; ++i)
-                {
-                    DamageStore ds = rights[i];
-
-                    ds.m_HasRight = (ds.m_Damage >= minDamage);
-                }
-            }
-
-            return rights;
-        }
-        public static SortedList<Mobile, int> ProcessDamageStore(List<DamageStore> list)
-        {   // divvy up points between party members
-
-            // we want sorted in descending order
-            // i.e., Ascending means smallest to largest, 0 to 9, and/or A to Z and Descending means largest to smallest, 9 to 0, and/or Z to A.
-            SortedList<Mobile, int> Results =
-                new SortedList<Mobile, int>(Comparer<Mobile>.Create((x, y) => y.CompareTo(x)));
-
-            for (int i = 0; i < list.Count; ++i)
-            {
-                DamageStore ds = list[i];
-
-                if (!ds.m_HasRight)
-                    continue;
-
-                Party party = Engines.PartySystem.Party.Get(ds.m_Mobile);
-
-                if (party != null)
-                {
-                    int divedDamage = ds.m_Damage / party.Members.Count;
-
-                    for (int j = 0; j < party.Members.Count; ++j)
-                    {
-                        PartyMemberInfo info = party.Members[j] as PartyMemberInfo;
-
-                        if (info != null && info.Mobile != null)
-                            Results[info.Mobile] = divedDamage;
-                    }
-                }
-                else
-                    Results[ds.m_Mobile] = ds.m_Damage;
-            }
-
-            return Results;
-        }
-        public static void ClipDamageStore(ref SortedList<Mobile, int> Results, Mobile beast)
-        {   // we cannot write to a sorted list, so we convert to a dictionary for modification, then back to the sorted list
-            //  so we maintain the order of damagers.
-
-            Dictionary<Mobile, int> writable = new(Results);
-            // first, make sure no player exceeds the creatures Maxhits
-            foreach (KeyValuePair<Mobile, int> kvp in writable)
-                writable[kvp.Key] = Math.Min(kvp.Value, beast.HitsMax);  // punish the likely cheater first
-
-            // add up total damage
-            int total_damage = 0;
-            foreach (KeyValuePair<Mobile, int> kvp in writable)
-                total_damage += writable[kvp.Key];
-
-            // how far over HitsMax are we?
-            int delta = total_damage - beast.HitsMax;
-            if (delta <= 0)
-                // no harm, no foul
-                return;
-
-            // start removing points
-            bool done = false;
-            while (!done)
-                foreach (KeyValuePair<Mobile, int> kvp in writable)
-                    if (writable[kvp.Key] > 0)
-                    {
-                        writable[kvp.Key]--;
-                        delta--;
-                        if (delta <= 0)
-                        {
-                            done = true;
-                            break;
-                        }
-                    }
-
-            Results = new SortedList<Mobile, int>(writable);
-
-            return;
-        }
-        #endregion
 
         public override void OnDeath(Container c)
         {
@@ -8803,9 +8657,9 @@ namespace Server.Mobiles
                     List<int> karma = new List<int>();
 
                     // inform our data recorder for PVM leader board
+                    // divvies up points between party members
                     if (list.Count > 0)
-                        // divvies up points between party members
-                        DataRecorder.PvMStats(this, list, hSpawner: SpawnerHandle);
+                        OnDeathLeaderBoards(list);
 
                     bool givenQuestKill = false;
                     bool givenFactionKill = false;
@@ -8820,7 +8674,7 @@ namespace Server.Mobiles
                         if (!ds.m_HasRight)
                             continue;
 
-                        Party party = Engines.PartySystem.Party.Get(ds.m_Mobile);
+                        Party? party = Engines.PartySystem.Party.Get(ds.m_Mobile);
 
                         if (party != null)
                         {
@@ -8829,7 +8683,7 @@ namespace Server.Mobiles
 
                             for (int j = 0; j < party.Members.Count; ++j)
                             {
-                                PartyMemberInfo info = party.Members[j] as PartyMemberInfo;
+                                PartyMemberInfo? info = party.Members[j] as PartyMemberInfo;
 
                                 if (info != null && info.Mobile != null)
                                 {
@@ -8899,7 +8753,7 @@ namespace Server.Mobiles
                         if (givenQuestKill)
                             continue;
 
-                        PlayerMobile pm = ds.m_Mobile as PlayerMobile;
+                        PlayerMobile? pm = ds.m_Mobile as PlayerMobile;
 
                         if (pm != null)
                         {
@@ -9117,7 +8971,7 @@ namespace Server.Mobiles
             #region Static Region
             if (target != null && this.Region != target.Region)
             {
-                StaticRegion sr = StaticRegion.FindStaticRegion(target);
+                StaticRegion? sr = StaticRegion.FindStaticRegion(target);
                 if (sr != null && sr.NoExternalHarmful && this.AccessLevel == AccessLevel.Player)
                 {
                     this.SendMessage("You cannot harm them in that area.");
@@ -9160,7 +9014,7 @@ namespace Server.Mobiles
             return ret;
         }
 
-        public bool SetControlMaster(Mobile m, bool force = false)
+        public bool SetControlMaster(Mobile? m, bool force = false)
         {
             if (m == null)
             {
@@ -9304,23 +9158,7 @@ namespace Server.Mobiles
                 m_LoyaltyWarning = DateTime.UtcNow + TimeSpan.FromMinutes(5.0);
             }
 
-            //check that IOBFollower's leader is still wearing an IOB
-            if (IOBFollower)
-            {
-                if (IOBLeader != null && IOBLeader is PlayerMobile)
-                {
-                    if (((PlayerMobile)IOBLeader).IOBEquipped == false)
-                    {
-                        IOBDismiss(true);
-                    }
-                }
-                else
-                {
-                    IOBDismiss(true);
-                }
-            }
-
-            if (Controlled || IOBFollower || Hits < HitsMax)
+            if (Controlled || Hits < HitsMax)
                 RefreshLifespan();
 
             if (EnableRummaging && CanRummageCorpses && !Summoned && !Controlled && DateTime.UtcNow >= m_NextRummageTime)
@@ -9368,8 +9206,8 @@ namespace Server.Mobiles
                         IPooledEnumerable eable = this.GetMobilesInRange(AuraRange);
                         foreach (Mobile mt in eable)
                         {   // normally I allow staff to be attacked, but in this case, it gets in the way of investigating spawn
-                            bool secret = mt.Player && mt.Hidden && mt.AccessLevel > AccessLevel.Player;
-                            if (mt != null && !mt.Deleted && mt != this && AuraTarget(mt) && CanBeHarmful(mt) && !secret)
+                            //  CanBeHarmful now handles: target is PlayerMobile pm && pm.Hidden && pm.AccessLevel > AccessLevel.Player
+                            if (mt != null && !mt.Deleted && mt != this && AuraTarget(mt) && CanBeHarmful(mt))
                                 list.Add(mt);
                         }
                         eable.Free();
@@ -9394,7 +9232,7 @@ namespace Server.Mobiles
                                 // Adam: add IsDeadBondedPet to the test to keep from attacking dead bonded pets
                                 if (m.Map == this.Map && m.Alive && !m.IsDeadBondedPet)
                                 {
-                                    m.Damage(Utility.Random(AuraMin, AuraMax), this, this);
+                                    m.Damage(Utility.Random(AuraMin, AuraMax), this, new DamageContext { Source = this });
                                     DoHarmful(m);
                                     NextAuraTime = DateTime.UtcNow + NextAuraDelay;
                                     m.Paralyzed = false;
@@ -9444,9 +9282,10 @@ namespace Server.Mobiles
                 BreedingSystem.OnThink(this);
         }
 
+        public List<Type> CorpseLootExclusions { get; set; } = new List<Type>();
         public virtual bool Rummage()
         {
-            Corpse toRummage = null;
+            Corpse? toRummage = null;
 
             IPooledEnumerable eable = this.GetItemsInRange(2);
             foreach (Item item in eable)
@@ -9475,8 +9314,15 @@ namespace Server.Mobiles
             for (int i = 0; i < items.Count; ++i)
             {
                 Item item = (Item)items[Utility.Random(items.Count)];
+                var exclusions = CorpseLootExclusions ?? new List<Type>();
 
                 Lift(item, item.Amount, out rejected, out reason);
+
+                if (exclusions.Contains(item.GetType()) ||
+                    exclusions.Any(t => t.IsAssignableFrom(item.GetType())))
+                {
+                    continue; // skip this item
+                }
 
                 if (!rejected && Drop(this, new Point3D(-1, -1, 0)))
                 {
@@ -9488,13 +9334,91 @@ namespace Server.Mobiles
 
             return false;
         }
-
-        public void Pacify(Mobile master, DateTime endtime)
+        #region Pacify
+        public double BardPacifyDiff { get; set; }
+        public double BardPacifyMusic { get; set; }
+        public double BardPacifyPeace { get; set; }
+        public double BardPacifyPressure { get; set; }   // accumulates per-hit
+        public int BardPacifyHitsMax { get; set; }       // cached robustness (optional but recommended)
+        public void Pacify(Mobile master, DateTime endtime, double diff, double music, double peace)
         {
             BardPacified = true;
+            BardStartTime = DateTime.UtcNow;
             BardEndTime = endtime;
-        }
+            BardMaster = master;
 
+            // Cache contest inputs so damage-handling doesn’t need instrument/targ context.
+            BardPacifyDiff = diff;
+            BardPacifyMusic = music;
+            BardPacifyPeace = peace;
+            BardPacifyPressure = 0.0;
+            BardPacifyHitsMax = Math.Max(1, HitsMax); // cache for stability across buffs/regen/etc
+        }
+        public void Unpacify()
+        {
+            BardPacified = false;
+            BardStartTime = DateTime.UtcNow;
+            BardEndTime = DateTime.UtcNow;
+            BardMaster = null;
+
+            // Good housekeeping
+            BardPacifyDiff = 0.0;
+            BardPacifyMusic = 0.0;
+            BardPacifyPeace = 0.0;
+            BardPacifyPressure = 0.0;
+            BardPacifyHitsMax = 0;
+        }
+        /// <summary>
+        /// Determines whether pacify breaks in response to incoming damage.
+        ///
+        /// Pacify does not break simply because a hit occurred. Instead, damage contributes
+        /// pressure proportional to its significance relative to the creature’s robustness
+        /// (HitsMax), counterbalanced by the bard’s musicianship. Weak music amplifies the
+        /// impact of damage; strong music dampens it. This pressure accumulates over time,
+        /// and as the pacify duration elapses, damage becomes increasingly effective.
+        ///
+        /// Pacify breaks only when accumulated pressure overwhelms the bard’s ability
+        /// to maintain control, modeling “felt” injury rather than per-hit randomness.
+        /// </summary>
+        private bool ShouldBreakPacifyOnDamage(DateTime now, int amount, Mobile attacker)
+        {
+            if (amount <= 0)
+                return false;
+
+            if (now >= BardEndTime)
+                return true;
+
+            // progress: 0..1
+            double total = (BardEndTime - BardStartTime).TotalSeconds;
+            if (total <= 0.001)
+                total = 0.001;
+
+            double elapsed = (now - BardStartTime).TotalSeconds;
+            if (elapsed < 0.0) elapsed = 0.0;
+            if (elapsed > total) elapsed = total;
+
+            double progress = elapsed / total;
+
+            // Relative injury (small hits on big creatures should barely matter)
+            double hitsMax = Math.Max(1.0, (double)(BardPacifyHitsMax > 0 ? BardPacifyHitsMax : HitsMax));
+            double relInjury = amount / (hitsMax + CoreAI.PacifyRobustnessBiasKnob);
+
+            // Music counterbalance: weak music amplifies, strong music dampens
+            double music = BardPacifyMusic;
+            double x = (music - CoreAI.PacifyMusicCenterKnob) / 25.0; // 25 = softness constant
+            double musicFactor = Math.Exp(-CoreAI.PacifyMusicDampenStrengthKnob * x);
+
+            // Late-window weakening: damage becomes more effective over time
+            double timeFactor = 1.0 + CoreAI.PacifyTimeWeakeningKnob * (progress * progress);
+
+            // Accumulate felt pressure
+            double deltaPressure = CoreAI.PacifyDamageScaleKnob * relInjury * musicFactor * timeFactor;
+            BardPacifyPressure += deltaPressure;
+
+            // Break when pressure overwhelms control
+            return BardPacifyPressure >= 1.0;
+        }
+        #endregion Pacify
         public override Mobile GetDamageMaster(Mobile damagee)
         {
             if (m_bBardProvoked && damagee == m_bBardTarget)
@@ -9600,7 +9524,7 @@ namespace Server.Mobiles
 
             if (searchMount)
             {
-                BaseCreature mount = master.Mount as BaseCreature;
+                BaseCreature? mount = master.Mount as BaseCreature;
 
                 if (mount.Controlled && mount.ControlMaster == master)
                     pets.Add(mount);
@@ -9628,7 +9552,7 @@ namespace Server.Mobiles
         {
             return true;
         }
-        public static TeleportResult TeleportPets(Mobile master, Point3D loc, Map map, Predicate<BaseCreature> predicate = null, int range = 3)
+        public static TeleportResult TeleportPets(Mobile master, Point3D loc, Map map, Predicate<BaseCreature>? predicate = null, int range = 3)
         {
             List<BaseCreature> pets = GetPetsInRange(master, range);
 
@@ -9667,17 +9591,18 @@ namespace Server.Mobiles
         }
 
         #region " AIEntrance Stable Code "
-        public static int GetMaxStabled(Mobile from, BaseCreature bc = null)
+        public static int GetMaxStabled(Mobile from, BaseCreature? bc = null)
         {
             int max = 0;
 
-            if (bc is Golem || bc is Chicken)
-            {   // golems and chickens do not require a skill threshold to get the extra slots
-                max += Core.RuleSets.ShardStableMinimum();  // 6
-                max += GetOSIMaxStabled(from);              // max 8 (skill based)
-                max += Core.RuleSets.ShardStableBonus();    // 12
-                return max;
-            }
+            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules(2))
+                if (bc is Golem || bc is Chicken)
+                {   // golems and chickens do not require a skill threshold to get the extra slots
+                    max += Core.RuleSets.ShardStableMinimum();  // 6
+                    max += GetOSIMaxStabled(from);              // max 8 (skill based)
+                    max += Core.RuleSets.ShardStableBonus();    // 12
+                    return max;
+                }
 
             // SiegeII for instance gives 6 minimum slots
             max += Core.RuleSets.ShardStableMinimum();      // 6
@@ -9851,11 +9776,11 @@ namespace Server.Mobiles
         {
             return (
                 Spawner != null && !Spawner.Deleted && Spawner.Running && Spawner.Map != Map.Internal && Spawner.Map != null &&
-                Spawner is not EventSpawner && Spawner is not PushBackSpawner);
+                Spawner is not EventSpawner);
         }
         [CommandProperty(AccessLevel.GameMaster)]
         public virtual bool Active { get { return m_AI != null ? m_AI.Active : false; } }
-        Timer m_deactivationTimer;
+        Timer? m_deactivationTimer;
         public override void OnSectorDeactivate()
         {
             if (CanDeactivate && m_AI != null)
@@ -9865,7 +9790,7 @@ namespace Server.Mobiles
                 // base vendors and guards always go home
                 if (SpawnerRule() && MobileRule() && DistanceRule())
                 {
-                    Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(CheckHome), new object[] { null });
+                    Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(CheckHome), new object?[] { null });
                 }
                 #endregion Special Mobs Go Home
             }
@@ -9878,7 +9803,7 @@ namespace Server.Mobiles
                 if (ActivationTimerRunning() == false)
                     m_deactivationTimer = Timer.DelayCall(
                         TimeSpan.FromMilliseconds(Utility.RandomDouble() * 800),
-                            new TimerStateCallback(ActivationTick), new object[] { null });
+                            new TimerStateCallback(ActivationTick), new object?[] { null });
             }
 
             base.OnSectorActivate();
@@ -9968,11 +9893,9 @@ namespace Server.Mobiles
             set { m_SeekResult = value; }
         }
         #endregion Smart Mobile Activate/Deactivate
-        // used for deleting creatures in houses
-        private int m_RemoveStep;
 
-        [CommandProperty(AccessLevel.GameMaster)]
-        public int RemoveStep { get { return m_RemoveStep; } set { m_RemoveStep = value; } }
+        // wild creature in a house - not serialized
+        public int CreatureIsInHouse { get; set; }
 
         private DateTime m_LastThought = DateTime.UtcNow;
         public bool Hibernating
@@ -10394,11 +10317,6 @@ namespace Server.Mobiles
         {
         }
 
-        public virtual bool CanGrow()
-        {
-            return this.Controlled;
-        }
-
         public virtual void OnGrowth(Maturity oldMaturity)
         {
         }
@@ -10419,7 +10337,7 @@ namespace Server.Mobiles
         public virtual bool CanBreedWith(BaseCreature with)
         {
             bool rule1 = this.GetType() == with.GetType();
-            bool rule2 = (Core.SiegeII_CFG && this.GetType() != typeof(Chicken)) ? ControlMaster != with.ControlMaster : true;
+            bool rule2 = (Core.RuleSets.SiegeRules(2) && this.GetType() != typeof(Chicken)) ? ControlMaster != with.ControlMaster : true;
             if (rule1 && !rule2)
             {
                 this.DebugSay(DebugFlags.AI, "Not interested in {0}, it's my sister!", with);
@@ -10466,7 +10384,7 @@ namespace Server.Mobiles
             return gc;
         }
 
-        protected override bool AllowGain(Skill skill, object[] contextObj)
+        protected override bool AllowGain(Skill skill, object?[] contextObj)
         {
             if (Region != null && Region.IsJailRules)
                 return false;
@@ -10481,7 +10399,7 @@ namespace Server.Mobiles
         {
             double gc = base.StatGainChance(skill, stat);
 
-            if (TestCenter.Enabled && Controlled)
+            if (TestCenterServer.Enabled && Controlled)
                 gc *= 20.0;
 
             if (BreedingSystem.Enabled)
@@ -10526,7 +10444,7 @@ namespace Server.Mobiles
 
         public virtual void PackStrongPotion()
         {
-            Item item = Loot.Construct(m_StrongPotions);
+            Item? item = Loot.Construct(m_StrongPotions);
             PackItem(item, lootType: LootType.Newbied);
         }
 
@@ -10543,7 +10461,7 @@ namespace Server.Mobiles
 
         public virtual void PackWeakPotion()
         {
-            Item item = Loot.Construct(m_WeakPotions);
+            Item? item = Loot.Construct(m_WeakPotions);
             PackItem(item, lootType: LootType.UnStealable);
         }
         #endregion
@@ -10577,139 +10495,112 @@ namespace Server.Mobiles
         {
             Mobile owner = c.ControlMaster;
 
-            return (owner == null || owner.Deleted || owner.Map != c.Map || !owner.InRange(c, 12) || !c.CanSee(owner) || !c.InLOS(owner));
+            return owner == null
+                || owner.Deleted
+                || owner.Map != c.Map
+                || !owner.InRange(c, 12)
+                || !c.CanSee(owner)
+                || !c.InLOS(owner);
         }
 
         protected override void OnTick()
         {
             ArrayList toRelease = new ArrayList();
-
-            // added array for wild creatures in house regions to be removed
             ArrayList toRemove = new ArrayList();
 
-            foreach (Mobile m in World.Mobiles.Values)
+            foreach (Mobile m in Mobile.PetCache)
             {
-                if (m is BaseMount && ((BaseMount)m).Rider != null && DateTime.UtcNow >= ((BaseCreature)m).LoyaltyCheck)
+                if (m is not BaseCreature c)
+                    continue;
+
+                if (DateTime.UtcNow < c.LoyaltyCheck)
+                    continue;
+
+                if (c is BaseMount mount && mount.Rider != null)
                 {
-                    ((BaseCreature)m).OwnerAbandonTime = DateTime.MinValue;
+                    c.OwnerAbandonTime = DateTime.MinValue;
+                    c.LoyaltyCheck = DateTime.UtcNow + TimeSpan.FromHours(1.0);
                     continue;
                 }
 
-                if (m is BaseCreature && DateTime.UtcNow >= ((BaseCreature)m).LoyaltyCheck)
+                if (c.IsDeadPet)
                 {
-                    BaseCreature c = (BaseCreature)m;
-
-                    if (c.IsDeadPet)
-                    {
-                        //Pix: 10/7/04 - if we're stabled dead, then we shouldn't have
-                        // any chance to be abandoned.
-                        if (c.IsAnyStabled)
-                        {
-                            c.OwnerAbandonTime = DateTime.MinValue;
-                        }
-                        else
-                        {
-                            if (OwnerOutOfSight(c))
-                            {
-                                if (c.OwnerAbandonTime == DateTime.MinValue)
-                                    c.OwnerAbandonTime = DateTime.UtcNow;
-                                else if ((c.OwnerAbandonTime + c.BondingAbandonDelay) <= DateTime.UtcNow)
-                                    toRemove.Add(c);
-                            }
-                            else
-                            {
-                                c.OwnerAbandonTime = DateTime.MinValue;
-                            }
-                        }
-                    }
-                    else if (c.Controlled && c.Commandable)
-                    {
-                        c.OwnerAbandonTime = DateTime.MinValue;
-
-                        if (c.HasLoyalty && c.Map != Map.Internal)
-                        {
-                            c.LoyaltyValue -= Utility.RandomMinMax(7, 13); // loyalty redo
-
-                            if (c.LoyaltyValue <= PetLoyalty.Unhappy)
-                            {
-                                c.Say(1043270, c.Name); // * ~1_NAME~ looks around desperately *
-                                c.PlaySound(c.GetIdleSound());
-                            }
-
-                            if (c.LoyaltyValue <= PetLoyalty.None) // loyalty redo
-                                toRelease.Add(c);
-                        }
-                    }
-
-                    c.LoyaltyCheck = DateTime.UtcNow + TimeSpan.FromHours(1.0);
+                    HandleDeadPetLoyalty(c, toRemove);
+                }
+                else if (c.Controlled && c.Commandable)
+                {
+                    HandleControlledPetLoyalty(c, toRelease);
                 }
 
-                if (m is BaseCreature)
-                {
-                    BaseCreature c = (BaseCreature)m;
-
-                    // added lines to check if a wild creature in a house region has to be removed or not
-                    if (DeleteCreatureRules(c))
-                    {
-                        c.RemoveStep++;
-
-                        if (c.RemoveStep >= 20)
-                            toRemove.Add(c);
-                    }
-                    else
-                    {
-                        c.RemoveStep = 0;
-                    }
-                }
+                c.LoyaltyCheck = DateTime.UtcNow + TimeSpan.FromHours(1.0);
             }
 
+            ReleaseDisloyalPets(toRelease);
+            RemoveAbandonedDeadPets(toRemove);
+        }
+
+        private static void HandleDeadPetLoyalty(BaseCreature c, ArrayList toRemove)
+        {
+            // Pix: 10/7/04 - if we're stabled dead, then we shouldn't have
+            // any chance to be abandoned.
+            if (c.IsAnyStabled)
+            {
+                c.OwnerAbandonTime = DateTime.MinValue;
+                return;
+            }
+
+            if (OwnerOutOfSight(c))
+            {
+                if (c.OwnerAbandonTime == DateTime.MinValue)
+                    c.OwnerAbandonTime = DateTime.UtcNow;
+                else if ((c.OwnerAbandonTime + c.BondingAbandonDelay) <= DateTime.UtcNow)
+                    toRemove.Add(c);
+            }
+            else
+            {
+                c.OwnerAbandonTime = DateTime.MinValue;
+            }
+        }
+
+        private static void HandleControlledPetLoyalty(BaseCreature c, ArrayList toRelease)
+        {
+            c.OwnerAbandonTime = DateTime.MinValue;
+
+            if (!c.HasLoyalty || c.Map == Map.Internal)
+                return;
+
+            c.LoyaltyValue -= Utility.RandomMinMax(7, 13); // loyalty redo
+
+            if (c.LoyaltyValue <= PetLoyalty.Unhappy)
+            {
+                c.Say(1043270, c.Name); // * ~1_NAME~ looks around desperately *
+                c.PlaySound(c.GetIdleSound());
+            }
+
+            if (c.LoyaltyValue <= PetLoyalty.None)
+                toRelease.Add(c);
+        }
+
+        private static void ReleaseDisloyalPets(ArrayList toRelease)
+        {
             foreach (BaseCreature c in toRelease)
             {
                 c.Say(1043255, c.Name); // ~1_NAME~ appears to have decided that is better off without a master!
+
                 c.LoyaltyValue = PetLoyalty.WonderfullyHappy;
                 c.IsBonded = false;
                 c.BondingBegin = DateTime.MinValue;
                 c.OwnerAbandonTime = DateTime.MinValue;
                 c.ControlTarget = null;
-                //c.ControlOrder = OrderType.Release;
-                if (c.IOBFollower)
-                {
-                    c.IOBDismiss(true);
-                }
-                else
-                {
-                    c.AIObject.DoOrderRelease(); // this will prevent no release of creatures left alone with AI disabled (and consequent bug of Followers)
-                }
-            }
 
-            // added code to handle removing of wild creatures in house regions
-            foreach (BaseCreature c in toRemove)
-            {
-                c.Delete();
+                c.AIObject.DoOrderRelease(); // prevents no-release when AI is disabled
             }
         }
-        private bool DeleteCreatureRules(BaseCreature bc)
+
+        private static void RemoveAbandonedDeadPets(ArrayList toRemove)
         {
-            // not controlled && can be damaged
-            bool rule0 = !bc.Controlled && bc.CanBeDamaged();
-            // must be INSIDE the house
-            bool rule1 = bc.Region is HouseRegion hr && hr.House != null && hr.House.Contains(bc);
-            // not a township NPC
-            bool rule2 = !TownshipNPCHelper.IsTownshipNPC(bc);
-            // base camp inhabitants may wander in, out and around their house/tent
-            bool rule3 = !NearMyBasecamp(bc);
-            return rule0 && rule1 && rule2 && rule3;
-        }
-
-        private bool NearMyBasecamp(BaseCreature bc)
-        {   // I don't have a base camp
-            if (bc.BaseCamp == null)
-                return false;
-            // I am in or near my base camp
-            if (bc.Region is HouseRegion hr && hr.House != null && hr.House.GetDistanceToSqrt(bc) < 10)
-                return true;
-            // I am likely in someone else's house
-            return false;
+            foreach (BaseCreature c in toRemove)
+                c.Delete();
         }
     }
 }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,7 +41,8 @@ namespace Server.Commands
     {
         public static void Initialize()
         {
-            Server.CommandSystem.Register("ShareBank", AccessLevel.Player, new CommandEventHandler(ShareBank_OnCommand));
+            if (!Core.RuleSets.MortalisStyleRules())
+                Server.CommandSystem.Register("ShareBank", AccessLevel.Player, new CommandEventHandler(ShareBank_OnCommand));
         }
 
         public static void ShareBank_OnCommand(CommandEventArgs e)

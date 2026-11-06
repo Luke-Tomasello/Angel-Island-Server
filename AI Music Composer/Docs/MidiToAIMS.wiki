@@ -1,0 +1,367 @@
+__TOC__
+
+== Overview ==
+'''MidiToAims''' turns a MIDI file into an AIMS composition that you paste into a [[Sheet Music#Composition Book|music composition book]]. It is a workbench for musicians, not a song generator: it does the transcription, and you make the musical decisions. It chooses the melody and accompaniment, fits the music into AIMS's range, and writes every note and pause with exact timing. You decide what to change, then refine the result in the book like any other composition.
+
+MidiToAims also plays your music on your own computer, the way the game will: a whole song before you paste it, or a single [play line while you try ideas.
+
+The finished book follows the usual path: preview it, transcribe it to [[Sheet Music]], and submit it to the [[Music Box]].
+
+You don't need any UO skills. MidiToAims runs on your own computer, and you choose the MIDI files.
+
+== Download ==
+MidiToAims is a single Windows program. Nothing needs to be installed.
+
+* [https://drive.google.com/uc?export=download&id=1T1Cwe1xYW6lYOcVWll764rvyXGrMSQRt Download MidiToAims.zip]
+
+Unzip it wherever you like, for example in Documents. The MidiToAims folder contains:
+* '''MidiToAims.exe''', the program.
+* '''Minuet in A minor.mid''', by J. S. Bach (public domain), to try first.
+* '''README.txt''', a quick start.
+
+Put the MIDI files you want to arrange in the same folder.
+
+The first time you run it, Windows may say "Windows protected your PC". Click '''More info''', then '''Run anyway'''.
+
+== Quick Start ==
+The fastest way: drag a MIDI file onto '''MidiToAims.exe'''. Try it with the minuet. '''Minuet in A minor.rzr''' appears next to the MIDI. That is your composition.
+
+== The m2a> Prompt ==
+Double-click '''MidiToAims.exe'''. It opens a window with an '''m2a>''' prompt, where you type commands:
+
+ m2a> [play preview minuet
+ m2a> [play c e g 0.5 c e g
+
+Press the up arrow to bring back an earlier line, change it, and press Enter to run it again. '''help''' lists the commands, and '''exit''' closes the window.
+
+The commands are the game's own where the game has one, so you don't learn two sets: '''[play c e g''', '''[play tempo 150''', '''[play config''' and '''[play preview''' work here as they do in game. The '''[''' is optional.
+
+Every command also works from a command prompt, with ''MidiToAims'' in front. Open the folder, type '''cmd''' in the address bar and press Enter, then:
+
+ MidiToAims [play preview minuet
+
+=== Naming a Song ===
+You don't have to type a whole file name. Any words from it will do: ''minuet'' finds ''Minuet in A minor'', and ''too sweet'' finds ''Hozier - Too Sweet (piano arrangement)''. Quotes are optional. A song's pieces (see [[#Long Songs: Several Posts|Long Songs]]) count as one song. If several songs match, MidiToAims lists them: type more of the name. A name that matches a song exactly wins.
+
+MidiToAims looks in the folder you're in, and in its own folder. To use another folder, name it: ''songs\minuet''.
+
+== Choosing a MIDI: The Starting Point Is Everything ==
+MidiToAims can only work with what the MIDI gives it. The same song can come out beautifully from one MIDI and muddled from another, so finding a good MIDI is the most important step.
+
+Look for:
+* '''A clear melody''', ideally on a track of its own. MidiToAims picks the melody track; you can choose another in the .m2a.
+* '''A few parts rather than many.''' Solo, piano, duet and small-ensemble arrangements usually convert best. A full orchestra or a complete band has more going on than three plucked instruments can carry.
+* '''A moderate range.''' AIMS has two octaves; parts far above or below them are moved by an octave.
+* '''Standard drums''' (a General MIDI drum track), where the kick, snare and hi-hat carry the beat.
+
+If you can find several MIDIs of the same song, try them all. Preview each and compare the reports: fewer dropped and folded notes usually means a cleaner result.
+
+Don't judge a MIDI only by how it sounds on your computer. Windows plays every part at once, often with long, held sounds, which can sound crowded. In AIMS the same song has at most a few notes at a time, led by the melody, on instruments that fade quickly, so it can sound clearer than the MIDI itself. An octet arrangement of ''Dance Monkey'' had 3,221 notes; MidiToAims kept 2,135 (the melody, the bass and the nearest harmony), and to our ears it sounded better in AIMS than as a MIDI.
+
+== Making It Yours ==
+ m2a> init minuet
+ m2a> minuet
+
+The first command writes '''Minuet in A minor.m2a''', the arrangement settings, next to the MIDI. Open it in Notepad, set '''Arranged by''' to your character's name, and change anything else you like. The second command converts the MIDI using those settings. Edit the .m2a and convert again as often as you like.
+
+== Hear It Before You Paste It ==
+ m2a> [play preview minuet
+
+MidiToAims plays the composition the way the game will, using the harp, lap harp and lute sounds of your own Ultima Online client. It reads the song as the game reads a book: sections, repeats, settings (# Timer:, # Tempo:, # Instrument:), instrument offsets and sound effects all play as they would in game. Lyrics (say lines) appear as they come.
+
+While it plays, a line shows the time in the song and the line of the .rzr that's playing, so when something sounds wrong, you know where to look:
+   1:23.4 / 3:12.5   book1.post2 line 140
+Ctrl+C stops and says where it stopped.
+
+* '''Part of a song:''' ''[play preview minuet --from 0:20 --to 0:35''. --from alone plays to the end; --to alone plays from the start. Times can be 1:10, 1:10.5 or 70 (seconds). The part sounds as it does in the whole song: settings and tempo changes before it still count. When it's done, MidiToAims says the line where it ended.
+* '''A clip of a song:''' add ''-clip'' to a preview with --from / --to, and MidiToAims writes that passage as a song of its own, ''Minuet in A minor.clip1.rzr'' (then clip2 ...), instead of playing it. A clip holds whole phrases (it starts and ends at a wait), the song's own lines, and its settings, so it plays as it does in the song; preview it, paste it, or share it. ''[play preview minuet clip1'' plays it; ''minuet'' alone is still the song.
+* '''Which file plays:''' if the song has a .rzr, that's what plays. It's what you'll paste, with any edits you made in it. If the .mid or the .m2a is newer, MidiToAims says so.
+* '''To convert again first''', after changing the .m2a, add .mid: ''[play preview minuet.mid''. This replaces the .rzr, including any edits you made in it.
+* '''--check''' shows the report, in full, without playing.
+* '''--debug''' (on any command, or ''debug on'' at the prompt) shows everything MidiToAims does, such as the files it found and plays.
+
+Before playing, MidiToAims tells you what the game will do differently from what is written:
+
+* '''Skipped notes.''' The game client won't play the same sound again within about half its length: about 0.2 seconds for the harp and lap harp, 0.15 for the lute. A fast repeated note on one instrument loses some of its repeats. MidiToAims says how many, and you hear them missing, as in game; --check lists the lines where it happens. MidiToAims fixes most of them by moving the repeats to the other harp (the .m2a's '''Repeated notes''').
+* '''Notes cut short''' by the same note starting again (with --check).
+* '''Words the game ignores.''' A word that isn't a note, a pause or a setting stops the game reading the rest of that [play line.
+* '''Sound effects that need music karma''' (see [[#Sound Effects and Percussion|Sound Effects]]).
+* '''Waits that don't fit''' (see [[#Fixing Waits|Fixing Waits]]).
+
+=== Fixing Waits ===
+Each wait line should be exactly as long as the [play lines above it take to play. MidiToAims writes them that way, but when you edit a phrase (add a note, change a pause), its wait no longer fits:
+* '''A wait that's too long''' leaves a silence after the phrase.
+* '''A wait that's too short''' doesn't change the music (the notes play in order), but the lyrics (say lines) come early.
+
+The preview says when a wait doesn't fit, and --check lists them. To fix them all:
+ m2a> waits minuet
+This sets each wait that doesn't fit to the length of its phrase, and changes nothing else. The files as they were are kept as .rzr.bak. To keep a rest after a phrase, end its [play line with a pause (''... c e g 1.0''), not a longer wait.
+
+This is for songs on the Anchored timer (# Timer: Anchored, as MidiToAims writes them), which keeps exact time. The Dynamic timer runs a little slower in game than written, so composers set its waits by ear, and MidiToAims leaves them alone.
+
+=== Finding Your Client ===
+MidiToAims finds your client by itself: through the Angel Island launcher, ClassicUO's settings, or the usual install folders. If it can't, tell it once where the client is, and it remembers:
+
+ m2a> [play preview minuet --uo "C:\...\UO Angel Island"
+
+It needs the client's sound.mul and soundidx.mul. It only reads them.
+
+== Try a Phrase ==
+Type [play just as in the game, and hear it at once:
+
+ m2a> [play c e g 0.5 c e g
+ m2a> [play instrument lute
+ m2a> [play tempo 150
+ m2a> [play timer anchored
+ m2a> [play config
+ m2a> [play reset
+
+As in the game, a setting stays until you change it, so set the instrument or tempo once, then try phrase after phrase. MidiToAims remembers the settings between sessions. '''config''' shows them, and '''reset''' goes back to harp, the Classic timer and tempo 100. A song you preview uses its own # directives, not these settings.
+
+A line plays to its end, or until Ctrl+C, before the prompt comes back. To hear two phrases as one, put them on one line.
+
+[play musickarma, volume, concertmode, chatter, macro and list are game-only. MidiToAims says so if you try them.
+
+== Sound Effects and Percussion ==
+A song can use the game's sound effects: ''+81'' in a [play line plays sound 81. To hear them and find their numbers:
+
+ m2a> sound 81             one sound
+ m2a> sound 300-330        a range, one after another
+ m2a> sound wood           every sound with "wood" in its name
+ m2a> sound percussion     the sounds anyone may use
+
+Add '''--list''' to see the numbers and names without playing them. Each sound listed says whether it is free for everyone or needs 1,000 music karma. In MidiToAims every sound plays, whatever your karma.
+
+In the game, most sound effects need 1,000 [[Music Composition#Music Karma|music karma]]. The 28 percussion sounds are free for everyone: in typed [play, in a book's preview, and in sheet music.
+
+{| class="wikitable"
+! Sound !! Name !! Sound !! Name
+|-
+| +42 || anvil || +563 || blunt01
+|-
+| +51 || dropgem2 || +569 || swish02
+|-
+| +66 || hamer01 || +737 || dropgem1
+|-
+| +73 || lever01 || +835 || feet_wood_a
+|-
+| +81 || switch01 || +836 || feet_wood_b
+|-
+| +295 || feet08a || +931 || hit10
+|-
+| +296 || feet08b || +937 || hit16
+|-
+| +304 || feet14b || +942 || hit20 (b)
+|-
+| +305 || feet15a (hi-hat) || +943 || hit21 (cymbal stand-in)
+|-
+| +309 || hit01 (snare) || +944 || hit22
+|-
+| +310 || hit02 || +946 || hit4
+|-
+| +328 || hit20 (kick) || +1285 || windchimes_01
+|-
+| +1334 || weaponhit_04 || +1336 || weaponmiss_01
+|-
+| +1337 || weaponmiss_02 || +1338 || weaponmiss_03
+|}
+
+See [[Sound List]] for every sound.
+
+== Getting It Into the Game ==
+# Open the .rzr file in Notepad and copy all of the text (Ctrl+A, Ctrl+C).
+# In game, put a blank music composition book in your backpack, single-click it and choose '''Paste'''.
+# Click '''Post Message''', click in the message box, paste (Ctrl+V) and click '''Post'''. The whole composition goes into the book at once, line by line.
+# Preview it with '''[play preview''', or with '''Start''' in the book's context menu. '''Stop''' ends the preview.
+# Edit in the book as you would any composition, and preview again.
+# When you're happy with it, use [[Sheet Music|manuscript paper]] on the book to make sheet music.
+
+The header at the top of the composition (# Song:, # Author:) gives a new book its title and author. See [[Sheet Music#Composition Book|Composition Book]] for more about Paste, and [[Sheet Music#Settings|Settings]] for every # setting.
+
+=== Long Songs: Several Posts ===
+One post takes up to 250 lines, so MidiToAims cuts a long book into pieces:
+
+ Long Song.post1.rzr    post 1 of 2
+ Long Song.post2.rzr    post 2 of 2
+
+Post them into the same book, in order: each one goes in after the last. Pieces always break between phrases. If a post won't fit in the book, nothing is written, and you're told how many pages it needs.
+
+If an older conversion left other .rzr files for the song, MidiToAims tells you. Don't paste those.
+=== Songs Longer Than One Book ===
+A book holds 96 pages. MidiToAims fills at most 95 of them, which leaves room for your own lines: lyrics, extra settings, notes to yourself.
+
+When a song needs more than one book, each book gets its own files:
+
+ Long Song.book1.post1.rzr    book 1, post 1 of 2
+ Long Song.book1.post2.rzr    book 1, post 2 of 2
+ Long Song.book2.rzr          book 2 (one post)
+
+Use a new book for each book number. Each book starts with its place in the song, for example ''# Book: 2/3''. Books always break between phrases. Keep all of a song's books together in your backpack or in one bag. Previewing or transcribing any of them uses the whole song. A song can span up to 9 books, but written out it must fit the game's limit of 64 KB, about four full books (see [[Music Composition#Rules and Limits|Rules and Limits]]). MidiToAims doesn't check this yet, so for a very long song, check the report's size.
+
+=== Sharing the Text ===
+To share an arrangement, share the MIDI and your .m2a: anyone with MidiToAims can make the same books from them. If you want the whole song as one file, set '''Format: whole''' in the .m2a, or add ''--format whole'': MidiToAims writes ''Long Song.rzr'', all of its books one after another, each starting with its ''# Book: n/m'' line.
+
+Don't paste a whole file into the game if it's bigger than one post. MidiToAims says when it is.
+
+== The Arrangement Settings (.m2a) ==
+The .m2a file is plain text, one setting per line. Write your value right after the colon: ''Arranged by: Mira''. A blank value keeps the default.
+
+A # starts a comment when it begins a line, or when it stands on its own with a space on each side (''Notes at once: 2 # fewer''). A # inside a word is kept, so ''Song: Prelude in C# minor'' works.
+
+Each conversion's report lists the settings it used, so you can see at a glance whether a change took effect. The report also warns you if a name has a word that starts with #, or is "say" or "wait", because the book may start a new line there and the shard would cut the name.
+
+{| class="wikitable"
+! Setting !! Default !! Meaning
+|-
+| Song || the MIDI's file name || The song's title.
+|-
+| Composer || (blank) || Who wrote the music. It's recorded in the composition.
+|-
+| Arranged by || MidiToAims || '''You.''' This becomes the book's author, the name the Music Box shows. Set it to your character's name.
+|-
+| Timer || Anchored || The AIMS timer. Anchored keeps every pause exactly on time.
+|-
+| Notes at once || 3 || At most 1 to 6 notes together. The melody comes first, then the bass, then inner notes from the top.
+|-
+| Bars per block || 2 || How many bars go into each phrase block (1 to 8). Each block ends with a wait of exactly its length.
+|-
+| Book pages || 95 || Pages filled per book (1 to 96). The rest is room for your own lines.
+|-
+| Inner notes || highest || Which notes fill the chord after the melody and the bass, when there are more than Notes at once. '''highest''': the ones nearest the melody, for a lighter accompaniment that stays out of the melody's way. '''loudest''': the ones the MIDI plays loudest (its velocity), following the original arrangement's balance. AIMS plays every note at the same volume, so you hear the difference as where the chords sit: in an arrangement whose low parts are the loud ones, '''loudest''' gives fuller, heavier low chords. The report says in how many moments the two would differ.
+|-
+| Repeated notes || alternate || '''alternate''': a note repeated on one instrument faster than the game replays it (about 0.2 seconds; the game skips it) moves to the other harp, so every repeat plays. The report says how many notes moved, and how many the game still skips. '''off''' leaves them, and the game skips them. See [[#Hear It Before You Paste It|Skipped notes]].
+|-
+| Format || post || '''post''': files for the book's Paste (see [[#Getting It Into the Game|Getting It Into the Game]]). '''whole''': the song in one file (see [[#Sharing the Text|Sharing the Text]]).
+|}
+
+=== Tracks ===
+The starter .m2a lists every track in the MIDI with its name, note count and range, and shows what MidiToAims chose for it:
+
+ Track 2:                # Violin; 312 notes, G3 to E6
+   Role: auto            # melody (the highest track)
+   Instrument: auto
+   Octave: auto
+
+{| class="wikitable"
+! Setting !! Choices !! Meaning
+|-
+| Role || auto, melody, harmony, bass, off, or a drum: kick, snare, hi-hat, cymbal, toms || '''melody''' is the line that leads. '''bass''' is preferred as the low note. '''off''' leaves the track out. A '''drum''' role makes the track that drum (see [[#Drums|Drums]]).
+|-
+| Instrument || auto, harp, lapharp, lute || By default the melody is on the lap harp and everything else on the harp.
+|-
+| Octave || auto, or -4 to +4 || Moves the track by whole octaves.
+|}
+
+By default, the track with the highest notes is the melody. A MIDI with only one track uses the top note at each moment as the melody. Drums play as percussion sound effects (see [[#Drums|Drums]]).
+
+=== Drums ===
+A MIDI's drums (MIDI channel 10) play as percussion sound effects: each drum hit is its role's sound, written first in its moment. The percussion sounds are free for everyone: no music karma needed. '''Drums: off''' in the .m2a leaves the drums out.
+
+The kit is Galois's, found in his 76 songs: the sounds he used on the downbeat, the backbeat and in between.
+
+{| class="wikitable"
+! Setting !! Default !! Plays !! Notes
+|-
+| Kick || +328 || bass drum || hit20: Galois's downbeat, in 82% of his groups
+|-
+| Snare || +309 || snare, side stick, clap || hit01: his backbeat
+|-
+| Hi-hat || +305 || closed, pedal and open hi-hat || feet15a: his most frequent sound, every 0.41 s
+|-
+| Cymbal || +943 || crash, ride || hit21: his accent, '''standing in''' until we find a cymbal
+|-
+| Toms || off || toms || '''none yet''': left out until we find one
+|-
+| Drums at once || 1 || || drum sounds at the same moment (the kick or snare wins over the hi-hat); they don't count against Notes at once
+|}
+
+==== Drums Written as Notes ====
+Some MIDIs, especially from notation programs, write a drum as an ordinary track of notes, often all on one pitch: a track named ''BassDrum'' or ''Snare''. MidiToAims would play those as harp notes. Give the track a drum role instead, and it plays as that drum:
+
+ Track 7:                # BassDrum; 287 notes, G4 to E5
+   Role: kick
+
+Every note of the track is then a kick (with '''Drums: off''', the track is left out). The starter .m2a points out tracks whose names say they're drums. (Golden's octet arrangement does this: its bass drum was 287 harp G's; as a kick, it's a beat, and the harmony has more room.)
+
+Any role can be any sound effect: ''Snare: +310'', or ''off'' to leave it out. A sound that isn't percussion needs 1000 music karma to make sheet music, and the report warns you. '''MidiToAims sound percussion''' plays the free ones.
+
+'''We're still looking for a good cymbal and good toms.''' If you find percussion sounds that work, tell Adam.
+
+=== Command-Line Overrides ===
+These options override the .m2a for one conversion:
+
+ MidiToAims "Minuet in A minor.mid" --arranger "Mira" --composer "J. S. Bach" --notes 2
+
+Available options: --song, --composer, --arranger, --notes, --bars, --pages, --format. You can also name the output file: ''MidiToAims "Minuet in A minor.mid" "My Minuet.rzr"''.
+
+== Reading the Report ==
+Each conversion prints a summary:
+
+ Minuet in A minor: 165 notes (165 kept, 0 dropped, 14 folded by octave); melody: track 1; melody octave -1, accompaniment 0; 22 [play lines, 63 s, 1.6 KB; 1 book (12 pages; 1 post)
+ Song: Minuet in A minor; Composer: J. S. Bach; Arranged by: Mira; Timer: Anchored; Notes at once: 3; Bars per block: 2; Book pages: 95
+
+* '''Dropped''' notes didn't fit within Notes at once.
+* '''Pages''' and '''posts''' are per book: a longer song might say ''2 books (93, 40 pages; 2, 1 posts)''.
+* '''Folded''' notes were outside AIMS's two octaves, so MidiToAims moved them by an octave.
+* After the summary, the report lists the bars where notes were dropped or folded, so you know where to listen and where to edit.
+
+== What AIMS Can Play ==
+* Three instruments: harp, lap harp and lute.
+* Two octaves, from low C to high C (25 notes).
+* Up to 9 books per song, but at most 2,000 lines and 64 KB once written out: about four full books (see [[Music Composition#Rules and Limits|Rules and Limits]]).
+* The same note on the same instrument can't sound again within about 0.2 seconds (see [[#Hear It Before You Paste It|Skipped notes]]).
+
+Music written for a full orchestra will be simplified. Pieces with a clear melody and accompaniment, such as dances, folk tunes and keyboard pieces, often sound good straight away. Try lowering Notes at once, turning off busy tracks, or moving a track an octave.
+
+== Command Reference ==
+At the m2a> prompt, type these as shown. At a command prompt, put ''MidiToAims'' in front.
+
+{| class="wikitable"
+! Command !! What it does
+|-
+| ''(drag a .mid onto MidiToAims.exe)'' || Converts it.
+|-
+| ''(double-click MidiToAims.exe)'' || Opens the m2a> prompt.
+|-
+| init ''song'' || Writes the song's .m2a, the arrangement settings.
+|-
+| ''song'' || Converts the song's .mid to .rzr files, using its .m2a.
+|-
+| [play preview ''song'' || Plays the song as the game will. Its .rzr if it has one; ''song''.mid converts again first. Also ''preview song''.
+|-
+| [play ''notes and pauses'' || Plays a [play line, as in the game.
+|-
+| [play instrument / tempo / timer / newtimer / prefetch ''value'' || Changes a setting and remembers it.
+|-
+| [play config || Shows the settings.
+|-
+| [play reset || Back to harp, the Classic timer, tempo 100.
+|-
+| sound ''81, 300-330, a name, or percussion'' || Plays the client's sound effects, with their numbers and names.
+|-
+| waits ''song'' || Fits each wait to its phrase (Anchored timer). See [[#Fixing Waits|Fixing Waits]].
+|-
+| help, exit || At the m2a> prompt: lists the commands, closes the window.
+|-
+| debug on / debug off || At the m2a> prompt: show everything MidiToAims does, or only what matters.
+|}
+
+Options (one dash works too: -from, -to, -clip, -check, -debug, -uo, -list):
+* '''--from, --to''' ''time'': play part of a song (preview).
+* '''--clip''': with --from / --to, write that part as ''song''.clip1.rzr instead of playing it.
+* '''--check''': report in full without playing (preview and [play).
+* '''--debug''': show everything MidiToAims does, for one command.
+* '''--list''': list sounds without playing them (sound).
+* '''--uo "folder"''': where your Ultima Online client is (remembered).
+* '''--song, --composer, --arranger, --notes, --bars, --pages, --format''': override the .m2a for one conversion.
+
+== Credit Where It's Due ==
+Arranging a piece doesn't make you its composer. Put the original composer in '''Composer''' and your own name in '''Arranged by'''. The arrangement is your work, and the composition is theirs.
+
+Use music you have the right to arrange: your own, or music in the public domain. The [https://www.mutopiaproject.org Mutopia Project] has a large library of free, public-domain MIDI files.
+
+== See Also ==
+* [[Music Composition]]
+* [[Sheet Music]]
+* [[Music Box]]
+* [[Sound List]]

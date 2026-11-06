@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -29,6 +29,7 @@
  *	    Added IAxe interface.
  */
 
+using Scripts.Misc;
 using Server.Engines.Harvest;
 using System.Collections;
 
@@ -84,7 +85,16 @@ namespace Server.Items
                 return;
 
             if (IsChildOf(from.Backpack) || Parent == from)
+            {
+                // Ownership check first
+                if (this is Item it && !StartingLootMonitor.CanUse(from, it))
+                {
+                    from.SendMessage("This tool is bound to another soul.");
+                    return;
+                }
+
                 HarvestSystem.BeginHarvesting(from, this);
+            }
             else
                 from.SendLocalizedMessage(1042001); // That must be in your pack for you to use it.
         }
@@ -139,22 +149,6 @@ namespace Server.Items
         public override void OnHit(Mobile attacker, Mobile defender)
         {
             base.OnHit(attacker, defender);
-#if false
-            // see BaseWeapon
-            if (false && DoPub5Move(attacker, defender) && Engines.ConPVP.DuelContext.AllowSpecialAbility(attacker, "Concussion Blow", false))
-            {
-                StatMod mod = defender.GetStatMod("Concussion");
-
-                if (mod == null)
-                {
-                    defender.SendMessage("You receive a concussion blow!");
-                    defender.AddStatMod(new StatMod(StatType.Int, "Concussion", -(defender.RawInt / 2), TimeSpan.FromSeconds(30.0)));
-
-                    attacker.SendMessage("You deliver a concussion blow!");
-                    attacker.PlaySound(0x308);
-                }
-            }
-#endif
         }
     }
 }

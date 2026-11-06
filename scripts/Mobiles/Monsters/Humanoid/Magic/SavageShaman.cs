@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -64,7 +64,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 using Server.Spells;
 using System;
@@ -152,7 +151,7 @@ namespace Server.Mobiles
             return base.IsEnemy(m, filter);
         }
 
-        public override void AggressiveAction(Mobile aggressor, bool criminal, object source = null)
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
         {
             base.AggressiveAction(aggressor, criminal);
 
@@ -160,7 +159,7 @@ namespace Server.Mobiles
             {   // Ai uses HUE value and not the BodyMod as there is no sitting graphic
                 if ((aggressor.BodyMod == 183 || aggressor.BodyMod == 184) || (aggressor.BodyMod == 0 && aggressor.HueMod == 0))
                 {
-                    AOS.Damage(aggressor, 50, 0, 100, 0, 0, 0, this);
+                    AOS.Damage(aggressor, 50, new DamageContext { Source = this });
                     aggressor.BodyMod = 0;
                     aggressor.HueMod = -1;
                     aggressor.FixedParticles(0x36BD, 20, 10, 5044, EffectLayer.Head);
@@ -209,7 +208,7 @@ namespace Server.Mobiles
             {
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    SavageShaman dancer = (SavageShaman)list[i];
+                    SavageShaman? dancer = (SavageShaman?)list[i];
 
                     dancer.Animate(111, 5, 1, true, false, 0); // Get down tonight...
 
@@ -293,7 +292,7 @@ namespace Server.Mobiles
 
                                 m.BoltEffect(0);
 
-                                SpellHelper.Damage(TimeSpan.FromSeconds(0.25), m, this, damage, 0, 0, 0, 0, 100);
+                                SpellHelper.Damage(TimeSpan.FromSeconds(0.25), m, this, damage, new DamageContext { Source = this });
                             }
 
                             break;
@@ -354,68 +353,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020213040553/uo.stratics.com/hunters/savage_shaman.shtml
+            // 20-40 Gold, bone arms, bone legs, deer mask, pouch of reagents (1-5 of each)
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(200, 250);
-                PackReg(10, 15);
-                //PackItem( new Bandage( Utility.RandomMinMax( 1, 15 ) ) );
-
-                if (Utility.RandomDouble() < 0.30)
-                    PackItem(new TribalBerry());
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
-
-                // pack bulk reg
-                PackItem(new Ginseng(Utility.RandomMinMax(10, 20)));
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(20, 40);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020213040553/uo.stratics.com/hunters/savage_shaman.shtml
-                    // 20-40 Gold, bone arms, bone legs, deer mask, pouch of reagents (1-5 of each)
-                    if (Spawning)
-                    {
-                        PackGold(20, 40);
-                    }
-                    else
-                    {
-                        PackItem(typeof(BoneArms), 0.8);
-                        PackItem(typeof(BoneLegs), 0.8);
-                        PackItem(typeof(DeerMask), 0.12);
-                        PackItem(new BagOfReagents(Utility.Random(1, 5)));
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackReg(10, 15);
-                        PackItem(new Bandage(Utility.RandomMinMax(1, 15)));
-
-                        // http://www.uoguide.com/Savage_Empire
-                        // http://uo.stratics.com/secrets/archive/orcsavage.shtml
-                        if (PublishInfo.PublishDate >= Core.EraSAVE)
-                            if (0.1 > Utility.RandomDouble())
-                                PackItem(new TribalBerry());
-                    }
-
-                    AddLoot(LootPack.Average);
-                }
+                PackItem(typeof(BoneArms), 0.8);
+                PackItem(typeof(BoneLegs), 0.8);
+                PackItem(typeof(DeerMask), 0.12);
+                PackItem(new BagOfReagents(Utility.Random(1, 5)));
             }
         }
 

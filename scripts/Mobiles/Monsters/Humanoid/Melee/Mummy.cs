@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,7 +36,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -83,61 +82,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020213040515/uo.stratics.com/hunters/mummy.shtml
+            // 50 to 150 Gold, Potions, Gems, Scrolls (circle 4-7), Garlic, Bandages
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
-                PackPotion();
-                PackScroll(4, 7);
-                PackItem(new Garlic(5));
-                PackItem(new Bandage(10));
-                PackGold(150, 250);
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(50, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020213040515/uo.stratics.com/hunters/mummy.shtml
-                    // 50 to 150 Gold, Potions, Gems, Scrolls (circle 4-7), Garlic, Bandages
-                    if (Spawning)
-                    {
-                        PackGold(50, 150);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackPotion(.2);
-                        PackGem(1, .9);
-                        PackGem(1, .5);
-                        PackScroll(4, 7);
-                        PackScroll(4, 7, .5);
-                        PackItem(new Garlic(5));
-                        PackItem(new Bandage(10));
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackItem(new Garlic(5));
-                        PackItem(new Bandage(10));
-                    }
-
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.Gems);
-                    AddLoot(LootPack.Potions);
-                }
+                PackPotion();
+                PackPotion(.2);
+                PackGem(1, .9);
+                PackGem(1, .5);
+                PackScroll(4, 7);
+                PackScroll(4, 7, .5);
+                PackItem(new Garlic(5));
+                PackItem(new Bandage(10));
             }
         }
 

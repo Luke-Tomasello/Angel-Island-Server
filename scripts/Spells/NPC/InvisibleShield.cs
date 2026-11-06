@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -114,7 +114,7 @@ namespace Server.Spells.Fifth
             public Mobile m_From;
             public Mobile m_Target;
             public DateTime m_EndTime;
-            public Timer m_Timer;
+            public Timer? m_Timer;
 
             public InvisibleShieldInfo(Mobile from, Mobile target, TimeSpan duration)
             {

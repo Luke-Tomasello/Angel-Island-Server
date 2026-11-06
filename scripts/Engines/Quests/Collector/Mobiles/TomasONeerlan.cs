@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -60,7 +60,7 @@ namespace Server.Engines.Quests.Collector
 
         public override bool CanTalkTo(PlayerMobile to)
         {
-            QuestSystem qs = to.Quest as CollectorQuest;
+            QuestSystem? qs = to.Quest as CollectorQuest;
 
             if (qs == null)
                 return false;
@@ -78,7 +78,7 @@ namespace Server.Engines.Quests.Collector
             {
                 Direction = GetDirectionTo(player);
 
-                QuestObjective obj = qs.FindObjective(typeof(FindTomasObjective));
+                QuestObjective? obj = qs.FindObjective(typeof(FindTomasObjective));
 
                 if (obj != null && !obj.Completed)
                 {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -51,7 +51,7 @@ namespace Server.Mobiles
     {
         public override double DispelDifficulty { get { return 125.0; } }
         public override double DispelFocus { get { return 45.0; } }
-        private Mobile m_Target;
+        private Mobile? m_Target;
 
         [Constructable]
         public Genie()
@@ -60,7 +60,7 @@ namespace Server.Mobiles
         }
 
         [Constructable]
-        public Genie(Mobile target)
+        public Genie(Mobile? target)
             : base(AIType.AI_Genie, FightMode.Aggressor, 10, 1, 0.13, 0.25)
         {
             m_Target = target;
@@ -99,7 +99,7 @@ namespace Server.Mobiles
         public override bool AlwaysMurderer { get { return true; } }
         public override bool ShowFameTitle { get { return false; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
 
         public override void InitBody()
         {
@@ -241,12 +241,16 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // AI Special
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
+                PackGold(600, 700);
+            }
+            else
+            {
                 PackMagicEquipment(1, 3, 0.80, 0.80);
                 PackMagicEquipment(1, 3, 0.10, 0.10);
-                PackGold(600, 700);
+
 
                 GenieBottle lamp = new GenieBottle(true);
                 AddItem(lamp);
@@ -254,24 +258,6 @@ namespace Server.Mobiles
                 // Category 3 MID
                 PackMagicItem(1, 2, 0.10);
                 PackMagicItem(1, 2, 0.05);
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-
-
-                }
             }
         }
 

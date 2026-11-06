@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -380,7 +380,7 @@ namespace Server.Misc
 
             // check boat wrap bounds
             Rectangle2D[] wrap = BaseBoat.GetWrapFor(new Point3D(curr, 0), map);
-            if (wrap == null || !Utility.World.AreaContains(wrap, curr))
+            if (wrap == null || !Utility.WorldMap.AreaContains(wrap, curr))
                 return false;
 
             ushort dist = distances[curr.Y, curr.X];
@@ -526,7 +526,7 @@ namespace Server.Misc
 
             foreach (Region region in regions)
             {
-                if (region.IsAngelIslandRules || region.IsDungeonRules)
+                if (region.IsPrisonRules || region.IsDungeonRules)
                     return true;
             }
 
@@ -535,7 +535,7 @@ namespace Server.Misc
 
         private static string GetFilePath(string fileName)
         {
-            return Path.Combine(Core.BaseDirectory, fileName);
+            return Path.Combine(Core.ExeDirectory, fileName);
         }
 
         private static void Log(string format, params object[] args)

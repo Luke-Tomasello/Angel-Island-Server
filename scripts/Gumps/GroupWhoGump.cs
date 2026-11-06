@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -39,9 +39,12 @@ namespace Server.Gumps
     {
         public static void Initialize()
         {
-            Server.CommandSystem.Register("Guild", AccessLevel.Player, new CommandEventHandler(Guild_OnCommand));
-            Server.CommandSystem.Register("Party", AccessLevel.Player, new CommandEventHandler(Party_OnCommand));
-            Server.CommandSystem.Register("Allied", AccessLevel.Player, new CommandEventHandler(Allied_OnCommand));
+            if (!Core.RuleSets.MortalisStyleRules())
+            {
+                Server.CommandSystem.Register("Guild", AccessLevel.Player, new CommandEventHandler(Guild_OnCommand));
+                Server.CommandSystem.Register("Party", AccessLevel.Player, new CommandEventHandler(Party_OnCommand));
+                Server.CommandSystem.Register("Allied", AccessLevel.Player, new CommandEventHandler(Allied_OnCommand));
+            }
         }
 
         public static void Guild_OnCommand(CommandEventArgs e)
@@ -128,7 +131,7 @@ namespace Server.Gumps
             {
             }
 
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
                 if (x == null && y == null)
                     return 0;
@@ -137,8 +140,8 @@ namespace Server.Gumps
                 else if (y == null)
                     return 1;
 
-                Mobile a = x as Mobile;
-                Mobile b = y as Mobile;
+                Mobile? a = x as Mobile;
+                Mobile? b = y as Mobile;
 
                 if (a == null || b == null)
                     throw new ArgumentException();
@@ -174,7 +177,7 @@ namespace Server.Gumps
         {
             if (type == WhoType.Allied)
             {
-                Guild g = owner.Guild as Guild;
+                Guild? g = owner.Guild as Guild;
                 if (g == null || g.Allies == null)
                     return;
 
@@ -195,7 +198,7 @@ namespace Server.Gumps
             }
             else if (type == WhoType.Guild)
             {
-                Guild g = owner.Guild as Guild;
+                Guild? g = owner.Guild as Guild;
                 if (g == null)
                     return;
 
@@ -285,7 +288,7 @@ namespace Server.Gumps
                 x = BorderSize + OffsetSize;
                 y += EntryHeight + OffsetSize;
 
-                Mobile m = (Mobile)m_Mobiles[index];
+                Mobile? m = (Mobile?)m_Mobiles[index];
 
                 AddImageTiled(x, y, EntryWidth, EntryHeight, EntryGumpID);
                 AddLabelCropped(x + TextOffsetX, y, EntryWidth - TextOffsetX, EntryHeight, m.GetHueForNameInList(), m.Deleted ? "(deleted)" : m.Name);
@@ -303,7 +306,7 @@ namespace Server.Gumps
         public override void OnResponse(NetState state, RelayInfo info)
         {
             Mobile from = state.Mobile;
-            PlayerMobile pm = (from as PlayerMobile);
+            PlayerMobile? pm = (from as PlayerMobile);
 
 
             switch (info.ButtonID)
@@ -332,7 +335,7 @@ namespace Server.Gumps
 
                         if (index >= 0 && index < m_Mobiles.Count)
                         {
-                            Mobile m = (Mobile)m_Mobiles[index];
+                            Mobile? m = (Mobile?)m_Mobiles[index];
 
                             if (m.Deleted)
                             {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,7 +28,6 @@
 using Server.Ethics;
 using Server.Gumps;
 using Server.Network;
-using System;
 
 namespace Server.Factions.NewGumps.Ethics
 {
@@ -84,7 +83,7 @@ namespace Server.Factions.NewGumps.Ethics
 
         public static void Update(Player pl)
         {
-            EthicsGump gump = pl.Mobile.FindGump(typeof(EthicsGump)) as EthicsGump;
+            EthicsGump? gump = pl.Mobile.FindGump(typeof(EthicsGump)) as EthicsGump;
 
             if (gump != null && gump.m_Power != pl.Power)
             {

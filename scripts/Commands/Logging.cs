@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -45,12 +45,12 @@ namespace Server.Commands
 {
     public class CommandLogging
     {
-        private static StreamWriter m_Output;
+        private static StreamWriter? m_Output;
         private static bool m_Enabled = true;
 
         public static bool Enabled { get { return m_Enabled; } set { m_Enabled = value; } }
 
-        public static StreamWriter Output { get { return m_Output; } }
+        public static StreamWriter? Output { get { return m_Output; } }
 
         public static void Initialize()
         {
@@ -165,7 +165,7 @@ namespace Server.Commands
                 {
                     m_Output.WriteLine("{0}: {1}: {2}", DateTime.UtcNow, from.NetState != null ? from.NetState.ToString() : "(null)", text);
 
-                    string path = Core.BaseDirectory;
+                    string path = Core.ExeDirectory;
 
                     AppendPath(ref path, "Logs");
                     AppendPath(ref path, "Commands");

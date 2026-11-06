@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -85,7 +85,8 @@ namespace Server.Mobiles
     public class Pirate : BaseCreature
     {
         public override AlignmentType DefaultGuildAlignment { get { return AlignmentType.Pirate; } }
-
+        [CommandProperty(AccessLevel.GameMaster)]
+        public override DefensiveSlayer SlayersDefensive { get; set; } = DefensiveSlayer.Repond;
         private TimeSpan m_SpeechDelay = TimeSpan.FromSeconds(10.0); // time between pirate speech
         protected TimeSpan SpeechDelay { get { return m_SpeechDelay; } }
         private DateTime m_NextSpeechTime;
@@ -120,29 +121,7 @@ namespace Server.Mobiles
             InitClass();
             InitBody();
             InitOutfit();
-
-            //Timer.DelayCall(Pussification);
-
         }
-
-        //private void Pussification()
-        //{
-        //    if (this is PirateChamp || this is RedBeard)
-        //        return;
-
-        //    if (this is PirateWench)
-        //    {
-        //        Utility.MultiplyStats(this, stat_multiplier: 0.5, damage_multiplier: 0.5, skill_multiplier: 0);
-        //    }
-        //    else if (this is PirateDeckHand)
-        //    {
-        //        Utility.MultiplyStats(this, stat_multiplier: 0.5, damage_multiplier: 0.5, skill_multiplier: 0);
-        //    }
-        //    else if (this is Pirate)
-        //    {
-        //        Utility.MultiplyStats(this, stat_multiplier: 0.5, damage_multiplier: 0.5, skill_multiplier: 0);
-        //    }
-        //}
 
         [Constructable]
         public Pirate()
@@ -327,64 +306,46 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AllShards)
+            // custom mob
+            if (Spawning)
             {
-                if (Spawning)
+                int gold = Utility.RandomMinMax(200, 250);
+
+                if (Core.RuleSets.AngelIslandRules() &&
+                    IOBRegions.GetIOBStronghold(this) == IOBAlignment)
                 {
-                    // No at spawn loot
+                    // 30% boost to gold
+                    gold += gold / 3;
                 }
-                else
-                {
-                    PackGem();
-                    PackMagicEquipment(1, 3);
-                    PackGold(200, 250);
 
-                    // Category 2 MID
-                    PackMagicItem(1, 1, 0.05);
-
-                    // TreasureMap
-                    //	5% chance to get a level 3 treasure map
-                    //  removed this tmap drop
-
-                    // Froste: 12% random IOB drop
-                    if (Core.RuleSets.AngelIslandRules())
-                        if (0.12 > Utility.RandomDouble())
-                        {
-                            Item iob = Loot.RandomIOB();
-                            PackItem(iob);
-                        }
-
-                    // pack bulk reg
-                    PackItem(new MandrakeRoot(Utility.RandomMinMax(10, 20)));
-
-                    if (Core.RuleSets.AngelIslandRules())
-                        if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                        {
-                            // 30% boost to gold
-                            PackGold(base.GetGold() / 3);
-                        }
-                }
+                PackGold(gold);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
+                PackGem();
+                PackMagicEquipment(1, 3);
+
+                // Category 2 MID
+                PackMagicItem(1, 1, 0.05);
+
+                // TreasureMap
+                //	5% chance to get a level 3 treasure map
+                //  removed this tmap drop
+
+                // Froste: 12% random IOB drop
+                if (Core.RuleSets.AngelIslandRules())
+                    if (0.12 > Utility.RandomDouble())
                     {
-                        PackGold(0);
+                        Item? iob = Loot.RandomIOB();
+                        PackItem(iob);
                     }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    // ai special
-                }
+
+                // pack bulk reg
+                PackItem(new MandrakeRoot(Utility.RandomMinMax(10, 20)));
             }
         }
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
             Mobile combatant = this.Combatant;
 
@@ -392,22 +353,31 @@ namespace Server.Mobiles
             {
                 if (Utility.RandomBool())
                 {
-
-                    int phrase = Utility.Random(4);
+                    int phrase = Utility.Random(12);
 
                     switch (phrase)
                     {
                         case 0: this.Say(true, "Har! The mackerel wiggles!"); break;
-                        case 1: this.Say(true, "Ye stink like a rotten clam! Bring it on yet!?"); break;
+                        case 1: this.Say(true, "Ye stink like a rotten clam!"); break;
                         case 2: this.Say(true, "Arr, treacherous monkey!"); break;
-                        case 3: this.Say(true, "Ye'll not get my swag!"); break;
+                        case 3: this.Say(true, "Ye'll not get me swag!"); break;
+
+                        case 4: this.Say(true, "I've gutted fiercer cod than ye!"); break;
+                        case 5: this.Say(true, "Ye fight like a bilge rat in a barrel!"); break;
+                        case 6: this.Say(true, "Stand still, ye slippery eel!"); break;
+                        case 7: this.Say(true, "I'll hang yer boots from me mast!"); break;
+
+                        case 8: this.Say(true, "Yer bones'll rattle in me treasure chest!"); break;
+                        case 9: this.Say(true, "Ye swing that blade like a cabin boy!"); break;
+                        case 10: this.Say(true, "Back to the sea with ye!"); break;
+                        case 11: this.Say(true, "I'll salt yer hide and sell it in Ocllo!"); break;
                     }
 
                     m_NextSpeechTime = DateTime.UtcNow + m_SpeechDelay;
                 }
             }
 
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
         }
 
         public override bool OnBeforeDeath()

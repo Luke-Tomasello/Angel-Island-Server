@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -39,7 +39,7 @@ namespace Server.Movement
     {
         Point3D m_StartingLocation;
         Point3D m_Goal;
-        Map m_Map;
+        Map? m_Map;
         bool m_CanFly;
         bool m_CantWalkLand;
         bool m_CanSwim;
@@ -51,7 +51,7 @@ namespace Server.Movement
         bool m_CanMoveOverObstacles;
         bool m_Player;
 #if DEBUG
-        Mobile m_Mobile;
+        Mobile? m_Mobile;
 #endif
 
         public MovementObject(Mobile m, Point3D goal)
@@ -67,7 +67,7 @@ namespace Server.Movement
             //TO_DO: Need to handle township NPCs. They were specifically designed to disallow opeining of doors.
         }
 
-        public MovementObject(Point3D location, Point3D goal, Map map = null, bool canFly = false,
+        public MovementObject(Point3D location, Point3D goal, Map? map = null, bool canFly = false,
             bool cantWalk = false, bool canSwim = false, bool alive = true, int bodyID = 0x190,
             bool isDeadBondedPet = false, bool canOpenDoors = true, bool canMoveOverObstacles = false,
             bool player = true)
@@ -86,13 +86,13 @@ namespace Server.Movement
             m_Player = player;
         }
 #if DEBUG
-        public Mobile Mobile { get { return m_Mobile; } }
+        public Mobile? Mobile { get { return m_Mobile; } }
 #endif
         public Point3D StartingLocation
         { get { return m_StartingLocation; } }
         public Point3D Goal
         { get { return m_Goal; } set { m_Goal = value; } }
-        public Map Map
+        public Map? Map
         { get { return m_Map; } }
         public bool CanFly
         { get { return m_CanFly; } }
@@ -143,9 +143,9 @@ namespace Server.Movement
     }
     public class Movement
     {
-        private static IMovementImpl m_Impl;
+        private static IMovementImpl? m_Impl;
 
-        public static IMovementImpl Impl
+        public static IMovementImpl? Impl
         {
             get { return m_Impl; }
             set { m_Impl = value; }

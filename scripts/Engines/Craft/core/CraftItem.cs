@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,13 @@
 
 /* Scripts/Engines/Craft/Core/CraftItem.cs
  * ChangeLog:
+ *  10/19/2026, Adam (StoreBought provenance)
+ *      ConsumeRes / CompleteCraft: an item crafted from any resource bought from an NPC (Item.StoreBought) is marked
+ *      StoreBought too. Only resources actually consumed count (read from the ItemConsumer.Consume callback): the
+ *      resource group can hold an extra item that is never used. Beverage containers are skipped. Used by
+ *      GenericSellInfo.IsRestrictedShopGoods.
+ *      FamilyID taint (starter loot) is read the same way, from consumed resources only; the first consumed
+ *      resource with a FamilyID still wins. It used to be read from the whole group, unconsumed items included.
  *  4/16/23, Yoar
  *      Added large/small forges as heat sources.
  *  4/2/23, Yoar
@@ -186,11 +193,27 @@ namespace Server.Engines.Craft
         private bool m_NeedOven;
         private bool m_NeedMill;
         private bool m_NeedWater;   // erl: added for special dyes
-
         private bool m_UseSubRes2;
-
         private bool m_ForceNonExceptional;
 
+        private BoatType? m_NeedShipBoatType;
+        public BoatType? NeedShipBoatType
+        {
+            get { return m_NeedShipBoatType; }
+            set { m_NeedShipBoatType = value; }
+        }
+        private ShipAssemblyParts m_NeedShipPart;
+        public ShipAssemblyParts NeedShipPart
+        {
+            get { return m_NeedShipPart; }
+            set { m_NeedShipPart = value; }
+        }
+        private bool m_NeedCompletedShipPlans;
+        public bool NeedCompletedShipPlans
+        {
+            get { return m_NeedCompletedShipPlans; }
+            set { m_NeedCompletedShipPlans = value; }
+        }
         public bool ForceNonExceptional
         {
             get { return m_ForceNonExceptional; }
@@ -220,7 +243,7 @@ namespace Server.Engines.Craft
             AddRes(type, name, amount, message, null);
         }
 
-        public void AddRes(Type type, TextDefinition name, int amount, TextDefinition message, Predicate<Item> predicate)
+        public void AddRes(Type type, TextDefinition name, int amount, TextDefinition message, Predicate<Item>? predicate)
         {
             m_arCraftRes.Add(new CraftRes(type, name, amount, message, predicate));
         }
@@ -332,7 +355,7 @@ namespace Server.Engines.Craft
                 return;
             }
 
-            Item item = null;
+            Item? item = null;
 
             try
             {
@@ -743,12 +766,12 @@ namespace Server.Engines.Craft
             return new Type[] { baseType };
         }
 
-        public bool ConsumeRes(Mobile from, Type typeRes, CraftSystem craftSystem, ref int resHue, ref int maxAmount, ConsumeType consumeType, ref TextDefinition message)
+        public bool ConsumeRes(Mobile from, Type? typeRes, CraftSystem craftSystem, ref int resHue, ref int maxAmount, ConsumeType consumeType, ref TextDefinition message)
         {
             return ConsumeRes(from, typeRes, craftSystem, ref resHue, ref maxAmount, consumeType, ref message, false);
         }
 
-        public bool ConsumeRes(Mobile from, Type typeRes, CraftSystem craftSystem, ref int resHue, ref int maxAmount, ConsumeType consumeType, ref TextDefinition message, bool isFailure)
+        public bool ConsumeRes(Mobile from, Type? typeRes, CraftSystem craftSystem, ref int resHue, ref int maxAmount, ConsumeType consumeType, ref TextDefinition message, bool isFailure)
         {
             Container ourPack = from.Backpack;
 
@@ -779,6 +802,18 @@ namespace Server.Engines.Craft
                 return false;
             }
 
+            if (m_NeedShipPart != ShipAssemblyParts.None && ShipPlans.Find(from, m_NeedShipBoatType, m_NeedShipPart) == null)
+            {
+                message = "You need ship plans that require this component.";
+                return false;
+            }
+
+            if (m_NeedCompletedShipPlans && ShipPlans.FindCompleted(from) == null)
+            {
+                message = "You need completed ship plans.";
+                return false;
+            }
+
             if (craftSystem == Township.DefTownshipCraft.CraftSystem && Township.DefTownshipCraft.RequiresMasonry(this) && (!(from is PlayerMobile) || !((PlayerMobile)from).Masonry))
             {
                 message = 1044633; // You havent learned stonecraft.
@@ -806,7 +841,7 @@ namespace Server.Engines.Craft
                 {
                     baseType = typeRes;
 
-                    CraftSubRes subResource = resCol.SearchFor(baseType);
+                    CraftSubRes? subResource = resCol.SearchFor(baseType);
 
                     if (subResource != null && from.Skills[craftSystem.MainSkill].Base < subResource.RequiredSkill)
                     {
@@ -953,7 +988,7 @@ namespace Server.Engines.Craft
 
                 if (craftSystem is DefTownshipCraft)
                 {
-                    TownshipRegion tsr = TownshipRegion.GetTownshipAt(from);
+                    TownshipRegion? tsr = TownshipRegion.GetTownshipAt(from);
 
                     if (tsr != null && tsr.TStone != null && tsr.TStone.AllowBuilding(from))
                     {
@@ -992,10 +1027,37 @@ namespace Server.Engines.Craft
                         index = i;
                 }
 
+                //if (index == -1)
+                //{
+                //    for (int i = 0; i < types.Length; i++)
+                //        ItemConsumer.Consume(groups[i], amounts[i], OnResourceConsumed);
+                //}
+
+                // Consume the required resource groups for this craft attempt.
+                // While consuming, scan the inputs to determine whether the crafted
+                // item should inherit a FamilyID from any of its source materials.
                 if (index == -1)
                 {
+                    CraftContext? context = craftSystem.GetContext(from);
+                    // Reset per-attempt lineage state (CraftContext persists across crafts)
+                    context.FamilyID = 0;
+                    context.StoreBought = false;
                     for (int i = 0; i < types.Length; i++)
-                        ItemConsumer.Consume(groups[i], amounts[i], OnResourceConsumed);
+                    {
+                        // Perform the actual consumption. Lineage comes only from what is actually consumed
+                        //  (the group can hold more than is used):
+                        //  FamilyID taint: the first consumed resource with a FamilyID wins.
+                        //  Shop goods: a consumed resource bought from an NPC marks the result. Beverage containers only
+                        //  supply their contents (a bought pitcher of water doesn't mark the dough).
+                        ItemConsumer.Consume(groups[i], amounts[i], (item, amount) =>
+                        {
+                            if (amount > 0 && context.FamilyID == 0 && item.FamilyID > 0)
+                                context.FamilyID = item.FamilyID;
+                            if (amount > 0 && item.StoreBought && !(item is BaseBeverage))
+                                context.StoreBought = true;
+                            OnResourceConsumed(item, amount);
+                        });
+                    }
                 }
 #endif
 
@@ -1007,7 +1069,7 @@ namespace Server.Engines.Craft
 
                 if (craftSystem is DefTownshipCraft)
                 {
-                    TownshipRegion tsr = TownshipRegion.GetTownshipAt(from);
+                    TownshipRegion? tsr = TownshipRegion.GetTownshipAt(from);
 
                     if (tsr != null && tsr.TStone != null && tsr.TStone.AllowBuilding(from))
                     {
@@ -1104,7 +1166,7 @@ namespace Server.Engines.Craft
         }
 #endif
 
-        public double GetExceptionalChance(CraftSystem system, double chance, Mobile from, Item tool = null)
+        public double GetExceptionalChance(CraftSystem system, double chance, Mobile from, Item? tool = null)
         {
             if (m_ForceNonExceptional)
                 return 0.0;
@@ -1160,7 +1222,7 @@ namespace Server.Engines.Craft
             return success;
         }
 
-        public double GetSuccessChance(Mobile from, Type typeRes, CraftSystem craftSystem, bool gainSkills, ref bool allRequiredSkills, Item tool = null)
+        public double GetSuccessChance(Mobile from, Type? typeRes, CraftSystem craftSystem, bool gainSkills, ref bool allRequiredSkills, Item? tool = null)
         {
             double minMainSkill = 0.0;
             double maxMainSkill = 0.0;
@@ -1208,7 +1270,7 @@ namespace Server.Engines.Craft
             return chance;
         }
 
-        public double GetSkillValue(Mobile from, CraftSystem craftSystem, Item tool)
+        public double GetSkillValue(Mobile from, CraftSystem craftSystem, Item? tool)
         {
             double value = from.Skills[craftSystem.MainSkill].Value;
 
@@ -1236,7 +1298,7 @@ namespace Server.Engines.Craft
                     {
                         int resHue = 0;
                         int maxAmount = 0;
-                        TextDefinition message = null;
+                        TextDefinition? message = null;
 
                         // just check and see if they have thge resources
                         if (ConsumeRes(from, typeRes, craftSystem, ref resHue, ref maxAmount, ConsumeType.None, ref message))
@@ -1246,7 +1308,7 @@ namespace Server.Engines.Craft
                             // just check and see if they have the attributes
                             if (ConsumeAttributes(from, ref message, false))
                             {
-                                CraftContext context = craftSystem.GetContext(from);
+                                CraftContext? context = craftSystem.GetContext(from);
 
                                 if (context != null)
                                     context.OnMade(this);
@@ -1297,7 +1359,7 @@ namespace Server.Engines.Craft
             }
         }
 
-        public void CompleteCraft(int quality, bool makersMark, Mobile from, CraftSystem craftSystem, Type typeRes, BaseTool tool, CustomCraft customCraft)
+        public void CompleteCraft(int quality, bool makersMark, Mobile from, CraftSystem craftSystem, Type typeRes, BaseTool tool, CustomCraft? customCraft)
         {
             TextDefinition badCraft = craftSystem.CanCraft(from, tool, m_Type);
 
@@ -1317,7 +1379,7 @@ namespace Server.Engines.Craft
             }
 
             int checkResHue = 0, checkMaxAmount = 0;
-            TextDefinition checkMessage = null;
+            TextDefinition? checkMessage = null;
 
             // Do we have enough resource to craft it
             if (!ConsumeRes(from, typeRes, craftSystem, ref checkResHue, ref checkMaxAmount, ConsumeType.None, ref checkMessage, true))
@@ -1361,7 +1423,7 @@ namespace Server.Engines.Craft
                 int resHue = 0;
                 int maxAmount = 0;
 
-                TextDefinition message = null;
+                TextDefinition? message = null;
 
                 ConsumeType ct = ConsumeType.All;
 
@@ -1403,12 +1465,12 @@ namespace Server.Engines.Craft
                 if (toolBroken)
                     tool.Delete();
 
-                TextDefinition notice = null;
+                TextDefinition? notice = null;
 
-                EnchantedScroll enchantedScroll = EnchantedScroll.Find(from, ItemType);
-                Item enchantedItem = null;
+                EnchantedScroll? enchantedScroll = EnchantedScroll.Find(from, ItemType);
+                Item? enchantedItem = null;
 
-                Item item;
+                Item? item;
                 if (customCraft != null)
                 {
                     item = customCraft.CompleteCraft(out notice);
@@ -1469,13 +1531,27 @@ namespace Server.Engines.Craft
                         enchantedItem.Delete();
                     }
 
-                    EventResourceSystem ecs = EventResourceSystem.Find(EventCraftAttribute.Find(craftSystem.GetType()));
+                    EventResourceSystem? ecs = EventResourceSystem.Find(EventCraftAttribute.Find(craftSystem.GetType()));
 
                     if (ecs != null)
                         ecs.OnCraft(from, item);
 
+                    CraftContext? context = craftSystem.GetContext(from);
+
+                    // Apply FamilyID to crafted result if the craft was tainted
+                    if (context != null && context.FamilyID > 0)
+                    {
+                        item.FamilyID = context.FamilyID;
+                    }
+
+                    // Made from shop goods (any consumed resource): see Server.Engines.Economy.ArbitrageTable
+                    if (context != null && context.StoreBought)
+                        item.StoreBought = true;
+
                     if (!craftSystem.GiveItem(from, item))
+                    {
                         from.AddToBackpack(item);
+                    }
                 }
 
                 if (notice == null)
@@ -1495,8 +1571,8 @@ namespace Server.Engines.Craft
                 #region Factions
                 bool queryFactionImbue = false;
                 int availableSilver = 0;
-                FactionItemDefinition def = null;
-                Faction faction = null;
+                FactionItemDefinition? def = null;
+                Faction? faction = null;
 
                 if (item is IFactionItem)
                 {
@@ -1508,7 +1584,7 @@ namespace Server.Engines.Craft
 
                         if (faction != null)
                         {
-                            Town town = Town.FromRegion(from.Region);
+                            Town? town = Town.FromRegion(from.Region);
 
                             if (town != null && town.Owner == faction)
                             {
@@ -1559,7 +1635,7 @@ namespace Server.Engines.Craft
                 int resHue = 0;
                 int maxAmount = 0;
 
-                TextDefinition message = null;
+                TextDefinition? message = null;
 
                 // Do we have enough resource to craft it? If so, consume them
                 if (!ConsumeRes(from, typeRes, craftSystem, ref resHue, ref maxAmount, consumeType, ref message))
@@ -1641,7 +1717,7 @@ namespace Server.Engines.Craft
             {
                 m_iCount++;
 
-                m_From.DisruptiveAction();
+                m_From.DisruptiveAction(null);
 
                 if (m_iCount < m_iCountMax)
                 {
@@ -1674,7 +1750,7 @@ namespace Server.Engines.Craft
 
                     m_CraftItem.CheckSkills(m_From, m_TypeRes, m_CraftSystem, m_Tool, ref quality, ref allRequiredSkills, false);
 
-                    CraftContext context = m_CraftSystem.GetContext(m_From);
+                    CraftContext? context = m_CraftSystem.GetContext(m_From);
 
                     if (context == null)
                         return;
@@ -1698,7 +1774,7 @@ namespace Server.Engines.Craft
                         if (m_CraftItem.CraftArgs != null)
                             Array.Copy(m_CraftItem.CraftArgs, 0, args, 6, m_CraftItem.CraftArgs.Length);
 
-                        CustomCraft cc = null;
+                        CustomCraft? cc = null;
 
                         try { cc = Activator.CreateInstance(m_CraftItem.ItemType, args) as CustomCraft; }
                         catch { }

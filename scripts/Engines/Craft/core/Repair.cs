@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -46,7 +46,7 @@ namespace Server.Engines.Craft
 {
     public class Repair
     {
-        public static bool RepairDeedsEnabled { get { return Core.RuleSets.SiegeStyleRules(); } }
+        public static bool RepairDeedsEnabled { get { return Core.RuleSets.SiegeRules(); } }
 
         public Repair()
         {
@@ -67,8 +67,8 @@ namespace Server.Engines.Craft
         private class InternalTarget : Target
         {
             private CraftSystem m_CraftSystem;
-            private BaseTool m_Tool;
-            private RepairDeed m_Deed;
+            private BaseTool? m_Tool;
+            private RepairDeed? m_Deed;
 
             public InternalTarget(CraftSystem craftSystem, BaseTool tool)
                 : base(2, false, TargetFlags.None)
@@ -463,7 +463,7 @@ namespace Server.Engines.Craft
 
                 if (!usingDeed)
                 {
-                    CraftContext context = m_CraftSystem.GetContext(from);
+                    CraftContext? context = m_CraftSystem.GetContext(from);
                     from.SendGump(new CraftGump(from, m_CraftSystem, m_Tool, number));
                 }
                 else

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,7 +66,7 @@ namespace Server.Mobiles
             Tamable = true;
             ControlSlots = 1;
 
-            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
                 MinTameSkill = 83.1;//Jade: Change to give tamers a ridgeback replacement for training.
             else
                 MinTameSkill = 59.1;
@@ -117,7 +117,7 @@ namespace Server.Mobiles
 
             int version = reader.ReadInt();
 
-            if (version < 1 && MinTameSkill == 83.1 && !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules())
+            if (version < 1 && MinTameSkill == 83.1 && !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules())
                 MinTameSkill = 59.1;
         }
     }

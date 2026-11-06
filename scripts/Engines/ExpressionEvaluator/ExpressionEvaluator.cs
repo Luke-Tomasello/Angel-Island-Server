@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -427,7 +427,7 @@ namespace CodingSeb.ExpressionEvaluator
 
                     Type typeOfList = typeof(List<>).MakeGenericType(type);
 
-                    object list = Activator.CreateInstance(typeOfList);
+                    object? list = Activator.CreateInstance(typeOfList);
 
                     typeOfList.GetMethod("AddRange").Invoke(list, new object[]{ typedArray });
 
@@ -510,7 +510,7 @@ namespace CodingSeb.ExpressionEvaluator
         #region Assemblies, Namespaces and types lists
 
         private static IList<Assembly> staticAssemblies;
-        private IList<Assembly> assemblies;
+        private IList<Assembly>? assemblies;
 
         /// <summary>
         /// All assemblies needed to resolves Types<para/>
@@ -952,52 +952,52 @@ namespace CodingSeb.ExpressionEvaluator
         /// Is fired just before an expression is evaluate.<para/>
         /// Allow to redefine the expression to evaluate or to force a result value.
         /// </summary>
-        public event EventHandler<ExpressionEvaluationEventArg> ExpressionEvaluating;
+        public event EventHandler<ExpressionEvaluationEventArg>? ExpressionEvaluating;
 
         /// <summary>
         /// Is fired just before to return the expression evaluation.<para/>
         /// Allow to modify on the fly the result of the evaluation.
         /// </summary>
-        public event EventHandler<ExpressionEvaluationEventArg> ExpressionEvaluated;
+        public event EventHandler<ExpressionEvaluationEventArg>? ExpressionEvaluated;
 
         /// <summary>
         /// Is fired before a variable, field or property resolution.<para/>
         /// Allow to define a variable and the corresponding value on the fly.<para/>
         /// Allow also to cancel the evaluation of this variable (consider it does'nt exists)
         /// </summary>
-        public event EventHandler<VariablePreEvaluationEventArg> PreEvaluateVariable;
+        public event EventHandler<VariablePreEvaluationEventArg>? PreEvaluateVariable;
 
         /// <summary>
         /// Is fired before a function or method resolution.<para/>
         /// Allow to define a function or method and the corresponding value on the fly.<para/>
         /// Allow also to cancel the evaluation of this function (consider it does'nt exists)
         /// </summary>
-        public event EventHandler<FunctionPreEvaluationEventArg> PreEvaluateFunction;
+        public event EventHandler<FunctionPreEvaluationEventArg>? PreEvaluateFunction;
 
         /// <summary>
         /// Is fired before a indexing resolution.<para/>
         /// Allow to define an indexing and the corresponding value on the fly.<para/>
         /// Allow also to cancel the evaluation of this indexing (consider it does'nt exists)
         /// </summary>
-        public event EventHandler<IndexingPreEvaluationEventArg> PreEvaluateIndexing;
+        public event EventHandler<IndexingPreEvaluationEventArg>? PreEvaluateIndexing;
 
         /// <summary>
         /// Is fired if no variable, field or property were found.<para/>
         /// Allow to define a variable and the corresponding value on the fly.
         /// </summary>
-        public event EventHandler<VariableEvaluationEventArg> EvaluateVariable;
+        public event EventHandler<VariableEvaluationEventArg>? EvaluateVariable;
 
         /// <summary>
         /// Is fired if no function or method were found.<para/>
         /// Allow to define a function or method and the corresponding value on the fly.
         /// </summary>
-        public event EventHandler<FunctionEvaluationEventArg> EvaluateFunction;
+        public event EventHandler<FunctionEvaluationEventArg>? EvaluateFunction;
 
         /// <summary>
         /// Is fired when a parameter is not of the correct type for the function.<para/>
         /// Allow to define a custom parameter cast to make the function call work on the fly.
         /// </summary>
-        public event EventHandler<ParameterCastEvaluationEventArg> EvaluateParameterCast;
+        public event EventHandler<ParameterCastEvaluationEventArg>? EvaluateParameterCast;
 
         #endregion
 
@@ -1111,7 +1111,7 @@ namespace CodingSeb.ExpressionEvaluator
                 bool isBreak = false;
                 bool isContinue = false;
 
-                object result = ScriptEvaluate(script, ref isReturn, ref isBreak, ref isContinue);
+                object? result = ScriptEvaluate(script, ref isReturn, ref isBreak, ref isContinue);
 
                 if (isBreak)
                     throw new ExpressionEvaluatorSyntaxErrorException("[break] keyword executed outside a loop");
@@ -1126,9 +1126,9 @@ namespace CodingSeb.ExpressionEvaluator
             }
         }
 
-        protected virtual object ScriptEvaluate(string script, ref bool valueReturned, ref bool breakCalled, ref bool continueCalled)
+        protected virtual object? ScriptEvaluate(string script, ref bool valueReturned, ref bool breakCalled, ref bool continueCalled)
         {
-            object lastResult = null;
+            object? lastResult = null;
             bool isReturn = valueReturned;
             bool isBreak = breakCalled;
             bool isContinue = continueCalled;
@@ -1226,7 +1226,7 @@ namespace CodingSeb.ExpressionEvaluator
             {
                 if (ifElseStatementsList.Count > 0)
                 {
-                    string ifScript = ifElseStatementsList.Find(statement => (bool)ManageJumpStatementsOrExpressionEval(statement[0]))?[1];
+                    string? ifScript = ifElseStatementsList.Find(statement => (bool)ManageJumpStatementsOrExpressionEval(statement[0]))?[1];
 
                     if (!string.IsNullOrEmpty(ifScript))
                         lastResult = ScriptEvaluate(ifScript, ref isReturn, ref isBreak, ref isContinue);
@@ -1303,8 +1303,8 @@ namespace CodingSeb.ExpressionEvaluator
 
             while (!isReturn && !isBreak && !isContinue && i < script.Length)
             {
-                Match blockKeywordsBeginingMatch = null;
-                Match blockKeywordsWithoutParenthesesBeginningMatch = null;
+                Match? blockKeywordsBeginingMatch = null;
+                Match? blockKeywordsWithoutParenthesesBeginningMatch = null;
 
                 if (script.Substring(startOfExpression, i - startOfExpression).Trim().Equals(string.Empty)
                     && ((blockKeywordsBeginingMatch = blockKeywordsBeginningRegex.Match(script.Substring(i))).Success
@@ -1312,7 +1312,7 @@ namespace CodingSeb.ExpressionEvaluator
                 {
                     i += blockKeywordsBeginingMatch.Success ? blockKeywordsBeginingMatch.Length : blockKeywordsWithoutParenthesesBeginningMatch.Length;
                     string keyword = blockKeywordsBeginingMatch.Success ? blockKeywordsBeginingMatch.Groups["keyword"].Value.Replace(" ", "").Replace("\t", "") : (blockKeywordsWithoutParenthesesBeginningMatch?.Groups["keyword"].Value ?? string.Empty);
-                    List<string> keywordAttributes = blockKeywordsBeginingMatch.Success ? GetExpressionsBetweenParenthesesOrOtherImbricableBrackets(script, ref i, true, ";") : null;
+                    List<string>? keywordAttributes = blockKeywordsBeginingMatch.Success ? GetExpressionsBetweenParenthesesOrOtherImbricableBrackets(script, ref i, true, ";") : null;
 
                     if (blockKeywordsBeginingMatch.Success)
                         i++;
@@ -1428,7 +1428,7 @@ namespace CodingSeb.ExpressionEvaluator
 
                                 i++;
 
-                                Match nextIsEndOfExpressionMatch = null;
+                                Match? nextIsEndOfExpressionMatch = null;
 
                                 if ((nextIsEndOfExpressionMatch = nextIsEndOfExpressionRegex.Match(script.Substring(i))).Success)
                                 {
@@ -1600,7 +1600,7 @@ namespace CodingSeb.ExpressionEvaluator
             return (T)Evaluate(expression);
         }
 
-        private IList<ParsingMethodDelegate> parsingMethods;
+        private IList<ParsingMethodDelegate>? parsingMethods;
 
         protected virtual IList<ParsingMethodDelegate> ParsingMethods => parsingMethods ?? (parsingMethods = new List<ParsingMethodDelegate>()
         {
@@ -1762,7 +1762,7 @@ namespace CodingSeb.ExpressionEvaluator
                     string type = numberMatch.Groups["type"].Value;
                     string numberNoType = numberMatch.Value.Replace(type, string.Empty).Replace("_", "");
 
-                    if (numberSuffixToParse.TryGetValue(type, out Func<string, CultureInfo, object> parseFunc))
+                    if (numberSuffixToParse.TryGetValue(type, out Func<string, CultureInfo, object>? parseFunc))
                     {
                         stack.Push(parseFunc(numberNoType, CultureInfoForNumberParsing));
                     }
@@ -1841,13 +1841,13 @@ namespace CodingSeb.ExpressionEvaluator
                     if (type == null || (typeIndex > 0 && typeIndex < completeName.Length))
                         throw new ExpressionEvaluatorSyntaxErrorException($"Type or class {completeName}{genericTypes} is unknown");
 
-                    void Init(object element, List<string> initArgs)
+                    void Init(object? element, List<string> initArgs)
                     {
                         if (typeof(IEnumerable).IsAssignableFrom(type)
                             && !typeof(IDictionary).IsAssignableFrom(type)
                             && !typeof(ExpandoObject).IsAssignableFrom(type))
                         {
-                            MethodInfo methodInfo = type.GetMethod("Add", BindingFlags.Public | BindingFlags.Instance);
+                            MethodInfo? methodInfo = type.GetMethod("Add", BindingFlags.Public | BindingFlags.Instance);
 
                             initArgs.ForEach(subExpr => methodInfo.Invoke(element, new object[] { Evaluate(subExpr) }));
                         }
@@ -1886,7 +1886,7 @@ namespace CodingSeb.ExpressionEvaluator
 
                         List<object> cArgs = constructorArgs.ConvertAll(Evaluate);
 
-                        object element = Activator.CreateInstance(type, cArgs.ToArray());
+                        object? element = Activator.CreateInstance(type, cArgs.ToArray());
 
                         Match blockBeginningMatch = blockBeginningRegex.Match(expression.Substring(i));
 
@@ -1907,7 +1907,7 @@ namespace CodingSeb.ExpressionEvaluator
                     }
                     else if (instanceCreationMatch.Groups["isInit"].Success)
                     {
-                        object element = Activator.CreateInstance(type, new object[0]);
+                        object? element = Activator.CreateInstance(type, new object[0]);
 
                         List<string> initArgs = GetExpressionsBetweenParenthesesOrOtherImbricableBrackets(expression, ref i, true, OptionInitializersSeparator, "{", "}");
 
@@ -1919,7 +1919,7 @@ namespace CodingSeb.ExpressionEvaluator
                     {
                         List<string> arrayArgs = GetExpressionsBetweenParenthesesOrOtherImbricableBrackets(expression, ref i, true, OptionInitializersSeparator, "[", "]");
                         i++;
-                        Array array = null;
+                        Array? array = null;
 
                         if (arrayArgs.Count > 0)
                         {
@@ -1993,9 +1993,9 @@ namespace CodingSeb.ExpressionEvaluator
 
                         object obj = inObject ? stack.Pop() : Context;
                         object keepObj = obj;
-                        Type objType = null;
-                        Type[] inferedGenericsTypes = obj?.GetType().GenericTypeArguments;
-                        ValueTypeNestingTrace valueTypeNestingTrace = null;
+                        Type? objType = null;
+                        Type[]? inferedGenericsTypes = obj?.GetType().GenericTypeArguments;
+                        ValueTypeNestingTrace? valueTypeNestingTrace = null;
 
                         if (obj != null && TypesToBlock.Contains(obj.GetType()))
                             throw new ExpressionEvaluatorSecurityException($"{obj.GetType().FullName} type is blocked");
@@ -2112,7 +2112,7 @@ namespace CodingSeb.ExpressionEvaluator
                                             oArgs.Insert(0, obj);
                                             objType = obj.GetType();
 
-                                            object extentionObj = null;
+                                            object? extentionObj = null;
                                             for (int e = 0; e < StaticTypesForExtensionsMethods.Count && methodInfo == null; e++)
                                             {
                                                 Type type = StaticTypesForExtensionsMethods[e];
@@ -2221,7 +2221,7 @@ namespace CodingSeb.ExpressionEvaluator
                         {
                             stack.Push(funcResult);
                         }
-                        else if (Variables.TryGetValue(varFuncName, out object o) && o is InternalDelegate lambdaExpression)
+                        else if (Variables.TryGetValue(varFuncName, out object? o) && o is InternalDelegate lambdaExpression)
                         {
                             stack.Push(lambdaExpression.Invoke(funcArgs.ConvertAll(Evaluate).ToArray()));
                         }
@@ -2232,8 +2232,8 @@ namespace CodingSeb.ExpressionEvaluator
                         else if (Variables.TryGetValue(varFuncName, out o) && o is MethodsGroupEncaps methodsGroupEncaps)
                         {
                             List<object> args = funcArgs.ConvertAll(Evaluate);
-                            List<object> modifiedArgs = null;
-                            MethodInfo methodInfo = null;
+                            List<object>? modifiedArgs = null;
+                            MethodInfo? methodInfo = null;
 
                             for (int m = 0; methodInfo == null && m < methodsGroupEncaps.MethodsGroup.Length; m++)
                             {
@@ -2277,8 +2277,8 @@ namespace CodingSeb.ExpressionEvaluator
 
                         object obj = inObject ? stack.Pop() : Context;
                         object keepObj = obj;
-                        Type objType = null;
-                        ValueTypeNestingTrace valueTypeNestingTrace = null;
+                        Type? objType = null;
+                        ValueTypeNestingTrace? valueTypeNestingTrace = null;
 
                         if (obj != null && TypesToBlock.Contains(obj.GetType()))
                             throw new ExpressionEvaluatorSecurityException($"{obj.GetType().FullName} type is blocked");
@@ -2326,9 +2326,9 @@ namespace CodingSeb.ExpressionEvaluator
                                         throw new ExpressionEvaluatorSyntaxErrorException($"[{objType}] object has no public Property or Field named \"{varFuncName}\".");
 
                                     bool isDynamic = (flag & BindingFlags.Instance) != 0 && obj is IDynamicMetaObjectProvider && obj is IDictionary<string, object>;
-                                    IDictionary<string, object> dictionaryObject = obj as IDictionary<string, object>;
+                                    IDictionary<string, object>? dictionaryObject = obj as IDictionary<string, object>;
 
-                                    MemberInfo member = isDynamic ? null : objType?.GetProperty(varFuncName, flag);
+                                    MemberInfo? member = isDynamic ? null : objType?.GetProperty(varFuncName, flag);
                                     dynamic varValue = null;
                                     bool assign = true;
 
@@ -2469,11 +2469,11 @@ namespace CodingSeb.ExpressionEvaluator
                         {
                             stack.Push(variablePreEvaluationEventArg.Value);
                         }
-                        else if (defaultVariables.TryGetValue(varFuncName, out object varValueToPush))
+                        else if (defaultVariables.TryGetValue(varFuncName, out object? varValueToPush))
                         {
                             stack.Push(varValueToPush);
                         }
-                        else if ((Variables.TryGetValue(varFuncName, out object cusVarValueToPush)
+                        else if ((Variables.TryGetValue(varFuncName, out object? cusVarValueToPush)
                                 || varFuncMatch.Groups["assignationOperator"].Success
                                 || (stack.Count == 1 && stack.Peek() is ClassOrEnumType && string.IsNullOrWhiteSpace(expression.Substring(i))))
                             && (cusVarValueToPush == null || !TypesToBlock.Contains(cusVarValueToPush.GetType())))
@@ -2837,7 +2837,7 @@ namespace CodingSeb.ExpressionEvaluator
                 {
                     List<string> expressionsInParenthis = GetExpressionsBetweenParenthesesOrOtherImbricableBrackets(expression, ref i, true);
 
-                    InternalDelegate lambdaDelegate = stack.Pop() as InternalDelegate;
+                    InternalDelegate? lambdaDelegate = stack.Pop() as InternalDelegate;
 
                     stack.Push(lambdaDelegate(expressionsInParenthis.ConvertAll(Evaluate).ToArray()));
                 }
@@ -2913,14 +2913,14 @@ namespace CodingSeb.ExpressionEvaluator
                 }
                 else
                 {
-                    Match assignationOrPostFixOperatorMatch = null;
+                    Match? assignationOrPostFixOperatorMatch = null;
                     dynamic valueToPush = null;
                     List<dynamic> oIndexingArgs = indexingArgs.ConvertAll(Evaluate);
-                    PropertyInfo[] itemProperties = null;
+                    PropertyInfo[]? itemProperties = null;
 
                     if (!(left is IDictionary<string, object>))
                     {
-                        Type type = ((object)left).GetType();
+                        Type? type = ((object)left).GetType();
 
                         if (type.IsArray && OptionForceIntegerNumbersEvaluationsAsDoubleByDefault)
                         {
@@ -3151,7 +3151,7 @@ namespace CodingSeb.ExpressionEvaluator
                     {
                         i++;
 
-                        if (stringEscapedCharDict.TryGetValue(expression.Substring(i, expression.Length - i)[0], out string escapedString))
+                        if (stringEscapedCharDict.TryGetValue(expression.Substring(i, expression.Length - i)[0], out string? escapedString))
                         {
                             resultString.Append(escapedString);
                             i++;
@@ -3378,9 +3378,9 @@ namespace CodingSeb.ExpressionEvaluator
 
         protected delegate bool ParsingMethodDelegate(string expression, Stack<object> stack, ref int i);
 
-        protected delegate dynamic InternalDelegate(params dynamic[] args);
+        protected delegate dynamic InternalDelegate(params dynamic?[] args);
 
-        protected virtual object ManageKindOfAssignation(string expression, ref int index, Match match, Func<object> getCurrentValue, Stack<object> stack = null)
+        protected virtual object ManageKindOfAssignation(string expression, ref int index, Match match, Func<object> getCurrentValue, Stack<object>? stack = null)
         {
             if (stack?.Count > 1)
                 throw new ExpressionEvaluatorSyntaxErrorException("The left part of an assignation must be a variable, a property or an indexer.");
@@ -3424,7 +3424,7 @@ namespace CodingSeb.ExpressionEvaluator
                     throw new ExpressionEvaluatorSyntaxErrorException($"Can not cast null to {stronglyTypedVariable.Type} because it's not a nullable valueType");
                 }
 
-                Type typeToAssign = value?.GetType();
+                Type? typeToAssign = value?.GetType();
                 if (typeToAssign == null || stronglyTypedVariable.Type.IsAssignableFrom(typeToAssign))
                 {
                     stronglyTypedVariable.Value = value;
@@ -3476,7 +3476,7 @@ namespace CodingSeb.ExpressionEvaluator
 
                     string lambdaBody = lambdaExpressionMatch.Groups["expression"].Value.Trim();
 
-                    object result = null;
+                    object? result = null;
 
                     if ((OptionCanDeclareMultiExpressionsLambdaInSimpleExpressionEvaluate || inScriptAtDeclaration)
                         && lambdaBody.StartsWith("{") && lambdaBody.EndsWith("}"))
@@ -3503,7 +3503,7 @@ namespace CodingSeb.ExpressionEvaluator
 
         protected virtual MethodInfo GetRealMethod(ref Type type, ref object obj, string func, BindingFlags flag, List<object> args, string genericsTypes, Type[] inferedGenericsTypes, List<ArgKeywordsEncaps> argsWithKeywords, bool testForExtention = false)
         {
-            MethodInfo methodInfo = null;
+            MethodInfo? methodInfo = null;
             List<object> modifiedArgs = new List<object>(args);
             Type typeCopy = type;
 
@@ -3602,9 +3602,9 @@ namespace CodingSeb.ExpressionEvaluator
                 || (implicitCastDict.ContainsKey(fromType) && implicitCastDict[fromType].Contains(toType));
         }
 
-        protected virtual MethodInfo TryToCastMethodParametersToMakeItCallable(MethodInfo methodInfoToCast, List<object> modifiedArgs, string genericsTypes, Type[] inferedGenericsTypes, object onInstance = null)
+        protected virtual MethodInfo TryToCastMethodParametersToMakeItCallable(MethodInfo methodInfoToCast, List<object> modifiedArgs, string genericsTypes, Type[] inferedGenericsTypes, object? onInstance = null)
         {
-            MethodInfo methodInfo = null;
+            MethodInfo? methodInfo = null;
 
             MethodInfo oldMethodInfo = methodInfoToCast;
 
@@ -3648,8 +3648,8 @@ namespace CodingSeb.ExpressionEvaluator
                                 {
                                     if (paramsForInference.ParameterType.Name.StartsWith("Converter"))
                                     {
-                                        Type specificType = Array.Find(paramsForInference.ParameterType.GetGenericArguments(), pType => pType.Name.Equals(name));
-                                        MethodInfo paraMethodInfo = Array.Find(methodsGroupEncaps.MethodsGroup, mi => mi.GetParameters().Length == 1);
+                                        Type? specificType = Array.Find(paramsForInference.ParameterType.GetGenericArguments(), pType => pType.Name.Equals(name));
+                                        MethodInfo? paraMethodInfo = Array.Find(methodsGroupEncaps.MethodsGroup, mi => mi.GetParameters().Length == 1);
                                         if (specificType?.GenericParameterPosition == 0)
                                         {
                                             inferedTypes.Add(paraMethodInfo.GetParameters()[0].ParameterType);
@@ -3661,8 +3661,8 @@ namespace CodingSeb.ExpressionEvaluator
                                     }
                                     else if (paramsForInference.ParameterType.Name.StartsWith("Action"))
                                     {
-                                        Type specificType = Array.Find(paramsForInference.ParameterType.GetGenericArguments(), pType => pType.Name.Equals(name));
-                                        MethodInfo paraMethodInfo = Array.Find(methodsGroupEncaps.MethodsGroup, mi => mi.GetParameters().Length == paramsForInference.ParameterType.GetGenericArguments().Length);
+                                        Type? specificType = Array.Find(paramsForInference.ParameterType.GetGenericArguments(), pType => pType.Name.Equals(name));
+                                        MethodInfo? paraMethodInfo = Array.Find(methodsGroupEncaps.MethodsGroup, mi => mi.GetParameters().Length == paramsForInference.ParameterType.GetGenericArguments().Length);
                                         if (specificType != null)
                                         {
                                             inferedTypes.Add(paraMethodInfo.GetParameters()[specificType.GenericParameterPosition].ParameterType);
@@ -3670,8 +3670,8 @@ namespace CodingSeb.ExpressionEvaluator
                                     }
                                     else if (paramsForInference.ParameterType.Name.StartsWith("Func"))
                                     {
-                                        Type specificType = Array.Find(paramsForInference.ParameterType.GetGenericArguments(), pType => pType.Name.Equals(name));
-                                        MethodInfo paraMethodInfo = Array.Find(methodsGroupEncaps.MethodsGroup, mi => mi.GetParameters().Length == paramsForInference.ParameterType.GetGenericArguments().Length - 1);
+                                        Type? specificType = Array.Find(paramsForInference.ParameterType.GetGenericArguments(), pType => pType.Name.Equals(name));
+                                        MethodInfo? paraMethodInfo = Array.Find(methodsGroupEncaps.MethodsGroup, mi => mi.GetParameters().Length == paramsForInference.ParameterType.GetGenericArguments().Length - 1);
                                         if (specificType?.GenericParameterPosition == paraMethodInfo.GetParameters().Length)
                                         {
                                             inferedTypes.Add(paraMethodInfo.ReturnType);
@@ -3757,12 +3757,12 @@ namespace CodingSeb.ExpressionEvaluator
                 else if (typeof(Delegate).IsAssignableFrom(parameterType)
                     && modifiedArgs[a] is MethodsGroupEncaps methodsGroupEncaps)
                 {
-                    MethodInfo invokeMethod = parameterType.GetMethod("Invoke");
-                    MethodInfo methodForDelegate = Array.Find(methodsGroupEncaps.MethodsGroup, m => invokeMethod.GetParameters().Length == m.GetParameters().Length && invokeMethod.ReturnType.IsAssignableFrom(m.ReturnType));
+                    MethodInfo? invokeMethod = parameterType.GetMethod("Invoke");
+                    MethodInfo? methodForDelegate = Array.Find(methodsGroupEncaps.MethodsGroup, m => invokeMethod.GetParameters().Length == m.GetParameters().Length && invokeMethod.ReturnType.IsAssignableFrom(m.ReturnType));
                     if (methodForDelegate != null)
                     {
                         Type[] parametersTypes = methodForDelegate.GetParameters().Select(p => p.ParameterType).ToArray();
-                        Type delegateType;
+                        Type? delegateType;
 
                         if (methodForDelegate.ReturnType == typeof(void))
                         {
@@ -4082,15 +4082,15 @@ namespace CodingSeb.ExpressionEvaluator
         {
             bool functionExists = true;
 
-            if (simpleDoubleMathFuncsDictionary.TryGetValue(name, out Func<double, double> func))
+            if (simpleDoubleMathFuncsDictionary.TryGetValue(name, out Func<double, double>? func))
             {
                 result = func(Convert.ToDouble(Evaluate(args[0])));
             }
-            else if (doubleDoubleMathFuncsDictionary.TryGetValue(name, out Func<double, double, double> func2))
+            else if (doubleDoubleMathFuncsDictionary.TryGetValue(name, out Func<double, double, double>? func2))
             {
                 result = func2(Convert.ToDouble(Evaluate(args[0])), Convert.ToDouble(Evaluate(args[1])));
             }
-            else if (complexStandardFuncsDictionary.TryGetValue(name, out Func<ExpressionEvaluator, List<string>, object> complexFunc))
+            else if (complexStandardFuncsDictionary.TryGetValue(name, out Func<ExpressionEvaluator, List<string>, object>? complexFunc))
             {
                 result = complexFunc(this, args);
             }
@@ -4115,7 +4115,7 @@ namespace CodingSeb.ExpressionEvaluator
 
         protected virtual Type GetTypeByFriendlyName(string typeName, string genericTypes = "", bool throwExceptionIfNotFound = false)
         {
-            Type result = null;
+            Type? result = null;
             string formatedGenericTypes = string.Empty;
             bool isCached = false;
             try
@@ -4185,7 +4185,7 @@ namespace CodingSeb.ExpressionEvaluator
             return result;
         }
 
-        protected static object ChangeType(object value, Type conversionType)
+        protected static object? ChangeType(object value, Type conversionType)
         {
             if (conversionType == null)
             {
@@ -4331,7 +4331,7 @@ namespace CodingSeb.ExpressionEvaluator
 
         protected class ValueTypeNestingTrace
         {
-            public object Container { get; set; }
+            public object? Container { get; set; }
 
             public MemberInfo Member { get; set; }
 
@@ -4659,7 +4659,7 @@ namespace CodingSeb.ExpressionEvaluator
         public static readonly ExpressionOperator NullCoalescing = new ExpressionOperator();
         public static readonly ExpressionOperator Cast = new ExpressionOperator();
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is ExpressionOperator otherOperator)
                 return Equals(otherOperator);
@@ -4672,7 +4672,7 @@ namespace CodingSeb.ExpressionEvaluator
             return OperatorValue.GetHashCode();
         }
 
-        public bool Equals(ExpressionOperator otherOperator)
+        public bool Equals(ExpressionOperator? otherOperator)
         {
             return otherOperator != null && OperatorValue == otherOperator.OperatorValue;
         }
@@ -4849,7 +4849,7 @@ namespace CodingSeb.ExpressionEvaluator
     /// </summary>
     public partial class VariableEvaluationEventArg : EventArgs
     {
-        private readonly Func<string, Type[]> evaluateGenericTypes;
+        private readonly Func<string, Type[]>? evaluateGenericTypes;
         private readonly string genericTypes;
 
         /// <summary>
@@ -4860,7 +4860,7 @@ namespace CodingSeb.ExpressionEvaluator
         /// <param name="onInstance">The object instance on which to evaluate the field or property (will be <see cref="This"/>)</param>
         /// <param name="genericTypes">The generics types specified when at property access</param>
         /// <param name="evaluateGenericTypes">A func to evaluate the list of specific types given between &lt; and &gt;</param>
-        public VariableEvaluationEventArg(string name, ExpressionEvaluator evaluator = null, object onInstance = null, string genericTypes = null, Func<string, Type[]> evaluateGenericTypes = null)
+        public VariableEvaluationEventArg(string name, ExpressionEvaluator? evaluator = null, object? onInstance = null, string? genericTypes = null, Func<string, Type[]>? evaluateGenericTypes = null)
         {
             Name = name;
             This = onInstance;
@@ -4899,12 +4899,12 @@ namespace CodingSeb.ExpressionEvaluator
         /// In the case of on the fly instance property definition the instance of the object on which this Property is called.<para/>
         /// Otherwise is set to null.
         /// </summary>
-        public object This { get; }
+        public object? This { get; }
 
         /// <summary>
         /// A reference on the current expression evaluator.
         /// </summary>
-        public ExpressionEvaluator Evaluator { get; }
+        public ExpressionEvaluator? Evaluator { get; }
 
         /// <summary>
         /// Is <c>true</c> if some generic types are specified with &lt;&gt;.<para/>
@@ -4996,7 +4996,7 @@ namespace CodingSeb.ExpressionEvaluator
     /// </summary>
     public partial class VariablePreEvaluationEventArg : VariableEvaluationEventArg
     {
-        public VariablePreEvaluationEventArg(string name, ExpressionEvaluator evaluator = null, object onInstance = null, string genericTypes = null, Func<string, Type[]> evaluateGenericTypes = null)
+        public VariablePreEvaluationEventArg(string name, ExpressionEvaluator? evaluator = null, object? onInstance = null, string? genericTypes = null, Func<string, Type[]>? evaluateGenericTypes = null)
             : base(name, evaluator, onInstance, genericTypes, evaluateGenericTypes)
         { }
 
@@ -5011,7 +5011,7 @@ namespace CodingSeb.ExpressionEvaluator
     /// </summary>
     public partial class FunctionEvaluationEventArg : EventArgs
     {
-        private readonly Func<string, Type[]> evaluateGenericTypes;
+        private readonly Func<string, Type[]>? evaluateGenericTypes;
         private readonly string genericTypes;
 
         /// <summary>
@@ -5023,7 +5023,7 @@ namespace CodingSeb.ExpressionEvaluator
         /// <param name="onInstance">The object instance on which to evaluate the method (will be <see cref="This"/>)</param>
         /// <param name="genericTypes">The generics types specified when at function calling</param>
         /// <param name="evaluateGenericTypes">A func to evaluate the list of specific types given between &lt; and &gt;</param>
-        public FunctionEvaluationEventArg(string name, List<string> args = null, ExpressionEvaluator evaluator = null, object onInstance = null, string genericTypes = null, Func<string, Type[]> evaluateGenericTypes = null)
+        public FunctionEvaluationEventArg(string name, List<string>? args = null, ExpressionEvaluator? evaluator = null, object? onInstance = null, string? genericTypes = null, Func<string, Type[]>? evaluateGenericTypes = null)
         {
             Name = name;
             Args = args ?? new List<string>();
@@ -5098,7 +5098,7 @@ namespace CodingSeb.ExpressionEvaluator
         /// In the case of on the fly instance method definition the instance of the object on which this method (function) is called.<para/>
         /// Otherwise is set to null.
         /// </summary>
-        public object This { get; }
+        public object? This { get; }
 
         /// <summary>
         /// A reference on the current expression evaluator.
@@ -5132,7 +5132,7 @@ namespace CodingSeb.ExpressionEvaluator
     /// </summary>
     public partial class FunctionPreEvaluationEventArg : FunctionEvaluationEventArg
     {
-        public FunctionPreEvaluationEventArg(string name, List<string> args = null, ExpressionEvaluator evaluator = null, object onInstance = null, string genericTypes = null, Func<string, Type[]> evaluateGenericTypes = null)
+        public FunctionPreEvaluationEventArg(string name, List<string>? args = null, ExpressionEvaluator? evaluator = null, object? onInstance = null, string? genericTypes = null, Func<string, Type[]>? evaluateGenericTypes = null)
             : base(name, args, evaluator, onInstance, genericTypes, evaluateGenericTypes)
         { }
 
@@ -5246,12 +5246,12 @@ namespace CodingSeb.ExpressionEvaluator
         /// In the case of on the fly instance method definition the instance of the object on which this method (function) is called.<para/>
         /// Otherwise is set to null.
         /// </summary>
-        public object This { get; }
+        public object? This { get; }
 
         /// <summary>
         /// A reference on the current expression evaluator.
         /// </summary>
-        public ExpressionEvaluator Evaluator { get; }
+        public ExpressionEvaluator? Evaluator { get; }
 
         /// <summary>
         /// The required type of the parameter
@@ -5277,7 +5277,7 @@ namespace CodingSeb.ExpressionEvaluator
         /// <param name="argPosition">Position of the argument (index from 0)</param>
         /// <param name="evaluator">A reference on the current expression evaluator.</param>
         /// <param name="onInstance">In the case of on the fly instance method definition the instance of the object on which this method (function) is called.<para/>Otherwise is set to null.<para/>Will be the <see cref="This"/> property</param>
-        public ParameterCastEvaluationEventArg(MethodInfo methodInfo, Type parameterType, object originalArg, int argPosition, ExpressionEvaluator evaluator = null, object onInstance = null)
+        public ParameterCastEvaluationEventArg(MethodInfo methodInfo, Type parameterType, object originalArg, int argPosition, ExpressionEvaluator? evaluator = null, object? onInstance = null)
         {
             MethodInfo = methodInfo;
             ParameterType = parameterType;

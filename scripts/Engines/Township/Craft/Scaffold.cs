@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -74,7 +74,7 @@ namespace Server.Township
             }
         }
 
-        private Item m_ToBuild;
+        private Item? m_ToBuild;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public Item ToBuild
@@ -274,7 +274,7 @@ namespace Server.Township
             PresentParticiple,
         }
 
-        private static string FormatVerb(Item item, VerbForm form)
+        private static string? FormatVerb(Item item, VerbForm form)
         {
             if (item is BoxwoodHedge)
             {
@@ -334,7 +334,7 @@ namespace Server.Township
 
         #region Registration
 
-        private Items.TownshipStone m_TStone;
+        private Items.TownshipStone? m_TStone;
 
         public override void OnMapChange()
         {

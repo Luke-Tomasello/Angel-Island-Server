@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -105,9 +105,9 @@ namespace Server.Mobiles
         public override ScaleType ScaleType { get { return ScaleType.All; } }
         public override int Scales { get { return 20; } }
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
 
             if (0.30 >= Utility.RandomDouble())
                 Earthquake();
@@ -139,7 +139,7 @@ namespace Server.Mobiles
 
             for (int i = 0; i < targets.Count; ++i)
             {
-                Mobile m = (Mobile)targets[i];
+                Mobile? m = (Mobile?)targets[i];
 
                 double damage = m.Hits * 0.6;
 
@@ -150,7 +150,7 @@ namespace Server.Mobiles
 
                 DoHarmful(m);
 
-                AOS.Damage(m, this, (int)damage, 100, 0, 0, 0, 0, this);
+                AOS.Damage(m, this, (int)damage, new DamageContext { Source = this });
 
                 if (m.Alive && m.Body.IsHuman && !m.Mounted)
                     m.Animate(20, 7, 1, true, false, 0); // take hit

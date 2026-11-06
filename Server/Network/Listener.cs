@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -95,7 +95,7 @@ namespace Server.Network
 #endif
         }
 
-        private Socket Bind(IPEndPoint ipep)
+        private Socket? Bind(IPEndPoint ipep)
         {
             Socket s = new Socket(ipep.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
@@ -137,7 +137,7 @@ namespace Server.Network
 
         private void DisplayListener()
         {
-            IPEndPoint ipep = m_Listener.LocalEndPoint as IPEndPoint;
+            IPEndPoint? ipep = m_Listener.LocalEndPoint as IPEndPoint;
 
             if (ipep == null)
                 return;
@@ -213,9 +213,9 @@ namespace Server.Network
 
         private void OnAccept(IAsyncResult asyncResult)
         {
-            Socket listener = (Socket)asyncResult.AsyncState;
+            Socket? listener = (Socket?)asyncResult.AsyncState;
 
-            Socket accepted = null;
+            Socket? accepted = null;
 
             try
             {

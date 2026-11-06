@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -143,7 +143,7 @@ namespace Server.Commands
                 CommandLogging.WriteLine(from, "{0} {1} duping {2} (inBag={3}; amount={4})", from.AccessLevel, CommandLogging.Format(from), CommandLogging.Format(targ), m_InBag, m_Amount);
 
                 Item copy = (Item)targ;
-                Container pack;
+                Container? pack;
 
                 if (m_InBag)
                 {
@@ -181,7 +181,7 @@ namespace Server.Commands
                                 if (o != null && o is Item)
                                 {
                                     Item new_item = (Item)o;
-                                    Utility.CopyProperties(new_item, copy);//copy.Dupe( item, copy.Amount );
+                                    Utility.CopyProperties(copy, new_item);//copy.Dupe( item, copy.Amount );
                                     if (new_item is Container cont)
                                         cont.UpdateAllTotals();
                                     else
@@ -212,58 +212,6 @@ namespace Server.Commands
             }
         }
         #region OBSOLETE, Moved to Utilities
-#if false
-        public static void CopyProperties(Item dest, Item src)
-        {
-            PropertyInfo[] props = src.GetType().GetProperties();
-            PropertyInfo[] swaps = new PropertyInfo[2];
-
-            for (int i = 0; i < props.Length; i++)
-            {
-                try
-                {
-                    if (props[i].CanRead && props[i].CanWrite)
-                    {
-                        // 8/5/21, Adam: Unfortunatly, Amount and TotalGold have side effects, so they have to be set in reverse order.
-                        //  That could be a fix for later, but it's too complex to try to handle before launch. For now I just swap
-                        //  the order of the assignment, and that solves the problem.
-                        if (props[i].Name == "Amount")
-                        {
-                            swaps[0] = props[i];
-                            continue;
-                        }
-                        if (props[i].Name == "TotalGold")
-                        {
-                            swaps[1] = props[i];
-                            continue;
-                        }
-
-
-                        //Console.WriteLine( "Setting {0} = {1}", props[i].Name, props[i].GetValue( src, null ) );
-                        props[i].SetValue(dest, props[i].GetValue(src, null), null);
-
-                    }
-                }
-                catch
-                {
-                    //Console.WriteLine( "Denied" );
-                }
-            }
-
-            try
-            {
-                if (swaps[0] != null && swaps[1] != null)
-                {
-                    swaps[0].SetValue(dest, swaps[0].GetValue(src, null), null);
-                    swaps[1].SetValue(dest, swaps[1].GetValue(src, null), null);
-                }
-            }
-            catch (Exception ex)
-            {
-                Server.Diagnostics.LogHelper.LogException(ex);
-            }
-        }
-#endif
         #endregion OBSOLETE, Moved to Utilities
     }
 }

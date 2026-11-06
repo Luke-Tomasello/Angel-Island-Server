@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -61,7 +61,7 @@ namespace Server.Engines.Craft
             get { return 1044001; } // <CENTER>ALCHEMY MENU</CENTER>
         }
 
-        private static CraftSystem m_CraftSystem;
+        private static CraftSystem? m_CraftSystem;
 
         public static CraftSystem CraftSystem
         {
@@ -94,7 +94,7 @@ namespace Server.Engines.Craft
             return 0;
         }
 
-        public override void PlayCraftEffect(Mobile from, object obj = null)
+        public override void PlayCraftEffect(Mobile from, object? obj = null)
         {
             from.PlaySound(0x242);
         }
@@ -110,6 +110,14 @@ namespace Server.Engines.Craft
                     return "You fail to mix the dye correctly.";
                 else
                     return null; // success messages are sent in the CustomCraft objects
+            }
+
+            if (item.ItemType == typeof(ShipSealantCraft))
+            {
+                if (failed)
+                    return "You fail to mix the sealant correctly.";
+                else
+                    return "You create the sealant.";
             }
 
             if (failed)
@@ -134,6 +142,9 @@ namespace Server.Engines.Craft
             if (item.ItemType == typeof(SpecialDyeCraft) || item.ItemType == typeof(ToneCraft))
                 return false; // no craft effect for dye crafts
 
+            if (item.ItemType == typeof(ShipSealantCraft))
+                return false; // no craft effect for ship sealant
+
             return true;
         }
 
@@ -148,116 +159,118 @@ namespace Server.Engines.Craft
         public override void InitCraftList()
         {
             int index = -1;
+            TextDefinition potionGroup = "Potions";
 
             // Refresh Potion
-            index = AddCraft(typeof(RefreshPotion), 1044530, 1044538, 15.0, 65.0, typeof(BlackPearl), 1044353, 1, 1044361);
+            index = AddCraft(typeof(RefreshPotion), potionGroup, 1044538, 15.0, 65.0, typeof(BlackPearl), 1044353, 1, 1044361);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(TotalRefreshPotion), 1044530, 1044539, 25.0, 75.0, typeof(BlackPearl), 1044353, 5, 1044361);
+            index = AddCraft(typeof(TotalRefreshPotion), potionGroup, 1044539, 25.0, 75.0, typeof(BlackPearl), 1044353, 5, 1044361);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
 
             // Agility Potion
-            index = AddCraft(typeof(AgilityPotion), 1044531, 1044540, 15.0, 65.0, typeof(Bloodmoss), 1044354, 1, 1044362);
+            index = AddCraft(typeof(AgilityPotion), potionGroup, 1044540, 15.0, 65.0, typeof(Bloodmoss), 1044354, 1, 1044362);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(GreaterAgilityPotion), 1044531, 1044541, 35.0, 85.0, typeof(Bloodmoss), 1044354, 3, 1044362);
+            index = AddCraft(typeof(GreaterAgilityPotion), potionGroup, 1044541, 35.0, 85.0, typeof(Bloodmoss), 1044354, 3, 1044362);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
 
             // Nightsight Potion
-            index = AddCraft(typeof(NightSightPotion), 1044532, 1044542, -25.0, 25.0, typeof(SpidersSilk), 1044360, 1, 1044368);
+            index = AddCraft(typeof(NightSightPotion), potionGroup, 1044542, -25.0, 25.0, typeof(SpidersSilk), 1044360, 1, 1044368);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
 
             // Heal Potion
-            index = AddCraft(typeof(LesserHealPotion), 1044533, 1044543, -25.0, 25.0, typeof(Ginseng), 1044356, 1, 1044364);
+            index = AddCraft(typeof(LesserHealPotion), potionGroup, 1044543, -25.0, 25.0, typeof(Ginseng), 1044356, 1, 1044364);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(HealPotion), 1044533, 1044544, 15.0, 65.0, typeof(Ginseng), 1044356, 3, 1044364);
+            index = AddCraft(typeof(HealPotion), potionGroup, 1044544, 15.0, 65.0, typeof(Ginseng), 1044356, 3, 1044364);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(GreaterHealPotion), 1044533, 1044545, 55.0, 105.0, typeof(Ginseng), 1044356, 7, 1044364);
+            index = AddCraft(typeof(GreaterHealPotion), potionGroup, 1044545, 55.0, 105.0, typeof(Ginseng), 1044356, 7, 1044364);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
 
             // Strength Potion
-            index = AddCraft(typeof(StrengthPotion), 1044534, 1044546, 25.0, 75.0, typeof(MandrakeRoot), 1044357, 2, 1044365);
+            index = AddCraft(typeof(StrengthPotion), potionGroup, 1044546, 25.0, 75.0, typeof(MandrakeRoot), 1044357, 2, 1044365);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(GreaterStrengthPotion), 1044534, 1044547, 45.0, 95.0, typeof(MandrakeRoot), 1044357, 5, 1044365);
+            index = AddCraft(typeof(GreaterStrengthPotion), potionGroup, 1044547, 45.0, 95.0, typeof(MandrakeRoot), 1044357, 5, 1044365);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
 
             // Poison Potion
-            index = AddCraft(typeof(LesserPoisonPotion), 1044535, 1044548, -5.0, 45.0, typeof(Nightshade), 1044358, 1, 1044366);
+            index = AddCraft(typeof(LesserPoisonPotion), potionGroup, 1044548, -5.0, 45.0, typeof(Nightshade), 1044358, 1, 1044366);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(PoisonPotion), 1044535, 1044549, 15.0, 65.0, typeof(Nightshade), 1044358, 2, 1044366);
+            index = AddCraft(typeof(PoisonPotion), potionGroup, 1044549, 15.0, 65.0, typeof(Nightshade), 1044358, 2, 1044366);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(GreaterPoisonPotion), 1044535, 1044550, 55.0, 105.0, typeof(Nightshade), 1044358, 4, 1044366);
+            index = AddCraft(typeof(GreaterPoisonPotion), potionGroup, 1044550, 55.0, 105.0, typeof(Nightshade), 1044358, 4, 1044366);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(DeadlyPoisonPotion), 1044535, 1044551, 90.0, 140.0, typeof(Nightshade), 1044358, 8, 1044366);
+            index = AddCraft(typeof(DeadlyPoisonPotion), potionGroup, 1044551, 90.0, 140.0, typeof(Nightshade), 1044358, 8, 1044366);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
 
             // Cure Potion
-            index = AddCraft(typeof(LesserCurePotion), 1044536, 1044552, -10.0, 40.0, typeof(Garlic), 1044355, 1, 1044363);
+            index = AddCraft(typeof(LesserCurePotion), potionGroup, 1044552, -10.0, 40.0, typeof(Garlic), 1044355, 1, 1044363);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(CurePotion), 1044536, 1044553, 25.0, 75.0, typeof(Garlic), 1044355, 3, 1044363);
+            index = AddCraft(typeof(CurePotion), potionGroup, 1044553, 25.0, 75.0, typeof(Garlic), 1044355, 3, 1044363);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(GreaterCurePotion), 1044536, 1044554, 65.0, 115.0, typeof(Garlic), 1044355, 6, 1044363);
+            index = AddCraft(typeof(GreaterCurePotion), potionGroup, 1044554, 65.0, 115.0, typeof(Garlic), 1044355, 6, 1044363);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
 
             // Explosion Potion
-            index = AddCraft(typeof(LesserExplosionPotion), 1044537, 1044555, 5.0, 55.0, typeof(SulfurousAsh), 1044359, 3, 1044367);
+            index = AddCraft(typeof(LesserExplosionPotion), potionGroup, 1044555, 5.0, 55.0, typeof(SulfurousAsh), 1044359, 3, 1044367);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(ExplosionPotion), 1044537, 1044556, 35.0, 85.0, typeof(SulfurousAsh), 1044359, 5, 1044367);
+            index = AddCraft(typeof(ExplosionPotion), potionGroup, 1044556, 35.0, 85.0, typeof(SulfurousAsh), 1044359, 5, 1044367);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
-            index = AddCraft(typeof(GreaterExplosionPotion), 1044537, 1044557, 65.0, 115.0, typeof(SulfurousAsh), 1044359, 10, 1044367);
+            index = AddCraft(typeof(GreaterExplosionPotion), potionGroup, 1044557, 65.0, 115.0, typeof(SulfurousAsh), 1044359, 10, 1044367);
             AddRes(index, typeof(Bottle), 1044529, 1, 500315);
 
-            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+            if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
             {
+                TextDefinition dyeGroup = "Dyes";
                 // erl: special dyes!
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Violet", 80.0, 113.33, typeof(SulfurousAsh), "Sulfurous Ash", 10, 1044367, 1230);
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Violet", 80.0, 113.33, typeof(SulfurousAsh), "Sulfurous Ash", 10, 1044367, 1230);
                 AddRes(index, typeof(BlackPearl), "Black Pearl", 10, 1044361);
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Tan", 80.0, 113.33, typeof(Ginseng), "Ginseng", 20, 1044364, 1501);
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Tan", 80.0, 113.33, typeof(Ginseng), "Ginseng", 20, 1044364, 1501);
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Brown", 80.0, 113.33, typeof(MandrakeRoot), "Mandrake Root", 20, 2013);
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Brown", 80.0, 113.33, typeof(MandrakeRoot), "Mandrake Root", 20, 2013);
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Dark Blue", 80.0, 113.33, typeof(BlackPearl), "Black Pearl", 20, 1044361, 1303);
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Dark Blue", 80.0, 113.33, typeof(BlackPearl), "Black Pearl", 20, 1044361, 1303);
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Forest Green", 80.0, 113.33, typeof(BlackPearl), "Black Pearl", 10, 1044361, 1420);
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Forest Green", 80.0, 113.33, typeof(BlackPearl), "Black Pearl", 10, 1044361, 1420);
                 AddRes(index, typeof(Nightshade), "Nightshade", 10, 1044366);
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Pink", 80.0, 113.33, typeof(Bloodmoss), "Blood Moss", 10, 1044362, 1619);
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Pink", 80.0, 113.33, typeof(Bloodmoss), "Blood Moss", 10, 1044362, 1619);
                 AddRes(index, typeof(Garlic), "Garlic", 10, 1044363);
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Crimson", 80.0, 113.33, typeof(Bloodmoss), "Blood Moss", 20, 1044362, 1640); // yoar: renamed from "Red" to "Crimson"
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Crimson", 80.0, 113.33, typeof(Bloodmoss), "Blood Moss", 20, 1044362, 1640); // yoar: renamed from "Red" to "Crimson"
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Olive", 80.0, 113.33, typeof(Garlic), "Garlic", 10, 1044363, 2001);
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Olive", 80.0, 113.33, typeof(Garlic), "Garlic", 10, 1044363, 2001);
                 AddRes(index, typeof(Nightshade), "Nightshade", 10, 1044366);
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
                 // yoar: added 4 more colors, from the RunUO leather dye tub
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Red", 80.0, 113.33, typeof(Ruby), "Ruby", 20, 1044253, 2113);
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Red", 80.0, 113.33, typeof(Ruby), "Ruby", 20, 1044253, 2113);
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Blue", 80.0, 113.33, typeof(Sapphire), "Sapphire", 20, 1044253, 2119);
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Blue", 80.0, 113.33, typeof(Sapphire), "Sapphire", 20, 1044253, 2119);
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Green", 80.0, 113.33, typeof(Emerald), "Emerald", 20, 1044253, 2126);
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Green", 80.0, 113.33, typeof(Emerald), "Emerald", 20, 1044253, 2126);
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
-                index = AddCraft(typeof(SpecialDyeCraft), "Mix Dye", "Yellow", 80.0, 113.33, typeof(Amber), "Amber", 20, 1044253, 2213);
+                index = AddCraft(typeof(SpecialDyeCraft), dyeGroup, "Yellow", 80.0, 113.33, typeof(Amber), "Amber", 20, 1044253, 2213);
                 SetNeedWater(index, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
@@ -275,11 +288,29 @@ namespace Server.Engines.Craft
                  * Let's ignore this complication... Now, every tone craft, regardless of the
                  * number of charges on the targeted tub, requires just 2 reagents.
                  */
-                index = AddCraft(typeof(ToneCraft), "Mix Dye", "> Lighten the mix", 80.0, 100.00, typeof(SulfurousAsh), "Sulfurous Ash", 2, 1044367, false);
+                index = AddCraft(typeof(ToneCraft), dyeGroup, "> Lighten the mix", 80.0, 100.00, typeof(SulfurousAsh), "Sulfurous Ash", 2, 1044367, false);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
 
-                index = AddCraft(typeof(ToneCraft), "Mix Dye", "> Darken the mix", 80.0, 100.00, typeof(BlackPearl), "Black Pearl", 2, 1044361, true);
+                index = AddCraft(typeof(ToneCraft), dyeGroup, "> Darken the mix", 80.0, 100.00, typeof(BlackPearl), "Black Pearl", 2, 1044361, true);
                 AddSkill(index, SkillName.Tailoring, 80.0, 113.33);
+
+                #region Shipbuilding
+                TextDefinition shipbuildingGroup = "Shipbuilding";
+
+                index = AddCraft(typeof(ShipSealantCraft), shipbuildingGroup, "ship sealant",
+                    ShipPlans.GetMinSkill(null, ShipAssemblyParts.Sealant),
+                    ShipPlans.GetMaxSkill(null, ShipAssemblyParts.Sealant),
+                    typeof(Beeswax), "bees wax",
+                    ShipPlans.GetRequiredAmount(null, ShipAssemblyParts.Sealant, typeof(Beeswax)),
+                    "You do not have enough bees wax.");
+
+                AddRes(index, typeof(SpidersSilk), 1044360,
+                    ShipPlans.GetRequiredAmount(null, ShipAssemblyParts.Sealant, typeof(SpidersSilk)),
+                    1044368);
+
+                SetNeedShipPlans(index, null, ShipAssemblyParts.Sealant);
+
+                #endregion Shipbuilding
             }
         }
 
@@ -298,7 +329,7 @@ namespace Server.Engines.Craft
                 m_Hue = hue;
             }
 
-            private TextDefinition Verify(DyeTub tub)
+            private TextDefinition? Verify(DyeTub? tub)
             {
                 if (tub != null)
                 {
@@ -331,7 +362,7 @@ namespace Server.Engines.Craft
 
             private bool Acquire(object targeted, out TextDefinition message)
             {
-                DyeTub tub = targeted as DyeTub;
+                DyeTub? tub = targeted as DyeTub;
 
                 message = Verify(tub);
 
@@ -348,7 +379,7 @@ namespace Server.Engines.Craft
 
             public override void EndCraftAction()
             {
-                DyeTub found = null;
+                DyeTub? found = null;
 
                 if (From.Backpack != null)
                 {
@@ -473,9 +504,9 @@ namespace Server.Engines.Craft
                 m_Darken = darken;
             }
 
-            private TextDefinition Verify(Item item)
+            private TextDefinition? Verify(Item item)
             {
-                ITonable tonable = item as ITonable;
+                ITonable? tonable = item as ITonable;
 
                 if (tonable == null || (!tonable.CanDarken && !tonable.CanLighten))
                     return "You cannot tone that.";
@@ -487,7 +518,7 @@ namespace Server.Engines.Craft
 
             private bool Acquire(object targeted, out TextDefinition message)
             {
-                Item target = targeted as Item;
+                Item? target = targeted as Item;
 
                 message = Verify(target);
 
@@ -504,7 +535,7 @@ namespace Server.Engines.Craft
 
             public override void EndCraftAction()
             {
-                Item found = null;
+                Item? found = null;
 
                 if (From.Backpack != null)
                 {

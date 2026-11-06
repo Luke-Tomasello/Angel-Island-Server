@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -42,7 +42,7 @@ namespace Server.Engines
             public Map Map { get { return m_PreGameMap; } }
             private Mobile m_Mobile;
             public Mobile Mobile { get { return m_Mobile; } }
-            private RespawnTimer m_RespawnTimer = null;
+            private RespawnTimer? m_RespawnTimer = null;
             private CTFControl m_ctfc;
             public CTFControl CTFControl { get { return m_ctfc; } }
 

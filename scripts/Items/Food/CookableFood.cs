@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -198,11 +198,11 @@ namespace Server.Items
         private class InternalTimer : Timer
         {
             private Mobile m_From;
-            private IPoint3D m_Point;
+            private IPoint3D? m_Point;
             private Map m_Map;
             private Item m_Item;
 
-            public InternalTimer(Mobile from, IPoint3D p, Map map, Item item) : base(TimeSpan.FromSeconds(5.0))
+            public InternalTimer(Mobile from, IPoint3D? p, Map map, Item item) : base(TimeSpan.FromSeconds(5.0))
             {
                 m_From = from;
                 m_Point = p;
@@ -221,15 +221,6 @@ namespace Server.Items
 
                 Food cookedFood = cookable.Cook();
 
-#if false
-				if ( m_From.Backpack == null || !m_From.Backpack.CheckHold( m_From, cookedFood, false ) )
-				{
-					m_From.SendLocalizedMessage( 500684 ); // You do not have room for the cooked food in your backpack!  You stop cooking.
-
-					cookedFood.Delete();
-					return;
-				}
-#endif
 
                 if (m_From.Map != m_Map || (m_Point != null && m_From.GetDistanceToSqrt(GetWorldLocation(m_Point)) > 3) || !m_From.CheckSkill(SkillName.Cooking, cookable.CookingLevel, cookable.MaxCookingLevel, contextObj: new object[2]))
                 {
@@ -253,6 +244,7 @@ namespace Server.Items
                     cookedAmount = 60000;
 
                 cookedFood.Amount = cookedAmount;
+                Server.Engines.Economy.Provenance.Inherit(m_Item, cookedFood);  // NPC raw food -> marked cooked food (ArbitrageTable)
 
                 if (Utility.RandomBool())
                     m_From.LocalOverheadMessage(MessageType.Regular, 0x3B2, 500687); // Looks delicious.
@@ -740,46 +732,6 @@ namespace Server.Items
         }
     }
 
-#if false
-	// ********** UncookedPizza **********
-	public class UncookedPizza : CookableFood
-	{
-		[Constructable]
-		public UncookedPizza() : base( 0x1083, 20 )
-		{
-			Weight = 1.0;
-		}
-
-		public UncookedPizza( Serial serial ) : base( serial )
-		{
-		}
-
-		public override void Serialize( GenericWriter writer )
-		{
-			base.Serialize( writer );
-
-			writer.Write( (int) 0 ); // version
-		}
-
-		public override void Deserialize( GenericReader reader )
-		{
-			base.Deserialize( reader );
-
-			int version = reader.ReadInt();
-
-			if ( ItemID == 0x1040 )
-				ItemID = 0x1083;
-
-			if ( Hue == 51 )
-				Hue = 0;
-		}
-
-		public override Food Cook()
-		{
-			return new Pizza();
-		}
-	}
-#endif
 
     // ********** UnbakedQuiche **********
     public class UnbakedQuiche : CookableFood
@@ -1176,7 +1128,7 @@ namespace Server.Items
 
         public override bool StackWith(Mobile from, Item dropped, bool playSound)
         {
-            CookableFoodItem other = dropped as CookableFoodItem;
+            CookableFoodItem? other = dropped as CookableFoodItem;
 
             return other != null
                 && other.m_Cooked == m_Cooked
@@ -1224,7 +1176,7 @@ namespace Server.Items
                     return;
                 }
 
-                CookableFoodItem toCook = null;
+                CookableFoodItem? toCook = null;
 
                 if (!m_Item.Stackable || m_Item.Amount == 0)
                 {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,8 @@
 
 /* Scripts/Mobiles/Monsters/Reptile/Melee/Scorpion.cs
  * ChangeLog
+ *  12/14/2025, Adam
+ *      Set HitPoison to match RunUO's 2.0 schedule
  *  8/16/06, Rhiannon
  *		Changed speed settings to match SpeedInfo table.
  *	7/26/05, erlein
@@ -30,8 +32,6 @@
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -92,7 +92,14 @@ namespace Server.Mobiles
                     return (Poison.Lesser);
                 }
                 else
-                    return base.HitPoison;
+                {
+                    // RunUO 2.0 seems wrong, of from a different Era
+                    // return (0.8 >= Utility.RandomDouble() ? Poison.Greater : Poison.Deadly);
+                    // http://web.archive.org/web/20020207054347/uo.stratics.com/hunters/giantscorpion.shtml
+                    // stratics says Greater, so I'll have it top out as Greater
+                    return (0.8 >= Utility.RandomDouble() ? Poison.Lesser : Poison.Greater);
+                }
+
             }
         }
 
@@ -103,32 +110,14 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020207054347/uo.stratics.com/hunters/giantscorpion.shtml
+            // loot: None
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(25, 50);
-                PackItem(new LesserPoisonPotion());
+
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020207054347/uo.stratics.com/hunters/giantscorpion.shtml
-                    // loot: None
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                        PackItem(new LesserPoisonPotion());
-
-                    AddLoot(LootPack.Meager);
-                }
             }
         }
 

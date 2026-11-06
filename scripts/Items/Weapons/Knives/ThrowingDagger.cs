@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -104,7 +104,7 @@ namespace Server.Items
                         {
                             from.MovingEffect(m, 0x1BFE, 7, 1, false, false, 0x481, 0);
 
-                            AOS.Damage(m, from, Utility.Random(5, from.Str / 10), 100, 0, 0, 0, 0, this);
+                            AOS.Damage(m, from, Utility.Random(5, from.Str / 10), new DamageContext { Source = this });
 
                             m_Dagger.MoveToWorld(m.Location, m.Map);
                         }

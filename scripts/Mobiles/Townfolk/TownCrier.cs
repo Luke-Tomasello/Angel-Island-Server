@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -51,7 +51,7 @@
  *		- Make sure staff can always hire the TC (> AccessLevel.Player)
  *		- typo
  *	01/13/06, Pix
- *		Changed using reference for TCCS/PJUM separation changes.
+ *		Changed using reference for TownCrierBulletinSystem/PlayerJusticeSystem separation changes.
  *  12/11/05, Kit
  *		Added Serial number of player when sending staff message, all hireing now logged to file,
  *		only players with characters older then 7 days can now hire town criers.
@@ -65,7 +65,7 @@
  *		Added Context Menu entry "Hire"
  *		Added functionality for players to enter and pay for TC messages
  *	1/27/05, Pix
- *		Incorporated TCCS system.
+ *		Incorporated TownCrierBulletinSystem system.
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
@@ -87,15 +87,15 @@ namespace Server.Mobiles
 {
     public interface ITownCrierEntryList
     {
-        ArrayList Entries { get; }
-        TownCrierEntry GetRandomEntry();
+        ArrayList? Entries { get; }
+        TownCrierEntry? GetRandomEntry();
         void AddEntry(TownCrierEntry tce);
         void RemoveEntry(TownCrierEntry entry);
     }
 
     public class GlobalTownCrierEntryList : ITownCrierEntryList
     {
-        private static GlobalTownCrierEntryList m_Instance;
+        private static GlobalTownCrierEntryList? m_Instance;
 
         public static void Initialize()
         {
@@ -113,15 +113,18 @@ namespace Server.Mobiles
         public static void OnSave(WorldSaveEventArgs e)
         {
             System.Console.WriteLine("Town Crier Global Saving...");
+
             if (Instance.Entries == null)
                 return;
 
             try
             {
-                if (!Directory.Exists("Saves/AngelIsland"))
-                    Directory.CreateDirectory("Saves/AngelIsland");
+                string saveDirectory = Path.Combine(Core.SavesDirectory, Core.Server);
 
-                string filePath = Path.Combine("Saves/AngelIsland", "TCGL.xml");
+                if (!Directory.Exists(saveDirectory))
+                    Directory.CreateDirectory(saveDirectory);
+
+                string filePath = Path.Combine(saveDirectory, "TCGL.xml");
 
                 using (StreamWriter op = new StreamWriter(filePath))
                 {
@@ -158,7 +161,10 @@ namespace Server.Mobiles
         {
             System.Console.WriteLine("TCGL Loading...");
 
-            string filePath = Path.Combine("Saves/AngelIsland", "TCGL.xml");
+            string filePath = Path.Combine(
+                Core.SavesDirectory,
+                Core.Server,
+                "TCGL.xml");
 
             if (!File.Exists(filePath))
             {
@@ -173,7 +179,7 @@ namespace Server.Mobiles
                 XmlDocument doc = new XmlDocument();
                 doc.Load(filePath);
 
-                XmlElement root = doc["TCGL"];
+                XmlElement? root = doc["TCGL"];
                 foreach (XmlElement entry in root.GetElementsByTagName("TCEntry"))
                 {
                     try
@@ -256,14 +262,14 @@ namespace Server.Mobiles
 
         }
 
-        private ArrayList m_Entries;
+        private ArrayList? m_Entries;
 
-        public ArrayList Entries
+        public ArrayList? Entries
         {
             get { return m_Entries; }
         }
 
-        public TownCrierEntry GetRandomEntry()
+        public TownCrierEntry? GetRandomEntry()
         {
             if (m_Entries == null || m_Entries.Count == 0)
                 return null;
@@ -273,7 +279,7 @@ namespace Server.Mobiles
                 if (i >= m_Entries.Count)
                     continue;
 
-                TownCrierEntry tce = (TownCrierEntry)m_Entries[i];
+                TownCrierEntry? tce = (TownCrierEntry?)m_Entries[i];
 
                 if (tce.Expired)
                     RemoveEntry(tce);
@@ -444,11 +450,11 @@ namespace Server.Mobiles
     public class TownCrierLinesPrompt : Prompt
     {
         private ITownCrierEntryList m_Owner;
-        private TownCrierEntry m_Entry;
+        private TownCrierEntry? m_Entry;
         private ArrayList m_Lines;
         private TimeSpan m_Duration;
 
-        public TownCrierLinesPrompt(ITownCrierEntryList owner, TownCrierEntry entry, ArrayList lines, TimeSpan duration)
+        public TownCrierLinesPrompt(ITownCrierEntryList owner, TownCrierEntry? entry, ArrayList lines, TimeSpan duration)
         {
             m_Owner = owner;
             m_Entry = entry;
@@ -540,7 +546,7 @@ namespace Server.Mobiles
 
                 if (entries != null && index < entries.Count)
                 {
-                    TownCrierEntry tce = (TownCrierEntry)entries[index];
+                    TownCrierEntry? tce = (TownCrierEntry?)entries[index];
                     TimeSpan ts = tce.ExpireTime - DateTime.UtcNow;
 
                     if (ts < TimeSpan.Zero)
@@ -596,7 +602,7 @@ namespace Server.Mobiles
             {
                 for (int i = 0; i < entries.Count; ++i)
                 {
-                    TownCrierEntry tce = (TownCrierEntry)entries[i];
+                    TownCrierEntry? tce = (TownCrierEntry?)entries[i];
 
                     TimeSpan toExpire = tce.ExpireTime - DateTime.UtcNow;
 
@@ -645,8 +651,8 @@ namespace Server.Mobiles
     public class TownCrier : BaseVendor, ITownCrierEntryList
     {
         private ArrayList m_Entries;
-        private Timer m_NewsTimer;
-        private Timer m_AutoShoutTimer;
+        private Timer? m_NewsTimer;
+        private Timer? m_AutoShoutTimer;
         private bool m_CanHire;
         private static Hashtable m_UnpaidEntries = new Hashtable();
 
@@ -695,7 +701,7 @@ namespace Server.Mobiles
 
             if (m_UnpaidEntries.ContainsKey(from))
             {
-                TownCrierEntry tce = (TownCrierEntry)m_UnpaidEntries[from];
+                TownCrierEntry? tce = (TownCrierEntry?)m_UnpaidEntries[from];
                 if (val >= tce.CalculateCost())
                 {
                     LogHelper Logger = new LogHelper("TownCrier.log", false, true);
@@ -742,7 +748,7 @@ namespace Server.Mobiles
                 if (i >= m_Entries.Count)
                     continue;
 
-                TownCrierEntry tce = (TownCrierEntry)m_Entries[i];
+                TownCrierEntry? tce = (TownCrierEntry?)m_Entries[i];
 
                 if (tce.Expired)
                     RemoveEntry(tce);
@@ -751,7 +757,7 @@ namespace Server.Mobiles
             if (m_Entries == null || m_Entries.Count == 0)
                 return GlobalTownCrierEntryList.Instance.GetRandomEntry();
 
-            TownCrierEntry entry = GlobalTownCrierEntryList.Instance.GetRandomEntry();
+            TownCrierEntry? entry = GlobalTownCrierEntryList.Instance.GetRandomEntry();
 
             if (entry == null || Utility.RandomBool())
                 entry = (TownCrierEntry)m_Entries[Utility.Random(m_Entries.Count)];
@@ -801,7 +807,7 @@ namespace Server.Mobiles
 
             if (Utility.RandomDouble() > 0.5 || tce == null) //only spout off about macroers 1/2 the time
             {
-                ListEntry le = TCCS.GetRandomEntry();
+                ListEntry? le = TownCrierBulletinSystem.GetRandomEntry();
                 if (le != null)
                 {
                     tce = new TownCrierEntry(le.Lines, TimeSpan.FromMinutes(1), Serial.MinusOne);
@@ -821,7 +827,7 @@ namespace Server.Mobiles
 
                 // pla: 12/08/06
                 // changed to show a different mesasge in a yellow hue for player messages
-                Mobile m = World.FindMobile(tce.Poster);
+                Mobile? m = World.FindMobile(tce.Poster);
                 if (m != null && m.AccessLevel == AccessLevel.Player)
                     PublicOverheadMessage(MessageType.Regular, 0x36, true, Utility.RandomBool() == true ? "A good citizen proclaims!" : "On behalf of a good citizen!");
                 else
@@ -846,7 +852,7 @@ namespace Server.Mobiles
             {
                 // pla: 12/08/06
                 // changed to show in a yellow hue for player messages
-                Mobile m = World.FindMobile(tce.Poster);
+                Mobile? m = World.FindMobile(tce.Poster);
                 if (m != null && m.AccessLevel == AccessLevel.Player)
                     PublicOverheadMessage(MessageType.Regular, 0x36, false, tce.Lines[index]);
                 else
@@ -888,7 +894,7 @@ namespace Server.Mobiles
 
                     // pla: 12/08/06
                     // added to show a yellow anouncement for player messages
-                    Mobile m = World.FindMobile(tce.Poster);
+                    Mobile? m = World.FindMobile(tce.Poster);
                     if (m != null && m.AccessLevel == AccessLevel.Player)
                     {
                         PublicOverheadMessage(MessageType.Regular, 0x36, true, Utility.RandomBool() == true ? "A good citizen proclaims!" : "On behalf of a good citizen!");
@@ -999,7 +1005,7 @@ namespace Server.Mobiles
         //  We are moving towards an Invulnerable TownCrier for Siege since players have found they can sneak them out of town to
         //  train their pets. Currently on Siege, BaseVendors are vulnerable with the exception of Town Criers and Animal Trainers
         //public override bool CanBeDamaged() { return false; }
-        public override bool IsInvulnerable { get { return Core.RuleSets.SiegeStyleRules() ? true : Core.RuleSets.BaseVendorInvulnerability(); } }
+        public override bool IsInvulnerable { get { return Core.RuleSets.SiegeRules() ? true : Core.RuleSets.BaseVendorInvulnerability(); } }
 
         public override void OnDelete()
         {

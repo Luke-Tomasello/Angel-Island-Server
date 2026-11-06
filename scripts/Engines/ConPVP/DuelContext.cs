@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -79,12 +79,12 @@ namespace Server.Engines.ConPVP
 
         public static bool IsActivelyDueling(Mobile mob)
         {
-            PlayerMobile pm = mob as PlayerMobile;
+            PlayerMobile? pm = mob as PlayerMobile;
 
             if (pm == null || pm.DuelContext == null || !pm.DuelContext.m_StartedBeginCountdown)
                 return false;
 
-            DuelPlayer pl = pm.DuelContext.Find(mob);
+            DuelPlayer? pl = pm.DuelContext.Find(mob);
 
             if (pl == null || pl.Eliminated)
                 return false;
@@ -94,12 +94,12 @@ namespace Server.Engines.ConPVP
 
         public static bool IsFreeConsume(Mobile mob)
         {
-            PlayerMobile pm = mob as PlayerMobile;
+            PlayerMobile? pm = mob as PlayerMobile;
 
             if (pm == null || pm.DuelContext == null || !pm.DuelContext.m_StartedBeginCountdown)
                 return false;
 
-            DuelPlayer pl = pm.DuelContext.Find(mob);
+            DuelPlayer? pl = pm.DuelContext.Find(mob);
 
             if (pl == null || pl.Eliminated)
                 return false;
@@ -113,55 +113,13 @@ namespace Server.Engines.ConPVP
         }
 
         // Yoar: we don't have special moves
-#if false
-        public static bool AllowSpecialMove(Mobile from, string name, SpecialMove move)
-        {
-            PlayerMobile pm = from as PlayerMobile;
-
-            if (pm == null)
-                return true;
-
-            DuelContext dc = pm.DuelContext;
-
-            return (dc == null || dc.InstAllowSpecialMove(from, name, move));
-        }
-
-        public bool InstAllowSpecialMove(Mobile from, string name, SpecialMove move)
-        {
-
-            if (!m_StartedBeginCountdown)
-                return true;
-
-            DuelPlayer pl = Find(from);
-
-            if (pl == null || pl.Eliminated)
-                return true;
-
-            if (CantDoAnything(from))
-                return false;
-
-            string title = null;
-
-            if (move is NinjaMove)
-                title = "Bushido";
-            else if (move is SamuraiMove)
-                title = "Ninjitsu";
-
-
-            if (title == null || name == null || m_Ruleset.GetOption(title, name))
-                return true;
-
-            from.SendMessage("The dueling ruleset prevents you from using this move.");
-            return false;
-        }
-#endif
 
         public bool AllowSpellCast(Mobile from, Spell spell)
         {
             if (!m_StartedBeginCountdown)
                 return true;
 
-            DuelPlayer pl = Find(from);
+            DuelPlayer? pl = Find(from);
 
             if (pl == null || pl.Eliminated)
                 return true;
@@ -172,57 +130,9 @@ namespace Server.Engines.ConPVP
             if (spell is Server.Spells.Fourth.RecallSpell)
                 from.SendMessage("You may not cast this spell.");
 
-            string title = null, option = null;
+            string? title = null, option = null;
 
             // Yoar: we only have pre-AOS spells
-#if false
-            if (spell is ArcanistSpell)
-            {
-                title = "Spellweaving";
-                option = spell.Name;
-            }
-            else if (spell is PaladinSpell)
-            {
-                title = "Chivalry";
-                option = spell.Name;
-            }
-            else if (spell is NecromancerSpell)
-            {
-                title = "Necromancy";
-                option = spell.Name;
-            }
-            else if (spell is NinjaSpell)
-            {
-                title = "Ninjitsu";
-                option = spell.Name;
-            }
-            else if (spell is SamuraiSpell)
-            {
-                title = "Bushido";
-                option = spell.Name;
-            }
-            else if (spell is MagerySpell)
-            {
-                switch (((MagerySpell)spell).Circle)
-                {
-                    case SpellCircle.First: title = "1st Circle"; break;
-                    case SpellCircle.Second: title = "2nd Circle"; break;
-                    case SpellCircle.Third: title = "3rd Circle"; break;
-                    case SpellCircle.Fourth: title = "4th Circle"; break;
-                    case SpellCircle.Fifth: title = "5th Circle"; break;
-                    case SpellCircle.Sixth: title = "6th Circle"; break;
-                    case SpellCircle.Seventh: title = "7th Circle"; break;
-                    case SpellCircle.Eighth: title = "8th Circle"; break;
-                }
-
-                option = spell.Name;
-            }
-            else
-            {
-                title = "Other Spell";
-                option = spell.Name;
-            }
-#else
             switch (spell.Circle)
             {
                 case SpellCircle.First: title = "1st Circle"; break;
@@ -236,7 +146,6 @@ namespace Server.Engines.ConPVP
             }
 
             option = spell.Name;
-#endif
 
             if (title == null || option == null || m_Ruleset.GetOption(title, option))
                 return true;
@@ -250,7 +159,7 @@ namespace Server.Engines.ConPVP
             if (!m_StartedBeginCountdown)
                 return true;
 
-            DuelPlayer pl = Find(from);
+            DuelPlayer? pl = Find(from);
 
             if (pl == null || pl.Eliminated)
                 return true;
@@ -264,7 +173,7 @@ namespace Server.Engines.ConPVP
 
         public static bool AllowSpecialAbility(Mobile from, string name, bool message)
         {
-            PlayerMobile pm = from as PlayerMobile;
+            PlayerMobile? pm = from as PlayerMobile;
 
             if (pm == null)
                 return true;
@@ -279,7 +188,7 @@ namespace Server.Engines.ConPVP
             if (!m_StartedBeginCountdown)
                 return true;
 
-            DuelPlayer pl = Find(from);
+            DuelPlayer? pl = Find(from);
 
             if (pl == null || pl.Eliminated)
                 return true;
@@ -350,7 +259,7 @@ namespace Server.Engines.ConPVP
             if (!m_StartedBeginCountdown)
                 return true;
 
-            DuelPlayer pl = Find(from);
+            DuelPlayer? pl = Find(from);
 
             if (pl == null || pl.Eliminated)
                 return true;
@@ -381,7 +290,7 @@ namespace Server.Engines.ConPVP
             if (!m_StartedBeginCountdown)
                 return true;
 
-            DuelPlayer pl = Find(from);
+            DuelPlayer? pl = Find(from);
 
             if (pl == null || pl.Eliminated)
                 return true;
@@ -392,7 +301,7 @@ namespace Server.Engines.ConPVP
                     return false;
             }
 
-            string title = null, option = null;
+            string? title = null, option = null;
 
             if (item is BasePotion)
             {
@@ -415,14 +324,6 @@ namespace Server.Engines.ConPVP
                 else if (item is BaseRefreshPotion)
                     option = "Refresh";
                 // Yoar: we don't have these potions
-#if false
-                else if (item is BaseConfusionBlastPotion)
-                    option = "Confusion Blast";
-                else if (item is BaseConflagrationPotion)
-                    option = "Conflagration";
-                else if (item is InvisibilityPotion)
-                    option = "Invisibility";
-#endif
             }
             else if (item is Bandage)
             {
@@ -453,23 +354,6 @@ namespace Server.Engines.ConPVP
                 option = "Mounts";
             }
             // Yoar: we don't have these items
-#if false
-            else if (item is LeatherNinjaBelt)
-            {
-                title = "Items";
-                option = "Shurikens";
-            }
-            else if (item is Fukiya)
-            {
-                title = "Items";
-                option = "Fukiya Darts";
-            }
-            else if (item is FireHorn)
-            {
-                title = "Items";
-                option = "Fire Horns";
-            }
-#endif
             else if (item is IMagicItem && ((IMagicItem)item).MagicEffect != MagicItemEffect.None)
             {
                 title = "Items";
@@ -546,7 +430,7 @@ namespace Server.Engines.ConPVP
             if (mob.Map == arena.Facet && arena.Bounds.Contains(mob.Location))
                 return;
 
-            DuelPlayer pl = Find(mob);
+            DuelPlayer? pl = Find(mob);
 
             if (pl == null || pl.Eliminated)
                 return;
@@ -571,7 +455,7 @@ namespace Server.Engines.ConPVP
             mob.LocalOverheadMessage(MessageType.Regular, 0x22, false, "You have forfeited your position in the duel.");
             mob.NonlocalOverheadMessage(MessageType.Regular, 0x22, false, string.Format("{0} has forfeited by leaving the dueling arena.", mob.Name));
 
-            Participant winner = CheckCompletion();
+            Participant? winner = CheckCompletion();
 
             if (winner != null)
                 Finish(winner);
@@ -584,7 +468,7 @@ namespace Server.Engines.ConPVP
             if (!m_Registered || !m_Started)
                 return;
 
-            DuelPlayer pl = Find(mob);
+            DuelPlayer? pl = Find(mob);
 
             if (pl != null && !pl.Eliminated)
             {
@@ -599,7 +483,7 @@ namespace Server.Engines.ConPVP
                 Requip(mob, corpse);
                 DelayBounce(TimeSpan.FromSeconds(4.0), mob, corpse);
 
-                Participant winner = CheckCompletion();
+                Participant? winner = CheckCompletion();
 
                 if (winner != null)
                 {
@@ -617,7 +501,7 @@ namespace Server.Engines.ConPVP
         {
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 if (p.HasOpenSlot)
                     return false;
@@ -631,7 +515,7 @@ namespace Server.Engines.ConPVP
             if (m_EventGame != null && m_EventGame.LootableCorpses)
                 return;
 
-            Corpse corpse = cont as Corpse;
+            Corpse? corpse = cont as Corpse;
 
             if (corpse == null)
                 return;
@@ -689,13 +573,13 @@ namespace Server.Engines.ConPVP
                 from.SendLocalizedMessage(1062472); // You gather some of your belongings. The rest remain on the corpse.
         }
 
-        public void Refresh(Mobile mob, Container cont)
+        public void Refresh(Mobile mob, Container? cont)
         {
             if (!mob.Alive)
             {
                 mob.Resurrect();
 
-                DeathRobe robe = mob.FindItemOnLayer(Layer.OuterTorso) as DeathRobe;
+                DeathRobe? robe = mob.FindItemOnLayer(Layer.OuterTorso) as DeathRobe;
 
                 if (robe != null)
                     robe.Delete();
@@ -706,7 +590,7 @@ namespace Server.Engines.ConPVP
 
                     for (int i = 0; i < corpse.EquipItems.Count; ++i)
                     {
-                        Item item = (Item)corpse.EquipItems[i];
+                        Item? item = (Item?)corpse.EquipItems[i];
 
                         if (item.Movable && item.Layer != Layer.Hair && item.Layer != Layer.FacialHair && item.IsChildOf(mob.Backpack))
                             mob.EquipItem(item);
@@ -762,7 +646,7 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant loser = (Participant)m_Participants[i];
+                Participant? loser = (Participant?)m_Participants[i];
 
                 if (loser != winner)
                 {
@@ -791,8 +675,8 @@ namespace Server.Engines.ConPVP
 
             if (IsOneVsOne)
             {
-                DuelPlayer dp1 = ((Participant)m_Participants[0]).Players[0];
-                DuelPlayer dp2 = ((Participant)m_Participants[1]).Players[0];
+                DuelPlayer? dp1 = ((Participant)m_Participants[0]).Players[0];
+                DuelPlayer? dp2 = ((Participant)m_Participants[1]).Players[0];
 
                 if (dp1 != null && dp2 != null)
                 {
@@ -878,7 +762,7 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 for (int j = 0; j < p.Players.Length; ++j)
                 {
@@ -910,7 +794,7 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant oldPart = (Participant)m_Participants[i];
+                Participant? oldPart = (Participant?)m_Participants[i];
                 Participant newPart = new Participant(dc, oldPart.Players.Length);
 
                 for (int j = 0; j < oldPart.Players.Length; ++j)
@@ -928,7 +812,7 @@ namespace Server.Engines.ConPVP
             dc.SendReadyUpGump();
         }
 
-        public DuelPlayer Find(Mobile mob)
+        public DuelPlayer? Find(Mobile mob)
         {
             if (mob is PlayerMobile)
             {
@@ -942,8 +826,8 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
-                DuelPlayer pl = p.Find(mob);
+                Participant? p = (Participant?)m_Participants[i];
+                DuelPlayer? pl = p.Find(mob);
 
                 if (pl != null)
                     return pl;
@@ -954,22 +838,22 @@ namespace Server.Engines.ConPVP
 
         public bool IsAlly(Mobile m1, Mobile m2)
         {
-            DuelPlayer pl1 = Find(m1);
-            DuelPlayer pl2 = Find(m2);
+            DuelPlayer? pl1 = Find(m1);
+            DuelPlayer? pl2 = Find(m2);
 
             return (pl1 != null && pl2 != null && pl1.Participant == pl2.Participant);
         }
 
-        public Participant CheckCompletion()
+        public Participant? CheckCompletion()
         {
-            Participant winner = null;
+            Participant? winner = null;
 
             bool hasWinner = false;
             int eliminated = 0;
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 if (p.Eliminated)
                 {
@@ -990,7 +874,7 @@ namespace Server.Engines.ConPVP
             return null;
         }
 
-        private Timer m_Countdown;
+        private Timer? m_Countdown;
 
         public void StartCountdown(int count, CountdownCallback cb)
         {
@@ -1026,7 +910,7 @@ namespace Server.Engines.ConPVP
             states[0] = count - 1;
         }
 
-        private Timer m_AutoTieTimer;
+        private Timer? m_AutoTieTimer;
         private bool m_Tied;
 
         public bool Tied { get { return m_Tied; } }
@@ -1067,7 +951,7 @@ namespace Server.Engines.ConPVP
         {
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 for (int j = 0; j < p.Players.Length; ++j)
                 {
@@ -1108,7 +992,7 @@ namespace Server.Engines.ConPVP
         {
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 for (int j = 0; j < p.Players.Length; ++j)
                 {
@@ -1170,7 +1054,7 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 if (p.Eliminated)
                 {
@@ -1290,7 +1174,7 @@ namespace Server.Engines.ConPVP
             if (!ConPVPSystem.Enabled)
                 return;
 
-            PlayerMobile pm = e.Mobile as PlayerMobile;
+            PlayerMobile? pm = e.Mobile as PlayerMobile;
 
             if (pm == null)
                 return;
@@ -1353,7 +1237,7 @@ namespace Server.Engines.ConPVP
             if (e.Handled)
                 return;
 
-            PlayerMobile pm = e.Mobile as PlayerMobile;
+            PlayerMobile? pm = e.Mobile as PlayerMobile;
 
             if (pm == null)
                 return;
@@ -1483,7 +1367,7 @@ namespace Server.Engines.ConPVP
                     }
                     else
                     {
-                        DuelPlayer pl = pm.DuelContext.Find(pm);
+                        DuelPlayer? pl = pm.DuelContext.Find(pm);
 
                         if (pl == null)
                             return;
@@ -1650,7 +1534,7 @@ namespace Server.Engines.ConPVP
                 }
                 else
                 {
-                    DuelPlayer pl = pm.DuelContext.Find(pm);
+                    DuelPlayer? pl = pm.DuelContext.Find(pm);
 
                     if (pl != null)
                     {
@@ -1685,7 +1569,7 @@ namespace Server.Engines.ConPVP
                                 CancelSpell(pm);
                                 pm.Frozen = false;
 
-                                Participant winner = pm.DuelContext.CheckCompletion();
+                                Participant? winner = pm.DuelContext.CheckCompletion();
 
                                 if (winner != null)
                                     pm.DuelContext.Finish(winner);
@@ -1727,7 +1611,7 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 for (int j = 0; j < p.Players.Length; ++j)
                 {
@@ -1745,7 +1629,7 @@ namespace Server.Engines.ConPVP
             }
         }
 
-        public void RejectReady(Mobile rejector, string page)
+        public void RejectReady(Mobile rejector, string? page)
         {
             if (m_StartedReadyCountdown)
                 return; // sanity
@@ -1755,7 +1639,7 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 for (int j = 0; j < p.Players.Length; ++j)
                 {
@@ -1829,9 +1713,6 @@ namespace Server.Engines.ConPVP
 
             TransformationSpellHelper.RemoveContext(mob, true);
             // Yoar: we don't have animal form
-#if false
-            AnimalForm.RemoveContext(mob, true);
-#endif
 
             if (DisguiseGump.IsDisguised(mob))
                 DisguiseGump.StopTimer(mob);
@@ -1840,6 +1721,7 @@ namespace Server.Engines.ConPVP
             {
                 mob.BodyMod = 0;
                 mob.HueMod = -1;
+                PolymorphSpell.StopTimer(mob);
                 mob.EndAction(typeof(PolymorphSpell));
             }
 
@@ -1954,7 +1836,7 @@ namespace Server.Engines.ConPVP
         {
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 if (p.Players.Length > 1)
                 {
@@ -1974,8 +1856,8 @@ namespace Server.Engines.ConPVP
                     {
                         for (int leaderIndex = 0; (leaderIndex + 1) < players.Count; leaderIndex += Party.Capacity)
                         {
-                            Mobile leader = (Mobile)players[leaderIndex];
-                            Party party = Party.Get(leader);
+                            Mobile? leader = (Mobile?)players[leaderIndex];
+                            Party? party = Party.Get(leader);
 
                             if (party == null)
                             {
@@ -1990,8 +1872,8 @@ namespace Server.Engines.ConPVP
 
                             for (int j = leaderIndex + 1; j < players.Count && j < leaderIndex + Party.Capacity; ++j)
                             {
-                                Mobile player = (Mobile)players[j];
-                                Party existing = Party.Get(player);
+                                Mobile? player = (Mobile?)players[j];
+                                Party? existing = Party.Get(player);
 
                                 if (existing == party)
                                     continue;
@@ -2022,7 +1904,7 @@ namespace Server.Engines.ConPVP
         {
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 for (int j = 0; j < p.Players.Length; ++j)
                 {
@@ -2069,11 +1951,11 @@ namespace Server.Engines.ConPVP
                 }
             }
 
-            Item inHand = mob.Holding;
+            Item inHand = mob.Dragging;
 
             if (inHand != null && !CheckItemEquip(mob, inHand))
             {
-                mob.Holding = null;
+                mob.Dragging = null;
 
                 BounceInfo bi = inHand.GetBounce();
 
@@ -2114,7 +1996,7 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 for (int j = 0; j < p.Players.Length; ++j)
                 {
@@ -2224,7 +2106,7 @@ namespace Server.Engines.ConPVP
 
             public void Register(Mobile mob)
             {
-                ReturnEntry entry = Find(mob);
+                ReturnEntry? entry = Find(mob);
 
                 if (entry != null)
                 {
@@ -2235,11 +2117,11 @@ namespace Server.Engines.ConPVP
                 m_Entries.Add(new ReturnEntry(mob));
             }
 
-            private ReturnEntry Find(Mobile mob)
+            private ReturnEntry? Find(Mobile mob)
             {
                 for (int i = 0; i < m_Entries.Count; ++i)
                 {
-                    ReturnEntry entry = (ReturnEntry)m_Entries[i];
+                    ReturnEntry? entry = (ReturnEntry?)m_Entries[i];
 
                     if (entry.Mobile == mob)
                         return entry;
@@ -2255,7 +2137,7 @@ namespace Server.Engines.ConPVP
                 if (!base.OnMoveOver(m))
                     return false;
 
-                ReturnEntry entry = Find(m);
+                ReturnEntry? entry = Find(m);
 
                 if (entry != null)
                 {
@@ -2289,7 +2171,7 @@ namespace Server.Engines.ConPVP
 
                 for (int i = 0; i < m_Entries.Count; ++i)
                 {
-                    ReturnEntry entry = (ReturnEntry)m_Entries[i];
+                    ReturnEntry? entry = (ReturnEntry?)m_Entries[i];
 
                     writer.Write((Mobile)entry.Mobile);
                     writer.Write((Point3D)entry.Location);
@@ -2316,7 +2198,7 @@ namespace Server.Engines.ConPVP
 
                             for (int i = 0; i < count; ++i)
                             {
-                                Mobile mob = reader.ReadMobile();
+                                Mobile? mob = reader.ReadMobile();
                                 Point3D loc = reader.ReadPoint3D();
                                 Map map = reader.ReadMap();
 
@@ -2413,7 +2295,7 @@ namespace Server.Engines.ConPVP
         {
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 for (int j = 0; j < p.Players.Length; ++j)
                 {
@@ -2442,7 +2324,7 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 for (int j = 0; j < p.Players.Length; ++j)
                 {
@@ -2462,14 +2344,14 @@ namespace Server.Engines.ConPVP
             }
         }
 
-        public string ValidateStart()
+        public string? ValidateStart()
         {
             if (m_Tournament == null && TournamentController.PreventDuels && TournamentController.IsActive)
                 return "a tournament is active";
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 for (int j = 0; j < p.Players.Length; ++j)
                 {
@@ -2516,7 +2398,7 @@ namespace Server.Engines.ConPVP
         public Arena m_OverrideArena;
         public Tournament m_Tournament;
         public TournyMatch m_Match;
-        public EventGame m_EventGame;
+        public EventGame? m_EventGame;
 
         public Tournament Tournament { get { return m_Tournament; } }
 
@@ -2532,13 +2414,13 @@ namespace Server.Engines.ConPVP
 
             if (count == 0)
             {
-                string error = ValidateStart();
+                string? error = ValidateStart();
 
                 if (error != null)
                 {
                     for (int i = 0; i < m_Participants.Count; ++i)
                     {
-                        Participant p = (Participant)m_Participants[i];
+                        Participant? p = (Participant?)m_Participants[i];
 
                         for (int j = 0; j < p.Players.Length; ++j)
                         {
@@ -2560,7 +2442,7 @@ namespace Server.Engines.ConPVP
 
                 for (int i = 0; i < m_Participants.Count; ++i)
                 {
-                    Participant p = (Participant)m_Participants[i];
+                    Participant? p = (Participant?)m_Participants[i];
 
                     for (int j = 0; j < p.Players.Length; ++j)
                     {
@@ -2571,7 +2453,7 @@ namespace Server.Engines.ConPVP
                     }
                 }
 
-                Arena arena = m_OverrideArena;
+                Arena? arena = m_OverrideArena;
 
                 if (arena == null)
                     arena = Arena.FindArena(players);
@@ -2580,7 +2462,7 @@ namespace Server.Engines.ConPVP
                 {
                     for (int i = 0; i < m_Participants.Count; ++i)
                     {
-                        Participant p = (Participant)m_Participants[i];
+                        Participant? p = (Participant?)m_Participants[i];
 
                         for (int j = 0; j < p.Players.Length; ++j)
                         {
@@ -2610,7 +2492,7 @@ namespace Server.Engines.ConPVP
                         m_GateFacet = m_Initiator.Map;
                     }
 
-                    ExitTeleporter tp = arena.Teleporter as ExitTeleporter;
+                    ExitTeleporter? tp = arena.Teleporter as ExitTeleporter;
 
                     if (tp == null)
                     {
@@ -2624,7 +2506,7 @@ namespace Server.Engines.ConPVP
 
                     for (int i = 0; i < m_Participants.Count; ++i)
                     {
-                        Participant p = (Participant)m_Participants[i];
+                        Participant? p = (Participant?)m_Participants[i];
 
                         for (int j = 0; j < p.Players.Length; ++j)
                         {
@@ -2658,7 +2540,7 @@ namespace Server.Engines.ConPVP
                 {
                     for (int i = 0; i < m_Participants.Count; ++i)
                     {
-                        Participant p = (Participant)m_Participants[i];
+                        Participant? p = (Participant?)m_Participants[i];
 
                         for (int j = 0; j < p.Players.Length; ++j)
                         {
@@ -2683,7 +2565,7 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < m_Participants.Count; ++i)
             {
-                Participant p = (Participant)m_Participants[i];
+                Participant? p = (Participant?)m_Participants[i];
 
                 for (int j = 0; j < p.Players.Length; ++j)
                 {

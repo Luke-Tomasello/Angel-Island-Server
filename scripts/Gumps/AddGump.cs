@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -175,10 +175,10 @@ namespace Server.Gumps
 
         private class TypeNameComparer : IComparer
         {
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
-                Type a = x as Type;
-                Type b = y as Type;
+                Type? a = x as Type;
+                Type? b = y as Type;
 
                 return a.Name.CompareTo(b.Name);
             }
@@ -202,7 +202,7 @@ namespace Server.Gumps
 
             protected override void OnTarget(Mobile from, object o)
             {
-                IPoint3D p = o as IPoint3D;
+                IPoint3D? p = o as IPoint3D;
 
                 if (p != null)
                 {
@@ -232,7 +232,7 @@ namespace Server.Gumps
             {
                 case 1: // Search
                     {
-                        TextRelay te = info.GetTextEntry(0);
+                        TextRelay? te = info.GetTextEntry(0);
                         string match = (te == null ? "" : te.Text.Trim());
 
                         if (match.Length < 3)

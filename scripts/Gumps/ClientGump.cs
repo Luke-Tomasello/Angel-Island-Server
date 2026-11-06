@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,15 @@
 
 /* Scripts/Gumps/ClientGump.cs
  * Changelog:
+ *	10/17/26, Adam (Confinement Stage 3)
+ *		Bring here, Jail now and Prison now go through the confinement coordinator (Confinement.Execute):
+ *		same prison/jail = plain move; out = release; in = admission; between facilities (jail <-> prison, Felucca <-> Trammel
+ *		prison) = transfer with full check-out and check-in. Staff transfers need no parole eligibility. Replaces the
+ *		interim boot/refusal logic below. Staff are told what happened, or why nothing did.
+ *	10/17/26, Adam (Bring here)
+ *		Bringing a prisoner to another spot in the same prison or jail region is a plain move (no boot).
+ *		Bringing them out checks Utility.CanBoot first and only moves them if the boot succeeds; otherwise
+ *		staff are told why and the prisoner is left alone. Bringing them into a different prison or jail is refused.
  *	9/7/05, Pix
  *		Added install versions for newer clients.
  *  6/5/04, Pix
@@ -28,10 +37,12 @@
  */
 
 using Server.Accounting;
+using Server.Commands;
+using Server.Engines.ConfinementSystem;
+using Server.Mobiles;
 using Server.Network;
 using Server.Scripts.Gumps;
 using Server.Targets;
-using System;
 
 namespace Server.Gumps
 {
@@ -41,7 +52,7 @@ namespace Server.Gumps
 
         private void Resend(Mobile to, RelayInfo info)
         {
-            TextRelay te = info.GetTextEntry(0);
+            TextRelay? te = info.GetTextEntry(0);
 
             to.SendGump(new ClientGump(to, m_State, te == null ? "" : te.Text));
         }
@@ -74,7 +85,7 @@ namespace Server.Gumps
             {
                 case 1: // Tell
                     {
-                        TextRelay text = info.GetTextEntry(0);
+                        TextRelay? text = info.GetTextEntry(0);
 
                         if (text != null)
                         {
@@ -114,8 +125,11 @@ namespace Server.Gumps
                             from.SendMessage("You cannot bring that person here.");
                         }
                         else
-                        {
-                            focus.MoveToWorld(from.Location, from.Map);
+                        {   // the confinement coordinator decides: same prison/jail = plain move; out = release; in = admission;
+                            //  another prison/jail = transfer. Staff and other non-players are just moved.
+                            ConfinementResult r = Confinement.Execute(new ConfinementRequest(focus, from, TransitionAuthority.Staff, TransitionMode.Administrative,
+                                ConfinementDestination.At(from.Location, from.Map)) { Comment = "Brought here by staff (Bring here)" });
+                            Report(from, focus, r);
                             Resend(from, info);
                         }
 
@@ -171,6 +185,18 @@ namespace Server.Gumps
 
                         break;
                     }
+                case 12: // Jail (immediate)
+                    {
+                        ImmediateJail(from, focus);
+                        Resend(from, info);
+                        break;
+                    }
+                case 13: // Prison (immediate)
+                    {
+                        ImmediatePrison(from, focus);
+                        Resend(from, info);
+                        break;
+                    }
             }
         }
 
@@ -191,13 +217,14 @@ namespace Server.Gumps
 
             AddPage(0);
 
-            AddBackground(0, 0, 400, 274, 5054);
+            AddBackground(0, 0, 400, 314, 5054);
 
             AddImageTiled(10, 10, 380, 19, 0xA40);
             AddAlphaRegion(10, 10, 380, 19);
 
-            AddImageTiled(10, 32, 380, 232, 0xA40);
-            AddAlphaRegion(10, 32, 380, 232);
+            // Main body taller to match new gump height
+            AddImageTiled(10, 32, 380, 272, 0xA40);
+            AddAlphaRegion(10, 32, 380, 272);
 
             AddHtml(10, 10, 380, 20, Color(Center("User Information"), LabelColor32), false, false);
 
@@ -210,27 +237,13 @@ namespace Server.Gumps
             AddHtml(70, 36 + (line++ * 20), 200, 20, Color(state.Version == null ? "(null)" : state.Version.ToString(), LabelColor32), false, false);
 
             AddHtml(14, 36 + (line * 20), 200, 20, Color("Version:", LabelColor32), false, false);
-#if true
+
             ExpansionInfo info = state.ExpansionInfo;
             string expansionName = info.Name;
-#else
-            string installVersion = "Unknown";
-            // some flags yet unverified
-            if ((state.Flags & 0x80) != 0) installVersion = "Unknown 0x80";
-            else if ((state.Flags & 0x40) != 0) installVersion = "Unknown 0x40";
-            else if ((state.Flags & 0x20) != 0) installVersion = "Mondain's Legacy";
-            else if ((state.Flags & 0x10) != 0) installVersion = "Samurai Empire";
-            else if ((state.Flags & 0x08) != 0) installVersion = "Age of Shadows";
-            else if ((state.Flags & 0x04) != 0) installVersion = "Blackthorn's Revenge";
-            else if ((state.Flags & 0x02) != 0) installVersion = "Third Dawn";
-            else if ((state.Flags & 0x01) != 0) installVersion = "Renaissance";
-            else installVersion = "The Second Age";
-#endif
-            //Pix: old:
-            //AddHtml( 70, 36 + (line++ * 20), 200, 20, Color( ((state.Flags & 0x08) != 0) ? "Age of Shadows" : ((state.Flags & 0x04) != 0) ? "Blackthorn's Revenge" : ((state.Flags & 0x02) != 0) ? "Third Dawn" : ((state.Flags & 0x01) != 0) ? "Renaissance" : "The Second Age", LabelColor32 ), false, false ); // some flags yet unverified
+
             AddHtml(70, 36 + (line++ * 20), 200, 20, Color(expansionName, LabelColor32), false, false);
 
-            Account a = state.Account as Account;
+            Account? a = state.Account as Account;
             Mobile m = state.Mobile;
 
             if (from.AccessLevel >= AccessLevel.GameMaster && a != null)
@@ -246,18 +259,48 @@ namespace Server.Gumps
 
                 AddHtml(14, 36 + (line * 20), 200, 20, Color("Location:", LabelColor32), false, false);
                 AddHtml(70, 36 + (line++ * 20), 200, 20, Color(string.Format("{0} [{1}]", m.Location, m.Map), LabelColor32), false, false);
+                #region new
+                // Incarceration status (world state)
+                AddHtml(14, 36 + (line * 20), 200, 20,
+                    Color("Incarceration:", LabelColor32), false, false);
 
-                AddButton(13, 157, 0xFAB, 0xFAD, 1, GumpButtonType.Reply, 0);
-                AddHtml(48, 158, 200, 20, Color("Send Message", LabelColor32), false, false);
+                string incarcerationText;
+                int incarcerationColor;
 
-                AddImageTiled(12, 182, 376, 80, 0xA40);
-                AddImageTiled(13, 183, 374, 78, 0xBBC);
-                AddTextEntry(15, 183, 372, 78, 0x480, 0, "");
+                if (Utility.IsPlayerImprisoned(m))
+                {
+                    incarcerationText = "In Prison";
+                    incarcerationColor = 0xFF4040; // red
+                }
+                else if (Utility.IsPlayerJailed(m))
+                {
+                    incarcerationText = "In Jail";
+                    incarcerationColor = 0xFFFF00; // yellow
+                }
+                else
+                {
+                    incarcerationText = "Free";
+                    incarcerationColor = 0xC0C0C0; // neutral
+                }
 
-                AddImageTiled(245, 35, 142, 144, 5058);
+                AddHtml(110, 36 + (line++ * 20), 200, 20,
+                    Color(incarcerationText, incarcerationColor), false, false);
 
-                AddImageTiled(246, 36, 140, 142, 0xA40);
-                AddAlphaRegion(246, 36, 140, 142);
+                #endregion new
+                // Move Send Message section down by ~2 rows + margin
+                AddButton(13, 202, 0xFAB, 0xFAD, 1, GumpButtonType.Reply, 0);
+                AddHtml(48, 203, 200, 20, Color("Send Message", LabelColor32), false, false);
+
+                // Move message box down accordingly (restore original height)
+                AddImageTiled(12, 227, 376, 80, 0xA40);
+                AddImageTiled(13, 228, 374, 78, 0xBBC);
+                AddTextEntry(15, 228, 372, 78, 0x480, 0, initialText);
+
+                // Right-side action panel (keep your taller panel)
+                AddImageTiled(245, 35, 142, 184, 5058);
+
+                AddImageTiled(246, 36, 140, 182, 0xA40);
+                AddAlphaRegion(246, 36, 140, 182);
 
                 line = 0;
 
@@ -270,7 +313,7 @@ namespace Server.Gumps
                     AddHtml(280, 38 + (line++ * 20), 100, 20, Color("Go to them", LabelColor32), false, false);
 
                     AddButton(246, 36 + (line * 20), 0xFA5, 0xFA7, 6, GumpButtonType.Reply, 0);
-                    AddHtml(280, 38 + (line++ * 20), 100, 20, Color("Bring them here", LabelColor32), false, false);
+                    AddHtml(280, 38 + (line++ * 20), 100, 20, Color("Bring here", LabelColor32), false, false);
                 }
 
                 AddButton(246, 36 + (line * 20), 0xFA5, 0xFA7, 7, GumpButtonType.Reply, 0);
@@ -280,6 +323,13 @@ namespace Server.Gumps
                 {
                     AddButton(246, 36 + (line * 20), 0xFA5, 0xFA7, 8, GumpButtonType.Reply, 0);
                     AddHtml(280, 38 + (line++ * 20), 100, 20, Color("Disconnect", LabelColor32), false, false);
+
+                    // Emergency confinement actions (defaults)
+                    AddButton(246, 36 + (line * 20), 0xFA5, 0xFA7, 12, GumpButtonType.Reply, 0);
+                    AddHtml(280, 38 + (line++ * 20), 100, 20, Color("Jail now", LabelColor32), false, false);
+
+                    AddButton(246, 36 + (line * 20), 0xFA5, 0xFA7, 13, GumpButtonType.Reply, 0);
+                    AddHtml(280, 38 + (line++ * 20), 100, 20, Color("Prison now", LabelColor32), false, false);
 
                     if (m.Alive)
                     {
@@ -298,85 +348,98 @@ namespace Server.Gumps
                     AddButton(246, 36 + (line * 20), 0xFA5, 0xFA7, 11, GumpButtonType.Reply, 0);
                     AddHtml(280, 38 + (line++ * 20), 100, 20, Color("Skills browser", LabelColor32), false, false);
                 }
+
             }
 
-#if false
-			AddPage( 0 );
 
-			AddBackground( 0, 0, 300, 370, 5054 );
-			AddBackground( 8, 8, 284, 354, 3000 );
-
-			AddLabel( 12, 12, 0, "Client Info" );
-
-			int line = 0;
-
-			AddLabel( 12, 38 + (line++ * 22), 0, string.Format( "Address: {0}", state ) );
-			AddLabel( 12, 38 + (line++ * 22), 0, string.Format( "Version: {0}; Flags: 0x{1:X}", state.Version == null ? "(null)" : state.Version.ToString(), state.Flags ) );
-
-			Account a = state.Account as Account;
-			Mobile m = state.Mobile;
-
-			if ( from.AccessLevel >= AccessLevel.GameMaster && a != null )
-			{
-				AddLabel( 12, 38 + (line++ * 22), 0, string.Format( "Account: {0}", a.Username ) );
-			}
-
-			if ( m != null )
-			{
-				AddLabel( 12, 38 + (line++ * 22), 0, string.Format( "Mobile: {0} (0x{1:X})", m.Name, m.Serial.Value ) );
-				AddLabel( 12, 38 + (line++ * 22), 0, string.Format( "Location: {0} [{1}]", m.Location, m.Map ) );
-
-				AddButton( 12, 38 + (line * 22), 0xFAB, 0xFAD, 1, GumpButtonType.Reply, 0 );
-				AddImageTiled( 47, 38 + (line * 22), 234, 22, 0xA40 );
-				AddImageTiled( 48, 38 + (line * 22) + 1, 232, 20, 0xBBC );
-				AddTextEntry( 48, 38 + (line++ * 22) + 1, 232, 20, 0, 0, initialText );
-			}
-
-			/*if ( from.AccessLevel >= AccessLevel.Administrator && a != null && from != m )
-			{
-				AddButton( 12, 38 + (line * 22), 0xFA2, 0xFA4, 2, GumpButtonType.Reply, 0 );
-				AddLabel( 48, 38 + (line++ * 22), 0, "Ban" );
-			}*/
-
-			/*if ( from.AccessLevel >= AccessLevel.Administrator && from != m )
-			{
-				AddButton( 12, 38 + (line * 22), 0xFA2, 0xFA4, 3, GumpButtonType.Reply, 0 );
-				AddLabel( 48, 38 + (line++ * 22), 0, "Firewall" );
-			}*/
-
-			if ( m != null )
-			{
-				AddButton( 12, 38 + (line * 22), 0xFB7, 0xFB9, 4, GumpButtonType.Reply, 0 );
-				AddLabel( 48, 38 + (line++ * 22), 0, "Props" );
-
-				if ( from != m )
-				{
-					AddButton( 12, 38 + (line * 22), 0xFA5, 0xFA7, 5, GumpButtonType.Reply, 0 );
-					AddLabel( 48, 38 + (line++ * 22), 0, "Goto" );
-
-					AddButton( 12, 38 + (line * 22), 0xFAE, 0xFB0, 6, GumpButtonType.Reply, 0 );
-					AddLabel( 48, 38 + (line++ * 22), 0, "Get" );
-				}
-
-				AddButton( 12, 38 + (line * 22), 0xFA8, 0xFAA, 7, GumpButtonType.Reply, 0 );
-				AddLabel( 48, 38 + (line++ * 22), 0, "Move" );
-
-				if ( from.AccessLevel >= AccessLevel.GameMaster && from.AccessLevel > m.AccessLevel )
-				{
-					AddButton( 12, 38 + (line * 22), 0xFA2, 0xFA4, 8, GumpButtonType.Reply, 0 );
-					AddLabel( 48, 38 + (line++ * 22), 0, "Kick" );
-
-					AddButton( 12, 38 + (line * 22), 0xFB7, 0xFB9, 9, GumpButtonType.Reply, 0 );
-					AddLabel( 48, 38 + (line++ * 22), 0, "Kill" );
-
-					AddButton( 12, 38 + (line * 22), 0xFB7, 0xFB9, 10, GumpButtonType.Reply, 0 );
-					AddLabel( 48, 38 + (line++ * 22), 0, "Resurrect" );
-
-					AddButton( 12, 38 + (line * 22), 0xFB7, 0xFB9, 11, GumpButtonType.Reply, 0 );
-					AddLabel( 48, 38 + (line++ * 22), 0, "Player's Skills" );
-				}
-			}
-#endif
         }
+
+        private static bool CanConstrain(Mobile staff, Mobile target)
+        {
+            return staff != null
+                   && target != null
+                   && staff.AccessLevel >= AccessLevel.GameMaster
+                   && staff.AccessLevel > target.AccessLevel;
+        }
+        private static void ImmediatePrison(Mobile staff, Mobile target)
+        {
+            if (!CanConstrain(staff, target))
+                return;
+
+            PlayerMobile? pm = target as PlayerMobile;
+
+            if (pm == null || (pm.Account is Accounting.Account) == false)
+                return;
+
+            // admission from the world, or a transfer from jail (jail check-out, then prison check-in), through the coordinator
+            ConfinementResult r = Confinement.Execute(new ConfinementRequest(pm, staff, TransitionAuthority.Staff, TransitionMode.Administrative,
+                ConfinementDestination.Prison()) { Comment = "Sent to prison", PrisonSentence = 3 });
+
+            // Already in prison (by region)
+            if (r.Plan.Operation == ConfinementOperation.Relocate)
+                staff.SendMessage("That player is already in prison.");
+            else
+                Report(staff, pm, r);
+        }
+
+        // Tell staff how a coordinated jail/prison move went. Plain moves are silent, as Bring here always was.
+        private static void Report(Mobile staff, Mobile focus, ConfinementResult r)
+        {
+            ConfinementPlan p = r.Plan;
+            string from = p.Source.Region != null ? string.Format("{0} ({1})", p.Source.Region, p.Source.Map) : "the world";
+            string to = p.DestinationRegion != null ? string.Format("{0} ({1})", p.DestinationRegion, p.DestinationMap) : "the world";
+
+            switch (r.Outcome)
+            {
+                case ConfinementOutcome.Denied:
+                    staff.SendMessage("{0} cannot be {1} right now: {2}", focus.Name, p.Operation switch
+                    {
+                        ConfinementOperation.Release => "released from " + from,
+                        ConfinementOperation.Admit => "admitted to " + to,
+                        ConfinementOperation.Transfer => "transferred from " + from + " to " + to,
+                        _ => "moved",
+                    }, r.Reason);
+                    break;
+
+                case ConfinementOutcome.PartialFailure:
+                    staff.SendMessage(0x22, "{0}: the {1} did not complete ({2}). Done so far: {3}. See Confinement.log.",
+                        focus.Name, p.Operation.ToString().ToLower(), r.Message, string.Join(", ", r.Steps));
+                    break;
+
+                default:
+                    if (p.Operation == ConfinementOperation.Release)
+                        staff.SendMessage("{0} was released from {1}.", focus.Name, from);
+                    else if (p.Operation == ConfinementOperation.Admit)
+                        staff.SendMessage("{0} was admitted to {1}.", focus.Name, to);
+                    else if (p.Operation == ConfinementOperation.Transfer)
+                        staff.SendMessage("{0} was transferred from {1} to {2}.", focus.Name, from, to);
+                    if (r.Message.Length > 0 && p.Operation != ConfinementOperation.Relocate)
+                        staff.SendMessage("({0})", r.Message);
+                    break;
+            }
+        }
+
+        private static void ImmediateJail(Mobile staff, Mobile target)
+        {
+            if (!CanConstrain(staff, target))
+                return;
+
+            PlayerMobile? pm = target as PlayerMobile;
+
+            if (pm == null || (pm.Account is Accounting.Account) == false)
+                return;
+
+            // admission from the world, or a transfer from prison (staff prison check-out without parole eligibility,
+            //  then jail check-in), through the coordinator
+            ConfinementResult r = Confinement.Execute(new ConfinementRequest(pm, staff, TransitionAuthority.Staff, TransitionMode.Administrative,
+                ConfinementDestination.Jail()) { Comment = "Sent to jail", JailCell = 3, JailHours = 24 });
+
+            // Already in jail (by region)
+            if (r.Plan.Operation == ConfinementOperation.Relocate)
+                staff.SendMessage("That player is already jailed.");
+            else
+                Report(staff, pm, r);
+        }
+
     }
 }

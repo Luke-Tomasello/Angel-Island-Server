@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -46,9 +46,9 @@ namespace Server.Engines.BulkOrders
 
         private const int LabelColor = 0x7FFF;
 
-        public Item Reconstruct(object obj)
+        public Item Reconstruct(object? obj)
         {
-            Item item = null;
+            Item? item = null;
 
             if (obj is BOBLargeEntry)
                 item = ((BOBLargeEntry)obj).Reconstruct();
@@ -58,7 +58,7 @@ namespace Server.Engines.BulkOrders
             return item;
         }
 
-        public bool CheckFilter(object obj)
+        public bool CheckFilter(object? obj)
         {
             if (obj is BOBLargeEntry)
             {
@@ -145,7 +145,7 @@ namespace Server.Engines.BulkOrders
 
             for (int i = 0; i < m_Book.Entries.Count; i++)
             {
-                object obj = m_Book.Entries[i];
+                object? obj = m_Book.Entries[i];
 
                 if (!CheckFilter(obj))
                     continue;
@@ -290,7 +290,7 @@ namespace Server.Engines.BulkOrders
                         if (index < 0 || index >= m_List.Count)
                             break;
 
-                        object obj = m_List[index];
+                        object? obj = m_List[index];
 
                         if (!m_Book.Entries.Contains(obj))
                         {
@@ -334,7 +334,7 @@ namespace Server.Engines.BulkOrders
                             {
                                 PlayerVendor pv = (PlayerVendor)m_Book.RootParent;
 
-                                VendorItem vi = pv.SellItems[m_Book] as VendorItem;
+                                VendorItem? vi = pv.SellItems[m_Book] as VendorItem;
 
                                 int price = 0;
 
@@ -361,11 +361,11 @@ namespace Server.Engines.BulkOrders
         private class SetPricePrompt : Prompt
         {
             private BulkOrderBook m_Book;
-            private object m_Object;
+            private object? m_Object;
             private int m_Page;
             private ArrayList m_List;
 
-            public SetPricePrompt(BulkOrderBook book, object obj, int page, ArrayList list)
+            public SetPricePrompt(BulkOrderBook book, object? obj, int page, ArrayList list)
             {
                 m_Book = book;
                 m_Object = obj;
@@ -419,7 +419,7 @@ namespace Server.Engines.BulkOrders
 
             TurnPage(page);
 
-            PlayerVendor pv = book.RootParent as PlayerVendor;
+            PlayerVendor? pv = book.RootParent as PlayerVendor;
 
             bool canDrop = book.IsChildOf(from.Backpack);
             bool canBuy = (pv != null);
@@ -427,7 +427,7 @@ namespace Server.Engines.BulkOrders
 
             if (canBuy)
             {
-                VendorItem vi = pv.SellItems[book] as VendorItem;
+                VendorItem? vi = pv.SellItems[book] as VendorItem;
 
                 canBuy = (vi != null && !vi.IsForSale);
             }
@@ -516,7 +516,7 @@ namespace Server.Engines.BulkOrders
 
             for (int i = 0; i < m_List.Count; i++)
             {
-                object obj = m_List[i];
+                object? obj = m_List[i];
 
                 AddImageTiled(24, y - 2, canPrice ? 573 : 489, 2, 2624);
 

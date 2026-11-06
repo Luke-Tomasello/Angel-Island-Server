@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,6 +48,8 @@ using System.Collections.Generic;
 
 namespace Server
 {
+
+
     [Serializable]
     [Parsable]
     public struct Point2D : IPoint2D
@@ -113,7 +115,7 @@ namespace Server
                 return new Point2D();
         }
 
-        public override bool Equals(object o)
+        public override bool Equals(object? o)
         {
             if (o == null || !(o is IPoint2D)) return false;
 
@@ -288,7 +290,7 @@ namespace Server
             return string.Format("({0}, {1}, {2})", m_X, m_Y, m_Z);
         }
 
-        public override bool Equals(object o)
+        public override bool Equals(object? o)
         {
             if (o == null || !(o is IPoint3D)) return false;
 
@@ -357,6 +359,11 @@ namespace Server
     {
         private Point2D m_Start;
         private Point2D m_End;
+        public static readonly Rectangle2D Empty = new Rectangle2D(0, 0, 0, 0);
+        public bool IsEmpty
+        {
+            get { return Width <= 0 || Height <= 0; }
+        }
 
         public Rectangle2D(int width, int height, IPoint2D center)
         {
@@ -548,20 +555,43 @@ namespace Server
         public bool Contains(Point3D p)
         {
             return (m_Start.m_X <= p.m_X && m_Start.m_Y <= p.m_Y && m_End.m_X > p.m_X && m_End.m_Y > p.m_Y);
-            //return ( m_Start <= p && m_End > p );
         }
 
         public bool Contains(Point2D p)
         {
             return (m_Start.m_X <= p.m_X && m_Start.m_Y <= p.m_Y && m_End.m_X > p.m_X && m_End.m_Y > p.m_Y);
-            //return ( m_Start <= p && m_End > p );
+
         }
 
         public bool Contains(IPoint2D p)
         {
             return (m_Start <= p && m_End > p);
         }
+        public bool Contains(Rectangle2D inner)
+        {
+            return m_Start.m_X <= inner.m_Start.m_X
+                   && m_Start.m_Y <= inner.m_Start.m_Y
+                   && m_End.m_X >= inner.m_End.m_X
+                   && m_End.m_Y >= inner.m_End.m_Y;
+        }
+        /// <summary>
+        /// Returns true if this rectangle overlaps with another rectangle.
+        /// </summary>
+        public bool Intersects(Rectangle2D other)
+        {
+            return !(other.X >= this.X + this.Width ||
+                     other.X + other.Width <= this.X ||
+                     other.Y >= this.Y + this.Height ||
+                     other.Y + other.Height <= this.Y);
+        }
 
+        /// <summary>
+        /// Returns true if this rectangle overlaps with a Rectangle3D.
+        /// </summary>
+        public bool Intersects(Rectangle3D other)
+        {
+            return Intersects(new Rectangle2D(other));
+        }
         public override string ToString()
         {
             return string.Format("({0}, {1})+({2}, {3})", X, Y, Width, Height);
@@ -574,7 +604,11 @@ namespace Server
     {
         private Point3D m_Start;
         private Point3D m_End;
-
+        //public static readonly Rectangle3D Empty = new Rectangle3D(0, 0, 0, 0, 0, 0);
+        //public bool IsEmpty
+        //{
+        //    get { return Width <= 0 || Height <= 0; }
+        //}
         public Rectangle3D(Point3D start, Point3D end)
         {
             m_Start = start;
@@ -665,4 +699,41 @@ namespace Server
             return string.Format("({0}, {1})+({2}, {3})", m_Start.m_X, m_Start.m_Y, Width, Height);
         }
     }
+
+    public static class Geometry
+    {
+        public static IEnumerable<Point2D> Line2D(int x0, int y0, int x1, int y1)
+        {
+            int dx = Math.Abs(x1 - x0);
+            int dy = Math.Abs(y1 - y0);
+
+            int sx = (x0 < x1) ? 1 : -1;
+            int sy = (y0 < y1) ? 1 : -1;
+
+            int err = dx - dy;
+
+            while (true)
+            {
+                yield return new Point2D(x0, y0);
+
+                if (x0 == x1 && y0 == y1)
+                    break;
+
+                int e2 = err << 1;
+
+                if (e2 > -dy)
+                {
+                    err -= dy;
+                    x0 += sx;
+                }
+
+                if (e2 < dx)
+                {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        }
+    }
+
 }

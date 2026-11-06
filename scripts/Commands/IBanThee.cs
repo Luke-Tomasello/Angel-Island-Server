@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -32,14 +32,13 @@
  */
 
 using Server.Accounting;
-using Server.BountySystem;
 using Server.Diagnostics;
 using Server.Items;
 using Server.Mobiles;
 using Server.Targeting;
 using System;
 
-namespace Server.PJUM
+namespace Server.Engines
 {
     public class IBanThee
     {
@@ -112,7 +111,7 @@ namespace Server.PJUM
                         lns[1] = string.Format("{0} was last seen at {1}.", pm.Name, location);
 
 
-                        if (PJUM.HasBeenReported(pm))
+                        if (PlayerJusticeSystem.HasBeenReported(pm))
                         {
                             from.SendMessage("{0} has already been reported.", pm.Name);
                         }
@@ -122,7 +121,10 @@ namespace Server.PJUM
                             //move player to outside arena
                             pm.MoveToWorld(new Point3D(353, 905, 0), Map.Felucca);
 
-                            PJUM.AddMacroer(lns, pm, DateTime.UtcNow + TimeSpan.FromHours(2));
+                            // Apply criminality + record authoritative account state
+                            pm.CriminalAction(message: false, ctx: null, Mobile.CriminalitySource.AFK, regionInform: false);
+
+                            PlayerJusticeSystem.AddMacroer(lns, pm);
 
                             //Add bounty to player
                             string name = string.Format("Officer {0}", Utility.RandomBool() ? NameList.RandomName("male") : NameList.RandomName("female"));
@@ -159,7 +161,7 @@ namespace Server.PJUM
                             BountyKeeper.Add(bounty);
 
                             //Add comment to account
-                            Account acc = pm.Account as Account;
+                            Account? acc = pm.Account as Account;
                             string comment = string.Format("On {0}, {1} caught {2} disturbing event at {3} : removed using the [ibanthee command",
                                 DateTime.UtcNow,
                                 from.Name,

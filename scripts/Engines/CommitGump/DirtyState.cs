@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -105,49 +105,7 @@ namespace Server.Engines.CommitGump
             return ((DirtyValue<T>)m_DirtyFields[key]).m_Value;
         }
 
-        public T GetOriginalValue<T>(string key) where T : struct
-        {
-            if (m_DirtyFields[key] == null)
-                m_DirtyFields[key] = new DirtyValue<T>(default(T));
-            return ((DirtyValue<T>)m_DirtyFields[key]).OriginalValue;
-        }
-
-        public bool IsValueDirty<T>(string key) where T : struct
-        {
-            if (m_DirtyFields[key] == null)
-                m_DirtyFields[key] = new DirtyValue<T>(default(T));
-            return ((DirtyValue<T>)m_DirtyFields[key]).IsDirty();
-        }
-
         //reference
-
-        public void SetReference<T>(string key, T value) where T : class, IEquatable<T>, ICloneable
-        {
-            if (m_DirtyFields[key] == null)
-                m_DirtyFields[key] = new DirtyReference<T>(value);
-            ((DirtyReference<T>)m_DirtyFields[key]).SetValue(value);
-        }
-
-        public T GetReference<T>(string key) where T : class, IEquatable<T>, ICloneable
-        {
-            if (m_DirtyFields[key] == null)
-                m_DirtyFields[key] = new DirtyReference<T>(default(T));
-            return ((DirtyReference<T>)m_DirtyFields[key]).m_Value;
-        }
-
-        public T GetOriginalReference<T>(string key) where T : class, IEquatable<T>, ICloneable
-        {
-            if (m_DirtyFields[key] == null)
-                m_DirtyFields[key] = new DirtyReference<T>(default(T));
-            return ((DirtyReference<T>)m_DirtyFields[key]).OriginalValue;
-        }
-
-        public bool IsReferenceDirty<T>(string key) where T : class, IEquatable<T>, ICloneable
-        {
-            if (m_DirtyFields[key] == null)
-                m_DirtyFields[key] = new DirtyReference<T>(default(T));
-            return ((DirtyReference<T>)m_DirtyFields[key]).IsDirty();
-        }
 
 
     }

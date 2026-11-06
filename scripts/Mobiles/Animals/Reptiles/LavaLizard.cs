@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,8 +28,6 @@
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -80,28 +78,14 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020607034631/uo.stratics.com/hunters/lavalizard.shtml
+            // 20 - 50 Gold
+            if (Spawning)
+            {
                 PackGold(20, 50);
+            }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020607034631/uo.stratics.com/hunters/lavalizard.shtml
-                    // 20 - 50 Gold
-                    if (Spawning)
-                    {
-                        PackGold(20, 50);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new SulfurousAsh(Utility.Random(4, 10)));
-
-                    AddLoot(LootPack.Meager);
-                }
             }
         }
 

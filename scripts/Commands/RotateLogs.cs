@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,12 @@
 
 /* Scripts/Commands/RotateLogs.cs
  * 	CHANGELOG:
+  *  8/1/2026, Adam
+ *      Refactored monthly log rotation to detach the complete active Logs
+ *      directory into a timestamped snapshot. Logging now resumes immediately,
+ *      while compression and cleanup run asynchronously against the detached
+ *      snapshot. Added transient retry handling, temporary archive publication,
+ *      failure-safe cleanup, and protection against overlapping rotations.
  *	11/14/06, Adam
  *		Adjust rollover tag to be seconds since 1/1/2000
  * 	11/3/06, Adam
@@ -30,24 +36,39 @@
 using Server.Diagnostics;
 using System;
 using System.IO;
+using System.IO.Compression;
+using System.Threading;
 
 namespace Server.Commands
 {
     public class RotateLogs
     {
+        private const int MaxRotateAttempts = 3;
+
+        private static readonly TimeSpan RotateRetryDelay =
+            TimeSpan.FromSeconds(1.0);
+
+        // 0 = idle, 1 = rotation/archive in progress
+        private static int m_Rotating;
+
         public static void Initialize()
         {
-            Server.CommandSystem.Register("RotateLogs", AccessLevel.Administrator, new CommandEventHandler(RotateLogs_OnCommand));
+            Server.CommandSystem.Register(
+                "RotateLogs",
+                AccessLevel.Administrator,
+                new CommandEventHandler(RotateLogs_OnCommand));
         }
 
         [Usage("RotateLogs")]
-        [Description("Rotate player command logs.")]
+        [Description("Rotate and archive server logs.")]
         public static void RotateLogs_OnCommand(CommandEventArgs e)
         {
             try
             {
-                RotateNow();
-                e.Mobile.SendMessage("Log rotation complete.");
+                if (RotateNow())
+                    e.Mobile.SendMessage("Log rotation started.");
+                else
+                    e.Mobile.SendMessage("Log rotation is already in progress.");
             }
             catch (Exception ex)
             {
@@ -57,201 +78,297 @@ namespace Server.Commands
             }
         }
 
-        public static void RotateNow()
+        public static bool RotateNow()
         {
-            // close the open logfile
-            CommandLogging.Close();
+            // Atomically prevent overlapping command, cron, or retry operations.
+            if (Interlocked.CompareExchange(ref m_Rotating, 1, 0) != 0)
+            {
+                Utility.Monitor.WriteLine(
+                    "Log rotation is already in progress.",
+                    ConsoleColor.Yellow);
 
-            // 5/12/2024, Adam: We need to allow the CLR time to cleanup finalizers (I think,) before we actually move the file or else it fails. 
-            //  I added queuing for the command logger to buffer output until the stream is reopened.
-            Timer.DelayCall(TimeSpan.FromSeconds(7.0), new TimerStateCallback(RotateTick), new object[] { null, null });
+                return false;
+            }
+
+            try
+            {
+                RotateTick(1);
+                return true;
+            }
+            catch
+            {
+                EndRotation();
+                throw;
+            }
         }
 
         private static void RotateTick(object state)
         {
+            int attempt = state is int value ? value : 1;
+
             Utility.TimeCheck tc = new Utility.TimeCheck();
             tc.Start();
-            bool ok = true;
+
+            bool rotated = false;
+            bool retryScheduled = false;
+            bool archiveQueued = false;
+
+            string? snapshotDirectory = null;
+
             try
             {
-                string root = Path.Combine(Core.BaseDirectory, "Logs");
+                CommandLogging.Close();
 
-                if (!Directory.Exists(root))
-                    Directory.CreateDirectory(root);
-
-                string[] existing = Directory.GetDirectories(root);
-
-                DirectoryInfo dir;
-
-                // rename the commands directory with a date-time stamp
-                dir = Match(existing, "Commands");
-                if (dir != null)
+                try
                 {
-                    string ToName = Utility.GameTimeFileStamp(id: true);  // 'Game Time' Format: "August 31 2023, 06 11 34 PM (0x01)"
-                    try { dir.MoveTo(FormatDirectory(root, ToName, "")); }
-                    catch (Exception ex)
+                    snapshotDirectory = DetachLogsDirectory();
+                    rotated = true;
+                }
+                catch (IOException ex)
+                {
+                    if (attempt < MaxRotateAttempts)
+                    {
+                        Utility.Monitor.WriteLine(
+                            string.Format(
+                                "Log rotation attempt {0} failed; retrying in {1} second.",
+                                attempt,
+                                RotateRetryDelay.TotalSeconds),
+                            ConsoleColor.Yellow);
+
+                        Timer.DelayCall(
+                            RotateRetryDelay,
+                            new TimerStateCallback(RotateTick),
+                            attempt + 1);
+
+                        retryScheduled = true;
+                    }
+                    else
                     {
                         LogHelper.LogException(ex);
-                        Console.WriteLine("Failed to move to {0}", FormatDirectory(root, ToName, ""));
                         Console.WriteLine(ex.ToString());
-                        ok = false;
                     }
                 }
+                catch (UnauthorizedAccessException ex)
+                {
+                    LogHelper.LogException(ex);
+                    Console.WriteLine(ex.ToString());
+                }
+                finally
+                {
+                    // Never leave command logging offline.
+                    CommandLogging.Open();
+                }
 
-                // reopen the logfile
-                CommandLogging.Open();
+                if (snapshotDirectory != null)
+                {
+                    QueueArchive(snapshotDirectory);
+                    archiveQueued = true;
+                }
             }
             catch (Exception ex)
             {
                 LogHelper.LogException(ex);
+                Console.WriteLine(ex.ToString());
             }
             finally
             {
                 tc.End();
-                System.Console.WriteLine("Rotation of command logs {0} in {1}.",
-                        ok ? "completed" : "failed", tc.TimeTaken);
+
+                if (rotated)
+                {
+                    Utility.Monitor.WriteLine(
+                        string.Format(
+                            "Rotation of logs completed in {0}.",
+                            tc.TimeTaken),
+                        ConsoleColor.White);
+                }
+                else if (!retryScheduled)
+                {
+                    Utility.Monitor.WriteLine(
+                        string.Format(
+                            "Rotation of logs failed after {0} attempt{1}.",
+                            attempt,
+                            attempt == 1 ? string.Empty : "s"),
+                        ConsoleColor.Yellow);
+                }
+
+                /*
+                 * A scheduled retry retains ownership of the rotation.
+                 * A queued archive releases ownership in ArchiveSnapshot().
+                 * Every other path is terminal and must release it here.
+                 */
+                if (!retryScheduled && !archiveQueued)
+                    EndRotation();
             }
         }
 
-        #region Archive
-
-        public static void ArchiveNow()
+        private static string GetActiveLogsDirectory()
         {
-            // close the open logfile
-            CommandLogging.Close();
-
-            // 5/13/2024, Adam: We need to allow the CLR time to cleanup finalizers (I think,) before we actually archive the files or else it fails. 
-            //  (I added queuing for the command logger to buffer output until the stream is reopened.)
-            Timer.DelayCall(TimeSpan.FromSeconds(7.0), new TimerStateCallback(ArchiveTick), new object[] { null, null });
+            return Path.Combine(Core.ExeDirectory, "Logs");
         }
 
-        private static void ArchiveTick(object state)
+        private static string GetArchiveQueueDirectory()
+        {
+            return Path.Combine(Core.ExeDirectory, "LogArchiveQueue");
+        }
+
+        private static string DetachLogsDirectory()
+        {
+            string activeDirectory = GetActiveLogsDirectory();
+            string queueDirectory = GetArchiveQueueDirectory();
+
+            if (!Directory.Exists(queueDirectory))
+                Directory.CreateDirectory(queueDirectory);
+
+            if (!Directory.Exists(activeDirectory))
+                Directory.CreateDirectory(activeDirectory);
+
+            string snapshotName = string.Format(
+                "Logs {0}",
+                Utility.GameTimeFileStamp(id: true));
+
+            string snapshotDirectory =
+                Path.Combine(queueDirectory, snapshotName);
+
+            Directory.Move(
+                activeDirectory,
+                snapshotDirectory);
+
+            // Establish the new live logging generation immediately.
+            Directory.CreateDirectory(activeDirectory);
+
+            return snapshotDirectory;
+        }
+
+        private static void QueueArchive(string snapshotDirectory)
+        {
+            if (string.IsNullOrEmpty(snapshotDirectory))
+                throw new ArgumentNullException(nameof(snapshotDirectory));
+
+            if (!ThreadPool.QueueUserWorkItem(
+                    new WaitCallback(ArchiveSnapshot),
+                    snapshotDirectory))
+            {
+                throw new InvalidOperationException(
+                    "Unable to queue the log archive worker.");
+            }
+        }
+
+        private static void ArchiveSnapshot(object? state)
         {
             Utility.TimeCheck tc = new Utility.TimeCheck();
             tc.Start();
-            bool compress_ok = true;
+
+            bool completed = false;
+            string status = "failed";
+
+            string? snapshotDirectory = state as string;
+            string? archivePath = null;
+            string? temporaryPath = null;
+
             try
             {
-                string root = Path.Combine(Core.BaseDirectory, "Logs");
-
-                if (Directory.Exists(root))
+                if (string.IsNullOrEmpty(snapshotDirectory))
                 {
-                    DateTime dt = AdjustedDateTime.GameTime;
-                    string ToName = string.Format($"Logs {dt.Month}-{dt.Day}-{dt.Year}.zip");
-                    if (!File.Exists(ToName))
-                    {
-                        try { System.IO.Compression.ZipFile.CreateFromDirectory(root, ToName); }
-                        catch (Exception ex)
-                        {
-                            LogHelper.LogException(ex);
-                            Utility.Monitor.WriteLine(string.Format("Failed to archive to {0}", FormatDirectory(root, ToName, "")), ConsoleColor.Red);
-                            Console.WriteLine(ex.ToString());
-                            compress_ok = false;
-                            goto done;
-                        }
-                        // now we do our best to delete the folder. Failure is routine. See comments in delete routine.
-                        Timer.DelayCall(TimeSpan.FromSeconds(7.0), new TimerStateCallback(DeleteTick), new object[] { null, null });
-                    }
-                    else
-                        Utility.Monitor.WriteLine(string.Format("Archive {0} already exists", ToName), ConsoleColor.Yellow);
+                    Utility.Monitor.WriteLine(
+                        "Log archive worker received an invalid snapshot path.",
+                        ConsoleColor.Yellow);
+
+                    return;
                 }
 
-            done:;
+                if (!Directory.Exists(snapshotDirectory))
+                {
+                    Utility.Monitor.WriteLine(
+                        string.Format(
+                            "Log snapshot {0} no longer exists.",
+                            snapshotDirectory),
+                        ConsoleColor.Yellow);
+
+                    return;
+                }
+
+                archivePath = snapshotDirectory + ".zip";
+                temporaryPath = archivePath + ".tmp";
+
+                if (File.Exists(archivePath))
+                {
+                    status = "skipped";
+
+                    Utility.Monitor.WriteLine(
+                        string.Format(
+                            "Archive {0} already exists; snapshot retained.",
+                            archivePath),
+                        ConsoleColor.Yellow);
+
+                    return;
+                }
+
+                if (File.Exists(temporaryPath))
+                    File.Delete(temporaryPath);
+
+                ZipFile.CreateFromDirectory(
+                    snapshotDirectory,
+                    temporaryPath);
+
+                // Publish only a completely constructed archive.
+                File.Move(
+                    temporaryPath,
+                    archivePath);
+
+                // Delete the snapshot only after successful publication.
+                Directory.Delete(
+                    snapshotDirectory,
+                    true);
+
+                completed = true;
+                status = "completed";
             }
             catch (Exception ex)
             {
                 LogHelper.LogException(ex);
-            }
-            finally
-            {
-                tc.End();
-                Utility.Monitor.WriteLine(string.Format("Archive of command logs {0} in {1}.",
-                        compress_ok ? "completed" : "failed", tc.TimeTaken), compress_ok ? ConsoleColor.White : ConsoleColor.Yellow);
-            }
-        }
-        private static void DeleteTick(object state)
-        {
-            Utility.TimeCheck tc = new Utility.TimeCheck();
-            tc.Start();
-            bool remove_ok = true;
-            int count = 0;
-            try
-            {
-                string root = Path.Combine(Core.BaseDirectory, "Logs");
 
-                if (Directory.Exists(root))
+                Utility.Monitor.WriteLine(
+                    string.Format(
+                        "Failed to archive log snapshot {0}.",
+                        snapshotDirectory),
+                    ConsoleColor.Red);
+
+                Console.WriteLine(ex.ToString());
+
+                try
                 {
-                    DateTime dt = AdjustedDateTime.GameTime;
-                    string ToName = string.Format($"Logs {dt.Month}-{dt.Day}-{dt.Year}.zip");
-                    if (File.Exists(ToName))
+                    if (!string.IsNullOrEmpty(temporaryPath) &&
+                        File.Exists(temporaryPath))
                     {
-                        try { DeleteDirectory(root, ref count); }
-                        catch (Exception ex)
-                        {
-                            Utility.Monitor.WriteLine(string.Format("Failed to completely remove to {0} (non critical)", root), ConsoleColor.Yellow);
-                            remove_ok = false;
-                            goto done;
-                        }
+                        File.Delete(temporaryPath);
                     }
-                    else
-                        Utility.Monitor.WriteLine(string.Format("Archive {0} doesn't exist. Unsafe to delete", ToName), ConsoleColor.Yellow);
                 }
-
-            done:
-                // reopen the logfile
-                CommandLogging.Open();
-            }
-            catch (Exception ex)
-            {
-                LogHelper.LogException(ex);
+                catch (Exception cleanupException)
+                {
+                    LogHelper.LogException(cleanupException);
+                }
             }
             finally
             {
                 tc.End();
-                Utility.Monitor.WriteLine(string.Format("Removal of logs directory {0} in {1}.\n{2} files/folders actually removed.",
-                        remove_ok ? "completed" : "failed", tc.TimeTaken, count), remove_ok ? ConsoleColor.White : ConsoleColor.Yellow);
-                if (remove_ok == false)
-                    Utility.Monitor.WriteLine(string.Format("A failure here is acceptable since backup, explorer, anti-virus etc. can all have files/folders open."), ConsoleColor.Yellow);
+
+                Utility.Monitor.WriteLine(
+                    string.Format(
+                        "Archive of log snapshot {0} in {1}.",
+                        status,
+                        tc.TimeTaken),
+                    completed
+                        ? ConsoleColor.White
+                        : ConsoleColor.Yellow);
+
+                EndRotation();
             }
         }
-        public static void DeleteDirectory(string target_dir, ref int count)
+
+        private static void EndRotation()
         {
-            string[] files = Directory.GetFiles(target_dir);
-            string[] dirs = Directory.GetDirectories(target_dir);
-
-            foreach (string file in files)
-            {
-                File.SetAttributes(file, FileAttributes.Normal);
-                File.Delete(file);
-                count++;
-            }
-
-            foreach (string dir in dirs)
-            {
-                DeleteDirectory(dir, ref count);
-            }
-
-            Directory.Delete(target_dir, true);
-            count++;
-        }
-        #endregion Archive
-
-        private static string FormatDirectory(string root, string name, string timeStamp)
-        {
-            return Path.Combine(root, string.Format("{0}", name));
-        }
-
-        private static DirectoryInfo Match(string[] paths, string match)
-        {
-            for (int i = 0; i < paths.Length; ++i)
-            {
-                DirectoryInfo info = new DirectoryInfo(paths[i]);
-
-                if (info.Name.StartsWith(match))
-                    return info;
-            }
-
-            return null;
+            Interlocked.Exchange(ref m_Rotating, 0);
         }
     }
 }

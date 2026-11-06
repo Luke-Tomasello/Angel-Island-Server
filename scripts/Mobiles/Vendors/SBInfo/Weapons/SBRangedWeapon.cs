@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -20,6 +20,10 @@
  ***************************************************************************/
 
 /* ChangeLog
+ *  10/20/26, Adam: (SPD pricing direction)
+ *      Bolt, Arrow, Feather, Shaft: PlayerPays had been placed in the stock-amount argument, leaving the old literal
+ *      price in place and a stock of 2-3. Price is PlayerPays again and stock is Utility.Random(30, 60) as in RunUO
+ *      and Angel Island before the SPD.
  *  11/8/22, Adam: (Vendor System)
  *  Complete overhaul of the vendor system:
  * - DisplayCache:
@@ -89,10 +93,10 @@ namespace Server.Mobiles
                 }
                 else if (Core.RuleSets.ShopkeepersSellResourcesRules())
                 {
-                    Add(new GenericBuyInfo(typeof(Bolt), 2, BaseVendor.PlayerPays(typeof(Bolt)), 0x1BFB, 0));
-                    Add(new GenericBuyInfo(typeof(Arrow), 2, BaseVendor.PlayerPays(typeof(Arrow)), 0xF3F, 0));
-                    Add(new GenericBuyInfo(typeof(Feather), 2, BaseVendor.PlayerPays(typeof(Feather)), 0x1BD1, 0));
-                    Add(new GenericBuyInfo(typeof(Shaft), 3, BaseVendor.PlayerPays(typeof(Shaft)), 0x1BD4, 0));
+                    Add(new GenericBuyInfo(typeof(Bolt), BaseVendor.PlayerPays(typeof(Bolt)), Utility.Random(30, 60), 0x1BFB, 0));
+                    Add(new GenericBuyInfo(typeof(Arrow), BaseVendor.PlayerPays(typeof(Arrow)), Utility.Random(30, 60), 0xF3F, 0));
+                    Add(new GenericBuyInfo(typeof(Feather), BaseVendor.PlayerPays(typeof(Feather)), Utility.Random(30, 60), 0x1BD1, 0));
+                    Add(new GenericBuyInfo(typeof(Shaft), BaseVendor.PlayerPays(typeof(Shaft)), Utility.Random(30, 60), 0x1BD4, 0));
                 }
             }
         }
@@ -108,22 +112,22 @@ namespace Server.Mobiles
                 }
                 else if (Core.RuleSets.ShopkeepersBuyResourcesRules())
                 {   // cash buyback
-                    Add(typeof(Bolt), BaseVendor.PlayerPays(typeof(Bolt)));
-                    Add(typeof(Arrow), BaseVendor.PlayerPays(typeof(Arrow)));
-                    Add(typeof(Shaft), BaseVendor.PlayerPays(typeof(Shaft)));
-                    Add(typeof(Feather), BaseVendor.PlayerPays(typeof(Feather)));
+                    Add(typeof(Bolt), BaseVendor.VendorPays(typeof(Bolt)));
+                    Add(typeof(Arrow), BaseVendor.VendorPays(typeof(Arrow)));
+                    Add(typeof(Shaft), BaseVendor.VendorPays(typeof(Shaft)));
+                    Add(typeof(Feather), BaseVendor.VendorPays(typeof(Feather)));
                 }
 
                 if (Core.RuleSets.ShopkeepersBuyItemsRules())
                 {   // cash buyback
-                    Add(typeof(HeavyCrossbow), BaseVendor.PlayerPays(typeof(HeavyCrossbow)));
-                    Add(typeof(Bow), BaseVendor.PlayerPays(typeof(Bow)));
-                    Add(typeof(Crossbow), BaseVendor.PlayerPays(typeof(Crossbow)));
+                    Add(typeof(HeavyCrossbow), BaseVendor.VendorPays(typeof(HeavyCrossbow)));
+                    Add(typeof(Bow), BaseVendor.VendorPays(typeof(Bow)));
+                    Add(typeof(Crossbow), BaseVendor.VendorPays(typeof(Crossbow)));
 
                     if (Core.RuleSets.AOSRules())
                     {
-                        Add(typeof(CompositeBow), BaseVendor.PlayerPays(typeof(CompositeBow)));
-                        Add(typeof(RepeatingCrossbow), BaseVendor.PlayerPays(typeof(RepeatingCrossbow)));
+                        Add(typeof(CompositeBow), BaseVendor.VendorPays(typeof(CompositeBow)));
+                        Add(typeof(RepeatingCrossbow), BaseVendor.VendorPays(typeof(RepeatingCrossbow)));
                     }
                 }
             }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -158,12 +158,12 @@ namespace Server.Commands.Generic
             if (map == null || map == Map.Internal)
                 return;
 
-            IPoint3D p = targeted as IPoint3D;
+            IPoint3D? p = targeted as IPoint3D;
 
             if (p == null)
                 return;
 
-            TileEntry[] clipboard;
+            TileEntry[]? clipboard;
 
             if (!m_Clipboards.TryGetValue(from, out clipboard) || clipboard.Length == 0)
             {
@@ -218,7 +218,7 @@ namespace Server.Commands.Generic
             {
             }
 
-            public int Compare(Item a, Item b)
+            public int Compare(Item? a, Item? b)
             {
                 int result = a.Y.CompareTo(b.Y);
 

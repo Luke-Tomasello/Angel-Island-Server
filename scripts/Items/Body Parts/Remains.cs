@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -73,7 +73,12 @@ namespace Server.Items
             if (Deleted || !from.CanSee(this))
                 return false;
 
-            base.ScissorHelper(scissors, from, new Bone(), Utility.RandomMinMax(10, 15));
+            // we track starting loot with the FamilyID.
+            //  Various restrictions are placed on FamilyID (player does not control this id, vendors don't buy, etc.)
+            Item new_item = new Bone();
+            new_item.FamilyID = this.FamilyID;
+
+            base.ScissorHelper(scissors, from, new_item, Utility.RandomMinMax(10, 15));
 
             return true;
         }
@@ -114,7 +119,12 @@ namespace Server.Items
             if (Deleted || !from.CanSee(this))
                 return false;
 
-            base.ScissorHelper(scissors, from, new Bone(), Utility.RandomMinMax(3, 5));
+            // we track starting loot with the FamilyID.
+            //  Various restrictions are placed on FamilyID (player does not control this id, vendors don't buy, etc.)
+            Item new_item = new Bone();
+            new_item.FamilyID = this.FamilyID;
+
+            base.ScissorHelper(scissors, from, new_item, Utility.RandomMinMax(3, 5));
 
             return true;
         }
@@ -388,10 +398,10 @@ namespace Server.Items
     #region CookTarget
     public class CookTarget : Target
     {
-        private Item m_CookItem = null;
+        private Item? m_CookItem = null;
         private double m_Difficulty = 0.0;
-        private Campfire m_Fire = null;
-        private Mobile m_From = null;
+        private Campfire? m_Fire = null;
+        private Mobile? m_From = null;
 
         public CookTarget(Item toCook)
             : base(2, false, TargetFlags.None)

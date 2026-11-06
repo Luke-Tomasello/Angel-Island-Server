@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -44,7 +44,7 @@ namespace Server.Engines.Craft
             get { return "<CENTER>STAHLRIM CRAFT MENU</CENTER>"; }
         }
 
-        private static CraftSystem m_CraftSystem;
+        private static CraftSystem? m_CraftSystem;
 
         public static CraftSystem CraftSystem
         {
@@ -95,7 +95,7 @@ namespace Server.Engines.Craft
                 return 0;
         }
 
-        public override void PlayCraftEffect(Mobile from, object obj = null)
+        public override void PlayCraftEffect(Mobile from, object? obj = null)
         {
             if (Core.RuleSets.StandardShardRules())
             {
@@ -168,10 +168,6 @@ namespace Server.Engines.Craft
             AddCraft(typeof(WarHammer), 1044566, 1025177, minSkill, maxSkill, typeof(Stahlrim), resName, 16, resMessage);
             AddCraft(typeof(Bow), 1044566, 1025042, minSkill, maxSkill, typeof(Stahlrim), resName, 10, resMessage);
 
-#if false
-            // Shields
-            AddCraft(typeof(Buckler),       1011080, 1027027, minSkill, maxSkill, typeof(Stahlrim), resName, 10, resMessage);
-#endif
 
             MarkOption = true;
         }

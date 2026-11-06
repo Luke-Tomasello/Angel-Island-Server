@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,14 +34,6 @@ namespace Server.Items
     [FlipableAttribute(0xe43, 0xe42)]
     public class L0TreasureChest : DungeonTreasureChest
     {
-        //public override int DefaultGumpID{ get{ return 0x49; } }
-        //public override int DefaultDropSound{ get{ return 0x42; } }
-
-        //public override Rectangle2D Bounds
-        //{
-        //	get{ return new Rectangle2D( 20, 105, 150, 180 ); }
-        //}
-
         [Constructable]
         public L0TreasureChest()
             : base(0)
@@ -71,14 +63,6 @@ namespace Server.Items
     [FlipableAttribute(0xe43, 0xe42)]
     public class L1TreasureChest : DungeonTreasureChest
     {
-        //public override int DefaultGumpID{ get{ return 0x49; } }
-        //public override int DefaultDropSound{ get{ return 0x42; } }
-
-        //public override Rectangle2D Bounds
-        //{
-        //	get{ return new Rectangle2D( 20, 105, 150, 180 ); }
-        //}
-
         [Constructable]
         public L1TreasureChest()
             : base(1)
@@ -108,14 +92,6 @@ namespace Server.Items
     [FlipableAttribute(0xe43, 0xe42)]
     public class L2TreasureChest : DungeonTreasureChest
     {
-        //public override int DefaultGumpID{ get{ return 0x49; } }
-        //public override int DefaultDropSound{ get{ return 0x42; } }
-
-        //public override Rectangle2D Bounds
-        //{
-        //	get{ return new Rectangle2D( 20, 105, 150, 180 ); }
-        //}
-
         [Constructable]
         public L2TreasureChest()
             : base(2)
@@ -145,14 +121,6 @@ namespace Server.Items
     [FlipableAttribute(0xe43, 0xe42)]
     public class L3TreasureChest : DungeonTreasureChest
     {
-        //public override int DefaultGumpID{ get{ return 0x49; } }
-        //public override int DefaultDropSound{ get{ return 0x42; } }
-
-        //public override Rectangle2D Bounds
-        //{
-        //	get{ return new Rectangle2D( 20, 105, 150, 180 ); }
-        //}
-
         [Constructable]
         public L3TreasureChest()
             : base(3)
@@ -182,14 +150,6 @@ namespace Server.Items
     [FlipableAttribute(0xe43, 0xe42)]
     public class L4TreasureChest : DungeonTreasureChest
     {
-        //public override int DefaultGumpID{ get{ return 0x49; } }
-        //public override int DefaultDropSound{ get{ return 0x42; } }
-
-        //public override Rectangle2D Bounds
-        //{
-        //	get{ return new Rectangle2D( 20, 105, 150, 180 ); }
-        //}
-
         [Constructable]
         public L4TreasureChest()
             : base(4)
@@ -219,14 +179,6 @@ namespace Server.Items
     [FlipableAttribute(0xe43, 0xe42)]
     public class L5TreasureChest : DungeonTreasureChest
     {
-        //public override int DefaultGumpID{ get{ return 0x49; } }
-        //public override int DefaultDropSound{ get{ return 0x42; } }
-
-        //public override Rectangle2D Bounds
-        //{
-        //	get{ return new Rectangle2D( 20, 105, 150, 180 ); }
-        //}
-
         [Constructable]
         public L5TreasureChest()
             : base(5)

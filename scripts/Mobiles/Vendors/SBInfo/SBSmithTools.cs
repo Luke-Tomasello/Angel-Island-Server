@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts/Mobiles/Vendors/SBInfo/SBSmithTools.cs
  * ChangeLog
+ *  10/20/26, Adam: (SPD pricing direction)
+ *      IronIngot stock was priced with VendorPays (what the NPC pays a player, 4 gp) instead of PlayerPays (5 gp).
+ *      RunUO and Angel Island before the SPD both sold ingots here for 5.
  *  11/8/22, Adam: (Vendor System)
  *  Complete overhaul of the vendor system:
  * - DisplayCache:
@@ -80,20 +83,9 @@ namespace Server.Mobiles
                     foreach (Type type in BBSTypes)
                         if (ResourcePool.IsPooledResource(type))
                             Add(new GenericBuyInfo(type));
-#if false
-                    Add(new GenericBuyInfo(typeof(IronIngot)));
-                    Add(new GenericBuyInfo(typeof(DullCopperIngot)));
-                    Add(new GenericBuyInfo(typeof(ShadowIronIngot)));
-                    Add(new GenericBuyInfo(typeof(CopperIngot)));
-                    Add(new GenericBuyInfo(typeof(BronzeIngot)));
-                    Add(new GenericBuyInfo(typeof(GoldIngot)));
-                    Add(new GenericBuyInfo(typeof(AgapiteIngot)));
-                    Add(new GenericBuyInfo(typeof(VeriteIngot)));
-                    Add(new GenericBuyInfo(typeof(ValoriteIngot)));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersSellResourcesRules())
-                    Add(new GenericBuyInfo(typeof(IronIngot), BaseVendor.VendorPays(typeof(IronIngot)), 16, 0x1BF2, 0));
+                    Add(new GenericBuyInfo(typeof(IronIngot), BaseVendor.PlayerPays(typeof(IronIngot)), 16, 0x1BF2, 0));
 
                 Add(new GenericBuyInfo(typeof(Tongs), BaseVendor.PlayerPays(typeof(Tongs)), 14, 0xFBB, 0));
                 Add(new GenericBuyInfo(typeof(SmithHammer), BaseVendor.PlayerPays(typeof(SmithHammer)), 16, 0x13E3, 0));
@@ -108,26 +100,6 @@ namespace Server.Mobiles
                 {   // balanced buyback system
                     foreach (Type type in BBSTypes)
                         AddToResourcePool(type);
-#if false
-                    AddToResourcePool(typeof(IronIngot));
-                    AddToResourcePool(typeof(DullCopperIngot));
-                    AddToResourcePool(typeof(ShadowIronIngot));
-                    AddToResourcePool(typeof(CopperIngot));
-                    AddToResourcePool(typeof(BronzeIngot));
-                    AddToResourcePool(typeof(GoldIngot));
-                    AddToResourcePool(typeof(AgapiteIngot));
-                    AddToResourcePool(typeof(VeriteIngot));
-                    AddToResourcePool(typeof(ValoriteIngot));
-                    AddToResourcePool(typeof(IronOre));
-                    AddToResourcePool(typeof(DullCopperOre));
-                    AddToResourcePool(typeof(ShadowIronOre));
-                    AddToResourcePool(typeof(CopperOre));
-                    AddToResourcePool(typeof(BronzeOre));
-                    AddToResourcePool(typeof(GoldOre));
-                    AddToResourcePool(typeof(AgapiteOre));
-                    AddToResourcePool(typeof(VeriteOre));
-                    AddToResourcePool(typeof(ValoriteOre));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersBuyResourcesRules())
                 {   // cash buyback

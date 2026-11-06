@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -119,27 +119,15 @@ namespace Server.Mobiles
         {
             if (!from.InLOS(this) || !from.InRange(Location, 2))
             {
-#if false
-                from.SendLocalizedMessage(1080400); // You can not milk the cow from this location.
-#else
                 from.SendMessage("You can not milk the cow from this location.");
-#endif
             }
             else if (Controlled && ControlMaster != from)
             {
-#if false
-                from.SendLocalizedMessage(1071182); // The cow nimbly escapes your attempts to milk it.
-#else
                 from.SendMessage("The cow nimbly escapes your attempts to milk it.");
-#endif
             }
             else if (m_Milk == 0 && m_MilkedOn + TimeSpan.FromDays(1) > DateTime.UtcNow)
             {
-#if false
-                from.SendLocalizedMessage(1080198); // This cow can not be milked now. Please wait for some time.
-#else
                 from.SendMessage("This cow can not be milked now. Please wait for some time.");
-#endif
             }
             else
             {

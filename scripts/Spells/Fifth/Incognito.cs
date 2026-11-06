@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -111,7 +111,7 @@ namespace Server.Spells.Fifth
                     Caster.HueMod = Utility.RandomSkinHue();
                     Caster.NameMod = Caster.Body.IsFemale ? NameList.RandomName("female") : NameList.RandomName("male");
 
-                    PlayerMobile pm = Caster as PlayerMobile;
+                    PlayerMobile? pm = Caster as PlayerMobile;
 
                     if (pm != null)
                     {
@@ -120,7 +120,7 @@ namespace Server.Spells.Fifth
                         else
                             pm.SetHairMods(Utility.RandomList(Utility.HairIDs), Utility.RandomList(Utility.BeardIDs));
 
-                        Item hair = pm.FindItemOnLayer(Layer.Hair);
+                        Item? hair = pm.FindItemOnLayer(Layer.Hair);
 
                         if (hair != null)
                             hair.Hue = Utility.RandomHairHue();
@@ -157,7 +157,7 @@ namespace Server.Spells.Fifth
 
         public static bool StopTimer(Mobile m)
         {
-            Timer t = (Timer)m_Timers[m];
+            Timer? t = (Timer?)m_Timers[m];
 
             if (t != null)
             {

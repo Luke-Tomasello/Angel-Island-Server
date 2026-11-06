@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -94,49 +94,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020202091244/uo.stratics.com/hunters/ratmanmage.shtml
+            // 300 Gold, Reagents, Magic Items, 8 Hides (carved), Statues
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(175, 225);
-                PackReg(6);
-                PackScroll(1, 7);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020202091244/uo.stratics.com/hunters/ratmanmage.shtml
-                    // 300 Gold, Reagents, Magic Items, 8 Hides (carved), Statues
-
-                    if (Spawning)
-                    {
-                        PackGold(300);
-                    }
-                    else
-                    {
-                        PackReg(6);
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 2);
-                        else
-                            PackMagicItem(1, 2, 1);
-                        if (0.02 > Utility.RandomDouble())
-                            PackStatue();
-                    }
-                }
+                PackReg(6);
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 2);
                 else
-                {
-                    if (Spawning)
-                    {
-                        PackReg(6);
-
-                        if (0.02 > Utility.RandomDouble())
-                            PackStatue();
-                    }
-
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.LowScrolls);
-                }
+                    PackMagicItem(1, 2, 1);
+                if (0.02 > Utility.RandomDouble())
+                    PackStatue();
             }
         }
 

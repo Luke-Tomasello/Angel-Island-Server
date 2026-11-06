@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -50,13 +50,13 @@ namespace Server.Commands
 
             public override void Execute(CommandEventArgs e, object obj)
             {
-                IPoint3D center = obj as IPoint3D;
+                IPoint3D? center = obj as IPoint3D;
                 if (center != null)
                 {
                     try
                     {
                         Direction direction = Direction.North;
-                        Type typeFound = ScriptCompiler.FindTypeByName(e.GetString(0));
+                        Type? typeFound = ScriptCompiler.FindTypeByName(e.GetString(0));
                         if (typeFound != null)
                         {
                             try
@@ -70,7 +70,7 @@ namespace Server.Commands
                                 center = item.GetWorldLocation();
                             }
 
-                            object o = Activator.CreateInstance(typeFound);
+                            object? o = Activator.CreateInstance(typeFound);
                             if (o is Mobile m)
                             {
                                 Body body = m.Body;

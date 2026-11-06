@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -194,7 +194,7 @@ namespace Server.Gumps
 
             public override void OnResponse(Mobile from, string text)
             {
-                object toSet;
+                object? toSet;
                 bool shouldSet;
 
                 try
@@ -246,9 +246,9 @@ namespace Server.Gumps
 
         public override void OnResponse(NetState sender, RelayInfo info)
         {
-            object toSet;
+            object? toSet;
             bool shouldSet, shouldSend = true;
-            object viewProps = null;
+            object? viewProps = null;
 
             switch (info.ButtonID)
             {
@@ -293,7 +293,7 @@ namespace Server.Gumps
                         toSet = null;
                         shouldSet = false;
 
-                        object obj = m_Property.GetValue(m_Object, null);
+                        object? obj = m_Property.GetValue(m_Object, null);
 
                         if (obj == null)
                             m_Mobile.SendMessage("The property is null and so you cannot view its properties.");

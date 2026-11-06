@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,8 +26,6 @@
  *	7/26/05, erlein
  *		Automated removal of AoS resistance related function calls. 2 lines removed.
 */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -69,31 +67,13 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // no larva circa 02 2002
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackItem(new Nightshade(Utility.RandomMinMax(2, 3)));
-                PackGold(0, 25);
+
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // no larva circa 02 2002
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new Nightshade(Utility.RandomMinMax(2, 3)));
-
-                    AddLoot(LootPack.Poor);
-                }
             }
         }
 

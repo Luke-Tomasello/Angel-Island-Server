@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,7 +52,7 @@ namespace Server.Accounting
 
         public static bool Throttle_Callback(NetState ns)
         {
-            InvalidAccountAccessLog accessLog = FindAccessLog(ns);
+            InvalidAccountAccessLog? accessLog = FindAccessLog(ns);
 
             if (accessLog == null)
                 return true;
@@ -62,7 +62,7 @@ namespace Server.Accounting
 
         private static ArrayList m_List = new ArrayList();
 
-        public static InvalidAccountAccessLog FindAccessLog(NetState ns)
+        public static InvalidAccountAccessLog? FindAccessLog(NetState ns)
         {
             if (ns == null)
                 return null;
@@ -71,7 +71,7 @@ namespace Server.Accounting
 
             for (int i = 0; i < m_List.Count; ++i)
             {
-                InvalidAccountAccessLog accessLog = (InvalidAccountAccessLog)m_List[i];
+                InvalidAccountAccessLog? accessLog = (InvalidAccountAccessLog?)m_List[i];
 
                 if (accessLog.HasExpired)
                     m_List.RemoveAt(i--);
@@ -87,7 +87,7 @@ namespace Server.Accounting
             if (ns == null || !Enabled)
                 return;
 
-            InvalidAccountAccessLog accessLog = FindAccessLog(ns);
+            InvalidAccountAccessLog? accessLog = FindAccessLog(ns);
 
             if (accessLog == null)
                 m_List.Add(accessLog = new InvalidAccountAccessLog(ns.Address));

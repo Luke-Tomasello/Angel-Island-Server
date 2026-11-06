@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -67,7 +67,7 @@ namespace Server.Mobiles
         }
 
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 1 : 0; } }
 
         public override void AlterMeleeDamageFrom(Mobile from, ref int damage)
@@ -93,57 +93,20 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020207055120/http://uo.stratics.com/hunters/ore_elementals.shtml
+            //  Magic Weapons, Magic Armor, 25 Large Colored Ore of the Elemental's type, Gems, 600 Gold 
+            //	(The Dull Copper Elemental that spawns naturally in Shame only gives 2 Large Dull Copper Ore and 2-3 Gems)
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGem();
-                PackGem();
-                PackGem();
-                PackGem();
-
-                PackMagicEquipment(1, 3, 0.80, 0.80);
-                PackMagicEquipment(1, 3, 0.20, 0.20);
-                PackMagicItem(2, 2, 0.90);
-                PackMagicItem(2, 2, 0.25);
-
-                // 7/7/21, Adam: add AncientSmithyHammer for player crafted magic items
-                if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.MagicCraftSystem) == true)
-                    if (Utility.RandomChance(10))
-                        PackItem(new TenjinsHammer(200));
-
-                // adam: Changed from 25-40, to 5-15
-                PackItem(new ValoriteOre(Utility.Random(5, 15)));
-
-                // add some gold to make up for the low ore
-                PackGold(200, 350);
+                PackGold(600);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020207055120/http://uo.stratics.com/hunters/ore_elementals.shtml
-                    //  Magic Weapons, Magic Armor, 25 Large Colored Ore of the Elemental's type, Gems, 600 Gold 
-                    //	(The Dull Copper Elemental that spawns naturally in Shame only gives 2 Large Dull Copper Ore and 2-3 Gems)
-
-                    if (Spawning)
-                    {
-                        PackGold(600);
-                    }
-                    else
-                    {
-                        PackMagicEquipment(1, 3);
-                        PackItem(new ValoriteOre(25));
-                        PackGem(Utility.Random(3, 5));
-                        PackGem(1, .1);
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new ValoriteOre(2/*oreAmount*/));
-
-                    AddLoot(LootPack.FilthyRich);
-                    AddLoot(LootPack.Gems, 4);
-                }
+                PackMagicEquipment(1, 3);
+                PackItem(new ValoriteOre(25));
+                PackGem(Utility.Random(3, 5));
+                PackGem(1, .1);
             }
         }
 

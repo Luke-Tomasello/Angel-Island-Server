@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -82,29 +82,45 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020207055230/uo.stratics.com/hunters/imp.shtml
+            // no loot (see GenerateNonStandardLoot())
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(25, 50);
-                PackScroll(1, 7);
+
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020207055230/uo.stratics.com/hunters/imp.shtml
-                    // no loot
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
+            }
+        }
+
+        public override void GenerateNonStandardLoot()
+        {
+            if (this.SpawnerEngine != null)
+            {   // in the era imps had no loot. Seems odd since an imp can kill a wraith (fairly closely matched)
+                //  So for champ spawns, we give imps wraith loot
+                // http://web.archive.org/web/20020207055230/uo.stratics.com/hunters/imp.shtml
+                // no loot
+                // https://web.archive.org/web/20010417091841/http://uo.stratics.com/hunters/wraith.shtml
+                // 50 to 150 Gold, Magic Items, Gems, Reagents, Scrolls, Bones (we sill skip the bones)
+
+                if (Spawning)
+                {
+                    PackGold(50, 150);
                 }
                 else
                 {
-                    AddLoot(LootPack.Meager);
-                    AddLoot(LootPack.MedScrolls, 2);
+                    if (Utility.RandomBool())       // TODO: no idea as to the level and rate
+                        PackMagicEquipment(1, 1);
+                    else
+                        PackMagicItem(1, 1);
+
+                    PackGem(1, .9);
+                    PackGem(1, .05);
+
+                    PackReg(10);                    // use 10 - from most recent stratics
+
+                    PackScroll(1, 4);               // TODO: no idea as to the level and rate
+                    PackScroll(1, 4, 0.1);
                 }
             }
         }

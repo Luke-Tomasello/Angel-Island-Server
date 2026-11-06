@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -74,7 +74,7 @@ namespace Server.Mobiles
                 Add(new GenericBuyInfo(typeof(ScribesPen), BaseVendor.PlayerPays(typeof(ScribesPen)), 20, 0xFBF, 0));
                 Add(new GenericBuyInfo(typeof(BlankScroll), BaseVendor.PlayerPays(typeof(BlankScroll)), SBScribe.ScrollStockMin, SBScribe.ScrollStockMin, SBScribe.ScrollStockMax, 0x0E34, 0));
 
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules())
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules())
                     // Jade: Add new House Sitter deeds
                     Add(new GenericBuyInfo("a housesitter contract", typeof(HouseSitterDeed), BaseVendor.PlayerPays(typeof(HouseSitterDeed)), 20, 0x14F0, 0));
             }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -60,16 +60,6 @@ namespace Server.Township
         public override void OnDoubleClick(Mobile from)
         {
             // 9/8/23, Yoar: Disabled double-click attack
-#if false
-            if (Addon is ITownshipItem && ((ITownshipItem)Addon).HitsMax > 0 && from.Warmode)
-            {
-                if (!from.InRange(this.GetWorldLocation(), 2))
-                    from.LocalOverheadMessage(MessageType.Regular, 0x3B2, 1019045); // I can't reach that.
-                else
-                    TownshipItemHelper.BeginDamageDelayed(from, (ITownshipItem)Addon);
-            }
-            else
-#endif
             {
                 base.OnDoubleClick(from);
             }

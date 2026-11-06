@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -54,7 +54,7 @@ namespace Server.Spells.Seventh
 
         private int m_NewBody;
 
-        public PolymorphSpell(Mobile caster, Item scroll, int body)
+        public PolymorphSpell(Mobile caster, Item? scroll, int body)
             : base(caster, scroll, m_Info)
         {
             m_NewBody = body;
@@ -192,7 +192,7 @@ namespace Server.Spells.Seventh
 
         public static bool StopTimer(Mobile m)
         {
-            Timer t = (Timer)m_Timers[m];
+            Timer? t = (Timer?)m_Timers[m];
 
             if (t != null)
             {
@@ -201,6 +201,17 @@ namespace Server.Spells.Seventh
             }
 
             return (t != null);
+        }
+
+        // Registers a polymorph expiry timer started outside this spell (e.g. a champion's
+        // polymorph attack), so StopTimer() cancels it just like the spell's own timer.
+        public static void StartTimer(Mobile m, Timer t)
+        {
+            StopTimer(m);
+
+            m_Timers[m] = t;
+
+            t.Start();
         }
 
         private class InternalTimer : Timer

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,23 @@
 
 /* Scripts/Mobiles/PlayerMobile.cs
  * ChangeLog:
+ *  10/29/2026, Adam (MusicLibrary)
+ *      Publishing points come from MusicLibrary.GetPublishingPoints (the music library moved out of MusicBox).
+ *  10/18/2026, Adam (CanBeHarmful message)
+ *      CanBeHarmful: "You cannot harm them in that area." (NoExternalHarmful) is sent only when the caller asked for
+ *      messages, like the rest of the chain; the check itself is unchanged.
+ *  10/18/2026, Adam (confinement Stage 5)
+ *      First confinement wins: HandleIpCheater (Tor, at login and by cron) and BadLogin (the login infraction) no longer
+ *      imprison someone already in a jail or a prison (as an inmate); the offense is recorded once for staff and a prison
+ *      keeps the longer minimum sentence. Nothing else (mute, mortality, guild, infraction) is applied then. A prison
+ *      trespasser is left alone by Tor and an inmate outside the prison by BadLogin, as before.
+ *      Test Center: the tripwire moved from OnMapEnter/OnMapExit (MoveToWorld only) to OnMapChange, which the Map setter
+ *      raises too (TestCenterPolicy.OnMapChange); OnLogin adds the login checkpoint after the clone cleanup
+ *      (TestCenterPolicy.OnLogin). The facet transition logging is unchanged.
+ *  10/15/2026, Adam (OnDelete)
+ *      Deleting a clone deletes its seasonal account (SeasonalAccounts.DeleteAccount) only under SeasonsRules.
+ *      Shards without Seasons no longer touch the Seasons-only SeasonalAccounts subsystem (or trip its
+ *      'accessed while SeasonsRules is disabled' assert).
  *  5/6/2024, Adam (OnLogin)
  *      Set the player's HideHidden status to false.
  *  9/10/23, Adam, (one-time Faction System Murder Reprieve)
@@ -591,9 +608,10 @@ using Server.ContextMenus;
 using Server.Diagnostics;
 using Server.Engines;
 using Server.Engines.Alignment;
-using Server.Engines.BetaRewardSystem;
 using Server.Engines.BulkOrders;
+using Server.Engines.CronScheduler;
 using Server.Engines.Quests;
+using Server.Engines.Seasons;
 using Server.Factions;
 using Server.Guilds;
 using Server.Gumps;
@@ -618,34 +636,40 @@ using static Server.Utility;
 namespace Server.Mobiles
 {
     [Flags]
-    public enum PlayerBoolTable : uint          // First 16 bits are reserved for default-distro use, start custom flags at 0x00010000
+    public enum PlayerBoolTable : ulong          // First 16 bits are reserved for default-distro use, start custom flags at 0x00010000
     {
-        None = 0x00000000,
-        Glassblowing = 0x00000001,
-        Masonry = 0x00000002,
-        SandMining = 0x00000004,
-        StoneMining = 0x00000008,
-        ToggleMiningStone = 0x00000010,
-        KarmaLocked = 0x00000020,
-        AutoRenewInsurance = 0x00000040,
-        UseOwnFilter = 0x00000080,
-        PublicMyRunUO = 0x00000100,
-        PagingSquelched = 0x00000200,
-        PrisonInmate = 0x00010000,              // inmate at Angel Island
-        MurderReprieve = 0x00020000,            // Adam - one-time Faction System Murder Reprieve (Never unset)
-        WoodEngraving = 0x00040000,             // weaver - added to allow perma prop.
-        Mortal = 0x00080000,                    // TK - Permadeath
-        Embroidering = 0x00100000,              // weaver - added to allow perma prop.
-        Etching = 0x00200000,                   // weaver - added to allow perma prop.
-        Watched = 0x00400000,                   // Pix: added for staff watch list,
-        LeatherEmbroidering = 0x00800000,       // Pix - leather embroidery
-        ShareBank = 0x01000000,                 // does this player wish to share his bank with others on the same account?
-        PrisonVisitor = 0x02000000,             // Player is on a prison quest
-        GrandfatheredHerding = 0x04000000,      // gets AI style Herding bonus for stable slots
-        DebugRot = 0x08000000,                  // Changes delay between skill gains to 2 minutes
-        MurderReprieveRescinded = 0x10000000,   // Adam - one-time Faction System Murder Reprieve Rescinded (Never unset)
-        InMemoriam = 0x20000000,                // Adam - Player passed away :(
-        OneYearVeteranReward = 0x40000000,      // player has already received the One Year Veteran Reward
+        None = 0,
+
+        Glassblowing = 1u << 0,
+        Masonry = 1u << 1,
+        SandMining = 1u << 2,
+        StoneMining = 1u << 3,
+        ToggleMiningStone = 1u << 4,
+        KarmaLocked = 1u << 5,
+        AutoRenewInsurance = 1u << 6,
+        UseOwnFilter = 1u << 7,
+        PublicMyRunUO = 1u << 8,
+        PagingSquelched = 1u << 9,
+
+        // bits 10–15 reserved for default distro
+
+        PrisonInmate = 1u << 16,                // inmate at Angel Island
+        MurderReprieve = 1u << 17,              // Adam - one-time Faction System Murder Reprieve (Never unset)
+        WoodEngraving = 1u << 18,               // weaver - added to allow perma prop.
+        Mortal = 1u << 19,                      // TK - Permadeath
+        Embroidering = 1u << 20,                // weaver - added to allow perma prop.
+        Etching = 1u << 21,                     // weaver - added to allow perma prop.
+        Watched = 1u << 22,                     // Pix: added for staff watch list,
+        LeatherEmbroidering = 1u << 23,         // Pix - leather embroidery
+        ShareBank = 1u << 24,                   // does this player wish to share his bank with others on the same account?
+        PrisonVisitor = 1u << 25,               // Player is on a prison quest
+        GrandfatheredHerding = 1u << 26,        // gets AI style Herding bonus for stable slots
+        DebugRot = 1u << 27,                    // Changes delay between skill gains to 2 minutes
+        MurderReprieveRescinded = 1u << 28,     // Adam - one-time Faction System Murder Reprieve Rescinded (Never unset)
+        InMemoriam = 1u << 29,                  // Adam - Player passed away :(
+        OneYearVeteranReward = 1u << 30,        // player has already received the One Year Veteran Reward
+        SuppressNextWelcomeMessage = 1u << 31,  // A player clone returning from test center doesn't get the welcome message
+        PlayerDisconnectedWithPets = 1u << 32   // a player disconnected and his pets were stashed on the internal map
     }
 
     public enum NpcGuild
@@ -667,8 +691,38 @@ namespace Server.Mobiles
 
     public partial class PlayerMobile : Mobile
     {
+        /// <summary>
+        /// True when this mobile is a clone and is currently inside the Test Center facet.
+        /// Clones outside Test Center are considered invalid.
+        /// </summary>
+        [CommandProperty(AccessLevel.Owner, AccessLevel.System)]
+        public override bool IsCloneInTestCenter
+        {
+            get
+            {
+                if (!Clone)
+                    return false;
+
+                // --------------------------------------------------------------------
+                // Legacy region-based logic (obsolete):
+                //
+                // ArrayList reglist = Region.FindAll(this.Location, this.Map);
+                //
+                // foreach (Region r in reglist)
+                // {
+                //     if (r is StaticRegion sr && sr.TestCenter)
+                //         return true;
+                // }
+                //
+                // return false;
+                // --------------------------------------------------------------------
+
+                // Facet-based Test Center check
+                return this.Map == Map.TestCenter;
+            }
+        }
         #region Kill Queue
-        public Queue<BaseCreature> KillQueue = null;  // not serialized. used by the controller system
+        public Queue<BaseCreature>? KillQueue = null;  // not serialized. used by the controller system
         #endregion Kill Queue
         #region event notifications
         public override void WeaponStatus(BaseWeapon weapon, object o)
@@ -734,6 +788,9 @@ namespace Server.Mobiles
             MinimumSentence = 0x100,// have they a Minimum Sentence they need to serve in prison?
             MurderReprieve = 0x200, // They are in factions and got a Murder Reprieve
             GMHistory = 0x400,      // player had at least one GM under ROT
+            PassiveGains = 0x800,   // Is the player participating in the passive gains system?
+            PermaFlags = 0x1000,   // Do we have any perma flags to record?
+            ActiveCourier = 0x2000,// Are we an Active Courier?
         }
         private void SetSaveFlag(ref SaveFlag flags, SaveFlag toSet, bool setIf)
         {
@@ -767,7 +824,7 @@ namespace Server.Mobiles
                     {
                         if (Map != null)
                         {
-                            Packet p = null;
+                            Packet? p = null;
 
                             IPooledEnumerable eable = Map.GetObjectsInRange(Location);
 
@@ -816,7 +873,7 @@ namespace Server.Mobiles
         private bool RegionAllowsSight()
         {
             #region Static Region
-            StaticRegion sr = StaticRegion.FindStaticRegion(this);
+            StaticRegion? sr = StaticRegion.FindStaticRegion(this);
             if (sr != null && !sr.GhostBlindness)
                 return true;
             #endregion
@@ -925,7 +982,7 @@ namespace Server.Mobiles
 
             if (cont == null)
             {
-                if (to.Holding != null)
+                if (to.Dragging != null)
                     msgNum = 1062727; // You cannot trade with someone who is dragging something.
                 else if (this.HasTrade)
                     msgNum = 1062781; // You are already trading with someone else!
@@ -1044,9 +1101,9 @@ namespace Server.Mobiles
         }
         #endregion AccountHardwareHash
         #region Siege Bless
-        public Mobile CalcBlessedFor(Item item)
+        public Mobile? CalcBlessedFor(Item item)
         {
-            if ((Core.RuleSets.SiegeStyleRules()) && CanBlessFor(item))
+            if ((Core.RuleSets.SiegeRules()) && CanBlessFor(item))
             {
                 SiegeUnBlessItem();
                 return SiegeBlessItem(item);
@@ -1058,14 +1115,14 @@ namespace Server.Mobiles
         }
         public override void TrackedItemParentChanging(Item item)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
                 if (item.BlessedFor == this && SiegeBlessedItem == item)
                     SiegeUnBlessItem();
             return;
         }
         public bool CanBlessFor(Item item)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 if (Alive)
                     if (item.LootType == LootType.Regular)
@@ -1073,9 +1130,9 @@ namespace Server.Mobiles
             }
             return false;
         }
-        public Mobile SiegeBlessItem(Item item)
+        public Mobile? SiegeBlessItem(Item item)
         {
-            if ((Core.RuleSets.SiegeStyleRules()) && CanBlessFor(item))
+            if ((Core.RuleSets.SiegeRules()) && CanBlessFor(item))
             {
                 item.BlessedFor = this;
                 SiegeBlessedItem = item;
@@ -1090,21 +1147,21 @@ namespace Server.Mobiles
         }
         public void SiegeUnBlessItem()
         {
-            if ((Core.RuleSets.SiegeStyleRules()) && SiegeBlessedItem != null)
+            if ((Core.RuleSets.SiegeRules()) && SiegeBlessedItem != null)
             {
                 SiegeBlessedItem.BlessedFor = null;
                 SiegeBlessedItem.LootType = LootType.Regular;
                 SiegeBlessedItem = null;
             }
         }
-        private Item m_siegeBlessedItem;
+        private Item? m_siegeBlessedItem;
         [CommandProperty(AccessLevel.GameMaster)]
-        public Item SiegeBlessedItem
+        public Item? SiegeBlessedItem
         {
             get { return m_siegeBlessedItem; }
             set
             {
-                if (Core.RuleSets.SiegeStyleRules())
+                if (Core.RuleSets.SiegeRules())
                 {
                     if (value != null)
                         Utility.Monitor.WriteLine("Setting:{0} as Siege Blessed", ConsoleColor.Red, value);
@@ -1127,7 +1184,7 @@ namespace Server.Mobiles
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public AlignmentPlayer AlignmentPlayer
+        public AlignmentPlayer? AlignmentPlayer
         {
             get { return AlignmentPlayer.Find(this, false); }
             set { }
@@ -1169,7 +1226,114 @@ namespace Server.Mobiles
                 m_Flags &= ~flag;
         }
         #endregion Player Bool Table
+        #region Vendor Courier System
+        private Serial m_ActiveCourierItemSerial = Serial.MinusOne;
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Serial ActiveCourierItemSerial
+        {
+            get => m_ActiveCourierItemSerial;
+            set => m_ActiveCourierItemSerial = value;
+        }
 
+        [CommandProperty(AccessLevel.GameMaster)]
+        public VendorCourierItem? ActiveCourierItem
+        {
+            get
+            {
+                Item? item = World.FindItem(m_ActiveCourierItemSerial);
+
+                if (item is VendorCourierItem courier && !courier.Deleted)
+                    return courier;
+
+                return null;
+            }
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool HasActiveCourierAssignment
+        {
+            get
+            {
+                VendorCourierItem? courier = ActiveCourierItem;
+
+                if (courier == null)
+                {
+                    m_ActiveCourierItemSerial = Serial.MinusOne;
+                    return false;
+                }
+
+                if (courier.Expired)
+                {
+                    /*
+                     * Expiration cleanup is lazy.
+                     *
+                     * Deleting the courier also deletes its unredeemed
+                     * escrow reward.
+                     */
+                    courier.Delete();
+
+                    m_ActiveCourierItemSerial = Serial.MinusOne;
+
+                    return false;
+                }
+
+                if (courier.DestinationVendor == null || courier.DestinationVendor.Deleted)
+                {
+                    /*
+                     * The recipient is gone (e.g. killed). The delivery can no
+                     * longer be completed, so clean it up like an expired one
+                     * rather than blocking new assignments until it expires.
+                     */
+                    courier.Delete();
+
+                    m_ActiveCourierItemSerial = Serial.MinusOne;
+
+                    return false;
+                }
+
+                /*
+                 * Defensive validation: the referenced courier must
+                 * actually belong to this character.
+                 */
+                if (courier.CourierSerial != Serial)
+                {
+                    m_ActiveCourierItemSerial = Serial.MinusOne;
+                    return false;
+                }
+
+                return true;
+            }
+        }
+        public bool SetActiveCourierAssignment(VendorCourierItem courier)
+        {
+            if (courier == null || courier.Deleted)
+                return false;
+
+            if (courier.CourierSerial != Serial)
+                return false;
+
+            if (HasActiveCourierAssignment)
+                return false;
+
+            m_ActiveCourierItemSerial = courier.Serial;
+
+            return true;
+        }
+
+        public void ClearActiveCourierAssignment(VendorCourierItem courier)
+        {
+            if (courier == null)
+                return;
+
+            if (m_ActiveCourierItemSerial == courier.Serial)
+                m_ActiveCourierItemSerial = Serial.MinusOne;
+        }
+        public void ClearActiveCourierAssignment(Serial courierSerial)
+        {
+            if (m_ActiveCourierItemSerial == courierSerial)
+                m_ActiveCourierItemSerial = Serial.MinusOne;
+        }
+        #endregion Vendor Courier System
         [CommandProperty(AccessLevel.Owner)]
         public bool InMemoriam
         {
@@ -1240,8 +1404,8 @@ namespace Server.Mobiles
         }
 
         private DateTime m_Reported;
-        private LogHelper m_ReportLogger;
-        private Timer m_ReportLogStopper;
+        private LogHelper? m_ReportLogger;
+        private Timer? m_ReportLogStopper;
         private TimeSpan ReportTime { get { return TimeSpan.FromMinutes(5); } }
 
         private DesignContext m_DesignContext;
@@ -1256,7 +1420,7 @@ namespace Server.Mobiles
             //InvalidateMyRunUO();
 
             m_LastGuildChange = DateTime.UtcNow;
-            Guilds.Guild og = oldGuild as Guilds.Guild;
+            Guilds.Guild? og = oldGuild as Guilds.Guild;
             if (og != null)
             {
                 m_LastGuildIOBAlignment = og.IOBAlignment;
@@ -1481,7 +1645,7 @@ namespace Server.Mobiles
             {
                 if (this.Guild != null)
                 {
-                    Guilds.Guild g = this.Guild as Guilds.Guild;
+                    Guilds.Guild? g = this.Guild as Guilds.Guild;
                     if (g != null)
                     {
                         return g.IOBAlignment;
@@ -1511,7 +1675,7 @@ namespace Server.Mobiles
                 {
                     if (this.Guild != null)
                     {
-                        Guilds.Guild g = this.Guild as Guilds.Guild;
+                        Guilds.Guild? g = this.Guild as Guilds.Guild;
                         if (g != null && g.IOBAlignment == IOBAlignment.None)
                         {
                             return false;
@@ -1548,15 +1712,6 @@ namespace Server.Mobiles
 
         private TimeSpan m_IOBRankTime;
         private DateTime m_IOBStartedWearing;
-
-        private DateTime m_IOBJoinRestrictionTime;
-
-        //[CommandProperty(AccessLevel.GameMaster)]
-        public DateTime IOBJoinRestrictionTime
-        {
-            get { return m_IOBJoinRestrictionTime; }
-            set { m_IOBJoinRestrictionTime = value; }
-        }
 
         //[CommandProperty(AccessLevel.GameMaster)]
         public TimeSpan IOBRankTime
@@ -1603,13 +1758,6 @@ namespace Server.Mobiles
                     return IOBRank.None;
                 }
             }
-        }
-
-        public void ResetIOBRankTime()
-        {
-            m_IOBRankTime = TimeSpan.FromHours(0.0);
-            if (IOBEquipped)
-                m_IOBStartedWearing = DateTime.UtcNow;
         }
 
         //[CommandProperty(AccessLevel.GameMaster)]
@@ -1874,7 +2022,7 @@ namespace Server.Mobiles
             if (NpcGuild == NpcGuild.BardsGuild)
             {   // Award player for work already done
                 int sales, plays, publications;
-                m_NpcGuildPoints = MusicBox.GetPublishingPoints(this, out sales, out plays, out publications);
+                m_NpcGuildPoints = MusicLibrary.GetPublishingPoints(this, out sales, out plays, out publications);
             }
         }
         // called by the NPC guild master when a player resigns
@@ -1980,12 +2128,12 @@ namespace Server.Mobiles
         {
             get
             {
-                Accounting.Account acct = this.Account as Accounting.Account;
+                Accounting.Account? acct = this.Account as Accounting.Account;
                 return acct != null ? acct.InfractionStatus : new Accounting.Account.AccountInfraction();
             }
             set
             {
-                Accounting.Account acct = this.Account as Accounting.Account;
+                Accounting.Account? acct = this.Account as Accounting.Account;
                 if (acct != null)
                     acct.InfractionStatus = value;
             }
@@ -1999,7 +2147,7 @@ namespace Server.Mobiles
         }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public bool WatchList
+        public bool Watched
         {
             get { return GetPlayerBool(PlayerBoolTable.Watched); }
             set { SetPlayerBool(PlayerBoolTable.Watched, value); }
@@ -2046,38 +2194,24 @@ namespace Server.Mobiles
             get { return GetPlayerBool(PlayerBoolTable.PrisonInmate); }
             set
             {
-                bool bWasInmate = GetPlayerBool(PlayerBoolTable.PrisonInmate);
-                SetPlayerBool(PlayerBoolTable.PrisonInmate, value);
-                if (value && !bWasInmate)
+                bool wasInmate = GetPlayerBool(PlayerBoolTable.PrisonInmate);
+
+                // Only act if the value is actually changing
+                if (value != wasInmate)
                 {
-                    //Going from non-inmate to inmate, make sure our counts are reduced
-                    //reduce shorttermelapse to a max of 4 hours from now
-                    if ((m_ShortTermElapse - GameTime) > TimeSpan.FromHours(4))
-                        if (this.Alive)
-                            m_ShortTermElapse = GameTime + TimeSpan.FromHours(4);
-                        else
-                            m_ShortTermElapse = GameTime + TimeSpan.FromHours(8);
-                    //reduce longtermelapse to a max of 20 hours from now
-                    if ((m_LongTermElapse - GameTime) > TimeSpan.FromHours(20))
-                        if (this.Alive)
-                            m_LongTermElapse = GameTime + TimeSpan.FromHours(20);
-                        else
-                            m_LongTermElapse = GameTime + TimeSpan.FromHours(40);
-                }
-                else if (!value && bWasInmate)
-                {
-                    //going from inmate to non-inmate,
-                    //add back on the difference in long and short-term
-                    //count times for non-inmates.
-                    m_ShortTermElapse += TimeSpan.FromHours(4);
-                    m_LongTermElapse += TimeSpan.FromHours(20);
-                }
-                else
-                {
-                    //setting flag to the same thing, don't touch anything
+                    SetPlayerBool(PlayerBoolTable.PrisonInmate, value);
+
+                    if (value) // Becoming inmate
+                    {
+                        MurderCountUtility.OnBecomePrisonInmate(this);
+                    }
+                    else // Being released
+                    {
+                        MurderCountUtility.OnReleaseFromPrison(this);
+                    }
                 }
 
-                //InvalidateMyRunUO();
+                // InvalidateMyRunUO();  // keep if still needed
             }
         }
         [CommandProperty(AccessLevel.GameMaster)]
@@ -2092,33 +2226,19 @@ namespace Server.Mobiles
         {
             get
             {
-                if (CoreAI.OfflineShortsDecay != 0)
-                {
-                    //if we're using offline shortterm decay, return the min of online and offline decay
-                    TimeSpan onlineDecay = m_ShortTermElapse - GameTime;
-                    TimeSpan offlineDecay = (this.m_LastShortDecayed.AddHours(CoreAI.OfflineShortsDecayHours) - DateTime.UtcNow);
-
-                    if (onlineDecay < offlineDecay)
-                    {
-                        return onlineDecay;
-                    }
-                    else
-                    {
-                        return offlineDecay;
-                    }
-                }
-                else
-                {
-                    //not using offline decay ... just return online decay time
-                    return m_ShortTermElapse - GameTime;
-                }
+                TimeSpan time = MurderCountUtility.GetRemainingShortDecayTime(this);
+                return time < TimeSpan.Zero ? TimeSpan.Zero : time;
             }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
         public TimeSpan DecayTimeLong
         {
-            get { return m_LongTermElapse - GameTime; }
+            get
+            {
+                TimeSpan time = MurderCountUtility.GetRemainingLongDecayTime(this);
+                return time < TimeSpan.Zero ? TimeSpan.Zero : time;
+            }
         }
 
         //public DateTime NextMurderCountTime
@@ -2127,7 +2247,7 @@ namespace Server.Mobiles
         //	set{ m_NextMurderCountTime = value; }
         //}
 
-        public ArrayList KillerTimes;
+        public ArrayList? KillerTimes;
 
         public static Direction GetDirection4(Point3D from, Point3D to)
         {
@@ -2161,17 +2281,6 @@ namespace Server.Mobiles
             //to a TillerMan, and if so prevent the drop.
             else if (!BaseBoat.DropFitResult(location, Map, Z))
                 return false;
-#if false
-            // 4/25/23: Adam (Exploit)
-            //  if the user canceled the target, then tries to place it on the ground,in town,
-            //      disallow the placement. We hope it blows up in your backback BTW
-            if (item is BaseExplosionPotion bep && bep.Armed)
-                if (bep.InTown(this))
-                {
-                    this.SendMessage("You may not place that here."/* dickhead */);
-                    return false;
-                }
-#endif
             BounceInfo bi = item.GetBounce();
 
             if (bi != null)
@@ -2184,7 +2293,7 @@ namespace Server.Mobiles
 
                     if (objs != null && objs.Length > 0)
                     {
-                        FlipableAttribute fp = objs[0] as FlipableAttribute;
+                        FlipableAttribute? fp = objs[0] as FlipableAttribute;
 
                         if (fp != null)
                         {
@@ -2236,16 +2345,33 @@ namespace Server.Mobiles
         public new static void Initialize()
         {
             PacketHandlers.RegisterThrottler(0x02, new ThrottlePacketCallback(MovementThrottle_Callback));
-            Server.CommandSystem.Register("RoTStatus", AccessLevel.Player, new CommandEventHandler(RoTStatus));
-            Server.CommandSystem.Register("RoTInfo", AccessLevel.Player, new CommandEventHandler(RoTInfo));
-            Server.CommandSystem.Register("CheckSkill", AccessLevel.Player, new CommandEventHandler(CheckSkill));
-            Server.CommandSystem.Register("CheckTargetSkill", AccessLevel.Player, new CommandEventHandler(CheckTargetSkill));
-            Server.CommandSystem.Register("DeleteAccount", AccessLevel.Player, new CommandEventHandler(DeleteAccount));
+            if (Core.RuleSets.SiegeRules())
+            {
+                Server.CommandSystem.Register("RoTStatus", AccessLevel.Player, new CommandEventHandler(RoTStatus));
+                Server.CommandSystem.Register("RoTInfo", AccessLevel.Player, new CommandEventHandler(RoTInfo));
+                Server.CommandSystem.Register("CheckSkill", AccessLevel.Player, new CommandEventHandler(CheckSkill));
+                Server.CommandSystem.Register("CheckTargetSkill", AccessLevel.Player,
+                    new CommandEventHandler(CheckTargetSkill));
+
+                if (TestCenterServer.Enabled == true || Core.ReleasePhase < ReleasePhase.Production)
+                    Server.CommandSystem.Register("DeleteAccount", AccessLevel.Player,
+                        new CommandEventHandler(DeleteAccount));
+            }
+
             EventSink.Login += new LoginEventHandler(OnLogin);
             EventSink.Logout += new LogoutEventHandler(OnLogout);
             EventSink.Connected += new ConnectedEventHandler(EventSink_Connected);
             EventSink.Disconnected += new DisconnectedEventHandler(EventSink_Disconnected);
             TargetCommands.Register(new PlayerMobile.HideHiddenCommand());
+
+            if (Core.RuleSets.MortalisRules())
+            {
+                EventSink.BeforePlayerDeath += new BeforePlayerDeathEventHandler(OnBeforeMortalisPlayerDeathEventHandler);
+            }
+            else
+            {
+                EventSink.BeforePlayerDeath += new BeforePlayerDeathEventHandler(OnBeforePlayerDeathEventHandler);
+            }
         }
 
         private int m_LastGlobalLight = -1, m_LastPersonalLight = -1;
@@ -2285,29 +2411,119 @@ namespace Server.Mobiles
             ns.Send(GlobalLightLevel.Instantiate(global));
             ns.Send(new PersonalLightLevel(this, personal));
         }
+        #region Player Identity
+        [CommandProperty(AccessLevel.Owner)]
+        public byte CharacterSlot
+        {
+            get
+            {
+                // CharacterSlot
+                // we carry our slot number to distinguish between characters on the same account with the same GUID
+                if (this is not Substitute)
+                {
+                    if (Account is Account acct)
+                        for (int ix = 0; ix < 5; ix++)
+                        {
+                            if (acct[ix] == this)
+                            {
+                                return (byte)ix;
+                            }
+                        }
+
+                    // probably a character that no longer has an account due to deletion
+                    return 255;
+                }
+
+                // Substitute Players (temporary stand-in,) don't have an account
+                if (this is Substitute)
+                    return (byte)Math.Abs(Serial % 255);
+
+                // sentinel 
+                return 255;
+            }
+        }
+
+        private uint m_PlayerGUID;
+        [CommandProperty(AccessLevel.Owner)]
+        public uint PlayerGUID
+        {
+            get
+            {
+                if (m_PlayerGUID == 0)
+                {
+                    if (Account is Account acct)
+                    {
+                        string key = acct.GUID.ToString() + '.' + CharacterSlot.ToString();
+                        m_PlayerGUID = (uint)Utility.GetStableHashCode(key);
+                    }
+                }
+
+                return m_PlayerGUID;
+            }
+        }
+        #endregion Player Identity
         private static void OnLogin(LoginEventArgs e)
         {
             Mobile from = e.Mobile;
-            PlayerMobile pm = from as PlayerMobile;
-            Accounting.Account acct = from.Account as Accounting.Account;
+            PlayerMobile? pm = from as PlayerMobile;
+            Accounting.Account? acct = from.Account as Accounting.Account;
+
+            if (pm == null || acct == null)
+                return;
+
+            #region Delete Clone
+            foreach (PlayerMobile candidate in PlayerMobile.Instances)
+                if (candidate != null && !candidate.Deleted && candidate.Clone)
+                    if (candidate.OwnerGUID == pm.PlayerGUID)
+                    {
+                        candidate.MoveToWorld(candidate.Location, Server.Map.Internal);
+                        if (candidate.Account is Account cloneAcct)
+                            cloneAcct.Delete();
+                    }
+            #endregion Delete Clone
+
+            #region GodlyRobe (Owner)
+            // Refresh GodlyRobe effects (title, fame/karma, robe color) on login
+            // This ensures everything is correct even if server config changed or robe was already equipped.
+            if (pm.FindItemOnLayer(Layer.OuterTorso) is GodlyRobe robe)
+            {
+                GodlyRobe.RefreshGodlyEffects(pm);
+            }
+            #endregion GodlyRobe (Owner)
+
+            #region Update Backpack Totals
+            if (pm.Backpack != null)
+                pm.Backpack.UpdateAllTotals();
+            #endregion Update Backpack Totals
+
+            #region Login Location Handling
+            // force a reasonable map
+            if (pm.Map == Server.Map.Internal || pm.Map == null)
+                pm.Map = Server.Map.Felucca;
+
+            // find a reasonable location
+            if (BaseBoat.FindBoatAt(pm) != null || Utility.IsWater(pm.Map, pm.Location.X, pm.Location.Y, pm.Location.Z))
+                // get a new location
+                Strandedness.ProcessStranded(pm, false);
+            #endregion Login Location Handling
+
+            #region Test Center
+            // the login checkpoint, after the clone cleanup and the location handling: judged on the character's state
+            //  (this also runs for a clone or an original during a Test Center portal's session swap)
+            TestCenterPolicy.OnLogin(pm);
+            #endregion Test Center
 
             #region HideHidden
             if (pm != null)
                 pm.SetMobileBool(MobileBoolTable.HideHidden, false);
             #endregion HideHidden
 
-            #region GUID
-            // link players to their account GUID
-            if (pm != null && acct != null)
-                pm.GUID = acct.GUID;
-            #endregion GUID
-
-            #region BETA Rewards
-            if (Core.ReleasePhase < ReleasePhase.Production)
-                BetaRewardSystem.RecordBetaLogin(pm, acct);
-            else
-                BetaRewardSystem.RewardBetaTester(pm, acct);
-            #endregion BETA Rewards
+            //#region BETA Rewards
+            //if (Core.ReleasePhase < ReleasePhase.Production)
+            //    BetaRewardSystem.RecordBetaLogin(pm, acct);
+            //else
+            //    BetaRewardSystem.RewardBetaTester(pm, acct);
+            //#endregion BETA Rewards
 
             #region Staff login with light
             if (pm != null && pm.AccessLevel > AccessLevel.Player)
@@ -2321,12 +2537,12 @@ namespace Server.Mobiles
             #endregion Logging
 
             #region invoke magic properties of clothing and jewelry
-            // adam: invoke magic clothing and jewelry on OnLogon
+            // adam: invoke magic clothing and jewelry on OnLogin
             if (pm != null)
             {
                 try
                 {
-                    Item[] items = new Item[21];
+                    Item?[] items = new Item?[21];
                     items[0] = pm.FindItemOnLayer(Layer.Shoes);
                     items[1] = pm.FindItemOnLayer(Layer.Pants);
                     items[2] = pm.FindItemOnLayer(Layer.Shirt);
@@ -2373,7 +2589,7 @@ namespace Server.Mobiles
                 {
                     // report how long this player has been offline
                     //Console.WriteLine("{1} has been offline since {0}.", pm.LastDisconnect, pm);
-                    if (pm.AccessLevel == AccessLevel.Player && pm.Region != null && pm.Region.IsAngelIslandRules)
+                    if (pm.AccessLevel == AccessLevel.Player && pm.Region != null && pm.Region.IsPrisonRules)
                     {
                         if (pm.Backpack != null)
                         {
@@ -2406,7 +2622,7 @@ namespace Server.Mobiles
 
             #region Players on UOMortalis login hidden
             //	Players on UOMortalis login hidden to prevent camping of inns
-            //	we require that the player has been logged out to at least
+            //	we require that the player has been logged out for at least DefaultLogoutDelay
             if (Core.RuleSets.MortalisRules() && from is PlayerMobile)
             {
                 try
@@ -2440,6 +2656,13 @@ namespace Server.Mobiles
             }
             #endregion
 
+            #region Record Login in Account
+            if (pm != null && acct != null)
+            {
+                acct.SeqConnectionStatus = ConnectionStatus.None;
+            }
+            #endregion Record Login in Account
+
             #region InmateLastDeathTime & LastResynchTime
             if (pm != null)
             {
@@ -2448,14 +2671,13 @@ namespace Server.Mobiles
             }
             #endregion
 
-            #region recalculate follower control slots
-            //recalculate follower control slots
+            #region Recalculate follower control slots
             try
             {
                 int slots = 0;
                 Mobile master = from;
 
-                foreach (Mobile m in World.Mobiles.Values)
+                foreach (Mobile m in master.Followers)
                 {
                     if (m is BaseCreature)
                     {
@@ -2475,11 +2697,47 @@ namespace Server.Mobiles
                 System.Console.WriteLine("Caught non-fatal exception in PlayerMobile.OnLogin: " + exc.Message);
                 System.Console.WriteLine(exc.StackTrace);
             }
-            #endregion
+            #endregion Recalculate follower control slots
+
+            #region Recover stashed pets
+
+            if (pm.GetPlayerBool(PlayerBoolTable.PlayerDisconnectedWithPets))
+            {
+                pm.SetPlayerBool(PlayerBoolTable.PlayerDisconnectedWithPets, false);
+
+                if (pm.Map != null && pm.Map != Map.Internal)
+                {
+                    foreach (Mobile m in pm.Followers)
+                    {
+                        if (m == null || m.Deleted)
+                            continue;
+
+                        // Pets should still be stashed on Internal. If not, leave them alone.
+                        if (m.Map != Map.Internal)
+                            continue;
+
+                        Point3D restoreLocation = m.Location;
+
+                        // If the pet was stashed far away from the player, recover it at the player instead.
+                        if (pm.GetDistanceToSqrt(restoreLocation) > 20)
+                            restoreLocation = pm.Location;
+
+                        m.RetrieveMobileFromIntStorage(restoreLocation, pm.Map);
+
+                        // We need to activate the creature's AI manually.
+                        Sector sector = pm.Map.GetSector(m);
+
+                        if (sector.Active)
+                            m.OnSectorActivate();
+                    }
+                }
+            }
+
+            #endregion Recover stashed pets
 
             #region Tell staff that a watchlist player has logged in
             //Tell staff that a watchlist player has logged in
-            if (pm != null && pm.WatchList)
+            if (pm != null && pm.Watched)
             {
                 if (pm.WatchExpire > DateTime.UtcNow)
                 {
@@ -2492,7 +2750,7 @@ namespace Server.Mobiles
                 else
                 {
                     //clean up watching
-                    pm.WatchList = false;
+                    pm.Watched = false;
                 }
             }
 
@@ -2593,38 +2851,40 @@ namespace Server.Mobiles
             #endregion
 
             #region Your account is not yet activated.
-            Accounting.Account account = from.Account as Accounting.Account;
+            Accounting.Account? account = from.Account as Accounting.Account;
             if (account != null)
             {
                 if (account.AccountActivated == false)
-                {
-                    from.SendMessage(0x35, "Your account is not yet activated.");
-                    from.SendMessage(0x35, "Password recovery is not possible without account activation.");
-                    from.SendMessage(0x35, "Please type [profile to activate your account.");
+                {   // don't spam on first login, and every login thereafter
+                    if (from.Age > TimeSpan.FromMinutes(5) && Utility.RandomChance(10))
+                    {
+                        from.SendMessage(0x35, "Your account is not yet activated.");
+                        from.SendMessage(0x35, "Password recovery is not possible without account activation.");
+                        from.SendMessage(0x35, "Please type [profile to activate your account.");
+                    }
                 }
             }
             #endregion
 
             #region Valid Client
-#if false
-            // now handled in Hardware Info
-            if (acct != null && pm != null && pm.NetState != null)
-            {
-                if (acct.ValidClient == false)
-                {
-                    //pm.SendMessage(0x35, "Your client is out of date. Please update your client with the Launcher.");
-                    Utility.ConsoleOut(string.Format("Invalid client detected for: {0}: Account '{1}'",
-                        pm.NetState, acct.Username), ConsoleColor.Red);
-                }
-                else
-                {
-                    Utility.ConsoleOut(string.Format("Valid client detected for: {0}: Account '{1}'",
-                        pm.NetState, acct.Username), ConsoleColor.Yellow);
-                }
-
-            }
-#endif
             #endregion Valid Client
+
+            #region Seasons
+            // Ensure this account has a valid seasonal leaderboard identity.
+            // If the seasonal account already exists, this will populate DisplayName
+            // once the player has chosen a real name.
+            if (Core.RuleSets.SeasonsRules())
+                SeasonManager.EnsureSeasonalAccount(pm.AcctGUID, pm.Name);
+
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+            {
+                if (EnforceOrcMaskRestrictions(pm, hide: true, message: false))
+                    pm.QueueLoginMessage($"The occupation forces know your face. Your disguise will not fool them for another {FormatOrcEnemyDuration(acct)}.");
+            }
+
+            #endregion Seasons
+
+
         }
 
         private bool m_NoDeltaRecursion;
@@ -2781,7 +3041,7 @@ namespace Server.Mobiles
                     }
 
                     #region Factions
-                    FactionItem factionItem = FactionItem.Find(item);
+                    FactionItem? factionItem = FactionItem.Find(item);
 
                     if (factionItem != null)
                     {
@@ -2796,7 +3056,7 @@ namespace Server.Mobiles
 
                         if (drop)
                         {
-                            if (Core.RuleSets.MLRules() && pack != null)
+                            if (Core.RuleSets.MondainsLegacyRules() && pack != null)
                                 pack.DropItem(item);
                             else
                                 from.AddToBackpack(item);
@@ -2809,7 +3069,7 @@ namespace Server.Mobiles
                     #region Alignment
                     if (AlignmentSystem.Enabled && !AlignmentSystem.ValidateEquipment(this, item))
                     {
-                        if (Core.RuleSets.MLRules() && pack != null)
+                        if (Core.RuleSets.MondainsLegacyRules() && pack != null)
                             pack.DropItem(item);
                         else
                             from.AddToBackpack(item);
@@ -2854,11 +3114,24 @@ namespace Server.Mobiles
 
         private static void OnLogout(LogoutEventArgs e)
         {
+            PlayerMobile? pm = e.Mobile as PlayerMobile;
+            if (pm == null) return;
+            Accounting.Account? acct = pm.Account as Account;
+            if (acct == null) return;
+
+            #region Record Logout in Account
+            // Cannot use this here, see LogoutReq in 
+            // \Server\Network\PacketHandlers.cs
+            //if (pm != null && acct != null)
+            //{
+            //    acct.SeqConnectionStatus  |= ConnectionStatus.LogedOut;
+            //}
+            #endregion Record Logout in Account
         }
 
         private static void DeleteAccount(CommandEventArgs e)
         {
-            PlayerMobile pm = e.Mobile as PlayerMobile;
+            PlayerMobile? pm = e.Mobile as PlayerMobile;
             if (pm == null || pm.Deleted)
                 return;
             if (Core.ReleasePhase < ReleasePhase.Production)
@@ -2881,11 +3154,11 @@ namespace Server.Mobiles
         }
         private static void EventSink_Connected(ConnectedEventArgs e)
         {
-            PlayerMobile pm = e.Mobile as PlayerMobile;
+            PlayerMobile? pm = e.Mobile as PlayerMobile;
 
             if (pm != null)
             {
-                Server.Accounting.Account acct = (pm.Account != null) ? pm.Account as Server.Accounting.Account : null;
+                Server.Accounting.Account? acct = (pm.Account != null) ? pm.Account as Server.Accounting.Account : null;
 
                 pm.m_SessionStart = DateTime.UtcNow;
 
@@ -2901,10 +3174,10 @@ namespace Server.Mobiles
                 if (acct != null && pm.NetState != null)
                 {   // clear the infraction if they are just logging in the same character on the same account
                     bool relogin = IPAddressToPlayerLookup.ContainsKey(pm.NetState.Address) && IPAddressToPlayerLookup[pm.NetState.Address] == pm;
-                    if (relogin && acct.InfractionStatus == AccountInfraction.concurrentIPLimiter)
-                        acct.InfractionStatus = AccountInfraction.none;
+                    if (relogin && acct.InfractionStatus == AccountInfraction.ConcurrentIpLimiter)
+                        acct.InfractionStatus = AccountInfraction.None;
 
-                    if (acct.InfractionStatus != Accounting.Account.AccountInfraction.none)
+                    if (acct.InfractionStatus != Accounting.Account.AccountInfraction.None)
                     {   // handle the bad boys here
                         Timer.DelayCall(TimeSpan.FromSeconds(2.0), new TimerStateCallback(BadLogin), new object[] { pm, acct });
                     }
@@ -2929,6 +3202,10 @@ namespace Server.Mobiles
                         IPAddressToPlayerLookup[pm.NetState.Address] = pm;
                 }
                 #endregion LastLoggedinMobile
+
+                // Mortalis: Should never be the case, this is just a safety check
+                // Normally this is cleared by any action by the player, but in case it slips through, we clear it here just in case
+                pm.BreakSafetyBuffs();
             }
         }
         public static void SeedIpInfo(object state)
@@ -2937,7 +3214,7 @@ namespace Server.Mobiles
             if (aState == null || aState.Length != 2)
                 return;
 
-            PlayerMobile pm = aState[0] as PlayerMobile;
+            PlayerMobile? pm = aState[0] as PlayerMobile;
             NetState ns = pm.NetState;
             if (aState[1] != null && aState[1] is Server.Accounting.Account acct && ns != null)
             {
@@ -2946,8 +3223,8 @@ namespace Server.Mobiles
                     Utility.Monitor.WriteLine("Ignoring IPInfo for private network {0}", ConsoleColor.Yellow, ns.Address);
                     return;
                 }
-                List<string> reason = null;
-                CityResponse response = GetIpInfo(pm, ref reason);
+                List<string>? reason = null;
+                CityResponse? response = GetIpInfo(pm, ref reason);
                 if (response != null)
                 {
                     acct.SetFlag(IPFlags.IsAnonymous, response.Traits.IsAnonymous);
@@ -2986,16 +3263,28 @@ namespace Server.Mobiles
             NetState ns = this.NetState;
             if (ns != null && ns.Mobile != null && ns.Mobile.Account != null)
             {
-                Accounting.Account acct = ns.Mobile.Account as Accounting.Account;
-                PlayerMobile pm = ns.Mobile as PlayerMobile;
+                Accounting.Account? acct = ns.Mobile.Account as Accounting.Account;
+                PlayerMobile? pm = ns.Mobile as PlayerMobile;
                 string reason = string.Empty;
                 if (!World.IsSystemAcct(ns.Address))
                 {
                     if (acct.GetFlag(Accounting.Account.IPFlags.IsTorExitNode))
                     {   // getting here on a IsTorExitNode is immediate prison. Not mortal, cause we don't want them just dying and crating another account
 
-                        if (pm.Region != null && pm.Region.IsAngelIslandRules)
-                            // they're already in prison
+                        // first confinement wins: someone already in a jail or a prison (as an inmate) stays exactly where they are.
+                        //  The offense is recorded once for staff (this check repeats every two minutes) and a prison keeps the
+                        //  longer of the two minimum sentences. Nothing else here (infraction, mute, guild) is applied.
+                        if (Server.Engines.ConfinementSystem.ConfinementBookkeeping.IsConfined(pm))
+                        {
+                            string offense = string.Format("Player blackholed with IP Flags {0}.", acct.IPFlagsPermanent | acct.IPFlagsSession);
+                            if (Server.Engines.ConfinementSystem.ConfinementBookkeeping.RecordAdditionalOffense(pm, "Tor exit node", offense,
+                                Server.Engines.ConfinementSystem.ConfinementBookkeeping.TorOffenseKeys))
+                                Server.Engines.ConfinementSystem.PrisonOperations.KeepLongerMinimumSentence(pm, DateTime.UtcNow + TimeSpan.FromDays(91.6));
+                            return false;
+                        }
+
+                        if (pm.Region != null && pm.Region.IsPrisonRules)
+                            // they're already in prison (not as an inmate: left alone, as before)
                             return false;
 
                         // First, set their login infraction. This is what the Warden checks to select your custom welcome message
@@ -3027,7 +3316,7 @@ namespace Server.Mobiles
                         {
                             foreach (BaseGuild g in BaseGuild.List.Values)
                             {
-                                Guild guild = g as Guild;
+                                Guild? guild = g as Guild;
                                 if (guild != null && guild.NoResign)
                                 {
                                     if (guild.Abbreviation.Contains("ToC", StringComparison.OrdinalIgnoreCase))
@@ -3064,37 +3353,91 @@ namespace Server.Mobiles
                         } */
                         #endregion FYI
 
-                        RefreshWatch(acct, string.Format("{2}{0}: {1}", ns.Address, temp.ToString(), !string.IsNullOrEmpty(acct.WatchReason) ? ", " : ""));
+                        RefreshWatch(string.Format("{2}{0}: {1}", ns.Address, temp.ToString(), !string.IsNullOrEmpty(acct.WatchReason) ? ", " : ""));
                     }
                     else if (ClientException.IsException(ns.Address))
                     {
-                        RefreshWatch(acct, string.Format("{2}{0}: {1}", ns.Address, "Client has IP Exception", !string.IsNullOrEmpty(acct.WatchReason) ? ", " : ""));
+                        RefreshWatch(string.Format("{2}{0}: {1}", ns.Address, "Client has IP Exception", !string.IsNullOrEmpty(acct.WatchReason) ? ", " : ""));
                     }
                 }
             }
             return true;
         }
-        private void RefreshWatch(Accounting.Account acct, string text)
+        public void AddWatch(string text)
         {
+            Accounting.Account? acct = this.Account as Accounting.Account;
+
+            if (acct == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(text))
+                return;
+
+            // normalize reason entry
+            text = text.Trim();
+
+            // prepend separator if needed
+            if (!string.IsNullOrEmpty(acct.WatchReason))
+                text = "; " + text;
+
+            RefreshWatch(text);
+        }
+        private void RefreshWatch(string text)
+        {
+            Accounting.Account? acct = this.Account as Accounting.Account;
+
+            if (acct == null)
+                return;
+
             if (acct.WatchReason == null || acct.WatchReason.Length > 128)
-                // set/reset
                 acct.WatchReason = string.Empty;
 
             acct.Watched = true;
             acct.WatchReason += text;
             acct.WatchExpire = DateTime.UtcNow + TimeSpan.FromDays(30.0);
+
+            // Log the watch event
+            LogHelper logger = new LogHelper("Watchlist.log", overwrite: false, sline: true);
+
+            logger.Log(LogType.Mobile, this);
+            logger.Log(LogType.Text, $"Watch added: {text}");
+
+            logger.Finish();
         }
         private static Dictionary<IPAddress, PlayerMobile> IPAddressToPlayerLookup = new();
         private static void BadLogin(object state)
         {
             object[] aState = (object[])state;
-            PlayerMobile pm = aState[0] as PlayerMobile;
-            if (aState[1] != null && aState[1] is Server.Accounting.Account acct && acct.InfractionStatus != Accounting.Account.AccountInfraction.none && pm.PrisonInmate == false)
+            PlayerMobile? pm = aState[0] as PlayerMobile;
+
+            #region First confinement wins
+            // someone already in a jail or a prison (as an inmate) is not imprisoned again: the infraction is recorded once for
+            //  staff (it is found again at every login) and a prison keeps the longer minimum sentence. Nothing else here
+            //  (mute, mortality, guild) is applied. The IPStillHot kick below is not a confinement and is unchanged.
+            if (pm != null && aState[1] is Server.Accounting.Account cacct
+                && (cacct.InfractionStatus == Accounting.Account.AccountInfraction.TotalIpLimiter
+                    || cacct.InfractionStatus == Accounting.Account.AccountInfraction.TotalHardwareLimiter
+                    || cacct.InfractionStatus == Accounting.Account.AccountInfraction.ConcurrentIpLimiter
+                    || cacct.InfractionStatus == Accounting.Account.AccountInfraction.TorExitNode)
+                && Server.Engines.ConfinementSystem.ConfinementBookkeeping.IsConfined(pm))
+            {
+                string offense = string.Format("Player blackholed with LoginStatus {0}.", cacct.InfractionStatus);
+                string[] keys = cacct.InfractionStatus == Accounting.Account.AccountInfraction.TorExitNode
+                    ? Server.Engines.ConfinementSystem.ConfinementBookkeeping.TorOffenseKeys : new[] { offense };
+                if (Server.Engines.ConfinementSystem.ConfinementBookkeeping.RecordAdditionalOffense(pm, "login infraction", offense, keys)
+                    && (cacct.InfractionStatus == Accounting.Account.AccountInfraction.TotalIpLimiter
+                        || cacct.InfractionStatus == Accounting.Account.AccountInfraction.TotalHardwareLimiter))
+                    Server.Engines.ConfinementSystem.PrisonOperations.KeepLongerMinimumSentence(pm, DateTime.UtcNow + TimeSpan.FromDays(91.6));
+                return;
+            }
+            #endregion First confinement wins
+
+            if (aState[1] != null && aState[1] is Server.Accounting.Account acct && acct.InfractionStatus != Accounting.Account.AccountInfraction.None && pm.PrisonInmate == false)
             {
                 string reason = string.Empty;
-                if (acct.InfractionStatus == Accounting.Account.AccountInfraction.totalIPLimiter ||
-                    acct.InfractionStatus == Accounting.Account.AccountInfraction.totalHardwareLimiter ||
-                    acct.InfractionStatus == Accounting.Account.AccountInfraction.concurrentIPLimiter)
+                if (acct.InfractionStatus == Accounting.Account.AccountInfraction.TotalIpLimiter ||
+                    acct.InfractionStatus == Accounting.Account.AccountInfraction.TotalHardwareLimiter ||
+                    acct.InfractionStatus == Accounting.Account.AccountInfraction.ConcurrentIpLimiter)
                 {
                     #region Mute all messages to mobile
                     // we temporarily mute all messages to the mobile.
@@ -3120,14 +3463,14 @@ namespace Server.Mobiles
                      */
                     #endregion Offenses
                     // only for the most egregious offenders
-                    if (acct.InfractionStatus != Accounting.Account.AccountInfraction.concurrentIPLimiter)
+                    if (acct.InfractionStatus != Accounting.Account.AccountInfraction.ConcurrentIpLimiter)
                         pm.Mortal = true;
                     #endregion Make the Mortal
 
                     #region Imprison them
                     reason = string.Format("Player blackholed with LoginStatus {0}.", acct.InfractionStatus);
                     Point3D px = Spawner.GetSpawnPosition(Map.Felucca, new Point3D(354, 836, 20), 2, SpawnFlags.None, pm);
-                    if (acct.InfractionStatus != Accounting.Account.AccountInfraction.concurrentIPLimiter)
+                    if (acct.InfractionStatus != Accounting.Account.AccountInfraction.ConcurrentIpLimiter)
                         pm.MinimumSentence = DateTime.UtcNow + TimeSpan.FromDays(91.6);    // 3 months
                     Prison.PrisonPlayer prison = new Prison.PrisonPlayer(null, pm, px, reason, sentence: 0);
                     prison.GoToPrison();
@@ -3139,14 +3482,14 @@ namespace Server.Mobiles
                     #endregion tell staff
 
                     #region Guild them
-                    if (acct.InfractionStatus != Accounting.Account.AccountInfraction.concurrentIPLimiter)
+                    if (acct.InfractionStatus != Accounting.Account.AccountInfraction.ConcurrentIpLimiter)
                     {
                         // add them to The Outcast guild but only if they are not guilded
                         if (pm.Guild == null)
                         {
                             foreach (BaseGuild g in BaseGuild.List.Values)
                             {
-                                Guild guild = g as Guild;
+                                Guild? guild = g as Guild;
                                 if (guild != null && guild.NoResign)
                                 {
                                     if (guild.Abbreviation.Contains("ToC", StringComparison.OrdinalIgnoreCase))
@@ -3201,7 +3544,7 @@ namespace Server.Mobiles
                         //pm.NetState.Dispose();
                         Timer.DelayCall(TimeSpan.FromSeconds(1), new TimerStateCallback(KickTick), new object[] { pm });
                         #region Clear State
-                        acct.InfractionStatus = Accounting.Account.AccountInfraction.none;
+                        acct.InfractionStatus = Accounting.Account.AccountInfraction.None;
                         #endregion  Clear State
                     }
                 }
@@ -3218,58 +3561,287 @@ namespace Server.Mobiles
         private static void KickTick(object state)
         {
             object[] aState = (object[])state;
-            PlayerMobile pm = aState[0] as PlayerMobile;
+            PlayerMobile? pm = aState[0] as PlayerMobile;
             if (pm != null && pm.NetState != null && pm.NetState.Running)
             {
                 pm.NetState.Dispose();
             }
         }
+
         private static void EventSink_Disconnected(DisconnectedEventArgs e)
         {
-            Mobile from = e.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            if (e.Mobile is not PlayerMobile pm || pm.Account is not Accounting.Account acct)
+                return;
+
+            DesignContext? context = DesignContext.Find(pm);
 
             if (context != null)
             {
                 /* Client disconnected
-				 *  - Remove design context
-				 *  - Eject client from house
-				 */
+                 *  - Remove design context
+                 *  - Eject client from house
+                 */
 
                 // Remove design context
-                DesignContext.Remove(from);
+                DesignContext.Remove(pm);
 
                 // Eject client from house
-                from.RevealingAction();
+                pm.RevealingAction();
 
-                from.MoveToWorld(context.Foundation.BanLocation, context.Foundation.Map);
+                pm.MoveToWorld(context.Foundation.BanLocation, context.Foundation.Map);
             }
 
-            PlayerMobile pm = e.Mobile as PlayerMobile;
 
-            if (pm != null)
+            pm.m_GameTime += (DateTime.UtcNow - pm.m_SessionStart);
+
+            if (pm.m_Quest != null)
+                pm.m_Quest.StopTimer();
+
+
+            if (pm.IOBEquipped)
             {
-                pm.m_GameTime += (DateTime.UtcNow - pm.m_SessionStart);
-
-                if (pm.m_Quest != null)
-                    pm.m_Quest.StopTimer();
-
-
-                if (pm.IOBEquipped)
+                if (pm.m_IOBStartedWearing > DateTime.MinValue)
                 {
-                    if (pm.m_IOBStartedWearing > DateTime.MinValue)
+                    pm.m_IOBRankTime += (DateTime.UtcNow - pm.m_IOBStartedWearing);
+                }
+            }
+
+            pm.m_IOBStartedWearing = DateTime.MinValue; //always set this to minvalue when logged out
+
+            // record when this player went off line 
+            pm.LastDisconnect = DateTime.UtcNow;
+
+            #region Record disconnect and handle player protections (if any)
+
+            // Player insta-logging via camping or at an inn doesn't count for, or against disconnect protection
+            bool IsInstaLog = pm.GetLogoutDelay() == TimeSpan.Zero;
+
+            // Save it in the account
+            acct.LastDisconnect = pm.LastDisconnect;
+
+            if (!IsInstaLog)
+            {
+                bool clientRequestedLogout =
+                    (acct.SeqConnectionStatus & ConnectionStatus.LogedOut) != 0;
+
+                bool allowed = (!clientRequestedLogout && DisconnectProtectionRules(pm, acct));
+
+                if (!clientRequestedLogout)
+                {
+                    try
                     {
-                        pm.m_IOBRankTime += (DateTime.UtcNow - pm.m_IOBStartedWearing);
+                        LogHelper logger = new LogHelper("Player Disconnect Protections.log", overwrite: false,
+                            sline: false);
+
+                        string rejectionReasons =
+                            allowed ? string.Empty : GetDisconnectProtectionRejectionReasons(pm, acct);
+
+                        LogDisconnectProtectionInfo(pm, logger, rejected: !allowed, rejectionReasons: rejectionReasons);
+                        logger.Finish();
+                    }
+                    catch
+                    {
+                        // swallow: disconnect protection must still apply
                     }
                 }
-                pm.m_IOBStartedWearing = DateTime.MinValue; //always set this to minvalue when logged out
 
-                // record when this player went off line 
-                pm.LastDisconnect = DateTime.UtcNow;
+                if (allowed)
+                {
+                    Utility.DropHolding(pm);
+                    if (Utility.InternalizePets(pm, dismount: false) > 0)
+                        pm.SetPlayerBool(PlayerBoolTable.PlayerDisconnectedWithPets, true);
+
+                    if (pm.Poisoned)
+                        pm.Poison = null;
+
+                    // force a reasonable map
+                    if (pm.Map == Server.Map.Internal || pm.Map == null)
+                        pm.Map = Server.Map.Felucca;
+
+                    // find a reasonable location
+                    if (BaseBoat.FindBoatAt(pm) != null ||
+                        Utility.IsWater(pm.Map, pm.Location.X, pm.Location.Y, pm.Location.Z))
+                        // get a new location
+                        Strandedness.ProcessStranded(pm, false);
+
+                    pm.LogoutLocation = pm.Location;
+                    pm.LogoutMap = pm.Map;
+                    pm.MoveToWorld(pm.Location, Server.Map.Internal);
+                    if (!Core.Debug)
+                        acct.RecordDisconnectProtectionUse();
+                    else
+                        pm.SendMessage("Disconnect protection use not counted in debug mode");
+                }
+                else
+                {
+                    // no protection
+                }
+
+                // Always mark the fact of disconnect last
+                acct.SeqConnectionStatus |= ConnectionStatus.Disconnected;
             }
 
+            #endregion Record disconnect and handle player protections (if any)
+
+            // Any deliberate player action breaks the temporary guard-protection (BlockDamageAtOne).
+            pm.BreakSafetyBuffs();
+
             // wea: log the fact that they've disconnected
-            Server.Commands.CommandLogging.LogChangeClient(e.Mobile, false);
+            Server.Commands.CommandLogging.LogChangeClient(pm, false);
+        }
+
+        private static bool DisconnectProtectionRules(PlayerMobile pm, Account acct)
+        {
+            if (pm == null || acct == null)
+                return false;
+
+            if (pm.Dead)
+                return false;
+
+            if (pm.HasTrade)
+                return false;
+
+            // per-account rolling cap (persistent)
+            if (!acct.CanUseDisconnectProtection())
+                return false;
+
+            Region r = pm.Region;
+
+            // No protection in guarded regions (towns, etc.)
+            if (r is Regions.GuardedRegion gr && gr.IsGuarded)
+                return false;
+
+            // No protection in house regions
+            if (r is HouseRegion)
+                return false;
+
+            //// recent criminal act
+            //if (pm.IsInRecentCriminalWindow)
+            //    return false;
+
+            // recent criminal act
+            if (pm.Criminal)
+                return false;
+
+            return true;
+        }
+
+        private static string GetDisconnectProtectionRejectionReasons(PlayerMobile pm, Account acct)
+        {
+            if (pm == null)
+                return "NullMobile";
+
+            if (acct == null)
+                return "NullAccount";
+
+            System.Collections.Generic.List<string> reasons =
+                new System.Collections.Generic.List<string>();
+
+            if (pm.Dead)
+                reasons.Add("Dead");
+
+            if (pm.HasTrade)
+                reasons.Add("HasTrade");
+
+            // persistent per-account throttle
+            if (!acct.CanUseDisconnectProtection())
+                reasons.Add("RateLimited");
+
+            Region r = pm.Region;
+
+            if (r is Regions.GuardedRegion gr && gr.IsGuarded)
+                reasons.Add("GuardedRegion");
+
+            if (r is HouseRegion)
+                reasons.Add("HouseRegion");
+
+            //if (pm.IsInRecentCriminalWindow)
+            //    reasons.Add("RecentCriminal");
+
+            // criminal
+            if (pm.Criminal)
+                reasons.Add("Is Criminal");
+
+            return (reasons.Count == 0)
+                ? string.Empty
+                : string.Join(", ", reasons.ToArray());
+        }
+
+        public static void LogDisconnectProtectionInfo(PlayerMobile pm, LogHelper logger, bool rejected, string rejectionReasons)
+        {
+            if (pm == null || logger == null)
+                return;
+
+            DateTime now = DateTime.UtcNow;
+
+            // Header / identity
+            logger.Log(LogType.Mobile, pm);
+
+            Account? acct = pm.Account as Account;
+            if (acct != null)
+                logger.Log(LogType.Text, $"Account: {acct.Username}");
+
+            if (acct != null)
+            {
+                logger.Log(
+                    LogType.Text,
+                    $"Disconnect Throttle: Uses={acct.DisconnectProtectionsInWindow}/{CoreAI.DCPMaxUses}, " +
+                    $"WindowStart(UTC)={acct.DisconnectProtectionWindowStartUtc:O}, Window={CoreAI.DCPWindow}"
+                );
+            }
+
+            // Environment snapshot
+            bool guarded = pm.Region is Regions.GuardedRegion gr && gr.IsGuarded;
+            bool inHouse = pm.Region is Regions.HouseRegion;
+
+            logger.Log(LogType.Text, $"Disconnect Environment: Guarded={guarded}, HouseRegion={inHouse}");
+
+            // Rule inputs (so we can explain rejections)
+            logger.Log(
+                LogType.Text,
+                $"Disconnect Rules: Dead={pm.Dead}, HasTrade={pm.HasTrade}, RecentCriminal={pm.Criminal}"
+            );
+
+            // Outcome
+            logger.Log(LogType.Text, $"Disconnect Protection: {(rejected ? "Rejected" : "Applied")}");
+
+            // If rejected, add a clear summary of why
+            if (rejected && !string.IsNullOrEmpty(rejectionReasons))
+                logger.Log(LogType.Text, $"Rejected Because: {rejectionReasons}");
+
+            // Player state relevant to protection mechanics
+            logger.Log(LogType.Text, $"State at Disconnect: Poisoned={pm.Poisoned}");
+
+            // Combatant snapshot (if any)
+            Mobile combatant = pm.Combatant;
+            if (combatant != null)
+            {
+                string combatantType;
+                string combatantName;
+
+                if (combatant is PlayerMobile cpm)
+                {
+                    combatantType = "Player";
+                    combatantName = cpm.Name;
+                }
+                else
+                {
+                    combatantType = "Creature";
+                    combatantName = combatant.GetType().Name;
+                }
+
+                logger.Log(LogType.Text, $"Combatant: Type={combatantType}, Name={combatantName}, Serial={combatant.Serial}");
+            }
+
+            // Inventory / follower implications
+            logger.Log(LogType.Text, $"Holdings: HoldingItem={(pm.Dragging != null)}, Followers={pm.Followers}");
+
+            // Timing / identity context
+            TimeSpan age = now - pm.Created;
+            logger.Log(LogType.Text, $"Player Age: {FormatAge(age)}");
+
+            if (acct != null)
+                logger.Log(LogType.Text, $"Account LastDisconnect(UTC): {acct.LastDisconnect:O}");
         }
 
         public override void RevealingAction()
@@ -3303,10 +3875,11 @@ namespace Server.Mobiles
             #region Static Region
             if (target != null && this.Region != target.Region)
             {
-                StaticRegion sr = StaticRegion.FindStaticRegion(target);
+                StaticRegion? sr = StaticRegion.FindStaticRegion(target);
                 if (sr != null && sr.NoExternalHarmful && this.AccessLevel == AccessLevel.Player)
                 {
-                    this.SendMessage("You cannot harm them in that area.");
+                    if (message)
+                        this.SendMessage("You cannot harm them in that area.");
                     return false;
                 }
             }
@@ -3390,7 +3963,7 @@ namespace Server.Mobiles
         {
             get
             {
-                BaseArmor ar;
+                BaseArmor? ar;
                 double rating = 0.0;
 
                 ar = NeckArmor as BaseArmor;
@@ -3475,7 +4048,11 @@ namespace Server.Mobiles
                     strBase = this.RawStr;
                 }
 
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || PublishInfo.Publish >= 13)
+                if (Core.RuleSets.AngelIslandRules() ||
+                    Core.RuleSets.MortalisRules() ||
+                    Core.RuleSets.SeasonsRules() ||
+                    Core.RuleSets.UpheavalRules() ||
+                    PublishInfo.Publish >= 13)
                 {
                     // Hit Point Calculation
                     //	The following change will be made to the manner in which hit points are calculated for players.
@@ -3519,6 +4096,15 @@ namespace Server.Mobiles
 
         public override bool Move(Direction d)
         {
+            // 6/21/2026, Adam: disable - causes jerky teleporter usage.
+            //  Maybe keep if we can limit scope to only the affected teleporters, like the one in Prison Spirit Spawn
+            // Suppress movement briefly after teleport.
+            // Client movement packets may still be in flight; rejecting them here
+            // avoids incorrect Z resolution, stuck states, and any visible side effects
+            // (no Frozen flag, no messages, no Razor tint).
+            if (false && DateTime.UtcNow < TeleportMoveLockUntil)
+                return false;
+
             NetState ns = this.NetState;
 
             if (ns != null)
@@ -3607,50 +4193,93 @@ namespace Server.Mobiles
             return baseResult;
         }
 
-        private bool m_LastProtectedMessage;
-        private int m_NextProtectionCheck = 10;
+        // See guarded region OnEnter/OnExit
+        //private bool m_LastProtectedMessage;
+        //private int m_NextProtectionCheck = 10;
+        //public virtual void RecheckTownProtection()
+        //{
+        //    m_NextProtectionCheck = 10;
 
-        public virtual void RecheckTownProtection()
-        {
-            m_NextProtectionCheck = 10;
+        //    Regions.GuardedRegion reg = this.Region as Regions.GuardedRegion;
+        //    bool isProtected = (reg != null && reg.IsGuarded);
 
-            Regions.GuardedRegion reg = this.Region as Regions.GuardedRegion;
-            bool isProtected = (reg != null && reg.IsGuarded);
+        //    if (isProtected == m_LastProtectedMessage)
+        //        return;
 
-            if (isProtected != m_LastProtectedMessage)
-            {
-                if (isProtected)
-                {
-                    if (Criminal || (Red && !Core.RedsInTown))
-                        SendLocalizedMessage(502275); // Guards can now be called on you!
-                    else
-                        SendLocalizedMessage(500112); // You are now under the protection of the town guards.
-                }
-                else
-                {
-                    if (Criminal || (Red && !Core.RedsInTown))
-                        SendMessage("You are now scot-free!");
-                    else
-                        SendLocalizedMessage(500113); // You have left the protection of the town guards.
-                }
+        //    bool isGuardRelevant =
+        //        (Criminal && reg != null && reg.IsGuardCandidate(this)) ||
+        //        (Red && !Core.RedsInTown);
 
-                m_LastProtectedMessage = isProtected;
-            }
-        }
+        //    if (isProtected)
+        //    {
+        //        if (isGuardRelevant)
+        //            SendLocalizedMessage(502275); // Guards can now be called on you!
+        //        else
+        //            SendLocalizedMessage(500112); // You are now under the protection of the town guards.
+        //    }
+        //    else
+        //    {
+        //        if (isGuardRelevant)
+        //            SendMessage("You are now scot-free!");
+        //        else
+        //            SendLocalizedMessage(500113); // You have left the protection of the town guards.
+        //    }
+
+        //    m_LastProtectedMessage = isProtected;
+        //}
+
+
+        #region Recent criminal window (Disconnect Protection anti-abuse)
+        ////
+        //// Purpose:
+        //// Track a short, session-only "recent criminal action" window to prevent players from
+        //// stealing/harming an innocent and immediately disconnecting to avoid retaliation.
+        ////
+        //// Notes:
+        //// - Not serialized (session only)
+        //// - Uses DateTime.MinValue as the default "inactive" state
+        ////
+
+        //private DateTime m_RecentCriminalUntil; // defaults to DateTime.MinValue
+
+        //public bool IsInRecentCriminalWindow
+        //{
+        //    get { return DateTime.UtcNow < m_RecentCriminalUntil; }
+        //}
+
+        //public void MarkRecentCriminalWindow(int seconds)
+        //{
+        //    if (seconds <= 0)
+        //        return;
+
+        //    DateTime until = DateTime.UtcNow + TimeSpan.FromSeconds(seconds);
+
+        //    // Extend only (never shorten an existing window)
+        //    if (until > m_RecentCriminalUntil)
+        //        m_RecentCriminalUntil = until;
+        //}
+
+        //// Convenience default (adjust as desired)
+        //public void MarkRecentCriminalWindow()
+        //{
+        //    MarkRecentCriminalWindow(15);
+        //}
+
+        #endregion Recent criminal window (Disconnect Protection anti-abuse)
 
         public override void MoveToWorld(Point3D loc, Map map)
         {
             base.MoveToWorld(loc, map);
 
-            RecheckTownProtection();
+            //RecheckTownProtection();
         }
 
         public override void SetLocation(Point3D loc, bool isTeleport)
         {
             base.SetLocation(loc, isTeleport);
 
-            if (isTeleport || --m_NextProtectionCheck == 0)
-                RecheckTownProtection();
+            //if (isTeleport || --m_NextProtectionCheck == 0)
+            //    RecheckTownProtection();
         }
 
         public override void GetContextMenuEntries(Mobile from, ArrayList list)
@@ -3701,7 +4330,7 @@ namespace Server.Mobiles
         {
             for (int i = 0; i < m_JusticeProtectors.Count; ++i)
             {
-                Mobile prot = (Mobile)m_JusticeProtectors[i];
+                Mobile? prot = (Mobile?)m_JusticeProtectors[i];
 
                 string args = string.Format("{0}\t{1}", this.Name, prot.Name);
 
@@ -3746,7 +4375,7 @@ namespace Server.Mobiles
             if (!CheckAlive())
                 return;
 
-            Item item = obj as Item;
+            Item? item = obj as Item;
 
             if (item == null || !item.IsChildOf(this))
             {
@@ -3823,7 +4452,7 @@ namespace Server.Mobiles
 
         private void LeaveHouse()
         {
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             if (house == null) //Pix: additional check for house
             {
@@ -3894,7 +4523,7 @@ namespace Server.Mobiles
             #endregion
 
             #region Factions
-            FactionItem factionItem = FactionItem.Find(item);
+            FactionItem? factionItem = FactionItem.Find(item);
 
             if (factionItem != null)
             {
@@ -3964,6 +4593,8 @@ namespace Server.Mobiles
 
         protected override void OnLocationChange(Point3D oldLocation)
         {
+            EnforceOrcMaskRestrictions(this, hide: false, message: true);
+
             CheckLightLevels(false);
 
             #region Dueling
@@ -4007,6 +4638,73 @@ namespace Server.Mobiles
             m_NoRecursion = false;
         }
 
+        protected override void OnMapEnter(Map oldMap, Point3D oldLocation)
+        {
+            base.OnMapEnter(oldMap, oldLocation);
+            Map newMap = this.Map;
+            Point3D newLoc = this.Location;
+
+            LogHelper logger = new LogHelper("FacetTransition.log", false, true);
+
+            try
+            {
+                #region Core Logging
+                string msg = string.Format(
+                    "[Enter] {0} @ {1} -> {2} @ {3}",
+                    oldMap,
+                    oldLocation,
+                    this.Map,
+                    this.Location);
+
+                logger.Log(LogType.Mobile, this, msg);
+                #endregion Core Logging
+
+                // Test Center clones: the tripwire is TestCenterPolicy.OnMapChange (OnMapChange below), which also sees
+                //  the Map setter; this method only sees MoveToWorld
+            }
+            catch (Exception ex)
+            {
+                logger.Log(LogType.Text, "Logging error: " + ex.Message);
+            }
+            finally
+            {
+                logger.Finish();
+            }
+        }
+        protected override void OnMapExit(Map oldMap, Point3D oldLocation)
+        {
+            base.OnMapExit(oldMap, oldLocation);
+
+            Map newMap = this.Map;
+            Point3D newLoc = this.Location;
+
+            LogHelper logger = new LogHelper("FacetTransition.log", false, true);
+
+            try
+            {
+                #region Core Logging
+                string msg = string.Format(
+                    "[Exit] {0} @ {1} -> {2} @ {3}",
+                    oldMap,
+                    oldLocation,
+                    this.Map,
+                    this.Location);
+
+                logger.Log(LogType.Mobile, this, msg);
+                #endregion Core Logging
+
+                // Test Center clones: the tripwire is TestCenterPolicy.OnMapChange (OnMapChange below)
+            }
+            catch (Exception ex)
+            {
+                logger.Log(LogType.Text, "Logging error: " + ex.Message);
+            }
+            finally
+            {
+                logger.Finish();
+            }
+        }
+
         public override bool OnMoveOver(Mobile m)
         {
             #region Dueling
@@ -4024,6 +4722,11 @@ namespace Server.Mobiles
 
         protected override void OnMapChange(Map oldMap)
         {
+            #region Test Center
+            // the Test Center tripwire: raised by MoveToWorld and by the Map setter, so every way across the boundary is seen
+            TestCenterPolicy.OnMapChange(this, oldMap);
+            #endregion Test Center
+
             if ((Map != Faction.Facet && oldMap == Faction.Facet) || (Map == Faction.Facet && oldMap != Faction.Facet))
                 InvalidateProperties();
 
@@ -4049,7 +4752,7 @@ namespace Server.Mobiles
             m_NoRecursion = false;
         }
 
-        public override void OnDamage(int amount, Mobile from, bool willKill, object source_weapon)
+        public override void OnDamage(int amount, Mobile from, bool willKill, DamageContext context)
         {
             try
             {
@@ -4058,33 +4761,43 @@ namespace Server.Mobiles
                     BandageContext c = BandageContext.GetContext(this);
 
                     if (c != null)
-                        c.Slip();
+                    {
+                        if (c != null)
+                        {
+                            // Poison-induced slips are configurable; all other bandage interruptions retain classic behavior.
+                            if (!IsPoisonTickDamage(context) || Utility.RandomDouble() < CoreAI.PoisonBandageSlipChance)
+                                c.Slip();
+                        }
+                    }
                 }
 
                 if (this.BlockDamage == false)
                     WeightOverloading.FatigueOnDamage(this, amount);
 
-                base.OnDamage(amount, from, willKill, source_weapon);
+                base.OnDamage(amount, from, willKill, context);
             }
             catch (Exception ex)
             {
                 LogHelper.LogException(ex);
             }
         }
-
+        private static bool IsPoisonTickDamage(DamageContext context)
+        {
+            return context?.Source?.GetType().FullName == "Server.PoisonImpl+PoisonTimer";
+        }
         // records the damage dealt to whomever you are fighting
         //	this is implemented for debugging low-damage complaints.
         //	See implemention in Mobile
-        public override void OnGaveDamage(int amount, Mobile to, bool willKill, object source_weapon)
+        public override void OnGaveDamage(int amount, Mobile to, bool willKill, DamageContext context)
         {   // we delivered this much damage on our last strike or spell
-            DamageTracker(amount, to, source_weapon);
+            DamageTracker(amount, to, context?.Source);
         }
 
         #region DAMAGE TRACKER
         DateTime DamageTracker_start = DateTime.UtcNow;
         double DamageTracker_damage = 0;
         bool clock_started = false;
-        public void DamageTracker(int amount, Mobile to, object source_weapon)
+        public void DamageTracker(int amount, Mobile to, object? source_weapon)
         {
             int DamageAbsorbed_amount = 0;
 
@@ -4108,7 +4821,7 @@ namespace Server.Mobiles
 
             // Aquire Virtual Armor Absorbtion
             // lets get the damage absorbed from my strike. (Base Weapon records this)
-            BaseWeapon bw = source_weapon as BaseWeapon;    // it's a baseweapon
+            BaseWeapon? bw = source_weapon as BaseWeapon;    // it's a baseweapon
             if (bw != null && bw.Parent == this)            // and it's me
                 DamageAbsorbed_amount = bw.DamageAbsorbed;  // record the absorbed damage
 
@@ -4138,7 +4851,6 @@ namespace Server.Mobiles
 
             return (total / 10);
         }
-
         public override void Resurrect()
         {
             bool wasAlive = this.Alive;
@@ -4171,7 +4883,7 @@ namespace Server.Mobiles
                 bool bNewDeathrobe = true;
                 if (this.Backpack != null)
                 {
-                    Item oldDeathrobe = this.Backpack.FindItemByType(typeof(DeathRobe), false);
+                    Item? oldDeathrobe = this.Backpack.FindItemByType(typeof(DeathRobe), false);
                     if (oldDeathrobe != null)
                     {
                         bNewDeathrobe = false;
@@ -4186,24 +4898,10 @@ namespace Server.Mobiles
                         deathRobe.Delete();
                 }
 
+                // When resurrecting as a prison inmate, apply decay credit for time spent dead
                 if (PrisonInmate)
                 {
-                    //When resrrecting, make sure our counts are reduced
-
-                    TimeSpan deadtime = TimeSpan.FromMinutes(0.0);
-                    if (m_InmateLastDeathTime == DateTime.MinValue)
-                    {
-                        //effectively 0 deadtime if it's set to minvalue
-                    }
-                    else
-                    {
-                        deadtime = DateTime.UtcNow - m_InmateLastDeathTime;
-                    }
-
-                    //reduce short term by 4 hours minus half the time spent dead (modulo 8 hours)
-                    m_ShortTermElapse -= (TimeSpan.FromHours(4.0) - TimeSpan.FromSeconds((deadtime.TotalSeconds % 28800) / 2));
-                    //reduce long term by 20 hours minus half the time spent dead (modulo 40 hours)
-                    m_LongTermElapse -= (TimeSpan.FromHours(20.0) - TimeSpan.FromSeconds((deadtime.TotalSeconds % 144000) / 2));
+                    MurderCountUtility.ApplyResurrectionDecayCredit(this, m_InmateLastDeathTime);
                 }
 
                 //InvalidateMyRunUO();
@@ -4284,14 +4982,6 @@ namespace Server.Mobiles
             // Set last res time so we know how long they've had alive
             LastResurrectTime = DateTime.UtcNow;
 
-#if false
-            // 8/16/2023, Adam: never true - what are we trying to do here?
-            if (LastDeathTime == null)
-            {
-                SpiritCohesion = 0;
-                return;
-            }
-#endif
             TimeSpan TimeSinceDeath = (DateTime.UtcNow - LastDeathTime);
 
             if (TimeSinceDeath < TimeSpan.FromSeconds(CoreAI.CohesionLowerDelay))
@@ -4313,7 +5003,23 @@ namespace Server.Mobiles
 #endif
 
         private DateTime m_InmateLastDeathTime;
+        public DateTime InmateLastDeathTime
+        {
+            get => m_InmateLastDeathTime;
+            set
+            {
+                DateTime now = DateTime.UtcNow;
 
+                // Clamp: no future dates (beyond small clock skew buffer)
+                if (value > now.AddMinutes(5))
+                    value = now;
+
+                // Optional: prevent setting to very old dates if undesired
+                // if (value < now.AddYears(-10)) value = DateTime.MinValue;
+
+                m_InmateLastDeathTime = value;
+            }
+        }
         public bool IsInCombat(bool player = false)
         {
             List<AggressorInfo> list = new();
@@ -4329,14 +5035,30 @@ namespace Server.Mobiles
 
             return false;
         }
+        public override void OnDelete()
+        {
+            if (this.Account is Account acct)
+            {
+                // Clones: How we got here: When a player logs in, we locate their clone and clone account.
+                // we then delete the clone account. This in turn deletes all player clones on the account.
+                if (Clone)
+                {
+                    // delete their seasonal account
+                    if (Core.RuleSets.SeasonsRules())
+                        SeasonalAccounts.DeleteAccount(acct.GUID);
+                }
 
+                // wipe any notion of the player's slot in the account
+                //  we do this to ensure the next character created receives the first available slot
+                for (int ix = 0; ix < 5; ix++)
+                    if (acct[ix] == this)
+                        acct[ix] = null;
+            }
+            base.OnDelete();
+        }
         public override bool OnBeforeDeath()
         {
-
-            if (Core.RuleSets.MortalisRules())
-                EventSink.InvokeBeforePlayerDeath(new BeforePlayerDeathEventArgs(this, this.GUID, this.Account as Account, DateTime.UtcNow, GetFirstHouse(), FollowerCount));
-            else
-                EventSink.InvokeBeforePlayerDeath(new BeforePlayerDeathEventArgs(this, this.GUID, this.Account as Account, DateTime.UtcNow, Serial.Zero, FollowerCount));
+            EventSink.InvokeBeforePlayerDeath(new BeforePlayerDeathEventArgs(this, this.AcctGUID, this.Account as Account, DateTime.UtcNow, GetFirstHouse(), FollowerCount));
 
             #region Notify the killers of their deed
             List<Mobile> aggressors_list = new List<Mobile>();
@@ -4349,31 +5071,16 @@ namespace Server.Mobiles
                 if (mx is BaseCreature)
                     (mx as BaseCreature).OnKilledBy(this, aggressors_list);
             #endregion
-#if THIS_IS_NOT_USED
-			m_InsuranceCost = 0;
-			m_InsuranceAward = base.FindMostRecentDamager( false );
 
-			if ( m_InsuranceAward != null && !m_InsuranceAward.Player )
-				m_InsuranceAward = null;
-
-			if ( m_InsuranceAward is PlayerMobile )
-				((PlayerMobile)m_InsuranceAward).m_InsuranceBonus = 0;
-#endif
             if (PrisonInmate)
             {
-                m_InmateLastDeathTime = DateTime.UtcNow;
-
-                // If they die as an Inmate, reset their kill timers to 8/40
-                m_ShortTermElapse += TimeSpan.FromHours(4);
-                m_LongTermElapse += TimeSpan.FromHours(20);
-
-                //InvalidateMyRunUO();
+                MurderCountUtility.OnPrisonInmateDeath(this);
             }
 
             //make sure that the player isn't holding anything...
             try
             {
-                Item held = Holding;
+                Item held = Dragging;
                 if (held != null)
                 {
                     held.ClearBounce();
@@ -4382,9 +5089,14 @@ namespace Server.Mobiles
                         Backpack.DropItem(held);
                     }
                 }
-                Holding = null;
+                Dragging = null;
             }
             catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
+
+            // for clones (temp players for sandbox environments like test center) we delete the account
+            if (Clone && this.Account is Account acct)
+                acct.Delete();
+
             return base.OnBeforeDeath();
         }
         private Serial GetFirstHouse()
@@ -4407,19 +5119,19 @@ namespace Server.Mobiles
                 IOBAlignment ta = IOBAlignment.None;
                 if (target is BaseCreature)
                 {
-                    BaseCreature bc = target as BaseCreature;
+                    BaseCreature? bc = target as BaseCreature;
                     ta = bc.IOBAlignment;
                 }
                 else if (target is PlayerMobile)
                 {
-                    PlayerMobile pma = target as PlayerMobile;
+                    PlayerMobile? pma = target as PlayerMobile;
                     ta = pma.IOBAlignment;
                 }
 
                 IOBAlignment myRealAlignment = this.IOBAlignment;
                 if (this.IOBAlignment == IOBAlignment.OutCast || this.IOBAlignment == IOBAlignment.Healer)
                 {
-                    Guilds.Guild g = this.Guild as Guilds.Guild;
+                    Guilds.Guild? g = this.Guild as Guilds.Guild;
                     if (g != null)
                     {
                         myRealAlignment = g.IOBAlignment;
@@ -4524,7 +5236,7 @@ namespace Server.Mobiles
                     {
                         if (target is PlayerMobile)
                         {
-                            PlayerMobile pmTarget = target as PlayerMobile;
+                            PlayerMobile? pmTarget = target as PlayerMobile;
                             if (pmTarget.IOBAlignment != IOBAlignment.None)
                             {
                                 this.OnKinBeneficial();
@@ -4565,74 +5277,61 @@ namespace Server.Mobiles
         /// <summary>
         /// Overridable. Event invoked when the Mobile <see cref="DoHarmful">does a harmful action</see>.
         /// </summary>
-        public override void OnHarmfulAction(Mobile target, bool isCriminal, object source = null)
+        public override void OnHarmfulAction(Mobile target, bool isCriminal, object? source = null)
         {
             base.OnHarmfulAction(target, isCriminal, source);
 
-            // Attacking evils makes you gray to all evils for two minutes. In addition, you are lootable if killed. 
-            //	You do not get this flag for attacking an evil player that just attacked an innocent. 
+            // Attacking evils makes you gray to all evils for two minutes. In addition, you are lootable if killed.
+            // You do not get this flag for attacking an evil player that just attacked an innocent.
 
-            // are they non criminal evil and I'm not in the system?
-            if (target.Criminal == false && target.Evil && !this.Hero && !this.Evil)
-            {   // yes, I am now an EvilNoto for attacking them
+            // Are they non-criminal evil and I am not already in the hero/evil system?
+            if (!target.Criminal && target.Evil && !this.Hero && !this.Evil)
+            {
+                // I become EvilNoto for attacking them.
                 this.ExpirationFlags.Add(new ExpirationFlag(this, ExpirationFlagID.EvilNoto, TimeSpan.FromMinutes(2)));
             }
 
-            // Monster ignore	Velgo K'balc
-            // This ability makes even aggressive monsters ignore the evil player for a time, unless they were already engaged in combat with them. 
-            // Attacking or stealing from a monster will shatter the spell.
+            // Monster Ignore: attacking or stealing from a monster breaks the effect.
             if (this.Evil && this.CheckState(ExpirationFlagID.MonsterIgnore))
                 this.RemoveState(ExpirationFlagID.MonsterIgnore);
         }
 
-        private bool CheckInsuranceOnDeath(Item item)
+        public bool InTownFirstHarmfulOffense(Mobile target)
         {
-            // Adam: no more insurance
-            /*
-			if ( InsuranceEnabled && item.Insured )
-			{
-                #region Dueling
-				if ( m_DuelPlayer != null && m_DuelContext != null && m_DuelContext.Registered && m_DuelContext.Started && !m_DuelPlayer.Eliminated )
-					return true;
-                #endregion
+            if (target is null || target.Deleted)
+                return false;
 
-				if ( AutoRenewInsurance )
-				{
-					int cost = ( m_InsuranceAward == null ? 600 : 300 );
+            // Must be a criminal harmful action
+            if (!IsHarmfulCriminal(target))
+                return false;
 
-					if ( Banker.Withdraw( this, cost ) )
-					{
-						m_InsuranceCost += cost;
-						item.PayedInsurance = true;
-					}
-					else
-					{
-						SendLocalizedMessage( 1061079, "", 0x23 ); // You lack the funds to purchase the insurance
-						item.PayedInsurance = false;
-						item.Insured = false;
-					}
-				}
-				else
-				{
-					item.PayedInsurance = false;
-					item.Insured = false;
-				}
+            // Must be in a guarded region
+            if (Region is null || !Region.IsGuarded)
+                return false;
 
-				if ( m_InsuranceAward != null )
-				{
-					if ( Banker.Deposit( m_InsuranceAward, 300 ) )
-					{
-						if ( m_InsuranceAward is PlayerMobile )
-							((PlayerMobile)m_InsuranceAward).m_InsuranceBonus += 300;
-					}
-				}
+            // Check if we are currently an aggressor on the target (not expired)
+            foreach (AggressorInfo info in target.Aggressors)
+            {
+                if (info.Attacker == this && !info.Expired)
+                    return false;
+            }
 
-				return true;
-			}
-
-			*/
-            return false;
+            return true;
         }
+
+        public void RecordHarmfulOffense()
+        {
+            if (Account == null)
+                return;
+
+            Account? a = Account as Account;
+            if (a == null)
+                return;
+
+            a.HarmfulOffenses += 1;
+        }
+
+        private bool CheckInsuranceOnDeath(Item item) { return false; }
 
         public override DeathMoveResult GetParentMoveResultFor(Item item)
         {
@@ -4695,9 +5394,9 @@ namespace Server.Mobiles
 
             MeerMage.StopEffect(this, false);
 
-            if (m_PermaFlags.Count > 0)
+            if (PermaFlags.Count > 0)
             {
-                m_PermaFlags.Clear();
+                PermaFlags.Clear();
 
                 if (c is Corpse)
                     ((Corpse)c).Criminal = true;
@@ -4764,11 +5463,8 @@ namespace Server.Mobiles
             if (Mortal)
             {
                 #region Logging
-                LogHelper logger = new LogHelper("Mortal Death.log", false, false);
-                LogPrisonerInfo(logger);
-                //List<string> list = Utility.GetObjectProperties(this);
-                //foreach (string s in list)
-                //logger.Log(LogType.Text, string.Format(s));
+                LogHelper logger = new LogHelper("Mortal Death.log", overwrite: false, sline: false);
+                LogMortalDeathInfo(logger);
                 logger.Finish();
                 #endregion Logging
                 Effects.SendBoltEffect(this, false, 100);
@@ -4786,18 +5482,6 @@ namespace Server.Mobiles
                 Timer.DelayCall(TimeSpan.FromSeconds(5.0), new TimerCallback(MortalDeathMessage));
                 if (AccessLevel == AccessLevel.Player)
                     Timer.DelayCall(TimeSpan.FromSeconds(10.0), new TimerCallback(Delete));
-
-                if (Core.RuleSets.MortalisRules())
-                {   // the killed player's bankbox is saved and given to the new character created on the account.
-                    if (BankBox != null && BankBox.Items != null && BankBox.Items.Count > 0 && Account != null && Account is Account acct)
-                    {
-                        // can't use a bankbox here since it requires an owner, and it will be deleted on world load if the owner is null
-                        StrongBackpack newBox = new StrongBackpack();   // create a new bankbox to store the items
-                        acct.BankBox = newBox.Serial;                   // save the serial
-                        RecursiveMove(newBox, this.BankBox);            // recursively move all container contents to storage container
-                        newBox.MoveToIntStorage();                  // move to a safe place
-                    }
-                }
             }
             #endregion
 
@@ -4826,9 +5510,9 @@ namespace Server.Mobiles
             this.LastDeathTime = DateTime.UtcNow;
             this.ClearDamageEntries();
         }
-        public void LogPrisonerInfo(LogHelper logger)
+        public void LogMortalPrisonInfo(LogHelper logger)
         {
-            logger.Log(LogType.Mobile, this, string.Format($"Server Time: {AdjustedDateTime.ServerTime}"));
+            logger.Log(LogType.Mobile, this);
             if (this.FindMostRecentDamager(true) != null)
             {
                 if (this.Dead)
@@ -4842,42 +5526,255 @@ namespace Server.Mobiles
             logger.Log(LogType.Text, string.Format("Long term murder counts: {0}, Short term murder counts: {1}", this.LongTermMurders, this.ShortTermMurders));
             logger.Log(LogType.Text, string.Format("Long term criminal counts: {0}, Short term criminal counts: {1}", this.LongTermCriminalCounts, this.ShortTermCriminalCounts));
         }
-        #region Mortalis OnDeath
-        private void RecursiveMove(Container to, Container from)
+        public void LogMortalDeathInfo(LogHelper logger)
         {
-            List<Item> list = new List<Item>();             // make a copy of the items
-            foreach (Item item in from.Items)
-                list.Add(item);
+            DateTime now = DateTime.UtcNow;
 
-            foreach (Item item in list)                     // move the items from the old bankbox to the new
+            // Header / identity (LogType.Mobile prints: type, loc, map, mob(name/serial), region, account, plus our suffix)
+            logger.Log(LogType.Mobile, this);
+
+            Account? acct = this.Account as Account;
+            if (acct != null)
+                logger.Log(LogType.Text, $"Account: {acct.Username}");
+
+            // Death context (do NOT repeat region name; it is already in the Mobile header)
+            bool deathGuarded = this.Region is Regions.GuardedRegion gr && gr.IsGuarded;
+
+            logger.Log(
+                LogType.Text,
+                $"Death Context: Mortal={this.Mortal}, Inmate={this.PrisonInmate}, Guarded={deathGuarded}"
+            );
+
+            // Server Wars context (only log when active)
+            if (Server.Misc.Maintenance.InServerWars)
+                logger.Log(LogType.Text, "Server Wars: Active");
+
+            // Killer / Cause (most recent damage entry)
+            DamageEntry? de = this.FindMostRecentDamageEntry(true);
+
+            Mobile? killer = de?.Damager;
+
+            if (killer != null)
             {
-                if (from.Items.Contains(item))
-                {   // we'll keep user defined packs in the player's bank, but 'prison issue' backpacks, get unpacked.
-                    if (item is Backpack bp && bp.IsDynamicFeatureSet(Server.Items.Backpack.FeatureBits.PrisonIssue))
-                        RecursiveMove(to, item as Container);
-                    else if (FilterTransferItems(item))
-                    {
-                        from.RemoveItem(item);
-                        to.AddItem(item);
-                    }
+                string killerType;
+                string killerName;
+                string? killerAccount = null;
+
+                if (killer is PlayerMobile pm)
+                {
+                    killerType = "Player";
+                    killerName = pm.Name;
+                    killerAccount = (pm.Account as Account)?.Username;
                 }
+                else
+                {
+                    // Keep it simple: treat everything non-player as Creature (includes guards, vendors, etc.)
+                    killerType = "Creature";
+                    killerName = killer.GetType().Name;
+                }
+
+                logger.Log(
+                    LogType.Text,
+                    $"Killer: Type={killerType}, Name={killerName}, Serial={killer.Serial}"
+                );
+
+                if (!string.IsNullOrEmpty(killerAccount))
+                    logger.Log(LogType.Text, $"Killer Account: {killerAccount}");
+
+                // Killer age (Created)
+                TimeSpan killerAge = now - killer.Created;
+                logger.Log(LogType.Text, $"Killer Age: {FormatAge(killerAge)}");
+
+                // Killer criminality (players only)
+                if (killer is PlayerMobile kpm)
+                {
+                    logger.Log(
+                        LogType.Text,
+                        $"Killer Criminality: Criminal={kpm.Criminal}, Murderer={kpm.Red}"
+                    );
+                }
+
+                // Region comparison (only call out both regions when they differ; house regions often have empty names)
+                Region deathRegion = this.Region;
+                Region killerRegion = killer.Region;
+
+                bool killerGuarded = killerRegion is Regions.GuardedRegion kgr && kgr.IsGuarded;
+
+                string FormatRegion(Region r)
+                {
+                    if (r == null)
+                        return "unknown";
+
+                    if (!string.IsNullOrEmpty(r.Name))
+                        return r.Name;
+
+                    if (r is Regions.HouseRegion)
+                        return "HouseRegion";
+
+                    return "UnnamedRegion";
+                }
+
+                string deathRegionName = FormatRegion(deathRegion);
+                string killerRegionName = FormatRegion(killerRegion);
+
+                string deathGuardedText = deathGuarded ? "Guarded" : "Unguarded";
+                string killerGuardedText = killerGuarded ? "Guarded" : "Unguarded";
+
+                bool sameRegion = killerRegion == deathRegion;
+
+                if (sameRegion)
+                {
+                    logger.Log(LogType.Text, $"Region: {deathRegionName} ({deathGuardedText})");
+                }
+                else
+                {
+                    logger.Log(
+                        LogType.Text,
+                        $"Regions: Killer={killerRegionName} ({killerGuardedText}), " +
+                        $"DeathRegion={deathRegionName} ({deathGuardedText}), SameRegion=False"
+                    );
+                }
+
+                // Cause-of-death / forensic context
+                DamageContext ctx = de.Context;
+
+                if (ctx == null)
+                {
+                    logger.Log(LogType.Text, "Cause: (no DamageContext)");
+                }
+                else
+                {
+                    // Source formatting: if it's a spell, label it.
+                    object src = ctx.Source;
+
+                    bool isSpell = src is Server.Spells.Spell;
+
+                    string srcText;
+                    if (src == null)
+                        srcText = "unknown";
+                    else if (isSpell)
+                        srcText = $"Spell:{src.GetType().Name}";
+                    else
+                        srcText = src.GetType().Name;
+
+                    logger.Log(LogType.Text, $"Cause: {srcText}");
+
+                    // Log only what is always meaningful.
+                    if (ctx.ExploitResult.HasValue)
+                        logger.Log(LogType.Text, $"Damage Context: WillKill={ctx.WillKill}, ExploitResult={ctx.ExploitResult.Value}, TimestampUtc={ctx.TimestampUtc:u}");
+                    else
+                        logger.Log(LogType.Text, $"Damage Context: WillKill={ctx.WillKill}, TimestampUtc={ctx.TimestampUtc:u}");
+
+                    if (ctx.ImpactLocation.HasValue)
+                        logger.Log(LogType.Text, $"Impact: {ctx.ImpactLocation.Value}");
+                }
+
             }
+            else
+            {
+                logger.Log(LogType.Text, "Killer: unknown (no recent DamageEntry)");
+            }
+
+            // Counts snapshot (+ current legality)
+            logger.Log(
+                LogType.Text,
+                $"Status at Death: Criminal={this.Criminal}, Murderer={this.Red}"
+            );
+
+            logger.Log(
+                LogType.Text,
+                $"Counts at Death: Murders(LT={this.LongTermMurders}, ST={this.ShortTermMurders}), " +
+                $"Criminals(LT={this.LongTermCriminalCounts}, ST={this.ShortTermCriminalCounts})"
+            );
         }
-        private bool FilterTransferItems(Item item)
+
+        public static void LogDisconnectProtectionInfo(PlayerMobile pm, LogHelper logger)
         {
-            /*
-             * Add your item filtering and taxation here
-             */
-            //if (Server.Engines.ResourcePool.ResourcePool.IsPooledResource(item.GetType(), true))
-            //return false;
-            //if (item.LootType != LootType.Regular)
-            //item.LootType = LootType.Regular;
-            //if (item.GetType() == typeof(TentBag))
-            //return false;
-            //if (item.GetType() == typeof(Bandage))
-            //return false;
-            return true;
+            if (pm == null)
+                return;
+
+            DateTime now = DateTime.UtcNow;
+
+            // Header / identity
+            // LogType.Mobile prints: type, loc, map, mob(name/serial),
+            // region, account, etc.
+            logger.Log(LogType.Mobile, pm);
+
+            Account? acct = pm.Account as Account;
+            if (acct != null)
+                logger.Log(LogType.Text, $"Account: {acct.Username}");
+
+            // Environment snapshot
+            bool guarded = pm.Region is Regions.GuardedRegion gr && gr.IsGuarded;
+            bool inHouse = pm.Region is Regions.HouseRegion;
+
+            logger.Log(
+                LogType.Text,
+                $"Disconnect Environment: Guarded={guarded}, HouseRegion={inHouse}"
+            );
+
+            // Player state relevant to protection mechanics
+            logger.Log(
+                LogType.Text,
+                $"State at Disconnect: Dead={pm.Dead}, HasTrade={pm.HasTrade}, Poisoned={pm.Poisoned}"
+            );
+
+            // Combatant snapshot (if any)
+            Mobile combatant = pm.Combatant;
+
+            if (combatant != null)
+            {
+                string combatantType;
+                string combatantName;
+
+                if (combatant is PlayerMobile cpm)
+                {
+                    combatantType = "Player";
+                    combatantName = cpm.Name;
+                }
+                else
+                {
+                    combatantType = "Creature";
+                    combatantName = combatant.GetType().Name;
+                }
+
+                logger.Log(
+                    LogType.Text,
+                    $"Combatant: Type={combatantType}, Name={combatantName}, Serial={combatant.Serial}"
+                );
+            }
+
+            // Inventory / follower implications
+            logger.Log(
+                LogType.Text,
+                $"Holdings: HoldingItem={(pm.Dragging != null)}, Followers={pm.Followers}"
+            );
+
+            // Timing / identity context
+            TimeSpan age = now - pm.Created;
+            logger.Log(LogType.Text, $"Player Age: {FormatAge(age)}");
+
+            if (acct != null)
+                logger.Log(LogType.Text, $"Account LastDisconnect(UTC): {acct.LastDisconnect:O}");
         }
+        private static string FormatAge(TimeSpan age)
+        {
+            if (age.TotalSeconds < 120)
+                return $"{(int)age.TotalSeconds}s";
+
+            if (age.TotalMinutes < 120)
+                return $"{age.TotalMinutes:F1}m";
+
+            if (age.TotalHours < 48)
+                return $"{age.TotalHours:F1}h";
+
+            if (age.TotalDays < 56)
+                return $"{age.TotalDays:F1}d";
+
+            return $"{(age.TotalDays / 7):F1}w";
+        }
+
+        #region Mortalis OnDeath
         #endregion Mortalis OnDeath
         //adam: New system to gauge player mobile travel speed as they move over MarkTime objects
         //	please the Server.Items.MarkTime object
@@ -4903,7 +5800,7 @@ namespace Server.Mobiles
         public override TimeSpan BoneDecayTime()
         {
             //If this is a commander on his boat then extend the bone decay delay
-            BaseBoat boat;
+            BaseBoat? boat;
             boat = BaseBoat.FindBoatAt(this);
             if (boat != null && (boat.HasKey(this) || boat.CorpseHasKey(this)))
                 return TimeSpan.FromMinutes(20.0);
@@ -4913,13 +5810,21 @@ namespace Server.Mobiles
 
         public void MortalDeathMessage()
         {
-            this.SendMessage(0x22, "Thou art dead. Fear thy fate not; pale Death with impartial tread beats at the poor man's cottage door and at the palaces of kings.");
+            string[] messages = new string[]
+            {
+                "Thou art dead. Fear not thy fate; pale Death with even tread knocks at the peasant’s humble door and at the palace of kings alike.",
+                "Thou art fallen. Fear not the end; for Death, with patient step, visits the cottage and the throne alike.",
+                "Thou art dead. Fear not the shade; for Death walks all roads, from beggar’s hearth to monarch’s hall.",
+                "Thou art dead. Fear not thy passing; Death makes no difference ‘twixt cottage and crown."
+            };
+
+            int index = Utility.Random(4);
+            this.SendMessage(0x22, messages[index]);
         }
 
-        // Store where items were OnDeath and keep them there, rather than makingthe pack a mess.
+        // Store where items were OnDeath and keep them there, rather than making the pack a mess.
         public override bool RetainPackLocsOnDeath { get { return true; } }
 
-        private ArrayList m_PermaFlags;
         private ArrayList m_VisList;
         private TimeSpan m_GameTime;
         private TimeSpan m_ShortTermElapse;
@@ -4929,20 +5834,29 @@ namespace Server.Mobiles
         private DateTime m_SavagePaintExpiration;
         private SkillName m_Learning = (SkillName)(-1);
 
+
         private DateTime m_LastShortDecayed;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public DateTime LastShortDecayed
         {
             get { return m_LastShortDecayed; }
+            set => m_LastShortDecayed = value;
         }
 
+        public TimeSpan LongTermElapse
+        {
+            get { return m_LongTermElapse; }
+            set => m_LongTermElapse = value;
+        }
+        public TimeSpan ShortTermElapse
+        {
+            get { return m_ShortTermElapse; }
+            set => m_ShortTermElapse = value;
+        }
         public void ReduceKillTimersByHours(double hours)
         {
-            m_ShortTermElapse -= TimeSpan.FromHours(hours);
-            m_LongTermElapse -= TimeSpan.FromHours(hours);
-
-            DecayKills();
+            MurderCountUtility.ReduceElapseByHours(this, hours);
         }
 
         public static int DoGlobalDecayKills()
@@ -5009,40 +5923,7 @@ namespace Server.Mobiles
 
         public void DecayKills()
         {
-            if (m_ShortTermElapse < this.GameTime || ((CoreAI.OfflineShortsDecay != 0) && ((DateTime.UtcNow - m_LastShortDecayed) > TimeSpan.FromHours(CoreAI.OfflineShortsDecayHours))))
-            {
-                m_LastShortDecayed = DateTime.UtcNow;
-
-                if ((Core.RuleSets.AngelIslandRules()) && PrisonInmate && Alive)
-                {
-                    m_ShortTermElapse = this.GameTime + TimeSpan.FromHours(4);
-                }
-                else
-                {
-                    m_ShortTermElapse = this.GameTime + TimeSpan.FromHours(8);
-                }
-
-                if (ShortTermMurders > 0)
-                    --ShortTermMurders;
-
-                if (ShortTermCriminalCounts > 0)
-                    --ShortTermCriminalCounts;
-            }
-
-            if (m_LongTermElapse < this.GameTime)
-            {
-                if ((Core.RuleSets.AngelIslandRules()) && PrisonInmate && Alive)
-                {
-                    m_LongTermElapse = this.GameTime + TimeSpan.FromHours(20);
-                }
-                else
-                {
-                    m_LongTermElapse = this.GameTime + TimeSpan.FromHours(40);
-                }
-
-                if (LongTermMurders > 0)
-                    --LongTermMurders;
-            }
+            MurderCountUtility.DecayKills(this);
         }
 
         public SkillName Learning
@@ -5075,24 +5956,28 @@ namespace Server.Mobiles
             set { m_LastEscortTime = value; }
         }
 
-        public PlayerMobile()
+        private static List<PlayerMobile> m_Instances = new();
+        public static List<PlayerMobile> Instances
         {
-            this.STRBonusCap = STRBonusCapDefault;      // have player mobiles start out with a capped STR bonus when using weapons
+            get { return m_Instances; }
+        }
+        public PlayerMobile()
+        : this((uint)0)
+        {
+
+        }
+        public PlayerMobile(uint acctGuid)
+            : base()
+        {
+            base.AcctGUID = acctGuid;                       // persistent account identity across shards, and character deletion on Mortalis
+            this.STRBonusCap = STRBonusCapDefault;  // have player mobiles start out with a capped STR bonus when using weapons
             m_VisList = new ArrayList();
-            m_PermaFlags = new ArrayList();
+            m_PermaFlagsTable = new();
             m_BOBFilter = new Engines.BulkOrders.BOBFilter();
             m_GameTime = TimeSpan.Zero;
 
-            if (PrisonInmate && Alive)
-            {
-                m_ShortTermElapse = TimeSpan.FromHours(4.0);
-                m_LongTermElapse = TimeSpan.FromHours(20.0);
-            }
-            else
-            {
-                m_ShortTermElapse = TimeSpan.FromHours(8.0);
-                m_LongTermElapse = TimeSpan.FromHours(40.0);
-            }
+            // In PlayerMobile constructor (after deserialization or field initialization)
+            MurderCountUtility.InitializeMurderElapseTimes(this);
 
             m_JusticeProtectors = new ArrayList();
 
@@ -5105,6 +5990,7 @@ namespace Server.Mobiles
             m_SpeechRecord = new Queue();               // TK: [report command
             m_Reported = DateTime.MinValue;
 
+            m_Instances.Add(this);
             //InvalidateMyRunUO();
         }
 
@@ -5117,7 +6003,7 @@ namespace Server.Mobiles
             {
                 for (int i = 0; i < hears.Count; ++i)
                 {
-                    object o = hears[i];
+                    object? o = hears[i];
 
                     if (o != this && o is Mobile && ((Mobile)o).Skills[SkillName.SpiritSpeak].Value >= 100.0)
                         return false;
@@ -5127,7 +6013,7 @@ namespace Server.Mobiles
             return base.MutateSpeech(hears, ref text, ref context);
         }
 
-        public void RecordSpeech(Mobile speaker, string text, string note)
+        public void RecordSpeech(Mobile speaker, string text, string? note)
         {
             if (!(speaker is PlayerMobile))
                 return;
@@ -5155,10 +6041,10 @@ namespace Server.Mobiles
 
             m_Reported = DateTime.UtcNow;
             m_ReportLogger = new LogHelper(GetReportLogName(m_Reported.ToString("MM-dd-yyyy HH-mm-ss")));
-            m_ReportLogger.Log(LogType.Text, 
+            m_ReportLogger.Log(LogType.Text,
                 string.Format("{0} (acct {1}, SN {2}, IP {3}) reported by {4} (acct {5}, SN {6}) at {7}, at {8}.\r\n\r\n",
-                    this.Name, ((Account)this.Account).Username, this.Serial, ((this.NetState != null) ? this.NetState.ToString() : ""), 
-                    from.Name, ((Account)from.Account).Username, from.Serial, string.Format("{0} (Game Time)", AdjustedDateTime.GameTime.ToString()), 
+                    this.Name, ((Account)this.Account).Username, this.Serial, ((this.NetState != null) ? this.NetState.ToString() : ""),
+                    from.Name, ((Account)from.Account).Username, from.Serial, string.Format("{0} (Game Time)", AdjustedDateTime.GameTime.ToString()),
                         from.Location));
             //Console.WriteLine("{0} (acct {1}, SN {2}, IP {3}) reported by {4} (acct {5}, SN {6}) at {7}, at {8}.\r\n\r\n",
             //    this.Name, ((Account)this.Account).Username, this.Serial, this.NetState.ToString(), from.Name, ((Account)from.Account).Username, from.Serial, DateTime.UtcNow, from.Location);
@@ -5201,6 +6087,14 @@ namespace Server.Mobiles
             {
                 m_ReportLogStopper.Stop();
                 m_ReportLogStopper = null;
+            }
+        }
+        public override bool IsOnBoatDeck
+        {
+            get
+            {
+                BaseBoat boat = BaseBoat.FindBoatAt(new Point2D(Location), Map);
+                return boat != null && boat.Contains(this);
             }
         }
 
@@ -5248,7 +6142,7 @@ namespace Server.Mobiles
             if (e != null && !string.IsNullOrEmpty(e.Speech))
             {
                 if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.SiegeBless))
-                    if ((Core.RuleSets.SiegeStyleRules()) && e.Speech.ToLower().Contains("i wish to bless this"))
+                    if ((Core.RuleSets.SiegeRules()) && e.Speech.ToLower().Contains("i wish to bless this"))
                     {
                         if (e.Mobile.Target != null)
                             // do we need to worry about players using this command to cancel a spell?
@@ -5315,14 +6209,14 @@ namespace Server.Mobiles
 
         public override void SendAlliedChat(string text)
         {
-            Server.Guilds.Guild g = this.Guild as Server.Guilds.Guild;
+            Server.Guilds.Guild? g = this.Guild as Server.Guilds.Guild;
             if (g != null)
             {
                 //g.AlliedMessage( string.Format("[Ally][{0} [{1}]]: {2}", this.Name, g.Abbreviation, text ) );
                 g.AlliedChat(text, this);
 
                 //Let GM+ overhear
-                Packet p = null;
+                Packet? p = null;
                 IPooledEnumerable eable = this.GetClientsInRange(8);
                 foreach (NetState ns in eable)
                 {
@@ -5354,14 +6248,14 @@ namespace Server.Mobiles
 
         public override void SendGuildChat(string text)
         {
-            Server.Guilds.Guild g = this.Guild as Server.Guilds.Guild;
+            Server.Guilds.Guild? g = this.Guild as Server.Guilds.Guild;
             if (g != null)
             {
                 //g.GuildMessage( string.Format("[Guild][{0}]: {1}", this.Name, text) );
                 g.GuildChat(text, this);
 
                 //Let GM+ overhear
-                Packet p = null;
+                Packet? p = null;
                 IPooledEnumerable eable = this.GetClientsInRange(8);
                 foreach (NetState ns in eable)
                 {
@@ -5434,21 +6328,14 @@ namespace Server.Mobiles
         }
         #endregion
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
-            //if ( Spells.Necromancy.EvilOmenSpell.CheckEffect( this ) )
-            //amount = (int)(amount * 1.25);
 
-            //Mobile oath = Spells.Necromancy.BloodOathSpell.GetBloodOath( from );
-            /*
-					if ( oath == this )
-					{
-						amount = (int)(amount * 1.1);
-						from.Damage( amount, from );
-					}
-			*/
+            base.Damage(amount, from, context);
 
-            base.Damage(amount, from, source_weapon);
+            // Angel Island only
+            if (!Core.RuleSets.AngelIslandRules())
+                return;
 
             //Explosion Potion Check
             if (amount >= CoreAI.ExplosionPotionSensitivityLevel)
@@ -5492,6 +6379,8 @@ namespace Server.Mobiles
             m_VisList = new ArrayList();
             m_SpeechRecord = new Queue();
             m_Reported = DateTime.MinValue;
+            m_Instances.Add(this);
+            MurderCountUtility.InitializeMurderElapseTimes(this);
             //InvalidateMyRunUO();
         }
 
@@ -5508,16 +6397,146 @@ namespace Server.Mobiles
             }
         }
 
+        #region Perma Flags
+
+        private Dictionary<Mobile, DateTime>? m_PermaFlagsTable = new();
+        public IReadOnlyDictionary<Mobile, DateTime>? PermaFlagsTable
+        {
+            get
+            {
+                LazyCleanupPermaFlags();
+                return m_PermaFlagsTable;
+            }
+        }
+
+        // 24 hours, as agreed
+        //private static readonly TimeSpan PermaFlagDuration = TimeSpan.FromHours(24);
+
+        // Debug / legacy-friendly view. Active entries only.
+        // NOTE: Do not use PermaFlags.Contains(...) in production logic anymore.
+        // Use ContainsPermaFlag(...) below.
         public ArrayList PermaFlags
         {
-            get { return m_PermaFlags; }
+            get
+            {
+                LazyCleanupPermaFlags();
+
+                ArrayList list = new ArrayList();
+
+                if (m_PermaFlagsTable != null)
+                {
+                    foreach (Mobile m in m_PermaFlagsTable.Keys)
+                        list.Add(m);
+                }
+
+                return list;
+            }
         }
+
+        public void AddPermaFlag(Mobile? m, TimeSpan? duration = null)
+        {
+            if (m == null || m.Deleted)
+                return;
+
+            LazyCleanupPermaFlags();
+
+            if (m_PermaFlagsTable == null)
+                m_PermaFlagsTable = new Dictionary<Mobile, DateTime>();
+
+            TimeSpan d = duration ?? CoreAI.PermaFlagDuration;
+            DateTime expiresAt = (d == TimeSpan.MaxValue)
+                ? DateTime.MaxValue
+                : DateTime.UtcNow + d;
+
+            m_PermaFlagsTable[m] = expiresAt;
+        }
+
+
+        public void RemovePermaFlag(Mobile m)
+        {
+            if (m == null || m_PermaFlagsTable == null)
+                return;
+
+            m_PermaFlagsTable.Remove(m);
+
+            if (m_PermaFlagsTable.Count == 0)
+                m_PermaFlagsTable = null;
+        }
+
+        // This replaces all old callsites of: pm.PermaFlags.Contains(x)
+        // It does lazy cleanup and then answers membership.
+        public bool ContainsPermaFlag(Mobile m)
+        {
+            if (m == null || m.Deleted)
+                return false;
+
+            LazyCleanupPermaFlags();
+
+            if (m_PermaFlagsTable == null)
+                return false;
+
+            DateTime expiresAt;
+
+            if (!m_PermaFlagsTable.TryGetValue(m, out expiresAt))
+                return false;
+
+            if (DateTime.UtcNow > expiresAt)
+            {
+                m_PermaFlagsTable.Remove(m);
+
+                if (m_PermaFlagsTable.Count == 0)
+                    m_PermaFlagsTable = null;
+
+                return false;
+            }
+
+            return true;
+        }
+
+        // No timers. Called on access/mutation.
+        // Removes expired entries and dead/deleted mobiles.
+        private void LazyCleanupPermaFlags()
+        {
+            if (m_PermaFlagsTable == null || m_PermaFlagsTable.Count == 0)
+            {
+                m_PermaFlagsTable = null;
+                return;
+            }
+
+            DateTime now = DateTime.UtcNow;
+
+            // Small tables are expected; sweeping all is fine and simplest.
+            List<Mobile>? toRemove = null;
+
+            foreach (KeyValuePair<Mobile, DateTime> kvp in m_PermaFlagsTable)
+            {
+                Mobile m = kvp.Key;
+
+                if (m == null || m.Deleted || now > kvp.Value)
+                {
+                    if (toRemove == null)
+                        toRemove = new List<Mobile>();
+
+                    toRemove.Add(m);
+                }
+            }
+
+            if (toRemove != null)
+            {
+                for (int i = 0; i < toRemove.Count; i++)
+                    m_PermaFlagsTable.Remove(toRemove[i]);
+
+                if (m_PermaFlagsTable.Count == 0)
+                    m_PermaFlagsTable = null;
+            }
+        }
+        #endregion Perma Flags
 
         public override int Luck { get { return AosAttributes.GetValue(this, AosAttribute.Luck); } }
 
         public override bool IsHarmfulCriminal(Mobile target)
         {
-            if (SkillHandlers.Stealing.ClassicMode && target is PlayerMobile && ((PlayerMobile)target).m_PermaFlags.Count > 0)
+            if (SkillHandlers.Stealing.ClassicMode && target is PlayerMobile pm && pm.ContainsPermaFlag(this))
             {
                 int noto = Notoriety.Compute(this, target);
 
@@ -5536,7 +6555,10 @@ namespace Server.Mobiles
 
             return base.IsHarmfulCriminal(target);
         }
-
+        public bool IsCriminal(Mobile target)
+        {
+            return this.IsHarmfulCriminal(target);
+        }
         public override bool ReportableForMurder(Mobile aggressor, bool criminal)
         {
             /*
@@ -5544,7 +6566,7 @@ namespace Server.Mobiles
 			 * They also lose lifeforce . If the evil has 0 lifeforce, then the evil can also be reported for murder. 
 			 */
 
-            Ethics.Player aggressorEPL = Server.Ethics.Player.Find(aggressor, true);
+            Ethics.Player? aggressorEPL = Server.Ethics.Player.Find(aggressor, true);
             Ethics.Player victimEPL = Server.Ethics.Player.Find(this);
             bool aggressorIsPowerfulEvil = (aggressorEPL != null && aggressorEPL.Ethic == Ethics.Ethic.Evil && aggressorEPL.Power > 0);
             bool victimIsinnocent = (victimEPL == null);
@@ -5588,20 +6610,68 @@ namespace Server.Mobiles
             SetSaveFlag(ref flags, SaveFlag.MinimumSentence, m_MinimumSentence != DateTime.MinValue);
             SetSaveFlag(ref flags, SaveFlag.MurderReprieve, GetPlayerBool(PlayerBoolTable.MurderReprieve) && !GetPlayerBool(PlayerBoolTable.MurderReprieveRescinded));
             SetSaveFlag(ref flags, SaveFlag.GMHistory, m_GMHistoryTable != SkillNameFlags._None);
+            SetSaveFlag(ref flags, SaveFlag.PassiveGains, m_PassiveTaming != null && m_PassiveTaming.HasBankedCredit());
+            SetSaveFlag(ref flags, SaveFlag.PermaFlags, m_PermaFlagsTable != null && m_PermaFlagsTable.Count > 0);
+            SetSaveFlag(ref flags, SaveFlag.ActiveCourier, m_ActiveCourierItemSerial != Serial.MinusOne);
             writer.Write((int)flags);
             return flags;
-        }
+        }// m_ActiveCourierItemSerial
+
         public override void Serialize(GenericWriter writer)
         {
             SkillGainSystem.CleanupAntiMacroTable(this);
             base.Serialize(writer);
-            int version = 48;
-            writer.Write(version);                      // write the version    
-            SaveFlag saveFlags = WriteSaveBits(writer); // calculate and write the bits that describe what we will write now / read later
+            int version = 52;
+            writer.Write(version); // write the version    
+            SaveFlag
+                saveFlags = WriteSaveBits(
+                    writer); // calculate and write the bits that describe what we will write now / read later
 
             ///////////////////////////////////////////////////
             // put all normal serialization below this line
             ///////////////////////////////////////////////////
+
+            // version 52: added ActiveCourierItemSerial
+            if (GetSaveFlag(saveFlags, SaveFlag.ActiveCourier))
+            {
+                writer.Write(m_ActiveCourierItemSerial);
+            }
+
+            // version 51 moves this to uint 64
+            writer.Write((ulong)m_Flags);
+
+            // version 50: here we write PermaFlags if any
+            if (GetSaveFlag(saveFlags, SaveFlag.PermaFlags))
+            {
+                // version (start at 1)
+                writer.Write((int)1);
+
+                if (m_PermaFlagsTable == null || m_PermaFlagsTable.Count == 0)
+                {
+                    writer.Write((int)0);
+                }
+                else
+                {
+                    writer.Write(m_PermaFlagsTable.Count);
+
+                    foreach (KeyValuePair<Mobile, DateTime> kvp in m_PermaFlagsTable)
+                    {
+                        Mobile m = kvp.Key;
+                        DateTime expiresAt = kvp.Value;
+
+                        // Mobile reference (Serial)
+                        writer.Write(m);
+
+                        // Expiration time (UTC ticks)
+                        writer.Write(expiresAt.Ticks);
+                    }
+                }
+            }
+
+            // version 49: Here we serialize Passive skill point accumulation
+            //  the Passive Skill Point system will decide on its own if data need be written
+            if (GetSaveFlag(saveFlags, SaveFlag.PassiveGains) == true)
+                SerializePassiveProgression(writer);
 
             // version 48
             if (GetSaveFlag(saveFlags, SaveFlag.GMHistory) == true)
@@ -5837,7 +6907,7 @@ namespace Server.Mobiles
 
                 for (int i = 0; i < m_DoneQuests.Count; ++i)
                 {
-                    QuestRestartInfo restartInfo = (QuestRestartInfo)m_DoneQuests[i];
+                    QuestRestartInfo? restartInfo = (QuestRestartInfo?)m_DoneQuests[i];
 
                     QuestSerializer.Write((Type)restartInfo.QuestType, QuestSystem.QuestTypes, writer);
                     writer.Write((DateTime)restartInfo.RestartTime);
@@ -5877,7 +6947,7 @@ namespace Server.Mobiles
                 writer.Write((TimeSpan)m_NpcGuildGameTime);
             }
 
-            writer.WriteMobileList(m_PermaFlags, true);
+            //writer.WriteMobileList(m_PermaFlags, true);
 
             // Yoar: BOD overhaul
 #if old
@@ -5893,13 +6963,20 @@ namespace Server.Mobiles
             writer.WriteDeltaTime(m_LastSacrificeLoss);
             writer.Write(m_AvailableResurrects);
 
-            writer.Write((uint)m_Flags);
+            // version 51 moves this to uint 64
+            //            writer.Write((uint)m_Flags);
 
             writer.Write(m_LongTermElapse);
             writer.Write(m_ShortTermElapse);
             writer.Write(this.GameTime);
         }
-
+        // Persist only the banked passive credit by progression destination.
+        // Transient throttles (cooldowns/bursts/apply windows) and context pointers are intentionally NOT persisted.
+        private void SerializePassiveProgression(GenericWriter writer)
+        {
+            if (m_PassiveTaming != null)
+                m_PassiveTaming.WriteTo(writer);
+        }
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
@@ -5912,6 +6989,81 @@ namespace Server.Mobiles
 
             switch (version)
             {
+                case 52:
+                    {
+                        if (GetSaveFlag(saveFlags, SaveFlag.ActiveCourier))
+                            m_ActiveCourierItemSerial = reader.ReadInt();
+                        goto case 51;
+                    }
+                case 51:
+                    {
+                        m_Flags = (PlayerBoolTable)reader.ReadULong();
+                        goto case 50;
+                    }
+                case 50:
+                    {
+                        if (GetSaveFlag(saveFlags, SaveFlag.PermaFlags))
+                        {
+                            int pfVersion = reader.ReadInt();
+
+                            switch (pfVersion)
+                            {
+                                case 1:
+                                    {
+                                        int count = reader.ReadInt();
+
+                                        if (count > 0)
+                                        {
+                                            m_PermaFlagsTable = new();
+
+                                            for (int i = 0; i < count; i++)
+                                            {
+                                                Mobile? m = reader.ReadMobile();
+                                                long ticks = reader.ReadLong();
+
+                                                if (m == null || m.Deleted)
+                                                    continue;
+
+                                                DateTime expiresAt = new DateTime(ticks, DateTimeKind.Utc);
+
+                                                // Skip already-expired entries on load
+                                                if (DateTime.UtcNow > expiresAt)
+                                                    continue;
+
+                                                m_PermaFlagsTable[m] = expiresAt;
+                                            }
+
+                                            if (m_PermaFlagsTable.Count == 0)
+                                                m_PermaFlagsTable = null;
+                                        }
+
+                                        break;
+                                    }
+
+                                default:
+                                    {
+                                        // Unknown future version: skip safely
+                                        int count = reader.ReadInt();
+
+                                        for (int i = 0; i < count; i++)
+                                        {
+                                            reader.ReadMobile();
+                                            reader.ReadLong();
+                                        }
+
+                                        break;
+                                    }
+                            }
+                        }
+
+                        goto case 49;
+                    }
+                case 49:
+                    // Here we deserialize Passive skill point accumulation
+                    //  the Passive Skill Point system will decide on its own if data need be read
+                    if (GetSaveFlag(saveFlags, SaveFlag.PassiveGains) == true)
+                        DeserializePassiveProgression(reader);
+                    goto case 48;
                 case 48:
                     {
                         if (GetSaveFlag(saveFlags, SaveFlag.GMHistory) == true)
@@ -6235,7 +7387,7 @@ namespace Server.Mobiles
 
                             for (int i = 0; i < count; ++i)
                             {
-                                Type questType = QuestSerializer.ReadType(QuestSystem.QuestTypes, reader);
+                                Type? questType = QuestSerializer.ReadType(QuestSystem.QuestTypes, reader);
                                 DateTime restartTime;
 
                                 if (version < 17)
@@ -6330,7 +7482,10 @@ namespace Server.Mobiles
                     }
                 case 7:
                     {
-                        m_PermaFlags = reader.ReadMobileList();
+
+                        if (version < 50)
+                            /*m_PermaFlags =*/
+                            reader.ReadMobileList();
                         goto case 6;
                     }
                 case 6:
@@ -6360,7 +7515,8 @@ namespace Server.Mobiles
                     }
                 case 2:
                     {
-                        m_Flags = (PlayerBoolTable)reader.ReadUInt();
+                        if (version < 51)
+                            m_Flags = (PlayerBoolTable)reader.ReadUInt();
                         goto case 1;
                     }
                 case 1:
@@ -6375,9 +7531,6 @@ namespace Server.Mobiles
                         break;
                     }
             }
-
-            if (m_PermaFlags == null)
-                m_PermaFlags = new ArrayList();
 
             if (m_JusticeProtectors == null)
                 m_JusticeProtectors = new ArrayList();
@@ -6407,8 +7560,11 @@ namespace Server.Mobiles
             //wea: For spirit cohesion, last resurrect time
             m_LastResurrectTime = DateTime.MinValue;
         }
-
-
+        private void DeserializePassiveProgression(GenericReader reader)
+        {
+            m_PassiveTaming = new PassiveGainState();
+            m_PassiveTaming.ReadFrom(reader);
+        }
         private bool VerifyJumpList()
         {
             if (m_JumpList == null || m_JumpList.Count == 0)
@@ -6434,19 +7590,7 @@ namespace Server.Mobiles
         }
         public void ResetKillTime()
         {
-            if (PrisonInmate && Alive)
-            {
-                m_ShortTermElapse = this.GameTime + TimeSpan.FromHours(4);
-                m_LongTermElapse = this.GameTime + TimeSpan.FromHours(20);
-            }
-            else
-            {
-                m_ShortTermElapse = this.GameTime + TimeSpan.FromHours(8);
-                m_LongTermElapse = this.GameTime + TimeSpan.FromHours(40);
-            }
-
-            //also reset last short decay (for offline decay)
-            m_LastShortDecayed = DateTime.UtcNow;
+            MurderCountUtility.ResetKillTimers(this);
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
@@ -6474,10 +7618,10 @@ namespace Server.Mobiles
                 return false;
 
             #region Static Region
-            StaticRegion sr = StaticRegion.FindStaticRegion(this);
+            StaticRegion? sr = StaticRegion.FindStaticRegion(this);
             if (sr != null && sr.IsIsolated)
             {
-                StaticRegion other = StaticRegion.FindStaticRegion(m);
+                StaticRegion? other = StaticRegion.FindStaticRegion(m);
                 if (other == null || !other.IsIsolated)
                     return true;
                 else
@@ -6494,10 +7638,10 @@ namespace Server.Mobiles
                 return false;
 
             #region Static Region
-            StaticRegion sr = StaticRegion.FindStaticRegion(this);
+            StaticRegion? sr = StaticRegion.FindStaticRegion(this);
             if (sr != null && sr.IsIsolated)
             {
-                StaticRegion other = StaticRegion.FindStaticRegion(item);
+                StaticRegion? other = StaticRegion.FindStaticRegion(item);
                 if (other == null || !other.IsIsolated)
                     return true;
                 else
@@ -6526,7 +7670,7 @@ namespace Server.Mobiles
                 {
                     BaseCreature bc = (BaseCreature)owner;
 
-                    Mobile master = bc.GetMaster();
+                    Mobile? master = bc.GetMaster();
 
                     if (master != null)
                         owner = master;
@@ -6573,7 +7717,7 @@ namespace Server.Mobiles
 
                 // if we are blind, check for actionable boat parts not counted as part of the multi
                 // we do not see boat parts but our own
-                BaseBoat boatAtItem = BaseBoat.FindBoatAt(item);
+                BaseBoat? boatAtItem = BaseBoat.FindBoatAt(item);
                 if (boatAtItem != null && (                                 // boat at item
                     boatAtItem.PPlank.ItemID == item.ItemID ||              // there 4 facings for all of these boat parts!
                     boatAtItem.SPlank.ItemID == item.ItemID ||              //  this is why we pull them from the boat instead of 
@@ -6597,6 +7741,10 @@ namespace Server.Mobiles
             if (faction != null)
                 faction.RemoveMember(this);
             #endregion
+
+            #region Mortalis
+
+            #endregion Mortalis
         }
 
         #region Quest stuff
@@ -6618,13 +7766,56 @@ namespace Server.Mobiles
         #endregion
 
         public override void OnSkillChange(SkillName skill, double oldBase, double newBase)
-        {   // When we GM a skill under ROT, we never need to go back to ROT for that skill
-            //  (allows players to change-up their template and return somewhat reasonably.)
+        {
+            // Existing RoT / GM-history behavior
             if (Core.RuleSets.RoTShardEnabled())
                 if (newBase >= 100.0)
                     m_GMHistoryTable |= SkillNameFlagsHelper.GetFlag(skill);
+
+            // ------------------------------------------------------------
+            // Server-side skill gain logging (Passive-style, Razor-like)
+            // ------------------------------------------------------------
+            if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.LogActualGains))
+                if (newBase > oldBase)
+                {
+                    //if (!Core.DebugSkillGains)
+                    //    return;
+
+                    double delta = newBase - oldBase;
+
+                    string file = GetPassiveLogFileName();
+                    LogHelper logger = new LogHelper(file, overwrite: false, sline: false);
+
+                    logger.Log(
+                        LogType.Text,
+                        $"[SkillGain] mob={Name}({Serial}) :: skill={skill} old={oldBase:0.0} new={newBase:0.0} delta=+{delta:0.0}"
+                    );
+
+                    logger.Finish();
+                }
         }
 
+        private string GetPassiveLogFileName()
+        {
+            string masterName = this.Name;
+            int masterSerial = this.Serial;
+
+            // Sanitize for filesystem (keep it simple)
+            string safeName = SanitizeFilePart(masterName);
+
+            return $"{safeName}_0x{masterSerial:X}_ActualGains.log";
+        }
+
+        private static string SanitizeFilePart(string s)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+                return "Unknown";
+
+            foreach (char c in Path.GetInvalidFileNameChars())
+                s = s.Replace(c, '_');
+
+            return s.Trim();
+        }
         public override bool UseROTForSkill(Skill skill)
         {   // we already GM'ed this skill, so we use normal skill gain from now on
             if ((m_GMHistoryTable & SkillNameFlagsHelper.GetFlag(skill.SkillName)) != 0)
@@ -6632,84 +7823,6 @@ namespace Server.Mobiles
 
             return true;
         }
-#if false
-        #region MyRunUO Invalidation
-        private bool m_ChangedMyRunUO;
-
-        public bool ChangedMyRunUO
-        {
-            get { return m_ChangedMyRunUO; }
-            set { m_ChangedMyRunUO = value; }
-        }
-
-        public void InvalidateMyRunUO()
-        {
-            if (!Deleted && !m_ChangedMyRunUO)
-            {
-                m_ChangedMyRunUO = true;
-                Engines.MyRunUO.MyRunUO.QueueMobileUpdate(this);
-            }
-        }
-
-        public override void OnKillsChange(int oldValue)
-        {
-            InvalidateMyRunUO();
-        }
-
-        public override void OnGenderChanged(bool oldFemale)
-        {
-            InvalidateMyRunUO();
-        }
-
-        public override void OnGuildTitleChange(string oldTitle)
-        {
-            InvalidateMyRunUO();
-        }
-
-        public override void OnKarmaChange(int oldValue)
-        {
-            InvalidateMyRunUO();
-        }
-
-        public override void OnFameChange(int oldValue)
-        {
-            InvalidateMyRunUO();
-        }
-
-        public override void OnSkillChange(SkillName skill, double oldBase)
-        {
-            InvalidateMyRunUO();
-        }
-
-        public override void OnAccessLevelChanged(AccessLevel oldLevel)
-        {
-            InvalidateMyRunUO();
-        }
-
-        public override void OnRawStatChange(StatType stat, int oldValue)
-        {
-
-            if (this.AccessLevel < AccessLevel.GameMaster)
-            {
-                if (this.StatCap > 225)
-                    this.StatCap = 225;
-                if (this.RawDex > 100)
-                    this.RawDex = 100;
-                if (this.RawInt > 100)
-                    this.RawInt = 100;
-                if (this.RawStr > 100)
-                    this.RawStr = 100;
-            }
-
-            InvalidateMyRunUO();
-        }
-
-        public override void OnDelete()
-        {
-            InvalidateMyRunUO();
-        }
-        #endregion
-#endif
         private bool m_BedrollLogout;
 
         public bool BedrollLogout
@@ -6759,7 +7872,7 @@ namespace Server.Mobiles
         #endregion
 
         #region Dueling
-        private Engines.ConPVP.DuelContext m_DuelContext;
+        private Engines.ConPVP.DuelContext? m_DuelContext;
         private Engines.ConPVP.DuelPlayer m_DuelPlayer;
 
         public Engines.ConPVP.DuelContext DuelContext
@@ -6928,7 +8041,7 @@ namespace Server.Mobiles
             if (!FastwalkPrevention)
                 return true;
 
-            PlayerMobile pm = ns.Mobile as PlayerMobile;
+            PlayerMobile? pm = ns.Mobile as PlayerMobile;
 
             if (pm == null || !pm.UsesFastwalkPrevention)
                 return true;
@@ -7015,26 +8128,6 @@ namespace Server.Mobiles
 
         public static void HackerTrap(PlayerMobile pm, Accounting.Account.AccountInfraction state)
         {
-#if false
-            if (state == AccountInfraction.fastwalk)
-            {
-                pm.InfractionStatus = AccountInfraction.fastwalk;
-                pm.FastwalkInfractionCount = 0;
-                string reason;
-                #region Imprison them
-                reason = string.Format("Player imprisoned with LoginStatus {0}.", state);
-                Point3D px = Spawner.GetSpawnPosition(Map.Felucca, new Point3D(354, 836, 20), 2, SpawnFlags.None, pm);
-                pm.MinimumSentence = DateTime.UtcNow + TimeSpan.FromHours(Core.RuleSets.TestCenterRules() ? 0 : 3);
-                Prison.PrisonPlayer prison = new Prison.PrisonPlayer(null, pm, px, reason, sentence: 0);
-                prison.GoToPrison();
-                #endregion Imprison them
-
-                #region tell staff
-                Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor, 0x482, string.Format("Staff message from SYSTEM:"));
-                Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor, 0x482, string.Format("{0} was sent to prison. ({1})", pm, reason));
-                #endregion tell staff
-            }
-#endif
         }
 
         #region Enemy of One
@@ -7108,7 +8201,7 @@ namespace Server.Mobiles
             if (id == -1)
                 return;
 
-            Item item = FindItemOnLayer(hair ? Layer.Hair : Layer.FacialHair);
+            Item? item = FindItemOnLayer(hair ? Layer.Hair : Layer.FacialHair);
 
             if (item != null)
                 item.Delete();
@@ -7122,7 +8215,7 @@ namespace Server.Mobiles
 
         private void InternalChangeHair(bool hair, int id, ref int storeID, ref int storeHue)
         {
-            Item item = FindItemOnLayer(hair ? Layer.Hair : Layer.FacialHair);
+            Item? item = FindItemOnLayer(hair ? Layer.Hair : Layer.FacialHair);
 
             if (item != null)
             {
@@ -7174,7 +8267,11 @@ namespace Server.Mobiles
 
         public override void OnSingleClick(Mobile from)
         {
-            if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) && AccessLevel == AccessLevel.Player && DisableHiddenSelfClick && Hidden && from == this)
+            if ((Core.RuleSets.AngelIslandRules() ||
+                 Core.RuleSets.MortalisRules() ||
+                 Core.RuleSets.SeasonsRules() ||
+                 Core.RuleSets.UpheavalRules()) &&
+                AccessLevel == AccessLevel.Player && DisableHiddenSelfClick && Hidden && from == this)
                 return;
 
             // incognito/disguise
@@ -7205,31 +8302,6 @@ namespace Server.Mobiles
             }
             else
             {
-                #region IOB
-                if (Core.RuleSets.KinSystemEnabled())
-                {
-                    //if (Engines.IOBSystem.KinSystemSettings.ShowKinSingleClick)
-                    {
-                        if (this.Guild != null && (this.DisplayGuildTitle || this.Guild.ForceGuildTitle))
-                        {
-                            if (this.IOBAlignment != IOBAlignment.None)
-                            {
-                                string text = string.Format("[{0}]", Server.Engines.IOBSystem.IOBSystem.GetIOBName(this.IOBAlignment));
-                                PrivateOverheadMessage(MessageType.Regular, SpeechHue, true, text, from.NetState);
-                            }
-                        }
-                    }
-
-                    /*if (Engines.IOBSystem.KinSystemSettings.ShowStatloss)
-                    {
-                        if (this.IsInStatloss)
-                        {
-                            PrivateOverheadMessage(MessageType.Regular, SpeechHue, true, "[STATLOSS]", from.NetState);
-                        }
-                    }*/
-                }
-                #endregion
-
                 bool hasFactionTitle = false;
 
                 #region Factions
@@ -7237,7 +8309,7 @@ namespace Server.Mobiles
                 {
                     if (Map == Faction.Facet)
                     {
-                        PlayerState pl = PlayerState.Find(this);
+                        PlayerState? pl = PlayerState.Find(this);
 
                         if (pl != null)
                         {
@@ -7335,7 +8407,7 @@ namespace Server.Mobiles
         {
             get
             {
-                if (Core.Debug || TestCenter.Enabled)
+                if (Core.Debug || TestCenterServer.Enabled)
                     return 2;
                 else
                     return 10;
@@ -7402,7 +8474,7 @@ namespace Server.Mobiles
                 try
                 {
                     //10+ failures in a row, assume we've got an AFK macroer - auto [macroer him!
-                    PJUM.MacroerCommand.ReportAsMacroer(World.GetSystemAcct(), this);
+                    MacroerCommand.ReportAsMacroer(World.GetSystemAcct(), this);
                 }
                 catch (Exception exc)
                 {
@@ -7435,7 +8507,7 @@ namespace Server.Mobiles
 
         #endregion
 
-        #region throwing timing - initially only for explosion potions
+        #region throwing timing - for explosion potions and firebombs
 
         private DateTime m_nextThrowTime = DateTime.MinValue;
 
@@ -7456,7 +8528,7 @@ namespace Server.Mobiles
             }
         }
 
-        #endregion
+        #endregion throwing timing - for explosion potions and firebombs
 
         public override void OnRegionChange(Region oldR, Region newR)
         {
@@ -7477,7 +8549,7 @@ namespace Server.Mobiles
         #region CheckSkill Command
         public static void CheckTargetSkill(CommandEventArgs e)
         {
-            PlayerMobile from = e.Mobile as PlayerMobile;
+            PlayerMobile? from = e.Mobile as PlayerMobile;
             double minskill;
             double maxskill;
             if (!Core.Debug)
@@ -7548,7 +8620,7 @@ namespace Server.Mobiles
         }
         public static void CheckSkill(CommandEventArgs e)
         {
-            PlayerMobile from = e.Mobile as PlayerMobile;
+            PlayerMobile? from = e.Mobile as PlayerMobile;
             double minskill;
             double maxskill;
             if (!Core.Debug)
@@ -7659,7 +8731,7 @@ namespace Server.Mobiles
     public class MovementReqCapture
     {
         private static bool m_Capturing = false;
-        private static Dictionary<PlayerMobile, MemoryStream> m_Table = null;
+        private static Dictionary<PlayerMobile, MemoryStream>? m_Table = null;
         private static DateTime m_Started = DateTime.MinValue;
         private static int m_Count = 0;
 
@@ -7686,7 +8758,7 @@ namespace Server.Mobiles
         }
 
         // Adam: may be called with CommandEventArgs == null
-        public static void StopMRCapture(CommandEventArgs e)
+        public static void StopMRCapture(CommandEventArgs? e)
         {
             try
             {

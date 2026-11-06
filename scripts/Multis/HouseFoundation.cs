@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -85,11 +85,11 @@ namespace Server.Multis
 
     public class HouseFoundation : BaseHouse, IDesignState
     {
-        private DesignState m_Current;              // State which is currently visible.
-        private DesignState m_Design;               // State of current design.
-        private DesignState m_Backup;               // State at last user backup.
+        private DesignState? m_Current;              // State which is currently visible.
+        private DesignState? m_Design;               // State of current design.
+        private DesignState? m_Backup;               // State at last user backup.
         private Item m_SignHanger;                  // Item hanging the sign.
-        private Item m_Signpost;                    // Item supporting the hanger.
+        private Item? m_Signpost;                    // Item supporting the hanger.
         private int m_SignpostGraphic;              // ItemID number of the chosen signpost.
         private int m_LastRevision;                 // Latest revision number.
         private ArrayList m_Fixtures;               // List of fixtures (teleporters and doors) associated with this house.
@@ -100,7 +100,7 @@ namespace Server.Multis
         public int LastRevision { get { return m_LastRevision; } set { m_LastRevision = value; } }
         public ArrayList Fixtures { get { return m_Fixtures; } }
         public Item SignHanger { get { return m_SignHanger; } }
-        public Item Signpost { get { return m_Signpost; } }
+        public Item? Signpost { get { return m_Signpost; } }
         public int SignpostGraphic { get { return m_SignpostGraphic; } set { m_SignpostGraphic = value; } }
         public Mobile Customizer { get { return m_Customizer; } set { m_Customizer = value; } }
 
@@ -210,7 +210,7 @@ namespace Server.Multis
 
             for (int i = 0; i < m_Fixtures.Count; ++i)
             {
-                Item item = (Item)m_Fixtures[i];
+                Item? item = (Item?)m_Fixtures[i];
 
                 if (item != null)
                     item.Delete();
@@ -255,7 +255,7 @@ namespace Server.Multis
                 }
                 else
                 {
-                    BaseDoor door = null;
+                    BaseDoor? door = null;
 
                     if (itemID >= 0x675 && itemID < 0x6F5)
                     {
@@ -335,7 +335,7 @@ namespace Server.Multis
 
             for (int i = 0; i < m_Fixtures.Count; ++i)
             {
-                Item fixture = (Item)m_Fixtures[i];
+                Item? fixture = (Item?)m_Fixtures[i];
 
                 if (fixture is HouseTeleporter)
                 {
@@ -343,7 +343,7 @@ namespace Server.Multis
 
                     for (int j = 1; j <= m_Fixtures.Count; ++j)
                     {
-                        HouseTeleporter check = m_Fixtures[(i + j) % m_Fixtures.Count] as HouseTeleporter;
+                        HouseTeleporter? check = m_Fixtures[(i + j) % m_Fixtures.Count] as HouseTeleporter;
 
                         if (check != null && check.ItemID == tp.ItemID)
                         {
@@ -377,7 +377,7 @@ namespace Server.Multis
 
                     for (int j = i + 1; j < m_Fixtures.Count; ++j)
                     {
-                        BaseHouseDoor check = m_Fixtures[j] as BaseHouseDoor;
+                        BaseHouseDoor? check = m_Fixtures[j] as BaseHouseDoor;
 
                         if (check != null && check.Link == null && check.Facing == linkFacing && (check.X - door.X) == xOffset && (check.Y - door.Y) == yOffset && (check.Z == door.Z))
                         {
@@ -729,7 +729,7 @@ namespace Server.Multis
         public static void Designer_Sync(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)
             {
@@ -747,7 +747,7 @@ namespace Server.Multis
         public static void Designer_Clear(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)
             {
@@ -777,7 +777,7 @@ namespace Server.Multis
         public static void Designer_Restore(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)
             {
@@ -807,7 +807,7 @@ namespace Server.Multis
         public static void Designer_Backup(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)
             {
@@ -827,7 +827,7 @@ namespace Server.Multis
         public static void Designer_Revert(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)
             {
@@ -948,7 +948,7 @@ namespace Server.Multis
         public static void Designer_Commit(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)
             {
@@ -1021,7 +1021,7 @@ namespace Server.Multis
             return level;
         }
 
-        private static ComponentVerification m_Verification;
+        private static ComponentVerification? m_Verification;
 
         public static ComponentVerification Verification
         {
@@ -1219,7 +1219,7 @@ namespace Server.Multis
         public static void Designer_Delete(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)
             {
@@ -1284,7 +1284,7 @@ namespace Server.Multis
         public static void Designer_Stairs(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)
             {
@@ -1348,9 +1348,9 @@ namespace Server.Multis
 
         private class DesignInsertTarget : Target
         {
-            private HouseFoundation m_Foundation;
+            private HouseFoundation? m_Foundation;
 
-            public DesignInsertTarget(HouseFoundation foundation)
+            public DesignInsertTarget(HouseFoundation? foundation)
                 : base(-1, false, TargetFlags.None)
             {
                 m_Foundation = foundation;
@@ -1368,7 +1368,7 @@ namespace Server.Multis
 
             protected override void OnTarget(Mobile from, object obj)
             {
-                Item item = obj as Item;
+                Item? item = obj as Item;
 
                 if (item == null)
                 {
@@ -1377,7 +1377,7 @@ namespace Server.Multis
                 }
                 else
                 {
-                    HouseFoundation house = BaseHouse.FindHouseAt(item) as HouseFoundation;
+                    HouseFoundation? house = BaseHouse.FindHouseAt(item) as HouseFoundation;
 
                     if (house == null)
                     {
@@ -1446,7 +1446,7 @@ namespace Server.Multis
         public static void Designer_Build(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)
             {
@@ -1480,7 +1480,7 @@ namespace Server.Multis
         public static void Designer_Close(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)
             {
@@ -1515,7 +1515,7 @@ namespace Server.Multis
         public static void Designer_Level(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)
             {
@@ -1551,7 +1551,7 @@ namespace Server.Multis
         {
             Mobile from = state.Mobile;
 
-            BaseMulti multi = World.FindItem(pvSrc.ReadInt32()) as BaseMulti;
+            BaseMulti? multi = World.FindItem(pvSrc.ReadInt32()) as BaseMulti;
 
             if (multi != null && from.Map == multi.Map && from.InRange(multi.GetWorldLocation(), 24) && from.CanSee(multi) && multi is IDesignState)
             {
@@ -1564,13 +1564,13 @@ namespace Server.Multis
         public static void Designer_Roof(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             //Adam: we do not have the SE expansion which allows us to place roofing tiles but we still want to allow them. 
             //  search for 'CoreSEOverride' in one other location in this file;
             bool CoreSEOverride = true;
 
-            if (context != null && (CoreSEOverride || Core.RuleSets.SERules() || from.AccessLevel >= AccessLevel.GameMaster))
+            if (context != null && (CoreSEOverride || Core.RuleSets.SamuraiEmpireRules() || from.AccessLevel >= AccessLevel.GameMaster))
             {
                 // Read data detailing component graphic and location
                 int itemID = pvSrc.ReadInt32();
@@ -1613,7 +1613,7 @@ namespace Server.Multis
         public static void Designer_RoofDelete(NetState state, IEntity e, EncodedReader pvSrc)
         {
             Mobile from = state.Mobile;
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null)    //No need to check if core.SE if trying to remvoe something that shouldn't be able to be placed anyways
             {
@@ -1653,7 +1653,7 @@ namespace Server.Multis
 
         private DesignState GetDesignState(Mobile from)
         {
-            DesignContext context = DesignContext.Find(from);
+            DesignContext? context = DesignContext.Find(from);
 
             if (context != null && context.Foundation == this)
                 return DesignState;
@@ -1670,10 +1670,10 @@ namespace Server.Multis
         private MultiComponentList m_Components;
         private MultiTileEntry[] m_Fixtures;
         private int m_Revision;
-        private Packet m_PacketCache;
+        private Packet? m_PacketCache;
 
         //public Packet PacketCache { get { return m_PacketCache; } set { m_PacketCache = value; } }
-        public Packet PacketCache
+        public Packet? PacketCache
         {
             get { return m_PacketCache; }
             set
@@ -1786,7 +1786,7 @@ namespace Server.Multis
                 state.Send(new DesignStateGeneral(m_Foundation, this));
         }
 
-        public void SendDetailedInfoTo(NetState state)
+        public void SendDetailedInfoTo(NetState? state)
         {
             if (state != null)
             {
@@ -1937,7 +1937,7 @@ namespace Server.Multis
 
         public static Hashtable Table { get { return m_Table; } }
 
-        public static DesignContext Find(Mobile from)
+        public static DesignContext? Find(Mobile from)
         {
             if (from == null)
                 return null;
@@ -1982,7 +1982,7 @@ namespace Server.Multis
 
             for (int i = 0; fixtures != null && i < fixtures.Count; ++i)
             {
-                Item item = (Item)fixtures[i];
+                Item? item = (Item?)fixtures[i];
 
                 state.Send(item.RemovePacket);
             }
@@ -1996,7 +1996,7 @@ namespace Server.Multis
             if (from == null)
                 return;
 
-            DesignContext context = (DesignContext)m_Table[from];
+            DesignContext? context = (DesignContext?)m_Table[from];
 
             m_Table.Remove(from);
 
@@ -2017,7 +2017,7 @@ namespace Server.Multis
 
             for (int i = 0; fixtures != null && i < fixtures.Count; ++i)
             {
-                Item item = (Item)fixtures[i];
+                Item? item = (Item?)fixtures[i];
 
                 item.SendInfoTo(state);
             }
@@ -2078,7 +2078,7 @@ namespace Server.Multis
     {
         public const int MaxItemsPerStairBuffer = 750;
 
-        private static byte[][] m_PlaneBuffers;
+        private static byte[][]? m_PlaneBuffers;
         private static bool[] m_PlaneUsed;
 
         private static byte[][] m_StairBuffers;
@@ -2413,11 +2413,11 @@ namespace Server.Multis
 
                 while (m_SendQueue.Count > 0)
                 {
-                    SendQueueEntry sqe = (SendQueueEntry)m_SendQueue.Dequeue();
+                    SendQueueEntry? sqe = (SendQueueEntry?)m_SendQueue.Dequeue();
 
                     try
                     {
-                        Packet p = null;
+                        Packet? p = null;
 
                         lock (sqe.m_Root)
                             p = sqe.m_Root.PacketCache;

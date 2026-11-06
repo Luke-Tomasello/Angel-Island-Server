@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -67,7 +67,7 @@ namespace Server.Engines.Quests.Haven
 
         public override bool CanTalkTo(PlayerMobile to)
         {
-            UzeraanTurmoilQuest qs = to.Quest as UzeraanTurmoilQuest;
+            UzeraanTurmoilQuest? qs = to.Quest as UzeraanTurmoilQuest;
 
             return (qs != null && qs.FindObjective(typeof(FindSchmendrickObjective)) != null);
         }
@@ -85,7 +85,7 @@ namespace Server.Engines.Quests.Haven
                 }
                 else
                 {
-                    QuestObjective obj = qs.FindObjective(typeof(FindSchmendrickObjective));
+                    QuestObjective? obj = qs.FindObjective(typeof(FindSchmendrickObjective));
 
                     if (obj != null && !obj.Completed)
                     {

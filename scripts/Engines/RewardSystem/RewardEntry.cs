@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -44,11 +44,11 @@ namespace Server.Engines.RewardSystem
         public string NameString { get { return m_NameString; } }
         public object[] Args { get { return m_Args; } }
 
-        public Item Construct()
+        public Item? Construct()
         {
             try
             {
-                Item item = Activator.CreateInstance(m_ItemType, m_Args) as Item;
+                Item? item = Activator.CreateInstance(m_ItemType, m_Args) as Item;
 
                 if (item is IRewardItem)
                     ((IRewardItem)item).IsRewardItem = true;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -93,8 +93,17 @@ namespace Server.Factions
             get { return (m_State.LastTaxChange + FactionConfig.TownTaxChangePeriod) < DateTime.UtcNow; }
         }
 
-        public static Town FromRegion(Region reg)
+        public static Town? FromRegion(Region reg)
         {
+            // Defensive: null region never maps to a faction town.
+            if (reg == null)
+                return null;
+
+            // Global factions gate: if factions are disabled, never resolve towns.
+            if (!Core.Factions)
+                return null;
+
+            // Faction towns only exist on the faction facet.
             if (reg.Map != Faction.Facet)
                 return null;
 
@@ -154,7 +163,7 @@ namespace Server.Factions
             get { return DailyIncome - FinanceUpkeep - SheriffUpkeep - Squalor; }
         }
 
-        public TownMonolith Monolith
+        public TownMonolith? Monolith
         {
             get
             {
@@ -185,7 +194,7 @@ namespace Server.Factions
         {
             bool isFinance = IsFinance(from);
             bool isSheriff = IsSheriff(from);
-            string type = null;
+            string? type = null;
 
             // NOTE: Messages not OSI-accurate, intentional
             if (isFinance && isSheriff) // GM only
@@ -203,7 +212,7 @@ namespace Server.Factions
         {
             bool isFinance = IsFinance(from);
             bool isSheriff = IsSheriff(from);
-            string type = null;
+            string? type = null;
 
             if (isFinance && isSheriff) // GM only
                 type = "vendor or guard";
@@ -253,7 +262,7 @@ namespace Server.Factions
                 while ((Silver + flow) < 0 && toDelete.Count > 0)
                 {
                     int index = Utility.Random(toDelete.Count);
-                    Mobile mob = (Mobile)toDelete[index];
+                    Mobile? mob = (Mobile?)toDelete[index];
 
                     mob.Delete();
 
@@ -307,7 +316,7 @@ namespace Server.Factions
                 m_GuardLists.Add(new GuardList(defs[i]));
         }
 
-        public GuardList FindGuardList(Type type)
+        public GuardList? FindGuardList(Type type)
         {
             List<GuardList> guardLists = GuardLists;
 
@@ -332,7 +341,7 @@ namespace Server.Factions
                 m_VendorLists.Add(new VendorList(defs[i]));
         }
 
-        public VendorList FindVendorList(Type type)
+        public VendorList? FindVendorList(Type type)
         {
             List<VendorList> vendorLists = VendorLists;
 
@@ -352,7 +361,7 @@ namespace Server.Factions
             if (guard == null)
                 return false;
 
-            GuardList guardList = FindGuardList(guard.GetType());
+            GuardList? guardList = FindGuardList(guard.GetType());
 
             if (guardList == null)
                 return false;
@@ -366,7 +375,7 @@ namespace Server.Factions
             if (guard == null)
                 return false;
 
-            GuardList guardList = FindGuardList(guard.GetType());
+            GuardList? guardList = FindGuardList(guard.GetType());
 
             if (guardList == null)
                 return false;
@@ -383,7 +392,7 @@ namespace Server.Factions
             if (vendor == null)
                 return false;
 
-            VendorList vendorList = FindVendorList(vendor.GetType());
+            VendorList? vendorList = FindVendorList(vendor.GetType());
 
             if (vendorList == null)
                 return false;
@@ -397,7 +406,7 @@ namespace Server.Factions
             if (vendor == null)
                 return false;
 
-            VendorList vendorList = FindVendorList(vendor.GetType());
+            VendorList? vendorList = FindVendorList(vendor.GetType());
 
             if (vendorList == null)
                 return false;
@@ -464,9 +473,22 @@ namespace Server.Factions
             return (mob.AccessLevel >= AccessLevel.GameMaster || (m_State.Owner != null && mob == m_State.Owner.Commander));
         }
 
-        public static List<Town> Towns { get { return Reflector.Towns; } }
+        public static List<Town> Towns
+        {
+            get
+            {
+                // If factions are disabled, never allow faction towns to be created or enumerated.
+                if (!Core.Factions)
+                    return m_EmptyTowns;   // a static readonly empty list
 
-        public int CompareTo(object obj)
+                return Reflector.Towns;
+            }
+        }
+
+        // Somewhere in the class:
+        private static readonly List<Town> m_EmptyTowns = new List<Town>();
+
+        public int CompareTo(object? obj)
         {
             return m_Definition.Sort - ((Town)obj).m_Definition.Sort;
         }
@@ -483,7 +505,7 @@ namespace Server.Factions
             writer.WriteEncodedInt((int)(idx + 1));
         }
 
-        public static Town ReadReference(GenericReader reader)
+        public static Town? ReadReference(GenericReader reader)
         {
             int idx = reader.ReadEncodedInt() - 1;
 
@@ -493,7 +515,7 @@ namespace Server.Factions
             return null;
         }
 
-        public static Town Parse(string name)
+        public static Town? Parse(string name)
         {
             List<Town> towns = Towns;
 
@@ -510,7 +532,7 @@ namespace Server.Factions
 
         public static void GrantTownSilver_OnCommand(CommandEventArgs e)
         {
-            Town town = FromRegion(e.Mobile.Region);
+            Town? town = FromRegion(e.Mobile.Region);
 
             if (town == null)
                 e.Mobile.SendMessage("You are not in a faction town.");

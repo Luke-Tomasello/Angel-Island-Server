@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -88,7 +88,7 @@ namespace Server.Mobiles
         public override Poison PoisonImmune { get { return Poison.Regular; } }
         public override AuraType MyAura { get { return AuraType.Ice; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
 
         public ArcticOgreLord(Serial serial)
             : base(serial)
@@ -97,15 +97,43 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            if (SpawnerEngine != null)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(2500, 3500);
+                GenerateMiniBossLoot();
+                return;
+            }
+
+            // http://web.archive.org/web/20020202092201/uo.stratics.com/hunters/arcticogrelord.shtml
+            // 500 - 700 Gold, Magic Items, a normal club and a gem
+            if (Spawning)
+            {
+                PackGold(500, 700);
+            }
+            else
+            {
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 3);
+                else
+                    PackMagicItem(2, 3, 0.10);
+
                 PackItem(new Club());
-                //PackMagicEquipment( 1, 3, 0.30, 0.30 );
+                PackGem();
+            }
+        }
+
+        private void GenerateMiniBossLoot()
+        {
+            if (Spawning)
+            {
+                PackGold(2500, 3500);
+            }
+            else
+            {
+                PackItem(new Club());
 
                 // adam: add 25% chance to get a Random Slayer Instrument
-                PackSlayerInstrument(.25);
+                if (Core.RuleSets.SlayerInstruments())
+                    PackSlayerInstrument(.25);
 
                 // Pigpen: Add the Arctic Storm (rare) armor to this mini-boss.
                 if (Core.RuleSets.MiniBossArmor())
@@ -114,40 +142,16 @@ namespace Server.Mobiles
                 // Use our unevenly weighted table for chance resolution
                 Item item;
                 item = Loot.RandomArmorOrShieldOrWeapon();
+                PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6 /*6*/, 0, false)); PackGold(2500, 3500);
+                PackItem(new Club());
+
+                // adam: add 25% chance to get a Random Slayer Instrument
+                if (Core.RuleSets.SlayerInstruments())
+                    PackSlayerInstrument(.25);
+
+                // Use our unevenly weighted table for chance resolution
+                item = Loot.RandomArmorOrShieldOrWeapon();
                 PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6 /*6*/, 0, false));
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020202092201/uo.stratics.com/hunters/arcticogrelord.shtml
-                    // 500 - 700 Gold, Magic Items, a normal club and a gem
-                    if (Spawning)
-                    {
-                        PackGold(500, 700);
-                    }
-                    else
-                    {
-                        // Pigpen: Add the Arctic Storm (rare) armor to this mini-boss.
-                        if (Core.RuleSets.MiniBossArmor())
-                            DoMiniBossArmor();
-
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 3);
-                        else
-                            PackMagicItem(2, 3, 0.10);
-
-                        PackItem(new Club());
-                        PackGem();
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new Club());
-
-                    AddLoot(LootPack.FilthyRich);
-                    AddLoot(LootPack.Rich);
-                }
             }
         }
         private void DoMiniBossArmor()

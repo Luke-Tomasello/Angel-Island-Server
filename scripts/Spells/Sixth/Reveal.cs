@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,7 +76,7 @@ namespace Server.Spells.Sixth
                     foreach (Mobile m in eable)
                     {
                         // if AI/MO, don't reveal our friends
-                        if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) && !Caster.CanBeHarmful(m, false, true))
+                        if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) && !Caster.CanBeHarmful(m, false, true))
                             continue;
 
                         if (m.Hidden && (m.AccessLevel == AccessLevel.Player || Caster.AccessLevel > m.AccessLevel) && CheckDifficulty(Caster, m))
@@ -88,7 +88,7 @@ namespace Server.Spells.Sixth
 
                 for (int i = 0; i < targets.Count; ++i)
                 {
-                    Mobile m = (Mobile)targets[i];
+                    Mobile? m = (Mobile?)targets[i];
 
                     m.RevealingAction();
 
@@ -104,7 +104,7 @@ namespace Server.Spells.Sixth
         private static bool CheckDifficulty(Mobile from, Mobile m)
         {
             // Reveal always reveals vs. invisibility spell 
-            if ((!Core.RuleSets.AOS_SVR && !CoreAI.RevealSpellDifficulty) || InvisibilitySpell.HasTimer(m))
+            if ((!Core.RuleSets.OSIAOS_SVR && !CoreAI.RevealSpellDifficulty) || InvisibilitySpell.HasTimer(m))
                 return true;
 
             int magery = from.Skills[SkillName.Magery].Fixed;
@@ -135,7 +135,7 @@ namespace Server.Spells.Sixth
 
             protected override void OnTarget(Mobile from, object o)
             {
-                IPoint3D p = o as IPoint3D;
+                IPoint3D? p = o as IPoint3D;
 
                 if (p != null)
                     m_Owner.Target(p);

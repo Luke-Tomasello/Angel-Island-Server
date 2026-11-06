@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,18 +19,16 @@
  *
  ***************************************************************************/
 
-using System;
-
 namespace Server.Gumps
 {
     public delegate void NoticeGumpCallback(Mobile from, object state);
 
     public class NoticeGump : Gump
     {
-        private NoticeGumpCallback m_Callback;
-        private object m_State;
+        private NoticeGumpCallback? m_Callback;
+        private object? m_State;
 
-        public NoticeGump(int header, int headerColor, object content, int contentColor, int width, int height, NoticeGumpCallback callback, object state)
+        public NoticeGump(int header, int headerColor, object content, int contentColor, int width, int height, NoticeGumpCallback? callback, object? state)
             : base((640 - width) / 2, (480 - height) / 2)
         {
             m_Callback = callback;

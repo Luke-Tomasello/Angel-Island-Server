@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,9 +36,10 @@ namespace Server.Township
         private enum Button
         {
             Close,
-            SetStandard,
-            SetLawless,
-            SetAuthority,
+            SetStandard,   // Standard Lord British law enforcement
+            SetLawless,    // No laws enforced within the township
+            SetAuthority,  // Township granted authority to enforce local law
+            SetGuarded,    // Season 2: Full guard protection within the township
         }
 
         public TSEmissaryGump(Items.TownshipStone stone, Mobile from)
@@ -50,22 +51,42 @@ namespace Server.Township
 
             AddLine("Current Law Level: {0}", Items.TownshipStone.FormatLawLevel(m_Stone.LawLevel));
 
-            AddButton((int)Button.SetStandard, string.Format("Change to Standard ({0} gp)", TownshipSettings.LawNormCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.NONE);
-            AddButton((int)Button.SetLawless, string.Format("Change to Lawless ({0} gp)", TownshipSettings.LawlessCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.LAWLESS);
-            AddButton((int)Button.SetAuthority, string.Format("Change to Grant of Authority ({0} gp)", TownshipSettings.LawAuthCharge.ToString("N0")), m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.AUTHORITY);
+            AddButton((int)Button.SetStandard,
+                string.Format("Change to Standard ({0} gp)", TownshipSettings.LawNormCharge.ToString("N0")),
+                m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.NONE);
+
+            AddButton((int)Button.SetLawless,
+                string.Format("Change to Lawless ({0} gp)", TownshipSettings.LawlessCharge.ToString("N0")),
+                m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.LAWLESS);
+
+            AddButton((int)Button.SetAuthority,
+                string.Format("Change to Grant of Authority ({0} gp)", TownshipSettings.LawAuthCharge.ToString("N0")),
+                m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.AUTHORITY);
+
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+            {
+                AddButton((int)Button.SetGuarded,
+                    string.Format("Change to Guarded ({0} gp)", TownshipSettings.LawGuardedCharge.ToString("N0")),
+                    m_Stone.HasAccess(from, TownshipAccess.CoLeader) && m_Stone.LawLevel != LawLevel.GUARDED);
+            }
 
             AddLine("Daily fees based on current activity level:");
 
             AddLine("Standard: {0} gp", m_Stone.CalculateLawLevelFee(LawLevel.NONE).ToString("N0"));
             AddLine("Lawless: {0} gp", m_Stone.CalculateLawLevelFee(LawLevel.LAWLESS).ToString("N0"));
             AddLine("Grant of Authority: {0} gp", m_Stone.CalculateLawLevelFee(LawLevel.AUTHORITY).ToString("N0"));
+
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+            {
+                AddLine("Guarded: {0} gp", m_Stone.CalculateLawLevelFee(LawLevel.GUARDED).ToString("N0"));
+            }
         }
 
         public override void OnResponse(NetState sender, RelayInfo info)
         {
             Mobile from = sender.Mobile;
 
-            if (!m_Stone.HasNPC(typeof(Mobiles.TSEmissary)))
+            if (!m_Stone.HasActiveNPC(typeof(Mobiles.TSEmissary)))
                 return;
 
             if (!from.CheckAlive() || !m_Stone.CheckView(from) || !m_Stone.CheckAccess(from, TownshipAccess.CoLeader))
@@ -82,6 +103,7 @@ namespace Server.Township
 
                         break;
                     }
+
                 case Button.SetLawless:
                     {
                         SetLawLevel(from, LawLevel.LAWLESS);
@@ -91,9 +113,23 @@ namespace Server.Township
 
                         break;
                     }
+
                 case Button.SetAuthority:
                     {
                         SetLawLevel(from, LawLevel.AUTHORITY);
+
+                        from.CloseGump(typeof(TSEmissaryGump));
+                        from.SendGump(new TSEmissaryGump(m_Stone, from));
+
+                        break;
+                    }
+
+                case Button.SetGuarded:
+                    {
+                        if (!(Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+                            return;
+
+                        SetLawLevel(from, LawLevel.GUARDED);
 
                         from.CloseGump(typeof(TSEmissaryGump));
                         from.SendGump(new TSEmissaryGump(m_Stone, from));
@@ -118,11 +154,28 @@ namespace Server.Township
 
             switch (lawLevel)
             {
-                case LawLevel.NONE: charge = TownshipSettings.LawNormCharge; break;
-                case LawLevel.LAWLESS: charge = TownshipSettings.LawlessCharge; break;
-                case LawLevel.AUTHORITY: charge = TownshipSettings.LawAuthCharge; break;
+                case LawLevel.NONE:
+                    charge = TownshipSettings.LawNormCharge;
+                    break;
 
-                default: return;
+                case LawLevel.LAWLESS:
+                    charge = TownshipSettings.LawlessCharge;
+                    break;
+
+                case LawLevel.AUTHORITY:
+                    charge = TownshipSettings.LawAuthCharge;
+                    break;
+
+                case LawLevel.GUARDED:
+
+                    if (!(Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+                        return;
+
+                    charge = TownshipSettings.LawGuardedCharge;
+                    break;
+
+                default:
+                    return;
             }
 
             if (m_Stone.GoldHeld < charge)
@@ -137,9 +190,13 @@ namespace Server.Township
             m_Stone.LastLawChange = DateTime.UtcNow;
             m_Stone.GoldHeld -= charge;
 
-            m_Stone.RecordWithdrawal(charge, string.Format("{0} changed law level to {1}", from.Name, Items.TownshipStone.FormatLawLevel(lawLevel)));
+            m_Stone.RecordWithdrawal(charge,
+                string.Format("{0} changed law level to {1}",
+                from.Name,
+                Items.TownshipStone.FormatLawLevel(lawLevel)));
 
-            from.SendMessage("You changed your township's law level to {0}.", Items.TownshipStone.FormatLawLevel(lawLevel));
+            from.SendMessage("You changed your township's law level to {0}.",
+                Items.TownshipStone.FormatLawLevel(lawLevel));
         }
     }
 }

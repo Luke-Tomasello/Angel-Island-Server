@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -83,7 +83,7 @@ namespace Server.Items
         private static Memory OpenMemory = new Memory();
         private void UpdateRareChance(Mobile from)
         {
-            Memory.ObjectMemory om = OpenMemory.Recall((object)from);
+            Memory.ObjectMemory? om = OpenMemory.Recall((object)from);
             if (om != null)
             {   // we remember this guy
                 int temp = (int)om.Context;
@@ -98,7 +98,7 @@ namespace Server.Items
         }
         private double GetRareChance(Mobile from)
         {
-            Memory.ObjectMemory om = OpenMemory.Recall((object)from);
+            Memory.ObjectMemory? om = OpenMemory.Recall((object)from);
             if (om != null && om.Context != null)
             {   // we remember this guy
                 double chest_opens = (double)((int)om.Context);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -114,7 +114,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public Item TownshipStone
+        public Item? TownshipStone
         {
             get
             {
@@ -199,7 +199,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public PlayerMobile Guildmaster
+        public PlayerMobile? Guildmaster
         {
             get
             {
@@ -266,25 +266,25 @@ namespace Server.Items
                 {
                     if (m_Guild.IOBAlignment != IOBAlignment.None)
                     {
-                        this.SendSystemMessage("You may not create a Peaceful guild that is also aligned.");
+                        this.SendMessageNearby("You may not create a Peaceful guild that is also aligned.");
                         errors++;
                     }
 
                     if (m_Guild.GuildWarRing == true)
                     {
-                        this.SendSystemMessage("You may not create a Peaceful guild that belongs to the war ring.");
+                        this.SendMessageNearby("You may not create a Peaceful guild that belongs to the war ring.");
                         errors++;
                     }
 
                     if (m_Guild.Allies.Count > 0 || m_Guild.AllyDeclarations.Count > 0 || m_Guild.AllyInvitations.Count > 0)
                     {
-                        this.SendSystemMessage("You may not create a Peaceful guild that wishes to ally.");
+                        this.SendMessageNearby("You may not create a Peaceful guild that wishes to ally.");
                         errors++;
                     }
 
                     if (m_Guild.Enemies.Count > 0 || m_Guild.WarDeclarations.Count > 0 || m_Guild.WarInvitations.Count > 0)
                     {
-                        this.SendSystemMessage("You may not create a Peaceful guild that wishes to war.");
+                        this.SendMessageNearby("You may not create a Peaceful guild that wishes to war.");
                         errors++;
                     }
                 }
@@ -306,7 +306,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public AlignmentState AlignmentState
+        public AlignmentState? AlignmentState
         {
             get { return AlignmentState.GetState(GuildAlignment); }
             set { }
@@ -420,11 +420,11 @@ namespace Server.Items
             else if (m_Guild.Accepted.Contains(from))
             {
                 #region Factions
-                PlayerState guildState = PlayerState.Find(m_Guild.Leader);
-                PlayerState targetState = PlayerState.Find(from);
+                PlayerState? guildState = PlayerState.Find(m_Guild.Leader);
+                PlayerState? targetState = PlayerState.Find(from);
 
-                Faction guildFaction = (guildState == null ? null : guildState.Faction);
-                Faction targetFaction = (targetState == null ? null : targetState.Faction);
+                Faction? guildFaction = (guildState == null ? null : guildState.Faction);
+                Faction? targetFaction = (targetState == null ? null : targetState.Faction);
 
                 if (guildFaction != targetFaction || (targetState != null && targetState.IsLeaving))
                     return;
@@ -441,7 +441,7 @@ namespace Server.Items
             }
             else if (from.AccessLevel < AccessLevel.GameMaster && !m_Guild.IsMember(from))
             {
-                BaseHouse house = BaseHouse.FindHouseAt(this);
+                BaseHouse? house = BaseHouse.FindHouseAt(this);
 
                 if (house != null && from.Alive && house.IsOwner(from))
                 {
@@ -460,7 +460,7 @@ namespace Server.Items
 
         public bool PlaceStone(Mobile from)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(from);
+            BaseHouse? house = BaseHouse.FindHouseAt(from);
 
             if (house == null)
             {

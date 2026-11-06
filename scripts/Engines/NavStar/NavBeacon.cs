@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,11 +48,11 @@ namespace Server.Items
 
         #region FindObjective
         #region TODO?
-        public NavBeacon FindObjective()
+        public NavBeacon? FindObjective()
         {
             return FindObjective(this);
         }
-        public NavBeacon FindObjective(NavBeacon beacon)
+        public NavBeacon? FindObjective(NavBeacon beacon)
         {
             foreach (KeyValuePair<string, List<NavBeacon>> kvp in Registry)
             {
@@ -70,7 +70,7 @@ namespace Server.Items
             return null;
         }
         #endregion TODO?
-        public static NavBeacon FindObjective(Mobile m, string dest)
+        public static NavBeacon? FindObjective(Mobile m, string dest)
         {
             if (!string.IsNullOrEmpty(dest) && Registry.ContainsKey(dest))
                 foreach (NavBeacon beacon in Registry[dest])

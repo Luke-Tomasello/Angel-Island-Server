@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -117,7 +117,7 @@ namespace Server.Items.Triggers
 
                 case SCStatusType.Damage:
                     {
-                        m.Damage(Utility.RandomMinMax(m_ValueMin, m_ValueMax), m, null);
+                        m.Damage(Utility.RandomMinMax(m_ValueMin, m_ValueMax), m, new DamageContext { Source = this });
 
                         break;
                     }
@@ -133,7 +133,7 @@ namespace Server.Items.Triggers
 
                 case SCStatusType.Poison:
                     {
-                        Poison poison = Poison.GetPoison(Utility.RandomMinMax(m_ValueMin, m_ValueMax));
+                        Poison? poison = Poison.GetPoison(Utility.RandomMinMax(m_ValueMin, m_ValueMax));
 
                         if (poison == null)
                             return;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -49,17 +49,6 @@ namespace Server.Mobiles
                     foreach (Type type in BBSTypes)
                         if (ResourcePool.IsPooledResource(type))
                             Add(new GenericBuyInfo(type));
-#if false
-                    Add(new GenericBuyInfo(typeof(IronIngot)));
-                    Add(new GenericBuyInfo(typeof(DullCopperIngot)));
-                    Add(new GenericBuyInfo(typeof(ShadowIronIngot)));
-                    Add(new GenericBuyInfo(typeof(CopperIngot)));
-                    Add(new GenericBuyInfo(typeof(BronzeIngot)));
-                    Add(new GenericBuyInfo(typeof(GoldIngot)));
-                    Add(new GenericBuyInfo(typeof(AgapiteIngot)));
-                    Add(new GenericBuyInfo(typeof(VeriteIngot)));
-                    Add(new GenericBuyInfo(typeof(ValoriteIngot)));
-#endif
                 }
 
                 Add(new GenericBuyInfo(typeof(Bag), BaseVendor.PlayerPays(typeof(Bag)), 20, 0xE76, 0));
@@ -80,26 +69,6 @@ namespace Server.Mobiles
                 {   // balanced buyback system
                     foreach (Type type in BBSTypes)
                         AddToResourcePool(type);
-#if false
-                    AddToResourcePool(typeof(IronIngot));
-                    AddToResourcePool(typeof(DullCopperIngot));
-                    AddToResourcePool(typeof(ShadowIronIngot));
-                    AddToResourcePool(typeof(CopperIngot));
-                    AddToResourcePool(typeof(BronzeIngot));
-                    AddToResourcePool(typeof(GoldIngot));
-                    AddToResourcePool(typeof(AgapiteIngot));
-                    AddToResourcePool(typeof(VeriteIngot));
-                    AddToResourcePool(typeof(ValoriteIngot));
-                    AddToResourcePool(typeof(IronOre));
-                    AddToResourcePool(typeof(DullCopperOre));
-                    AddToResourcePool(typeof(ShadowIronOre));
-                    AddToResourcePool(typeof(CopperOre));
-                    AddToResourcePool(typeof(BronzeOre));
-                    AddToResourcePool(typeof(GoldOre));
-                    AddToResourcePool(typeof(AgapiteOre));
-                    AddToResourcePool(typeof(VeriteOre));
-                    AddToResourcePool(typeof(ValoriteOre));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersBuyResourcesRules())
                 {   // cash buyback

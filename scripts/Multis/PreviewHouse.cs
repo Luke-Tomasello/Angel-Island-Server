@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,7 +34,7 @@ namespace Server.Multis
     public class PreviewHouse : BaseMulti
     {
         private ArrayList m_Components;
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         public PreviewHouse(int multiID)
             : base(multiID | 0x4000)
@@ -74,7 +74,7 @@ namespace Server.Multis
 
             for (int i = 0; i < m_Components.Count; ++i)
             {
-                Item item = (Item)m_Components[i];
+                Item? item = (Item?)m_Components[i];
 
                 item.MoveToWorld(new Point3D(item.X + xOffset, item.Y + yOffset, item.Z + zOffset), this.Map);
             }
@@ -89,7 +89,7 @@ namespace Server.Multis
 
             for (int i = 0; i < m_Components.Count; ++i)
             {
-                Item item = (Item)m_Components[i];
+                Item? item = (Item?)m_Components[i];
 
                 item.Map = this.Map;
             }
@@ -104,7 +104,7 @@ namespace Server.Multis
 
             for (int i = 0; i < m_Components.Count; ++i)
             {
-                Item item = (Item)m_Components[i];
+                Item? item = (Item?)m_Components[i];
 
                 item.Delete();
             }

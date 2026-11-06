@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -81,7 +81,7 @@ namespace Server.Engines.Harvest
 
         private static void WriteBanks(HarvestDefinition def, Map map, string id, List<Type> types)
         {
-            Hashtable banks = def.Banks[map] as Hashtable;
+            Hashtable? banks = def.Banks[map] as Hashtable;
 
             try
             {
@@ -103,14 +103,14 @@ namespace Server.Engines.Harvest
                     foreach (DictionaryEntry e in banks)
                     {
                         Point2D p = (Point2D)e.Key;
-                        HarvestBank bank = (HarvestBank)e.Value;
+                        HarvestBank? bank = (HarvestBank?)e.Value;
 
                         writer.Write((int)p.X);
                         writer.Write((int)p.Y);
 
                         HarvestVein vein = bank.DefaultVein;
 
-                        Type type = null;
+                        Type? type = null;
 
                         if (vein != null && vein.PrimaryResource.Types.Length != 0)
                             type = vein.PrimaryResource.Types[0];
@@ -168,7 +168,7 @@ namespace Server.Engines.Harvest
                     {
                         Type type = ReadType(reader, types);
 
-                        HarvestVein vein = null;
+                        HarvestVein? vein = null;
 
                         for (int j = 0; j < def.Veins.Length; j++)
                         {
@@ -180,7 +180,7 @@ namespace Server.Engines.Harvest
 
                         if (vein != null)
                         {
-                            Hashtable banks = def.Banks[map] as Hashtable;
+                            Hashtable? banks = def.Banks[map] as Hashtable;
 
                             if (banks == null)
                                 def.Banks[map] = banks = new Hashtable();

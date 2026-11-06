@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -73,7 +73,6 @@ namespace Server
 {
     public delegate void CharacterCreatedEventHandler(CharacterCreatedEventArgs e);
     public delegate void OpenDoorMacroEventHandler(OpenDoorMacroEventArgs e);
-    public delegate void DoorUsedEventHandler(DoorUsedEventArgs e);
     public delegate void SpeechEventHandler(SpeechEventArgs e);
     public delegate void LoginEventHandler(LoginEventArgs e);
     public delegate void ServerListEventHandler(ServerListEventArgs e);
@@ -231,14 +230,14 @@ namespace Server
         private string m_Password;
         private bool m_Accepted;
         private ALRReason m_RejectReason;
-        private CityInfo[] m_CityInfo;
+        private CityInfo[]? m_CityInfo;
 
         public NetState State { get { return m_State; } }
         public string Username { get { return m_Username; } set { m_Username = value; } }
         public string Password { get { return m_Password; } set { m_Password = value; } }
         public bool Accepted { get { return m_Accepted; } set { m_Accepted = value; } }
         public ALRReason RejectReason { get { return m_RejectReason; } set { m_RejectReason = value; } }
-        public CityInfo[] CityInfo { get { return m_CityInfo; } set { m_CityInfo = value; } }
+        public CityInfo[]? CityInfo { get { return m_CityInfo; } set { m_CityInfo = value; } }
 
         public GameLoginEventArgs(NetState state, string un, string pw)
         {
@@ -258,7 +257,7 @@ namespace Server
         public Mobile Aggressor { get { return m_Aggressor; } }
         public bool Criminal { get { return m_Criminal; } }
 
-        private static Queue m_Pool = new Queue();
+        private static Queue<AggressiveActionEventArgs> m_Pool = new Queue<AggressiveActionEventArgs>();
 
         public static AggressiveActionEventArgs Create(Mobile aggressed, Mobile aggressor, bool criminal)
         {
@@ -266,7 +265,7 @@ namespace Server
 
             if (m_Pool.Count > 0)
             {
-                args = (AggressiveActionEventArgs)m_Pool.Dequeue();
+                args = m_Pool.Dequeue();
 
                 args.m_Aggressed = aggressed;
                 args.m_Aggressor = aggressor;
@@ -607,14 +606,14 @@ namespace Server
     public class CastSpellRequestEventArgs : EventArgs
     {
         private Mobile m_Mobile;
-        private Item m_Spellbook;
+        private Item? m_Spellbook;
         private int m_SpellID;
 
         public Mobile Mobile { get { return m_Mobile; } }
-        public Item Spellbook { get { return m_Spellbook; } }
+        public Item? Spellbook { get { return m_Spellbook; } }
         public int SpellID { get { return m_SpellID; } }
 
-        public CastSpellRequestEventArgs(Mobile m, int spellID, Item book)
+        public CastSpellRequestEventArgs(Mobile m, int spellID, Item? book)
         {
             m_Mobile = m;
             m_Spellbook = book;
@@ -704,13 +703,13 @@ namespace Server
 
     public class CrashedEventArgs : EventArgs
     {
-        private Exception m_Exception;
+        private Exception? m_Exception;
         private bool m_Close;
 
-        public Exception Exception { get { return m_Exception; } }
+        public Exception? Exception { get { return m_Exception; } }
         public bool Close { get { return m_Close; } set { m_Close = value; } }
 
-        public CrashedEventArgs(Exception e)
+        public CrashedEventArgs(Exception? e)
         {
             m_Exception = e;
         }
@@ -741,7 +740,7 @@ namespace Server
         public Direction Direction { get { return m_Direction; } }
         public bool Blocked { get { return m_Blocked; } set { m_Blocked = value; } }
 
-        private static Queue m_Pool = new Queue();
+        private static Queue<MovementEventArgs> m_Pool = new Queue<MovementEventArgs>();
 
         public static MovementEventArgs Create(Mobile mobile, Direction dir)
         {
@@ -749,7 +748,7 @@ namespace Server
 
             if (m_Pool.Count > 0)
             {
-                args = (MovementEventArgs)m_Pool.Dequeue();
+                args = m_Pool.Dequeue();
 
                 args.m_Mobile = mobile;
                 args.m_Direction = dir;
@@ -834,13 +833,13 @@ namespace Server
         private int m_Hue;
         private int m_Str, m_Dex, m_Int;
         private int m_Profession;
-        private Mobile m_Mobile;
+        private Mobile? m_Mobile;
 
         private Race m_Race;
 
         public NetState State { get { return m_State; } }
         public IAccount Account { get { return m_Account; } }
-        public Mobile Mobile { get { return m_Mobile; } set { m_Mobile = value; } }
+        public Mobile? Mobile { get { return m_Mobile; } set { m_Mobile = value; } }
         public string Name { get { return m_Name; } }
         public bool Female { get { return m_Female; } }
         public int Hue { get { return m_Hue; } }
@@ -888,18 +887,6 @@ namespace Server
         public Mobile Mobile { get { return m_Mobile; } }
 
         public OpenDoorMacroEventArgs(Mobile mobile)
-        {
-            m_Mobile = mobile;
-        }
-    }
-
-    public class DoorUsedEventArgs : EventArgs
-    {
-        private Mobile m_Mobile;
-
-        public Mobile Mobile { get { return m_Mobile; } }
-
-        public DoorUsedEventArgs(Mobile mobile)
         {
             m_Mobile = mobile;
         }
@@ -986,13 +973,13 @@ namespace Server
 
     public class AddItemEventArgs : EventArgs
     {
-        private Item m_item;
+        private Item? m_item;
         Mobile m_from;
 
-        public Item item { get { return m_item; } }
+        public Item? item { get { return m_item; } }
         public Mobile from { get { return m_from; } }
 
-        public AddItemEventArgs(Item item, Mobile from)
+        public AddItemEventArgs(Item? item, Mobile from)
         {
             m_item = item;
             m_from = from;
@@ -1035,17 +1022,17 @@ namespace Server
     {
         private Mobile m_from;
         private uint m_guid;
-        private Account m_account;
+        private Account? m_account;
         private DateTime m_timeOfDeath;
         private Serial m_house;
         private int m_followers;
         public Mobile Mobile { get { return m_from; } }
         public uint GUID { get { return m_guid; } }
-        public Account Account { get { return m_account; } }
+        public Account? Account { get { return m_account; } }
         public Serial House { get { return m_house; } }
         public DateTime TimeOfDeath { get { return m_timeOfDeath; } }
         public int Followers { get { return m_followers; } }
-        public BeforePlayerDeathEventArgs(Mobile m, uint guid, Account acct, DateTime timeOfDeath, Serial house, int followers)
+        public BeforePlayerDeathEventArgs(Mobile m, uint guid, Account? acct, DateTime timeOfDeath, Serial house, int followers)
         {
             m_from = m;
             m_guid = guid;
@@ -1142,68 +1129,67 @@ namespace Server
 
     public class EventSink
     {
-        public static event CharacterCreatedEventHandler CharacterCreated;
-        public static event OpenDoorMacroEventHandler OpenDoorMacroUsed;
-        public static event DoorUsedEventHandler DoorUsed;
-        public static event SpeechEventHandler Speech;
-        public static event LoginEventHandler Login;
-        public static event ServerListEventHandler ServerList;
-        public static event MovementEventHandler Movement;
-        public static event HungerChangedEventHandler HungerChanged;
-        public static event CrashedEventHandler Crashed;
-        public static event ShutdownEventHandler Shutdown;
-        public static event ShuttingDownEventHandler ShuttingDown;
-        public static event HelpRequestEventHandler HelpRequest;
-        public static event DisarmRequestEventHandler DisarmRequest;
-        public static event StunRequestEventHandler StunRequest;
-        public static event OpenSpellbookRequestEventHandler OpenSpellbookRequest;
-        public static event CastSpellRequestEventHandler CastSpellRequest;
-        public static event AnimateRequestEventHandler AnimateRequest;
-        public static event LogoutEventHandler Logout;
-        public static event SocketConnectEventHandler SocketConnect;
-        public static event ConnectedEventHandler Connected;
-        public static event DisconnectedEventHandler Disconnected;
-        public static event RenameRequestEventHandler RenameRequest;
-        public static event PlayerDeathEventHandler PlayerDeath;
-        public static event BeforePlayerDeathEventHandler BeforePlayerDeath;
-        public static event SpawnedMobileCreatedEventHandler SpawnedMobileCreated;
-        public static event SpawnedMobileKilledEventHandler SpawnedMobileKilled;
-        public static event ContainerAddItemEventHandler ContainerAddItem;
-        public static event OnDragDropEventHandler OnDragDrop;
-        public static event CreatureGenerateLootEventHandler CreatureGenerateLoot;
-        public static event VirtueGumpRequestEventHandler VirtueGumpRequest;
-        public static event VirtueItemRequestEventHandler VirtueItemRequest;
-        public static event VirtueMacroRequestEventHandler VirtueMacroRequest;
-        public static event ChatRequestEventHandler ChatRequest;
-        public static event AccountLoginEventHandler AccountLogin;
-        public static event PaperdollRequestEventHandler PaperdollRequest;
-        public static event ProfileRequestEventHandler ProfileRequest;
-        public static event ChangeProfileRequestEventHandler ChangeProfileRequest;
-        public static event AggressiveActionEventHandler AggressiveAction;
-        public static event CommandEventHandler Command;
-        public static event GameLoginEventHandler GameLogin;
-        public static event DeleteRequestEventHandler DeleteRequest;
-        public static event PreWorldLoadEventHandler PreWorldLoad;
-        public static event WorldLoadEventHandler WorldLoad;
-        public static event WorldSaveEventHandler WorldSave;
-        public static event SetAbilityEventHandler SetAbility;
-        public static event FastWalkEventHandler FastWalk;
-        public static event CreateGuildHandler CreateGuild;
-        public static event OnSingleClickEventHandler OnSingleClick;
-        public static event ServerStartedEventHandler ServerStarted;
-        public static event GuildGumpRequestHandler GuildGumpRequest;
-        public static event QuestGumpRequestHandler QuestGumpRequest;
-        public static event ClientVersionReceivedHandler ClientVersionReceived;
-        public static event AddItemEventHandler AddItem;
-        public static event WealthTrackerEventHandler WealthTracker;
-        public static event LogExceptionEventHandler LogException;
-        public static event DropMobileEventHandler DropMobile;
-        public static event HousePlacedEventHandler HousePlaced;
-        public static event BandageTargetRequestHandler BandageTargetRequest;
-        public static event MovementObservedEventHandler MovementObserved;
-        public static event BoatMovingEventHandler BoatMoving;
+        public static event CharacterCreatedEventHandler? CharacterCreated;
+        public static event OpenDoorMacroEventHandler? OpenDoorMacroUsed;
+        public static event SpeechEventHandler? Speech;
+        public static event LoginEventHandler? Login;
+        public static event ServerListEventHandler? ServerList;
+        public static event MovementEventHandler? Movement;
+        public static event HungerChangedEventHandler? HungerChanged;
+        public static event CrashedEventHandler? Crashed;
+        public static event ShutdownEventHandler? Shutdown;
+        public static event ShuttingDownEventHandler? ShuttingDown;
+        public static event HelpRequestEventHandler? HelpRequest;
+        public static event DisarmRequestEventHandler? DisarmRequest;
+        public static event StunRequestEventHandler? StunRequest;
+        public static event OpenSpellbookRequestEventHandler? OpenSpellbookRequest;
+        public static event CastSpellRequestEventHandler? CastSpellRequest;
+        public static event AnimateRequestEventHandler? AnimateRequest;
+        public static event LogoutEventHandler? Logout;
+        public static event SocketConnectEventHandler? SocketConnect;
+        public static event ConnectedEventHandler? Connected;
+        public static event DisconnectedEventHandler? Disconnected;
+        public static event RenameRequestEventHandler? RenameRequest;
+        public static event PlayerDeathEventHandler? PlayerDeath;
+        public static event BeforePlayerDeathEventHandler? BeforePlayerDeath;
+        public static event SpawnedMobileCreatedEventHandler? SpawnedMobileCreated;
+        public static event SpawnedMobileKilledEventHandler? SpawnedMobileKilled;
+        public static event ContainerAddItemEventHandler? ContainerAddItem;
+        public static event OnDragDropEventHandler? OnDragDrop;
+        public static event CreatureGenerateLootEventHandler? CreatureGenerateLoot;
+        public static event VirtueGumpRequestEventHandler? VirtueGumpRequest;
+        public static event VirtueItemRequestEventHandler? VirtueItemRequest;
+        public static event VirtueMacroRequestEventHandler? VirtueMacroRequest;
+        public static event ChatRequestEventHandler? ChatRequest;
+        public static event AccountLoginEventHandler? AccountLogin;
+        public static event PaperdollRequestEventHandler? PaperdollRequest;
+        public static event ProfileRequestEventHandler? ProfileRequest;
+        public static event ChangeProfileRequestEventHandler? ChangeProfileRequest;
+        public static event AggressiveActionEventHandler? AggressiveAction;
+        public static event CommandEventHandler? Command;
+        public static event GameLoginEventHandler? GameLogin;
+        public static event DeleteRequestEventHandler? DeleteRequest;
+        public static event PreWorldLoadEventHandler? PreWorldLoad;
+        public static event WorldLoadEventHandler? WorldLoad;
+        public static event WorldSaveEventHandler? WorldSave;
+        public static event SetAbilityEventHandler? SetAbility;
+        public static event FastWalkEventHandler? FastWalk;
+        public static event CreateGuildHandler? CreateGuild;
+        public static event OnSingleClickEventHandler? OnSingleClick;
+        public static event ServerStartedEventHandler? ServerStarted;
+        public static event GuildGumpRequestHandler? GuildGumpRequest;
+        public static event QuestGumpRequestHandler? QuestGumpRequest;
+        public static event ClientVersionReceivedHandler? ClientVersionReceived;
+        public static event AddItemEventHandler? AddItem;
+        public static event WealthTrackerEventHandler? WealthTracker;
+        public static event LogExceptionEventHandler? LogException;
+        public static event DropMobileEventHandler? DropMobile;
+        public static event HousePlacedEventHandler? HousePlaced;
+        public static event BandageTargetRequestHandler? BandageTargetRequest;
+        public static event MovementObservedEventHandler? MovementObserved;
+        public static event BoatMovingEventHandler? BoatMoving;
 
-        public static BaseGuild InvokeCreateGuild(CreateGuildEventArgs e)
+        public static BaseGuild? InvokeCreateGuild(CreateGuildEventArgs e)
         {
             if (CreateGuild != null)
             {
@@ -1275,24 +1261,6 @@ namespace Server
             }
         }
 
-        public static void InvokeDoorUsed(DoorUsedEventArgs e)
-        {
-            if (DoorUsed != null)
-            {
-                foreach (DoorUsedEventHandler currentDelegate in DoorUsed.GetInvocationList())
-                {
-                    try
-                    {
-                        currentDelegate.Invoke(e);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log an exception
-                        EventSink.InvokeLogException(new LogExceptionEventArgs(ex));
-                    }
-                }
-            }
-        }
         public static void InvokeSpeech(SpeechEventArgs e)
         {
             if (Speech != null)
@@ -1967,7 +1935,7 @@ namespace Server
 
         public static void InvokePreWorldLoad()
         {
-            if (WorldLoad != null)
+            if (PreWorldLoad != null)
             {
                 foreach (PreWorldLoadEventHandler currentDelegate in PreWorldLoad.GetInvocationList())
                 {
@@ -2375,7 +2343,6 @@ namespace Server
         {
             CharacterCreated = null;
             OpenDoorMacroUsed = null;
-            DoorUsed = null;
             Speech = null;
             Login = null;
             ServerList = null;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -116,11 +116,7 @@ namespace Server.Items
                     AddComponent(new AddonComponent(0x1CB4), 0, 0, 0);
                     AddComponent(new AddonComponent(0x1CB5), 0, 1, 0);
                     AddComponent(new AddonComponent(0x1CB2), 1, -1, 0);
-#if false
-                    AddComponent( new AddonComponent( 0x1CB1 ), 1, 0, 0 );
-#else
                     AddComponent(new AddonComponent(0x1D82), 1, 0, 0);
-#endif
                     AddComponent(new AddonComponent(0x1CB0), 1, 1, 0);
 
                     AddComponent(new AddonComponent(0x1CAD), 1, -1, 5);
@@ -242,11 +238,7 @@ namespace Server.Items
                                 SetComponentID(1, 0x1CB4);
                                 SetComponentID(2, 0x1CB5);
                                 SetComponentID(3, 0x1CB2);
-#if false
-                            SetComponentID( 4, 0x1CB1 );
-#else
                                 SetComponentID(4, 0x1D82);
-#endif
                                 SetComponentID(5, 0x1CB0);
                             }
                         }
@@ -352,7 +344,7 @@ namespace Server.Items
 
         private void MoveComponent(int index, Point3D offset)
         {
-            AddonComponent c = GetComponent(index);
+            AddonComponent? c = GetComponent(index);
 
             if (c != null)
             {
@@ -364,13 +356,13 @@ namespace Server.Items
 
         private void SetComponentID(int index, int itemID)
         {
-            AddonComponent c = GetComponent(index);
+            AddonComponent? c = GetComponent(index);
 
             if (c != null)
                 c.ItemID = itemID;
         }
 
-        private AddonComponent GetComponent(int index)
+        private AddonComponent? GetComponent(int index)
         {
             if (index >= 0 && index < Components.Count)
                 return Components[index] as AddonComponent;

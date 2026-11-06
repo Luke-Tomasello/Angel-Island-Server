@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -40,6 +40,9 @@ namespace Server.Mobiles
         private Mobile m_Target;
         private DateTime m_ExpireTime;
 
+        public override double DispelDifficulty { get { return 80.0; } }
+        public override double DispelFocus { get { return 20.0; } }
+
         public override void DisplayPaperdollTo(Mobile to)
         {
             // Do nothing
@@ -47,9 +50,6 @@ namespace Server.Mobiles
 
         public override Mobile PreferredFocus { get { return m_Target; } }
         public override bool NoHouseRestrictions { get { return true; } }
-
-        public override double DispelDifficulty { get { return 80.0; } }
-        public override double DispelFocus { get { return 20.0; } }
 
         public Revenant(Mobile caster, Mobile target, TimeSpan duration)
             : base(AIType.AI_Melee, FightMode.All | FightMode.Closest, 10, 1, 0.2, 0.4)

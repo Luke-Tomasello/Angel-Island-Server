@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -59,9 +59,9 @@ namespace Server.Items.Triggers
                 if (value is MusicController)
                 {
                     if (WaitReady == false)
-                        SendSystemMessage("You should set WaitReady when targeting a Music Controller.");
+                        SendMessageNearby("You should set WaitReady when targeting a Music Controller.");
                     if (Interval > TimeSpan.FromSeconds(1))
-                        SendSystemMessage("It is also recommended Interval be short, maybe 1 second.");
+                        SendMessageNearby("It is also recommended Interval be short, maybe 1 second.");
                 }
             }
         }
@@ -164,7 +164,7 @@ namespace Server.Items.Triggers
             }
         }
 
-        private InternalTimer m_Timer;
+        private InternalTimer? m_Timer;
         private void StopTimer()
         {
             if (m_Timer != null)

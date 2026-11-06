@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -79,44 +79,26 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020213035113/uo.stratics.com/hunters/ophwarr.shtml
+            // 50 to 150 Gold, Potions, Arrows, Gems, Weapons
+            // http://web.archive.org/web/20020414104242/uo.stratics.com/hunters/ophenfor.shtml
+            // 50 to 150 Gold, Potions, Arrows, Gems, Weapons
+            // (same creature)
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(100, 140);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(50, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020213035113/uo.stratics.com/hunters/ophwarr.shtml
-                    // 50 to 150 Gold, Potions, Arrows, Gems, Weapons
-                    // http://web.archive.org/web/20020414104242/uo.stratics.com/hunters/ophenfor.shtml
-                    // 50 to 150 Gold, Potions, Arrows, Gems, Weapons
-                    // (same creature)
-                    if (Spawning)
-                    {
-                        PackGold(50, 150);
-                    }
-                    else
-                    {
-                        PackPotion(0.9);
-                        PackPotion(0.6);
+                PackPotion(0.9);
+                PackPotion(0.6);
 
-                        PackItem(new Arrow(Utility.Random(1, 4)));
+                PackItem(new Arrow(Utility.Random(1, 4)));
 
-                        PackGem(1, .9);
-                        PackGem(1, .05);
+                PackGem(1, .9);
+                PackGem(1, .05);
 
-                        PackMagicEquipment(1, 2, 0.00, 0.25);   // no chance at armor, 25% (12.5% actual) at low end magic weapon
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    AddLoot(LootPack.Meager);
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Gems);
-                }
+                PackMagicEquipment(1, 2, 0.00, 0.25);   // no chance at armor, 25% (12.5% actual) at low end magic weapon
             }
         }
 

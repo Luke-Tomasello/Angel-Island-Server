@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -101,7 +101,7 @@ namespace Server.Spells.Fifth
 
             if (caster.HarmfulCheck(defender))
             {
-                SpellHelper.Damage(TimeSpan.FromSeconds(0.65), target, Utility.RandomMinMax(damage, damage + 4), 0, 0, 100, 0, 0);
+                SpellHelper.Damage(TimeSpan.FromSeconds(0.65), target, Utility.RandomMinMax(damage, damage + 4), new DamageContext { Source = this });
 
                 target.FixedParticles(0x374A, 10, 15, 5038, 1181, 2, EffectLayer.Head);
                 target.PlaySound(0x213);
@@ -163,27 +163,10 @@ namespace Server.Spells.Fifth
                     // round up
                     double rawFormula = Math.Ceiling((rawHighStat - rawLowStat) / 2.0);
 
-#if true
                     // going for a flat reduction.
                     //  The table below still delivers regular 37 damage hits.
                     // This damageMod: ToMage 11/21, ToWarrior 13/24
                     damageMod = -(rawFormula * .34);
-#else
-                    if (rawFormula == 0)
-                        damageMod = 1;
-                    else if (rawFormula >= 38)
-                        damageMod = 0;
-                    else if (rawFormula >= 36)
-                        damageMod = -5;
-                    else if (rawFormula >= 33)
-                        damageMod = -10;
-                    else if (rawFormula >= 30)
-                        damageMod = -15;
-                    else if (rawFormula >= 28)
-                        damageMod = -18;
-                    else
-                        damageMod = -20;
-#endif
 
                 }
                 #endregion
@@ -201,7 +184,7 @@ namespace Server.Spells.Fifth
                     damage = ((highestStat - lowestStat) / 2.0) + damageMod;
 
                 #region Damage Caps (AI/MO/SP)
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || Core.RuleSets.SiegeStyleRules())
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules() || Core.RuleSets.SiegeRules())
                 {
                     if (damage > 45)
                         damage = 45;
@@ -211,10 +194,6 @@ namespace Server.Spells.Fifth
                 #endregion
 
                 #region Tuning Console
-#if false
-                if (Server.Items.Consoles.TuningConsole.Enabled && Server.Items.Consoles.MindBlastMCi.UseNewScale == true)
-                    damage = (int)(((double)damage / ((45.0 - 1.0) / (Server.Items.Consoles.MindBlastMCi.DamageRangeHigh - Server.Items.Consoles.MindBlastMCi.DamageRangeLow))) + Server.Items.Consoles.MindBlastMCi.DamageRangeLow);
-#endif
                 #endregion
 
                 if (CheckResisted(target))
@@ -235,14 +214,10 @@ namespace Server.Spells.Fifth
                 TimeSpan delay = TimeSpan.Zero;
 
                 #region Tuning Console
-#if false
-                if (Server.Items.Consoles.TuningConsole.Enabled)
-                    delay = TimeSpan.FromSeconds(Server.Items.Consoles.MindBlastMCi.DamageDelay);
-#endif
                 #endregion
 
                 //Pixie: 7/4/04: added caster to this so corpse wouldn't stay blue to this caster
-                SpellHelper.Damage(delay, target, Caster, damage, 0, 0, 100, 0, 0);
+                SpellHelper.Damage(delay, target, Caster, damage, new DamageContext { Source = this });
             }
 
             FinishSequence();

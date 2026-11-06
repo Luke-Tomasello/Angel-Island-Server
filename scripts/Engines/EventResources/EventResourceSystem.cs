@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -39,7 +39,7 @@ namespace Server.Engines.EventResources
     {
         public static CraftResource Find(Type type)
         {
-            EventCraftAttribute eca = type.GetCustomAttribute(typeof(EventCraftAttribute)) as EventCraftAttribute;
+            EventCraftAttribute? eca = type.GetCustomAttribute(typeof(EventCraftAttribute)) as EventCraftAttribute;
 
             return (eca == null ? CraftResource.None : eca.Resource);
         }
@@ -70,12 +70,12 @@ namespace Server.Engines.EventResources
                 {
                     if (type.IsSubclassOf(typeof(EventResourceSystem)))
                     {
-                        PropertyInfo prop = type.GetProperty("System", BindingFlags.Static | BindingFlags.Public);
+                        PropertyInfo? prop = type.GetProperty("System", BindingFlags.Static | BindingFlags.Public);
 
                         if (prop == null)
                             continue;
 
-                        MethodInfo accessor = prop.GetGetMethod();
+                        MethodInfo? accessor = prop.GetGetMethod();
 
                         if (accessor == null)
                             continue;
@@ -88,7 +88,7 @@ namespace Server.Engines.EventResources
             #endregion
         }
 
-        public static EventResourceSystem Find(CraftResource resource)
+        public static EventResourceSystem? Find(CraftResource resource)
         {
             foreach (EventResourceSystem system in m_Systems)
             {
@@ -172,7 +172,7 @@ namespace Server.Engines.EventResources
             m_Registry = new List<Item>();
         }
 
-        public virtual CraftSystem MutateCraft(Mobile from, BaseTool tool)
+        public virtual CraftSystem? MutateCraft(Mobile from, BaseTool tool)
         {
             return null;
         }
@@ -208,7 +208,7 @@ namespace Server.Engines.EventResources
 
                     if (Utility.RandomDouble() < GetImbueChance(item.GetType()))
                     {
-                        BaseEnchantment enchantment = GetRandomEnchantment(item, table);
+                        BaseEnchantment? enchantment = GetRandomEnchantment(item, table);
 
                         if (enchantment != null)
                         {
@@ -348,7 +348,7 @@ namespace Server.Engines.EventResources
             return maxChance - Math.Sqrt((maxChance * maxChance / maxItems) * curItems);
         }
 
-        protected static BaseEnchantment GetRandomEnchantment(Item item, BaseEnchantment[] table)
+        protected static BaseEnchantment? GetRandomEnchantment(Item item, BaseEnchantment[] table)
         {
             int total = 0;
 

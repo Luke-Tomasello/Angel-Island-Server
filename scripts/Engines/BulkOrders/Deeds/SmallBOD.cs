@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -95,7 +95,7 @@ namespace Server.Engines.BulkOrders
 
         public virtual void Randomize()
         {
-            SmallBulkEntry e = System.GetRandomSmallEntry();
+            SmallBulkEntry? e = System.GetRandomSmallEntry();
 
             if (e == null)
                 return;
@@ -119,7 +119,7 @@ namespace Server.Engines.BulkOrders
 
         public override void Randomize(Mobile from)
         {
-            SmallBulkEntry e = System.GetRandomSmallEntry(from);
+            SmallBulkEntry? e = System.GetRandomSmallEntry(from);
 
             if (e == null)
                 return;
@@ -335,7 +335,7 @@ namespace Server.Engines.BulkOrders
                         if (version < 1)
                             AmountMax = reader.ReadInt();
 
-                        string type = reader.ReadString();
+                        string? type = reader.ReadString();
 
                         if (type != null)
                             m_Type = ScriptCompiler.FindTypeByFullName(type);

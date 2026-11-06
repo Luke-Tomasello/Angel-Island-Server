@@ -1,0 +1,100 @@
+__TOC__
+
+== General Information ==
+'''Sheet music''' (Rolled Up Sheet Music) turns a composition into an item: double-click it and it plays. It is how songs are kept, given, sold, and published to the [[Music Box]].
+
+You write a song in a '''Music Composition Book''', then use '''Manuscript Paper''' on the book to transcribe it. Both are sold by Bard NPCs. No Musicianship or other skill is needed, to write, transcribe, or play.
+
+For the notes themselves, see [[Music Composition]]. To start from a MIDI file instead of writing every note, see [[MidiToAIMS]].
+
+== Composition Book ==
+A composition is written the way a Razor script is: [play lines to play, say lines for lyrics, wait lines between phrases, and # lines for settings and comments.
+
+ # Song: Twinkle Twinkle
+ # Author: Mira
+ # Timer: Anchored
+ # Prefetch: True
+ say '[play cl 0.4 cl 0.4 g 0.4 g 0.4 a 0.4 a 0.4 g 0.8'
+ say 'Twinkle, twinkle, little star'
+ wait 3200
+
+Typing directly into a book in game is not recommended: the book breaks long lines. Write the composition in a text editor (or use your Razor script), then paste it:
+
+# Put the composition book in your backpack.
+# Single-click the book and choose '''Paste'''.
+# Click '''Post Message''', click in the message box, paste (Ctrl+V), and click '''Post'''.
+
+The whole text goes into the book at once, line by line, after anything already written there. Blank lines are left out.
+* '''One post takes up to 255 lines''', counting blank lines. A longer post is refused with nothing written: paste a long composition in parts, one after another.
+* '''All or nothing:''' if the text doesn't fit in the pages the book has left, nothing is written, and you are told how many pages it needs.
+* '''The cover:''' if the book's title is still ''Title'' (or blank), it takes the composition's # Song:. Likewise, an author still ''Author'' (or blank) takes # Author:. A book you have already named keeps its name.
+* If the book is open while you paste, close it and open it again to see the new text.
+
+You do '''not''' need to fix spacing or line breaks after pasting: transcription joins lines the book wrapped and drops blank lines.
+
+A book holds at most 96 pages. A longer song can be written across several books; see [[Music Composition#Songs in Several Books|Songs in Several Books]].
+
+Before using any paper, you can hear the book as its sheet music will play: see [[Music Composition#Preview Without Using Paper|Preview Without Using Paper]].
+
+== Settings ==
+Settings go at the top of the composition, one per line, each starting with #. All are optional. Any other # line is a comment, so the first line is a good place to credit the original composer:
+
+ # Douce Dame Jolie, by Guillaume de Machaut (14th century)
+ # Song: Douce Dame Jolie
+ # Author: Mira
+ # Instrument: LapHarp
+ # Timer: Anchored
+ # Tempo: 100
+ # Prefetch: True
+ # Price: 1000
+
+{| class="wikitable"
+! Setting !! Default !! Meaning
+|-
+| # Song: ''title'' || the book's title || The song's name, as the [[Music Box]] lists it.
+|-
+| # Author: ''name'' || the book's author || Who to credit. This is informational: payment goes to the character who made the sheet music, not to this name.
+|-
+| # Instrument: Harp, LapHarp or Lute || Harp || The instrument the song starts on. A song can change instrument as it plays (see [[Music Composition#Instruments and Note Offsets|Instruments]]).
+|-
+| # Timer: Classic, Dynamic or Anchored || Classic || How notes are timed. Anchored is recommended for new songs. See [[Music Composition#Timing Mode Comparison|Timers]].
+|-
+| # Tempo: ''milliseconds'' || 100 || The default spacing between notes (Dynamic and Anchored). See [[Music Composition#Player Settings and Commands|Tempo]].
+|-
+| # Prefetch: True or False || False || Whether a written pause replaces the Tempo spacing instead of adding to it. See [[Music Composition#Player Settings and Commands|Prefetch]].
+|-
+| # ConcertMode: True or False || False || Whether listeners hear the song's volume steps (vN) regardless of distance. See [[Music Composition#Volume|Volume]].
+|-
+| # Price: ''gold'' || 0 (free) || What the song costs in the [[Music Box]].
+|-
+| # Napster: True or False || False || Lets anyone who holds a copy of the sheet music add it to their own Music Box. See [[Music Box#Napster Tracks|Napster Tracks]].
+|-
+| # Book: ''n''/''total'' || (none) || This book's place in a song written across several books. See [[Music Composition#Songs in Several Books|Songs in Several Books]].
+|-
+| # NewTimer: True or False || False || '''Legacy.''' The setting older songs use: False is Classic, True is Dynamic. Still supported; for new songs use # Timer:. If both are present, # Timer: wins.
+|}
+
+Lines such as # Section:, # Play: and # Repeat are not settings; they arrange the music. See [[Music Composition#Advanced Composition: Sections and Repeats|Sections and Repeats]].
+
+'''Note:''' Settings are recognized anywhere in their line, so keep words such as ''Song:'' or ''Price:'' out of your comments.
+
+== Instructions ==
+To transcribe a composition into sheet music:
+
+# Double-click the Manuscript Paper.
+# Target the composition book (in your backpack, or within two tiles).
+# The paper becomes Rolled Up Sheet Music, named by the # Song: and # Author: lines (or, without them, by the book's own title and author).
+
+The book stays yours, unchanged: it remains the source of the song. To make another copy, transcribe the book again with another sheet of paper.
+
+Sound effects other than percussion need 1,000 Music Karma to transcribe; see [[Music Composition#Music Karma|Music Karma]].
+
+If the composition has a mistake in its sections or repeats, transcription stops without using the paper and says what is wrong and where. See [[Music Composition#Transcribing and Troubleshooting|Transcribing and Troubleshooting]].
+
+== Playing and Selling ==
+Double-click sheet music to play it. Anyone can play it, whatever their skills or Music Karma, and every sound in it plays.
+
+Only the composer, who keeps the book, can make more copies. That makes sheet music something to trade: sell copies in person, or publish the song in the [[Music Box]], where players can buy it and the gold goes to your bank. See [[Music Box#Instructions for Composers|Instructions for Composers]].
+
+== History ==
+Sheet music, the composition book, and manuscript paper were created by Adam Ant in 2022, as part of the rewrite that made AIMS a full music system. See [[Music Composition#History and Credits|History and Credits]].

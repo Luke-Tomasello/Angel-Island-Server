@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -74,7 +74,7 @@ namespace Server.Engines.Quests
             list.Add(1060741, m_Charges.ToString()); // charges: ~1_val~
         }
 
-        private Timer m_PlayTimer;
+        private Timer? m_PlayTimer;
 
         public override void OnDoubleClick(Mobile from)
         {

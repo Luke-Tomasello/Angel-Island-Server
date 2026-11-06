@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,6 +77,7 @@ namespace Server.Items
         {
             Movable = false;
             Light = LightType.Circle300;
+            TravelObject = true;
         }
 
         public PublicMoongate(Serial serial)
@@ -162,7 +163,7 @@ namespace Server.Items
                 return false;
             }
             // 8/10/22 Adam: I think we should check Core.RedsInTown at this location. 
-            else if (from.Player && (from.Red && !Core.RedsInTown) && list.Map != Map.Felucca)
+            else if (from.Player && from.Red && !Utility.AreRedsAllowed(from.Region) && list.Map != Map.Felucca)
             {
                 from.SendLocalizedMessage(1019004); // You are not allowed to travel there.
                 return false;
@@ -172,7 +173,9 @@ namespace Server.Items
                 from.SendLocalizedMessage(1019004); // You are not allowed to travel there.
                 return false;
             }
-            else if (from.Criminal)
+            // NOTE: OSI relied on short criminal timers for travel denial.
+            // Mortalis uses explicit travel restriction logic; Criminal is no longer sufficient.
+            else if (from is PlayerMobile pm && !pm.CanCriminalTravel)
             {
                 from.SendLocalizedMessage(1005561, "", 0x22); // Thou'rt a criminal and cannot escape so easily.
                 return false;
@@ -396,7 +399,7 @@ namespace Server.Items
             return changeLog;
         }
 
-        public static int Generate(PMList list, bool listOnly = false, Dictionary<Item, Tuple<Point3D, Map, bool>> changeLog = null)
+        public static int Generate(PMList list, bool listOnly = false, Dictionary<Item, Tuple<Point3D, Map, bool>>? changeLog = null)
         {
             foreach (PMEntry entry in list.Entries)
             {

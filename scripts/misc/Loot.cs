@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -106,6 +106,7 @@ using Server.Engines.CrownSterlingSystem;
 using Server.Items;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using static Server.Utility;
 
 namespace Server
@@ -484,12 +485,12 @@ namespace Server
 
                 return new Type[0];
         }*/
-        public static Item RareFactoryItem(double chance, RareType RareType = RareType.MonsterDrop | RareType.DungeonChestDrop | RareType.TMapChestDrop)
+        public static Item? RareFactoryItem(double chance, RareType RareType = RareType.MonsterDrop | RareType.DungeonChestDrop | RareType.TMapChestDrop)
         {
             if (chance < Utility.RandomDouble())
                 return null;
 
-            Item temp = null;
+            Item? temp = null;
             if ((RareType & (RareType.MonsterDrop | RareType.DungeonChestDrop | RareType.TMapChestDrop)) != 0)
             {
                 int ItemId = BasicRares[Utility.Random(BasicRares.Length)];
@@ -681,7 +682,7 @@ namespace Server
             else if ((RareType & RareType.CrystallinePowder) != 0)
             {
                 Type type = CrystallinePowder[Utility.RandomMinMaxExp(CrystallinePowder.Length, Exponent.d0_20)];
-                CrystallinePowder cp = (CrystallinePowder)Construct(type);
+                CrystallinePowder? cp = (CrystallinePowder?)Construct(type);
                 cp.UsesRemaining = Utility.RandomMinMax(1, cp.MaxUses);
                 temp = cp;
             }
@@ -716,59 +717,16 @@ namespace Server
             if (temp != null)
             {
                 temp.LootType = LootType.Rare;
-#if true
                 // now filter for rares already being sold
                 for (int ix = 0; ix < 10 && temp != null && AlreadyForSale(temp); ix++)
                 {
                     temp.Delete();
                     temp = RareFactoryItem(chance: 1.0, RareType: RareType);
                 }
-#endif
             }
 
             return temp;
         }
-#if false
-        public static List<Type> TypeRegistry()
-        {
-            List<Type> new_list = new()
-            {
-                typeof(Tapestry1EastAddonDeed),
-                typeof(TatteredBanner1EastAddonDeed),
-                typeof(TatteredBanner2EastAddonDeed),
-                typeof(BloodSplatter1EastAddonDeed),
-                typeof(BloodSplatter2EastAddonDeed),
-                typeof(Vines1SouthAddonDeed),
-                typeof(Vines2SouthAddonDeed),
-                typeof(Vines1EastAddonDeed),
-                typeof(Vines2EastAddonDeed),
-                typeof(Vines3EastAddonDeed),
-                typeof(Vines4EastAddonDeed),
-                typeof(Vines5EastAddonDeed),
-                typeof(SkeletonWithMeat1SouthAddonDeed),
-                typeof(SkeletonWithMeat2EastAddonDeed()),
-                typeof(Skeleton1SouthAddonDeed),
-                typeof(Chains1SouthAddonDeed),
-                typeof(Chains1EastAddonDeed),
-            };
-            return new_list;
-        }
-        public static List<int> IDRegistry()
-        {
-            List<int> new_list = new List<int>(BasicRares);
-            new_list.AddRange(UnusualRares);
-            new_list.AddRange(new List<int>() {
-                0x99D,      // bottles of liquor 
-                0xC14,      // ruined bookcase south
-                0xC15,      // ruined bookcase east
-                0x9D8,      // a plate of food 
-                0xE23,      // bloody water
-                0xC24,      // broken furniture 1 (south)
-                0xC25,      // broken furniture 2 (east)
-             });
-            return new_list;
-        }
-#endif
         public static bool AlreadyForSale(Item item)
         {
             if (item == null) return false;
@@ -781,7 +739,7 @@ namespace Server
                 {
                     if (ba.Components != null && ba.Components.Count == 1)
                     {
-                        AddonComponent ac = ba.Components[0] as AddonComponent;
+                        AddonComponent? ac = ba.Components[0] as AddonComponent;
                         if (CrownSterlingSystem.ForSale(ac.ItemID))
                         {
                             ba.Delete();
@@ -839,7 +797,57 @@ namespace Server
                 typeof( HammerPick ),           typeof( ButcherKnife ),         typeof( Cleaver ),
                 typeof( Dagger ),               typeof( SkinningKnife ),        typeof( ShepherdsCrook )
             };
+        private static Type[] m_BashingWeaponTypes = new Type[]
+        {
+            typeof( Club ),
+            typeof( Mace ),
+            typeof( Maul ),
+            typeof( WarHammer ),
+            typeof( WarMace ),
+            typeof( BlackStaff ),
+            typeof( GnarledStaff ),
+            typeof( QuarterStaff ),
+            typeof( HammerPick ),
+            typeof( ShepherdsCrook ),
+            typeof( WarAxe )                    // Moved here for skill accuracy
+        };
 
+        private static Type[] m_SwordWeaponTypes = new Type[]
+        {
+            typeof( Bardiche ),
+            typeof( Halberd ),
+            typeof( Broadsword ),
+            typeof( Cutlass ),
+            typeof( Katana ),
+            typeof( Longsword ),
+            typeof( Scimitar ),
+            typeof( VikingSword ),
+            typeof( ButcherKnife ),
+            typeof( Cleaver ),
+            typeof( SkinningKnife )
+        };
+
+        private static Type[] m_SpearWeaponTypes = new Type[]
+        {
+            typeof( Spear ),
+            typeof( ShortSpear ),
+            typeof( Pitchfork ),
+            typeof( WarFork ),
+            typeof( Kryss ),
+            typeof( Dagger )
+        };
+
+        private static Type[] m_AxeWeaponTypes = new Type[]
+        {
+            typeof( Axe ),
+            typeof( BattleAxe ),
+            typeof( DoubleAxe ),
+            typeof( ExecutionersAxe ),
+            typeof( Hatchet ),
+            typeof( LargeBattleAxe ),
+            typeof( TwoHandedAxe ),
+            typeof( Pickaxe )
+        };
         public static Type[] WeaponTypes { get { return m_WeaponTypes; } }
 
         private static Type[] m_SERangedWeaponTypes = new Type[]
@@ -1118,20 +1126,20 @@ namespace Server
         };
         public static MagicEquipEffect[] ArmorEnchantments { get { return m_ArmorEnchantments; } }
 
-        public static Item IDWand()
+        public static Item? IDWand()
         {
             Item reward = new Wand();
             if (reward != null)
             {
                 int minLevel = 1;
                 int maxLevel = Utility.RandomList(new int[] { 1, 2, 3 });
-                ((Wand)reward).SetRandomMagicEffect(minLevel, maxLevel);        // to get the random charges
-                ((Wand)reward).MagicEffect = MagicItemEffect.Identification;    // reset to IDWand
+                ((Wand)reward).MagicCharges = Charges(minLevel, maxLevel);       // to get the random charges
+                ((Wand)reward).MagicEffect = MagicItemEffect.Identification;    // set to IDWand
             }
 
             return reward;
         }
-        public static Item GnarledStaff()
+        public static Item? GnarledStaff()
         {
             Item reward = new GnarledStaff();
             if (reward != null)
@@ -1139,42 +1147,186 @@ namespace Server
                 //  info is hard to come by.
                 int minLevel = 1;
                 int maxLevel = Utility.RandomList(new int[] { 1, 2, 3 });
-                ((GnarledStaff)reward).SetRandomMagicEffect(minLevel, maxLevel);        // to get the random charges
-                ((GnarledStaff)reward).MagicEffect =                                    // reset to wand ability
-                    WandEnchantments[Utility.Random(WandEnchantments.Length)];
+                Wand wand = new Wand();
+                if (wand != null)
+                {   // based on shard, wands have certain 'magic' restrictions. We respect those restrictions
+                    wand.SetRandomMagicEffect(minLevel, maxLevel);
+                    ((GnarledStaff)reward).MagicCharges = wand.MagicCharges;    // to get the random charges
+                    ((GnarledStaff)reward).MagicEffect = wand.MagicEffect;      // reset to wand ability
+                    wand.Delete();
+                }
             }
 
             return reward;
         }
 
-        [Obsolete("Use Wand class instead")]
-        public static Item RandomPvPWand()
+        private static int Charges(int min, int max)
         {
-            Type t = m_PvPWandTypes[Utility.Random(m_PvPWandTypes.Length)];
-            return (Item)Activator.CreateInstance(t);
-        }
-        [Obsolete("Use Wand class instead")]
-        private static Type[] m_PvPWandTypes = new Type[]
+            int NewLevel = Utility.RandomMinMax(min, max);
+            int MagicCharges = 0;
+            switch (NewLevel)
             {
-                typeof( ClumsyWand ),               typeof( FeebleWand ),           typeof( FireballWand ),
-                typeof( GreaterHealWand ),          typeof( HarmWand ),             typeof( HealWand ),
-                typeof( IDWand ),                   typeof( LightningWand ),        typeof( MagicArrowWand ),
-                typeof( ManaDrainWand ),            typeof( WeaknessWand )
+                case 1:
+                    MagicCharges = Utility.Random(1, 5);
+                    break;
+                case 2:
+                    MagicCharges = Utility.Random(4, 11);
+                    break;
+                case 3:
+                    MagicCharges = Utility.Random(9, 20);
+                    break;
+                default:
+                    // should never happen
+                    MagicCharges = 0;
+                    break;
+            }
 
-            };
-        [Obsolete("Use Wand class instead")]
-        public static Item RandomWand()
-        {
-            Type t = m_WandTypes[Utility.Random(m_WandTypes.Length)];
-            return (Item)Activator.CreateInstance(t);
+            return MagicCharges;
         }
+
+        #region Magic Item Effect Buckets
+        public static readonly HashSet<MagicItemEffect> DamagingEffects = new()
+        {
+            MagicItemEffect.MagicArrow,
+            MagicItemEffect.Harm,
+            MagicItemEffect.Fireball,
+            MagicItemEffect.Lightning,
+            MagicItemEffect.MindBlast,
+            MagicItemEffect.EnergyBolt,
+            MagicItemEffect.Explosion,
+            MagicItemEffect.ChainLightning,
+            MagicItemEffect.FlameStrike,
+            MagicItemEffect.MeteorSwarm,
+            MagicItemEffect.Earthquake,
+
+            MagicItemEffect.Poison,
+            MagicItemEffect.FireField,
+            MagicItemEffect.PoisonField,
+            MagicItemEffect.ParalyzeField,
+            MagicItemEffect.EnergyField,
+            MagicItemEffect.WallOfStone
+        };
+        public static readonly HashSet<MagicItemEffect> CreatureSummoningEffects = new()
+        {
+            MagicItemEffect.BladeSpirits,
+            MagicItemEffect.SummonCreature,
+            MagicItemEffect.EnergyVortex,
+
+            MagicItemEffect.AirElemental,
+            MagicItemEffect.SummonDaemon,
+            MagicItemEffect.EarthElemental,
+            MagicItemEffect.FireElemental,
+            MagicItemEffect.WaterElemental
+        };
+        public static readonly HashSet<MagicItemEffect> BuffDebuffEffects = new()
+        {
+            MagicItemEffect.Clumsy,
+            MagicItemEffect.Feeblemind,
+            MagicItemEffect.Weaken,
+
+            MagicItemEffect.Agility,
+            MagicItemEffect.Cunning,
+            MagicItemEffect.Strength,
+
+            MagicItemEffect.Bless,
+            MagicItemEffect.Curse,
+
+            MagicItemEffect.Protection,
+            MagicItemEffect.ArchProtection,
+
+            MagicItemEffect.ReactiveArmor,
+            MagicItemEffect.MagicReflect,
+
+            MagicItemEffect.MassCurse,
+
+            MagicItemEffect.ManaDrain,
+            MagicItemEffect.ManaVampire,
+
+            MagicItemEffect.Incognito,
+            MagicItemEffect.Polymorph,
+
+            MagicItemEffect.Paralyze
+        };
+        public static readonly HashSet<MagicItemEffect> RestorationEffects = new()
+        {
+            MagicItemEffect.Heal,
+            MagicItemEffect.GreaterHeal,
+
+            MagicItemEffect.Cure,
+            MagicItemEffect.ArchCure,
+
+            MagicItemEffect.Resurrection,
+            MagicItemEffect.Restoration
+        };
+        public static readonly HashSet<MagicItemEffect> TravelEffects = new()
+        {
+            MagicItemEffect.Teleport,
+            MagicItemEffect.Recall,
+            MagicItemEffect.Mark,
+            MagicItemEffect.GateTravel
+        };
+        public static readonly HashSet<MagicItemEffect> UtilityEffects = new()
+        {
+            MagicItemEffect.CreateFood,
+            MagicItemEffect.NightSight,
+
+            MagicItemEffect.MagicTrap,
+            MagicItemEffect.RemoveTrap,
+            MagicItemEffect.MagicLock,
+            MagicItemEffect.Unlock,
+
+            MagicItemEffect.Telekinesis,
+
+            MagicItemEffect.DispelField,
+            MagicItemEffect.Dispel,
+            MagicItemEffect.MassDispel,
+
+            MagicItemEffect.Reveal,
+            MagicItemEffect.Invisibility,
+
+            MagicItemEffect.Identification
+        };
+        /* 6/10/2026, Adam: I think I got this right.
+         * Curt — 6/8/26, 10:23 PM
+         *  I'd keep teleport rings, id wands, no damaging wands, and all stat boost items we have except invis
+         *  So what we have now minus damaging wands and invis items
+         */
+        public static bool IsAllowedMagicEffect(MagicItemEffect effect)
+        {
+            if (DamagingEffects.Contains(effect))
+                return false;
+
+            if (CreatureSummoningEffects.Contains(effect))
+                return false;
+
+            switch (effect)
+            {
+                case MagicItemEffect.Invisibility:
+                case MagicItemEffect.Recall:
+                case MagicItemEffect.Mark:
+                case MagicItemEffect.GateTravel:
+                    return false;
+            }
+
+            return true;
+        }
+        public static bool IsAllowedEquipEffect(MagicEquipEffect effect)
+        {
+            switch (effect)
+            {
+                case MagicEquipEffect.Harm:
+                case MagicEquipEffect.Invisibility:
+                    return false;
+            }
+
+            return true;
+        }
+        #endregion Magic Item Effect Buckets
         [Obsolete("Use Wand class instead")]
         private static Type[] m_WandTypes = new Type[]
             {
                 typeof( IDWand ), typeof(NightSightWand),typeof(CreateFoodWand),typeof(MagicLockWand),typeof(UnlockWand)
             };
-        [Obsolete("Use Wand class instead")]
-        public static Type[] WandTypes { get { return m_WandTypes; } }
 
         private static Type[] m_SEClothingTypes = new Type[]
             {
@@ -1259,6 +1411,52 @@ namespace Server
 
         #region Accessors
 
+        #region Random Items
+
+        #region Random Weapons & Mixed Loot
+
+        public static BaseWeapon RandomWeapon()
+        {
+            // Season 2 normalizes melee vs ranged weapon drops by selecting a category first,
+            // then a weapon within that category. This gives Ranged weapons much better representation.
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+                return ConstructBalanced(m_BashingWeaponTypes, m_SwordWeaponTypes, m_SpearWeaponTypes, m_AxeWeaponTypes, m_RangedWeaponTypes) as BaseWeapon;
+
+            if (Core.RuleSets.AOSRules())
+                return Construct(m_AosWeaponTypes, m_WeaponTypes) as BaseWeapon;
+
+            return Construct(m_WeaponTypes, m_RangedWeaponTypes) as BaseWeapon;
+        }
+        public static BaseWeapon RandomMeleeWeapon()
+        {
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+            {
+                return ConstructBalanced(
+                    m_BashingWeaponTypes,
+                    m_SwordWeaponTypes,
+                    m_SpearWeaponTypes,
+                    m_AxeWeaponTypes) as BaseWeapon;
+            }
+
+            if (Core.RuleSets.AOSRules())
+            {
+                BaseWeapon? weapon;
+
+                do
+                {
+                    weapon = Construct(
+                        m_AosWeaponTypes,
+                        m_WeaponTypes) as BaseWeapon;
+                }
+                while (weapon is BaseRanged);
+
+                return weapon;
+            }
+
+            return Construct(
+                m_WeaponTypes) as BaseWeapon;
+        }
+
         public static BaseWeapon RandomRangedWeapon()
         {
             return RandomRangedWeapon(false);
@@ -1266,30 +1464,91 @@ namespace Server
 
         public static BaseWeapon RandomRangedWeapon(bool inTokuno)
         {
-            /*if (Core.SE && inTokuno)
-				return Construct(m_SERangedWeaponTypes, m_AosRangedWeaponTypes, m_RangedWeaponTypes) as BaseWeapon;
+            if (Core.SE && inTokuno)
+                return Construct(m_SERangedWeaponTypes, m_AosRangedWeaponTypes, m_RangedWeaponTypes) as BaseWeapon;
 
-			if (Core.AOS)
-				return Construct(m_AosRangedWeaponTypes, m_RangedWeaponTypes) as BaseWeapon;*/
+            if (Core.AOS)
+                return Construct(m_AosRangedWeaponTypes, m_RangedWeaponTypes) as BaseWeapon;
 
             return Construct(m_RangedWeaponTypes) as BaseWeapon;
         }
-
-        public static BaseWeapon RandomWeapon()
-        {
-            if (Core.RuleSets.AOSRules())
-                return Construct(m_AosWeaponTypes, m_WeaponTypes) as BaseWeapon;
-
-            return Construct(m_WeaponTypes, m_RangedWeaponTypes) as BaseWeapon;
-        }
-
         public static Item RandomWeaponOrJewelry()
         {
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+            {
+                // In Season 2 we treat "Weapon" as one unified category (with internal balance)
+                // rather than weighting by raw array size.
+                if (Utility.Random(2) == 0)        // 50/50 chance between Weapon and Jewelry
+                    return RandomWeapon();
+
+                return Construct(m_JewelryTypes);
+            }
+
             if (Core.RuleSets.AOSRules())
                 return Construct(m_AosWeaponTypes, m_WeaponTypes, m_JewelryTypes);
 
             return Construct(m_WeaponTypes, m_RangedWeaponTypes, m_JewelryTypes);
         }
+
+        public static Item RandomArmorOrShieldOrWeapon()
+        {
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+            {
+                // Equal weight between the three major categories
+                int roll = Utility.Random(3);
+                if (roll == 0)
+                    return RandomWeapon();
+                if (roll == 1)
+                    return Construct(m_ArmorTypes);
+
+                return Construct(m_ShieldTypes);
+            }
+
+            if (Core.RuleSets.AOSRules())
+                return Construct(m_AosWeaponTypes, m_WeaponTypes, m_ArmorTypes, m_ShieldTypes);
+
+            return Construct(m_WeaponTypes, m_RangedWeaponTypes, m_ArmorTypes, m_ShieldTypes);
+        }
+
+        public static Item? RandomArmorOrWeapon()
+        {
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+            {
+                if (Utility.Random(2) == 0)        // 50/50
+                    return RandomWeapon();
+
+                return Construct(m_ArmorTypes);
+            }
+
+            if (Core.RuleSets.AOSRules())
+                return Construct(m_AosWeaponTypes, m_WeaponTypes, m_ArmorTypes);
+
+            return Construct(m_WeaponTypes, m_RangedWeaponTypes, m_ArmorTypes);
+        }
+
+        public static Item RandomArmorOrShieldOrWeaponOrJewelry()
+        {
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
+            {
+                // Four equal categories in Season 2
+                int roll = Utility.Random(4);
+                if (roll == 0)
+                    return RandomWeapon();
+                if (roll == 1)
+                    return Construct(m_ArmorTypes);
+                if (roll == 2)
+                    return Construct(m_ShieldTypes);
+
+                return Construct(m_JewelryTypes);
+            }
+
+            if (Core.RuleSets.AOSRules())
+                return Construct(m_AosWeaponTypes, m_WeaponTypes, m_ArmorTypes, m_ShieldTypes, m_JewelryTypes);
+
+            return Construct(m_WeaponTypes, m_RangedWeaponTypes, m_ArmorTypes, m_ShieldTypes, m_JewelryTypes);
+        }
+
+        #endregion
 
         public static BaseJewel RandomJewelry()
         {
@@ -1315,31 +1574,6 @@ namespace Server
         {
             return Construct(m_ArmorTypes, m_ShieldTypes, m_JewelryTypes);
         }
-
-        public static Item RandomArmorOrShieldOrWeapon()
-        {
-            if (Core.RuleSets.AOSRules())
-                return Construct(m_AosWeaponTypes, m_WeaponTypes, m_ArmorTypes, m_ShieldTypes);
-
-            return Construct(m_WeaponTypes, m_RangedWeaponTypes, m_ArmorTypes, m_ShieldTypes);
-        }
-
-        public static Item RandomArmorOrWeapon()
-        {
-            if (Core.RuleSets.AOSRules())
-                return Construct(m_AosWeaponTypes, m_WeaponTypes, m_ArmorTypes);
-
-            return Construct(m_WeaponTypes, m_RangedWeaponTypes, m_ArmorTypes);
-        }
-
-        public static Item RandomArmorOrShieldOrWeaponOrJewelry()
-        {
-            if (Core.RuleSets.AOSRules())
-                return Construct(m_AosWeaponTypes, m_WeaponTypes, m_ArmorTypes, m_ShieldTypes, m_JewelryTypes);
-
-            return Construct(m_WeaponTypes, m_RangedWeaponTypes, m_ArmorTypes, m_ShieldTypes, m_JewelryTypes);
-        }
-
         public static Item RandomClothingOrJewelry(bool must_support_magic = false)
         {
             if (must_support_magic == true)
@@ -1347,14 +1581,14 @@ namespace Server
             else
                 return Construct(m_JewelryTypes, m_ClothingTypes);
         }
-        public static Item RandomJewelry(bool must_support_magic = false)
+        public static Item? RandomJewelry(bool must_support_magic = false)
         {
             if (must_support_magic == true)
                 return Construct(m_JewelryTypes);
             else
                 return Construct(m_JewelryTypes);
         }
-        public static Item RandomClothing(bool must_support_magic = false)
+        public static Item? RandomClothing(bool must_support_magic = false)
         {
             if (must_support_magic == true)
                 return Construct(m_MagicClothingTypes);
@@ -1370,13 +1604,41 @@ namespace Server
         {
             return Construct(m_RegTypes);
         }
+        /// <summary>
+        /// Returns a list of 'count' random reagents.
+        /// </summary>
+        public static List<Item> RandomReagent(int count)
+        {
+            if (count <= 0)
+                return new List<Item>();
 
-        public static Item RandomNecromancyReagent()
+            List<Item> reagents = new List<Item>(count);
+
+            for (int i = 0; i < count; i++)
+            {
+                reagents.Add(Construct(m_RegTypes));
+            }
+
+            return reagents;
+        }
+        /// <summary>
+        /// Returns a random number of reagents between min and max (inclusive).
+        /// </summary>
+        public static List<Item> RandomReagent(int min, int max)
+        {
+            if (min < 0) min = 0;
+            if (max < min) max = min;
+
+            int count = Utility.RandomMinMax(min, max);
+
+            return RandomReagent(count);   // reuse the method above
+        }
+        public static Item? RandomNecromancyReagent()
         {
             return Construct(m_NecroRegTypes);
         }
 
-        public static Item RandomPossibleReagent()
+        public static Item? RandomPossibleReagent()
         {
             if (Core.RuleSets.AOSRules())
                 return Construct(m_RegTypes, m_NecroRegTypes);
@@ -1394,11 +1656,11 @@ namespace Server
             return Construct(m_InstrumentTypes) as BaseInstrument;
         }
 
-        public static Item RandomStatue()
+        public static Item? RandomStatue()
         {
             return Construct(m_StatueTypes);
         }
-
+        #endregion Random Items
         public enum ImbueLevel : int
         {
             Level0 = 0, // regular
@@ -1477,7 +1739,7 @@ namespace Server
         }*/
         public static Item RandomMagicClothingOrJewelry()
         {
-            Item item = null;
+            Item? item = null;
             if (Utility.RandomBool())
             {
                 switch (Utility.Random(4))
@@ -1554,7 +1816,7 @@ namespace Server
                 return item;
         }
         // see test harness in Nuke TestUnusualKey
-        public static Key UnusualKey(ImbueLevel level, double chance = 1.0)
+        public static Key? UnusualKey(ImbueLevel level, double chance = 1.0)
         {
             if (chance >= Utility.RandomDouble())
             {
@@ -1626,7 +1888,7 @@ namespace Server
             return ImbueWeaponOrArmor(false, item, value, 0, false);
         }
         // see test harness in Nuke TestImbuing()
-        public static Item ImbueWeaponOrArmor(bool noThrottle, Item item, ImbueLevel level, double upgrade_chance, bool hueing)
+        public static Item ImbueWeaponOrArmor(bool noThrottle, Item? item, ImbueLevel level, double upgrade_chance, bool hueing)
         {
             if (item == null)
                 return item;
@@ -1687,7 +1949,7 @@ namespace Server
             return chance_table;
         }
         // Adam: used for treasure chests / mini-bosses
-        private static Item ImbueWeaponOrArmor(Item item, ImbueLevel level, double upgrade_chance, bool hueing)
+        private static Item? ImbueWeaponOrArmor(Item item, ImbueLevel level, double upgrade_chance, bool hueing)
         {
             int[][] chance_table = Loot.LootTab();
 
@@ -1715,7 +1977,7 @@ namespace Server
             return ImbueWeaponOrArmor(item, level, chance_table, hueing);
         }
 
-        public static Item ImbueWeaponOrArmor(Item item, Loot.ImbueLevel level, int[][] chance_table, bool hueing)
+        public static Item? ImbueWeaponOrArmor(Item item, Loot.ImbueLevel level, int[][] chance_table, bool hueing)
         {
             if (item == null)
                 return item;
@@ -1747,12 +2009,12 @@ namespace Server
                 //  The docs are unclear if slayer weapons were available during our Siege era, but the discussion of the boards
                 //  was to keep them.
                 if (CoreAI.SlayerWeaponDropRate >= Utility.RandomDouble())
-                    /*if (Core.RuleSets.SiegeStyleRules())
+                    /*if (Core.RuleSets.SiegeRules())
                         weapon.Slayer = SlayerName.Silver;
                     else*/
                     weapon.Slayer = BaseRunicTool.GetRandomSlayer();
 
-                if (Core.RuleSets.SiegeStyleRules())
+                if (Core.RuleSets.SiegeRules())
                     // add a 5% chance at a MagicEnchantment
                     if (CoreAI.EnchantedEquipmentDropRate >= Utility.RandomDouble())
                     {
@@ -1786,7 +2048,7 @@ namespace Server
                 // store the imbue level in the item
                 armor.ImbueLevel = (Byte)level;
 
-                if (Core.RuleSets.SiegeStyleRules())
+                if (Core.RuleSets.SiegeRules())
                     // add a 5% chance at a MagicEnchantment
                     if (CoreAI.EnchantedEquipmentDropRate >= Utility.RandomDouble())
                     {
@@ -1811,7 +2073,7 @@ namespace Server
 
             return item;
         }
-        public static Item RandomMagicWeapon(int minLevel, int maxLevel, double chance)
+        public static Item? RandomMagicWeapon(int minLevel, int maxLevel, double chance)
         {
             if (chance <= Utility.RandomDouble())
                 return null;
@@ -1825,24 +2087,33 @@ namespace Server
 
             return item;
         }
-        public static Item RandomMagicClothing(int minLevel, int maxLevel, double chance)
+        public static Item? RandomMagicClothing(int minLevel, int maxLevel, double chance)
         {
-            Item item = Construct(m_MagicClothingTypes);
+            if (chance <= Utility.RandomDouble())
+                return null;
+
+            Item? item = Construct(m_MagicClothingTypes);
             if (item != null)
                 ((BaseClothing)item).SetRandomMagicEffect(minLevel, maxLevel);
 
             return item;
         }
-        public static Item RandomMagicJewelry(int minLevel, int maxLevel, double chance)
+        public static Item? RandomMagicJewelry(int minLevel, int maxLevel, double chance)
         {
-            Item item = Construct(m_JewelryTypes);
+            if (chance <= Utility.RandomDouble())
+                return null;
+
+            Item? item = Construct(m_JewelryTypes);
             if (item != null)
                 ((BaseJewel)item).SetRandomMagicEffect(minLevel, maxLevel);
 
             return item;
         }
-        public static Item RandomMagicWand(int minLevel, int maxLevel, double chance)
+        public static Item? RandomMagicWand(int minLevel, int maxLevel, double chance)
         {
+            if (chance <= Utility.RandomDouble())
+                return null;
+
             Wand wand = new Wand();
 
             if (wand != null)
@@ -1850,7 +2121,7 @@ namespace Server
 
             return wand;
         }
-        public static Item RandomMagicArmor(int minLevel, int maxLevel, double chance)
+        public static Item? RandomMagicArmor(int minLevel, int maxLevel, double chance)
         {
             if (chance <= Utility.RandomDouble())
                 return null;
@@ -1871,7 +2142,7 @@ namespace Server
             else if (val > max)
                 val = max;
         }
-        public static Item RandomIOB()
+        public static Item? RandomIOB()
         {
             switch (Utility.Random(7))
             {
@@ -2069,7 +2340,7 @@ namespace Server
                 int[] minmax = Loot.ImbueLevelToMagicEnchantment(imbueLevel);
                 for (int i = 0; i < level * item_count; ++i)
                 {
-                    Item item = null;
+                    Item? item = null;
                     switch (Utility.Random(4))
                     {
                         case 0:
@@ -2142,7 +2413,7 @@ namespace Server
         }
         #endregion Standard Loot Packs
         #region Construction methods
-        public static Item Construct(Type type)
+        public static Item? Construct(Type type)
         {
             try
             {
@@ -2154,7 +2425,7 @@ namespace Server
             }
         }
 
-        public static Item Construct(Type[] types)
+        public static Item? Construct(Type[] types)
         {
             if (types.Length > 0)
                 return Construct(types, Utility.Random(types.Length));
@@ -2162,7 +2433,7 @@ namespace Server
             return null;
         }
 
-        public static Item Construct(Type[] types, int index)
+        public static Item? Construct(Type[] types, int index)
         {
             if (index >= 0 && index < types.Length)
                 return Construct(types[index]);
@@ -2170,7 +2441,7 @@ namespace Server
             return null;
         }
 
-        public static Item Construct(params Type[][] types)
+        public static Item? Construct(params Type[][] types)
         {
             int totalLength = 0;
 
@@ -2191,6 +2462,21 @@ namespace Server
             }
 
             return null;
+        }
+        public static Item? ConstructBalanced(params Type[][] types)
+        {
+            if (types == null || types.Length == 0)
+                return null;
+
+            // Filter out null or empty arrays
+            Type[][] validGroups = types.Where(t => t != null && t.Length > 0).ToArray();
+
+            if (validGroups.Length == 0)
+                return null;
+
+            // Pick random category, then random item from that category
+            Type[] selectedGroup = validGroups[Utility.Random(validGroups.Length)];
+            return Construct(selectedGroup);
         }
         #endregion
     }

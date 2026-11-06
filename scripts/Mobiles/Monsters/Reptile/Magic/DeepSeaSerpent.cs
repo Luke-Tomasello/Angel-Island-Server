@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -106,44 +106,17 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // customized for the Angel Island family of shards
+            // http://web.archive.org/web/20011213223007/uo.stratics.com/hunters/deepseaserpent.shtml
+            // 	Special Fishing Net, 1 Fish Steak (carved)
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(150, 200);
-                PackItem(new SulfurousAsh(4));
-                PackItem(new BlackPearl(4));
+
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20011213223007/uo.stratics.com/hunters/deepseaserpent.shtml
-                    // 	Special Fishing Net, 1 Fish Steak (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                        // no special fishing nets here, thos are dropped as part of the fishing system.
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        if (Utility.RandomBool())
-                            PackItem(new SulfurousAsh(4));
-                        else
-                            PackItem(new BlackPearl(4));
-
-                        // even though loot says, SpecialFishingNet, I don't believe it should ever be added as loot.
-                        // the SpecialFishingNet is added dynamically by the fishing system.
-                        // fishing.cs
-                    }
-
-                    AddLoot(LootPack.Meager);
-                }
+                // no special fishing nets here, thos are dropped as part of the fishing system.
             }
         }
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,12 +36,15 @@
  */
 
 using Server.Accounting;
+using Server.Diagnostics;
 using Server.Network;
 using Server.SMTP;					// new SMTP engine
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+
 //using System.Web.Mail;
 using System.Net.Mail;
 
@@ -96,7 +99,7 @@ namespace Server.Misc
             {
                 MailMessage message = new MailMessage();
                 message.Subject = "Automated RunUO Crash Report";
-                if (Server.Misc.TestCenter.Enabled)
+                if (Server.Engines.TestCenterServer.Enabled)
                 {
                     message.Subject += " (Test Center)";
                 }
@@ -133,26 +136,53 @@ namespace Server.Misc
 
             return Path.Combine(path1, path2);
         }
-
         private static void Restart(CrashedEventArgs e)
         {
-            string root = GetRoot();
-
             Console.Write("Crash: Restarting...");
 
             try
             {
-                Process.Start(Core.ExePath);
+                string args = Core.Arguments ?? string.Empty;
+
+                bool hasCrashed = args
+                    .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Any(t => string.Equals(t, "-crashed", StringComparison.OrdinalIgnoreCase));
+
+                if (!hasCrashed)
+                {
+                    if (!string.IsNullOrWhiteSpace(args))
+                        args += " ";
+
+                    args += "-crashed";
+                }
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = Core.ExePath,
+                    Arguments = args,
+                    UseShellExecute = false,
+                    WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory
+                };
+
+                Utility.Monitor.WriteLine($"Restarting process: {Core.ExePath} {args}", ConsoleColor.Yellow);
+
+                Process.Start(psi);
+
                 Console.WriteLine("done");
 
-                e.Close = true;
+                // Mirror RunUO intent: close crash UI automatically only when running as a service.
+                if (Core.Service)
+                    e.Close = true;
+
+                // Terminate current instance so clients drop and the port is released.
+                Environment.Exit(1);
             }
-            catch
+            catch (Exception ex)
             {
+                LogHelper.LogException(ex);
                 Console.WriteLine("failed");
             }
         }
-
         private static void CreateDirectory(string path)
         {
             if (!Directory.Exists(path))
@@ -264,7 +294,7 @@ namespace Server.Misc
 
                             op.Write("+ {0}:", state);
 
-                            Account a = state.Account as Account;
+                            Account? a = state.Account as Account;
 
                             if (a != null)
                                 op.Write(" (account = {0})", a.Username);

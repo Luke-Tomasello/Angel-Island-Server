@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,7 +48,7 @@ namespace Server.Items
 
             for (int i = 0; i < NumNames; i++)
             {
-                string name = null;
+                string? name = null;
 
                 if (i == playerIndex)
                     name = GetRandomPlayerName();
@@ -104,13 +104,13 @@ namespace Server.Items
             }
         }
 
-        public static string GetRandomPlayerName()
+        public static string? GetRandomPlayerName()
         {
             int count = 0;
 
             for (int i = 0; i < m_ActiveUsers.Count; i++)
             {
-                Account acct = Accounts.Table[m_ActiveUsers[i]] as Account;
+                Account? acct = Accounts.Table[m_ActiveUsers[i]] as Account;
 
                 if (acct != null)
                 {
@@ -131,7 +131,7 @@ namespace Server.Items
 
             for (int i = 0; i < m_ActiveUsers.Count; i++)
             {
-                Account acct = Accounts.Table[m_ActiveUsers[i]] as Account;
+                Account? acct = Accounts.Table[m_ActiveUsers[i]] as Account;
 
                 if (acct != null)
                 {

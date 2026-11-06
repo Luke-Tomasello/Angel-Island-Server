@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -79,46 +79,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020214224334/uo.stratics.com/hunters/ophzealot.shtml
+            // http://web.archive.org/web/20020202091744/uo.stratics.com/hunters/ophjust.shtml
+            // (same creature)
+            // 300 Gold, Scrolls.
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(190, 220);
-                PackScroll(1, 6);
-                PackScroll(1, 6);
-                PackReg(5, 15);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020214224334/uo.stratics.com/hunters/ophzealot.shtml
-                    // http://web.archive.org/web/20020202091744/uo.stratics.com/hunters/ophjust.shtml
-                    // (same creature)
-                    // 300 Gold, Scrolls.
-                    if (Spawning)
-                    {
-                        PackGold(300);
-                    }
-                    else
-                    {
-                        PackScroll(1, 6);
-                        PackScroll(1, 6);
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                    {
-                        PackReg(5, 15);
-
-                        if (Core.RuleSets.AOSRules())
-                            PackNecroReg(5, 15);
-                    }
-
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.MedScrolls, 2);
-                }
+                PackScroll(1, 6);
+                PackScroll(1, 6);
             }
         }
 

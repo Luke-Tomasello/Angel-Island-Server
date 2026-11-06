@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -51,19 +51,27 @@ namespace Server.Mobiles
             {
                 new HairstylistBuyInfo( 1018357, 50000, Layer.Hair, typeof( ChangeHairstyleGump ), new object[]
                     { From, Vendor, Price, Layer.Hair, ChangeHairstyleEntry.HairEntries } ),
+
                 new HairstylistBuyInfo( 1018358, 50000, Layer.FacialHair, typeof( ChangeHairstyleGump ), new object[]
                     { From, Vendor, Price, Layer.FacialHair, ChangeHairstyleEntry.BeardEntries } ),
-                new HairstylistBuyInfo( 1018359, 50, Layer.Hair, typeof( ChangeHairHueGump ), new object[]
+                
+                // standard hair & beard dye
+                new HairstylistBuyInfo( 1018359, BaseVendor.PlayerPays(typeof(HairDye)), Layer.Hair, typeof( ChangeHairHueGump ), new object[]
                     { From, Vendor, Price, new Layer[]{ Layer.Hair, Layer.FacialHair }, ChangeHairHueEntry.RegularEntries } ),
-                new HairstylistBuyInfo( 1018360, 500000, Layer.Hair, typeof( ChangeHairHueGump ), new object[]
+                // bright hair & beard dye
+                new HairstylistBuyInfo( 1018360, BaseVendor.PlayerPays(typeof(SpecialHairDye)), Layer.Hair, typeof( ChangeHairHueGump ), new object[]
                     { From, Vendor, Price, new Layer[]{ Layer.Hair, Layer.FacialHair }, ChangeHairHueEntry.BrightEntries } ),
+                // regular hair dye (we don't have an item for this, so no standard price)
                 new HairstylistBuyInfo( 1018361, 30000, Layer.Hair, typeof( ChangeHairHueGump ), new object[]
                     { From, Vendor, Price, new Layer[]{ Layer.Hair }, ChangeHairHueEntry.RegularEntries } ),
+                // regular beard dye (we don't have an item for this, so no standard price)
                 new HairstylistBuyInfo( 1018362, 30000, Layer.FacialHair, typeof( ChangeHairHueGump ), new object[]
                     { From, Vendor, Price, new Layer[]{ Layer.FacialHair }, ChangeHairHueEntry.RegularEntries } ),
-                new HairstylistBuyInfo( 1018363, 500000, Layer.Hair, typeof( ChangeHairHueGump ), new object[]
+                // bright hair dye
+                new HairstylistBuyInfo( 1018363, BaseVendor.PlayerPays(typeof(SpecialHairDye)), Layer.Hair, typeof( ChangeHairHueGump ), new object[]
                     { From, Vendor, Price, new Layer[]{ Layer.Hair }, ChangeHairHueEntry.BrightEntries } ),
-                new HairstylistBuyInfo( 1018364, 500000, Layer.FacialHair, typeof( ChangeHairHueGump ), new object[]
+                // bright beard dye
+                new HairstylistBuyInfo( 1018364, BaseVendor.PlayerPays(typeof(SpecialBeardDye)), Layer.FacialHair, typeof( ChangeHairHueGump ), new object[]
                     { From, Vendor, Price, new Layer[]{ Layer.FacialHair }, ChangeHairHueEntry.BrightEntries } )
             };
 
@@ -240,7 +248,7 @@ namespace Server.Mobiles
                                 args[i] = origArgs[i];
                         }
 
-                        Gump g = Activator.CreateInstance(buyInfo.GumpType, args) as Gump;
+                        Gump? g = Activator.CreateInstance(buyInfo.GumpType, args) as Gump;
 
                         m_From.SendGump(g);
                     }
@@ -384,7 +392,7 @@ namespace Server.Mobiles
 
                             for (int i = 0; i < m_Layers.Length; ++i)
                             {
-                                Item item = m_From.FindItemOnLayer(m_Layers[i]);
+                                Item? item = m_From.FindItemOnLayer(m_Layers[i]);
 
                                 if (item == null)
                                     continue;
@@ -424,16 +432,16 @@ namespace Server.Mobiles
 
     public class ChangeHairstyleEntry
     {
-        private Type m_ItemType;
+        private Type? m_ItemType;
         private int m_GumpID;
         private int m_X, m_Y;
 
-        public Type ItemType { get { return m_ItemType; } }
+        public Type? ItemType { get { return m_ItemType; } }
         public int GumpID { get { return m_GumpID; } }
         public int X { get { return m_X; } }
         public int Y { get { return m_Y; } }
 
-        public ChangeHairstyleEntry(int gumpID, int x, int y, Type itemType)
+        public ChangeHairstyleEntry(int gumpID, int x, int y, Type? itemType)
         {
             m_GumpID = gumpID;
             m_X = x;
@@ -553,7 +561,7 @@ namespace Server.Mobiles
                         if (m_From is PlayerMobile)
                             ((PlayerMobile)m_From).SetHairMods(-1, -1);
 
-                        Item hair = m_From.FindItemOnLayer(m_Layer);
+                        Item? hair = m_From.FindItemOnLayer(m_Layer);
 
                         if (entry.ItemType == null)
                         {
@@ -570,7 +578,7 @@ namespace Server.Mobiles
                             if (hair != null && hair.GetType() == entry.ItemType)
                                 return;
 
-                            Item newHair = null;
+                            Item? newHair = null;
 
                             try { newHair = Activator.CreateInstance(entry.ItemType, null) as Item; }
                             catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -47,7 +47,7 @@ using Server.Mobiles;
 using System;
 using System.Xml;
 
-namespace Server.BountySystem
+namespace Server.Engines
 {
     /// <summary>
     /// Summary description for Bounty.
@@ -59,7 +59,7 @@ namespace Server.BountySystem
         private DateTime m_datePlaced;
         private int m_reward;
         private bool m_bLordBritishBonus;
-        private string m_placername;
+        private string? m_placername;
         private double m_TownCrierEntryID;      // any town crier message associated with this bounty
 
         public Bounty(PlayerMobile placer, PlayerMobile wanted, int rewardamount)
@@ -81,7 +81,7 @@ namespace Server.BountySystem
         {
         }
 
-        public Bounty(PlayerMobile placer, PlayerMobile wanted, int rewardamount, bool LBBonus, string PlacerName)
+        public Bounty(PlayerMobile placer, PlayerMobile wanted, int rewardamount, bool LBBonus, string? PlacerName)
         {
             player_placed = placer;
             player_wanted = wanted;
@@ -136,11 +136,13 @@ namespace Server.BountySystem
         public PlayerMobile Placer
         {
             get { return player_placed; }
+            set => player_placed = value;
         }
 
         public PlayerMobile WantedPlayer
         {
             get { return player_wanted; }
+            set => player_wanted = value;
         }
 
         public DateTime RewardDate

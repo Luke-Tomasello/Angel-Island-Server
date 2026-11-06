@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -47,7 +47,8 @@ namespace Server.Mobiles
     public class WraithRiderMage : BaseCreature
     {
         public override AlignmentType DefaultGuildAlignment { get { return AlignmentSystem.GetDynamicAlignment(this, new AlignmentType[] { AlignmentType.Undead }); } }
-
+        [CommandProperty(AccessLevel.GameMaster)]
+        public override DefensiveSlayer SlayersDefensive { get; set; } = DefensiveSlayer.Silver;
         public override bool ShowFameTitle { get { return false; } }
 
         [Constructable]
@@ -165,18 +166,16 @@ namespace Server.Mobiles
 
             if (0.12 > Utility.RandomDouble())
             {
-                Item iob = Loot.RandomIOB();
+                Item? iob = Loot.RandomIOB();
                 bag.DropItem(iob);
             }
 
             bag.DropItem(new Gold(1000, 1500));
-
             if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
             {
                 // 30% boost to gold
                 PackGold(base.GetGold() / 3);
             }
-
             // Category 4 MID
             rm.PackMagicItem(2, 3, 0.10);
             rm.PackMagicItem(2, 3, 0.05);

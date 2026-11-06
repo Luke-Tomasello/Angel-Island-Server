@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -25,7 +25,7 @@ namespace Server.Engines.Quests
 {
     public class QuestSerializer
     {
-        public static object Construct(Type type)
+        public static object? Construct(Type type)
         {
             try
             {
@@ -60,7 +60,7 @@ namespace Server.Engines.Quests
             }
         }
 
-        public static Type ReadType(Type[] referenceTable, GenericReader reader)
+        public static Type? ReadType(Type[] referenceTable, GenericReader reader)
         {
             int encoding = reader.ReadEncodedInt();
 
@@ -82,7 +82,7 @@ namespace Server.Engines.Quests
                     }
                 case 0x02: // by name
                     {
-                        string fullName = reader.ReadString();
+                        string? fullName = reader.ReadString();
 
                         if (fullName == null)
                             return null;
@@ -92,7 +92,7 @@ namespace Server.Engines.Quests
             }
         }
 
-        public static QuestSystem DeserializeQuest(GenericReader reader)
+        public static QuestSystem? DeserializeQuest(GenericReader reader)
         {
             int encoding = reader.ReadEncodedInt();
 
@@ -105,9 +105,9 @@ namespace Server.Engines.Quests
                     }
                 case 0x01:
                     {
-                        Type type = ReadType(QuestSystem.QuestTypes, reader);
+                        Type? type = ReadType(QuestSystem.QuestTypes, reader);
 
-                        QuestSystem qs = Construct(type) as QuestSystem;
+                        QuestSystem? qs = Construct(type) as QuestSystem;
 
                         if (qs != null)
                             qs.BaseDeserialize(reader);
@@ -133,7 +133,7 @@ namespace Server.Engines.Quests
             }
         }
 
-        public static QuestObjective DeserializeObjective(Type[] referenceTable, GenericReader reader)
+        public static QuestObjective? DeserializeObjective(Type[] referenceTable, GenericReader reader)
         {
             int encoding = reader.ReadEncodedInt();
 
@@ -146,9 +146,9 @@ namespace Server.Engines.Quests
                     }
                 case 0x01:
                     {
-                        Type type = ReadType(referenceTable, reader);
+                        Type? type = ReadType(referenceTable, reader);
 
-                        QuestObjective obj = Construct(type) as QuestObjective;
+                        QuestObjective? obj = Construct(type) as QuestObjective;
 
                         if (obj != null)
                             obj.BaseDeserialize(reader);
@@ -158,7 +158,7 @@ namespace Server.Engines.Quests
             }
         }
 
-        public static void Serialize(Type[] referenceTable, QuestObjective obj, GenericWriter writer)
+        public static void Serialize(Type[] referenceTable, QuestObjective? obj, GenericWriter writer)
         {
             if (obj == null)
             {
@@ -174,7 +174,7 @@ namespace Server.Engines.Quests
             }
         }
 
-        public static QuestConversation DeserializeConversation(Type[] referenceTable, GenericReader reader)
+        public static QuestConversation? DeserializeConversation(Type[] referenceTable, GenericReader reader)
         {
             int encoding = reader.ReadEncodedInt();
 
@@ -187,9 +187,9 @@ namespace Server.Engines.Quests
                     }
                 case 0x01:
                     {
-                        Type type = ReadType(referenceTable, reader);
+                        Type? type = ReadType(referenceTable, reader);
 
-                        QuestConversation conv = Construct(type) as QuestConversation;
+                        QuestConversation? conv = Construct(type) as QuestConversation;
 
                         if (conv != null)
                             conv.BaseDeserialize(reader);
@@ -199,7 +199,7 @@ namespace Server.Engines.Quests
             }
         }
 
-        public static void Serialize(Type[] referenceTable, QuestConversation conv, GenericWriter writer)
+        public static void Serialize(Type[] referenceTable, QuestConversation? conv, GenericWriter writer)
         {
             if (conv == null)
             {

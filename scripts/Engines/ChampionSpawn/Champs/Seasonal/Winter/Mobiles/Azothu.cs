@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -120,13 +120,13 @@ namespace Server.Mobiles
         public override bool AlwaysMurderer { get { return true; } }
         public override Poison PoisonImmune { get { return Poison.Deadly; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override bool ShowFameTitle { get { return false; } }
         public override bool ClickTitle { get { return false; } }
 
         public override void OnThink()
         {
-            Mobile m;
+            Mobile? m;
 
             try
             {
@@ -161,7 +161,7 @@ namespace Server.Mobiles
         {
             try
             {
-                Mobile m = VerifyValidMobile(target, 8);
+                Mobile? m = VerifyValidMobile(target, 8);
 
                 if (m != null)
                 {
@@ -178,11 +178,11 @@ namespace Server.Mobiles
             }
         }
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
             try
             {
-                Mobile m = VerifyValidMobile(from, 10);
+                Mobile? m = VerifyValidMobile(from, 10);
 
                 if (m != null)
                 {
@@ -201,10 +201,10 @@ namespace Server.Mobiles
                 Console.WriteLine("Exception (non-fatal) caught in Azothu.Damage: " + e.Message);
             }
 
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
         }
 
-        public Mobile VerifyValidMobile(Mobile m, int tileRange)
+        public Mobile? VerifyValidMobile(Mobile m, int tileRange)
         {
             try
             {
@@ -237,76 +237,56 @@ namespace Server.Mobiles
         {
             if (IsChampion)
             {
-                if (Core.RuleSets.AllShards)
+                if (Spawning)
                 {
-                    if (Spawning)
-                    {
-                        // No at spawn loot
-                    }
-                    else
-                    {
-                        for (int ix = 0; ix < 3; ix++)
-                        {
-                            Item item = null;
-                            switch (Utility.Random(8))
-                            {
-                                case 0:
-                                    item = new SpecialLeggings();
-                                    item.Name = "Azothu's Leggings";
-                                    break;  // Leggings
-                                case 1:
-                                    item = new SpecialArms();
-                                    item.Name = "Azothu's Arms";
-                                    break;  // arms
-                                case 2:
-                                    item = new SpecialTunic();
-                                    item.Name = "Azothu's Tunic";
-                                    break;  // Chest
-                                case 3:
-                                    item = new SpecialArmor();
-                                    item.Name = "Azothu's Armor";
-                                    break;  // Female Chest
-                                case 4:
-                                    item = new SpecialGorget();
-                                    item.Name = "Azothu's Gorget";
-                                    break;  // gorget
-                                case 5:
-                                    item = new SpecialGloves();
-                                    item.Name = "Azothu's Gloves";
-                                    break;  // gloves
-                                case 6:
-                                    item = new SpecialHelm();
-                                    item.Name = "Azothu's Helm";
-                                    break;  // helm
-                                case 7:
-                                    item = new MetalChest();
-                                    item.Name = "Azothu's Locker";
-                                    break;  // metal chest
-                            }
-
-                            if (item != null)
-                            {
-                                item.Hue = 0x84A;
-                                PackItem(item);
-                            }
-                        }
-                    }
+                    // No at spawn loot
                 }
                 else
                 {
-                    if (Core.RuleSets.AllShards)
-                    {   // ai special
-                        if (Spawning)
+                    for (int ix = 0; ix < 3; ix++)
+                    {
+                        Item? item = null;
+                        switch (Utility.Random(8))
                         {
-                            PackGold(0);
+                            case 0:
+                                item = new SpecialLeggings();
+                                item.Name = "Azothu's Leggings";
+                                break;  // Leggings
+                            case 1:
+                                item = new SpecialArms();
+                                item.Name = "Azothu's Arms";
+                                break;  // arms
+                            case 2:
+                                item = new SpecialTunic();
+                                item.Name = "Azothu's Tunic";
+                                break;  // Chest
+                            case 3:
+                                item = new SpecialArmor();
+                                item.Name = "Azothu's Armor";
+                                break;  // Female Chest
+                            case 4:
+                                item = new SpecialGorget();
+                                item.Name = "Azothu's Gorget";
+                                break;  // gorget
+                            case 5:
+                                item = new SpecialGloves();
+                                item.Name = "Azothu's Gloves";
+                                break;  // gloves
+                            case 6:
+                                item = new SpecialHelm();
+                                item.Name = "Azothu's Helm";
+                                break;  // helm
+                            case 7:
+                                item = new MetalChest();
+                                item.Name = "Azothu's Locker";
+                                break;  // metal chest
                         }
-                        else
+
+                        if (item != null)
                         {
+                            item.Hue = 0x84A;
+                            PackItem(item);
                         }
-                    }
-                    else
-                    {   // Standard RunUO
-                        // ai special
                     }
                 }
             }

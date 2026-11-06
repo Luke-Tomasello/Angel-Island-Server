@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,12 @@
 
 /* Scripts/Commands/Handlers.cs
  * CHANGELOG
+ *  10/22/2026, Adam ([go)
+ *      Player-level Go (Test Center "go" speech command and the Go gump): players see and resolve only the player
+ *      location tree, and every Go move is checked by PlayerMayGo: no change of facet, and on Trammel (Map.TestCenter)
+ *      only destinations inside the new player starting area. Staff behavior is unchanged.
+ *  10/18/2026, Adam ([bank)
+ *      The bank box count shown to staff uses Container.ItemCountText (capacity slots appended when they differ).
  *  9/4/2023, Adam ([go)
  *      Allow player access to faction locations (for now,) on Test Center
  *  6/13/23, Yoar ([bank)
@@ -84,13 +90,12 @@
  *		Merged in 1.0RC0 code.
  */
 
-
 using Server.Diagnostics;
-using Server.Engines.RewardSystem;
 using Server.Gumps;
 using Server.Items;
 using Server.Menus.ItemLists;
 using Server.Menus.Questions;
+using Server.Misc;
 using Server.Mobiles;
 using Server.Network;
 using Server.Regions;
@@ -113,8 +118,7 @@ namespace Server.Commands
 
             Properties.Register();
 
-            // 9/4/2023, Adam: Allow player access to faction locations (for now,) on Test Center
-            Register("Go", AccessLevel.Player, new CommandEventHandler(Go_OnCommand));
+            Register("Go", AccessLevel.GameMaster, new CommandEventHandler(Go_OnCommand));
 
             Register("DropHolding", AccessLevel.Counselor, new CommandEventHandler(DropHolding_OnCommand));
 
@@ -159,7 +163,8 @@ namespace Server.Commands
 
             Register("RangeExit", AccessLevel.GameMaster, new CommandEventHandler(Distance_OnCommand));
 
-            Register("Echo", AccessLevel.Player, new CommandEventHandler(Echo_OnCommand));
+            if (!Core.RuleSets.MortalisRules())
+                Register("Echo", AccessLevel.Player, new CommandEventHandler(Echo_OnCommand));
 
             Register("Sound", AccessLevel.GameMaster, new CommandEventHandler(Sound_OnCommand));
 
@@ -173,7 +178,8 @@ namespace Server.Commands
 
             Register("ReplaceBankers", AccessLevel.Administrator, new CommandEventHandler(ReplaceBankers_OnCommand));
 
-            Register("Reward", AccessLevel.Player, new CommandEventHandler(RewardSystem.Reward_OnCommand));
+            //if (!Core.RuleSets.MortalisStyleRules())
+            //    Register("Reward", AccessLevel.Player, new CommandEventHandler(RewardSystem.Reward_OnCommand));
 
             Register("ClearContainers", AccessLevel.Administrator, new CommandEventHandler(ClearContainers_OnCommand));
 
@@ -188,140 +194,54 @@ namespace Server.Commands
         }
 
         #region Where
-        [Usage("Where")]
-        [Description("Tells the commanding player his coordinates, region, and facet.")]
+        [Usage("Where [name]")]
+        [Description("Tells the commanding player his coordinates, region, and facet. Optionally specify a mobile name to locate them and show distance.")]
         public static void Where_OnCommand(CommandEventArgs e)
         {
             Mobile from = e.Mobile;
-            Map map = from.Map;
-            List<string> list = new();
-            Where(from, map, list);
-            foreach (string s in list)
-                from.SendMessage(s);
-#if false
-            from.SendMessage("You are at {0} {1} {2} ({3}) in {4}.", from.X, from.Y, from.Z, Sextant.Where(from), map);
-            string area = "unknown";
-            if (Utility.World.BritMainLandWrap.Contains(from.Location))
-                area = "Britain";
-            else if (Utility.World.LostLandsWrap.Contains(from.Location))
-                area = "Lost Lands";
-            else if (Utility.World.Dungeons.Contains(from.Location))
-                area = "Dungeons";
 
-            from.SendMessage("  in area '{0}'.", area);
-
-            if (map != null)
+            if (e.Arguments.Length == 0)
             {
-                try
-                {
-                    ArrayList reglist = Region.FindAll(from.Location, map);
-                    ArrayList multlist = BaseMulti.FindAll(from.Location, map);
-
-                    foreach (Region rx in reglist)
-                    {
-                        if (rx is Region)
-                        {
-                            if (rx is HouseRegion)
-                            {
-                                HouseRegion hr = rx as HouseRegion;
-                                string text = string.Format("Region is a {0} at {1} id {2}.", hr.GetType().Name, hr.GoLocation, rx.UId);
-                                if (Region.IsHighestPriority(rx, from.Location, map))
-                                    from.SendMessage("(Highest priority) {0}", text);
-                                else
-                                    from.SendMessage("{0}", text);
-                            }
-                            else if (rx is StaticRegion && StaticRegion.Controller(rx as StaticRegion) != null)
-                            {
-                                StaticRegionControl rc = StaticRegion.Controller(rx as StaticRegion);
-                                if (rc != null)
-                                {
-                                    Point3D location = new Point3D(0, 0, 0);
-                                    if (rc != null)
-                                        location = rc.Location;
-
-                                    string inn = string.Empty;
-                                    foreach (Rectangle3D px in rx.InnBounds)
-                                        if (px.Contains(from))
-                                        {
-                                            inn = "(Inn)";
-                                            break;
-                                        }
-
-                                    string text = string.Format("Region is {0}{4} with a STATIC controller at {1}({3}) id {2}.", rx, location, rx.UId, rc.Serial, inn);
-                                    if (Region.IsHighestPriority(rx, from.Location, map))
-                                        from.SendMessage("(Highest priority) {0}", text);
-                                    else
-                                        from.SendMessage("{0}", text);
-                                }
-                            }
-                            else if (rx is CustomRegion)
-                            {
-                                CustomRegionControl rc = ((CustomRegion)rx).Controller;
-                                Point3D location = new Point3D(0, 0, 0);
-                                if (rc != null)
-                                    location = rc.Location;
-
-                                string inn = string.Empty;
-                                foreach (Rectangle3D px in rx.InnBounds)
-                                    if (px.Contains(from))
-                                    {
-                                        inn = "(Inn)";
-                                        break;
-                                    }
-
-                                string text = string.Format("Region is {0}{4} with a DYNAMIC controller at {1}({3}) id {2}.", rx, location, rx.UId, rc.Serial, inn);
-                                if (Region.IsHighestPriority(rx, from.Location, map))
-                                    from.SendMessage("(Highest priority) {0}", text);
-                                else
-                                    from.SendMessage("{0}", text);
-                            }
-                            else if (rx != map.DefaultRegion)
-                            {
-                                string text = string.Format("Region is {0} id {1}.", rx, rx.UId);
-                                if (Region.IsHighestPriority(rx, from.Location, map))
-                                    from.SendMessage("(Highest priority) {0}", text);
-                                else
-                                    from.SendMessage("{0}", text);
-                            }
-                            else
-                            {
-                                if (rx == map.DefaultRegion)
-                                {
-                                    string text = string.Format("Region is {0} (DefaultRegion) id {1}.", rx, rx.UId);
-                                    if (Region.IsHighestPriority(rx, from.Location, map))
-                                        from.SendMessage("(Highest priority) {0}", text);
-                                    else
-                                        from.SendMessage("{0}", text);
-                                }
-                                else
-                                {
-                                    string text = string.Format("Region is {0} id {1}.", rx, rx.UId);
-                                    if (Region.IsHighestPriority(rx, from.Location, map))
-                                        from.SendMessage("(Highest priority) {0}", text);
-                                    else
-                                        from.SendMessage("{0}", text);
-                                }
-                            }
-                        }
-                    }
-
-                    foreach (BaseMulti bx in multlist)
-                    {
-                        if (bx is BaseMulti)
-                        {
-                            from.SendMessage("Multi is a {0}.", bx.GetType().Name);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    LogHelper.LogException(ex);
-                }
-
+                // Original behavior - show info about self
+                List<string> list = new List<string>();
+                Where(from, from.Map, list, isSelf: true);
+                foreach (string s in list)
+                    from.SendMessage(s);
             }
-#endif
+            else
+            {
+                // Target a specific mobile by name
+                string searchName = e.Arguments[0];
+                Mobile? target = null;
+
+                foreach (Mobile m in World.Mobiles.Values)
+                {
+                    if (m != null && m.Name != null && Insensitive.Equals(m.Name, searchName))
+                    {
+                        target = m;
+                        break;
+                    }
+                }
+
+                if (target == null)
+                {
+                    from.SendMessage($"Could not find any mobile named '{searchName}'.");
+                    return;
+                }
+
+                List<string> list = new List<string>();
+                Where(target, target.Map, list, isSelf: false);
+
+                // Add distance from command user
+                double distance = from.GetDistanceToSqrt(target);
+                list.Add(string.Format("Distance from you: {0:F1} tiles.", distance));
+
+                foreach (string s in list)
+                    from.SendMessage(s);
+            }
         }
-        public static void Where(IEntity ent, Map map, List<string> output)
+
+        public static void Where(IEntity ent, Map map, List<string> output, bool isSelf = true)
         {
             if (ent is Item item && item.RootParent != null)
                 ent = item.RootParent as IEntity;
@@ -329,16 +249,20 @@ namespace Server.Commands
             if (ent == null)
                 return;
 
-            output.Add(string.Format("You are at {0} {1} {2} ({3}) in {4}.", ent.X, ent.Y, ent.Z, Sextant.Where(ent), map));
+            string subject = isSelf ? "You are" : "They are";
+
+            output.Add(string.Format("{0} at {1} {2} {3} ({4}) in {5}.",
+                subject, ent.X, ent.Y, ent.Z, Sextant.Where(ent), map));
+
             string area = "unknown";
-            if (Utility.World.BritMainLandWrap.Contains(ent.Location))
+            if (Utility.WorldMap.BritMainLandWrap.Contains(ent.Location))
                 area = "Britain";
-            else if (Utility.World.LostLandsWrap.Contains(ent.Location))
+            else if (Utility.WorldMap.LostLandsWrap.Contains(ent.Location))
                 area = "Lost Lands";
-            else if (Utility.World.Dungeons.Contains(ent.Location))
+            else if (Utility.WorldMap.Dungeons.Contains(ent.Location))
                 area = "Dungeons";
 
-            output.Add(string.Format("  in area '{0}'.", area));
+            output.Add(string.Format(" in area '{0}'.", area));
 
             if (map != null)
             {
@@ -349,48 +273,39 @@ namespace Server.Commands
 
                     foreach (Region rx in reglist)
                     {
-                        if (rx is Region)
+                        if (rx is HouseRegion hr)
                         {
-                            if (rx is HouseRegion)
-                            {
-                                HouseRegion hr = rx as HouseRegion;
-                                string text = string.Format("Region is a {0} at {1} id {2}.", hr.GetType().Name, hr.GoLocation, rx.UId);
-                                if (Region.IsHighestPriority(rx, ent.Location, map))
-                                    output.Add(string.Format("(Highest priority) {0}", text));
-                                else
-                                    output.Add(string.Format("{0}", text));
-                            }
-                            else if (rx is StaticRegion && StaticRegion.Controller(rx as StaticRegion) != null)
-                            {
-                                StaticRegionControl rc = StaticRegion.Controller(rx as StaticRegion);
-                                if (rc != null)
+                            string text = string.Format("Region is a {0} at {1} id {2}.", hr.GetType().Name, hr.GoLocation, rx.UId);
+                            if (Region.IsHighestPriority(rx, ent.Location, map))
+                                output.Add(string.Format("(Highest priority) {0}", text));
+                            else
+                                output.Add(string.Format("{0}", text));
+                        }
+                        else if (rx is CustomRegion)
+                        {
+                            CustomRegionControl rc = ((CustomRegion)rx).Controller;
+                            Point3D location = rc?.Location ?? new Point3D(0, 0, 0);
+
+                            string inn = string.Empty;
+                            foreach (Rectangle3D px in rx.InnBounds)
+                                if (px.Contains(ent))
                                 {
-                                    Point3D location = new Point3D(0, 0, 0);
-                                    if (rc != null)
-                                        location = rc.Location;
-
-                                    string inn = string.Empty;
-                                    foreach (Rectangle3D px in rx.InnBounds)
-                                        if (px.Contains(ent))
-                                        {
-                                            inn = "(Inn)";
-                                            break;
-                                        }
-
-                                    string text = string.Format("Region is {0}{4} with a STATIC controller at {1}({3}) id {2}.", rx, location, rx.UId, rc.Serial, inn);
-                                    if (Region.IsHighestPriority(rx, ent.Location, map))
-                                        output.Add(string.Format("(Highest priority) {0}", text));
-                                    else
-                                        output.Add(string.Format("{0}", text));
+                                    inn = "(Inn)";
+                                    break;
                                 }
-                            }
-                            else if (rx is CustomRegion)
-                            {
-                                CustomRegionControl rc = ((CustomRegion)rx).Controller;
-                                Point3D location = new Point3D(0, 0, 0);
-                                if (rc != null)
-                                    location = rc.Location;
 
+                            string text = $"Region is {rx}{inn} with a Dynamic controller at {location} [{map}] ({rc?.Serial}) id {rx.UId}.";
+                            if (Region.IsHighestPriority(rx, ent.Location, map))
+                                output.Add(string.Format("(Highest priority) {0}", text));
+                            else
+                                output.Add(string.Format("{0}", text));
+                        }
+                        else if (rx is StaticRegion && StaticRegion.Controller(rx as StaticRegion) != null)
+                        {
+                            StaticRegionControl? rc = StaticRegion.Controller(rx as StaticRegion);
+                            if (rc != null)
+                            {
+                                Point3D location = rc.Location;
                                 string inn = string.Empty;
                                 foreach (Rectangle3D px in rx.InnBounds)
                                     if (px.Contains(ent))
@@ -399,45 +314,34 @@ namespace Server.Commands
                                         break;
                                     }
 
-                                string text = string.Format("Region is {0}{4} with a DYNAMIC controller at {1}({3}) id {2}.", rx, location, rx.UId, rc.Serial, inn);
+                                string text = string.Format("Region is {0}{4} with a Static controller at {1}({3}) id {2}.", rx, location, rx.UId, rc.Serial, inn);
                                 if (Region.IsHighestPriority(rx, ent.Location, map))
                                     output.Add(string.Format("(Highest priority) {0}", text));
                                 else
                                     output.Add(string.Format("{0}", text));
                             }
-                            else if (rx != map.DefaultRegion)
-                            {
-                                string text = string.Format("Region is {0} id {1}.", rx, rx.UId);
-                                if (Region.IsHighestPriority(rx, ent.Location, map))
-                                    output.Add(string.Format("(Highest priority) {0}", text));
-                                else
-                                    output.Add(string.Format("{0}", text));
-                            }
+                        }
+                        else if (rx != map.DefaultRegion)
+                        {
+                            string text = string.Format("Region is {0} id {1}.", rx, rx.UId);
+                            if (Region.IsHighestPriority(rx, ent.Location, map))
+                                output.Add(string.Format("(Highest priority) {0}", text));
                             else
-                            {
-                                if (rx == map.DefaultRegion)
-                                {
-                                    string text = string.Format("Region is {0} (DefaultRegion) id {1}.", rx, rx.UId);
-                                    if (Region.IsHighestPriority(rx, ent.Location, map))
-                                        output.Add(string.Format("(Highest priority) {0}", text));
-                                    else
-                                        output.Add(string.Format("{0}", text));
-                                }
-                                else
-                                {
-                                    string text = string.Format("Region is {0} id {1}.", rx, rx.UId);
-                                    if (Region.IsHighestPriority(rx, ent.Location, map))
-                                        output.Add(string.Format("(Highest priority) {0}", text));
-                                    else
-                                        output.Add(string.Format("{0}", text));
-                                }
-                            }
+                                output.Add(string.Format("{0}", text));
+                        }
+                        else
+                        {
+                            string text = string.Format("Region is {0} (DefaultRegion) id {1}.", rx, rx.UId);
+                            if (Region.IsHighestPriority(rx, ent.Location, map))
+                                output.Add(string.Format("(Highest priority) {0}", text));
+                            else
+                                output.Add(string.Format("{0}", text));
                         }
                     }
 
                     foreach (BaseMulti bx in multlist)
                     {
-                        if (bx is BaseMulti)
+                        if (bx != null)
                         {
                             output.Add(string.Format("Multi is a {0}.", bx.GetType().Name));
                         }
@@ -447,7 +351,6 @@ namespace Server.Commands
                 {
                     LogHelper.LogException(ex);
                 }
-
             }
         }
         #endregion Where
@@ -465,7 +368,7 @@ namespace Server.Commands
             if (obj is Mobile && ((Mobile)obj).Player)
             {
                 Mobile targ = (Mobile)obj;
-                Item held = targ.Holding;
+                Item held = targ.Dragging;
 
                 if (held == null)
                 {
@@ -495,7 +398,7 @@ namespace Server.Commands
 
                     held.ClearBounce();
 
-                    targ.Holding = null;
+                    targ.Dragging = null;
                 }
             }
             else
@@ -515,7 +418,7 @@ namespace Server.Commands
 
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    object obj = list[i];
+                    object? obj = list[i];
 
                     if (obj is Item)
                         ((Item)obj).Delete();
@@ -607,7 +510,7 @@ namespace Server.Commands
 
                     for (int i = 0; i < pets.Count; ++i)
                     {
-                        Mobile pet = (Mobile)pets[i];
+                        Mobile? pet = (Mobile?)pets[i];
 
                         if (pet is IMount)
                             ((IMount)pet).Rider = null; // make sure it's dismounted
@@ -833,7 +736,7 @@ namespace Server.Commands
                         }
                         else
                         {
-                            m.PrivateOverheadMessage(MessageType.Regular, 0x3B2, true, string.Format("Bank container has {0} items, {1} stones", box.TotalItems, box.TotalWeight), from.NetState);
+                            m.PrivateOverheadMessage(MessageType.Regular, 0x3B2, true, string.Format("Bank container has {0}, {1} stones", box.ItemCountText, box.TotalWeight), from.NetState);
                             box.DisplayTo(from);
                         }
                     }
@@ -1045,6 +948,13 @@ namespace Server.Commands
         [Description("Saves the world.")]
         private static void Save_OnCommand(CommandEventArgs e)
         {
+            // Block manual saves while maintenance/serverwars is in flight.
+            if (Maintenance.Scheduled)
+            {
+                e.Mobile.SendMessage("Save cannot be run while maintenance is scheduled or Server Wars are in progress. Cancel maintenance first, or wait until it completes.");
+                return;
+            }
+
             Misc.AutoSave.Save();
         }
 
@@ -1052,7 +962,7 @@ namespace Server.Commands
         {
             if (map == null || map == Map.Internal)
             {
-                Mobile m = item.RootParent as Mobile;
+                Mobile? m = item.RootParent as Mobile;
 
                 return (m != null && FixMap(ref map, ref loc, m));
             }
@@ -1070,269 +980,514 @@ namespace Server.Commands
 
             return (map != null && map != Map.Internal);
         }
-        private static Point3D GetMarkLocation(Mobile m, ref Map map, string description)
+        private class GoMarkResult
         {
-            if (m.Backpack == null)
-                return Point3D.Zero;
-
-            ArrayList list = m.Backpack.FindAllItems();
-            foreach (Item item in list)
-            {
-                if (item is RecallRune)
-                {
-                    RecallRune rune = (RecallRune)item;
-
-                    if (rune.Marked && rune.TargetMap != null && rune.Description != null && rune.Description.Equals(description, StringComparison.OrdinalIgnoreCase))
-                    {
-                        map = rune.TargetMap;
-                        return rune.Target;
-                    }
-                }
-                else if (item is Moonstone)
-                {
-                    Moonstone stone = (Moonstone)item;
-
-                    if (stone.Marked && stone.Description != null && stone.Description.Equals(description, StringComparison.OrdinalIgnoreCase))
-                    {
-                        // map = stone.TargetMap; no map info
-                        return stone.Destination;
-                    }
-                }
-                else if (item is Runebook)
-                {
-                    Runebook book = (Runebook)item;
-
-                    for (int i = 0; i < book.Entries.Count; ++i)
-                    {
-                        RunebookEntry entry = (RunebookEntry)book.Entries[i];
-
-                        if (entry.Map != null && entry.Description.Equals(description, StringComparison.OrdinalIgnoreCase))
-                        {
-                            map = entry.Map;
-                            return entry.Location;
-                        }
-                    }
-                }
-            }
-
-            return Point3D.Zero;
+            public Point3D Location;
+            public Map? Map;
         }
-        [Usage("Go [name | serial | (x y [z]) | (deg min (N | S) deg min (E | W))]")]
-        [Description("With no arguments, this command brings up the go menu. With one argument, (name), you are moved to that regions \"go location.\" Or, if a numerical value is specified for one argument, (serial), you are moved to that object. Two or three arguments, (x y [z]), will move your character to that location. When six arguments are specified, (deg min (N | S) deg min (E | W)), your character will go to an approximate of those sextant coordinates.")]
+
+        [Usage("Go [name | serial | player | (x y [z]) | (deg min (N | S) deg min (E | W))]")]
+        [Description(
+            "With no arguments, this command brings up the go menu.\n" +
+            "\n" +
+            "You may travel using one of several formats:\n" +
+            "\n" +
+            "- Name: Travels to a location defined in the go menu or world signs (supports multi-word names, e.g. 'West Britain Bank').\n" +
+            "- Serial: Travels to an object or mobile by serial (decimal or hex, e.g. 0x40012345; staff only).\n" +
+            "- Player: Travels to a player by name (requires equal or higher access level; players may not cross maps).\n" +
+            "- Coordinates: Travels to (x y) or (x y z) on your current map.\n" +
+            "- Sextant: Travels using sextant coordinates on your current map.\n" +
+            "- Mark: If a rune, runebook entry, or moonstone in your backpack matches the name, it will be used.\n" +
+            "\n" +
+            "Name resolution priority:\n" +
+            "  Mark (runebook/rune) -> Go menu locations -> Sign locations -> Player\n"
+        )]
         private static void Go_OnCommand(CommandEventArgs e)
         {
-            Mobile from = e.Mobile;
-            if (from == null) return;
+            ExecuteGo(e.Mobile, e.ArgString);
+        }
+
+        public static void ExecuteGo(Mobile from, string raw)
+        {
+            if (from == null)
+                return;
 
             from.LightLevel = 100;
 
-            if (Core.RuleSets.TestCenterRules() && from.AccessLevel == AccessLevel.Player)
+            if (raw == null)
+                raw = "";
+
+            // we accept coords like
+            // [go (4406, 1032, 1)
+            raw = raw.Trim(' ', '(', ')');
+
+            // No args: open the Go gump (players see only player-accessible destinations).
+            if (raw.Length == 0)
             {
-                Dictionary<string, Point3D> places = new(StringComparer.OrdinalIgnoreCase)
-                {   // factions
-                    { "Council of Mages", new Point3D(3750, 2241, 20) },
-                    { "CouncilofMages", new Point3D(3750, 2241, 20) },
-                    { "Council", new Point3D(3750, 2241, 20) },
-                    { "COM", new Point3D(3750, 2241, 20) },
-                    { "C", new Point3D(3750, 2241, 20) },
+                if (from.AccessLevel == AccessLevel.Player)
+                    GoGump.DisplayTo(from, playerView: true);
+                else
+                    GoGump.DisplayTo(from);
+                return;
+            }
 
-                    { "Minax", new Point3D(1172, 2593, 0) },
-                    { "M", new Point3D(1172, 2593, 0) },
+            // Normalize comma-delimited coordinates:
+            // [go 4406,1032
+            // [go 4406, 1032, 1
+            string normalized = raw.Replace(",", " ");
+            string[] args = normalized.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    { "Shadowlords", new Point3D(969, 768, 0) },
-                    { "Shadow Lords", new Point3D(969, 768, 0) },
-                    { "Shadow", new Point3D(969, 768, 0) },
-                    { "SL", new Point3D(969, 768, 0) },
-                    { "S", new Point3D(969, 768, 0) },
+            // 1. One numeric argument: treat as serial.
+            //    Important: only do this for exactly one argument so names like
+            //    "west brit bank" are not affected.
+            if (args.Length == 1)
+            {
+                int? ser = Utility.ToInt32Nullable(args[0]);
 
-                    { "True Britannians", new Point3D(1419, 1622, 20) },
-                    { "TrueBritannians", new Point3D(1419, 1622, 20) },
-                    { "True", new Point3D(1419, 1622, 20) },
-                    { "TB", new Point3D(1419, 1622, 20) },
-                    { "True Brits", new Point3D(1419, 1622, 20) },
-                    { "TrueBrits", new Point3D(1419, 1622, 20) },
-                    { "T", new Point3D(1419, 1622, 20) },
-                    // towns
-                    {"Britain", new Point3D(1592, 1680, 10) },
-                    {"Magincia", new Point3D(3714, 2235, 20) },
-                    {"Minoc", new Point3D(2471, 439, 15 )},
-                    {"Moonglow", new Point3D(4436,1083, 0) },
-                    {"Skara Brae", new Point3D( 576, 2200, 0) },
-                    {"Trinsic", new Point3D(1914, 2717, 20) },
-                    {"Vesper", new Point3D( 2982, 818, 0) },
-                    { "Yew", new Point3D(548, 979, 0) },
-                };
-                string dest = string.Empty;
-                foreach (string s in e.Arguments)
+                if (ser.HasValue)
                 {
-                    dest += s;
-                    if (places.ContainsKey(dest))
+                    if (from.AccessLevel == AccessLevel.Player)
                     {
-                        e.Mobile.MoveToWorld(places[s], e.Mobile.Map);
+                        from.SendMessage("You cannot go to serials.");
                         return;
                     }
-                    else
-                        dest += " ";
+
+                    if (GoToSerial(from, ser.Value))
+                        return;
+
+                    if (ser.Value != 0)
+                    {
+                        from.SendMessage("No object with that serial was found.");
+                        return;
+                    }
                 }
-                from.SendMessage("Format: Go [<faction_name> | <town_name>");
             }
-            else if (from.AccessLevel > AccessLevel.Player)
+
+            // 2. Clear coordinate forms:
+            //    [go x y
+            //    [go x y z
+            //    [go x,y
+            //    [go x,y,z
+            //
+            //    We only treat this as coordinates if the input yielded exactly
+            //    2 or 3 integers AND every argument token is numeric-ish.
+            if (args.Length == 2 || args.Length == 3)
             {
-                if (e.Length == 0)
-                {
-                    GoGump.DisplayTo(from);
-                }
-                else if (e.Length == 1)
-                {
-                    try
-                    {
-                        int ser = e.GetInt32(0);
-
-                        IEntity ent = World.FindEntity(ser);
-
-                        if (ent is Item)
-                        {
-                            Item item = (Item)ent;
-
-                            Map map = item.Map;
-                            Point3D loc = item.GetWorldLocation();
-
-                            Mobile owner = item.RootParent as Mobile;
-
-                            if (owner != null && (owner.Map != null && owner.Map != Map.Internal) && !from.CanSee(owner))
-                            {
-                                from.SendMessage("You can not go to what you can not see.");
-                                return;
-                            }
-                            else if (owner != null && (owner.Map == null || owner.Map == Map.Internal) && owner.Hidden && owner.AccessLevel >= from.AccessLevel)
-                            {
-                                from.SendMessage("You can not go to what you can not see.");
-                                return;
-                            }
-                            else if (!FixMap(ref map, ref loc, item))
-                            {
-                                from.SendMessage("That is an internal item and you cannot go to it.");
-                                return;
-                            }
-
-                            from.MoveToWorld(loc, map);
-
-                            return;
-                        }
-                        else if (ent is Mobile)
-                        {
-                            Mobile m = (Mobile)ent;
-
-                            Map map = m.Map;
-                            Point3D loc = m.Location;
-
-                            Mobile owner = m;
-
-                            if (owner != null && (owner.Map != null && owner.Map != Map.Internal) && !from.CanSee(owner))
-                            {
-                                from.SendMessage("You can not go to what you can not see.");
-                                return;
-                            }
-                            else if (owner != null && (owner.Map == null || owner.Map == Map.Internal) && owner.Hidden && owner.AccessLevel >= from.AccessLevel)
-                            {
-                                from.SendMessage("You can not go to what you can not see.");
-                                return;
-                            }
-                            else if (!FixMap(ref map, ref loc, m))
-                            {
-                                from.SendMessage("That is an internal mobile and you cannot go to it.");
-                                return;
-                            }
-
-                            from.MoveToWorld(loc, map);
-
-                            return;
-                        }
-                        else
-                        {
-                            Map map = Map.Felucca;
-                            if (GetMarkLocation(e.Mobile, ref map, e.GetString(0)) != Point3D.Zero)
-                            {
-                                from.Location = GetMarkLocation(e.Mobile, ref map, e.GetString(0));
-                                from.Map = map;
-                                return;
-                            }
-                            else if (Region.FindByName(e.GetString(0), e.Mobile.Map) != null)
-                            {
-                                string name = e.GetString(0);
-                                var list = from.Map.RegionsSorted;//.Values.ToList();
-
-                                for (int i = 0; i < list.Count; ++i)
-                                {
-                                    Region r = (Region)list[i];
-
-                                    if (Insensitive.Equals(r.Name, name))
-                                    {
-                                        from.Location = new Point3D(r.GoLocation);
-                                        return;
-                                    }
-                                }
-                            }
-                            // look for something like x,y,z (no spaces)
-                            else if (e.ArgString.Contains(','))
-                            {
-                                string new_string = e.ArgString.Replace(",", " ");
-                                string[] args = new_string.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                                Go_OnCommand(new CommandEventArgs(e.Mobile, e.Command, new_string, args));
-                                return;
-                            }
-                            else
-                            {
-                                if (ser != 0)
-                                    from.SendMessage("No object with that serial was found.");
-                                else
-                                    from.SendMessage("No region with that name was found.");
-                            }
-                            return;
-                        }
-                    }
-                    catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                    from.SendMessage("Region name not found");
-                }
-                else if (e.Length == 2)
+                if (AllTokensAreInteger(args))
                 {
                     Map map = from.Map;
 
                     if (map != null)
                     {
-                        /// 6/1/2021, Adam: Allow comma delimited coords
-                        /// For example; [go 4406, 1032
-                        int[] ints = Utility.IntParser(string.Join(" ", e.Arguments));
-                        from.Location = new Point3D(ints[0], ints[1], map.GetAverageZ(ints[0], ints[1]));
-                    }
-                }
-                else if (e.Length == 3)
-                {
-                    /// 5/25/2021, Adam: Allow comma delimited coords
-                    /// For example; [go 4406, 1032, 1
-                    int[] ints = Utility.IntParser(string.Join(" ", e.Arguments));
-                    from.Location = new Point3D(ints[0], ints[1], ints[2]);
-                }
-                else if (e.Length == 4 || e.Length == 6)
-                {
-                    // length == 6 is old-style sextant: [go 55 54 N 72 54 W
-                    // length == 7 is new-style sextant: [go 55� 54'N 72� 54'W
-                    Map map = from.Map;
+                        int[] ints = Utility.IntParser(normalized);
 
-                    if (map != null)
-                    {
-                        Point3D p = Sextant.Parse(map, string.Join(" ", e.Arguments));
-                        if (p != Point3D.Zero)
-                            from.Location = p;
-                        else
-                            from.SendMessage("Sextant reverse lookup failed.");
+                        if (ints.Length == 2)
+                        {
+                            int x = ints[0];
+                            int y = ints[1];
+
+                            Point3D dest = new Point3D(x, y, map.GetAverageZ(x, y));
+                            if (PlayerMayGo(from, dest, map))
+                                from.Location = dest;
+                            return;
+                        }
+
+                        if (ints.Length == 3)
+                        {
+                            Point3D dest = new Point3D(ints[0], ints[1], ints[2]);
+                            if (PlayerMayGo(from, dest, map))
+                                from.Location = dest;
+                            return;
+                        }
                     }
-                }
-                else
-                {
-                    from.SendMessage("Format: Go [name | serial | (x y [z]) | (deg min (N | S) deg min (E | W)]");
                 }
             }
+
+            // 3. Sextant forms.
+            //    Old style:
+            //      [go 55 54 N 72 54 W
+            //
+            //    New style is also delegated to Sextant.Parse.
+            if (LooksLikeSextant(normalized))
+            {
+                Map map = from.Map;
+
+                if (map != null)
+                {
+                    Point3D p = Sextant.Parse(map, normalized);
+
+                    if (p != Point3D.Zero)
+                    {
+                        if (PlayerMayGo(from, p, map))
+                            from.Location = p;
+                        return;
+                    }
+
+                    from.SendMessage("Sextant reverse lookup failed.");
+                    return;
+                }
+            }
+
+            // 4. Dynamic marked locations.
+            //    This preserves the useful behavior where a rune/runebook entry
+            //    named "Home" can be reached with:
+            //
+            //      [go home
+            //
+            //    Mark locations intentionally win over LocationTree names.
+            GoMarkResult? mark = FindMarkLocation(from, raw);
+
+            if (mark != null && mark.Map != null && mark.Map != Map.Internal)
+            {
+                if (from.AccessLevel == AccessLevel.Player && mark.Map != from.Map)
+                {
+                    from.SendMessage("You cannot go to marked locations on another map.");
+                    return;
+                }
+
+                if (PlayerMayGo(from, mark.Location, mark.Map))
+                    from.MoveToWorld(mark.Location, mark.Map);
+                return;
+            }
+
+            // 5. LocationTree name resolution.
+            //    This is the new multi-word path:
+            //
+            //      [go west brit bank
+            //      [go destard entrance
+            //      [go chaos shrine
+            LocationTree tree = GoGump.GetTreeFor(from.Map, playerView: from.AccessLevel == AccessLevel.Player);
+
+            if (tree != null && tree.Root != null)
+            {
+                ChildNode? node = tree.Resolve(raw);
+
+                if (node != null)
+                {
+                    Map targetMap = node.Map ?? tree.Map;
+
+                    // Preserve existing Felucca XML -> Trammel/TestCenter tree behavior.
+                    if (node.Map == Map.Felucca && tree.Map == Map.Trammel)
+                        targetMap = Map.Trammel;
+
+                    if (targetMap != null && targetMap != Map.Internal)
+                    {
+                        if (from.AccessLevel == AccessLevel.Player && targetMap != from.Map)
+                        {
+                            from.SendMessage("You cannot go to locations on another map.");
+                            return;
+                        }
+
+                        if (PlayerMayGo(from, node.Location, targetMap))
+                            from.MoveToWorld(node.Location, targetMap);
+                        return;
+                    }
+                }
+            }
+
+            // 6. region name resolution.
+            //    We restrict this to staff since it allows access to jail, proson, green acres, etc
+            var region = Region.FindByName(raw, from.Map);
+            if (from.AccessLevel > AccessLevel.Player && region != null)
+            {
+                from.MoveToWorld(region.GoLocation, from.Map);
+                return;
+            }
+
+            // 7. Sign name resolution.
+            //    Signs are loaded from data/signs.cfg and resolved through cliloc labels.
+            //    LocationTree intentionally wins over sign names.
+            SignParser.SignLocation? sign = SignParser.FindSignLocation(from, raw);
+
+            if (sign != null && sign.Map != null && sign.Map != Map.Internal)
+            {
+                if (from.AccessLevel == AccessLevel.Player && sign.Map != from.Map)
+                {
+                    from.SendMessage("You cannot go to sign locations on another map.");
+                    return;
+                }
+
+                if (PlayerMayGo(from, sign.Location, sign.Map))
+                    from.MoveToWorld(sign.Location, sign.Map);
+                return;
+            }
+
+            // 8. Player name resolution (last fallback)
+            GoPlayerResult? player = FindPlayerByName(raw);
+
+            if (player != null)
+            {
+                PlayerMobile target = player.Player;
+
+                if (target.AccessLevel > from.AccessLevel)
+                {
+                    from.SendMessage("You cannot go to that player.");
+                    return;
+                }
+
+                if (from.AccessLevel == AccessLevel.Player && player.Map != from.Map)
+                {
+                    from.SendMessage("You cannot go to players on another map.");
+                    return;
+                }
+
+                if (PlayerMayGo(from, player.Location, player.Map))
+                    from.MoveToWorld(player.Location, player.Map);
+                return;
+            }
+
+            from.SendMessage("No location with that name was found.");
+        }
+
+        /// <summary>
+        /// Go travel rules for player-level users (the Test Center "go" speech command and the Go gump); staff are not
+        /// restricted. A player may not change facets, and on Trammel (Map.TestCenter) may only go to destinations inside
+        /// the new player starting area, the one part of Test Center open to players.
+        /// </summary>
+        public static bool PlayerMayGo(Mobile from, Point3D dest, Map map)
+        {
+            if (from == null || from.AccessLevel > AccessLevel.Player)
+                return true;
+
+            if (map != from.Map)
+            {
+                from.SendMessage("You cannot go to locations on another map.");
+                return false;
+            }
+
+            if (map == Map.TestCenter && !Utility.WorldMap.NewPlayerStartingArea.Contains(dest))
+            {
+                from.SendMessage("You cannot go to that location.");
+                return false;
+            }
+
+            return true;
+        }
+        private static GoMarkResult? FindMarkLocation(Mobile m, string description)
+        {
+            if (m == null || m.Backpack == null || string.IsNullOrWhiteSpace(description))
+                return null;
+
+            ArrayList list = m.Backpack.FindAllItems();
+
+            foreach (Item item in list)
+            {
+                if (item is RecallRune rune)
+                {
+                    if (rune.Marked && rune.TargetMap != null && rune.Description != null &&
+                        rune.Description.Equals(description, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return new GoMarkResult
+                        {
+                            Location = rune.Target,
+                            Map = rune.TargetMap
+                        };
+                    }
+                }
+                else if (item is Moonstone stone)
+                {
+                    if (stone.Marked && stone.Description != null &&
+                        stone.Description.Equals(description, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return new GoMarkResult
+                        {
+                            Location = stone.Destination,
+                            Map = m.Map // moonstone has no map info
+                        };
+                    }
+                }
+                else if (item is Runebook book)
+                {
+                    for (int i = 0; i < book.Entries.Count; ++i)
+                    {
+                        RunebookEntry? entry = (RunebookEntry?)book.Entries[i];
+
+                        if (entry.Map != null && entry.Description != null &&
+                            entry.Description.Equals(description, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return new GoMarkResult
+                            {
+                                Location = entry.Location,
+                                Map = entry.Map
+                            };
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+        private class GoPlayerResult
+        {
+            public PlayerMobile Player;
+            public Point3D Location;
+            public Map Map;
+        }
+        private static GoPlayerResult? FindPlayerByName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return null;
+
+            name = name.Trim();
+
+            // Prefer online players.
+            foreach (NetState ns in NetState.Instances)
+            {
+                Mobile m = ns.Mobile;
+
+                PlayerMobile? pm = m as PlayerMobile;
+
+                if (pm == null || pm.Deleted)
+                    continue;
+
+                if (!Insensitive.Equals(pm.Name, name))
+                    continue;
+
+                return BuildGoPlayerResult(pm);
+            }
+
+            // Fallback: known PlayerMobiles, including offline/internal players.
+            foreach (PlayerMobile pm in PlayerMobile.Instances)
+            {
+                if (pm == null || pm.Deleted)
+                    continue;
+
+                if (!Insensitive.Equals(pm.Name, name))
+                    continue;
+
+                return BuildGoPlayerResult(pm);
+            }
+
+            return null;
+        }
+
+        private static GoPlayerResult? BuildGoPlayerResult(PlayerMobile pm)
+        {
+            if (pm == null || pm.Deleted)
+                return null;
+
+            Map map = pm.Map;
+            Point3D loc = pm.Location;
+
+            // If the player is internal/offline, use last logout position.
+            if (map == null || map == Map.Internal)
+            {
+                map = pm.LogoutMap;
+                loc = pm.LogoutLocation;
+            }
+
+            if (map == null || map == Map.Internal)
+                return null;
+
+            return new GoPlayerResult
+            {
+                Player = pm,
+                Location = loc,
+                Map = map
+            };
+        }
+        private static bool AllTokensAreInteger(string[] args)
+        {
+            if (args == null || args.Length == 0)
+                return false;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                int value;
+
+                if (!int.TryParse(args[i], out value))
+                    return false;
+            }
+
+            return true;
+        }
+        private static bool LooksLikeSextant(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return false;
+
+            // The old supported form contains cardinal direction tokens.
+            // Keep this intentionally broad and let Sextant.Parse decide validity.
+            string[] args = text.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            bool hasNorthSouth = false;
+            bool hasEastWest = false;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                string s = args[i];
+
+                if (Insensitive.Equals(s, "N") || Insensitive.Equals(s, "S"))
+                    hasNorthSouth = true;
+                else if (Insensitive.Equals(s, "E") || Insensitive.Equals(s, "W"))
+                    hasEastWest = true;
+            }
+
+            return hasNorthSouth && hasEastWest;
+        }
+        private static bool GoToSerial(Mobile from, int ser)
+        {
+            IEntity? ent = World.FindEntity(ser);
+
+            if (ent is Item)
+            {
+                Item item = (Item)ent;
+
+                Map map = item.Map;
+                Point3D loc = item.GetWorldLocation();
+
+                Mobile? owner = item.RootParent as Mobile;
+
+                if (owner != null && (owner.Map != null && owner.Map != Map.Internal) && !from.CanSee(owner))
+                {
+                    from.SendMessage("You can not go to what you can not see.");
+                    return true;
+                }
+                else if (owner != null && (owner.Map == null || owner.Map == Map.Internal) && owner.Hidden && owner.AccessLevel >= from.AccessLevel)
+                {
+                    from.SendMessage("You can not go to what you can not see.");
+                    return true;
+                }
+                else if (!FixMap(ref map, ref loc, item))
+                {
+                    from.SendMessage("That is an internal item and you cannot go to it.");
+                    return true;
+                }
+
+                from.MoveToWorld(loc, map);
+                return true;
+            }
+
+            if (ent is Mobile)
+            {
+                Mobile m = (Mobile)ent;
+
+                Map map = m.Map;
+                Point3D loc = m.Location;
+
+                Mobile owner = m;
+
+                if (owner != null && (owner.Map != null && owner.Map != Map.Internal) && !from.CanSee(owner))
+                {
+                    from.SendMessage("You can not go to what you can not see.");
+                    return true;
+                }
+                else if (owner != null && (owner.Map == null || owner.Map == Map.Internal) && owner.Hidden && owner.AccessLevel >= from.AccessLevel)
+                {
+                    from.SendMessage("You can not go to what you can not see.");
+                    return true;
+                }
+                else if (!FixMap(ref map, ref loc, m))
+                {
+                    from.SendMessage("That is an internal mobile and you cannot go to it.");
+                    return true;
+                }
+
+                from.MoveToWorld(loc, map);
+                return true;
+            }
+
+            return false;
         }
 
         [Usage("Help")]
@@ -1359,7 +1514,7 @@ namespace Server.Commands
             ArrayList record_list = new ArrayList();
             for (int i = 1; i < list.Count; ++i)
             {
-                string v = ((CommandEntry)list[i]).Command;
+                string? v = ((CommandEntry)list[i]).Command;
                 if (m.AccessLevel > AccessLevel.Player)
                     record_list.Add(v = string.Format("[{0}] {1}", ((CommandEntry)list[i]).AccessLevel.ToString(), ((CommandEntry)list[i]).Command));
 
@@ -1464,7 +1619,7 @@ namespace Server.Commands
             {
                 if (targeted is Mobile)
                 {
-                    Item item = ((Mobile)targeted).FindItemOnLayer(m_Layer);
+                    Item? item = ((Mobile)targeted).FindItemOnLayer(m_Layer);
 
                     if (item != null)
                     {
@@ -1528,7 +1683,7 @@ namespace Server.Commands
                 if (!Multis.DesignContext.Check(e.Mobile))
                     return; // They are customizing
 
-                Spell spell = SpellRegistry.NewSpell(e.GetString(0), e.Mobile, null);
+                Spell? spell = SpellRegistry.NewSpell(e.GetString(0), e.Mobile, null);
 
                 if (spell != null)
                     spell.Cast();
@@ -1634,10 +1789,10 @@ namespace Server.Commands
             if (list.Count > 0)
                 for (int i = list.Count - 1; i > 0; i--)
                 {
-                    Item ix = list[i] as Item;
+                    Item? ix = list[i] as Item;
                     if (ix != null && ix.Deleted == false)
                     {
-                        Container con = ix.Parent as Container;
+                        Container? con = ix.Parent as Container;
                         if (con != null)
                         {
                             con.RemoveItem(ix);
@@ -1651,13 +1806,85 @@ namespace Server.Commands
             e.Mobile.Say("Finished clearing {0} items {1} containers.", count, containers);
         }
 
-        [Usage("Shard")]
-        [Description("Reminds of the current shard configuraton.")]
+        [Usage("Shard [List | <shard name> Hidden <true|false>]")]
+        [Description("Displays the current shard configuration or manages shard visibility.")]
         public static void Shard_OnCommand(CommandEventArgs e)
         {
-            e.Mobile.SendMessage(string.Format("You are on {0}{1}{2} ({3}).", Core.Server, Core.UOTC_CFG ? " Test Center" : "", Core.UOEV_CFG ? " Event Shard" : "", Environment.MachineName));
-        }
+            if (e.Arguments.Length == 0)
+            {
+                e.Mobile.SendMessage(
+                    "You are on {0}{1}{2} ({3}).",
+                    Core.Server,
+                    Core.GMNTC_CFG ? " Test Center" : "",
+                    Core.GMNEV_CFG ? " Event Shard" : "",
+                    Environment.MachineName);
 
+                return;
+            }
+
+            if (e.Arguments.Length == 1 &&
+                e.Arguments[0].Equals("List", StringComparison.OrdinalIgnoreCase))
+            {
+                DisplayShardList(e.Mobile);
+                return;
+            }
+
+            // Changing shard visibility is an Owner-level operation.
+            if (e.Mobile.AccessLevel < AccessLevel.Owner)
+            {
+                e.Mobile.SendMessage("You do not have access to modify shard visibility.");
+                return;
+            }
+
+            if (e.Arguments.Length >= 3 &&
+                e.Arguments[^2].Equals("Hidden", StringComparison.OrdinalIgnoreCase) &&
+                bool.TryParse(e.Arguments[^1], out bool hidden))
+            {
+                // Everything preceding "Hidden" is the shard name. This allows
+                // names containing spaces whether or not the command parser
+                // preserves quoted arguments.
+                string shardName = string.Join(" ", e.Arguments, 0, e.Arguments.Length - 2);
+
+                Server.Misc.ServerList.ShardEntry shard =
+                    Server.Misc.ServerList.FindShard(shardName);
+
+                if (shard == null)
+                {
+                    e.Mobile.SendMessage("Unknown shard '{0}'. Use [Shard List for valid shard names.", shardName);
+                    return;
+                }
+
+                shard.Visible = !hidden;
+
+                e.Mobile.SendMessage(
+                    "{0}, port {1}, status: {2}",
+                    shard.Name,
+                    shard.Port,
+                    shard.Visible ? "visible" : "hidden");
+
+                return;
+            }
+
+            e.Mobile.SendMessage("Usage:");
+            e.Mobile.SendMessage("[Shard");
+            e.Mobile.SendMessage("[Shard List");
+            e.Mobile.SendMessage("[Shard <shard name> Hidden <true|false>");
+        }
+        public static void DisplayShardList(Mobile from)
+        {
+            foreach (Server.Misc.ServerList.ShardEntry shard in Server.Misc.ServerList.Shards)
+            {
+                from.SendMessage(
+                    "{0}, port {1}, status: {2}",
+                    shard.Name,
+                    shard.Port,
+                    shard.Visible ? "visible" : "hidden");
+            }
+
+            from.SendMessage(
+                "Administrative, port {0}, status: owner only",
+                SocketOptions.LoginServerPortBase);
+        }
 
         [Usage("ClearHarvestMemory")]
         [Description("Clear harvest system memory.")]

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts\Items\Special\RewardCake.cs
  * Changelog:
+ *	10/28/2026, Adam
+ *		Deserialize no longer forces LootType.Blessed: the saved loot type stands. Bless a cake explicitly where it is made
+ *		(e.g., ThePumpkinKing.MakeHalloweenCake). Cakes already in the world were saved blessed and stay blessed.
  *	12/11/05, Adam
  *		Changed LootType.Blessed to LootType.Regular
  */
@@ -69,7 +72,6 @@ namespace Server.Items
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
-            LootType = LootType.Blessed;
 
             int version = reader.ReadInt();
         }

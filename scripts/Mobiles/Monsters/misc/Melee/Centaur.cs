@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -96,53 +96,26 @@ namespace Server.Mobiles
         {
             Utility.WipeLayers(this);
             AddItem(new Bow()); // functional, used for shooting
-
         }
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020806171152/uo.stratics.com/hunters/centaur.shtml
+            // 250-300 Gold, Scrolls, Bow, Magic Items
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(180, 250);
-                PackGem();
-                PackMagicEquipment(1, 2, 0.15, 0.15);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(250, 300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020806171152/uo.stratics.com/hunters/centaur.shtml
-                    // 250-300 Gold, Scrolls, Bow, Magic Items
-                    if (Spawning)
-                    {
-                        PackGold(250, 300);
-                    }
-                    else
-                    {
-                        PackScroll(3, 7);
-                        PackScroll(3, 7, .8);
+                PackScroll(3, 7);
+                PackScroll(3, 7, .8);
 
-                        // bow dropped as part of outfit
+                // bow dropped as part of outfit
 
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 2, 0.15, 0.15);
-                        else
-                            PackMagicItem(1, 1, 0.15);
-                    }
-                }
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 2, 0.15, 0.15);
                 else
-                {   // Standard RunUO
-                    if (Spawning)
-                    {
-                        //	AddItem(new Bow()); - added in initoutfit
-                        PackItem(new Arrow(Utility.RandomMinMax(80, 90))); // OSI it is different: in a sub backpack, this is probably just a limitation of their engine
-                    }
-
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Gems);
-                }
+                    PackMagicItem(1, 1, 0.15);
             }
         }
 

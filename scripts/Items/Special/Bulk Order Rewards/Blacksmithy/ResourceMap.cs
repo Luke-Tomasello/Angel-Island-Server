@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -47,7 +47,7 @@ namespace Server.Items
 {
     public class ResourceMap : MapItem
     {
-        public virtual HarvestDefinition HarvestDefinition
+        public virtual HarvestDefinition? HarvestDefinition
         {
             get
             {
@@ -210,7 +210,7 @@ namespace Server.Items
             {
                 Point2D loc = GetRandomLocation();
 
-                HarvestDefinition def = HarvestDefinition;
+                HarvestDefinition? def = HarvestDefinition;
 
                 if (def != null)
                     m_BankLocation = new Point2D(loc.X * def.BankWidth + def.BankWidth / 2, loc.Y * def.BankHeight + def.BankHeight / 2);
@@ -227,12 +227,12 @@ namespace Server.Items
             if (m_BankMap == null)
                 return Point2D.Zero;
 
-            HarvestDefinition def = HarvestDefinition;
+            HarvestDefinition? def = HarvestDefinition;
 
             if (def == null)
                 return Point2D.Zero;
 
-            Hashtable banks = (Hashtable)def.Banks[m_BankMap];
+            Hashtable? banks = (Hashtable?)def.Banks[m_BankMap];
 
             if (banks == null)
                 return Point2D.Zero;
@@ -262,7 +262,7 @@ namespace Server.Items
             return false;
         }
 
-        public static ResourceMap Find(Mobile from, Point3D loc, Map map, HarvestDefinition def)
+        public static ResourceMap? Find(Mobile from, Point3D loc, Map map, HarvestDefinition def)
         {
             if (def == null)
                 return null;

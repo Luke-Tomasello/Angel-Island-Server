@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -37,7 +37,7 @@ namespace Server.Township
         public virtual int Range { get { return -1; } }
         public virtual bool AllowGround { get { return true; } }
 
-        private object m_Targeted;
+        private object? m_Targeted;
 
         public TargetCraft(Mobile from, CraftItem craftItem, CraftSystem craftSystem, Type typeRes, BaseTool tool, int quality)
             : base(from, craftItem, craftSystem, typeRes, tool, quality)

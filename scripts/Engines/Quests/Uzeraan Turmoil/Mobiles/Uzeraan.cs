@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -118,7 +118,7 @@ namespace Server.Engines.Quests.Haven
                         }
                     }
 
-                    QuestObjective obj = qs.FindObjective(typeof(FindUzeraanBeginObjective));
+                    QuestObjective? obj = qs.FindObjective(typeof(FindUzeraanBeginObjective));
 
                     if (obj != null && !obj.Completed)
                     {
@@ -221,7 +221,7 @@ namespace Server.Engines.Quests.Haven
 
         public override bool OnDragDrop(Mobile from, Item dropped)
         {
-            PlayerMobile player = from as PlayerMobile;
+            PlayerMobile? player = from as PlayerMobile;
 
             if (player != null)
             {
@@ -249,7 +249,7 @@ namespace Server.Engines.Quests.Haven
 
                     if (dropped is SchmendrickScrollOfPower)
                     {
-                        QuestObjective obj = qs.FindObjective(typeof(ReturnScrollOfPowerObjective));
+                        QuestObjective? obj = qs.FindObjective(typeof(ReturnScrollOfPowerObjective));
 
                         if (obj != null && !obj.Completed)
                         {
@@ -275,7 +275,7 @@ namespace Server.Engines.Quests.Haven
                     }
                     else if (dropped is QuestFertileDirt)
                     {
-                        QuestObjective obj = qs.FindObjective(typeof(ReturnFertileDirtObjective));
+                        QuestObjective? obj = qs.FindObjective(typeof(ReturnFertileDirtObjective));
 
                         if (obj != null && !obj.Completed)
                         {
@@ -320,7 +320,7 @@ namespace Server.Engines.Quests.Haven
                     }
                     else if (dropped is QuestDaemonBlood)
                     {
-                        QuestObjective obj = qs.FindObjective(typeof(ReturnDaemonBloodObjective));
+                        QuestObjective? obj = qs.FindObjective(typeof(ReturnDaemonBloodObjective));
 
                         if (obj != null && !obj.Completed)
                         {
@@ -384,7 +384,7 @@ namespace Server.Engines.Quests.Haven
                     }
                     else if (dropped is QuestDaemonBone)
                     {
-                        QuestObjective obj = qs.FindObjective(typeof(ReturnDaemonBoneObjective));
+                        QuestObjective? obj = qs.FindObjective(typeof(ReturnDaemonBoneObjective));
 
                         if (obj != null && !obj.Completed)
                         {

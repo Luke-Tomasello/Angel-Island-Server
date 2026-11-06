@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -50,11 +50,11 @@ namespace Server.Engines.Craft
             return (CraftItem)List[index];
         }
 
-        public CraftItem SearchForSubclass(Type type)
+        public CraftItem? SearchForSubclass(Type type)
         {
             for (int i = 0; i < List.Count; i++)
             {
-                CraftItem craftItem = (CraftItem)List[i];
+                CraftItem? craftItem = (CraftItem?)List[i];
 
                 if (craftItem.ItemType == type || type.IsSubclassOf(craftItem.ItemType))
                     return craftItem;
@@ -63,11 +63,11 @@ namespace Server.Engines.Craft
             return null;
         }
 
-        public CraftItem SearchFor(Type type)
+        public CraftItem? SearchFor(Type type)
         {
             for (int i = 0; i < List.Count; i++)
             {
-                CraftItem craftItem = (CraftItem)List[i];
+                CraftItem? craftItem = (CraftItem?)List[i];
                 if (craftItem.ItemType == type)
                 {
                     return craftItem;

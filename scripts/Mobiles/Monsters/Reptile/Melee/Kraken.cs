@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -83,64 +83,27 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // Angel Island - no mib, SpecialFishingNet, or Map - these are added as part of the fishing system.
+            // http://web.archive.org/web/20020313114942/uo.stratics.com/hunters/kraken.shtml
+            // Messages in a Bottle, Treasure Maps, Rope, 300 - 600 Gold
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(200, 300);
-
-                if (Utility.RandomDouble() <= 0.05)
-                    PackItem(new Rope());
-
-                // Adam: I think this is in error. See the comments below
-                //	we may want to consider removing this
-                if (Utility.RandomDouble() <= 0.05)
-                    PackItem(new MessageInABottle(this.Map));
+                PackGold(300, 600);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020313114942/uo.stratics.com/hunters/kraken.shtml
-                    // Messages in a Bottle, Treasure Maps, Rope, 300 - 600 Gold
+                // No mib, SpecialFishingNet, or Map - these are added as part of the fishing system. 
+                //	See fishing.cs
+                // http://web.archive.org/web/20020313114942/uo.stratics.com/hunters/kraken.shtml
+                // There are two different types of Kraken, the one found in dungeons such as Shame and Wind Park and the one that 
+                //	spawns as a result of a fishing net. The difference between the two lies in the fact that the open sea Kraken can 
+                //	breathe fire, much like a Dragon, and can give a Message in a Bottle as loot. As a result of that, the open sea 
+                //	Kraken gives more Fame and Karma when killed. The damage done by the open sea Kraken breath attack diminishes 
+                //	as the Kraken runs out of mana.
 
-                    if (Spawning)
-                    {
-                        PackGold(300, 600);
-                    }
-                    else
-                    {
-                        // No mib, SpecialFishingNet, or Map - these are added as part of the fishing system. 
-                        //	See fishing.cs
-                        // http://web.archive.org/web/20020313114942/uo.stratics.com/hunters/kraken.shtml
-                        // There are two different types of Kraken, the one found in dungeons such as Shame and Wind Park and the one that 
-                        //	spawns as a result of a fishing net. The difference between the two lies in the fact that the open sea Kraken can 
-                        //	breathe fire, much like a Dragon, and can give a Message in a Bottle as loot. As a result of that, the open sea 
-                        //	Kraken gives more Fame and Karma when killed. The damage done by the open sea Kraken breath attack diminishes 
-                        //	as the Kraken runs out of mana.
-
-                        if (Utility.RandomDouble() <= 0.05)
-                            PackItem(new Rope());
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        Rope rope = new Rope();
-                        rope.ItemID = 0x14F8;
-                        PackItem(rope);
-
-                        // No mib, SpecialFishingNet, or Map - these are added as part of the fishing system. 
-                        //	See fishing.cs
-                        // http://web.archive.org/web/20020313114942/uo.stratics.com/hunters/kraken.shtml
-                        // There are two different types of Kraken, the one found in dungeons such as Shame and Wind Park and the one that 
-                        //	spawns as a result of a fishing net. The difference between the two lies in the fact that the open sea Kraken can 
-                        //	breathe fire, much like a Dragon, and can give a Message in a Bottle as loot. As a result of that, the open sea 
-                        //	Kraken gives more Fame and Karma when killed. The damage done by the open sea Kraken breath attack diminishes 
-                        //	as the Kraken runs out of mana.
-                    }
-
-                    AddLoot(LootPack.Rich);
-                }
+                if (Utility.RandomDouble() <= 0.05)
+                    PackItem(new Rope());
             }
         }
 

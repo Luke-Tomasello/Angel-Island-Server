@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -49,8 +49,8 @@ namespace Server.Items.Triggers
         private Item m_Link;
         private Item m_Else;
 
-        private string m_ConditionStr;
-        private ObjectConditional m_ConditionImpl;
+        private string? m_ConditionStr;
+        private ObjectConditional? m_ConditionImpl;
         private IEntity m_Target;
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -68,7 +68,7 @@ namespace Server.Items.Triggers
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.GameMaster)]
-        public string Condition
+        public string? Condition
         {
             get { return m_ConditionStr; }
             set

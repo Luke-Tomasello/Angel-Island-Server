@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -81,7 +81,7 @@ namespace Server.Commands
                     {
                         if (props[i].CanRead && props[i].CanWrite)
                         {
-                            string value = null;
+                            string? value = null;
                             if (props[i].GetValue(spawner, null) != null)
                                 value = props[i].GetValue(spawner, null).ToString();
 
@@ -186,7 +186,7 @@ namespace Server.Commands
             {
                 XmlDocument doc = new XmlDocument();
                 doc.Load(pathName);
-                XmlElement root = doc["Spawners"];
+                XmlElement? root = doc["Spawners"];
                 int read_count = 0;
                 count = XmlUtility.GetInt32(root.GetAttribute("Count"), 0);
 
@@ -212,7 +212,7 @@ namespace Server.Commands
 
             return spawners.Count;
         }
-        private static Spawner LoadEntry(XmlNode xml)
+        private static Spawner? LoadEntry(XmlNode xml)
         {
             GridSpawner spawner = new GridSpawner();
 
@@ -226,7 +226,7 @@ namespace Server.Commands
                     {
                         if (props[i].CanRead && props[i].CanWrite)
                         {
-                            string value = null;
+                            string? value = null;
                             value = XmlUtility.GetText(xml[props[i].Name], null);
                             if (props[i].Name.Equals("ObjectNamesRaw"))
                             {

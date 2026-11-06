@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -54,7 +54,7 @@ namespace Server.Items
             if (map == null)
                 return;
 
-            BaseWeapon weapon = attacker.Weapon as BaseWeapon;
+            BaseWeapon? weapon = attacker.Weapon as BaseWeapon;
 
             if (weapon == null)
                 return;
@@ -72,11 +72,11 @@ namespace Server.Items
                 list.Add(m);
             eable.Free();
 
-            Party p = Party.Get(attacker);
+            Party? p = Party.Get(attacker);
 
             for (int i = 0; i < list.Count; ++i)
             {
-                Mobile m = (Mobile)list[i];
+                Mobile? m = (Mobile?)list[i];
 
                 if (m != defender && m != attacker && SpellHelper.ValidIndirectTarget(attacker, m) && (p == null || !p.Contains(m)))
                 {

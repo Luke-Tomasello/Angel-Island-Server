@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -97,7 +97,7 @@ namespace Server.Items
             Timer.DelayCall(BlockMountDuration, new TimerStateCallback(ReleaseMountLock), defender);
 
             if (!attacker.Mounted)
-                AOS.Damage(defender, attacker, Utility.RandomMinMax(15, 25), 100, 0, 0, 0, 0, this);
+                AOS.Damage(defender, attacker, Utility.RandomMinMax(15, 25), new DamageContext { Source = this });
         }
 
         private void ReleaseMountLock(object state)

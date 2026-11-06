@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -144,6 +144,7 @@ namespace Server.Items
 
             m_Target = target;
             m_TargetMap = targetMap;
+            TravelObject = true;
         }
         public Moongate(Serial serial)
             : base(serial)
@@ -156,7 +157,9 @@ namespace Server.Items
 
             if (from.InRange(GetWorldLocation(), 1))
             {
-                if (from.Criminal)
+                // NOTE: OSI relied on short criminal timers for travel denial.
+                // Mortalis uses explicit travel restriction logic; Criminal is no longer sufficient.
+                if (from is PlayerMobile pm && !pm.CanCriminalTravel)
                 {
                     from.SendLocalizedMessage(1005561, "", 0x22); // Thou'rt a criminal and cannot escape so easily.
                 }
@@ -176,13 +179,28 @@ namespace Server.Items
         {
             if (m.Player)
             {
-                if (m.Criminal)
+                PlayerMobile? pm = m as PlayerMobile;
+                if (pm == null)
+                    return false;
+
+                // NOTE: OSI relied on short criminal timers for travel denial.
+                // Mortalis uses explicit travel restriction logic; Criminal is no longer sufficient.
+                if (!pm.CanCriminalTravel)
                 {
                     m.SendLocalizedMessage(1005561, "", 0x22); // Thou'rt a criminal and cannot escape so easily.
                 }
                 else if (m.CheckState(Mobile.ExpirationFlagID.EvilCrim))
                 {
                     m.SendLocalizedMessage(1005561, "", 0x22); // Thou'rt a criminal and cannot escape so easily.
+                }
+                // clones can never leave the TestCenter map unless it's via a Test Center Teleporter
+                else if (pm.Clone)
+                {
+                    if (MapDest != null && MapDest != Map.TestCenter)
+                    {
+                        m.SendMessage("You cannot travel there.");
+                        return true;
+                    }
                 }
                 else
                 {
@@ -227,7 +245,7 @@ namespace Server.Items
             {   // message issued in OnMagicTravel()
                 ; // we're not traveling like this
             }
-            else if (m.CheckHolding() && Core.RuleSets.AngelIslandRules())
+            else if (m.CheckDragging() && Core.RuleSets.AngelIslandRules())
             {   // no Cliloc
                 // m.SendLocalizedMessage(1071955); // You cannot teleport while dragging an object.
                 m.SendMessage("You cannot teleport while dragging an object.");
@@ -349,7 +367,7 @@ namespace Server.Items
             if (map == null)
                 return false;
 
-            GuardedRegion reg = Region.Find(p, map) as GuardedRegion;
+            GuardedRegion? reg = Region.Find(p, map) as GuardedRegion;
 
             return (reg != null && reg.IsGuarded && !(reg is Engines.ConPVP.SafeZone));
         }
@@ -609,12 +627,6 @@ namespace Server.Items
                 from.CloseGump(typeof(WarningGump));
                 from.SendGump(new WarningGump(m_TitleNumber, m_TitleColor, m_MessageString == null ? (object)m_MessageNumber : (object)m_MessageString, m_MessageColor, m_GumpWidth, m_GumpHeight, new WarningGumpCallback(Warning_Callback), from));
             }
-#if false
-            else
-            {
-                base.BeginConfirmation(from);
-            }
-#endif
         }
         public override void Serialize(GenericWriter writer)
         {
@@ -659,24 +671,6 @@ namespace Server.Items
             }
         }
         #region Trammy gump
-#if false
-        public virtual void BeginConfirmation(Mobile from)
-        {
-            // removed trammy confirm gump below
-            bool bUseConfirmGump = false;
-
-            if (bUseConfirmGump && IsInTown(from.Location, from.Map) && !IsInTown(m_Target, m_TargetMap))
-            {
-                from.Send(new PlaySound(0x20E, from.Location));
-                from.CloseGump(typeof(MoongateConfirmGump));
-                from.SendGump(new MoongateConfirmGump(from, this));
-            }
-            else
-            {
-                EndConfirmation(from);
-            }
-        }
-#endif
         public virtual void EndConfirmation(Mobile from)
         {
             if (!ValidateUse(from, true))
@@ -699,7 +693,7 @@ namespace Server.Items
             if (map == null)
                 return false;
 
-            GuardedRegion reg = Region.Find(p, map) as GuardedRegion;
+            GuardedRegion? reg = Region.Find(p, map) as GuardedRegion;
 
             return (reg != null && reg.IsGuarded && !(reg is Engines.ConPVP.SafeZone));
         }

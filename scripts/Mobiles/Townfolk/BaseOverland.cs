@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -118,7 +118,7 @@ namespace Server.Mobiles
 
             for (int i = 0; i < toDelete.Count; i++)
             {
-                BaseOverland bo = toDelete[i] as BaseOverland;
+                BaseOverland? bo = toDelete[i] as BaseOverland;
                 if (bo != null)
                 {
                     iDeleted++;
@@ -138,7 +138,7 @@ namespace Server.Mobiles
             OnDeathMsg
         }
 
-        private Timer m_Timer = null;
+        private Timer? m_Timer = null;
         private bool m_Announce = false;
         private MsgState m_LastMsg = MsgState.None;
         private DateTime m_MsgTime = DateTime.MinValue;
@@ -170,7 +170,7 @@ namespace Server.Mobiles
         }
 
         // town crier entry for telling the world about us
-        private TownCrierEntry m_TownCrierMessage;
+        private TownCrierEntry? m_TownCrierMessage;
 
         private void RemoveTCEntry()
         {
@@ -364,13 +364,13 @@ namespace Server.Mobiles
             }
         }
 
-        public PlayerMobile GetPlayerMobile(Mobile mob)
+        public PlayerMobile? GetPlayerMobile(Mobile mob)
         {
             if (mob == null) return null;
             if (mob is PlayerMobile) return mob as PlayerMobile;
             if (mob is BaseCreature)
             {
-                BaseCreature bc = mob as BaseCreature;
+                BaseCreature? bc = mob as BaseCreature;
                 if (bc.ControlMaster == null) return null;
                 return bc.ControlMaster as PlayerMobile;
             }
@@ -430,7 +430,7 @@ namespace Server.Mobiles
         }
 
         #region DescribeLocation
-        public static Region BestRegion(Point3D px, Map map)
+        public static Region? BestRegion(Point3D px, Map map)
         {
             ArrayList all = Region.FindAll(px, map);
             if (all is not null)
@@ -450,11 +450,11 @@ namespace Server.Mobiles
                 }
             return null;
         }
-        public static string DescribeLocation(object o)
+        public static string DescribeLocation(object? o)
         {
 
             Point3D oLocation;
-            Region oRegion;
+            Region? oRegion;
             Map oMap;
             if (o is Item)
             {
@@ -506,7 +506,7 @@ namespace Server.Mobiles
 
         private static string NearbyMobile(Map map, Point3D location)
         {
-            string lastResort = null;
+            string? lastResort = null;
 
             // use "my" RangeHome which is set to be the same as the homerange of the spawner
             //	where we were spawned. This should give us a better chance in finding a nearby mob
@@ -579,12 +579,6 @@ namespace Server.Mobiles
                 }
             }
 
-        }
-
-        // timer callback to kickstart the town crier
-        private void tcKickstart()
-        {
-            OverlandSystemMessage();
         }
 
         public virtual bool GateTravel { get { return true; } }

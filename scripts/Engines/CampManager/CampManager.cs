@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -47,8 +47,8 @@ namespace Server.Engines
         public static List<Point3D> Mineable { get { return m_mineable; } }
         public static List<Point3D> NonMineable { get { return GetNonMineableCache(); } }
         public static List<Point3D> All { get { return GetAllCache(); } }
-        public static List<Point3D> m_nonMineableCache = null;
-        public static List<Point3D> m_allCache = null;
+        public static List<Point3D>? m_nonMineableCache = null;
+        public static List<Point3D>? m_allCache = null;
         private static List<Point3D> GetNonMineableCache()
         {
             if (m_nonMineableCache == null)
@@ -110,7 +110,7 @@ namespace Server.Engines
             #region Mineable Locations
             HarvestDefinition def = Mining.System.OreAndStone;
             m_mineable.Clear();
-            Hashtable banks = (Hashtable)def.Banks[Map.Felucca];
+            Hashtable? banks = (Hashtable?)def.Banks[Map.Felucca];
             int[] tiles = def.Tiles;
             const int extendedRange = 0;
             foreach (Point3D gp3d in m_database)

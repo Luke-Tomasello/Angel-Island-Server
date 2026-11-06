@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -91,7 +91,7 @@ namespace Server.Items
             if (targeted is AddonComponent)
                 targeted = ((AddonComponent)targeted).Addon;
 
-            PlantAddon plantAddon = targeted as PlantAddon;
+            PlantAddon? plantAddon = targeted as PlantAddon;
 
             if (plantAddon == null || plantAddon.PlantItem == null || plantAddon.PlantItem.Deleted || !TreeSeed.IsTree(plantAddon.PlantItem.PlantType))
             {

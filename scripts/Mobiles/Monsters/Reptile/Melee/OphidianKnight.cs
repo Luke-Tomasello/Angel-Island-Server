@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -85,58 +85,35 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020403074442/uo.stratics.com/hunters/ophaveng.shtml
+            // 200 to 300 Gold, Potions, Arrows, Gems, Scrolls, Magic items
+            // http://web.archive.org/web/20020301014712/uo.stratics.com/hunters/ophknight.shtml
+            // 200 to 300 Gold, Potions, Arrows, Gems
+            // (Hmm, interesting. RunUO has this as the same mob, yet They have different loot!
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(400, 500);
-                PackItem(new DeadlyPoisonPotion());
-                PackMagicEquipment(1, 2, 0.20, 0.20);
-                PackMagicEquipment(1, 2, 0.05, 0.05);
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
+                PackGold(200, 300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020403074442/uo.stratics.com/hunters/ophaveng.shtml
-                    // 200 to 300 Gold, Potions, Arrows, Gems, Scrolls, Magic items
-                    // http://web.archive.org/web/20020301014712/uo.stratics.com/hunters/ophknight.shtml
-                    // 200 to 300 Gold, Potions, Arrows, Gems
-                    // (Hmm, interesting. RunUO has this as the same mob, yet They have different loot!
-                    if (Spawning)
-                    {
-                        PackGold(200, 300);
-                    }
+                PackPotion(0.9);
+                PackPotion(0.6);
+                PackPotion(0.2);
+
+                PackItem(new Arrow(Utility.Random(1, 4)));
+
+                PackGem(1, .9);
+                PackGem(1, .05);
+
+                if (Name == "an ophidian avenger")
+                {
+                    PackScroll(1, 6);
+                    PackScroll(1, 6, 0.8);
+
+                    if (Utility.RandomBool())
+                        PackMagicEquipment(1, 2);
                     else
-                    {
-                        PackPotion(0.9);
-                        PackPotion(0.6);
-                        PackPotion(0.2);
-
-                        PackItem(new Arrow(Utility.Random(1, 4)));
-
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-
-                        if (Name == "an ophidian avenger")
-                        {
-                            PackScroll(1, 6);
-                            PackScroll(1, 6, 0.8);
-
-                            if (Utility.RandomBool())
-                                PackMagicEquipment(1, 2);
-                            else
-                                PackMagicItem(1, 2, 0.10);
-                        }
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                        PackItem(new LesserPoisonPotion());
-
-                    AddLoot(LootPack.Rich, 2);
+                        PackMagicItem(1, 2, 0.10);
                 }
             }
         }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -74,21 +74,21 @@ namespace Server.Items.Triggers
                 {
                     case KeywordController.KeyWordMatchMode.Standard:
                         {
-                            SendSystemMessage("Using wild cards:");
-                            SendSystemMessage(string.Format("To ignore leading text, use: *{0}", m_Keyword));
-                            SendSystemMessage(string.Format("To also ignore trailing text, use: *{0}*", m_Keyword));
+                            SendMessageNearby("Using wild cards:");
+                            SendMessageNearby(string.Format("To ignore leading text, use: *{0}", m_Keyword));
+                            SendMessageNearby(string.Format("To also ignore trailing text, use: *{0}*", m_Keyword));
                             break;
                         }
                     case KeywordController.KeyWordMatchMode.AnyOf:
                         {
-                            SendSystemMessage("AnyOf: Use a ';' to separate words or phrases.");
-                            SendSystemMessage(string.Format("Any of the words '{0}' are required, any order, other words are ignored", m_Keyword));
+                            SendMessageNearby("AnyOf: Use a ';' to separate words or phrases.");
+                            SendMessageNearby(string.Format("Any of the words '{0}' are required, any order, other words are ignored", m_Keyword));
                             break;
                         }
                     case KeywordController.KeyWordMatchMode.AllOf:
                         {
-                            SendSystemMessage("AllOf: Use a ';' to separate words or phrases.");
-                            SendSystemMessage(string.Format("All of the words '{0}' are required, any order, other words are ignored", m_Keyword));
+                            SendMessageNearby("AllOf: Use a ';' to separate words or phrases.");
+                            SendMessageNearby(string.Format("All of the words '{0}' are required, any order, other words are ignored", m_Keyword));
                             break;
                         }
                 }

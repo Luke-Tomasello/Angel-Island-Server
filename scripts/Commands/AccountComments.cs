@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,7 +76,7 @@ namespace Server.Commands
 
         private static void OnTarget(Mobile from, object target)
         {
-            Mobile m = target as Mobile;
+            Mobile? m = target as Mobile;
 
             if (m == null || !m.Player)
             {
@@ -103,24 +103,24 @@ namespace Server.Commands
                 Add,
                 Remove
             }
-            private Mobile m_Target;
+            private Mobile? m_Target;
             private Account m_Account;
             private int m_Index;
             private bool m_FilterSystem;
 
             private Page m_Page;
-            private AccountComment m_Selected;
+            private AccountComment? m_Selected;
 
             private int m_Height;
 
-            private ArrayList m_List;
+            private ArrayList? m_List;
 
-            public AccountCommentsGump(Mobile from, Mobile target, Account acct)
+            public AccountCommentsGump(Mobile from, Mobile? target, Account acct)
                 : this(from, target, acct, 0, false, Page.View, null, null)
             {
             }
 
-            private AccountCommentsGump(Mobile from, Mobile target, Account acct, int index, bool filterSystem, Page page, AccountComment selected, string notice)
+            private AccountCommentsGump(Mobile from, Mobile? target, Account acct, int index, bool filterSystem, Page page, AccountComment? selected, string notice)
                 : base(120, 50)
             {
                 m_Target = target;
@@ -234,7 +234,7 @@ namespace Server.Commands
                 {
                     for (int i = 0; i < m_List.Count; i++)
                     {
-                        AccountComment c = (AccountComment)m_Account.Comments[i];
+                        AccountComment? c = (AccountComment?)m_Account.Comments[i];
 
                         if (!m_FilterSystem || Array.IndexOf(m_SystemComments, c.AddedBy) == -1)
                         {
@@ -395,7 +395,7 @@ namespace Server.Commands
                                     {
                                         if (m_List != null && info.ButtonID >= 100 && info.ButtonID < 100 + m_List.Count)
                                         {
-                                            AccountComment selected = (AccountComment)m_List[info.ButtonID - 100];
+                                            AccountComment? selected = (AccountComment?)m_List[info.ButtonID - 100];
 
                                             from.SendGump(new AccountCommentsGump(from, m_Target, m_Account, m_Index, m_FilterSystem, Page.Remove, selected, null));
                                         }

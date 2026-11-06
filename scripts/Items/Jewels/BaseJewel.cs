@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -190,13 +190,13 @@ namespace Server.Items
         /// Since lists of integers aren't really supported by the properties gump, we manipulate it as a string
         /// </summary>
         [CommandProperty(AccessLevel.GameMaster)]
-        public string RegionLock
+        public string? RegionLock
         {
             get
             {
                 if (m_Regions != null && m_Regions.Count > 0)
                 {
-                    String sx = null;
+                    String? sx = null;
                     foreach (int ix in m_Regions)
                         sx += string.Format("{0}, ", ix);
                     return sx.TrimEnd(new char[] { ' ', ',' });
@@ -232,7 +232,7 @@ namespace Server.Items
             if (m_Regions.Count == 0)
                 return true;
 
-            Mobile from = Parent as Mobile;
+            Mobile? from = Parent as Mobile;
             Map map = from.Map;
             bool got_it = false;
 
@@ -250,13 +250,6 @@ namespace Server.Items
                             {   // don't allow use in a house even if the underlying region is a match
                                 return false;
                             }
-#if false
-                            else if (rx is SensoryRegion)
-                            {   // return the id
-                                if (m_Regions.Contains(rx.UId))
-                                    got_it = true;
-                            }
-#endif
                             else if (rx is StaticRegion)
                             {   // sure, why not
                                 if (m_Regions.Contains(rx.UId))
@@ -349,7 +342,7 @@ namespace Server.Items
                 {
                     PlayerMobile pm = (PlayerMobile)m;
 
-                    if (Core.RuleSets.MortalisRules() || Core.RuleSets.AngelIslandRules())
+                    if (Core.RuleSets.KinSystemEnabled())
                         if (this.IOBAlignment != IOBAlignment.None)
                         {
                             if (pm.IOBEquipped == true)
@@ -424,6 +417,16 @@ namespace Server.Items
                     /*(int)MagicEquipEffect.Teleport,*/ (int)MagicEquipEffect.Agility,
                     (int)MagicEquipEffect.Cunning, (int)MagicEquipEffect.Strength,
                     (int)MagicEquipEffect.NightSight);
+            }
+
+            /* 6/10/2026, Adam
+             *  Curt — 6/8/26, 10:23 PM
+             * I'd keep teleport rings, id wands, no damaging wands, and all stat boost items we have except invis
+             * So what we have now minus damaging wands and invis items
+             */
+            if (Core.RuleSets.SeasonsRules(2) && m_MagicEffect == MagicEquipEffect.Invisibility)
+            {
+                m_MagicEffect = MagicEquipEffect.None;
             }
 
             int NewLevel = Utility.RandomMinMax(MinLevel, MaxLevel);
@@ -649,7 +652,7 @@ namespace Server.Items
 
             Resource = CraftResources.GetFromType(resourceType);
 
-            CraftContext context = craftSystem.GetContext(from);
+            CraftContext? context = craftSystem.GetContext(from);
 
             if (context != null && context.DoNotColor)
                 Hue = 0;
@@ -772,7 +775,7 @@ namespace Server.Items
         {
             m_SaveFlags = SaveFlags.None;
             SetFlag(SaveFlags.HasExpiration, m_Expiration != DateTime.MinValue ? true : false);
-            SetFlag(SaveFlags.HasIOBAlignment, m_IOBAlignment != IOBAlignment.None ? true : false);
+            SetFlag(SaveFlags.HasIOBAlignment, false);  // retired in version 9
             SetFlag(SaveFlags.HasRegionLock, m_Regions.Count > 0 ? true : false);
             writer.Write((int)m_SaveFlags);
             return m_SaveFlags;
@@ -782,13 +785,10 @@ namespace Server.Items
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((int)8);                   // version
+            writer.Write((int)9);                   // version (9: retired IOBAlignment no longer written)
             m_SaveFlags = WriteSaveFlags(writer);   // always follows version
 
             // version 6
-            if (GetFlag(SaveFlags.HasIOBAlignment))
-                writer.Write((int)m_IOBAlignment);
-
             if (GetFlag(SaveFlags.HasExpiration))
                 writer.WriteDeltaTime(m_Expiration);
 
@@ -824,14 +824,13 @@ namespace Server.Items
 
             switch (version)
             {
+                case 9:
                 case 8:
                 case 7:
                 case 6:
                     {   // adam: add flags and support for special expiring event items
-                        if (GetFlag(SaveFlags.HasIOBAlignment))
-                            m_IOBAlignment = (IOBAlignment)reader.ReadInt();
-                        else
-                            m_IOBAlignment = IOBAlignment.None;
+                        if (version < 9 && GetFlag(SaveFlags.HasIOBAlignment))
+                            reader.ReadInt(); // Retired IOBAlignment; consume legacy value for save compatibility.
 
                         if (GetFlag(SaveFlags.HasExpiration))
                             m_Expiration = reader.ReadDeltaTime();

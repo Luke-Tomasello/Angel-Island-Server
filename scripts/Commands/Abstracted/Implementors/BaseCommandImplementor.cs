@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -192,7 +192,7 @@ namespace Server.Commands
         {
             try
             {
-                object obj = null;
+                object? obj = null;
 
                 Compile(from, command, ref args, ref obj);
 
@@ -299,7 +299,7 @@ namespace Server.Commands
         {
             if (e.Length >= 1)
             {
-                BaseCommand command = (BaseCommand)m_Commands[e.GetString(0)];
+                BaseCommand? command = (BaseCommand?)m_Commands[e.GetString(0)];
 
                 if (command == null)
                 {

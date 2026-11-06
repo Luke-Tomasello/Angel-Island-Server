@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -121,7 +121,7 @@ namespace Server.Mobiles
 
         public static void StopEffect(Mobile m, bool message)
         {
-            Timer t = (Timer)m_Table[m];
+            Timer? t = (Timer?)m_Table[m];
 
             if (t != null)
             {
@@ -146,7 +146,7 @@ namespace Server.Mobiles
             }
             else
             {
-                Torch torch = m.FindItemOnLayer(Layer.TwoHanded) as Torch;
+                Torch? torch = m.FindItemOnLayer(Layer.TwoHanded) as Torch;
 
                 if (torch != null && torch.Burning)
                 {
@@ -164,7 +164,7 @@ namespace Server.Mobiles
                     m.PlaySound(0x00E);
                     m.PlaySound(0x1BC);
 
-                    AOS.Damage(m, this, Utility.RandomMinMax(30, 40) - (Core.RuleSets.AOSRules() ? 0 : 10), 100, 0, 0, 0, 0, this);
+                    AOS.Damage(m, this, Utility.RandomMinMax(30, 40) - (Core.RuleSets.AOSRules() ? 0 : 10), new DamageContext { Source = this });
 
                     states[1] = count + 1;
 
@@ -181,30 +181,24 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(200, 400);
+            // https://www.uoguide.com/Meer_Mage
+            // Post-era creature (Mondain's Legacy). No Stratics-era entry.
+            // 300 - 500 Gold
+            // Special: 3-6 Gems, Magic Weapons/Armor, Reagents, Scrolls
+            // Note: Excludes ML systems (artifacts, quest items, etc.)
 
-                PackScroll(3, 6);
-                PackScroll(3, 6);
+            if (Spawning)
+            {
+                PackGold(300, 500);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // no LBR
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    // TODO: standard runuo
-                }
+                PackGem(3, 6);
+                PackReg(3);
+                PackScroll(4, 7);
+
+                PackMagicEquipment(2, 3, 1.0, 1.0);
+                PackMagicEquipment(2, 3, 0.50, 0.50);
             }
         }
 

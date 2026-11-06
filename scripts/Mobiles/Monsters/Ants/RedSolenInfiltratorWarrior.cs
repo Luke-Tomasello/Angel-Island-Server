@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -92,42 +92,21 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=117
+            // 200 - 225 Gold. 1-4 Gems
+            // Special: 3-13 Zoogi Fungus, Picnic Basket
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                int gems = Utility.RandomMinMax(1, 4);
-
-                for (int i = 0; i < gems; ++i)
-                    PackGem();
-
-                SolenHelper.PackPicnicBasket(this);
-                PackGold(250, 350);
-                // TODO: 3-13 zoogi fungus
+                PackGold(200, 225);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        SolenHelper.PackPicnicBasket(this);
+                PackGem(1, 4);
+                PackItem(new ZoogiFungus(Utility.RandomMinMax(3, 13)));
 
-                        PackItem(new ZoogiFungus((0.05 < Utility.RandomDouble()) ? 3 : 13));
-                    }
-
-                    AddLoot(LootPack.Average, 2);
-                    AddLoot(LootPack.Gems, Utility.RandomMinMax(1, 4));
-                }
+                if (Utility.RandomDouble() < 0.02) // 2%
+                    SolenHelper.PackPicnicBasket(this);
             }
         }
 

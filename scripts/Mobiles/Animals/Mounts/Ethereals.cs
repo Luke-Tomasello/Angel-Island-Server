@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -31,6 +31,7 @@ namespace Server.Mobiles
         private int m_RegularID;
         private Mobile m_Rider;
         private bool m_IsRewardItem;
+        private int m_Uses; // Number of lives/uses remaining
 
         [CommandProperty(AccessLevel.GameMaster)]
         public bool IsRewardItem
@@ -39,16 +40,28 @@ namespace Server.Mobiles
             set { m_IsRewardItem = value; }
         }
 
+        [CommandProperty(AccessLevel.GameMaster)]
+        public int Uses
+        {
+            get { return m_Uses; }
+            set
+            {
+                m_Uses = value;
+                if (m_Uses <= 0)
+                    Delete();
+            }
+        }
+
         [Constructable]
-        public EtherealMount(int itemID, int mountID)
+        public EtherealMount(int itemID, int mountID, int uses = int.MaxValue)
             : base(itemID)
         {
             m_MountedID = mountID;
             m_RegularID = itemID;
             m_Rider = null;
+            m_Uses = uses > 0 ? uses : int.MaxValue;
 
             Layer = Layer.Invalid;
-
             LootType = LootType.Blessed;
         }
 
@@ -97,6 +110,11 @@ namespace Server.Mobiles
 
         public override bool DisplayLootType { get { return false; } }
 
+        public override void OnSingleClick(Mobile from)
+        {
+            base.OnSingleClick(from);
+            LabelTo(from, string.Format("[ethereal bond: {0}]", m_Uses));
+        }
         public override void OnDoubleClick(Mobile from)
         {
             if (!IsChildOf(from.Backpack))
@@ -117,10 +135,13 @@ namespace Server.Mobiles
         {
             base.Serialize(writer);
 
-            writer.Write((int)2); // version
+            writer.Write((int)3); // version
+
+
+            // version 3
+            writer.Write((int)m_Uses);
 
             writer.Write((bool)m_IsRewardItem);
-
             writer.Write((int)m_MountedID);
             writer.Write((int)m_RegularID);
             writer.Write(m_Rider);
@@ -135,8 +156,15 @@ namespace Server.Mobiles
 
             switch (version)
             {
+                case 3:
+                    {
+                        m_Uses = reader.ReadInt();
+                        goto case 2;
+                    }
                 case 2:
                     {
+                        if (version == 2)
+                            m_Uses = int.MaxValue;
                         m_IsRewardItem = reader.ReadBool();
                         goto case 0;
                     }
@@ -157,11 +185,15 @@ namespace Server.Mobiles
 
         public override DeathMoveResult OnParentDeath(Mobile parent)
         {
-            Rider = null;//get off, move to pack
+            Rider = null; // get off, move to pack
+
+            if (--m_Uses <= 0)
+            {
+                Delete();
+            }
 
             return DeathMoveResult.RemainEquiped;
         }
-
         public static void Dismount(Mobile m)
         {
             IMount mount = m.Mount;
@@ -331,7 +363,12 @@ namespace Server.Mobiles
 
         [Constructable]
         public EtherealHorse()
-            : base(0x20DD, 0x3EAA)
+            : this(int.MaxValue)
+        {
+        }
+        [Constructable]
+        public EtherealHorse(int uses = int.MaxValue)
+            : base(0x20DD, 0x3EAA, uses)
         {
         }
 
@@ -367,7 +404,13 @@ namespace Server.Mobiles
 
         [Constructable]
         public EtherealLlama()
-            : base(0x20F6, 0x3EAB)
+            : this(int.MaxValue)
+        {
+        }
+
+        [Constructable]
+        public EtherealLlama(int uses = int.MaxValue)
+            : base(0x20F6, 0x3EAB, uses)
         {
         }
 
@@ -400,10 +443,14 @@ namespace Server.Mobiles
 
         [Constructable]
         public EtherealOstard()
-            : base(0x2135, 0x3EAC)
+            : this(int.MaxValue)
         {
         }
-
+        [Constructable]
+        public EtherealOstard(int uses = int.MaxValue)
+            : base(0x2135, 0x3EAC, uses)
+        {
+        }
         public EtherealOstard(Serial serial)
             : base(serial)
         {
@@ -433,10 +480,14 @@ namespace Server.Mobiles
 
         [Constructable]
         public EtherealRidgeback()
-            : base(0x2615, 0x3E9A)
+            : this(int.MaxValue)
         {
         }
-
+        [Constructable]
+        public EtherealRidgeback(int uses = int.MaxValue)
+            : base(0x2615, 0x3E9A, uses)
+        {
+        }
         public EtherealRidgeback(Serial serial)
             : base(serial)
         {
@@ -466,10 +517,14 @@ namespace Server.Mobiles
 
         [Constructable]
         public EtherealUnicorn()
-            : base(0x25CE, 0x3E9B)
+            : this(int.MaxValue)
         {
         }
-
+        [Constructable]
+        public EtherealUnicorn(int uses = int.MaxValue)
+            : base(0x25CE, 0x3E9B, uses)
+        {
+        }
         public EtherealUnicorn(Serial serial)
             : base(serial)
         {
@@ -499,10 +554,14 @@ namespace Server.Mobiles
 
         [Constructable]
         public EtherealBeetle()
-            : base(0x260F, 0x3E97)
+            : this(int.MaxValue)
         {
         }
-
+        [Constructable]
+        public EtherealBeetle(int uses = int.MaxValue)
+            : base(0x260F, 0x3E97, uses)
+        {
+        }
         public EtherealBeetle(Serial serial)
             : base(serial)
         {
@@ -532,10 +591,14 @@ namespace Server.Mobiles
 
         [Constructable]
         public EtherealKirin()
-            : base(0x25A0, 0x3E9C)
+            : this(int.MaxValue)
         {
         }
-
+        [Constructable]
+        public EtherealKirin(int uses = int.MaxValue)
+            : base(0x25A0, 0x3E9C, uses)
+        {
+        }
         public EtherealKirin(Serial serial)
             : base(serial)
         {
@@ -565,11 +628,16 @@ namespace Server.Mobiles
 
         [Constructable]
         public EtherealSwampDragon()
-            : base(0x2619, 0x3E98)
+            : this(int.MaxValue)
         {
             Name = "an ethereal swamp dragon";
         }
-
+        [Constructable]
+        public EtherealSwampDragon(int uses = int.MaxValue)
+            : base(0x2619, 0x3E98, uses)
+        {
+            Name = "an ethereal swamp dragon";
+        }
         public EtherealSwampDragon(Serial serial)
             : base(serial)
         {

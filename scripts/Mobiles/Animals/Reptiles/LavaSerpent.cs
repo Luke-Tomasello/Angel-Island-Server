@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,54 +76,31 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // TODO: need reference from 2002, best we can find is Sep 2008
+            // http://web.archive.org/web/20080804183706/uo.stratics.com/database/view.php?db_content=hunters&id=225
+            // 200 - 250 Gold. 3 Sulfurous Ash, Bones, Body Parts, Armor
+            //	Carved: 15 Spined Hides, 4 Raw Ribs
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(90, 130);
-                PackItem(new SulfurousAsh(3));
-                PackArmor(1, 4);
+                PackGold(200, 250);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // TODO: need reference from 2002, best we can find is Sep 2008
-                    // http://web.archive.org/web/20080804183706/uo.stratics.com/database/view.php?db_content=hunters&id=225
-                    // 200 - 250 Gold. 3 Sulfurous Ash, Bones, Body Parts, Armor
-                    //	Carved: 15 Spined Hides, 4 Raw Ribs
-                    if (Spawning)
-                    {
-                        PackGold(200, 250);
-                    }
-                    else
-                    {
-                        PackItem(new SulfurousAsh(3));
-                        switch (Utility.Random(10))
-                        {
-                            case 0: PackItem(new LeftArm()); break;
-                            case 1: PackItem(new RightArm()); break;
-                            case 2: PackItem(new Torso()); break;
-                            case 3: PackItem(new Bone()); break;
-                            case 4: PackItem(new RibCage()); break;
-                            case 5: PackItem(new RibCage()); break;
-                            case 6: PackItem(new BonePile()); break;
-                            case 7: PackItem(new BonePile()); break;
-                            case 8: PackItem(new BonePile()); break;
-                            case 9: PackItem(new BonePile()); break;
-                        }
-                        PackItem(Loot.RandomArmor());
-                    }
-                }
-                else
+                PackItem(new SulfurousAsh(3));
+                switch (Utility.Random(10))
                 {
-                    if (Spawning)
-                    {
-                        PackItem(new SulfurousAsh(3));
-                        PackItem(new Bone());
-                        // TODO: body parts, armour
-                    }
-
-                    AddLoot(LootPack.Average);
+                    case 0: PackItem(new LeftArm()); break;
+                    case 1: PackItem(new RightArm()); break;
+                    case 2: PackItem(new Torso()); break;
+                    case 3: PackItem(new Bone()); break;
+                    case 4: PackItem(new RibCage()); break;
+                    case 5: PackItem(new RibCage()); break;
+                    case 6: PackItem(new BonePile()); break;
+                    case 7: PackItem(new BonePile()); break;
+                    case 8: PackItem(new BonePile()); break;
+                    case 9: PackItem(new BonePile()); break;
                 }
+                PackItem(Loot.RandomArmor());
             }
         }
 

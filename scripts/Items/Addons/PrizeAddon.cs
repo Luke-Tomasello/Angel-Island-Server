@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -243,7 +243,7 @@ namespace Server.Items
 
         private string m_Label;
 
-        private string m_SongFile;
+        private string? m_SongFile;
 
         private DateTime m_SeasonBegin;
         private DateTime m_SeasonEnd;
@@ -271,7 +271,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public string SongFile
+        public string? SongFile
         {
             get { return m_SongFile; }
             set
@@ -349,12 +349,6 @@ namespace Server.Items
             if (!string.IsNullOrEmpty(m_Label))
                 LabelTo(from, m_Label);
 
-#if false
-            int rank = Rank;
-
-            if (rank != 0)
-                LabelTo(from, "{0} Place", PrizeAddon.FormatRank(rank));
-#endif
         }
 
         public override bool CanPlace(Mobile from)
@@ -438,122 +432,4 @@ namespace Server.Items
             }
         }
     }
-#if false
-    public delegate bool MusicPlayerCallback(Mobile from, int tick);
-
-    public class MusicPlayer
-    {
-        private RazorInstrument m_Instrument;
-        private Mobile m_Mobile;
-        private Timer m_Timer;
-        private int m_Tick;
-        private MusicPlayerCallback m_Callback;
-
-        public RazorInstrument Instrument { get { return m_Instrument; } }
-        public Mobile Mobile { get { return m_Mobile; } }
-        public Timer Timer { get { return m_Timer; } }
-        public int Tick { get { return m_Tick; } }
-        public MusicPlayerCallback Callback { get { return m_Callback; } set { m_Callback = value; } }
-
-        public bool Playing { get { return (m_Timer != null); } }
-
-        public MusicPlayer()
-        {
-        }
-
-        public bool Play(Item item, Mobile from, object song)
-        {
-            if (song is string songFile)
-            {
-                RazorInstrument ri = GetInstrument();
-
-                if (ri == null)
-                    return false;
-
-                Stop();
-
-                m_Mobile = from;
-                m_Timer = Timer.DelayCall(TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(2.0), new TimerCallback(OnTick));
-                m_Tick = 0;
-
-                ri.SongFile = songFile;
-                ri.MinMusicSkill = 0;
-                ri.PlayItem = item;
-                ri.AllDone = Stop;
-                ri.StartMusic(from, ri);
-            }
-            if (song is RolledUpSheetMusic rsm)
-            {
-                rsm.AllDone = new RazorInstrument.FinishCallback(Stop);                                     // establishes NextMusicTime
-                rsm.CheckMobileStatus = new RazorInstrument.CheckMobileStatusCallback(CheckMobileStatus);   // make sure the mobile is still around
-                rsm.Instrument = rsm;
-                rsm.PlayItem = item;
-                rsm.RequiresBackpack = false;
-                rsm.OnDoubleClick(from);
-            }
-            else
-                return false;
-
-            return true;
-        }
-        public bool CheckMobileStatus(Mobile m, Item playItem)
-        {   // called back from RazorInstrument
-            return CheckMobile(m, playItem);
-        }
-        private bool CheckMobile(Mobile m, Item playItem)
-        {   // is the mobile still available?
-            bool result = (m != null && m is Mobiles.PlayerMobile pm && pm.NetState != null && pm.NetState.Mobile != null && pm.NetState.Running == true);
-            if (result && playItem != null)
-                // are we sufficiently close to our PlayItem?
-                result |= playItem.Map == m.Map && playItem.GetDistanceToSqrt(m) < 15;
-            return result;
-        }
-        public void Stop()
-        {
-            if (m_Timer != null)
-            {
-                m_Timer.Stop();
-                m_Timer = null;
-            }
-
-            m_Tick = 0;
-
-            if (m_Instrument != null)
-            {
-                m_Instrument.PlayQueue.Clear();
-                m_Instrument.SongBuffer.Clear();
-            }
-
-            if (m_Mobile != null)
-            {
-                if (Commands.Play.MusicConfig.ContainsKey(m_Mobile))
-                    Commands.Play.MusicConfig[m_Mobile].PlayList.Clear();
-
-                m_Mobile = null;
-            }
-        }
-
-        private void OnTick()
-        {
-            int tick = ++m_Tick;
-
-            if (m_Callback != null && !m_Callback(m_Mobile, tick))
-                Stop();
-        }
-
-        private RazorInstrument GetInstrument()
-        {
-            if (m_Instrument != null && m_Instrument.Deleted)
-                m_Instrument = null;
-
-            if (m_Instrument == null)
-            {
-                m_Instrument = new RazorInstrument(RazorInstrument.InstrumentSoundType.LapHarp);
-                m_Instrument.IsIntMapStorage = true;
-            }
-
-            return m_Instrument;
-        }
-    }
-#endif
 }

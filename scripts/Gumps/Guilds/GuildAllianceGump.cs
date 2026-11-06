@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -78,7 +78,7 @@ namespace Server.Gumps
             {
                 for (int i = 0; i < Allies.Count; ++i)
                 {
-                    Guild g = (Guild)Allies[i];
+                    Guild? g = (Guild?)Allies[i];
 
                     if (i != 0)
                     {
@@ -124,7 +124,7 @@ namespace Server.Gumps
             {
                 for (int i = 0; i < declared.Count; ++i)
                 {
-                    Guild g = (Guild)declared[i];
+                    Guild? g = (Guild?)declared[i];
 
                     if (i != 0)
                     {
@@ -172,7 +172,7 @@ namespace Server.Gumps
             {
                 for (int i = 0; i < invites.Count; ++i)
                 {
-                    Guild g = (Guild)invites[i];
+                    Guild? g = (Guild?)invites[i];
 
                     if (i != 0)
                     {

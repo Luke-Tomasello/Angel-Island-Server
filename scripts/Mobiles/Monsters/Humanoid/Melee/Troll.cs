@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -65,6 +65,7 @@ namespace Server.Mobiles
         public override bool CanRummageCorpses { get { return Core.RuleSets.AngelIslandRules() ? true : true; } }
         public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 1 : 1; } }
         public override int Meat { get { return 2; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
 
         public Troll(Serial serial)
             : base(serial)
@@ -73,33 +74,21 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-                PackGold(50, 100);
+            // http://web.archive.org/web/20021215174532/uo.stratics.com/hunters/troll.shtml
+            // 50 to 200 Gold, Potions, Arrows, Weapon Carried, 2 Raw Ribs (carved), Level 1 Treasure Maps
+
+            if (Spawning)
+            {
+                PackGold(50, 200);
+            }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021215174532/uo.stratics.com/hunters/troll.shtml
-                    // 50 to 200 Gold, Potions, Arrows, Weapon Carried, 2 Raw Ribs (carved), Level 1 Treasure Maps
+                PackPotion();
+                PackPotion(0.5);
+                PackItem(new Arrow(Utility.Random(1, 3)));
 
-                    if (Spawning)
-                    {
-                        PackGold(50, 200);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackPotion(0.5);
-                        PackItem(new Arrow(Utility.Random(1, 3)));
-
-                        if (Body == 53)
-                            PackItem(new LargeBattleAxe());
-                    }
-
-                }
-                else
-                {
-                    AddLoot(LootPack.Average);
-                }
+                if (Body == 53)
+                    PackItem(new LargeBattleAxe());
             }
         }
 

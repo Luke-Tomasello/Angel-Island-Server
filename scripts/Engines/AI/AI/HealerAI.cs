@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -80,7 +80,7 @@ namespace Server.Mobiles
             }
             else
             {
-                Mobile toHelp = Find(m_All);
+                Mobile? toHelp = Find(m_All);
 
                 if (toHelp != null)
                 {
@@ -128,7 +128,7 @@ namespace Server.Mobiles
 
         private void ProcessTarget(Target targ, NeedDelegate[] func)
         {
-            Mobile toHelp = Find(func);
+            Mobile? toHelp = Find(func);
 
             if (toHelp != null)
             {
@@ -147,7 +147,7 @@ namespace Server.Mobiles
             }
         }
 
-        private Mobile Find(params NeedDelegate[] funcs)
+        private Mobile? Find(params NeedDelegate[] funcs)
         {
             if (m_Mobile.Deleted)
                 return null;
@@ -157,7 +157,7 @@ namespace Server.Mobiles
             if (map != null)
             {
                 double prio = 0.0;
-                Mobile found = null;
+                Mobile? found = null;
 
                 IPooledEnumerable eable = m_Mobile.GetMobilesInRange(m_Mobile.RangePerception);
                 foreach (Mobile m in eable)

@@ -1,30 +1,21 @@
-/***************************************************************************
+﻿/***************************************************************************
  *
  *   RunUO                   : May 1, 2002
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
- *
- ***************************************************************************/
-
-/***************************************************************************
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
  *
  ***************************************************************************/
 
 /* Scripts\Engines\DataRecorder\DataRecorder.cs
  * CHANGELOG:
- *  1/27/22, Adam (RecordMusicSales)
+ *  4/5/2026, Adam
+ *      Renamed LootGold → PvMLootGold for clarity (now clearly represents gold earned via PvM activities).
+ *  1/27/22, Adam
  *      Record data for two new leader boards for MusicSales
- *          a. total gold earned from sales
- *          b. total number of tracks sold
  *  11/6/21, Adam
  *      Check for null mobile before adding back to in-memory database
  *  10/25/21, Adam
@@ -33,534 +24,545 @@
  *		first time check in
  */
 
-using Server.Engines.ChampionSpawn;
-using Server.Items;
-using Server.Mobiles;
+using Server.Diagnostics;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Server.Engines.DataRecorder
 {
+    /// <summary>
+    /// DataRecorder - Central activity and economy tracking system for the shard.
+    ///
+    /// This static class records various player activities and earnings used for:
+    /// - Leaderboards (PvM, Prison Quest, BOD, Music, Earned Gold, etc.)
+    /// - Seasonal rewards and point systems
+    /// - Township subsidies and internal statistics
+    ///
+    /// All data is stored in a single unified structure using RecorderDomain.
+    /// Old separate dictionaries have been retired in favor of this model.
+    ///
+    /// Serialization:
+    /// Current version is 10 (unified dynamic format). Adding new domains requires
+    /// no changes to Load/Save.
+    /// </summary>
+    public enum RecorderDomain
+    {
+        PvMLootGold,    // Gold earned from killing monsters and looting them
+        ChestGold,      // Gold earned from lockpicking chests
+        PvMPoints,      // Damage contribution points for PvM leaderboards
+        PQChamps,       // Prison Quest Champion damage points
+
+        BODPoints,
+
+        MusicGold,
+        MusicPoints,
+
+        PQEscapes,
+        PQRares,
+        PQSterling,
+
+        SmithBODGold,
+        TailorBODGold,
+        CarpenterBODGold,
+
+        TheftGold,      // Gold earned through stealing
+
+        // New: Generic bucket for major launch / seasonal event participation points
+        // Reusable across any future launch or big event without creating dead domains.
+        LaunchEventPoints
+    }
+
     public static class DataRecorder
     {
+        public static void Initialize()
+        {
+            CommandSystem.Register("WipeLeaderboards", AccessLevel.Owner, new CommandEventHandler(WipeLeaderboards_OnCommand));
+        }
+
         public static void Configure()
         {
-            EventSink.WorldLoad += new Server.WorldLoadEventHandler(Load);
-            EventSink.WorldSave += new Server.WorldSaveEventHandler(Save);
+            EventSink.WorldLoad += Load;
+            EventSink.WorldSave += Save;
         }
-        #region Prison Quest Points
-        private static Dictionary<Mobile, int[]> m_PQuestPoints = new Dictionary<Mobile, int[]>();
-        public static Dictionary<Mobile, int[]> GetPQuestPoints { get { return m_PQuestPoints; } }
-        public static void RecordPQuestPoints(Mobile m, int escapes, int rares, int sterling)
+
+        #region Core Data Storage
+
+        private static readonly Dictionary<Mobile, Dictionary<RecorderDomain, double>> m_Database
+            = new Dictionary<Mobile, Dictionary<RecorderDomain, double>>();
+
+        /// <summary>
+        /// Read-only access to the internal database.
+        /// Use Add() and Get() for normal operations.
+        /// </summary>
+        public static IReadOnlyDictionary<Mobile, Dictionary<RecorderDomain, double>> Database
+            => m_Database;
+
+        /// <summary>
+        /// Add (or subtract) a value for a specific domain for a player.
+        /// Negative values are supported and will clean up zero/negative entries.
+        /// </summary>
+        public static void Add(Mobile m, RecorderDomain domain, double value)
         {
-            if (m_PQuestPoints.ContainsKey(m))
-            {
-                m_PQuestPoints[m][0] += escapes;
-                m_PQuestPoints[m][1] += rares;
-                m_PQuestPoints[m][2] += sterling;
-            }
-            else
-                m_PQuestPoints.Add(m, new int[] { escapes, rares, sterling });
-        }
-        #endregion Prison Quest Points
-        #region Music Sales
-        private static Dictionary<Mobile, int[]> m_MusicSales = new Dictionary<Mobile, int[]>();
-        public static Dictionary<Mobile, int[]> GetMusicSales { get { return m_MusicSales; } }
-        public static void RecordMusicSales(Mobile m, int price, int sold)
-        {
-            if (m_MusicSales.ContainsKey(m))
-            {
-                m_MusicSales[m][0] += price;
-                m_MusicSales[m][1] += sold;
-            }
-            else
-                m_MusicSales.Add(m, new int[] { price, sold });
-        }
-        #endregion Music Sales
-        #region BOD Points
-        private static Dictionary<Mobile, int> m_BODPoints = new Dictionary<Mobile, int>();
-        public static Dictionary<Mobile, int> GetBODPoints { get { return m_BODPoints; } }
-        private static Dictionary<Mobile, int> m_BODGold = new Dictionary<Mobile, int>();
-        public static Dictionary<Mobile, int> GetBODGold { get { return m_BODGold; } }
-        public static void RecordBODPoints(Mobile m, int points)
-        {   // called from HandleBulkOrderDropped - BulkOrderSystem
-            if (m_BODPoints.ContainsKey(m))
-                m_BODPoints[m] += points;
-            else
-                m_BODPoints.Add(m, points);
-        }
-        public static void RecordBODGold(Mobile m, int gold)
-        {   // called from HandleBulkOrderDropped - BulkOrderSystem
-            if (m_BODGold.ContainsKey(m))
-                m_BODGold[m] += gold;
-            else
-                m_BODGold.Add(m, gold);
-        }
-        #endregion BOD Points
-        #region PackGold
-        //private static Dictionary<Mobile, int> m_GoldDrop = new Dictionary<Mobile, int>();              // beast, amount (not serialized)
-        /*public static void PackGold(Mobile beast, int amount)
-        {
-            m_GoldDrop.Add(beast, amount);
-        }*/
-        #endregion PackGold
-        #region CoalesceGoldEarned
-        private static Dictionary<Mobile, double> m_GoldEarned = new Dictionary<Mobile, double>();      // player, total (serialized)
-        public static void LockPick(Mobile from, Item container)
-        {
-            LockableContainer chest = container as LockableContainer;
-            if (chest == null || chest.Items == null || chest.Items.Count == 0)
+            if (m == null || value == 0)
                 return;
-            if (Server.Multis.BaseHouse.FindHouseAt(chest) != null)
-                return;
-            if (chest.Movable == true)
-                return;
-            foreach (Item item in chest.Items)
+
+            if (!m_Database.TryGetValue(m, out var table))
             {
-                if (item is Gold)
-                {
-                    if (m_GoldEarned.ContainsKey(from))
-                    {
-                        m_GoldEarned[from] += (item as Gold).Amount;
-                    }
-                    else
-                    {
-                        m_GoldEarned.Add(from, (item as Gold).Amount);
-                    }
-                }
+                table = new Dictionary<RecorderDomain, double>();
+                m_Database[m] = table;
+            }
+
+            table.TryGetValue(domain, out double current);
+            double newValue = current + value;
+
+            if (newValue <= 0)
+            {
+                table.Remove(domain);
+                if (table.Count == 0)
+                    m_Database.Remove(m);
+            }
+            else
+            {
+                table[domain] = newValue;
             }
         }
-        public static List<KeyValuePair<Mobile, double>> GoldEarned
+
+        /// <summary>
+        /// Get the value for a specific domain for a player. Returns 0 if not present.
+        /// </summary>
+        public static double Get(Mobile m, RecorderDomain domain)
         {
-            get
-            {
-                List<KeyValuePair<Mobile, double>> new_list = new List<KeyValuePair<Mobile, double>>();
-                foreach (KeyValuePair<Mobile, double> kvp in m_GoldEarned)
-                    new_list.Add(kvp);
+            if (m == null)
+                return 0;
 
-                new_list.Sort((e1, e2) =>
-                {
-                    return e2.Value.CompareTo(e1.Value);
-                });
-                return new_list;
-            }
+            if (m_Database.TryGetValue(m, out var table) &&
+                table.TryGetValue(domain, out var value))
+                return value;
+
+            return 0;
         }
-        public static void CoalesceGoldEarned(Mobile beast, List<DamageStore> players)
+
+        /// <summary>
+        /// Delete all recorded data for a mobile.
+        /// </summary>
+        public static void Delete(Mobile m)
         {
-            if (players != null && players.Count > 0)
-            {   // we now have the players responsible for this beast's death
-                // find out how much of the drop-points they are entitled to
-                Dictionary<Mobile, double> goldEarnedSubTotal = PercentOfDrop(beast, players);
-                // okay, now attribute those points to the players
-                foreach (KeyValuePair<Mobile, double> mob_percent in goldEarnedSubTotal)
-                {
-                    if (m_GoldEarned.ContainsKey(mob_percent.Key))
-                    {
-                        m_GoldEarned[mob_percent.Key] += mob_percent.Value;
-                    }
-                    else
-                    {
-                        m_GoldEarned.Add(mob_percent.Key, mob_percent.Value);
-                    }
-                }
-            }
+            if (m == null)
+                return;
+
+            m_Database.Remove(m);
         }
-        private static Dictionary<Mobile, double> PercentOfDrop(Mobile beast, List<DamageStore> players)
-        {   // we now have the damage stores for this beast's death
-            // add up all the damage to determine the beast's damage points.
-            // Note: Damage points can exceed HP of the creature due to 'healing' 
-            // Then determine our percentage of the damage. That's the credited points
-            //  for each player.
-            Dictionary<Mobile, double> goldEarnedSubTotal = new Dictionary<Mobile, double>();    // player, subtotal
 
-            //  calc damage points
-            double beastDamagePoints = 0;
-            foreach (DamageStore ds in players)
-                beastDamagePoints += ds.m_Damage;
+        /// <summary>
+        /// Replace one mobile key with another, preserving recorded domain values.
+        /// Used when a semantic player identity is transferred to a Substitute.
+        /// </summary>
+        public static void Replace(Mobile from, Mobile to)
+        {
+            if (from == null || to == null || from == to)
+                return;
 
-            // assign each participent a percentage of loot-points/damage-points 
-            foreach (DamageStore ds in players)
+            if (!m_Database.TryGetValue(from, out var fromTable))
+                return;
+
+            if (!m_Database.TryGetValue(to, out var toTable))
             {
-                double prct = (double)ds.m_Damage / beastDamagePoints;
-                double loot = prct * (double)((beast as BaseCreature).PackedGold);
-                goldEarnedSubTotal.Add(ds.m_Mobile, loot);
+                toTable = new Dictionary<RecorderDomain, double>();
+                m_Database[to] = toTable;
             }
 
-            return goldEarnedSubTotal;
-        }
-        #endregion CoalesceGoldEarned
-        #region PvM Rankings
-        // pseudo dictionary that allows null keys
-        private static List<KeyValuePair<Mobile, int>> m_GeneralPvMRankings = new List<KeyValuePair<Mobile, int>>();
-        public static List<KeyValuePair<Mobile, int>> GeneralPvMRankings { get { return m_GeneralPvMRankings; } }
-        private static List<KeyValuePair<Mobile, int>> m_ChampPvMRankings = new List<KeyValuePair<Mobile, int>>();
-        public static List<KeyValuePair<Mobile, int>> ChampPvMRankings { get { return m_ChampPvMRankings; } }
-        public static List<KeyValuePair<Mobile, int>> TopPvMers(List<KeyValuePair<Mobile, int>> database)
-        {   // called by Cron to populate the LeaderBoard
-
-            if (database.Count == 0)
-                return null;
-            List<KeyValuePair<Mobile, int>> list = new List<KeyValuePair<Mobile, int>>();
-            foreach (KeyValuePair<Mobile, int> kvp in database)
-                list.Add(kvp);
-
-            list.Sort((e1, e2) =>
+            foreach (var kvp in fromTable)
             {
-                return e2.Value.CompareTo(e1.Value);
-            });
+                toTable.TryGetValue(kvp.Key, out double current);
+
+                double newValue = current + kvp.Value;
+
+                if (newValue <= 0)
+                    toTable.Remove(kvp.Key);
+                else
+                    toTable[kvp.Key] = newValue;
+            }
+
+            m_Database.Remove(from);
+
+            if (toTable.Count == 0)
+                m_Database.Remove(to);
+        }
+        public static void RemoveDeletedEntries()
+        {
+            List<Mobile> toDelete = new List<Mobile>();
+
+            foreach (Mobile m in m_Database.Keys)
+            {
+                if (m == null || m.Deleted)
+                    toDelete.Add(m);
+            }
+
+            foreach (Mobile m in toDelete)
+                Delete(m);
+        }
+        #endregion
+
+        #region Leaderboards
+
+        /// <summary>
+        /// Returns the top players by total earned gold (PvMLootGold + ChestGold + TheftGold combined).
+        /// This is what players see on the main "Earned Gold" leaderboard.
+        /// </summary>
+        public static List<KeyValuePair<Mobile, int>> GetEarnedGoldLeaderboard(int maxCount = 0)
+        {
+            var combined = new Dictionary<Mobile, double>();
+
+            foreach (var entry in Database)
+            {
+                Mobile m = entry.Key;
+                if (m == null) continue;
+
+                double total = Get(m, RecorderDomain.PvMLootGold) +
+                               Get(m, RecorderDomain.ChestGold) +
+                               Get(m, RecorderDomain.TheftGold);
+
+                if (total > 0)
+                    combined[m] = total;
+            }
+
+            var list = new List<KeyValuePair<Mobile, int>>(
+                combined.Select(k => new KeyValuePair<Mobile, int>(k.Key, (int)k.Value))
+            );
+
+            list.Sort((a, b) => b.Value.CompareTo(a.Value));
+
+            if (maxCount > 0 && list.Count > maxCount)
+                list.RemoveRange(maxCount, list.Count - maxCount);
 
             return list;
         }
 
-        public static void PvMStats(Mobile beast, List<DamageStore> list, object hSpawner)
-        {   // Called in BaseCreature when the creature is killed
-            // list is already Sorted by damage
-
-            // divvy up points between party members
-            SortedList<Mobile, int> Results = BaseCreature.ProcessDamageStore(list);
-
-            // anti-cheezing: Players have found that healing a monster (or allowing it to heal itself,) can yield unlimited damage points.
-            //  We therefore limit the damage points to no more than the creature's HitsMax
-            BaseCreature.ClipDamageStore(ref Results, beast);
-
-            // update rankings dictionary, add new players
-            foreach (var kvp in Results)
-            {
-                if (!Core.Debug && !Core.UOTC_CFG)
-                    if (kvp.Key.AccessLevel > AccessLevel.Player)
-                        continue;
-
-                // update player damage totals
-                if (hSpawner is ChampEngine ce && ce.KillDatabase)  // this champ engine is registered for separate kill accounting
-                {
-                    UpdateStats(kvp, m_ChampPvMRankings);
-                    UpdateTownshipForPlayer(kvp);
-                }
-
-                // general accounting always applies
-                UpdateStats(kvp, m_GeneralPvMRankings);              // general kill accounting
-            }
-
-            // update Gold Farmed for this player
-            //  We do this by calling CoalesceGoldFarmed with only the damage to *this* beast
-            //  CoalesceGoldFarmed will then calc how much gold should be attributed to this player
-            CoalesceGoldEarned(beast, list);
-        }
-        private static void UpdateTownshipForPlayer(KeyValuePair<Mobile, int> kvp)
+        /// <summary>
+        /// Returns the top players for any single domain, sorted descending.
+        /// </summary>
+        public static List<KeyValuePair<Mobile, int>> GetTopPlayers(RecorderDomain domain, int maxCount = 0)
         {
-            if (TownshipStone.GetPlayerTownship(kvp.Key) is TownshipStone ts)
+            var list = new List<KeyValuePair<Mobile, int>>();
+
+            foreach (var entry in Database)
             {
-                ts.LBTaxSubsidy += kvp.Value;
-                ts.LBFameSubsidy += kvp.Value;
+                Mobile m = entry.Key;
+                if (m == null) continue;
+
+                double value = Get(m, domain);
+                if (value > 0)
+                    list.Add(new KeyValuePair<Mobile, int>(m, (int)value));
             }
+
+            list.Sort((a, b) => b.Value.CompareTo(a.Value));
+
+            if (maxCount > 0 && list.Count > maxCount)
+                list.RemoveRange(maxCount, list.Count - maxCount);
+
+            return list;
         }
-        private static void UpdateStats(KeyValuePair<Mobile, int> kvp, List<KeyValuePair<Mobile, int>> database)
+
+        /// <summary>
+        /// Returns the top players by total BOD gold earned (Smith + Tailor + Carpenter combined).
+        /// The leaderboard does not distinguish between professions — it shows the total.
+        /// </summary>
+        public static List<KeyValuePair<Mobile, int>> GetBODGoldLeaderboard(int maxCount = 0)
         {
-            int index = 0;
-            bool found = FindIndex(kvp.Key, out index, database);    // is this player in our database?
+            var combined = new Dictionary<Mobile, double>();
 
-            if (found == true)                 // do they have a right to these points?
+            foreach (var entry in Database)
             {
-                // update damage points for this player
-                KeyValuePair<Mobile, int> kvp_old = database[index];
-                KeyValuePair<Mobile, int> kvp_new = new KeyValuePair<Mobile, int>(kvp.Key, kvp_old.Value + kvp.Value);
-                database.RemoveAt(index);
-                database.Add(kvp_new);
+                Mobile m = entry.Key;
+                if (m == null) continue;
+
+                double totalBODGold =
+                    Get(m, RecorderDomain.SmithBODGold) +
+                    Get(m, RecorderDomain.TailorBODGold) +
+                    Get(m, RecorderDomain.CarpenterBODGold);
+
+                if (totalBODGold > 0)
+                    combined[m] = totalBODGold;
             }
-            else
-            {   // add this new player to our database
-                KeyValuePair<Mobile, int> new_record = new KeyValuePair<Mobile, int>(kvp.Key, kvp.Value);
-                database.Add(new_record);
-            }
+
+            var list = new List<KeyValuePair<Mobile, int>>(
+                combined.Select(k => new KeyValuePair<Mobile, int>(k.Key, (int)k.Value))
+            );
+
+            list.Sort((a, b) => b.Value.CompareTo(a.Value));
+
+            if (maxCount > 0 && list.Count > maxCount)
+                list.RemoveRange(maxCount, list.Count - maxCount);
+
+            return list;
         }
-        private static bool FindIndex(Mobile m, out int index, List<KeyValuePair<Mobile, int>> database)
+
+        #endregion
+
+        #region Recording Helpers
+        // Put this method in DataRecorder.cs
+        public static void RemoveStaffEntries()
         {
-            bool found = false;
-            index = 0;
-            foreach (KeyValuePair<Mobile, int> kvp in database)
-            {
-                if (kvp.Key == m)          // got the right player?
-                {
-                    found = true;               // got it, we will update totals now
-                    break;
-                }
-                index++;                        // at this index
-            }
+            var staffToRemove = m_Database.Keys
+                .Where(m => m != null && m.AccessLevel > AccessLevel.Player)
+                .ToList();
 
-            return found;
+            foreach (var m in staffToRemove)
+                m_Database.Remove(m);
         }
-
-        #endregion PvM Rankings
-        #region Purchase
         public static void GoldSink(Mobile m, object obj, int price)
         {
-            if (!Core.Debug && !Core.UOTC_CFG)
+            if (!Core.Debug && !Core.GMNTC_CFG)
                 if (m != null && m.AccessLevel > AccessLevel.Player)
                     return;
 
-            if (obj is Item item)
-            {
-                // TODO: add player vendor upkeep
-                // Rental Vendor upkeep
-                Type type = item.GetType();
-                if (
-                    type.FullName.ToLower().Contains("deed") ||         // all deed types, filter below
-                    type.FullName.ToLower().Contains("library") ||      // 
-                    item is TownshipStone                               // upkeep/fees
-                    )
-                {
-                    // toss out tents and classic 7x7 houses
-                    ;
-                }
-            }
-            else if (obj is Mobile mobile)
-            {   // player vendors (daily charges)
-                ;
-            }
+            // TODO: Expand with player vendor upkeep, rental charges, etc.
         }
-        #endregion Purchase
-        #region Serialization
+
+        #endregion
+
+
+        #region Serialization (Version 10 - Unified Dynamic Format)
+
         public static void Load()
         {
             if (!File.Exists("Saves/DataRecorder.bin"))
                 return;
 
             Console.WriteLine("Data Recorder Loading...");
+
+            BinaryFileReader? reader = null;
+
             try
             {
-                BinaryFileReader reader = new BinaryFileReader(new BinaryReader(new FileStream("Saves/DataRecorder.bin", FileMode.Open, FileAccess.Read)));
+                reader = new BinaryFileReader(
+                    new BinaryReader(new FileStream("Saves/DataRecorder.bin", FileMode.Open, FileAccess.Read)));
+
                 int version = reader.ReadInt();
 
                 switch (version)
                 {
-                    case 9: goto case 8;    // update prison quest data
+                    case 10:
+                        // Unified dynamic format
+                        int playerCount = reader.ReadInt();
+                        for (int i = 0; i < playerCount; i++)
+                        {
+                            Mobile? m = reader.ReadMobile();
+                            if (m == null)
+                            {
+                                int skip = reader.ReadInt();
+                                for (int j = 0; j < skip; j++)
+                                {
+                                    reader.ReadInt();   // domain
+                                    reader.ReadDouble(); // value
+                                }
+                                continue;
+                            }
+
+                            int domainCount = reader.ReadInt();
+                            for (int j = 0; j < domainCount; j++)
+                            {
+                                int domainId = reader.ReadInt();
+                                double value = reader.ReadDouble();
+                                if (value != 0)
+                                    Add(m, (RecorderDomain)domainId, value);
+                            }
+                        }
+                        break;
+
+                    // Migration from legacy versions (9 and below)
+                    case 9:
+                        goto case 8;
                     case 8:
+                        // Prison Quest Champ PvM Rankings → PQChamps
+                        int count = reader.ReadInt();
+                        for (int i = 0; i < count; i++)
                         {
-                            int count = reader.ReadInt();
-                            for (int ix = 0; ix < count; ix++)
-                            {
-                                Mobile m = reader.ReadMobile();
-                                int damage = reader.ReadInt();
-                                KeyValuePair<Mobile, int> kvp = new KeyValuePair<Mobile, int>(m, damage);
-                                if (m != null)
-                                    m_ChampPvMRankings.Add(kvp);
-                            }
-                            goto case 7;
+                            Mobile? m = reader.ReadMobile();
+                            int damage = reader.ReadInt();
+                            if (m != null && damage > 0)
+                                Add(m, RecorderDomain.PQChamps, damage);
                         }
-                    case 7:
-                        {
-                            int count = reader.ReadInt();
-                            for (int ix = 0; ix < count; ix++)
-                            {
-                                Mobile m = reader.ReadMobile();
-                                int gold = reader.ReadInt();
-                                if (m != null)
-                                    m_BODGold.Add(m, gold);
-                            }
-                            goto case 6;
-                        }
-                    case 6:
-                        {
-                            int count = reader.ReadInt();
-                            for (int ix = 0; ix < count; ix++)
-                            {
-                                Mobile m = reader.ReadMobile();
-                                int escapes = reader.ReadInt();
-                                int rares = reader.ReadInt();
-                                int sterling = 0;
-                                if (version >= 9)
-                                    sterling = reader.ReadInt();
+                        goto case 7;
 
-                                if (m != null)
-                                    m_PQuestPoints.Add(m, new int[] { escapes, rares, sterling });
-                            }
-                            goto case 5;
-                        }
-                    case 5:
+                    case 7: // Legacy BOD Gold → split evenly across professions
+                        count = reader.ReadInt();
+                        for (int i = 0; i < count; i++)
                         {
-                            int count = reader.ReadInt();
-                            for (int ix = 0; ix < count; ix++)
-                            {
-                                Mobile m = reader.ReadMobile();
-                                int price = reader.ReadInt();
-                                int sold = reader.ReadInt();
-                                if (m != null)
-                                    m_MusicSales.Add(m, new int[] { price, sold });
-                            }
-                            goto case 4;
-                        }
-                    case 4:
-                        {
-                            int count = reader.ReadInt();
-                            for (int ix = 0; ix < count; ix++)
-                            {
-                                Mobile m = reader.ReadMobile();
-                                int points = reader.ReadInt();
-                                if (m != null)
-                                    m_BODPoints.Add(m, points);
-                            }
-                            goto case 3;
-                        }
-                    case 3:
-                        {
-                            int count = reader.ReadInt();
-                            for (int ix = 0; ix < count; ix++)
-                            {
-                                Mobile m = reader.ReadMobile();
-                                int damage = reader.ReadInt();
-                                KeyValuePair<Mobile, int> kvp = new KeyValuePair<Mobile, int>(m, damage);
-                                if (m != null)
-                                    m_GeneralPvMRankings.Add(kvp);
-                            }
+                            Mobile? m = reader.ReadMobile();
+                            int gold = reader.ReadInt();
 
-                            count = reader.ReadInt();
-                            for (int ix = 0; ix < count; ix++)
+                            if (m != null && gold > 0)
                             {
-                                Mobile m = reader.ReadMobile();
-                                double score = reader.ReadDouble();
-                                if (m != null)
-                                    m_GoldEarned.Add(m, score);
+                                int goldPerProfession = gold / 3;
+                                int remainder = gold % 3;
+
+                                if (goldPerProfession > 0)
+                                {
+                                    Add(m, RecorderDomain.SmithBODGold, goldPerProfession);
+                                    Add(m, RecorderDomain.TailorBODGold, goldPerProfession);
+                                    Add(m, RecorderDomain.CarpenterBODGold, goldPerProfession);
+                                }
+
+                                if (remainder > 0)
+                                    Add(m, RecorderDomain.SmithBODGold, remainder);
                             }
-                            break;
+                        }
+                        goto case 6;
+
+                    case 6: // Prison Quest Points
+                        count = reader.ReadInt();
+                        for (int i = 0; i < count; i++)
+                        {
+                            Mobile? m = reader.ReadMobile();
+                            int escapes = reader.ReadInt();
+                            int rares = reader.ReadInt();
+                            int sterling = reader.ReadInt();
+                            if (m != null)
+                            {
+                                if (escapes > 0) Add(m, RecorderDomain.PQEscapes, escapes);
+                                if (rares > 0) Add(m, RecorderDomain.PQRares, rares);
+                                if (sterling > 0) Add(m, RecorderDomain.PQSterling, sterling);
+                            }
+                        }
+                        goto case 5;
+
+                    case 5: // Music Sales
+                        count = reader.ReadInt();
+                        for (int i = 0; i < count; i++)
+                        {
+                            Mobile? m = reader.ReadMobile();
+                            int price = reader.ReadInt();
+                            int sold = reader.ReadInt();
+                            if (m != null)
+                            {
+                                if (price > 0) Add(m, RecorderDomain.MusicGold, price);
+                                if (sold > 0) Add(m, RecorderDomain.MusicPoints, sold);
+                            }
+                        }
+                        goto case 4;
+
+                    case 4: // BOD Points
+                        count = reader.ReadInt();
+                        for (int i = 0; i < count; i++)
+                        {
+                            Mobile? m = reader.ReadMobile();
+                            int points = reader.ReadInt();
+                            if (m != null && points > 0)
+                                Add(m, RecorderDomain.BODPoints, points);
+                        }
+                        goto case 3;
+
+                    case 3: // General PvM Rankings + PvMLootGold (was LootGold)
+                        count = reader.ReadInt();
+                        for (int i = 0; i < count; i++)
+                        {
+                            Mobile? m = reader.ReadMobile();
+                            int damage = reader.ReadInt();
+                            if (m != null && damage > 0)
+                                Add(m, RecorderDomain.PvMPoints, damage);
                         }
 
-                    default:
+                        count = reader.ReadInt();
+                        for (int i = 0; i < count; i++)
                         {
-                            throw new Exception("Invalid DataRecorder.bin savefile version.");
+                            Mobile? m = reader.ReadMobile();
+                            double gold = reader.ReadDouble();
+                            if (m != null && gold > 0)
+                                Add(m, RecorderDomain.PvMLootGold, gold);
                         }
+                        break;
                 }
-
-                reader.Close();
             }
-            catch
+            catch (Exception ex)
             {
-                Utility.Monitor.WriteLine("Error reading DataRecorder.bin, using default values:", ConsoleColor.Red);
+                Utility.Monitor.WriteLine("Error loading DataRecorder.bin", ConsoleColor.Red);
+                LogHelper.LogException(ex);
+            }
+            finally
+            {
+                reader?.Close();
             }
         }
+
         public static void Save(WorldSaveEventArgs e)
         {
             Console.WriteLine("Data Recorder Saving...");
+
+            BinaryFileWriter? writer = null;
+
             try
             {
-                BinaryFileWriter writer = new BinaryFileWriter("Saves/DataRecorder.bin", true);
-                int version = 9;
-                writer.Write((int)version); // version
+                writer = new BinaryFileWriter("Saves/DataRecorder.bin", true);
+                writer.Write(10); // unified format
 
-                switch (version)
+                writer.Write(m_Database.Count);
+
+                foreach (var playerEntry in m_Database)
                 {
-                    case 9: goto case 8;    // update prison quest data
-                    case 8:
-                        {
-                            // version 8
-                            writer.Write(m_ChampPvMRankings.Count);
-                            foreach (KeyValuePair<Mobile, int> kvp in m_ChampPvMRankings)
-                            {
-                                writer.Write(kvp.Key);
-                                writer.Write(kvp.Value);
-                            }
-                            goto case 7;
-                        }
-                    case 7:
-                        {
-                            // version 7
-                            writer.Write(m_BODGold.Count);
-                            foreach (KeyValuePair<Mobile, int> kvp in m_BODGold)
-                            {
-                                writer.Write(kvp.Key);
-                                writer.Write(kvp.Value);
-                            }
-                            goto case 6;
-                        }
-                    case 6:
-                        {
-                            writer.Write(m_PQuestPoints.Count);
-                            foreach (KeyValuePair<Mobile, int[]> kvp in m_PQuestPoints)
-                            {
-                                writer.Write(kvp.Key);
-                                writer.Write(kvp.Value[0]);
-                                writer.Write(kvp.Value[1]);
-                                writer.Write(kvp.Value[2]);
-                            }
-                            goto case 5;
-                        }
-                    case 5:
-                        {
-                            writer.Write(m_MusicSales.Count);
-                            foreach (KeyValuePair<Mobile, int[]> kvp in m_MusicSales)
-                            {
-                                writer.Write(kvp.Key);
-                                writer.Write(kvp.Value[0]);
-                                writer.Write(kvp.Value[1]);
-                            }
-                            goto case 4;
-                        }
-                    case 4:
-                        {
-                            // version 4
-                            writer.Write(m_BODPoints.Count);
-                            foreach (KeyValuePair<Mobile, int> kvp in m_BODPoints)
-                            {
-                                writer.Write(kvp.Key);
-                                writer.Write(kvp.Value);
-                            }
-                            goto case 3;
-                        }
-                    case 3:
-                        {
-                            // version 3
-                            writer.Write(m_GeneralPvMRankings.Count);
-                            foreach (KeyValuePair<Mobile, int> kvp in m_GeneralPvMRankings)
-                            {
-                                writer.Write(kvp.Key);
-                                writer.Write(kvp.Value);
-                            }
+                    writer.Write(playerEntry.Key);
 
-                            writer.Write(m_GoldEarned.Count);
-                            foreach (KeyValuePair<Mobile, double> kvp in m_GoldEarned)
-                            {
-                                writer.Write(kvp.Key);
-                                writer.Write(kvp.Value);
-                            }
-                            break;
-                        }
+                    var domains = playerEntry.Value;
+                    writer.Write(domains.Count);
 
-                    case 2:
-                        {
-                            // version 2
-                            /*writer.Write(m_PvMRankings.Count);
-                            foreach (KeyValuePair<Mobile, DamageStore> kvp in m_PvMRankings)
-                            {
-                                writer.Write(kvp.Key);
-                                writer.Write(kvp.Value.m_Mobile);
-                                writer.Write(kvp.Value.m_Damage);
-                                writer.Write(kvp.Value.m_HasRight);
-                            }*/
-                            break;
-                        }
-
-                    case 1:
-                        {
-                            // version 1
-                            /*writer.Write(m_PvMRankings.Count);
-                            foreach (KeyValuePair<Mobile, DamageStore> kvp in m_PvMRankings)
-                            {
-                                writer.Write(kvp.Key);
-                                writer.Write(kvp.Value.m_Damage);
-                                writer.Write(kvp.Value.m_HasRight);
-                            }*/
-                            break;
-                        }
+                    foreach (var d in domains)
+                    {
+                        writer.Write((int)d.Key);
+                        writer.Write(d.Value);
+                    }
                 }
-
-                writer.Close();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error writing DataRecorder.bin");
-                Console.WriteLine(ex.ToString());
+                LogHelper.LogException(ex);
+            }
+            finally
+            {
+                writer?.Close();
             }
         }
-        #endregion Serialization
+
+        #endregion
+
+
+        #region Wipe Command
+
+        [Usage("WipeLeaderboards")]
+        [Description("Clears all leaderboard data. Does not delete the associated persistent storage.")]
+        public static void WipeLeaderboards_OnCommand(CommandEventArgs e)
+        {
+            try
+            {
+                int clearedCount = ClearAllDataRecorder();
+
+                string message = $"{clearedCount} leaderboards cleared.";
+
+                if (e.Mobile != null)
+                    e.Mobile.SendMessage(0x3B2, message);
+                else
+                    Console.WriteLine(message);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex);
+
+                if (e.Mobile != null)
+                    e.Mobile.SendMessage(0x25, "Failed to wipe leaderboards. Check logs.");
+                else
+                    Console.WriteLine("Failed to wipe leaderboards. Check logs.");
+            }
+        }
+
+        public static int ClearAllDataRecorder()
+        {
+            int count = m_Database.Count;
+            m_Database.Clear();
+            return count;
+        }
+
+        #endregion
     }
 }

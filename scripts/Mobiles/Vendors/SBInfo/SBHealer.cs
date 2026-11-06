@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -89,5 +89,38 @@ namespace Server.Mobiles
                 }
             }
         }
+    }
+
+    public class SBWanderingHealer : SBInfo
+    {
+        private ArrayList m_BuyInfo = new InternalBuyInfo();
+        private IShopSellInfo m_SellInfo = new InternalSellInfo();
+
+        public SBWanderingHealer()
+        {
+        }
+
+        public override IShopSellInfo SellInfo { get { return m_SellInfo; } }
+        public override ArrayList BuyInfo { get { return m_BuyInfo; } }
+
+        public class InternalBuyInfo : ArrayList
+        {
+            public InternalBuyInfo()
+            {
+                Add(new GenericBuyInfo(typeof(Bandage), BaseVendor.PlayerPays(typeof(Bandage)), 20, 0xE21, 0));
+                Add(new GenericBuyInfo(typeof(LesserHealPotion), BaseVendor.PlayerPays(typeof(LesserHealPotion)), 20, 0xF0C, 0));
+                Add(new GenericBuyInfo(typeof(RefreshPotion), BaseVendor.PlayerPays(typeof(RefreshPotion)), 20, 0xF0B, 0));
+                Add(new GenericBuyInfo(typeof(Garlic), BaseVendor.PlayerPays(typeof(Garlic)), SBMage.ReagentStockMin, SBMage.ReagentStockMin, SBMage.ReagentStockMax, 0xF84, 0));
+                Add(new GenericBuyInfo(typeof(Ginseng), BaseVendor.PlayerPays(typeof(Ginseng)), SBMage.ReagentStockMin, SBMage.ReagentStockMin, SBMage.ReagentStockMax, 0xF85, 0));
+            }
+        }
+
+        public class InternalSellInfo : GenericSellInfo
+        {
+            public InternalSellInfo()
+            {
+            }
+        }
+
     }
 }

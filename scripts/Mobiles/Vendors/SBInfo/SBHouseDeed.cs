@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts/Mobiles/Vendors/SBInfo/SBHouseDeed.cs
  * CHANGELOG
+ *  10/20/26, Adam: (Architect deed buyback)
+ *      Commented out the house-deed cash buyback. It never ran: house deeds are Newbied, so VendorSell never lists them.
+ *      The RealEstateBroker is the refund mechanism (80% of the deed price, HouseDeed and StaticDeed, all rulesets).
  *  11/8/22, Adam: (Vendor System)
  *  Complete overhaul of the vendor system:
  * - DisplayCache:
@@ -130,26 +133,28 @@ namespace Server.Mobiles
             {
                 if (Core.RuleSets.ShopkeepersBuyItemsRules())
                 {   // cash buyback
-                    Add(typeof(StonePlasterHouseDeed), StonePlasterHouseDeed.m_price);
-                    Add(typeof(FieldStoneHouseDeed), FieldStoneHouseDeed.m_price);
-                    Add(typeof(SmallBrickHouseDeed), SmallBrickHouseDeed.m_price);
-                    Add(typeof(WoodHouseDeed), WoodHouseDeed.m_price);
-                    Add(typeof(WoodPlasterHouseDeed), WoodPlasterHouseDeed.m_price);
-                    Add(typeof(ThatchedRoofCottageDeed), ThatchedRoofCottageDeed.m_price);
-                    Add(typeof(BrickHouseDeed), BrickHouseDeed.m_price);
-                    Add(typeof(TwoStoryWoodPlasterHouseDeed), TwoStoryWoodPlasterHouseDeed.m_price);
-                    Add(typeof(TowerDeed), TowerDeed.m_price);
-                    Add(typeof(KeepDeed), KeepDeed.m_price);
-                    Add(typeof(CastleDeed), CastleDeed.m_price);
-                    Add(typeof(LargePatioDeed), LargePatioDeed.m_price);
-                    Add(typeof(LargeMarbleDeed), LargeMarbleDeed.m_price);
-                    Add(typeof(SmallTowerDeed), SmallTowerDeed.m_price);
-                    Add(typeof(LogCabinDeed), LogCabinDeed.m_price);
-                    Add(typeof(SandstonePatioDeed), SandstonePatioDeed.m_price);
-                    Add(typeof(VillaDeed), VillaDeed.m_price);
-                    Add(typeof(StoneWorkshopDeed), StoneWorkshopDeed.m_price);
-                    Add(typeof(MarbleWorkshopDeed), MarbleWorkshopDeed.m_price);
-                    Add(typeof(SmallBrickHouseDeed), SmallBrickHouseDeed.m_price);
+                    // House deeds are not bought back here: they are Newbied, so VendorSell never lists them.
+                    //  Refunds go through the RealEstateBroker: 80% of the deed price (RealEstateBroker.OnDragDrop).
+                    //Add(typeof(StonePlasterHouseDeed), StonePlasterHouseDeed.m_price);
+                    //Add(typeof(FieldStoneHouseDeed), FieldStoneHouseDeed.m_price);
+                    //Add(typeof(SmallBrickHouseDeed), SmallBrickHouseDeed.m_price);
+                    //Add(typeof(WoodHouseDeed), WoodHouseDeed.m_price);
+                    //Add(typeof(WoodPlasterHouseDeed), WoodPlasterHouseDeed.m_price);
+                    //Add(typeof(ThatchedRoofCottageDeed), ThatchedRoofCottageDeed.m_price);
+                    //Add(typeof(BrickHouseDeed), BrickHouseDeed.m_price);
+                    //Add(typeof(TwoStoryWoodPlasterHouseDeed), TwoStoryWoodPlasterHouseDeed.m_price);
+                    //Add(typeof(TowerDeed), TowerDeed.m_price);
+                    //Add(typeof(KeepDeed), KeepDeed.m_price);
+                    //Add(typeof(CastleDeed), CastleDeed.m_price);
+                    //Add(typeof(LargePatioDeed), LargePatioDeed.m_price);
+                    //Add(typeof(LargeMarbleDeed), LargeMarbleDeed.m_price);
+                    //Add(typeof(SmallTowerDeed), SmallTowerDeed.m_price);
+                    //Add(typeof(LogCabinDeed), LogCabinDeed.m_price);
+                    //Add(typeof(SandstonePatioDeed), SandstonePatioDeed.m_price);
+                    //Add(typeof(VillaDeed), VillaDeed.m_price);
+                    //Add(typeof(StoneWorkshopDeed), StoneWorkshopDeed.m_price);
+                    //Add(typeof(MarbleWorkshopDeed), MarbleWorkshopDeed.m_price);
+                    //Add(typeof(SmallBrickHouseDeed), SmallBrickHouseDeed.m_price);
                 }
             }
         }

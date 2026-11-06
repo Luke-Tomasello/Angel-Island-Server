@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -79,7 +79,7 @@ namespace Server.Mobiles
         // Adam; we don't want our boss to stop healing when the players leave the sector (a trick for killing monsters)
         public override bool CanDeactivate { get { return Hits == HitsMax; } }
 
-        public override void OnDamage(int amount, Mobile from, bool willKill, object source_weapon)
+        public override void OnDamage(int amount, Mobile from, bool willKill, DamageContext context)
         {
             if (Aggressors.Count > m_threatLevel)
             {
@@ -134,7 +134,7 @@ namespace Server.Mobiles
                     }
                 }
             }
-            base.OnDamage(amount, from, willKill, source_weapon);
+            base.OnDamage(amount, from, willKill, context);
         }
 
         public bool IsStaff(Mobile m)

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,17 +71,17 @@ namespace Server.Items
 
         public override bool OnDroppedToMobile(Mobile from, Mobile target)
         {
-            BaseCreature pet = target as BaseCreature;
+            BaseCreature? pet = target as BaseCreature;
 
             if (pet != null && !pet.IsDeadPet && pet.ControlMaster == from && pet.EatsKukuiNuts)
             {
-                string message = null;
+                string? message = null;
 
                 if (pet.BreedingParticipant)
                 {
                     message = "The magical properties of the kukui nut didn't seem to affect your pet.";
 
-                    if (Core.UOTC_CFG && pet.Maturity >= Maturity.Egg && pet.Maturity <= Maturity.Adult)
+                    if (Core.GMNTC_CFG && pet.Maturity >= Maturity.Egg && pet.Maturity <= Maturity.Adult)
                     {
                         BreedingSystem.SetMaturity(pet, (Maturity)((int)pet.Maturity + 1));
 

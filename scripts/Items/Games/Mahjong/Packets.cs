@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -55,7 +55,7 @@ namespace Server.Engines.Mahjong
             int n = 0;
             for (int i = 0; i < players.Seats; i++)
             {
-                Mobile mobile = players.GetPlayer(i);
+                Mobile? mobile = players.GetPlayer(i);
 
                 if (mobile != null)
                 {

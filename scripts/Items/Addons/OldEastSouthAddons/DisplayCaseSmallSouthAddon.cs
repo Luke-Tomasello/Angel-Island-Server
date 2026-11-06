@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -63,7 +63,7 @@ namespace Server.Items
             AddComponent(new AddonComponent(2724), 1, 0, 0);
             AddComponent(new AddonComponent(2724), 1, 0, 5);
             AddComponent(new AddonComponent(2835), 1, 0, 2);
-            AddonComponent ac = null;
+            AddonComponent? ac = null;
             ac = new AddonComponent(2723);
             AddComponent(ac, -1, 0, 0);
             ac = new AddonComponent(2722);

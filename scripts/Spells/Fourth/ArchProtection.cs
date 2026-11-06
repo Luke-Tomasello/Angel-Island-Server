@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -87,11 +87,11 @@ namespace Server.Spells.Fourth
 
                 if (Core.RuleSets.AOSRules())
                 {
-                    Party party = Party.Get(Caster);
+                    Party? party = Party.Get(Caster);
 
                     for (int i = 0; i < targets.Count; ++i)
                     {
-                        Mobile m = (Mobile)targets[i];
+                        Mobile? m = (Mobile?)targets[i];
 
                         if (m == Caster || (party != null && party.Contains(m)))
                         {
@@ -110,7 +110,7 @@ namespace Server.Spells.Fourth
                     {
                         for (int i = 0; i < targets.Count; ++i)
                         {
-                            Mobile m = (Mobile)targets[i];
+                            Mobile? m = (Mobile?)targets[i];
 
                             if (m.BeginAction(typeof(ArchProtectionSpell)))
                             {
@@ -185,7 +185,7 @@ namespace Server.Spells.Fourth
 
             protected override void OnTarget(Mobile from, object o)
             {
-                IPoint3D p = o as IPoint3D;
+                IPoint3D? p = o as IPoint3D;
 
                 if (p != null)
                     m_Owner.Target(p);

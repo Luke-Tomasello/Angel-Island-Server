@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,10 @@
 
 /* Scripts/Items/SkillItems/CarpenterItems/TaxidermyKit.cs
  * CHANGELOG
+ *  10/25/26, Adam (AIMusicSystem Phase 4 Step 1: shared device playback)
+ *      TrophyAddon: the music play lock, start and "playing elsewhere" check now come from CalypsoMusicPlayer
+ *      (NextMusicTime, ReadyToPlay, StartPerformance, UserBlocked); EndMusic is gone (the player restarts the lock
+ *      with DelayBetween when the performance ends). No behavior change.
  *  1/7/23, Yoar
  *      Trophies now retain their hue on redeed/replace.
  *  9/29/23, Yoar
@@ -258,9 +262,6 @@ namespace Server.Items
             m_OffsetZ = offsetZ;
             m_Hunter = hunter;
             m_TrophyWeight = trophyWeight;
-
-            NextMusicTime.Start(0);                 // we can play now
-            m_MusicPlayer.AllDone = EndMusic;
         }
 
         public TrophyAddon(Serial serial)
@@ -282,14 +283,14 @@ namespace Server.Items
                 else
                 {
                     CalypsoMusicPlayer.Metadata data = CalypsoMusicPlayer.GetMetaData(value);
-                    SendSystemMessage(string.Format("Adding music {0}", data?.Song));
+                    SendMessageNearby(string.Format("Adding music {0}", data?.Song));
 
                     m_RazorFile = value;
                     // delete the rolled up sheet music if it exists
-                    RolledUpSheetMusic rsm = GetRSM();
+                    RolledUpSheetMusic? rsm = GetRSM();
                     if (rsm != null)
                     {
-                        SendSystemMessage(string.Format("Deleting music {0}", rsm));
+                        SendMessageNearby(string.Format("Deleting music {0}", rsm));
                         RemoveItem(rsm);
                         rsm.Delete();
                     }
@@ -297,7 +298,7 @@ namespace Server.Items
             }
         }
         [CommandProperty(AccessLevel.Seer)]
-        public virtual Item SheetMusic
+        public virtual Item? SheetMusic
         {
             get
             {
@@ -308,11 +309,11 @@ namespace Server.Items
             }
             set
             {
-                Item musicObject = null;
+                Item? musicObject = null;
 
                 if (value != null && value is not RolledUpSheetMusic)
                 {
-                    this.SendSystemMessage("That is not rolled up sheet music");
+                    this.SendMessageNearby("That is not rolled up sheet music");
                     return;
                 }
 
@@ -329,12 +330,12 @@ namespace Server.Items
                     if (m_RazorFile != null)
                     {
                         if (GetRZR() != null)
-                            SendSystemMessage(string.Format("Deleting music {0}", m_RazorFile));
+                            SendMessageNearby(string.Format("Deleting music {0}", m_RazorFile));
                         m_RazorFile = null;
                     }
                     if (musicObject != null)
                     {
-                        SendSystemMessage(string.Format("Deleting music {0}", musicObject));
+                        SendMessageNearby(string.Format("Deleting music {0}", musicObject));
                         RemoveItem(musicObject);
                         musicObject.Delete();
                     }
@@ -343,8 +344,8 @@ namespace Server.Items
 
                     if (musicObject != null)
                     {
-                        Item item = Utility.Dupe(musicObject);
-                        SendSystemMessage(string.Format("Adding music {0}", item));
+                        Item? item = Utility.Dupe(musicObject);
+                        SendMessageNearby(string.Format("Adding music {0}", item));
                         AddItem(item);
                     }
                 }
@@ -368,7 +369,7 @@ namespace Server.Items
             }
         }
         [CommandProperty(AccessLevel.Seer)]
-        public string Song
+        public string? Song
         {
             get
             {
@@ -397,14 +398,14 @@ namespace Server.Items
             get { return m_range_exit; }
             set { m_range_exit = value; }
         }
-        private RolledUpSheetMusic GetRSM()
+        private RolledUpSheetMusic? GetRSM()
         {
             foreach (Item item in PeekItems)
                 if (item is RolledUpSheetMusic rsm)
                     return rsm;
             return null;
         }
-        private string GetRZR()
+        private string? GetRZR()
         {
             if (m_RazorFile != null && m_RazorFile.EndsWith(".rzr") && File.Exists(Path.Combine(Core.DataDirectory, "song files", m_RazorFile)))
                 return m_RazorFile;
@@ -412,31 +413,24 @@ namespace Server.Items
         }
         private object GetMusic()
         {
-            object music = GetRSM();
+            object? music = GetRSM();
             if (music == null)
                 music = GetRZR();
             return music;
         }
         private CalypsoMusicPlayer m_MusicPlayer = new CalypsoMusicPlayer();
-        private Utility.LocalTimer NextMusicTime = new Utility.LocalTimer();
+        private Utility.LocalTimer NextMusicTime { get { return m_MusicPlayer.NextMusicTime; } }   // the play lock
         public override bool HandlesOnMovement { get { return GetMusic() != null; } }
         public override void OnMovement(Mobile m, Point3D oldLocation)
         {   // CanPlay blocks if: the player is already playing, OR another player nearby (15 tiles) is playing
-            bool all_good = PlayMobile(m) && NextMusicTime.Triggered && !IsPlayLocked() && m.InRange(this, m_range_enter) && m.CanSee(this) && m.InLOS(this) && m_MusicPlayer.CanPlay(this);
+            bool all_good = PlayMobile(m) && m_MusicPlayer.ReadyToPlay && m.InRange(this, m_range_enter) && m.CanSee(this) && m.InLOS(this) && m_MusicPlayer.CanPlay(this);
             // check if this user is playing music elsewhere
-            bool blocked = SystemMusicPlayer.IsUserBlocked(m_MusicPlayer.MusicContextMobile);
+            bool blocked = m_MusicPlayer.UserBlocked;
             if (all_good && !blocked)
             {
                 object song = GetMusic();
                 if (song != null)
-                {
-                    // some music devices use a fake mobile for music context. This will be the mobile we check for distance etc.
-                    m_MusicPlayer.PlayerMobile = m;
-                    m_MusicPlayer.RangeExit = m_range_exit;         // how far the mobile can be from this
-                    //m_MusicPlayer.Play(m, this, song);
-                    m_MusicPlayer.Play(Utility.MakeTempMobile(), this, song);
-                    NextMusicTime.Stop();                           // just to block us. See EndMusic
-                }
+                    m_MusicPlayer.StartPerformance(m, this, song, m_range_exit, () => m_time_between);
             }
             else if (Core.Debug && all_good && blocked)
                 Utility.SendSystemMessage(m, 5, "Debug message: music not started because this player has initiated music elsewhere.");
@@ -464,14 +458,9 @@ namespace Server.Items
             }
             return false;
         }
-        public void EndMusic(Mobile from)
-        {   // called back from RazorInstrument
-            NextMusicTime.Start(m_time_between);
-            return;
-        }
         private bool IsPlayLocked()
         {
-            return !NextMusicTime.Running;
+            return m_MusicPlayer.IsPlayLocked;
         }
         #endregion
 
@@ -530,7 +519,7 @@ namespace Server.Items
 
                         if (version <= 6)
                         {   // no longer needed
-                            Item instrument = reader.ReadItem();
+                            Item? instrument = reader.ReadItem();
 
                             if (instrument != null)
                                 instrument.Delete();
@@ -573,9 +562,6 @@ namespace Server.Items
                         break;
                     }
             }
-
-            NextMusicTime.Start(0);                 // we can play now
-            m_MusicPlayer.AllDone = EndMusic;
         }
 
         public override void GetProperties(ObjectPropertyList list)
@@ -620,7 +606,7 @@ namespace Server.Items
         }
         public override void OnDoubleClick(Mobile from)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             if (house != null && house.IsCoOwner(from))
             {
@@ -677,14 +663,14 @@ namespace Server.Items
                 else
                 {
                     CalypsoMusicPlayer.Metadata data = CalypsoMusicPlayer.GetMetaData(value);
-                    SendSystemMessage(string.Format("Adding music {0}", data?.Song));
+                    SendMessageNearby(string.Format("Adding music {0}", data?.Song));
 
                     m_RazorFile = value;
                     // delete the rolled up sheet music if it exists
-                    RolledUpSheetMusic rsm = GetRSM();
+                    RolledUpSheetMusic? rsm = GetRSM();
                     if (rsm != null)
                     {
-                        SendSystemMessage(string.Format("Deleting music {0}", rsm));
+                        SendMessageNearby(string.Format("Deleting music {0}", rsm));
                         RemoveItem(rsm);
                         rsm.Delete();
                     }
@@ -692,7 +678,7 @@ namespace Server.Items
             }
         }
         [CommandProperty(AccessLevel.Seer)]
-        public Item SheetMusic
+        public Item? SheetMusic
         {
             get
             {
@@ -703,11 +689,11 @@ namespace Server.Items
             }
             set
             {
-                Item musicObject = null;
+                Item? musicObject = null;
 
                 if (value != null && value is not RolledUpSheetMusic)
                 {
-                    this.SendSystemMessage("That is not rolled up sheet music");
+                    this.SendMessageNearby("That is not rolled up sheet music");
                     return;
                 }
 
@@ -724,12 +710,12 @@ namespace Server.Items
                     if (m_RazorFile != null)
                     {
                         if (GetRZR() != null)
-                            SendSystemMessage(string.Format("Deleting music {0}", m_RazorFile));
+                            SendMessageNearby(string.Format("Deleting music {0}", m_RazorFile));
                         m_RazorFile = null;
                     }
                     if (musicObject != null)
                     {
-                        SendSystemMessage(string.Format("Deleting music {0}", musicObject));
+                        SendMessageNearby(string.Format("Deleting music {0}", musicObject));
                         RemoveItem(musicObject);
                         musicObject.Delete();
                     }
@@ -738,16 +724,16 @@ namespace Server.Items
 
                     if (musicObject != null)
                     {
-                        Item item = Utility.Dupe(musicObject);
+                        Item? item = Utility.Dupe(musicObject);
                         item.SetItemBool(ItemBoolTable.StaffOwned, false);
-                        SendSystemMessage(string.Format("Adding music {0}", item));
+                        SendMessageNearby(string.Format("Adding music {0}", item));
                         AddItem(item);
                     }
                 }
             }
         }
         [CommandProperty(AccessLevel.Seer)]
-        public string Song
+        public string? Song
         {
             get
             {
@@ -776,14 +762,14 @@ namespace Server.Items
             get { return m_range_exit; }
             set { m_range_exit = value; }
         }
-        private RolledUpSheetMusic GetRSM()
+        private RolledUpSheetMusic? GetRSM()
         {
             foreach (Item item in PeekItems)
                 if (item is RolledUpSheetMusic rsm)
                     return rsm;
             return null;
         }
-        private string GetRZR()
+        private string? GetRZR()
         {
             if (m_RazorFile != null && m_RazorFile.EndsWith(".rzr") && File.Exists(Path.Combine(Core.DataDirectory, "song files", m_RazorFile)))
                 return m_RazorFile;
@@ -791,7 +777,7 @@ namespace Server.Items
         }
         private object GetMusic()
         {
-            object music = GetRSM();
+            object? music = GetRSM();
             if (music == null)
                 music = GetRZR();
             return music;
@@ -973,7 +959,7 @@ namespace Server.Items
         {
             if (IsChildOf(from.Backpack))
             {
-                BaseHouse house = BaseHouse.FindHouseAt(from);
+                BaseHouse? house = BaseHouse.FindHouseAt(from);
 
                 if (house != null && house.IsCoOwner(from))
                 {

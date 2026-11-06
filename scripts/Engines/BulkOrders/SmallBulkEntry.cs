@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,19 +62,19 @@ namespace Server.Engines.BulkOrders
             get { return GetEntries("Tailoring", "leather"); }
         }
 
-        private static Hashtable m_Cache;
+        private static Hashtable? m_Cache;
 
         public static SmallBulkEntry[] GetEntries(string type, string name)
         {
             if (m_Cache == null)
                 m_Cache = new Hashtable();
 
-            Hashtable table = (Hashtable)m_Cache[type];
+            Hashtable? table = (Hashtable?)m_Cache[type];
 
             if (table == null)
                 m_Cache[type] = table = new Hashtable();
 
-            SmallBulkEntry[] entries = (SmallBulkEntry[])table[name];
+            SmallBulkEntry[]? entries = (SmallBulkEntry[]?)table[name];
 
             if (entries == null)
                 table[name] = entries = LoadEntries(type, name);
@@ -90,7 +90,7 @@ namespace Server.Engines.BulkOrders
 
         public static SmallBulkEntry[] LoadEntries(string path)
         {
-            path = Path.Combine(Core.BaseDirectory, path);
+            path = Path.Combine(Core.ExeDirectory, path);
 
             ArrayList list = new ArrayList();
 
@@ -111,7 +111,7 @@ namespace Server.Engines.BulkOrders
 
                             if (split.Length >= 2)
                             {
-                                Type type = ScriptCompiler.FindTypeByName(split[0]);
+                                Type? type = ScriptCompiler.FindTypeByName(split[0]);
                                 int graphic = Utility.ToInt32(split[split.Length - 1]);
 
                                 if (type != null && graphic > 0)

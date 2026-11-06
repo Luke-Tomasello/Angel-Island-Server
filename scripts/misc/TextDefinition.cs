@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -18,8 +18,6 @@
  *   (at your option) any later version.
  *
  ***************************************************************************/
-
-using System;
 
 namespace Server
 {
@@ -91,7 +89,7 @@ namespace Server
             return m.m_String;
         }
 
-        public static void AddHtmlText(Server.Gumps.Gump g, int x, int y, int width, int height, TextDefinition text, bool back, bool scroll, int numberColor, int stringColor)
+        public static void AddHtmlText(Server.Gumps.Gump g, int x, int y, int width, int height, TextDefinition? text, bool back, bool scroll, int numberColor, int stringColor)
         {
             if (text != null && text.Number > 0)
                 if (numberColor >= 0)

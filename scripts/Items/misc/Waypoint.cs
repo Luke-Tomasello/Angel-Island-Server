@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,6 +36,14 @@ namespace Server.Items
     [FlipableAttribute(0x1f14, 0x1f15, 0x1f16, 0x1f17)]
     public class WayPoint : Item
     {
+        public override Item Dupe(int amount)
+        {
+            WayPoint? new_item = Activator.CreateInstance(this.GetType()) as WayPoint;
+            if (new_item != null)
+                Utility.CopyProperties(this, new_item);
+
+            return base.Dupe(new_item, amount);
+        }
         public static void Initialize()
         {
             Server.CommandSystem.Register("WayPointSeq", AccessLevel.GameMaster, new CommandEventHandler(WayPointSeq_OnCommand));
@@ -133,7 +141,7 @@ namespace Server.Items
 
     public class AutoWayPoint : WayPoint
     {
-        private DeleteTimer m_Timer;
+        private DeleteTimer? m_Timer;
 
         [Constructable]
         public AutoWayPoint()

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -244,7 +244,7 @@ namespace Server.Items
          * Upon a successful hit with a two handed Mace type weapon (excluding staves), there will be a small chance to perform a Crushing Blow, which is a hit for double damage. The base chance to inflict this special damage is your Anatomy skill level divided by 4. The only weapon that can be used for this special attack is the War Hammer.
          * http://uo.stratics.com/content/skills/macefighting.shtml
          */
-        public static bool Pub5Moves { get { return (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules() && !Core.RuleSets.AOSRules() && PublishInfo.Publish >= 5 && PublishInfo.Publish < 18); } }
+        public static bool Pub5Moves { get { return (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules() && !Core.RuleSets.AOSRules() && PublishInfo.Publish >= 5 && PublishInfo.Publish < 18); } }
 
         protected bool DoPub5Move(Mobile attacker, Mobile defender)
         {
@@ -769,26 +769,6 @@ namespace Server.Items
             if (m_Quality == WeaponQuality.Exceptional)
                 bonus += 20;
 
-#if false
-            if (Core.RuleSets.AllShards) // custom resource benefits
-            {
-                switch (m_Resource)
-                {
-                    case CraftResource.DullCopper: bonus += 5; break;
-                    case CraftResource.ShadowIron: bonus += 10; break;
-                    case CraftResource.Copper: bonus += 15; break;
-                    case CraftResource.Bronze: bonus += 20; break;
-                    case CraftResource.Gold: bonus += 50; break;
-                    case CraftResource.Agapite: bonus += 70; break;
-                    case CraftResource.Verite: bonus += 100; break;
-                    case CraftResource.Valorite: bonus += 120; break;
-
-                    case CraftResource.SpinedLeather: bonus += 20; break;
-                    case CraftResource.HornedLeather: bonus += 40; break;
-                    case CraftResource.BarbedLeather: bonus += 60; break;
-                }
-            }
-#endif
 
             switch (m_DurabilityLevel)
             {
@@ -799,7 +779,7 @@ namespace Server.Items
                 case WeaponDurabilityLevel.Indestructible: bonus += 120; break;
             }
 
-            EventResourceSystem ers = EventResourceSystem.Find(m_Resource);
+            EventResourceSystem? ers = EventResourceSystem.Find(m_Resource);
 
             if (ers != null && ers.Validate(this))
                 bonus += (ers.DurabilityScalar - 100);
@@ -1018,7 +998,7 @@ namespace Server.Items
             if (parent is Mobile)
             {
                 Mobile m = (Mobile)parent;
-                BaseWeapon weapon = m.Weapon as BaseWeapon;
+                BaseWeapon? weapon = m.Weapon as BaseWeapon;
 
                 string modName = this.Serial.ToString();
 
@@ -1094,8 +1074,8 @@ namespace Server.Items
 
         public virtual bool CheckHit(Mobile attacker, Mobile defender)
         {
-            BaseWeapon atkWeapon = attacker.Weapon as BaseWeapon;
-            BaseWeapon defWeapon = defender.Weapon as BaseWeapon;
+            BaseWeapon? atkWeapon = attacker.Weapon as BaseWeapon;
+            BaseWeapon? defWeapon = defender.Weapon as BaseWeapon;
 
             Skill atkSkill = attacker.Skills[atkWeapon.Skill];
             Skill defSkill = defender.Skills[defWeapon.Skill];
@@ -1152,7 +1132,7 @@ namespace Server.Items
             }
 
             double chance;
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 chance = ourValue / (theirValue * 2.0);
             }
@@ -1166,7 +1146,7 @@ namespace Server.Items
             if (Core.RuleSets.AOSRules() && chance < 0.02)
                 chance = 0.02;
 
-            WeaponAbility ability = WeaponAbility.GetCurrentAbility(attacker);
+            WeaponAbility? ability = WeaponAbility.GetCurrentAbility(attacker);
 
             if (ability != null)
                 chance *= ability.AccuracyScalar;
@@ -1174,7 +1154,7 @@ namespace Server.Items
             if (attacker is BaseCreature)
                 chance *= ((BaseCreature)attacker).GetAccuracyScalar();
 
-            return attacker.CheckSkill(atkSkill.SkillName, chance, contextObj: new object[2] { defender, null });
+            return attacker.CheckSkill(atkSkill.SkillName, chance, contextObj: new object?[2] { defender, null });
 
             //return ( chance >= Utility.RandomDouble() );
         }
@@ -1232,7 +1212,7 @@ namespace Server.Items
 
                 if (canSwing)
                 {
-                    Spell sp = attacker.Spell as Spell;
+                    Spell? sp = attacker.Spell as Spell;
 
                     canSwing = (sp == null || !sp.IsCasting || !sp.BlocksMovement);
                 }
@@ -1253,7 +1233,7 @@ namespace Server.Items
 
             if (canSwing && attacker.HarmfulCheck(defender))
             {
-                attacker.DisruptiveAction();
+                attacker.DisruptiveAction(null);
 
                 if (attacker.NetState != null)
                     attacker.Send(new Swing(0, attacker, defender));
@@ -1261,7 +1241,7 @@ namespace Server.Items
                 if (attacker is BaseCreature)
                 {
                     BaseCreature bc = (BaseCreature)attacker;
-                    WeaponAbility ab = bc.GetWeaponAbility();
+                    WeaponAbility? ab = bc.GetWeaponAbility();
 
                     if (ab != null)
                     {
@@ -1321,7 +1301,7 @@ namespace Server.Items
         public virtual int AbsorbDamageAOS(Mobile attacker, Mobile defender, int damage)
         {
             double positionChance = Utility.RandomDouble();
-            BaseArmor armor;
+            BaseArmor? armor;
 
             if (positionChance < 0.07)
                 armor = defender.NeckArmor as BaseArmor;
@@ -1341,7 +1321,7 @@ namespace Server.Items
 
             if (defender.Player || defender.Body.IsHuman)
             {
-                BaseShield shield = defender.FindItemOnLayer(Layer.TwoHanded) as BaseShield;
+                BaseShield? shield = defender.FindItemOnLayer(Layer.TwoHanded) as BaseShield;
 
                 bool blocked = false;
 
@@ -1394,7 +1374,7 @@ namespace Server.Items
                 return AbsorbDamageAOS(attacker, defender, damage);
 
             double chance = Utility.RandomDouble();
-            Item itemHit;
+            Item? itemHit;
 
             if (chance < 0.07)
             {
@@ -1459,7 +1439,7 @@ namespace Server.Items
             if (itemHit is BaseClothing)
                 damage = (itemHit as BaseClothing).OnHit(this, damage);
 
-            BaseShield shield = defender.FindItemOnLayer(Layer.TwoHanded) as BaseShield;
+            BaseShield? shield = defender.FindItemOnLayer(Layer.TwoHanded) as BaseShield;
             if (shield != null)
                 damage = shield.OnHit(this, damage);
 
@@ -1497,7 +1477,7 @@ namespace Server.Items
             if (attacker.Player || defender.Player)
                 return 0;
 
-            BaseCreature bc = attacker as BaseCreature;
+            BaseCreature? bc = attacker as BaseCreature;
 
             if (bc == null || bc.PackInstinct == PackInstinct.None || (!bc.Controlled && !bc.Summoned))
                 return 0;
@@ -1568,10 +1548,10 @@ namespace Server.Items
             // will always be false if not Core.AngelIsland so no need to condition it here
             if (SkillHandlers.SpiritSpeak.SlayerDamageCache.Recall(attacker))
             {   // okay, we have a slayer strike queued up
-                Memory.ObjectMemory om = SkillHandlers.SpiritSpeak.SlayerDamageCache.Recall(attacker as object);
+                Memory.ObjectMemory? om = SkillHandlers.SpiritSpeak.SlayerDamageCache.Recall(attacker as object);
                 if (om != null && om.Context is SkillHandlers.SpiritSpeak.SlayerDamageContext)
                 {
-                    SkillHandlers.SpiritSpeak.SlayerDamageContext sdc = om.Context as SkillHandlers.SpiritSpeak.SlayerDamageContext;
+                    SkillHandlers.SpiritSpeak.SlayerDamageContext? sdc = om.Context as SkillHandlers.SpiritSpeak.SlayerDamageContext;
                     if (sdc.SlayerDamageHP > 0)
                     {
                         if (sdc.SlayerDamageHP == sdc.SlayerDamageHPMax)
@@ -1590,7 +1570,7 @@ namespace Server.Items
                             // should repair their weapon?
                             if (attacker.Skills.SpiritSpeak.Value / 100.0 >= Utility.RandomDouble())
                             {
-                                BaseWeapon atkWeapon = attacker.Weapon as BaseWeapon;
+                                BaseWeapon? atkWeapon = attacker.Weapon as BaseWeapon;
                                 if (atkWeapon.HitPoints < atkWeapon.MaxHitPoints)
                                 {
                                     atkWeapon.HitPoints++;
@@ -1631,8 +1611,25 @@ namespace Server.Items
             defender.PlaySound(GetHitDefendSound(attacker, defender));
             int damage = ComputeDamage(attacker, defender);
 
+            #region Slayers
             // Check Slayer weapon: slayers only work against evil
             CheckSlayerResult cs = CheckSlayers(attacker, defender);
+
+            #region test code
+            //if (cs == CheckSlayerResult.Slayer)
+            //{
+            //    SlayerName slayer = SlayerName.None;
+
+            //    BaseWeapon w = attacker.Weapon as BaseWeapon;
+
+            //    if (w != null && w.Slayer != SlayerName.None)
+            //        slayer = w.Slayer;
+            //    else if (attacker is BaseCreature bc && bc.OffensiveSlayer != SlayerName.None)
+            //        slayer = bc.OffensiveSlayer;
+
+            //    attacker.SendMessage($"Effective slayer: {slayer}");
+            //}
+            #endregion test code
 
             // good pets are not attackable, check to see if this pet is evil
             // 7/19/2023, Adam. Exception: If the attacker is not a player, slayers work against tames.
@@ -1668,13 +1665,17 @@ namespace Server.Items
                     attacker.SendMessage("Your weapon is only attuned to destroy evil.");
                 }
             }
-
-            // resource slayer
-            if (defender is BaseCreature bcd && bcd.SusceptibleTo == this.Resource)
+            else if (!good)
             {
-                defender.FixedEffect(0x37B9, 10, 5);
-                damage = (int)((double)damage * 2.0);
+                // resource slayer
+                if (defender is BaseCreature bcd && bcd.SusceptibleTo == this.Resource)
+                {
+                    defender.FixedEffect(0x37B9, 10, 5);
+                    damage = (int)((double)damage * 2.0);
+                }
             }
+
+            #endregion Slayers
 
             #region Ethics
             // Give double damage to Heroes wielding a holy weapon against Evil and undead
@@ -1682,7 +1683,7 @@ namespace Server.Items
             {
                 if (attacker.Hero && this.HolyBlade)
                 {   // see if we are fighting an undead with our holy weapon
-                    SlayerEntry defSlayer = SlayerGroup.GetEntryByName(SlayerName.Silver);
+                    SlayerEntry? defSlayer = SlayerGroup.GetEntryByName(SlayerName.Silver);
                     bool defenderIsUndead = defSlayer.Slays(defender);
 
                     // see if we are fighting an Evil Player
@@ -1697,7 +1698,7 @@ namespace Server.Items
             #endregion
 
             int packInstinctBonus = 0;
-            if (PublishInfo.Publish >= 16 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+            if (PublishInfo.Publish >= 16 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
                 packInstinctBonus = GetPackInstinctBonus(attacker, defender);
 
             // adam: limit to PvM only (for now)
@@ -1717,7 +1718,7 @@ namespace Server.Items
             if (defender is BaseCreature)
                 ((BaseCreature)defender).AlterMeleeDamageFrom(attacker, ref damage);
 
-            WeaponAbility weaponAblity = WeaponAbility.GetCurrentAbility(attacker);
+            WeaponAbility? weaponAblity = WeaponAbility.GetCurrentAbility(attacker);
 
             damage = AbsorbDamage(attacker, defender, damage);
 
@@ -1734,14 +1735,14 @@ namespace Server.Items
             //check if creature has some immunity to weapon being used, if so reduce damage according to immunity.
             if (defender is BaseCreature)
             {
-                BaseWeapon atkWeapon = attacker.Weapon as BaseWeapon;
+                BaseWeapon? atkWeapon = attacker.Weapon as BaseWeapon;
                 ((BaseCreature)defender).CheckWeaponImmunity(atkWeapon, damage, out damage);
             }
 
             int damageGiven = damage;
 
             AOS.ArmorIgnore = (weaponAblity is ArmorIgnore);
-            damageGiven = AOS.Damage(defender, attacker, damage, phys, fire, cold, pois, nrgy, this);
+            damageGiven = AOS.Damage(defender, attacker, damage, new DamageContext { Source = this });
             AOS.ArmorIgnore = false;
 
             DoWeaponWear(attacker, defender, true);
@@ -1779,7 +1780,7 @@ namespace Server.Items
 
                 Mobile atkr = attacker;
 
-                Item weapon = atkr.FindItemOnLayer(Layer.TwoHanded);
+                Item? weapon = atkr.FindItemOnLayer(Layer.TwoHanded);
 
                 bool SpecialMoveOk = Core.RuleSets.UseToggleSpecialAbility() ?
                     atkr.Mana >= 15 && DateTime.UtcNow >= atkr.NextAbilityTime :
@@ -1815,7 +1816,7 @@ namespace Server.Items
                             defender.SendLocalizedMessage(1060091); // You take extra damage from the crushing attack!
                             defender.PlaySound(0x1E1);
                             defender.FixedParticles(0, 1, 0, 9946, EffectLayer.Head);
-                            defender.Damage(crush, atkr, this);       // brings dmg total up to 150%
+                            defender.Damage(crush, atkr, new DamageContext { Source = this });       // brings dmg total up to 150%
 
                             Effects.SendMovingParticles(new Entity(Serial.Zero, new Point3D(defender.X, defender.Y, defender.Z + 50), defender.Map), new Entity(Serial.Zero, new Point3D(defender.X, defender.Y, defender.Z + 20), defender.Map), 0xFB4, 1, 0, false, false, 0, 3, 9501, 1, 0, EffectLayer.Head, 0x100);
 
@@ -1907,70 +1908,6 @@ namespace Server.Items
             return damage * scale;
         }
 
-        public virtual void DoMagicArrow(Mobile attacker, Mobile defender)
-        {
-            if (!attacker.CanBeHarmful(defender, false))
-                return;
-
-            attacker.DoHarmful(defender);
-
-            double damage = GetAosDamage(attacker, 3, 1, 10.0);
-
-            attacker.MovingParticles(defender, 0x36E4, 5, 0, false, true, 3006, 4006, 0);
-            attacker.PlaySound(0x1E5);
-
-            SpellHelper.Damage(TimeSpan.FromSeconds(1.0), defender, attacker, damage, 0, 100, 0, 0, 0);
-        }
-
-        public virtual void DoHarm(Mobile attacker, Mobile defender)
-        {
-            if (!attacker.CanBeHarmful(defender, false))
-                return;
-
-            attacker.DoHarmful(defender);
-
-            double damage = GetAosDamage(attacker, 6, 3, 6.5);
-
-            if (!defender.InRange(attacker, 2))
-                damage *= 0.25; // 1/4 damage at > 2 tile range
-            else if (!defender.InRange(attacker, 1))
-                damage *= 0.50; // 1/2 damage at 2 tile range
-
-            defender.FixedParticles(0x374A, 10, 30, 5013, 1153, 2, EffectLayer.Waist);
-            defender.PlaySound(0x0FC);
-
-            SpellHelper.Damage(TimeSpan.Zero, defender, attacker, damage, 0, 0, 100, 0, 0);
-        }
-
-        public virtual void DoFireball(Mobile attacker, Mobile defender)
-        {
-            if (!attacker.CanBeHarmful(defender, false))
-                return;
-
-            attacker.DoHarmful(defender);
-
-            double damage = GetAosDamage(attacker, 6, 3, 5.5);
-
-            attacker.MovingParticles(defender, 0x36D4, 7, 0, false, true, 9502, 4019, 0x160);
-            attacker.PlaySound(0x15E);
-
-            SpellHelper.Damage(TimeSpan.FromSeconds(1.0), defender, attacker, damage, 0, 100, 0, 0, 0);
-        }
-
-        public virtual void DoLightning(Mobile attacker, Mobile defender)
-        {
-            if (!attacker.CanBeHarmful(defender, false))
-                return;
-
-            attacker.DoHarmful(defender);
-
-            double damage = GetAosDamage(attacker, 6, 3, 5.0);
-
-            defender.BoltEffect(0);
-
-            SpellHelper.Damage(TimeSpan.Zero, defender, attacker, damage, 0, 0, 0, 0, 100);
-        }
-
         public virtual void DoDispel(Mobile attacker, Mobile defender)
         {
             bool dispellable = false;
@@ -2001,58 +1938,19 @@ namespace Server.Items
             }
         }
 
-        public virtual void DoAreaAttack(Mobile from, int sound, int hue, int phys, int fire, int cold, int pois, int nrgy)
-        {
-            Map map = from.Map;
-
-            if (map == null)
-                return;
-
-            ArrayList list = new ArrayList();
-
-            IPooledEnumerable eable = from.GetMobilesInRange(10);
-            foreach (Mobile m in eable)
-            {
-                if (from != m && SpellHelper.ValidIndirectTarget(from, m) && from.CanBeHarmful(m, false) && from.InLOS(m))
-                    list.Add(m);
-            }
-            eable.Free();
-
-            if (list.Count == 0)
-                return;
-
-            Effects.PlaySound(from.Location, map, sound);
-
-            // TODO: What is the damage calculation?
-
-            for (int i = 0; i < list.Count; ++i)
-            {
-                Mobile m = (Mobile)list[i];
-
-                double scalar = (11 - from.GetDistanceToSqrt(m)) / 10;
-
-                if (scalar > 1.0)
-                    scalar = 1.0;
-                else if (scalar < 0.0)
-                    continue;
-
-                from.DoHarmful(m, true);
-                m.FixedEffect(0x3779, 1, 15, hue, 0);
-                AOS.Damage(m, from, (int)(GetBaseDamage(from, m) * scalar), phys, fire, cold, pois, nrgy, this);
-            }
-        }
-
+        #region Slayers
         public virtual CheckSlayerResult CheckSlayers(Mobile attacker, Mobile defender)
         {
-            BaseWeapon atkWeapon = attacker.Weapon as BaseWeapon;
-            SlayerEntry atkSlayer = SlayerGroup.GetEntryByName(atkWeapon.Slayer);
+            BaseWeapon? atkWeapon = attacker.Weapon as BaseWeapon;
+            SlayerEntry? atkSlayer = null;
 
-            // BaseCreature now supports a Slayer property. Useful for testing (no production uses atm,) and has the effect that 
-            //  Holy Water has on players (but does not expire.)
-            if (atkSlayer == null && attacker is BaseCreature bc)
-                atkSlayer = SlayerGroup.GetEntryByName(bc.Slayer);
+            if (attacker is BaseCreature bc && bc.SlayerOffensive != SlayerName.None)
+                atkSlayer = SlayerGroup.GetEntryByName(bc.SlayerOffensive);
 
-            if (atkSlayer != null && atkSlayer.Slays(defender))
+            if (atkSlayer == null)
+                atkSlayer = SlayerGroup.GetEntryByName(atkWeapon?.Slayer ?? SlayerName.None);
+
+            if (SlaysTarget(atkSlayer, defender))
                 return CheckSlayerResult.Slayer;
 
             if (HolyWater.Slays(attacker, defender))
@@ -2061,10 +1959,10 @@ namespace Server.Items
             if (CoveBrew.Slays(attacker, defender))
                 return CheckSlayerResult.Slayer;
 
-            BaseWeapon defWeapon = defender.Weapon as BaseWeapon;
-            SlayerEntry defSlayer = SlayerGroup.GetEntryByName(defWeapon.Slayer);
+            BaseWeapon? defWeapon = defender.Weapon as BaseWeapon;
+            SlayerEntry? defSlayer = SlayerGroup.GetEntryByName(defWeapon?.Slayer ?? SlayerName.None);
 
-            if (defSlayer != null && defSlayer.Group.Opposition.Super.Slays(attacker))
+            if (OppositionSlaysTarget(defSlayer, attacker))
                 return CheckSlayerResult.Opposition;
 
             if (HolyWater.OppositionSuperSlays(attacker, defender))
@@ -2072,6 +1970,107 @@ namespace Server.Items
 
             return CheckSlayerResult.None;
         }
+        public static bool SlaysTarget(SlayerEntry? entry, Mobile defender)
+        {
+            if (entry == null || defender == null)
+                return false;
+
+            if (defender is BaseCreature bc && bc.SlayersDefensive != DefensiveSlayer.None)
+                return Matches(entry, bc.SlayersDefensive);
+
+            return entry.Slays(defender); // legacy fallback
+        }
+
+        public static bool OppositionSlaysTarget(SlayerEntry? entry, Mobile attacker)
+        {
+            if (entry == null || entry.Group?.Opposition?.Super == null || attacker == null)
+                return false;
+
+            if (attacker is BaseCreature bc && bc.SlayersDefensive != DefensiveSlayer.None)
+                return Matches(entry.Group.Opposition.Super, bc.SlayersDefensive);
+
+            return entry.Group.Opposition.Super.Slays(attacker); // legacy fallback
+        }
+        public static bool Matches(SlayerEntry entry, DefensiveSlayer groups)
+        {
+            if (entry == null || groups == DefensiveSlayer.None)
+                return false;
+
+            DefensiveSlayer mapped = MapSlayerEntryToDefensiveSlayer(entry);
+
+            return (groups & mapped) != 0;
+        }
+
+        public static DefensiveSlayer MapSlayerEntryToDefensiveSlayer(SlayerEntry entry)
+        {
+            if (entry == null)
+                return DefensiveSlayer.None;
+
+            switch (entry.Name)
+            {
+                case SlayerName.Silver:
+                    return DefensiveSlayer.Silver;
+
+                case SlayerName.Repond:
+                    return DefensiveSlayer.Repond;
+                case SlayerName.OgreTrashing:
+                    return DefensiveSlayer.OgreTrashing;
+                case SlayerName.OrcSlaying:
+                    return DefensiveSlayer.OrcSlaying;
+                case SlayerName.TrollSlaughter:
+                    return DefensiveSlayer.TrollSlaughter;
+
+                case SlayerName.ElementalBan:
+                    return DefensiveSlayer.ElementalBan;
+                case SlayerName.BloodDrinking:
+                    return DefensiveSlayer.BloodDrinking;
+                case SlayerName.EarthShatter:
+                    return DefensiveSlayer.EarthShatter;
+                case SlayerName.ElementalHealth:
+                    return DefensiveSlayer.ElementalHealth;
+                case SlayerName.FlameDousing:
+                    return DefensiveSlayer.FlameDousing;
+                case SlayerName.SummerWind:
+                    return DefensiveSlayer.SummerWind;
+                case SlayerName.Vacuum:
+                    return DefensiveSlayer.Vacuum;
+                case SlayerName.WaterDissipation:
+                    return DefensiveSlayer.WaterDissipation;
+
+                case SlayerName.Exorcism:
+                    return DefensiveSlayer.Exorcism;
+                case SlayerName.DaemonDismissal:
+                    return DefensiveSlayer.DaemonDismissal;
+                case SlayerName.GargoylesFoe:
+                    return DefensiveSlayer.GargoylesFoe;
+                case SlayerName.BalronDamnation:
+                    return DefensiveSlayer.BalronDamnation;
+
+                case SlayerName.ArachnidDoom:
+                    return DefensiveSlayer.ArachnidDoom;
+                case SlayerName.ScorpionsBane:
+                    return DefensiveSlayer.ScorpionsBane;
+                case SlayerName.SpidersDeath:
+                    return DefensiveSlayer.SpidersDeath;
+                case SlayerName.Terathan:
+                    return DefensiveSlayer.Terathan;
+
+                case SlayerName.ReptilianDeath:
+                    return DefensiveSlayer.ReptilianDeath;
+                case SlayerName.DragonSlaying:
+                    return DefensiveSlayer.DragonSlaying;
+                case SlayerName.LizardmanSlaughter:
+                    return DefensiveSlayer.LizardmanSlaughter;
+                case SlayerName.Ophidian:
+                    return DefensiveSlayer.Ophidian;
+                case SlayerName.SnakesBane:
+                    return DefensiveSlayer.SnakesBane;
+
+                default:
+                    return DefensiveSlayer.None;
+            }
+        }
+        #endregion Slayers
 
         public virtual void AddBlood(Mobile attacker, Mobile defender, int damage)
         {
@@ -2181,7 +2180,7 @@ namespace Server.Items
             attacker.PlaySound(GetMissAttackSound(attacker, defender));
             defender.PlaySound(GetMissDefendSound(attacker, defender));
 
-            WeaponAbility ability = WeaponAbility.GetCurrentAbility(attacker);
+            WeaponAbility? ability = WeaponAbility.GetCurrentAbility(attacker);
 
             if (ability != null)
                 ability.OnMiss(attacker, defender);
@@ -2349,7 +2348,7 @@ namespace Server.Items
 
             damage += (damage * totalBonus);
 
-            WeaponAbility a = WeaponAbility.GetCurrentAbility(attacker);
+            WeaponAbility? a = WeaponAbility.GetCurrentAbility(attacker);
 
             if (checkAbility && a != null)
                 damage *= a.DamageScalar;
@@ -2417,7 +2416,7 @@ namespace Server.Items
 
             if (Type == WeaponType.Axe)
             {
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
                 {   // AI style bonus 
                     // The bonus is 20% of the lumberjack skill
                     /* Compute lumberjacking bonus
@@ -2469,19 +2468,12 @@ namespace Server.Items
             }
 
             // New quality bonus:
-#if false
-            //double qualityBonus = ((int)m_Quality - 1) * 0.2;
-            // Adam: Cap quality bonus at Exceptional
-            double qualityBonus = (QualityLookup(m_Quality) - 1) * 0.2;
-#else
             double qualityBonus = 0.0;
-#endif
 
             // Apply bonuses
             damage += (damage * tacticsBonus) + (damage * strBonus) + (damage * anatomyBonus) + (damage * lumberBonus) + (damage * qualityBonus) + ((damage * VirtualDamageBonus) / 100);
 
             // Old quality bonus:
-#if true
             /* Apply quality offset
 			 * : Low         : -4
 			 * : Regular     :  0
@@ -2489,7 +2481,6 @@ namespace Server.Items
 			 * https://web.archive.org/web/20010801151717fw_/http://uo.stratics.com/content/arms-armor/arms.shtml
 			 */
             damage += ((int)m_Quality - 1) * 4.0;
-#endif
 
             /* Apply damage level offset
 			 * : Regular : 0
@@ -2503,7 +2494,7 @@ namespace Server.Items
             if (m_DamageLevel != WeaponDamageLevel.Regular)
                 damage += (2.0 * (int)m_DamageLevel) - 1.0;
 
-            EventResourceSystem ers = EventResourceSystem.Find(m_Resource);
+            EventResourceSystem? ers = EventResourceSystem.Find(m_Resource);
 
             if (ers != null && ers.Validate(this))
                 damage += ers.DamageBonus;
@@ -2513,7 +2504,7 @@ namespace Server.Items
             //  See the caller of this function where we correctly scale the damage based on what you're fighting.
             // damage /= 2.0;
 
-            WeaponAbility a = WeaponAbility.GetCurrentAbility(attacker);
+            WeaponAbility? a = WeaponAbility.GetCurrentAbility(attacker);
 
             if (checkAbility && a != null)
                 damage *= a.DamageScalar;
@@ -3304,7 +3295,7 @@ namespace Server.Items
 
         public virtual int GetLuckBonus()
         {
-            CraftResourceInfo resInfo = CraftResources.GetInfo(m_Resource);
+            CraftResourceInfo? resInfo = CraftResources.GetInfo(m_Resource);
 
             if (resInfo == null)
                 return 0;
@@ -3667,7 +3658,7 @@ namespace Server.Items
 
             if (EventResourceSystem.Find(m_Resource) != null)
             {
-                CraftResourceInfo info = CraftResources.GetInfo(m_Resource);
+                CraftResourceInfo? info = CraftResources.GetInfo(m_Resource);
 
                 if (info != null)
                 {
@@ -3904,7 +3895,7 @@ namespace Server.Items
                 bool acidScars = true;
 
                 #region Soft Metals & Wax Coatings (AI/MO)
-                if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) && acidScars && isSoftMetal)
+                if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) && acidScars && isSoftMetal)
                 {
                     acidScars = false;
                     if (m_dwResistsAcidBlood.Recall("ResistsAcidBlood") == null)
@@ -3914,7 +3905,7 @@ namespace Server.Items
                     }
                 }
 
-                if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) && acidScars && IsSealed)
+                if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) && acidScars && IsSealed)
                 {
                     acidScars = false;
                     if (m_dwResistsAcidBlood.Recall("ResistsAcidBlood") == null)
@@ -3957,7 +3948,7 @@ namespace Server.Items
                 int corrodeWeapon = m_Corrosion;
 
                 #region Soft Metals & Wax Coatings (AI/MO)
-                if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) && corrodeWeapon > 0 && isSoftMetal)
+                if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) && corrodeWeapon > 0 && isSoftMetal)
                 {
                     corrodeWeapon = 0;
                     if (m_dwResistsCorrosiveEffect.Recall("CorrosiveEffect") == null)
@@ -3967,7 +3958,7 @@ namespace Server.Items
                     }
                 }
 
-                if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) && corrodeWeapon > 0 && IsSealed)
+                if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) && corrodeWeapon > 0 && IsSealed)
                 {
                     corrodeWeapon = 0;
                     if (--m_WaxCharges == 0)
@@ -4017,7 +4008,7 @@ namespace Server.Items
             }
         }
 
-        protected Mobile IsGuardAttacking(Mobile m)
+        protected Mobile? IsGuardAttacking(Mobile m)
         {
             List<AggressorInfo> aggressors = m.Aggressed;
 
@@ -4048,7 +4039,7 @@ namespace Server.Items
 
             // no Interference if we're not in town with a guard whacking us.
             //	also, interference doesn't kick in untill we've taken some damage
-            Mobile guard = null;
+            Mobile? guard = null;
             if (attacker.Region is Regions.GuardedRegion && (attacker.Region as Regions.GuardedRegion).IsGuarded && (attacker.Region as Regions.GuardedRegion).IsSmartGuards && attacker.Hits < attacker.HitsMax && (guard = IsGuardAttacking(attacker)) != null)
             {
                 double chance = (((atkSkill.Value - 80.0) * 5.0) + ((attacker.Dex - 50.0) * 2.0)) / 2.66;
@@ -4115,7 +4106,7 @@ namespace Server.Items
 
             Resource = CraftResources.GetFromType(resourceType);
 
-            CraftContext context = craftSystem.GetContext(from);
+            CraftContext? context = craftSystem.GetContext(from);
 
             if (context != null && context.DoNotColor)
                 Hue = 0;
@@ -4139,41 +4130,6 @@ namespace Server.Items
         #endregion ICraftable Members
 
         #region Dynamic Resources
-#if false
-        public static bool DynamicResource(Mobile from)
-        {
-            if (from != null)
-            {
-                if (from.Backpack != null)
-                {
-                    foreach (Item item in from.Backpack.Items)
-                    {
-                        if (item is CrystallinePowder && (item as CrystallinePowder).UsesRemaining > 0)
-                            return true;
-                    }
-                }
-            }
-            return false;
-        }
-        public static CraftResource GetDynamicResource(Mobile from)
-        {
-            if (from != null)
-            {
-                if (from.Backpack != null)
-                {
-                    foreach (Item item in from.Backpack.Items)
-                    {
-                        if (item is CrystallinePowder && (item as CrystallinePowder).UsesRemaining > 0)
-                        {
-                            (item as CrystallinePowder).UsesRemaining--;
-                            return (item as CrystallinePowder).Resource;
-                        }
-                    }
-                }
-            }
-            return CraftResource.None;
-        }
-#endif
         #endregion Dynamic Resources
 
         #region Magic Effects
@@ -4183,6 +4139,15 @@ namespace Server.Items
                 return;
 
             m_MagicEffect = Loot.WeaponEnchantments[Utility.Random(Loot.WeaponEnchantments.Length)];
+
+            if (Core.RuleSets.SeasonsRules(2) &&
+                m_MagicEffect != MagicItemEffect.None &&
+                !Loot.IsAllowedMagicEffect(m_MagicEffect))
+            {
+                m_MagicEffect = MagicItemEffect.None;
+                m_MagicCharges = 0;
+                return;
+            }
 
             int NewLevel = Utility.RandomMinMax(MinLevel, MaxLevel);
             switch (NewLevel)
@@ -4224,9 +4189,6 @@ namespace Server.Items
 
         #endregion
     }
-
-
-
     public enum CheckSlayerResult
     {
         None,

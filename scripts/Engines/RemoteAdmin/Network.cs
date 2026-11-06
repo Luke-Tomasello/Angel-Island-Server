@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -203,7 +203,7 @@ namespace Server.Admin
             ArrayList list = new ArrayList();
             for (int i = 0; i < m_Auth.Count; i++)
             {
-                NetState ns = (NetState)m_Auth[i];
+                NetState? ns = (NetState?)m_Auth[i];
                 if (ns.Running)
                     list.Add(ns);
             }
@@ -263,13 +263,13 @@ namespace Server.Admin
                 m_OnChar(ch);
         }
 
-        public override void Write(string str)
+        public override void Write(string? str)
         {
             if (m_OnStr != null)
                 m_OnStr(str);
         }
 
-        public override void WriteLine(string line)
+        public override void WriteLine(string? line)
         {
             if (m_OnLine != null)
                 m_OnLine(line);

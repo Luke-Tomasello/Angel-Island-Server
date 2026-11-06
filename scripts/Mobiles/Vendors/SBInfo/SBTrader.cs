@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts/Mobiles/Vendors/SBInfo/SBTrader.cs
  * ChangeLog
+ *  10/20/26, Adam: (SPD pricing direction)
+ *      Ginseng and Nightshade stock was priced with VendorPays (what the NPC pays a player, 2 gp). The Trader's bulk
+ *      supply has always sold at a premium: 6 gp before the SPD, twice the Mage's 3. Restored as PlayerPays x 2.
  *  11/8/22, Adam: (Vendor System)
  *  Complete overhaul of the vendor system:
  * - DisplayCache:
@@ -81,8 +84,8 @@ namespace Server.Mobiles
             {
                 if (Core.RuleSets.AngelIslandRules())
                 {
-                    Add(new GenericBuyInfo(typeof(Ginseng), BaseVendor.VendorPays(typeof(Ginseng)), 500, 500, 999, 0xF85, 0));
-                    Add(new GenericBuyInfo(typeof(Nightshade), BaseVendor.VendorPays(typeof(Nightshade)), 500, 500, 999, 0xF88, 0));
+                    Add(new GenericBuyInfo(typeof(Ginseng), BaseVendor.PlayerPays(typeof(Ginseng)) * 2, 500, 500, 999, 0xF85, 0));
+                    Add(new GenericBuyInfo(typeof(Nightshade), BaseVendor.PlayerPays(typeof(Nightshade)) * 2, 500, 500, 999, 0xF88, 0));
                 }
             }
         }

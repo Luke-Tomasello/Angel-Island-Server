@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,6 +19,7 @@
  *
  ***************************************************************************/
 
+using System;
 using System.Collections;
 using System.Xml;
 
@@ -26,24 +27,51 @@ namespace Server.Gumps
 {
     public class ParentNode
     {
-        private ParentNode m_Parent;
+        private ParentNode? m_Parent;
+        private AccessLevel m_Access;
+        private bool m_HasAccess;
         private object[] m_Children;
 
         private string m_Name;
 
-        public ParentNode(XmlTextReader xml, ParentNode parent)
+        public ParentNode(XmlTextReader xml, ParentNode? parent)
         {
             m_Parent = parent;
 
             Parse(xml);
         }
 
+        public ParentNode(ParentNode source, ParentNode? parent, AccessLevel access, object[] children)
+        {
+            m_Parent = parent;
+            m_Name = source.Name;
+            m_Access = access;
+            m_HasAccess = true;
+            m_Children = children ?? new object[0];
+        }
+        public void SetParent(ParentNode parent)
+        {
+            m_Parent = parent;
+        }
         private void Parse(XmlTextReader xml)
         {
             if (xml.MoveToAttribute("name"))
                 m_Name = xml.Value;
             else
                 m_Name = "empty";
+
+            string? access = xml.GetAttribute("access");
+
+            if (access != null && access.Length > 0)
+            {
+                m_Access = (AccessLevel)Enum.Parse(typeof(AccessLevel), access, true);
+                m_HasAccess = true;
+            }
+            else
+            {
+                m_Access = AccessLevel.Player;
+                m_HasAccess = false;
+            }
 
             if (xml.IsEmptyElement)
             {
@@ -71,28 +99,29 @@ namespace Server.Gumps
             }
         }
 
-        public ParentNode Parent
+        public ParentNode? Parent
         {
-            get
-            {
-                return m_Parent;
-            }
+            get { return m_Parent; }
+        }
+
+        public AccessLevel Access
+        {
+            get { return m_Access; }
+        }
+
+        public bool HasAccess
+        {
+            get { return m_HasAccess; }
         }
 
         public object[] Children
         {
-            get
-            {
-                return m_Children;
-            }
+            get { return m_Children; }
         }
 
         public string Name
         {
-            get
-            {
-                return m_Name;
-            }
+            get { return m_Name; }
         }
     }
 }

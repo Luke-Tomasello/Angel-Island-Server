@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,13 +30,16 @@
  *		Merged in 1.0RC0 code.
  */
 
+using Server.Diagnostics;
+using System;
+
 namespace Server.Items
 {
     public class PotionKeg : Item
     {
         private PotionEffect m_Type;
         private int m_Held;
-        private Container m_returnPack = null;
+        private Container? m_returnPack = null;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public int Held
@@ -122,7 +125,7 @@ namespace Server.Items
                 // Publish 15
                 // Potion kegs will now display the correct contents when single-clicked (ex. the keg will say �a keg of greater poison� versus �a keg of green potions�).
                 // more info on id'ing http://forums.uosecondage.com/viewtopic.php?f=4&t=1440
-                if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisRules() && PublishInfo.Publish < 15)
+                if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules() && PublishInfo.Publish < 15)
                     switch (m_Type)
                     {
                         case PotionEffect.Nightsight: return 1041611;       // "A keg of black liquid.";
@@ -284,71 +287,126 @@ namespace Server.Items
 
         public override bool OnDragDrop(Mobile from, Item item)
         {
-            if (item is BasePotion)
+            try
             {
-                BasePotion pot = (BasePotion)item;
+                if (from == null || from.Deleted || item == null || item.Deleted)
+                    return false;
 
-                if (m_Held == 0)
+                if (item is BasePotion pot)
                 {
-                    if (GiveBottle(from))
+                    // Sanity: stacked potions must have a meaningful Amount.
+                    int offer = pot.Amount;
+                    if (offer <= 0)
+                        return false;
+
+                    // No mixing different potion types in the same keg.
+                    if (m_Held > 0 && pot.PotionEffect != m_Type)
                     {
+                        from.SendLocalizedMessage(502236); // You decide that it would be a bad idea to mix different types of potions.
+                        return false;
+                    }
+
+                    // Keg capacity.
+                    int space = 100 - m_Held;
+                    if (space <= 0)
+                    {
+                        from.SendLocalizedMessage(502233); // The keg will not hold any more!
+                        return false;
+                    }
+
+                    int transfer = Math.Min(offer, space);
+                    if (transfer <= 0)
+                    {
+                        from.SendLocalizedMessage(502233); // The keg will not hold any more!
+                        return false;
+                    }
+
+                    // If the keg is empty, lock in the potion type on first fill.
+                    if (m_Held == 0)
                         m_Type = pot.PotionEffect;
-                        Held = 1;
 
+                    int poured = 0;
+
+                    // Loop is fine here (max 100). Keep it simple and obvious.
+                    for (int i = 0; i < transfer; i++)
+                    {
+                        // Preserve original semantics: do not pour unless we can return an empty bottle.
+                        if (!GiveBottle(from))
+                        {
+                            if (poured == 0)
+                            {
+                                from.SendLocalizedMessage(502238); // You don't have room for the empty bottle in your backpack.
+                                return false;
+                            }
+
+                            // Partial success: stop pouring and report what happened.
+                            from.SendLocalizedMessage(502238); // You don't have room for the empty bottle in your backpack.
+                            break;
+                        }
+
+                        // Pour exactly one unit.
+                        Held = m_Held + 1;
+
+                        // Consume exactly one potion from the stack (Item.Consume(1)).
+                        // This handles stack decrement + deletion at zero.
+                        pot.Consume(1);
+
+                        poured++;
+                        if (pot.Deleted) // Stack fully consumed.
+                            break;
+                    }
+
+                    if (poured > 0)
+                    {
                         from.PlaySound(0x240);
 
-                        from.SendLocalizedMessage(502237); // You place the empty bottle in your backpack.
+                        // Better UX and better debugging signal than the old fixed localized text.
+                        from.SendMessage("You pour {0} {1} into the keg.", poured, poured == 1 ? "potion" : "potions");
 
-                        item.Delete();
+                        // If we could not pour the entire stack (e.g., keg filled), the remainder must be returned to the player.
+                        // When OnDragDrop returns true, the engine may treat the dropped item as "accepted" by this keg, so
+                        // any remainder must be explicitly re-homed.
+                        if (pot != null && !pot.Deleted && pot.Amount > 0)
+                        {
+                            Container pack = from.Backpack;
+
+                            // If the potion is not already in the player's pack, try to return it there.
+                            // (If it is already in the pack, do nothing.)
+                            if (pack == null)
+                            {
+                                // No backpack: drop remainder at the player's feet as a last resort.
+                                pot.MoveToWorld(from.Location, from.Map);
+                            }
+                            else if (pot.Parent != pack)
+                            {
+                                // Best-effort: put it back in the backpack.
+                                // If this fails for any reason, drop at feet rather than orphaning.
+                                if (!pack.TryDropItem(from, pot, false))
+                                    pot.MoveToWorld(from.Location, from.Map);
+                            }
+                        }
+
+                        // Optional: if partial due to keg full (space-limited), you can tell them explicitly.
+                        if (poured < offer && m_Held >= 100)
+                            from.SendLocalizedMessage(502233); // The keg will not hold any more!
+
                         return true;
                     }
-                    else
-                    {
-                        from.SendLocalizedMessage(502238); // You don't have room for the empty bottle in your backpack.
-                        return false;
-                    }
-                }
-                else if (pot.PotionEffect != m_Type)
-                {
-                    from.SendLocalizedMessage(502236); // You decide that it would be a bad idea to mix different types of potions.
+
                     return false;
                 }
-                else if (m_Held >= 100)
-                {
-                    from.SendLocalizedMessage(502233); // The keg will not hold any more!
-                    return false;
-                }
-                else
-                {
-                    if (GiveBottle(from))
-                    {
-                        ++Held;
-                        item.Delete();
 
-                        from.PlaySound(0x240);
-
-                        from.SendLocalizedMessage(502237); // You place the empty bottle in your backpack.
-
-                        item.Delete();
-                        return true;
-                    }
-                    else
-                    {
-                        from.SendLocalizedMessage(502238); // You don't have room for the empty bottle in your backpack.
-                        return false;
-                    }
-                }
-            }
-            else
-            {
+                // Non-potions: preserve legacy behavior (bounce into backpack).
                 from.SendLocalizedMessage(502232); // The keg is not designed to hold that type of object.
 
-                // Adam: anything other than a potion will get dropped into your backpack
-                // (so your best sword doesn't get dropped on the ground.)
                 from.AddToBackpack(item);
-                //	For richness, we add the drop sound of the item dropped.
                 from.PlaySound(item.GetDropSound());
                 return true;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex);
+                return false;
             }
         }
 

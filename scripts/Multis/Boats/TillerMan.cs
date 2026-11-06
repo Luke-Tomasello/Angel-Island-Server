@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -45,7 +45,7 @@ namespace Server.Items
 {
     public class TillerMan : Item
     {
-        private BaseBoat m_Boat;
+        private BaseBoat? m_Boat;
 
         public TillerMan(BaseBoat boat)
             : base(0x3E4E)
@@ -60,7 +60,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public BaseBoat Boat { get { return m_Boat; } set { m_Boat = value; } }
+        public BaseBoat? Boat { get { return m_Boat; } set { m_Boat = value; } }
 
         public void SetFacing(Direction dir)
         {
@@ -154,7 +154,7 @@ namespace Server.Items
 
                     Direction dir = (Direction)(((int)Utility.GetDirection(m_Boat, target) - (int)m_Boat.Facing) & 0x7);
 
-                    string message = null;
+                    string? message = null;
 
                     switch (dir)
                     {

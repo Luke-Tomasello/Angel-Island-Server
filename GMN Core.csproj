@@ -7,6 +7,7 @@
 		<BaseOutputPath></BaseOutputPath>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<Nullable>annotations</Nullable>
+		<Configurations>Debug;Release;Nullable</Configurations>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -21,14 +22,178 @@
 		<NoWarn>1701;1702;CS0649;CS0642;CS0162;CS0414;CS0168;CS0612;SYSLIB0022;CS0618;CS0219;SYSLIB0021;SYSLIB0014</NoWarn>
 	</PropertyGroup>
 
+	<!-- Nullable: same as Debug, plus full nullable analysis -->
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Nullable|AnyCPU'">
+		<DebugSymbols>true</DebugSymbols>
+		<Optimize>false</Optimize>
+		<DisableImplicitConfigurationDefines>true</DisableImplicitConfigurationDefines>
+		<DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<WarningsAsErrors>$(WarningsAsErrors);NU1605;CS0108</WarningsAsErrors>
+		<NoWarn>1701;1702;CS0649;CS0642;CS0162;CS0414;CS0168;CS0612;SYSLIB0022;CS0618;CS0219;SYSLIB0021;SYSLIB0014</NoWarn>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+<ItemGroup>
+  	<Compile Remove="AIPlayerHistory\**" />
+  	<Compile Remove="Backups\**" />
+  	<Compile Remove="BuildInfo\**" />
+  	<Compile Remove="data\**" />
+  	<Compile Remove="Development\**" />
+  	<Compile Remove="FreezeDriedAddons\**" />
+  	<Compile Remove="GOT_Golden_Master.fddb\**" />
+  	<Compile Remove="LogArchiveQueue\**" />
+  	<Compile Remove="Logs\**" />
+  	<Compile Remove="Patches\**" />
+  	<Compile Remove="runtimes\**" />
+  	<Compile Remove="Saves - Copy\**" />
+  	<Compile Remove="Saves - one head\**" />
+  	<Compile Remove="Saves - ready to fight guardian\**" />
+  	<Compile Remove="Saves - ten heads\**" />
+  	<Compile Remove="Saves - zero heads\**" />
+  	<Compile Remove="Saves.golden-master\**" />
+  	<Compile Remove="Saves.MusicBench-2026-10-26\**" />
+  	<Compile Remove="Saves.production-2026-10-27\**" />
+  	<Compile Remove="Saves\**" />
+  	<Compile Remove="web\**" />
+	<Compile Remove="ZLR.VM\**" />
+	<Compile Remove="Patches001_100\**" />
+	<Compile Remove="Patches101_200\**" />
+	<Compile Remove="Patches201_300\**" />
+	<Compile Remove="DynPatchTest\**" />
+	<Compile Remove="AI Music Composer\**" />
+	<Compile Remove="PotionCapacityTests\**" />
+	<Compile Remove="PotionCapacityAudit\**" />
+	<EmbeddedResource Remove="AIPlayerHistory\**" />
+	<EmbeddedResource Remove="Backups\**" />
+
+	<EmbeddedResource Remove="BuildInfo\**" />
+
+	<EmbeddedResource Remove="data\**" />
+	<EmbeddedResource Remove="Development\**" />
+
+	<EmbeddedResource Remove="FreezeDriedAddons\**" />
+
+	<EmbeddedResource Remove="GOT_Golden_Master.fddb\**" />
+
+	<EmbeddedResource Remove="LogArchiveQueue\**" />
+
+	<EmbeddedResource Remove="Logs\**" />
+
+	<EmbeddedResource Remove="Patches\**" />
+
+	<EmbeddedResource Remove="runtimes\**" />
+	<EmbeddedResource Remove="Saves - Copy\**" />
+	<EmbeddedResource Remove="Saves - one head\**" />
+	<EmbeddedResource Remove="Saves - ready to fight guardian\**" />
+	<EmbeddedResource Remove="Saves - ten heads\**" />
+	<EmbeddedResource Remove="Saves - zero heads\**" />
+	<EmbeddedResource Remove="Saves.golden-master\**" />
+	<EmbeddedResource Remove="Saves.MusicBench-2026-10-26\**" />
+	<EmbeddedResource Remove="Saves.production-2026-10-27\**" />
+	<EmbeddedResource Remove="Saves\**" />
+	<EmbeddedResource Remove="web\**" />
+	<EmbeddedResource Remove="ZLR.VM\**" />
+	<EmbeddedResource Remove="Patches001_100\**" />
+	<EmbeddedResource Remove="Patches101_200\**" />
+	<EmbeddedResource Remove="Patches201_300\**" />
+	<EmbeddedResource Remove="DynPatchTest\**" />
+	<EmbeddedResource Remove="AI Music Composer\**" />
+	<EmbeddedResource Remove="PotionCapacityTests\**" />
+	<EmbeddedResource Remove="PotionCapacityAudit\**" />
+	<None Remove="AIPlayerHistory\**" />
+	<None Remove="Backups\**" />
+
+  	<None Remove="BuildInfo\**" />
+
+  	<None Remove="data\**" />
+  	<None Remove="Development\**" />
+
+  	<None Remove="FreezeDriedAddons\**" />
+
+  	<None Remove="GOT_Golden_Master.fddb\**" />
+
+  	<None Remove="LogArchiveQueue\**" />
+
+  	<None Remove="Logs\**" />
+
+  	<None Remove="Patches\**" />
+
+  	<None Remove="runtimes\**" />
+  	<None Remove="Saves - Copy\**" />
+  	<None Remove="Saves - one head\**" />
+  	<None Remove="Saves - ready to fight guardian\**" />
+  	<None Remove="Saves - ten heads\**" />
+  	<None Remove="Saves - zero heads\**" />
+  	<None Remove="Saves.golden-master\**" />
+  	<None Remove="Saves.MusicBench-2026-10-26\**" />
+  	<None Remove="Saves.production-2026-10-27\**" />
+  	<None Remove="Saves\**" />
+  	<None Remove="web\**" />
+	<None Remove="ZLR.VM\**" />
+	<None Remove="Patches001_100\**" />
+	<None Remove="Patches101_200\**" />
+	<None Remove="Patches201_300\**" />
+	<None Remove="DynPatchTest\**" />
+	<None Remove="AI Music Composer\**" />
+	<None Remove="PotionCapacityTests\**" />
+	<None Remove="PotionCapacityAudit\**" />
+</ItemGroup>
 
 	<ItemGroup>
-	  <Compile Remove="BuildInfo\**" />
-	  <Compile Remove="ZLR.VM\**" />
-	  <EmbeddedResource Remove="BuildInfo\**" />
-	  <EmbeddedResource Remove="ZLR.VM\**" />
-	  <None Remove="BuildInfo\**" />
-	  <None Remove="ZLR.VM\**" />
+	  <None Remove="BuildInfo.deps.json" />
+	  <None Remove="BuildInfo.dll" />
+	  <None Remove="BuildInfo.exe" />
+	  <None Remove="BuildInfo.pdb" />
+	  <None Remove="BuildInfo.runtimeconfig.json" />
+	  <None Remove="delta-recursion.log" />
+	  <None Remove="GMN Core.deps.json" />
+	  <None Remove="GMN Core.dll" />
+	  <None Remove="GMN Core.dll.config" />
+	  <None Remove="GMN Core.exe" />
+	  <None Remove="GMN Core.pdb" />
+	  <None Remove="GMN Core.runtimeconfig.json" />
+	  <None Remove="grep.exe.stackdump" />
+	  <None Remove="Logs 6-30-2026.zip" />
+	  <None Remove="MaxMind.Db.dll" />
+	  <None Remove="MaxMind.GeoIP2.dll" />
+	  <None Remove="Microsoft.Extensions.DependencyInjection.Abstractions.dll" />
+	  <None Remove="Microsoft.Extensions.Options.dll" />
+	  <None Remove="Microsoft.Extensions.Primitives.dll" />
+	  <None Remove="network-errors.log" />
+	  <None Remove="net_opt.log" />
+	  <None Remove="Newtonsoft.Json.dll" />
+	  <None Remove="Nito.AsyncEx.Context.dll" />
+	  <None Remove="Nito.AsyncEx.Coordination.dll" />
+	  <None Remove="Nito.AsyncEx.Interop.WaitHandles.dll" />
+	  <None Remove="Nito.AsyncEx.Oop.dll" />
+	  <None Remove="Nito.AsyncEx.Tasks.dll" />
+	  <None Remove="Nito.Cancellation.dll" />
+	  <None Remove="Nito.Collections.Deque.dll" />
+	  <None Remove="Nito.Disposables.dll" />
+	  <None Remove="Packets.log" />
+	  <None Remove="Patches001_100.deps.json" />
+	  <None Remove="Patches001_100.dll" />
+	  <None Remove="Patches001_100.pdb" />
+	  <None Remove="Patches101_200.deps.json" />
+	  <None Remove="Patches101_200.dll" />
+	  <None Remove="Patches101_200.pdb" />
+	  <None Remove="Patches201_300.deps.json" />
+	  <None Remove="Patches201_300.dll" />
+	  <None Remove="Patches201_300.pdb" />
+	  <None Remove="Pluralize.NET.dll" />
+	  <None Remove="Ports.json" />
+	  <None Remove="System.Data.SQLite.dll" />
+	  <None Remove="TextCopy.dll" />
+	  <None Remove="zlib32.dll" />
+	  <None Remove="zlib64.dll" />
+	  <None Remove="zlr-logo.png" />
+	  <None Remove="ZLR.VM.0.9.0-pre-03.nupkg" />
+	  <None Remove="ZLR.VM.deps.json" />
+	  <None Remove="ZLR.VM.dll" />
+	  <None Remove="ZLR.VM.pdb" />
+	  <None Remove="ZLR.VM.xml" />
+	  <None Remove="_Launch Test Center.lnk" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -41,6 +206,11 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="ZLR.VM\ZLR.VM.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="scripts\Items\Skill Items\Forensic Evaluation\" />
+	  <Folder Include="scripts\misc\Seasons\" />
 	</ItemGroup>
 
 	<PropertyGroup>

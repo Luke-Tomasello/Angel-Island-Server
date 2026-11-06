@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -112,38 +112,6 @@ namespace Server.Engines.CronScheduler
             "PS. Please forward this to all your email and IM contacts especially those playing on other shards. And with the permission of your message board administrator, post this on your shards message board. This is a rare opportunity for you to represent your shard in a shard vs shard battle royal.\n" +
             "Represent!\n";
 
-    }
-
-    public class RansomQuestReminderMsg
-    {
-        public string m_subject = "Angel Island: Kin's Ransom Quest this {0:D}"; // Sunday, November 20th
-        public string m_body =
-            "We will be holding another Kin's Ransom Quest this {0:D} at {0:t} Pacific Time.\n" + // Sunday, November 20 at 12:00 noon.
-            "\n" +
-            "The 'Ransom Chest' will be located at one of the Kin Strongholds and will be filled with about 100K gold, lots premium armor pieces and weapons, and some other goodies like the finest leather dyes etc. \n" +
-            "\n" +
-            "There are no murder counts in the event area. The no-count zone will include the entire Kin Stronghold under siege.\n" +
-            "\n" +
-            "The event starts at {0:t} Pacific Time and the Chest will open at some point after the event starts.\n" + // 12:00 noon, 2:45 PM
-            "You will want to come early to this large scale PvP event and try to hold the stronghold for your team.\n" +
-            "Once any local NPC kin have been killed, you need only concern yourself with the other players that will be trying to take your treasure!\n" +
-            "\n" +
-            "Objective: I believe the primary tactic for one of these Kin Quests is to get a group of players together that share your alignment and attempt an overthrow of the stronghold; then hold it until the chest can be opened by human skills.\n" +
-            "\n" +
-            "The chest will require the talents of a highly skilled treasure hunter. At some point after the events starts, the magical protections about the chest shall be lifted, and the highly skilled treasure hunter will be able to open the chest.\n" +
-            "\n" +
-            "Note: This is a Bob griefing, Player Killing, PvP, event where there will be lots of death and dismemberment. If you are uncomfortable in such situations, please steer clear as this event is not for the faint of heart!\n" +
-            "Oh, and if you don't yet have an account, this would be a great time to come make an account and just watch the event - even as a ghost.\n" +
-            "\n" +
-            "PS. ICQ all of your friends, and forward this email. We will have a big turnout for this event. \n" +
-            "\n" +
-            "How to Connect:\n" +
-            "IP: Tamke.net\n" +
-            "Port: 2593\n" +
-            "http://www.game-master.net\n" +
-            "\n" +
-            "See you on Sunday!\n" +
-            "Adam Ant and the Angel Island team.\n";
     }
 
     public class DonationReminderMsg

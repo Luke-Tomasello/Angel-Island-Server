@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -112,6 +112,7 @@
 
 using Server.Engines.ResourcePool;
 using Server.Items;
+using Server.Misc;
 using Server.Multis.Deeds;
 using System;
 using System.Collections.Generic;
@@ -122,9 +123,9 @@ namespace Server.Mobiles
     {
         private class DisplayCache : Container, IPersistence
         {
-            private static DisplayCache m_Instance;
+            private static DisplayCache? m_Instance;
             public Item GetInstance() { return m_Instance; }
-            public static DisplayCache Cache { get { return m_Instance; } }
+            public static DisplayCache? Cache { get { return m_Instance; } }
             public static Point3D Dogtag = Utility.Dogtag.Get(typeof(DisplayCache).FullName);
             private static List<Mobile> m_Mobiles = new();
             private static List<Item> m_Items = new();
@@ -141,25 +142,6 @@ namespace Server.Mobiles
                 // set this so Cron doesn't try to clean it up
                 this.IsIntMapStorage = true;
             }
-#if false
-            public void Store(Type key, object obj)
-            {
-                if (obj is Item item)
-                {   // not quite Noah's Arc - we only want one of each object
-                    if (m_Items.FindAll(i => i.GetType() == item.GetType()).Count == 0)
-                        m_Items.Add(item);
-                    else
-                        throw new ArgumentException("object	is already stored.");
-                }
-                else if (obj is Mobile mobile)
-                {   // not quite Noah's Arc - we only want one of each object
-                    if (m_Mobiles.FindAll(m => m.GetType() == mobile.GetType()).Count == 0)
-                        m_Mobiles.Add(mobile);
-                    else
-                        throw new ArgumentException("object	is already stored.");
-                }
-            }
-#else
             public void Store(Type key, object obj)
             {
                 if (obj is Item item)
@@ -167,7 +149,6 @@ namespace Server.Mobiles
                 else if (obj is Mobile mobile)
                     m_Mobiles.Add(mobile);
             }
-#endif
             public DisplayCache(Serial serial)
                 : base(serial)
             {
@@ -276,8 +257,8 @@ namespace Server.Mobiles
         private int m_MaxAmount, m_MinAmount, m_Amount, m_RestockAmount;
         private int m_ItemID;
         private int m_Hue;
-        private object[] m_Args;
-        private object m_DisplayObject;
+        private object[]? m_Args;
+        private object? m_DisplayObject;
 
         public virtual int ControlSlots { get { return 0; } }
         private bool IsDeleted(object obj)
@@ -289,7 +270,7 @@ namespace Server.Mobiles
 
             return false;
         }
-        public object GetDisplayObject()
+        public object? GetDisplayObject()
         {
             if (DisplayCache.Cache == null)
                 return null;
@@ -301,10 +282,6 @@ namespace Server.Mobiles
                 BaseVendor.ScheduleRefresh(m_DisplayObject);
                 return m_DisplayObject;
             }
-#if false
-            if (m_DisplayObject == null || IsDeleted(m_DisplayObject))
-                m_DisplayObject = LookUpCachedObject();
-#endif
             //Pix: we need to test for BOTH null and if it's deleted here!
             if (m_DisplayObject == null || IsDeleted(m_DisplayObject))
             {   // first time a vendor is asked to show his list (buy) we create the object and 'Store' it below
@@ -318,15 +295,6 @@ namespace Server.Mobiles
             }
 
             return m_DisplayObject;
-        }
-        private object LookUpCachedObject()
-        {
-            if (typeof(Mobile).IsAssignableFrom(m_Type))
-                return DisplayCache.Mobiles.Find(m => m.GetType() == m_Type);
-            if (typeof(Item).IsAssignableFrom(m_Type))
-                return DisplayCache.Items.Find(i => i.GetType() == m_Type);
-
-            return null;
         }
         public static class Diagnostics
         {   // diagnostic use only
@@ -365,7 +333,7 @@ namespace Server.Mobiles
                 int base_price = m_Price;
 
                 // adjust for inflation (siege)
-                if (Core.RuleSets.SiegeStyleRules() && PublishInfo.Publish < 11)
+                if (Core.RuleSets.SiegeRules() && PublishInfo.Publish < 11)
                 {
                     double delta = (double)(m_RestockAmount - m_Amount);
                     double percent = ((delta / m_RestockAmount) * 100.00) / 100;
@@ -432,7 +400,7 @@ namespace Server.Mobiles
             get { return m_MaxAmount; }
             set { m_MaxAmount = value; }
         }
-        public object[] Args
+        public object[]? Args
         {
             get { return m_Args; }
             set { m_Args = value; }
@@ -447,7 +415,7 @@ namespace Server.Mobiles
             : this(null, type, price, amount, 0, 0, itemID, hue, null)
         {
         }
-        public GenericBuyInfo(string name, Type type, int price, int amount, int itemID, int hue)
+        public GenericBuyInfo(string? name, Type type, int price, int amount, int itemID, int hue)
             : this(name, type, price, amount, 0, 0, itemID, hue, null)
         {
         }
@@ -456,7 +424,7 @@ namespace Server.Mobiles
         {
         }
         public static List<int> Registry = new();
-        public GenericBuyInfo(string name, Type type, int price, int amount, int min_amount, int max_amount, int itemID, int hue, object[] args)
+        public GenericBuyInfo(string? name, Type type, int price, int amount, int min_amount, int max_amount, int itemID, int hue, object[]? args)
         {
             //amount = 20;
 
@@ -482,9 +450,9 @@ namespace Server.Mobiles
             // all standard vendor fare have already been marked up for Siege in the Standard Pricing Dictionary,
             //  But house deeds go through a different system and aren't managed by SPD. We therefore 
             //  handle it here.
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
                 if (typeof(HouseDeed).IsAssignableFrom(m_Type))
-                    m_Price = Core.RuleSets.SiegePriceRules(m_Type, m_Price);
+                    m_Price = SiegeHelper.SiegePriceRules(m_Type, m_Price);
 
             m_Amount = amount;
             m_ItemID = itemID;
@@ -539,7 +507,7 @@ namespace Server.Mobiles
         //get a new instance of an object (we just bought it)
         public virtual object GetObject()
         {
-            object o = null;
+            object? o = null;
             if (m_Args == null || m_Args.Length == 0)
                 o = Activator.CreateInstance(m_Type);
             else

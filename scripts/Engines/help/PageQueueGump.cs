@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -95,7 +95,7 @@ namespace Server.Engines.Help
 
             for (int i = 0; i < list.Count;)
             {
-                PageEntry e = (PageEntry)list[i];
+                PageEntry? e = (PageEntry?)list[i];
 
                 if (e.Sender.Deleted || e.Sender.NetState == null)
                     PageQueue.Remove(e);
@@ -161,7 +161,7 @@ namespace Server.Engines.Help
             m_Message = message;
         }
 
-        private static ArrayList m_List;
+        private static ArrayList? m_List;
 
         public static ArrayList List
         {
@@ -200,7 +200,7 @@ namespace Server.Engines.Help
                 {
                     for (int i = 0; i < m_List.Count; ++i)
                     {
-                        PredefinedResponse resp = (PredefinedResponse)m_List[i];
+                        PredefinedResponse? resp = (PredefinedResponse?)m_List[i];
 
                         op.WriteLine("{0}\t{1}", resp.Title, resp.Message);
                     }
@@ -268,9 +268,9 @@ namespace Server.Engines.Help
         }
 
         private Mobile m_From;
-        private PredefinedResponse m_Response;
+        private PredefinedResponse? m_Response;
 
-        public PredefGump(Mobile from, PredefinedResponse response)
+        public PredefGump(Mobile from, PredefinedResponse? response)
             : base(30, 30)
         {
             m_From = from;
@@ -306,7 +306,7 @@ namespace Server.Engines.Help
                         AddLabel(48, 10, 2100, "Previous Page");
                     }
 
-                    PredefinedResponse resp = (PredefinedResponse)list[i];
+                    PredefinedResponse? resp = (PredefinedResponse?)list[i];
 
                     string html = string.Format("<u>{0}</u><br>{1}", resp.Title, resp.Message);
 
@@ -392,7 +392,7 @@ namespace Server.Engines.Help
 
                     if (index >= 0 && index < list.Count)
                     {
-                        PredefinedResponse resp = (PredefinedResponse)list[index];
+                        PredefinedResponse? resp = (PredefinedResponse?)list[index];
 
                         switch (type)
                         {
@@ -447,7 +447,7 @@ namespace Server.Engines.Help
                         }
                     case 2:
                         {
-                            TextRelay te = info.GetTextEntry(0);
+                            TextRelay? te = info.GetTextEntry(0);
 
                             if (te != null)
                                 m_Response.Title = te.Text;
@@ -459,7 +459,7 @@ namespace Server.Engines.Help
                         }
                     case 3:
                         {
-                            TextRelay te = info.GetTextEntry(1);
+                            TextRelay? te = info.GetTextEntry(1);
 
                             if (te != null)
                                 m_Response.Message = te.Text;
@@ -805,7 +805,7 @@ namespace Server.Engines.Help
                     }
                 case 8: // Send message
                     {
-                        TextRelay text = info.GetTextEntry(0);
+                        TextRelay? text = info.GetTextEntry(0);
 
                         if (text != null)
                         {

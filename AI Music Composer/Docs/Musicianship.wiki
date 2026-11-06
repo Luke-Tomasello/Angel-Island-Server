@@ -1,0 +1,39 @@
+[[Skills|◄ Back to Skills Overview]]
+
+== General Information ==
+
+Your skill in Musicianship determines how well you can play bardic instruments, such as drums or a lute. The higher your skill, the more melodic and harmonious the music you produce will be.
+
+== Secondary Skills ==
+
+Several skills can turn your musical ability into a powerful weapon. These secondary skills work in conjunction with Musicianship to produce effects on monsters.
+
+=== Peacemaking ===
+
+This skill allows you to turn hostile creatures into friendly ones. You must remain on screen for the effect to continue.
+
+=== Provocation ===
+
+You can use this skill to provoke a creature into attacking another creature. You can also use it to taunt monsters into attacking you.
+
+=== Discordance ===
+
+This skill allows you to play music so distracting that creatures cannot perform at their full potential. Their skill ratings are lowered.
+
+== Training Musicianship ==
+
+Musicianship can be trained to Grandmaster (GM) by repeatedly using instruments until they break.
+
+You may increase the speed of skill gain by using secondary barding skills while training. The most convenient of these is [[Peacemaking]].
+
+== Music Composition ==
+
+Angel Island features an extensive custom music composition system. Enterprising troubadours can also sell their own [[Sheet Music]] to other musicians.
+
+Musicianship is not needed for it: anyone can play, compose, and sell music with AIMS, whatever their skills. For more information, see [[Music Composition]].
+
+== See Also ==
+
+* [[The Bard's Table]]
+* [[Music Composition]]
+* [[Sheet Music]]

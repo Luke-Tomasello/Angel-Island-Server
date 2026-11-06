@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,7 +19,7 @@
  *
  ***************************************************************************/
 
-/* Scripts/Accounting/AccountHandler.cs
+/* Scripts\Accounting\AccessRestrictions.cs
  * ChangeLog:
  *  8/5/22, Adam
  *      Remove IPLimiter.Verify(ip) from socket block
@@ -30,7 +30,6 @@
  *		Added.
  */
 
-using System;
 using System.Net;
 
 namespace Server
@@ -46,7 +45,7 @@ namespace Server
         {
             try
             {
-                IPAddress ip = ((IPEndPoint)e.Socket.RemoteEndPoint).Address;
+                IPAddress? ip = ((IPEndPoint)e.Socket.RemoteEndPoint).Address;
 
                 if (Firewall.IsBlocked(ip.ToString()))
                 {

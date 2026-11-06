@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,16 +41,16 @@ namespace Server
         public const int Murderer = 6;
         public const int Invulnerable = 7;
 
-        private static NotorietyHandler m_Handler;
-        private static NotorietyBeneficialActsHandler m_BeneficialHandler;
+        private static NotorietyHandler? m_Handler;
+        private static NotorietyBeneficialActsHandler? m_BeneficialHandler;
 
-        public static NotorietyHandler Handler
+        public static NotorietyHandler? Handler
         {
             get { return m_Handler; }
             set { m_Handler = value; }
         }
 
-        public static NotorietyBeneficialActsHandler BeneficialActsHandler
+        public static NotorietyBeneficialActsHandler? BeneficialActsHandler
         {
             get { return m_BeneficialHandler; }
             set { m_BeneficialHandler = value; }

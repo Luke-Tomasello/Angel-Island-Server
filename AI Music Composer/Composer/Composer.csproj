@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- AI Music Composer: standalone development tool. No references to GMN Core or any shard assembly. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>AIMusicComposer</RootNamespace>
+    <AssemblyName>AIMusicComposer</AssemblyName>
+    <Configurations>Debug;Release;Nullable</Configurations>
+  </PropertyGroup>
+
+</Project>

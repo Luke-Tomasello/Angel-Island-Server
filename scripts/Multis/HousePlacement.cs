@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -82,6 +82,8 @@ using Server.Items;
 using Server.Regions;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace Server.Multis
 {
@@ -157,11 +159,18 @@ namespace Server.Multis
             return false;
         }
 
-        private static HousePlacementResult HousePlacementRegionCheck(Mobile from, Map map, Point3D testPoint, out Region region)
+        private static HousePlacementResult HousePlacementRegionCheck(Mobile? from, Map map, Point3D testPoint, out Region region)
         {
             Sector sector = map.GetSector(testPoint);
             List<Region> list = sector.Regions;
             region = null;
+
+            // Placement may not cross the Test Center containment boundary in either direction.
+            bool fromInTestCenter = from != null && from.AllRegions.Any(r => r is TestCenterRegion);
+            bool pointInTestCenter = list.Any(r => r is TestCenterRegion && r.Contains(testPoint));
+
+            if (fromInTestCenter != pointInTestCenter)
+                return BlockHousePlacement(from, HousePlacementResult.BadRegion, "Test Center boundary violation");
 
             for (int i = 0; i < list.Count; ++i)
             {
@@ -169,23 +178,23 @@ namespace Server.Multis
 
                 if (region.Contains(testPoint))
                 {
-                    if ((region is GuardedRegion && ((GuardedRegion)region).IsGuarded) || region.IsTownRules)
-                        return HousePlacementResult.BadRegion;
+                    if (IsProtectedPlacementRegion(region))
+                        return BlockHousePlacement(from, HousePlacementResult.BadRegion, "Guarded region or town rules");
 
                     if (region is HouseRegion)
-                    {   // Adam: tents only block other tents, not houses.
+                    {
+                        // Adam: tents only block other tents, not houses.
                         BaseHouse house = (region as HouseRegion).House;
-                        if (house is Tent == true)
+
+                        if (house is Tent)
                             return HousePlacementResult.TentRegion;
-                        return HousePlacementResult.BadRegion;
+
+                        return BlockHousePlacement(from, HousePlacementResult.BadRegion, "Existing house region");
                     }
 
                     if (!region.AllowHousing(testPoint)) // Cannot place houses in dungeons, towns, treasure map areas etc
                     {
-                        if (region is TreasureRegion)
-                            return HousePlacementResult.BadRegionHidden;
-
-                        return HousePlacementResult.BadRegion;
+                        return BlockHousePlacement(from, HousePlacementResult.BadRegion, "Region does not allow housing");
                     }
 
                     if (region is TownshipRegion)
@@ -193,10 +202,52 @@ namespace Server.Multis
                         TownshipRegion tsr = (TownshipRegion)region;
 
                         if (from == null || tsr.TStone == null || !tsr.TStone.IsMember(from))
-                            return HousePlacementResult.BadRegionTownship;
+                            return BlockHousePlacement(from, HousePlacementResult.BadRegionTownship, "Township region - non-member");
                     }
                 }
             }
+
+            return HousePlacementResult.Valid;
+        }
+        private static bool IsProtectedPlacementRegion(Region region)
+        {
+            if (region is TownshipRegion)
+                return false;
+
+            if (region is GuardedRegion gr && gr.IsGuarded)
+                return true;
+
+            return region.IsTownRules;
+        }
+        private static HousePlacementResult HousePlacementBlockerCheck(
+            Mobile? from,
+            Map map,
+            Point3D testPoint,
+            Dictionary<Sector, HashSet<Point3D>> blockerCache)
+        {
+            Sector sector = map.GetSector(testPoint);
+
+            if (sector == null)
+                return HousePlacementResult.Valid;
+
+            if (!blockerCache.TryGetValue(sector, out HashSet<Point3D>? blockerPoints))
+            {
+                blockerPoints = new HashSet<Point3D>();
+
+                if (sector.Items != null)
+                {
+                    foreach (Item item in sector.Items)
+                    {
+                        if (item != null && !item.Deleted && item.ItemID == 0x2199)
+                            blockerPoints.Add(item.Location);
+                    }
+                }
+
+                blockerCache[sector] = blockerPoints;
+            }
+
+            if (blockerPoints.Contains(testPoint))
+                return HousePlacementResult.BadItem;
 
             return HousePlacementResult.Valid;
         }
@@ -205,55 +256,139 @@ namespace Server.Multis
         {
             return Check(from, multiID, center, out toMove, false);
         }
-
-        public static HousePlacementResult Check(Mobile from /*may be null*/, int multiID, Point3D center, out ArrayList toMove, bool tent)
+        public static HousePlacementResult Check(Mobile? from /* may be null */, int multiID, Point3D center, out ArrayList toMove, bool tent)
         {
-            // If this spot is considered valid, every item and mobile in this list will be moved under the house sign
-            toMove = new ArrayList();
+            // Policy:
+            // This method validates whether a house/tent may be placed at the requested location.
+            // It also collects blocking mobiles/items that may be relocated if placement succeeds.
+            //
+            // Embedded policy currently includes:
+            // - staff bypass
+            // - map/event exclusions
+            // - tent annexation
+            // - world-zone restrictions
+            // - township clearance
+            // - road restrictions
+            //
+            // The goal of this pass is to preserve those policies while improving structure and lookup cost.
 
-            Map map = Map.Felucca;
-            if (from != null)
-                map = from.Map;
+            HashSet<object> moveSet = new HashSet<object>();
+            Map map = (from != null) ? from.Map : Map.Felucca;
+            bool isPlayer = from != null && from.AccessLevel == AccessLevel.Player;
+            bool isStaff = from != null && from.AccessLevel >= AccessLevel.GameMaster;
+            bool allowTentAnnexation = Core.RuleSets.TentAnnexation();
 
+            HousePlacementResult earlyResult = ValidatePlacementContext(from, map, center, isStaff);
+            if (earlyResult != HousePlacementResult.Valid)
+            {
+                toMove = new ArrayList();
+                return earlyResult;
+            }
 
-            if (map == null || map == Map.Internal)
-                return HousePlacementResult.BadLand; // A house cannot go here
+            if (isStaff)
+            {
+                toMove = new ArrayList();
+                return HousePlacementResult.Valid;
+            }
 
-            if (from != null && from.AccessLevel >= AccessLevel.GameMaster)
-                return HousePlacementResult.Valid; // Staff can place anywhere
-
-            if (map == Map.Ilshenar || Misc.WinterEventSystem.Contains(center, map))
-                return HousePlacementResult.BadRegion; // No houses in Ilshenar
-
-            // This holds data describing the internal structure of the house
             MultiComponentList mcl = MultiData.GetComponents(multiID);
-
             if (multiID >= 0x13EC && multiID < 0x1D00)
-                HouseFoundation.AddStairsTo(ref mcl); // this is a AOS house, add the stairs
+                HouseFoundation.AddStairsTo(ref mcl);
 
-            // Location of the nortwest-most corner of the house
             Point3D start = new Point3D(center.X + mcl.Min.X, center.Y + mcl.Min.Y, center.Z);
 
-            // These are storage lists. They hold items and mobiles found in the map for further processing
-            ArrayList items = new ArrayList(), mobiles = new ArrayList();
+            PlacementScratch scratch = new PlacementScratch();
 
-            // These are also storage lists. They hold location values indicating the yard and border locations.
-            ArrayList yard = new ArrayList(), borders = new ArrayList();
+            HousePlacementResult footprintResult = ScanFootprint(
+                from,
+                map,
+                center,
+                start,
+                mcl,
+                tent,
+                isPlayer,
+                allowTentAnnexation,
+                scratch,
+                moveSet);
 
-            // This is also a storage lists. It holds the addons for tents as we will want to exclude them
-            ArrayList TentComponents = new ArrayList();
+            if (footprintResult != HousePlacementResult.Valid)
+            {
+                toMove = new ArrayList();
+                return footprintResult;
+            }
 
-            /* RULES:
-			 * 
-			 * 1) All tiles which are around the -outside- of the foundation must not have anything impassable.
-			 * 2) No impassable object or land tile may come in direct contact with any part of the house.
-			 * 3) Five tiles from the front and back of the house must be completely clear of all house tiles.
-			 * 4) The foundation must rest flatly on a surface. Any bumps around the foundation are not allowed.
-			 * 5) No foundation tile may reside over terrain which is viewed as a road.
-			 * 6) Tried to place a tent but the area ws not clear of other retions
-			 * 7) if we are placing a house and there is a tent there at that we do not own, fail (we now allows this)
-			 * 8) tried to place a non-tent and the area wasn't a valid region
-			 */
+            HousePlacementResult borderResult = ValidateBorders(from, map, center, scratch.Border, scratch.TentComponents);
+            if (borderResult != HousePlacementResult.Valid)
+            {
+                toMove = new ArrayList();
+                return borderResult;
+            }
+
+            HousePlacementResult yardResult = ValidateYard(from, map, scratch.Yard);
+            if (yardResult != HousePlacementResult.Valid)
+            {
+                toMove = new ArrayList();
+                return yardResult;
+            }
+
+            toMove = new ArrayList();
+            toMove.AddRange(moveSet.ToArray());
+
+            return HousePlacementResult.Valid;
+        }
+        private sealed class PlacementScratch
+        {
+            // Per-tile working sets.
+            public readonly List<Item> Items = new List<Item>();
+            public readonly List<Mobile> Mobiles = new List<Mobile>();
+
+            // Aggregate sets built while scanning the footprint.
+            public readonly HashSet<Point2D> Yard = new HashSet<Point2D>();
+            public readonly HashSet<Point2D> Border = new HashSet<Point2D>();
+
+            // Tent annexation exclusions.
+            public readonly HashSet<Item> TentComponents = new HashSet<Item>();
+        }
+        private static HousePlacementResult ValidatePlacementContext(Mobile? from, Map map, Point3D center, bool isStaff)
+        {
+            // Policy:
+            // Global placement exclusions that apply before any footprint scanning begins.
+            // This is where shard-wide "you may not place here at all" rules live.
+
+            if (map == null || map == Map.Internal)
+                return BlockHousePlacement(from, HousePlacementResult.BadLand, "Invalid map (null or Internal)");
+
+            if (isStaff)
+                return HousePlacementResult.Valid;
+
+            if (map == Map.Ilshenar || Misc.WinterEventSystem.Contains(center, map))
+                return BlockHousePlacement(from, HousePlacementResult.BadRegion, "Ilshenar or Winter Event - placement blocked");
+
+            return HousePlacementResult.Valid;
+        }
+        private static HousePlacementResult ScanFootprint(
+    Mobile? from,
+    Map map,
+    Point3D center,
+    Point3D start,
+    MultiComponentList mcl,
+    bool tent,
+    bool isPlayer,
+    bool allowTentAnnexation,
+    PlacementScratch scratch,
+    HashSet<object> toMove)
+        {
+            // Policy:
+            // This is the core structural placement validator.
+            // It enforces:
+            // - collision rules
+            // - region rules
+            // - road restrictions
+            // - world-zone restrictions
+            // - township clearance
+            // It also collects yard/border points and relocation targets.
+
+            Dictionary<Sector, HashSet<Point3D>> blockerCache = new Dictionary<Sector, HashSet<Point3D>>();
 
             for (int x = 0; x < mcl.Width; ++x)
             {
@@ -261,328 +396,495 @@ namespace Server.Multis
                 {
                     int tileX = start.X + x;
                     int tileY = start.Y + y;
+                    StaticTile[] foundationTiles = mcl.Tiles[x][y];
 
-                    StaticTile[] addTiles = mcl.Tiles[x][y];
+                    if (foundationTiles.Length == 0)
+                        continue;
 
-                    if (addTiles.Length == 0)
-                        continue; // There are no tiles here, continue checking somewhere else
-
-                    // okay, we have a house tile at this point, is there anything there to block us?
                     Point3D testPoint = new Point3D(tileX, tileY, center.Z);
 
-                    #region REGION_CHECK
-                    // maybe this point is in a region that doesn't allow housing?
-                    Region region = null;
-                    HousePlacementResult RegionCheck = HousePlacementRegionCheck(from, map, testPoint, out region);
+                    HousePlacementResult blockerResult = HousePlacementBlockerCheck(from, map, testPoint, blockerCache);
+                    if (blockerResult != HousePlacementResult.Valid)
+                        return BlockHousePlacement(from, blockerResult, "LOS Blocker (0x2199) detected in footprint");
 
-                    // if we are placing a tent, the area must be clear of everything including other tents
-                    if (tent == true)
-                    {   // if we are placing a tent and the region is not cool, fail
-                        if (RegionCheck != HousePlacementResult.Valid)
-                            return RegionCheck; // Broke rule #6
-                    }
+                    Region region;
+                    HousePlacementResult regionResult = ValidatePlacementRegion(
+                        from,
+                        map,
+                        testPoint,
+                        tent,
+                        allowTentAnnexation,
+                        scratch.TentComponents,
+                        toMove,
+                        out region);
 
-                    // if we are placing a house, the area better either be clear or a tent
-                    if (RegionCheck != HousePlacementResult.Valid && RegionCheck != HousePlacementResult.TentRegion)
-                        return RegionCheck; // Broke rule #7
+                    if (regionResult != HousePlacementResult.Valid)
+                        return BlockHousePlacement(from, regionResult, "Region validation failed");
 
-                    // save the list of all the addon components from the tent as we will want to exclude them from further tests
-                    if (Core.RuleSets.TentAnnexation())
-                        if (RegionCheck == HousePlacementResult.TentRegion && region != null)
-                        {
-                            BaseHouse house = (region as HouseRegion).House;
-                            if (house is Tent == true)
-                            {
-                                // we will move this house after house is placed
-                                if (toMove.Contains(house) == false)
-                                    toMove.Add(house);
+                    HousePlacementResult areaResult = ValidateSurroundingArea(from, map, testPoint);
+                    if (areaResult != HousePlacementResult.Valid)
+                        return BlockHousePlacement(from, areaResult, "Surrounding area validation failed");
 
-                                if (TentComponents.Contains(house) == false)
-                                    TentComponents.Add(house);
+                    if (isPlayer && WorldZone.IsOutside(testPoint, map))
+                        return BlockHousePlacement(from, HousePlacementResult.BadRegion, "WorldZone - Outside placement blocked");
 
-                                if (TentComponents.Contains((house as Tent).TentPack) == false)
-                                    TentComponents.Add((house as Tent).TentPack);
+                    // Reject placement inside any configured forbidden placement area
+                    if (IsInForbiddenPlacementArea(testPoint, map))
+                        return BlockHousePlacement(from, HousePlacementResult.BadRegion, "Forbidden placement area");
 
-                                if (TentComponents.Contains((house as Tent).TentBed) == false)
-                                    TentComponents.Add((house as Tent).TentBed);
-
-                                if (house.Addons != null)
-                                {
-                                    for (int ix = 0; ix < house.Addons.Count; ix++)
-                                    {
-                                        if (house.Addons[ix] != null)
-                                        {
-                                            Server.Items.BaseAddon ba = house.Addons[ix] as Server.Items.BaseAddon;
-                                            for (int jx = 0; jx < ba.Components.Count; jx++)
-                                            {
-                                                if (TentComponents.Contains(ba.Components[jx]) == false)
-                                                    TentComponents.Add(ba.Components[jx]);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                    // otherwise, all is a go!
-                    #endregion REGION_CHECK
-
-                    #region AREA CHECK
-                    IPooledEnumerable eable = map.GetItemsInRange(testPoint, 30);
-                    foreach (Item item in eable)
-                    {
-                        if (item == null) continue;
-                        if (item.CampComponent) continue;   // ignore orc camps, brigand camps etc.
-                        if (item is BaseDoor && item.GetType().Name.Contains("Gate") && Region.Find(item.Location, map) is not HouseRegion)
-                            // we're looking for a gate to a farm pen.
-                            return HousePlacementResult.BadArea;
-                    }
-                    eable.Free();
-                    #endregion AREA CHECK
-
-                    #region WORLD_ZONE_CHECK
-                    if (from != null && from.AccessLevel == AccessLevel.Player && WorldZone.IsOutside(testPoint, map))
-                        return HousePlacementResult.BadRegion;
-                    #endregion
-
-                    // look at the land tiles (water etc.)
                     LandTile landTile = map.Tiles.GetLandTile(tileX, tileY);
                     int landID = landTile.ID & 0x3FFF;
-
-                    StaticTile[] oldTiles = map.Tiles.GetStaticTiles(tileX, tileY, true);
-
-                    // get the sector of this tile
+                    StaticTile[] staticTiles = map.Tiles.GetStaticTiles(tileX, tileY, true);
                     Sector sector = map.GetSector(tileX, tileY);
 
-                    #region ITEMS_MOBILES
-                    // collect the items in this sector at this location
-                    items.Clear();
-                    foreach (Item item in sector.Items)
-                    {
-                        if (item == null)
-                            continue;
+                    CollectTileItemsAndMobiles(from, tileX, tileY, sector, scratch, scratch.TentComponents);
 
-                        if (item.X == tileX && item.Y == tileY)
-                        {
-                            if (SpecialItemExclusion(item) == false)
-                                // Adam: ignore these tent components
-                                if (TentComponents.Contains(item) == false)
-                                    items.Add(item);
-                        }
-                    }
+                    bool hasFoundation;
+                    HousePlacementResult tileResult = ValidateFootprintTile(
+                        from,
+                        map,
+                        center,
+                        tileX,
+                        tileY,
+                        landTile,
+                        staticTiles,
+                        foundationTiles,
+                        scratch.Items,
+                        scratch.Mobiles,
+                        toMove,
+                        out hasFoundation);
 
-                    // collect the mobiles in this sector at this location
-                    mobiles.Clear();
-                    foreach (Mobile m in sector.Mobiles)
-                    {
-                        if (m == null)
-                            continue;
+                    if (tileResult != HousePlacementResult.Valid)
+                        return BlockHousePlacement(from, tileResult, "Footprint tile validation failed");
 
-                        if (m.X == tileX && m.Y == tileY)
-                        {
-                            if (SpecialMobileExclusion(m) == false)
-                                mobiles.Add(m);
-                        }
-                    }
-                    #endregion ITEMS_MOBILES
+                    if (IsRoadTile(landID))
+                        return BlockHousePlacement(from, HousePlacementResult.BadLand, "Road tile detected in foundation");
 
-                    #region LAND_TILES
-                    int landStartZ = 0, landAvgZ = 0, landTopZ = 0;
-
-                    map.GetAverageZ(tileX, tileY, ref landStartZ, ref landAvgZ, ref landTopZ);
-
-                    bool hasFoundation = false;
-
-                    if (addTiles != null)
-                        for (int i = 0; i < addTiles.Length; ++i)
-                        {
-                            StaticTile addTile = addTiles[i];
-
-                            if (addTile.ID == 0x4001) // Nodraw
-                                continue;
-
-                            TileFlag addTileFlags = TileData.ItemTable[addTile.ID & 0x3FFF].Flags;
-
-                            bool isFoundation = (addTile.Z == 0 && (addTileFlags & TileFlag.Wall) != 0);
-                            bool hasSurface = false;
-
-                            if (isFoundation)
-                                hasFoundation = true;
-
-                            int addTileZ = center.Z + addTile.Z;
-                            int addTileTop = addTileZ + addTile.Height;
-
-                            if ((addTileFlags & TileFlag.Surface) != 0)
-                                addTileTop += 16;
-
-                            if (addTileTop > landStartZ && landAvgZ > addTileZ)
-                                return HousePlacementResult.BadLand; // Broke rule #2
-
-                            if (isFoundation && ((TileData.LandTable[landTile.ID & 0x3FFF].Flags & TileFlag.Impassable) == 0) && landAvgZ == center.Z)
-                                hasSurface = true;
-
-                            for (int j = 0; j < oldTiles.Length; ++j)
-                            {
-                                StaticTile oldTile = oldTiles[j];
-                                ItemData id = TileData.ItemTable[oldTile.ID & 0x3FFF];
-
-                                if ((id.Impassable || (id.Surface && (id.Flags & TileFlag.Background) == 0)) && addTileTop > oldTile.Z && (oldTile.Z + id.CalcHeight) > addTileZ)
-                                    return HousePlacementResult.BadStatic; // Broke rule #2
-                                else if (isFoundation && !hasSurface && (id.Flags & TileFlag.Surface) != 0 && (oldTile.Z + id.CalcHeight) == center.Z)
-                                    hasSurface = true;
-                            }
-
-                            for (int j = 0; j < items.Count; ++j)
-                            {
-                                Item item = (Item)items[j];
-                                ItemData id = item.ItemData;
-
-                                if (addTileTop > item.Z && (item.Z + id.CalcHeight) > addTileZ)
-                                {
-                                    if (item.Movable)
-                                        toMove.Add(item);
-                                    else if ((id.Impassable || (id.Surface && (id.Flags & TileFlag.Background) == 0)))
-                                        return HousePlacementResult.BadItem; // Broke rule #2
-                                }
-                                else if (isFoundation && !hasSurface && (id.Flags & TileFlag.Surface) != 0 && (item.Z + id.CalcHeight) == center.Z)
-                                {
-                                    hasSurface = true;
-                                }
-                            }
-
-                            if (isFoundation && !hasSurface)
-                                return HousePlacementResult.NoSurface; // Broke rule #4
-
-                            for (int j = 0; j < mobiles.Count; ++j)
-                            {
-                                Mobile m = (Mobile)mobiles[j];
-
-                                if (addTileTop > m.Z && (m.Z + 16) > addTileZ)
-                                    toMove.Add(m);
-                            }
-                        }
-                    #endregion LAND_TILES
-
-                    #region ROAD_TILES
-                    for (int i = 0; i < m_RoadIDs.Length; i += 2)
-                    {
-                        if ((landID >= m_RoadIDs[i] && landID <= m_RoadIDs[i + 1]) && (ExceptionTiles(landID) == false))
-                        {
-                            //Console.WriteLine(landID.ToString());
-                            return HousePlacementResult.BadLand; // Broke rule #5
-                        }
-                    }
-                    #endregion ROAD_TILES
-
-                    #region YARD_CHECK
                     if (hasFoundation)
                     {
-                        for (int xOffset = -1; xOffset <= 1; ++xOffset)
-                        {
-                            for (int yOffset = -YardSize; yOffset <= YardSize; ++yOffset)
-                            {
-                                Point2D yardPoint = new Point2D(tileX + xOffset, tileY + yOffset);
-
-                                if (!yard.Contains(yardPoint))
-                                    yard.Add(yardPoint);
-                            }
-                        }
-
-                        for (int xOffset = -1; xOffset <= 1; ++xOffset)
-                        {
-                            for (int yOffset = -1; yOffset <= 1; ++yOffset)
-                            {
-                                if (xOffset == 0 && yOffset == 0)
-                                    continue;
-
-                                // To ease this rule, we will not add to the border list if the tile here is under a base floor (z<=8)
-
-                                int vx = x + xOffset;
-                                int vy = y + yOffset;
-
-                                if (vx >= 0 && vx < mcl.Width && vy >= 0 && vy < mcl.Height)
-                                {
-                                    StaticTile[] breakTiles = mcl.Tiles[vx][vy];
-                                    bool shouldBreak = false;
-
-                                    for (int i = 0; !shouldBreak && i < breakTiles.Length; ++i)
-                                    {
-                                        StaticTile breakTile = breakTiles[i];
-
-                                        if (breakTile.Height == 0 && breakTile.Z <= 8 && TileData.ItemTable[breakTile.ID & 0x3FFF].Surface)
-                                            shouldBreak = true;
-                                    }
-
-                                    if (shouldBreak)
-                                        continue;
-                                }
-
-                                Point2D borderPoint = new Point2D(tileX + xOffset, tileY + yOffset);
-
-                                if (!borders.Contains(borderPoint))
-                                    borders.Add(borderPoint);
-                            }
-                        }
+                        CollectYardPoints(tileX, tileY, scratch.Yard);
+                        CollectBorderPoints(x, y, tileX, tileY, mcl, scratch.Border);
                     }
-                    #endregion YARD_CHECK
 
-                    #region TOWNSHIP_CHECK
-                    if (hasFoundation)
-                    {
-                        int size = Township.TownshipSettings.NeutralHouseClearance;
-
-                        for (int xOffset = -size; xOffset <= size; ++xOffset)
-                        {
-                            for (int yOffset = -size; yOffset <= size; ++yOffset)
-                            {
-                                Point3D p = new Point3D(tileX + xOffset, tileY + yOffset, center.Z);
-
-                                TownshipRegion tsr = Region.Find(p, map) as TownshipRegion;
-
-                                if (tsr != null && (from == null || tsr.TStone == null || !tsr.TStone.IsMember(from)))
-                                    return HousePlacementResult.NearTownship;
-                            }
-                        }
-                    }
-                    #endregion TOWNSHIP_CHECK
+                    HousePlacementResult townshipResult = ValidateTownshipClearance(from, map, center.Z, tileX, tileY, hasFoundation);
+                    if (townshipResult != HousePlacementResult.Valid)
+                        return BlockHousePlacement(from, townshipResult, "Township clearance violation");
                 }
             }
 
-            for (int i = 0; i < borders.Count; ++i)
-            {
-                Point2D borderPoint = (Point2D)borders[i];
+            return HousePlacementResult.Valid;
+        }
+        private sealed class ForbiddenPlacementArea
+        {
+            public string Name { get; }
+            public Map Map { get; }
+            public Rectangle2D Rect { get; }
 
+            public ForbiddenPlacementArea(string name, Map map, Rectangle2D rect)
+            {
+                Name = name;
+                Map = map;
+                Rect = rect;
+            }
+        }
+        private static readonly ForbiddenPlacementArea[] m_ForbiddenPlacementAreas =
+        {
+            new ForbiddenPlacementArea(
+                "Ice Island",
+                Map.Felucca,
+                new Rectangle2D(3623, 213, 705, 546)),
+        };
+        private static bool IsInForbiddenPlacementArea(Point3D p, Map map)
+        {
+            foreach (ForbiddenPlacementArea area in m_ForbiddenPlacementAreas)
+            {
+                if (!ShouldApply(area.Name))
+                    continue;
+
+                if (area.Map == map && area.Rect.Contains(p))
+                    return true;
+            }
+
+            return false;
+        }
+        private static bool ShouldApply(string name)
+        {
+            switch (name)
+            {
+                case "Ice Island":
+                    return (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules());
+
+                default:
+                    return true;
+            }
+        }
+        private static HousePlacementResult ValidatePlacementRegion(
+            Mobile? from,
+            Map map,
+            Point3D testPoint,
+            bool tent,
+            bool allowTentAnnexation,
+            HashSet<Item> tentComponents,
+            HashSet<object> toMove,
+            out Region region)
+        {
+            // Policy:
+            // Region placement rules are layered:
+            // - tents require a fully valid region
+            // - non-tents may overlap a tent region when tent annexation is enabled
+            // - annexed tent components are excluded from later collision tests
+
+            HousePlacementResult regionResult = HousePlacementRegionCheck(from, map, testPoint, out region);
+
+            if (tent)
+            {
+                if (regionResult != HousePlacementResult.Valid)
+                    return BlockHousePlacement(from, regionResult, "Tent placement failed region check");
+            }
+            else
+            {
+                if (regionResult != HousePlacementResult.Valid && regionResult != HousePlacementResult.TentRegion)
+                    return BlockHousePlacement(from, regionResult, "House placement failed region check");
+            }
+
+            if (allowTentAnnexation && regionResult == HousePlacementResult.TentRegion && region != null)
+                CaptureTentAnnexation(region, tentComponents, toMove);
+
+            return HousePlacementResult.Valid;
+        }
+
+        private static void CaptureTentAnnexation(Region region, HashSet<Item> tentComponents, HashSet<object> toMove)
+        {
+            // Policy:
+            // When a house is allowed to annex a tent region, tent-owned components are treated
+            // as exempt from collision checks and are scheduled for post-placement movement.
+
+            BaseHouse house = (region as HouseRegion).House;
+
+            if (house is not Tent tentHouse)
+                return;
+
+            toMove.Add(house);
+
+            AddTentComponent(tentComponents, house);
+            AddTentComponent(tentComponents, tentHouse.TentPack);
+            AddTentComponent(tentComponents, tentHouse.TentBed);
+
+            if (house.Addons == null)
+                return;
+
+            for (int addonIndex = 0; addonIndex < house.Addons.Count; addonIndex++)
+            {
+                BaseAddon? addon = house.Addons[addonIndex] as BaseAddon;
+                if (addon == null)
+                    continue;
+
+                for (int componentIndex = 0; componentIndex < addon.Components.Count; componentIndex++)
+                    AddTentComponent(tentComponents, addon.Components[componentIndex] as Item);
+            }
+        }
+
+        private static void AddTentComponent(HashSet<Item> tentComponents, Item? item)
+        {
+            if (item != null)
+                tentComponents.Add(item);
+        }
+        private static HousePlacementResult ValidateSurroundingArea(Mobile? from, Map map, Point3D testPoint)
+        {
+            // Policy:
+            // Special-case environmental blockers that are not part of the core footprint collision rules.
+            // This currently includes farm-pen style gates and camp exceptions.
+
+            IPooledEnumerable nearbyItems = map.GetItemsInRange(testPoint, 30);
+
+            foreach (Item item in nearbyItems)
+            {
+                if (item == null)
+                    continue;
+
+                if (item.CampComponent)
+                    continue;
+
+                if (item is BaseDoor && item.GetType().Name.Contains("Gate") && Region.Find(item.Location, map) is not HouseRegion)
+                {
+                    nearbyItems.Free();
+                    return BlockHousePlacement(from, HousePlacementResult.BadArea, "Farm gate / pen gate blocking placement");
+                }
+            }
+
+            nearbyItems.Free();
+            return HousePlacementResult.Valid;
+        }
+        private static void CollectTileItemsAndMobiles(Mobile? from, int tileX, int tileY, Sector sector, PlacementScratch scratch, HashSet<Item> tentComponents)
+        {
+            // Policy:
+            // Gather only the items/mobiles that physically occupy this tile and are relevant
+            // to placement. Special exclusions are applied here so later checks can stay simpler.
+
+            scratch.Items.Clear();
+
+            foreach (Item item in sector.Items)
+            {
+                if (item == null)
+                    continue;
+
+                if (item.X != tileX || item.Y != tileY)
+                    continue;
+
+                if (SpecialItemExclusion(item))
+                    continue;
+
+                if (tentComponents.Contains(item))
+                    continue;
+
+                scratch.Items.Add(item);
+            }
+
+            scratch.Mobiles.Clear();
+
+            foreach (Mobile mobile in sector.Mobiles)
+            {
+                if (mobile == null)
+                    continue;
+
+                if (mobile.X != tileX || mobile.Y != tileY)
+                    continue;
+
+                if (SpecialMobileExclusion(mobile))
+                    continue;
+
+                scratch.Mobiles.Add(mobile);
+            }
+        }
+        private static HousePlacementResult ValidateFootprintTile(Mobile? from,
+    Map map,
+    Point3D center,
+    int tileX,
+    int tileY,
+    LandTile landTile,
+    StaticTile[] staticTiles,
+    StaticTile[] foundationTiles,
+    List<Item> items,
+    List<Mobile> mobiles,
+    HashSet<object> toMove,
+    out bool hasFoundation)
+        {
+            // Policy:
+            // This is the strict collision/terrain validator for a single occupied house tile.
+            // It enforces:
+            // - no terrain or static overlap
+            // - no item overlap unless movable
+            // - foundation support requirements
+            // It also collects items/mobiles that may be relocated.
+
+            hasFoundation = false;
+            int landStartZ = 0;
+            int landAvgZ = 0;
+            int landTopZ = 0;
+            map.GetAverageZ(tileX, tileY, ref landStartZ, ref landAvgZ, ref landTopZ);
+
+            for (int i = 0; i < foundationTiles.Length; ++i)
+            {
+                StaticTile foundationTile = foundationTiles[i];
+
+                if (foundationTile.ID == 0x4001)
+                    continue;
+
+                TileFlag foundationFlags = TileData.ItemTable[foundationTile.ID & 0x3FFF].Flags;
+                bool isFoundation = (foundationTile.Z == 0 && (foundationFlags & TileFlag.Wall) != 0);
+                bool hasSurface = false;
+
+                if (isFoundation)
+                    hasFoundation = true;
+
+                int structureZ = center.Z + foundationTile.Z;
+                int structureTop = structureZ + foundationTile.Height;
+
+                if ((foundationFlags & TileFlag.Surface) != 0)
+                    structureTop += 16;
+
+                if (structureTop > landStartZ && landAvgZ > structureZ)
+                    return BlockHousePlacement(from, HousePlacementResult.BadLand, "BadLand - terrain overlap with foundation");
+
+                if (isFoundation &&
+                    (TileData.LandTable[landTile.ID & 0x3FFF].Flags & TileFlag.Impassable) == 0 &&
+                    landAvgZ == center.Z)
+                {
+                    hasSurface = true;
+                }
+
+                for (int j = 0; j < staticTiles.Length; ++j)
+                {
+                    StaticTile staticTile = staticTiles[j];
+                    ItemData staticData = TileData.ItemTable[staticTile.ID & 0x3FFF];
+
+                    if ((staticData.Impassable || (staticData.Surface && (staticData.Flags & TileFlag.Background) == 0)) &&
+                        structureTop > staticTile.Z &&
+                        (staticTile.Z + staticData.CalcHeight) > structureZ)
+                    {
+                        return BlockHousePlacement(from, HousePlacementResult.BadStatic, "BadStatic - static tile overlap");
+                    }
+
+                    if (isFoundation &&
+                        !hasSurface &&
+                        (staticData.Flags & TileFlag.Surface) != 0 &&
+                        (staticTile.Z + staticData.CalcHeight) == center.Z)
+                    {
+                        hasSurface = true;
+                    }
+                }
+
+                for (int j = 0; j < items.Count; ++j)
+                {
+                    Item item = items[j];
+                    ItemData itemData = item.ItemData;
+
+                    if (structureTop > item.Z && (item.Z + itemData.CalcHeight) > structureZ)
+                    {
+                        if (item.Movable)
+                        {
+                            toMove.Add(item);
+                        }
+                        else if (itemData.Impassable || (itemData.Surface && (itemData.Flags & TileFlag.Background) == 0))
+                        {
+                            return BlockHousePlacement(from, HousePlacementResult.BadItem, "BadItem - impassable item overlap");
+                        }
+                    }
+                    else if (isFoundation &&
+                             !hasSurface &&
+                             (itemData.Flags & TileFlag.Surface) != 0 &&
+                             (item.Z + itemData.CalcHeight) == center.Z)
+                    {
+                        hasSurface = true;
+                    }
+                }
+
+                if (isFoundation && !hasSurface)
+                    return BlockHousePlacement(from, HousePlacementResult.NoSurface, "NoSurface - foundation has no support");
+
+                for (int j = 0; j < mobiles.Count; ++j)
+                {
+                    Mobile mobile = mobiles[j];
+
+                    if (structureTop > mobile.Z && (mobile.Z + 16) > structureZ)
+                        toMove.Add(mobile);
+                }
+            }
+
+            return HousePlacementResult.Valid;
+        }
+        private static void CollectYardPoints(int tileX, int tileY, HashSet<Point2D> yard)
+        {
+            // Policy:
+            // The yard set represents the clearance area later checked for obstructing multi tiles.
+
+            for (int xOffset = -1; xOffset <= 1; ++xOffset)
+            {
+                for (int yOffset = -YardSize; yOffset <= YardSize; ++yOffset)
+                    yard.Add(new Point2D(tileX + xOffset, tileY + yOffset));
+            }
+        }
+
+        private static void CollectBorderPoints(int houseX, int houseY, int tileX, int tileY, MultiComponentList mcl, HashSet<Point2D> border)
+        {
+            // Policy:
+            // Border points represent the immediate outer perimeter around the footprint.
+            // Border collection is softened when neighboring structure tiles already provide base-floor coverage.
+
+            for (int xOffset = -1; xOffset <= 1; ++xOffset)
+            {
+                for (int yOffset = -1; yOffset <= 1; ++yOffset)
+                {
+                    if (xOffset == 0 && yOffset == 0)
+                        continue;
+
+                    int neighborX = houseX + xOffset;
+                    int neighborY = houseY + yOffset;
+
+                    if (neighborX >= 0 && neighborX < mcl.Width && neighborY >= 0 && neighborY < mcl.Height)
+                    {
+                        StaticTile[] neighboringTiles = mcl.Tiles[neighborX][neighborY];
+                        bool suppressBorder = false;
+
+                        for (int i = 0; !suppressBorder && i < neighboringTiles.Length; ++i)
+                        {
+                            StaticTile neighboringTile = neighboringTiles[i];
+
+                            if (neighboringTile.Height == 0 &&
+                                neighboringTile.Z <= 8 &&
+                                TileData.ItemTable[neighboringTile.ID & 0x3FFF].Surface)
+                            {
+                                suppressBorder = true;
+                            }
+                        }
+
+                        if (suppressBorder)
+                            continue;
+                    }
+
+                    border.Add(new Point2D(tileX + xOffset, tileY + yOffset));
+                }
+            }
+        }
+        private static HousePlacementResult ValidateTownshipClearance(Mobile? from, Map map, int centerZ, int tileX, int tileY, bool hasFoundation)
+        {
+            // Policy:
+            // Township clearance is enforced only around true foundation tiles and may be bypassed
+            // for township members.
+
+            if (!hasFoundation)
+                return HousePlacementResult.Valid;
+
+            int clearance = Township.TownshipSettings.NeutralHouseClearance;
+
+            for (int xOffset = -clearance; xOffset <= clearance; ++xOffset)
+            {
+                for (int yOffset = -clearance; yOffset <= clearance; ++yOffset)
+                {
+                    Point3D point = new Point3D(tileX + xOffset, tileY + yOffset, centerZ);
+
+                    TownshipRegion? township = Region.Find(point, map) as TownshipRegion;
+
+                    if (township != null && (from == null || township.TStone == null || !township.TStone.IsMember(from)))
+                        return BlockHousePlacement(from, HousePlacementResult.NearTownship, "Near Township (clearance violation)");
+                }
+            }
+
+            return HousePlacementResult.Valid;
+        }
+        private static HousePlacementResult ValidateBorders(Mobile? from, Map map, Point3D center, HashSet<Point2D> borders, HashSet<Item> tentComponents)
+        {
+            // Policy:
+            // Border validation enforces the "clear around the outside" rule.
+            // Tent-annexed components are excluded from item obstruction checks.
+
+            foreach (Point2D borderPoint in borders)
+            {
                 LandTile landTile = map.Tiles.GetLandTile(borderPoint.X, borderPoint.Y);
                 int landID = landTile.ID & 0x3FFF;
 
                 if ((TileData.LandTable[landID].Flags & TileFlag.Impassable) != 0)
-                    return HousePlacementResult.BadLand;
+                    return BlockHousePlacement(from, HousePlacementResult.BadLand, "BadLand - impassable land on border");
 
-                #region ROAD_TILES
-                for (int j = 0; j < m_RoadIDs.Length; j += 2)
+                if (IsRoadTile(landID))
+                    return BlockHousePlacement(from, HousePlacementResult.BadLand, "BadLand - road tile on border");
+
+                StaticTile[] staticTiles = map.Tiles.GetStaticTiles(borderPoint.X, borderPoint.Y, true);
+
+                for (int j = 0; j < staticTiles.Length; ++j)
                 {
-                    if ((landID >= m_RoadIDs[j] && landID <= m_RoadIDs[j + 1]) && (ExceptionTiles(landID) == false))
+                    StaticTile staticTile = staticTiles[j];
+                    ItemData staticData = TileData.ItemTable[staticTile.ID & 0x3FFF];
+
+                    if (staticData.Impassable ||
+                        (staticData.Surface && (staticData.Flags & TileFlag.Background) == 0 && (staticTile.Z + staticData.CalcHeight) > (center.Z + 2)))
                     {
-                        //Console.WriteLine(landID.ToString());
-                        return HousePlacementResult.BadLand; // Broke rule #5
+                        return BlockHousePlacement(from, HousePlacementResult.BadStatic, "BadStatic - static obstruction on border");
                     }
-                }
-                #endregion ROAD_TILES
-
-                StaticTile[] tiles = map.Tiles.GetStaticTiles(borderPoint.X, borderPoint.Y, true);
-
-                for (int j = 0; j < tiles.Length; ++j)
-                {
-                    StaticTile tile = tiles[j];
-                    ItemData id = TileData.ItemTable[tile.ID & 0x3FFF];
-
-                    if (id.Impassable || (id.Surface && (id.Flags & TileFlag.Background) == 0 && (tile.Z + id.CalcHeight) > (center.Z + 2)))
-                        return HousePlacementResult.BadStatic; // Broke rule #1
                 }
 
                 Sector sector = map.GetSector(borderPoint.X, borderPoint.Y);
 
-                #region IMPASSABLE_TILE
                 foreach (Item item in sector.Items)
                 {
                     if (item == null)
@@ -591,65 +893,75 @@ namespace Server.Multis
                     if (item.X != borderPoint.X || item.Y != borderPoint.Y || item.Movable)
                         continue;
 
-                    // Adam: ignore these tent components
-                    if (TentComponents.Contains(item) == true)
+                    if (tentComponents.Contains(item))
                         continue;
 
-                    ItemData id = item.ItemData;
+                    ItemData itemData = item.ItemData;
 
-                    if (id.Impassable || (id.Surface && (id.Flags & TileFlag.Background) == 0 && (item.Z + id.CalcHeight) > (center.Z + 2)))
-                        return HousePlacementResult.BadItem; // Broke rule #1
+                    if (itemData.Impassable ||
+                        (itemData.Surface && (itemData.Flags & TileFlag.Background) == 0 && (item.Z + itemData.CalcHeight) > (center.Z + 2)))
+                    {
+                        return BlockHousePlacement(from, HousePlacementResult.BadItem, "BadItem - impassable item on border");
+                    }
                 }
-                #endregion IMPASSABLE_TILE
             }
 
-            for (int i = 0; i < yard.Count; ++i)
+            return HousePlacementResult.Valid;
+        }
+        private static HousePlacementResult ValidateYard(Mobile? from, Map map, HashSet<Point2D> yard)
+        {
+            // Policy:
+            // Yard validation enforces clearance in the front/back placement buffer by checking
+            // for blocking multi tiles.
+
+            foreach (Point2D yardPoint in yard)
             {
-                Point2D yardPoint = (Point2D)yard[i];
+                IPooledEnumerable multiTiles = map.GetMultiTilesAt(yardPoint.X, yardPoint.Y);
 
-                IPooledEnumerable eable = map.GetMultiTilesAt(yardPoint.X, yardPoint.Y);
-
-                foreach (StaticTile[] tile in eable)
+                foreach (StaticTile[] tileSet in multiTiles)
                 {
-                    for (int j = 0; j < tile.Length; ++j)
+                    for (int j = 0; j < tileSet.Length; ++j)
                     {
-                        if ((TileData.ItemTable[tile[j].ID & 0x3FFF].Flags & (TileFlag.Impassable | TileFlag.Surface)) != 0)
+                        if ((TileData.ItemTable[tileSet[j].ID & 0x3FFF].Flags & (TileFlag.Impassable | TileFlag.Surface)) != 0)
                         {
-                            eable.Free();
-                            return HousePlacementResult.BadStatic; // Broke rule #3
+                            multiTiles.Free();
+                            return BlockHousePlacement(from, HousePlacementResult.BadStatic, "BadStatic - multi tile blocking yard clearance");
                         }
                     }
                 }
 
-                eable.Free();
+                multiTiles.Free();
             }
 
             return HousePlacementResult.Valid;
+        }
+        private static bool IsRoadTile(int landID)
+        {
+            for (int i = 0; i < m_RoadIDs.Length; i += 2)
+            {
+                if (landID >= m_RoadIDs[i] && landID <= m_RoadIDs[i + 1] && !ExceptionTiles(landID))
+                    return true;
+            }
 
-            /*if ( blockedLand || blockedStatic || blockedItem )
-			{
-				from.SendLocalizedMessage( 1043287 ); // The house could not be created here.  Either something is blocking the house, or the house would not be on valid terrain.
-			}
-			else if ( !foundationHasSurface )
-			{
-				from.SendMessage( "The house could not be created here.  Part of the foundation would not be on any surface." );
-			}
-			else
-			{
-				BaseHouse house = GetHouse( from );
-				house.MoveToWorld( center, from.Map );
-				this.Delete();
+            return false;
+        }
+        // ===================================================================
+        // House Placement Debug Helper
+        // ===================================================================
 
-				for ( int i = 0; i < toMove.Count; ++i )
-				{
-					object o = toMove[i];
-
-					if ( o is Mobile )
-						((Mobile)o).Location = house.BanLocation;
-					else if ( o is Item )
-						((Item)o).Location = house.BanLocation;
-				}
-			}*/
+        private static HousePlacementResult BlockHousePlacement(
+            Mobile? from,
+            HousePlacementResult result,
+            string reason,
+            [CallerLineNumber] int lineNumber = 0)
+        {
+#if DEBUG
+            if (from != null /*&& from.AccessLevel >= AccessLevel.GameMaster*/)
+            {
+                from.SendMessage($"[HousePlacement Debug] Blocked at line {lineNumber}: {reason}");
+            }
+#endif
+            return result;
         }
         private static bool SpecialItemExclusion(Item item)
         {

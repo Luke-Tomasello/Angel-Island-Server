@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -69,32 +69,24 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // LBR: we'll not need to worry about this guys loot unless we decide to add LBR
+            // http://web.archive.org/web/20020414105125/uo.stratics.com/hunters/chaosdaemon.shtml
+            // unknown
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=46
+            // 500 - 600 Gold
+            // Special: 4-8 Gems, Magic Weapons/Armor
+            // Cut Up: None
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(130, 170);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(500, 600);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // LBR: we'll not need to worry about this guys loot unless we decide to add LBR
-                    // http://web.archive.org/web/20020414105125/uo.stratics.com/hunters/chaosdaemon.shtml
-                    // unknown
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Meager);
-                }
+                PackGem(4, 8);
+
+                PackMagicEquipment(3, 4, 1.0, 1.0);
+                PackMagicEquipment(3, 4, 0.50, 0.50);
             }
         }
 

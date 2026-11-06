@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -98,28 +98,11 @@ namespace Server.Ethics
                 Attach(item, false, expire - DateTime.UtcNow);
         }
 
-        public static void AddProperty(Item item, ObjectPropertyList list)
-        {
-            DateTime expire;
-
-            Ethic ethic = GetEffect(item, out expire);
-
-            if (ethic != null)
-            {
-                int minutes = Math.Max(0, (int)Math.Ceiling((expire - DateTime.UtcNow).TotalMinutes));
-
-                if (ethic == Ethic.Hero)
-                    list.Add(1045118, minutes.ToString()); // Holy item [Blessed] - minutes remaining: ~1_val~
-                else
-                    list.Add(1045119, minutes.ToString()); // Unholy item [Blessed] - minutes remaining: ~1_val~
-            }
-        }
-
         public static void LabelTo(Item item, Mobile from)
         {
             DateTime expire;
 
-            Ethic ethic = GetEffect(item, out expire);
+            Ethic? ethic = GetEffect(item, out expire);
 
             if (ethic != null)
             {
@@ -146,16 +129,16 @@ namespace Server.Ethics
 
         #endregion
 
-        public static Ethic GetBlessedFor(Item item)
+        public static Ethic? GetBlessedFor(Item item)
         {
             DateTime expire;
 
             return GetEffect(item, out expire);
         }
 
-        public static Ethic GetEffect(Item item, out DateTime expire)
+        public static Ethic? GetEffect(Item item, out DateTime expire)
         {
-            InternalTimer timer;
+            InternalTimer? timer;
 
             if (m_Registry.TryGetValue(item, out timer))
             {
@@ -182,7 +165,7 @@ namespace Server.Ethics
 
         public static void Detach(Item item)
         {
-            InternalTimer timer;
+            InternalTimer? timer;
 
             if (m_Registry.TryGetValue(item, out timer))
             {
@@ -195,7 +178,7 @@ namespace Server.Ethics
 
         public static void Expire(Item item)
         {
-            Mobile m = item.RootParent as Mobile;
+            Mobile? m = item.RootParent as Mobile;
 
             if (m != null)
                 m.SendLocalizedMessage(1045117); // The blessing fades
@@ -298,7 +281,7 @@ namespace Server.Ethics
 
                         for (int i = 0; i < count; i++)
                         {
-                            Item item = reader.ReadItem();
+                            Item? item = reader.ReadItem();
                             bool hero = reader.ReadBool();
                             DateTime expireDate = reader.ReadDeltaTime();
 

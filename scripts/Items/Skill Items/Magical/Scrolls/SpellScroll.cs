@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,7 +28,9 @@
  *		Merged in 1.0RC0 code.
  */
 
+using Scripts.Misc;
 using Server.Factions;
+using Server.Mobiles;
 using Server.Spells;
 using Server.Targeting;
 using System.Collections;
@@ -135,10 +137,17 @@ namespace Server.Items
                 return;
             }
 
+            // Ownership check first
+            if (this is Item it && !StartingLootMonitor.CanUse(from, it))
+            {
+                from.SendMessage("This scroll is bound to another soul.");
+                return;
+            }
+
             #region Factions
             if (m_FactionState != null)
             {
-                PlayerState player = PlayerState.Find(from);
+                PlayerState? player = PlayerState.Find(from);
 
                 if (player == null)
                 {
@@ -158,7 +167,14 @@ namespace Server.Items
             }
             #endregion
 
-            Spell spell = SpellRegistry.NewSpell(m_SpellID, from, this);
+            // Season 2 disables player spellcasting.
+            if (Core.RuleSets.SeasonsRules(2) && from is PlayerMobile)
+            {
+                from.SendMessage("Player magic is disabled for this season.");
+                return;
+            }
+
+            Spell? spell = SpellRegistry.NewSpell(m_SpellID, from, this);
 
             if (spell != null)
                 spell.Cast();
@@ -218,8 +234,8 @@ namespace Server.Items
 
                 MagicItemEffect effect = (MagicItemEffect)m_Scroll.SpellID;
 
-                PlayerState player = PlayerState.Find(from);
-                GnarledStaff staff = targeted as GnarledStaff;
+                PlayerState? player = PlayerState.Find(from);
+                GnarledStaff? staff = targeted as GnarledStaff;
 
                 if (staff == null)
                 {

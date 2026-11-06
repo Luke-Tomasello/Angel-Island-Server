@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,8 +34,6 @@
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -84,51 +82,24 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021015004725/uo.stratics.com/hunters/acidelemental.shtml
+            //	250 - 650 Gold, Magic Items, Gems, Potions, Scrolls
+            // https://web.archive.org/web/20011031140133/http://uo.stratics.com/hunters/acidelemental.shtml
+            // 	300 - 600 Gold, Magic Items, Scrolls
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                Katana kat = new Katana();                  // Adam: why do we have an unmovable katana?
-                kat.Movable = false;
-                kat.Crafter = this;
-                kat.Quality = WeaponQuality.Exceptional;
-                AddItem(kat);
-
-                PackPotion();
-                PackGold(200, 250);
-                PackScroll(1, 6);
-                PackScroll(1, 6);
-                PackMagicEquipment(1, 2, 0.20, 0.20);
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(250, 650);
             }
             else
-            {   // http://web.archive.org/web/20021015004725/uo.stratics.com/hunters/acidelemental.shtml
-                //	250 - 650 Gold, Magic Items, Gems, Potions, Scrolls
-                // https://web.archive.org/web/20011031140133/http://uo.stratics.com/hunters/acidelemental.shtml
-                // 	300 - 600 Gold, Magic Items, Scrolls
-                if (Core.RuleSets.AllShards)
+            {
+                PackMagicStuff(1, 1, 0.05);
+                PackScroll(1, 6, .9);
+                PackScroll(1, 6, .5);
+                if (PublishInfo.Publish >= 15)
                 {
-                    if (Spawning)
-                    {
-                        PackGold(250, 650);
-                    }
-                    else
-                    {
-                        PackMagicStuff(1, 1, 0.05);
-                        PackScroll(1, 6, .9);
-                        PackScroll(1, 6, .5);
-                        if (PublishInfo.Publish >= 15)
-                        {
-                            PackGem();
-                            PackPotion();
-                        }
-                    }
-                }
-                else
-                {   // runuo standard loot
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.Average);
+                    PackGem();
+                    PackPotion();
                 }
             }
         }

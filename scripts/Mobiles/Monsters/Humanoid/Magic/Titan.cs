@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -81,43 +81,20 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020414130205/uo.stratics.com/hunters/titan.shtml
+            // 500 to 800 Gold, Magic Items, Treasure Maps
+            // https://web.archive.org/web/20010419012955/http://uo.stratics.com/hunters/titan.shtml
+            // 300 to 600 gold, Magic Items, Treasure Maps
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(300, 450);
-                PackMagicEquipment(1, 2, 0.20, 0.20);
-                PackScroll(1, 7);
-                // TODO: corn
-
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
+                PackGold(300, 600);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020414130205/uo.stratics.com/hunters/titan.shtml
-                    // 500 to 800 Gold, Magic Items, Treasure Maps
-                    // https://web.archive.org/web/20010419012955/http://uo.stratics.com/hunters/titan.shtml
-                    // 300 to 600 gold, Magic Items, Treasure Maps
-                    if (Spawning)
-                    {
-                        PackGold(300, 600);
-                    }
-                    else
-                    {
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 2);
-                        else
-                            PackMagicItem(1, 2, 0.10);
-                    }
-                }
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 2);
                 else
-                {
-                    AddLoot(LootPack.FilthyRich);
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.MedScrolls);
-                }
+                    PackMagicItem(1, 2, 0.10);
             }
         }
 

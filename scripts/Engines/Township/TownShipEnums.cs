@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,9 +36,10 @@ namespace Server.Township
 
     public enum LawLevel
     {
-        NONE,
-        AUTHORITY,
-        LAWLESS
+        NONE,       // Standard Lord British law enforcement
+        AUTHORITY,  // Township granted authority to enforce local law
+        LAWLESS,    // No laws enforced within the township
+        GUARDED     // Season 2: Full guard protection within the township
     }
 
     public enum TownshipAccess

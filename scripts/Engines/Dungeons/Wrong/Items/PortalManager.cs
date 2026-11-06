@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -49,7 +49,7 @@ namespace Server.Items
         }
 
         public override bool HandlesOnMovement { get { return base.IsRunning; } }
-        Timer m_Timer = null;
+        Timer? m_Timer = null;
         public override void OnMovement(Mobile m, Point3D oldLocation)
         {   // running into an already open portal, even if you have a port key, will not reset the timer.
             //  You must active an inactive portal in order to restart the timer.
@@ -69,7 +69,7 @@ namespace Server.Items
         {
             if (list != null && list.Count > 0)
                 foreach (Item item in list)
-                    if (item != null && !item.Deleted && item.Map == Map.Felucca)
+                    if (item != null && !item.Deleted && item.Map == this.Map)
                         if (item is Teleporter tp && tp.Running)
                             return true;
                         else if (item.ItemID == 0x375A /*sparkle*/ && item.Visible)
@@ -80,7 +80,7 @@ namespace Server.Items
         {
             if (list != null && list.Count > 0)
                 foreach (Item item in list)
-                    if (item != null && !item.Deleted && item.Map == Map.Felucca)
+                    if (item != null && !item.Deleted && item.Map == this.Map)
                         if (item is Teleporter tp && tp.Running != mode)
                             tp.Running = mode;
                         else if (item.ItemID == 0x375A /*sparkle*/ && item.Visible != mode)
@@ -91,7 +91,7 @@ namespace Server.Items
             List<Item> list = new();
             IPooledEnumerable eable = this.GetItemsInRange(10);
             foreach (Item item in eable)
-                if (item != null && !item.Deleted && item.Map == Map.Felucca)
+                if (item != null && !item.Deleted && item.Map == this.Map)
                     if (item is Teleporter || item.ItemID == 0x375A /*sparkle*/)
                         list.Add(item);
             eable.Free();

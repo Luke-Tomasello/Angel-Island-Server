@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,10 @@
 
 /* Scripts\Engines\ChampionSpawn\Champs\Harrower\Mobiles\Harrower.cs
  * ChangeLog:
+ * 6/6/2026, Adam
+ * The Harrower now grants charged Ethereal Mounts to all qualified
+ * participants. Uses are limited and depleted by death, making them
+ * a consumable prestige reward rather than a permanent account asset.
  *  2/2/22, Adam
  *      Add LeatherArmorDyeTub to loot drop
  *  1/21/22, Adam
@@ -94,7 +98,7 @@ namespace Server.Mobiles
     public class Harrower : BaseCreature
     {
         private bool m_TrueForm;
-        private Item m_GateItem;
+        private Item? m_GateItem;
         private ArrayList m_Tentacles;
         private Timer m_Timer;
         // UOGuide says 9 - 12 items, but we bump that up because we don't give the power scrolls and artifacts.
@@ -106,7 +110,7 @@ namespace Server.Mobiles
         {
             get { return 10 * 60.0; }
         }
-
+        public override bool IsChampion { get { return true; } }
         private class SpawnEntry
         {
             public Point3D m_Location;
@@ -131,7 +135,7 @@ namespace Server.Mobiles
 
         public static ArrayList Instances { get { return m_Instances; } }
 
-        public static Harrower Spawn(Point3D platLoc, Map platMap)
+        public static Harrower? Spawn(Point3D platLoc, Map platMap)
         {
             if (m_Instances.Count > 0)
                 return null;
@@ -366,7 +370,7 @@ namespace Server.Mobiles
 
                 for (int i = 0; i < m_Tentacles.Count; ++i)
                 {
-                    Mobile m = (Mobile)m_Tentacles[i];
+                    Mobile? m = (Mobile?)m_Tentacles[i];
 
                     if (!m.Deleted)
                         m.Kill();
@@ -385,16 +389,23 @@ namespace Server.Mobiles
             LogHelper logger = new LogHelper("HarrowerLoot.log", false);
             try
             {
-                ArrayList toGive = WhoGetsWhat(this, logger);
+                ArrayList toGive = GetQualifiedParticipantsAndLog(this, logger);
+
                 logger.Log(LogType.Text, string.Format("{0} slayed at location {1} on {2} ", this, this.Location, DateTime.UtcNow));
 
                 List<Item> gifts = ChampLootPack.GetHarrowerRewardLoot(MaxGifts);
                 LogPercentageThisMobileIsEntitled(logger, toGive.Count, gifts.Count);
 
+                // 6/6/2026, Adam
+                // The Harrower now grants charged Ethereal Mounts to all qualified
+                // participants. Uses are limited and depleted by death, making them
+                // a consumable prestige reward rather than a permanent account asset.
+                GiveHarrowerEtherealMounts(toGive, logger);
+
                 // Loop goes until we've generated MaxGifts items.
                 for (int i = 0; i < gifts.Count; ++i)
                 {
-                    Mobile m = (Mobile)toGive[i % toGive.Count];
+                    Mobile? m = (Mobile?)toGive[i % toGive.Count];
 
                     Item reward = gifts[i];
 
@@ -431,30 +442,85 @@ namespace Server.Mobiles
                 logger.Finish();
             }
         }
-#if false
-        private static Item CreateWeapon(int level)
+
+        private static void GiveHarrowerEtherealMounts(ArrayList toGive, LogHelper logger)
         {
-            Item item = Loot.RandomWeapon();
+            if (toGive == null || toGive.Count == 0)
+                return;
 
-            if (level == 5)
-                item = Loot.ImbueWeaponOrArmor(false, item, Loot.ImbueLevel.Level6, 0, false);
-            if (level == 4)
-                item = Loot.ImbueWeaponOrArmor(false, item, Loot.ImbueLevel.Level5, 0, false);
+            logger.Log(LogType.Text, "");
+            logger.Log(LogType.Text, "Begin Ethereal Mount distribution:");
 
-            return (item);
+            for (int i = 0; i < toGive.Count; ++i)
+            {
+                PlayerMobile? pm = toGive[i] as PlayerMobile;
+
+                if (pm == null || pm.Deleted)
+                    continue;
+
+                EtherealMount em = CreateHarrowerEtherealMount();
+
+                if (TryPlaceHarrowerEtherealMount(pm, em, logger))
+                    continue;
+
+                // Absolute failsafe: if placement somehow failed everywhere,
+                // avoid leaking the item.
+                logger.Log(LogType.Mobile, pm, "FAILED to place Ethereal Mount; deleting reward");
+                logger.Log(LogType.Item, em, string.Format("FAILED placement. Uses:{0}", em.Uses));
+
+                em.Delete();
+            }
         }
 
-        private static Item CreateArmor(int level)
+        private static EtherealMount CreateHarrowerEtherealMount()
         {
-            Item item = Loot.RandomArmorOrShield();
-            if (level == 5)
-                item = Loot.ImbueWeaponOrArmor(false, item, Loot.ImbueLevel.Level6, 0, false);
-            if (level == 4)
-                item = Loot.ImbueWeaponOrArmor(false, item, Loot.ImbueLevel.Level5, 0, false);
+            int uses = Core.RuleSets.MortalisRules() ? 5 : 3;
 
-            return (item);
+            switch (Utility.Random(3))
+            {
+                default:
+                case 0: return new EtherealHorse(uses);
+                case 1: return new EtherealOstard(uses);
+                case 2: return new EtherealLlama(uses);
+            }
         }
-#endif
+
+        private static bool TryPlaceHarrowerEtherealMount(PlayerMobile pm, EtherealMount em, LogHelper logger)
+        {
+            if (pm.Backpack != null && pm.Backpack.TryDropItem(pm, em, false))
+            {
+                pm.SendMessage(0x35, "You have received an Ethereal Mount!");
+
+                logger.Log(LogType.Mobile, pm, "received Ethereal Mount in backpack");
+                logger.Log(LogType.Item, em, string.Format("Location:Backpack Uses:{0}", em.Uses));
+
+                return true;
+            }
+
+            if (pm.BankBox != null && pm.BankBox.TryDropItem(pm, em, false))
+            {
+                pm.SendMessage(0x35, "An Ethereal Mount was placed in your Bankbox!");
+
+                logger.Log(LogType.Mobile, pm, "received Ethereal Mount in bankbox");
+                logger.Log(LogType.Item, em, string.Format("Location:BankBox Uses:{0}", em.Uses));
+
+                return true;
+            }
+
+            em.MoveToWorld(pm.Location, pm.Map);
+
+            pm.SendMessage(0x35, "An Ethereal Mount was placed at your feet!");
+
+            logger.Log(LogType.Mobile, pm, "received Ethereal Mount at feet");
+            logger.Log(LogType.Item, em, string.Format("Location:World({0},{1},{2}) Map:{3} Uses:{4}",
+                pm.Location.X,
+                pm.Location.Y,
+                pm.Location.Z,
+                pm.Map,
+                em.Uses));
+
+            return true;
+        }
         private class TeleportTimer : Timer
         {
             private Mobile m_Owner;
@@ -493,7 +559,7 @@ namespace Server.Mobiles
                 if (0.25 < Utility.RandomDouble())
                     return;
 
-                Mobile toTeleport = null;
+                Mobile? toTeleport = null;
 
                 IPooledEnumerable eable = m_Owner.GetMobilesInRange(16);
                 foreach (Mobile m in eable)

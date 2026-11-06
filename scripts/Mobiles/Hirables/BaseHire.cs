@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,7 +34,7 @@
  *  11/8/22, Adam
  *      Hireling NPCs charge 3x more for their services
  *      https://www.uoguide.com/Siege_Perilous
- *      triple price for SiegeStyleRules().
+ *      triple price for SiegeRules().
  * 1/26/05 - Albatross:  
  *  Changed the amount of gold the NPC started out with from 8 to 0, and changed the paytimer from 30 minutes to a full UO day.
  * 6/12/04 - Old Salty:  
@@ -60,8 +60,8 @@ namespace Server.Mobiles
             TargetCommands.Register(new HirePayTimerCommand());
         }
         private int m_HoldGold;
-        private Timer m_PayTimer;
-        public Timer HirePayTimer { get { return m_PayTimer; } }
+        private Timer? m_PayTimer;
+        public Timer? HirePayTimer { get { return m_PayTimer; } }
         [CommandProperty(AccessLevel.Administrator)]
         public int HoldGold
         {
@@ -153,8 +153,18 @@ namespace Server.Mobiles
         {
             return Controlled && ControlMaster == from;
         }
+
+        private bool IsHighterFighterBlocked()
+        {
+            return Core.RuleSets.SeasonsRules(2) && this is HireFighter;
+        }
         public override bool OnGoldGiven(Mobile from, Gold dropped)
         {
+            if (IsHighterFighterBlocked())
+            {
+                return base.OnGoldGiven(from, dropped);
+            }
+
             if (!FromMyMaster(from) && from.FollowerCount + ControlSlots > from.FollowersMax)
             {
                 SayTo(from, 1049672); // Thou must reduce thine followers before I will work for thee!
@@ -200,7 +210,7 @@ namespace Server.Mobiles
 
                                 if ((this is HireFighter && count_fighters >= max_fighters) || (this is HireMinstrel && count_minstrels >= max_minstrels))
                                 {
-                                    Mobile m = null;
+                                    Mobile? m = null;
                                     if (this is HireFighter)
                                         m = from.Pets.Where(o => o.GetType() == typeof(HireFighter) && !o.Deleted).FirstOrDefault();
                                     else
@@ -292,14 +302,15 @@ namespace Server.Mobiles
         }
         public override bool HandlesOnSpeech(Mobile from)   // needed for OnQuery
         {
-            return true;
+            return !IsHighterFighterBlocked();
         }
         public override void GetContextMenuEntries(Mobile from, ArrayList list)
         {
             base.GetContextMenuEntries(from, list);
 
-            if (!Controlled)
-                list.Add(new HireEntry(this));
+            if (!IsHighterFighterBlocked())
+                if (!Controlled)
+                    list.Add(new HireEntry(this));
         }
         private class PayTimer : Timer
         {

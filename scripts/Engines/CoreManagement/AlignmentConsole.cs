@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -23,77 +23,76 @@
  * CHANGELOG:
  *  4/14/23, Yoar
  *      Initial commit.
+ *  3/18/26, Luke
+ *      Refactored to inherit from BaseConsole.
  */
 
-using Server.Items;
+using Server.Engines.Alignment;
 using System;
 
-namespace Server.Engines.Alignment
+namespace Server.Engines.Consoles
 {
-    [FlipableAttribute(0x1f14, 0x1f15, 0x1f16, 0x1f17)]
-    public class AlignmentConsole : Item
+    public class AlignmentConsole : BaseConsole
     {
+        [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
+        public bool Enabled
+        {
+            get => AlignmentSystem.Enabled;
+        }
+
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public TimeSpan ChangeAlignmentDelay
         {
-            get { return AlignmentConfig.ChangeAlignmentDelay; }
-            set { AlignmentConfig.ChangeAlignmentDelay = value; }
+            get => AlignmentConfig.ChangeAlignmentDelay;
+            set => AlignmentConfig.ChangeAlignmentDelay = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public bool StrongholdNotoriety
         {
-            get { return AlignmentConfig.StrongholdNotoriety; }
-            set { AlignmentConfig.StrongholdNotoriety = value; }
+            get => AlignmentConfig.StrongholdNotoriety;
+            set => AlignmentConfig.StrongholdNotoriety = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public TimeSpan TraitorCooldown
         {
-            get { return AlignmentConfig.TraitorCooldown; }
-            set { AlignmentConfig.TraitorCooldown = value; }
+            get => AlignmentConfig.TraitorCooldown;
+            set => AlignmentConfig.TraitorCooldown = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public TitleDisplay TitleDisplay
         {
-            get { return AlignmentConfig.TitleDisplay; }
-            set { AlignmentConfig.TitleDisplay = value; }
+            get => AlignmentConfig.TitleDisplay;
+            set => AlignmentConfig.TitleDisplay = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public bool KillPointsEnabled
         {
-            get { return AlignmentConfig.KillPointsEnabled; }
-            set { AlignmentConfig.KillPointsEnabled = value; }
+            get => AlignmentConfig.KillPointsEnabled;
+            set => AlignmentConfig.KillPointsEnabled = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public TimeSpan KillAwardCooldown
         {
-            get { return AlignmentConfig.KillAwardCooldown; }
-            set { AlignmentConfig.KillAwardCooldown = value; }
+            get => AlignmentConfig.KillAwardCooldown;
+            set => AlignmentConfig.KillAwardCooldown = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public CreatureAllegiance CreatureAllegiance
         {
-            get { return AlignmentConfig.CreatureAllegiance; }
-            set { AlignmentConfig.CreatureAllegiance = value; }
+            get => AlignmentConfig.CreatureAllegiance;
+            set => AlignmentConfig.CreatureAllegiance = value;
         }
 
         [Constructable]
         public AlignmentConsole()
-            : base(0x1F14)
+            : base("Alignment Settings Console")
         {
-            Hue = 1254;
-            Name = "Alignment Settings Console";
-        }
-
-        public override void OnDoubleClick(Mobile from)
-        {
-            if (from.AccessLevel > AccessLevel.Player)
-                from.SendGump(new Gumps.PropertiesGump(from, this));
         }
 
         public AlignmentConsole(Serial serial)
@@ -101,18 +100,21 @@ namespace Server.Engines.Alignment
         {
         }
 
+        public override void OnDoubleClick(Mobile from)
+        {
+            if (from.AccessLevel > AccessLevel.Player)
+                from.SendGump(new Gumps.PropertiesGump(from, this));
+        }
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-
-            writer.WriteEncodedInt(0); // version
+            writer.Write((int)0); // version
         }
 
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
-
-            reader.ReadEncodedInt();
+            int version = reader.ReadInt();
         }
     }
 }

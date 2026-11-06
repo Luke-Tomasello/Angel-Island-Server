@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -46,7 +46,7 @@
 
 using Server.Accounting;			// Emailer
 using Server.Diagnostics;
-using Server.Misc;					// Test Center
+using Server.Engines;
 using Server.SMTP;                          // new SMTP engine
 using System;
 using System.Collections;
@@ -186,7 +186,7 @@ namespace Server.Commands
                 // assume activations since date
                 else
                 {
-                    string buff = null;
+                    string? buff = null;
                     for (int ix = 0; ix < e.Length; ix++)
                         buff += e.GetString(ix) + " ";
 
@@ -216,7 +216,7 @@ namespace Server.Commands
 
                     foreach (object ox in results)
                     {
-                        string address = ox as string;
+                        string? address = ox as string;
                         if (address == null) continue;
                         Logger.Log(LogType.Text, address);
                     }
@@ -262,7 +262,7 @@ namespace Server.Commands
             }
 
             // can only be run on Test Center
-            if (TestCenter.Enabled == false)
+            if (TestCenterServer.Enabled == false)
             {
                 from.SendMessage("This command may only be executed on Test Center.");
                 return;
@@ -295,7 +295,7 @@ namespace Server.Commands
                     from.SendMessage("Sending {0} email announcement(s).", Reminders);
 
                     string subject = string.Format(e.GetString(1));
-                    string body = null;
+                    string? body = null;
 
                     try
                     {

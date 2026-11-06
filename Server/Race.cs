@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -44,20 +44,8 @@ namespace Server
 
         private string m_Name, m_PluralName;
 
-        private static string[] m_RaceNames;
-        private static Race[] m_RaceValues;
-
-        public static string[] GetRaceNames()
-        {
-            CheckNamesAndValues();
-            return m_RaceNames;
-        }
-
-        public static Race[] GetRaceValues()
-        {
-            CheckNamesAndValues();
-            return m_RaceValues;
-        }
+        private static string[]? m_RaceNames;
+        private static Race[]? m_RaceValues;
 
         public static Race Parse(string value)
         {
@@ -79,9 +67,9 @@ namespace Server
             throw new Exception("Invalid race name");
         }
 
-        private static void CheckNamesAndValues()
+        [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(m_RaceNames), nameof(m_RaceValues))] private static void CheckNamesAndValues()
         {
-            if (m_RaceNames != null && m_RaceNames.Length == m_AllRaces.Count)
+            if (m_RaceNames != null && m_RaceValues != null && m_RaceNames.Length == m_AllRaces.Count)
                 return;
 
             m_RaceNames = new string[m_AllRaces.Count];

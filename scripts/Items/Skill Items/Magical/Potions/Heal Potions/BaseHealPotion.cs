@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -84,7 +84,10 @@ namespace Server.Items
                         BasePotion.PlayDrinkEffect(from);
 
                         if (!Engines.ConPVP.DuelContext.IsFreeConsume(from))
-                            this.Consume();
+                        {
+                            Consume();
+                            BasePotion.GiveEmptyBottle(from);
+                        }
 
                         Timer.DelayCall(TimeSpan.FromSeconds(10.0), new TimerStateCallback(ReleaseHealLock), from);
                     }

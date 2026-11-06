@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -240,7 +240,7 @@ namespace Server.Township
 
             for (int i = 0; i < addon.Components.Count; i++)
             {
-                AddonComponent c = (AddonComponent)addon.Components[i];
+                AddonComponent? c = (AddonComponent?)addon.Components[i];
 
                 // ignore nodraw tiles
                 if (c.ItemID == 0x1 || (c.ItemID >= 0x2198 && c.ItemID <= 0x21A4) || c.ItemID == 0x3F28)
@@ -301,7 +301,7 @@ namespace Server.Township
                     return BuildResult.HousingPercentage; // the guild must own all houses in the township
             }
 
-            BaseHouse house = BaseHouse.FindHouseAt(loc, map, 16);
+            BaseHouse? house = BaseHouse.FindHouseAt(loc, map, 16);
 
             OffsetZ = 0;
 
@@ -321,7 +321,7 @@ namespace Server.Township
                 }
             }
 
-            BaseBoat boat = BaseBoat.FindBoatAt(loc, map, 16);
+            BaseBoat? boat = BaseBoat.FindBoatAt(loc, map, 16);
 
             if (boat != null)
                 return BuildResult.Blocked; // cannot build on boats
@@ -461,7 +461,7 @@ namespace Server.Township
 
                         if (dist <= TownshipSettings.HouseClearance || dist <= TownshipSettings.NeutralHouseClearance)
                         {
-                            BaseHouse otherHouse = BaseHouse.FindHouseAt(worldLoc, map, height);
+                            BaseHouse? otherHouse = BaseHouse.FindHouseAt(worldLoc, map, height);
 
                             if (otherHouse != null)
                             {
@@ -563,7 +563,7 @@ namespace Server.Township
         {
             size = Math.Max(0, Math.Min(m_SizeMax, size));
 
-            ushort[,] matrix;
+            ushort[,]? matrix;
 
             if (!m_Matrices.TryGetValue(size, out matrix))
                 m_Matrices[size] = matrix = new ushort[size, size];

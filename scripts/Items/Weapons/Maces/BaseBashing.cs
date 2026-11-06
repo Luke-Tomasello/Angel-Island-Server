@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -83,7 +83,7 @@ namespace Server.Items
             // Vile blade	Velgo Reyam	This power actually works on any weapon (including maces and bows). 
             // It gives the weapon a few charges of powerful (level 5 !!) poison . Once a weapon has been made vile, 
             //	it can never again be used by a hero . 
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
                 if (!Core.RuleSets.AOSRules() && Poison != null && PoisonCharges > 0)
                 {
                     --PoisonCharges;
@@ -101,16 +101,6 @@ namespace Server.Items
         public override double GetBaseDamage(Mobile attacker, Mobile defender)
         {
             double damage = base.GetBaseDamage(attacker, defender);
-#if false
-            // see BaseWeapon
-            if (false && DoPub5Move(attacker, defender) && Engines.ConPVP.DuelContext.AllowSpecialAbility(attacker, "Crushing Blow", false))
-            {
-                damage *= 1.5;
-
-                attacker.SendMessage("You deliver a crushing blow!"); // Is this not localized?
-                attacker.PlaySound(0x11C);
-            }
-#endif
             return damage;
         }
 

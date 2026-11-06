@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,16 @@
 
 /* Scripts/Items/Skill Items/Theif/LockPick.cs
  * CHANGELOG:
+ *  12/17/25, Adam
+ *      Adjusted LockPick behavior to align with container trap semantics.
+ *   
+ *   - New-style tinker traps now block lockpicking while the trap is armed.
+ *   - Prevents false “lock yields” success messaging when pick is not allowed.
+ *   - Lockpicking no longer detonates new-style tinker traps.
+ *   - World containers (fillable, dungeon, treasure map) remain pickable before disarming.
+ *   - LockPick logic now respects container TrapKind classification.
+ *   
+ *   Improves consistency, player feedback, and historical accuracy.
  *  5/21/23, Yoar
  *      Rewrote lockpick delay as an action lock
  *	01/10/05 - Pix
@@ -193,13 +203,26 @@ namespace Server.Items
                         return;
                     }
 
-                    if (m_From.CheckTargetSkill(SkillName.Lockpicking, m_Item, m_Item.LockLevel, m_Item.MaxLockLevel, new object[2] /*contextObj*/))
+                    // New-style tinker traps: cannot pick while the trap is armed
+                    LockableContainer? lc = m_Item as LockableContainer;
+
+                    if (lc != null && lc.GetTrapKind() == TrapableContainer.TrapKind.NewStyleTinkerTrap)
                     {
-                        // Success! Pick the lock!
+                        if (lc is TrapableContainer tc && tc.TrapEnabled)
+                        {
+                            ((Item)lc).SendMessageTo(m_From, ascii: true,
+                                "The lock cannot be picked while the trap is armed.");
+                            return;
+                        }
+                    }
+
+                    if (m_From.CheckTargetSkill(SkillName.Lockpicking, m_Item, m_Item.LockLevel, m_Item.MaxLockLevel, new object[2]))
+                    {
                         ((Item)m_Item).SendLocalizedMessageTo(m_From, 502076); // The lock quickly yields to your skill.
                         m_From.PlaySound(0x4A);
                         m_Item.LockPick(m_From);
                     }
+
                     else
                     {
                         // The player failed to pick the lock

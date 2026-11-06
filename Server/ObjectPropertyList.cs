@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,7 +26,6 @@
  */
 
 using Server.Network;
-using System;
 using System.Text;
 
 namespace Server
@@ -37,13 +36,13 @@ namespace Server
         private int m_Hash;
         private int m_Header;
         private int m_Strings;
-        private string m_HeaderArgs;
+        private string? m_HeaderArgs;
 
         public IEntity Entity { get { return m_Entity; } }
         public int Hash { get { return 0x40000000 + m_Hash; } }
 
         public int Header { get { return m_Header; } set { m_Header = value; } }
-        public string HeaderArgs { get { return m_HeaderArgs; } set { m_HeaderArgs = value; } }
+        public string? HeaderArgs { get { return m_HeaderArgs; } set { m_HeaderArgs = value; } }
 
         private static bool m_Enabled = false;
 
@@ -97,7 +96,7 @@ namespace Server
             m_Hash ^= (val >> 26) & 0x3F;
         }
 
-        public void Add(int number, string arguments)
+        public void Add(int number, string? arguments)
         {
             if (number == 0)
                 return;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -128,7 +128,7 @@ namespace Server.Items
                 if (m_Deed.Deleted)
                     return;
 
-                Item newHair = null;
+                Item? newHair = null;
 
                 switch (info.ButtonID)
                 {
@@ -150,7 +150,7 @@ namespace Server.Items
                     pm.SetHairMods(-1, -1); // clear any hairmods (disguise kit, incognito)
                 }
 
-                Item oldHair = m_From.FindItemOnLayer(Layer.Hair);
+                Item? oldHair = m_From.FindItemOnLayer(Layer.Hair);
 
                 if (oldHair != null)
                     oldHair.Delete();

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,6 +34,7 @@
 using Server.Diagnostics;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Server.Engines.ChampionSpawn
 {
@@ -43,11 +44,11 @@ namespace Server.Engines.ChampionSpawn
     {
         private const int m_xMaxRedSkulls = 16; // maximum amount of skulls that fit on platform
         private const int m_xMaxWhiteSkulls = 4;    // 		
-        private ChampAltar m_Altar;                 // altar item		// pla: 02/11/07 changed to private
+        private ChampAltar? m_Altar;                 // altar item		// pla: 02/11/07 changed to private
         private ArrayList m_RedSkulls;          // red skull list
         private ArrayList m_WhiteSkulls;        // white skull list
         private ChampEngine m_Champ;            // ChampEngine object 
-        private ChampPlatform m_Platform;       // platform item
+        private ChampPlatform? m_Platform;       // platform item
         private int m_AltarHue;                     // allows different base hues
 
         // ctor 
@@ -122,6 +123,32 @@ namespace Server.Engines.ChampionSpawn
             writer.Write((int)m_AltarHue);
         }
 
+        public List<Item> GetItems()
+        {
+            List<Item> list = new();
+            if (m_Altar != null)
+            {
+                list.Add(m_Altar);
+            }
+
+            if (m_Platform != null)
+            {
+                list.Add(m_Platform);
+            }
+
+            if (m_RedSkulls != null)
+            {
+                foreach (Item i in m_RedSkulls)
+                    list.Add(i);
+            }
+
+            if (m_WhiteSkulls != null)
+            {
+                foreach (Item i in m_WhiteSkulls)
+                    list.Add(i);
+            }
+            return list;
+        }
         // Deletes all graphics from world
         public void Delete()
         {
@@ -274,7 +301,8 @@ namespace Server.Engines.ChampionSpawn
                 {
                     ((Item)m_RedSkulls[i]).Location = GetRedSkullLocation(i);
                     ((Item)m_RedSkulls[i]).Map = m_Champ.Map;
-                };
+                }
+                ;
             }
             if (m_WhiteSkulls != null)
             {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -143,7 +143,7 @@ namespace Server.Items
 
     public class DecorativeSwordNorth : Item
     {
-        private InternalItem m_Item;
+        private InternalItem? m_Item;
 
         [Constructable]
         public DecorativeSwordNorth()
@@ -198,7 +198,7 @@ namespace Server.Items
         }
         private class InternalItem : Item
         {
-            private DecorativeSwordNorth m_Item;
+            private DecorativeSwordNorth? m_Item;
 
             public InternalItem(DecorativeSwordNorth item)
                 : base(0x1564)
@@ -254,7 +254,7 @@ namespace Server.Items
     }
     public class DecorativeSwordWest : Item
     {
-        private InternalItem m_Item;
+        private InternalItem? m_Item;
 
         [Constructable]
         public DecorativeSwordWest()
@@ -309,7 +309,7 @@ namespace Server.Items
         }
         private class InternalItem : Item
         {
-            private DecorativeSwordWest m_Item;
+            private DecorativeSwordWest? m_Item;
 
             public InternalItem(DecorativeSwordWest item)
                 : base(0x1567)
@@ -365,7 +365,7 @@ namespace Server.Items
     }
     public class DecorativeDAxeNorth : Item
     {
-        private InternalItem m_Item;
+        private InternalItem? m_Item;
 
         [Constructable]
         public DecorativeDAxeNorth()
@@ -420,7 +420,7 @@ namespace Server.Items
         }
         private class InternalItem : Item
         {
-            private DecorativeDAxeNorth m_Item;
+            private DecorativeDAxeNorth? m_Item;
 
             public InternalItem(DecorativeDAxeNorth item)
                 : base(0x1568)
@@ -476,7 +476,7 @@ namespace Server.Items
     }
     public class DecorativeDAxeWest : Item
     {
-        private InternalItem m_Item;
+        private InternalItem? m_Item;
 
         [Constructable]
         public DecorativeDAxeWest()
@@ -531,7 +531,7 @@ namespace Server.Items
         }
         private class InternalItem : Item
         {
-            private DecorativeDAxeWest m_Item;
+            private DecorativeDAxeWest? m_Item;
 
             public InternalItem(DecorativeDAxeWest item)
                 : base(0x156B)

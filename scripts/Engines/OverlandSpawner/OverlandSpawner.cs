@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts/Engines/OverlandSpawner/OverlandSpawner.cs
  * Changelog:
+ *	10/21/26, Adam
+ *		OverlandSpawnerSpawn: when no valid treasure map location is available, abort (never place at 0,0),
+ *		delete the unplaced mobile and its mount, and log the error on every failed attempt.
  *	04/23/08, plasma
  *		Change to use new SpawnerCache.cs
  *	9/6/06, Adam
@@ -50,15 +53,15 @@ namespace Server.Engines.OverlandSpawner
 {
     public class OverlandSpawner
     {
-        public Mobile SpawnAt(Point2D location, Mobile mob)
+        public Mobile? SpawnAt(Point2D location, Mobile mob)
         {
             Map map = Map.Felucca;
             int z = map.GetAverageZ(location.X, location.Y);
 
             try
             {
-                BaseOverland bo = null;
-                BaseCreature bc = mob as BaseCreature;
+                BaseOverland? bo = null;
+                BaseCreature? bc = mob as BaseCreature;
                 // we will make it so this is passed in
                 if (mob is BaseOverland)
                     bo = mob as BaseOverland;
@@ -99,12 +102,23 @@ namespace Server.Engines.OverlandSpawner
             return null;
         }
 
-        public Mobile OverlandSpawnerSpawn(Mobile mob)
+        public Mobile? OverlandSpawnerSpawn(Mobile mob)
         {
             try
             {   // we have many 'tested' treasure map locations, use them
-                Mobile m = SpawnAt(TreasureMap.GetRandomTreasureMapLocation(map: Map.Felucca), mob);
+                Point2D location = TreasureMap.GetRandomTreasureMapLocation(map: Map.Felucca);
+                if (location == Point2D.Zero)
+                {   // no usable location: abort, never place the mobile at 0,0
+                    DiscardUnplaced(mob);
+                    throw new InvalidOperationException(string.Format("no valid treasure map location; {0} not spawned", mob?.GetType().Name));
+                }
+                Mobile? m = SpawnAt(location, mob);
                 return m;
+            }
+            catch (InvalidOperationException e)
+            {   // logged on every failed attempt (this overload is not capped)
+                LogHelper.LogException(e, "Server.Engines.OverlandSpawner : spawn aborted");
+                Utility.Monitor.WriteLine("Server.Engines.OverlandSpawner : spawn aborted: {0}", ConsoleColor.Red, e.Message);
             }
             catch (Exception e)
             {
@@ -113,6 +127,16 @@ namespace Server.Engines.OverlandSpawner
             }
 
             return null;
+        }
+
+        // the mobile was never moved into the world: delete it and anything it rides
+        private static void DiscardUnplaced(Mobile? mob)
+        {
+            if (mob == null || mob.Deleted)
+                return;
+            if (mob.Mount is Mobile mount && !mount.Deleted)
+                mount.Delete();
+            mob.Delete();
         }
 
     }

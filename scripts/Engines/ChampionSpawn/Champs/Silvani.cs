@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -80,7 +80,7 @@ namespace Server.Mobiles
         public override bool Unprovokable { get { return true; } }
         public override Poison PoisonImmune { get { return Poison.Regular; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 5 : 0; } }
 
         public void SpawnPixies(Mobile target)
@@ -129,7 +129,7 @@ namespace Server.Mobiles
         {
             base.OnGaveMeleeAttack(defender);
 
-            defender.Damage(Utility.Random(20, 10), this, this);
+            defender.Damage(Utility.Random(20, 10), this, new DamageContext { Source = this });
             defender.Stam -= Utility.Random(20, 10);
             defender.Mana -= Utility.Random(20, 10);
         }

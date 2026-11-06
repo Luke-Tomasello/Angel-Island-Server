@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -72,41 +72,23 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AllShards)
+            // I can find no official record of the loot for this creature,
+            // so I'm making it up based on the fact that it's a mid-level magic monster.
+            // And we had this loot table from Angel Island's original implementation.
+            if (Spawning)
             {
-                if (Spawning)
-                {
-                    // No at spawn loot
-                }
-                else
-                {
-                    Body = 51;
-                    PackGem();
-                    PackReg(8, 12);
-
-                    PackGold(170, 220);
-                    PackScroll(2, 7);
-                    // Category 3 MID
-                    PackMagicItem(1, 2, 0.10);
-                    PackMagicItem(1, 2, 0.05);
-                }
+                PackGold(170, 220);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    // ai special
-                }
+                Body = 51;
+                PackGem();
+                PackReg(8, 12);
+
+                PackScroll(2, 7);
+                // Category 3 MID
+                PackMagicItem(1, 2, 0.10);
+                PackMagicItem(1, 2, 0.05);
             }
         }
 

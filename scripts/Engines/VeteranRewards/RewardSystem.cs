@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,8 +28,8 @@ namespace Server.Engines.VeteranRewards
 {
     public class RewardSystem
     {
-        private static RewardCategory[] m_Categories;
-        private static RewardList[] m_Lists;
+        private static RewardCategory[]? m_Categories;
+        private static RewardList[]? m_Lists;
 
         public static RewardCategory[] Categories
         {
@@ -42,7 +42,7 @@ namespace Server.Engines.VeteranRewards
             }
         }
 
-        public static RewardList[] Lists
+        public static RewardList[]? Lists
         {
             get
             {
@@ -71,7 +71,7 @@ namespace Server.Engines.VeteranRewards
                 return false;
             }
 
-            Account acct = mob.Account as Account;
+            Account? acct = mob.Account as Account;
 
             if (acct == null)
             {
@@ -91,7 +91,7 @@ namespace Server.Engines.VeteranRewards
 
         public static int GetRewardLevel(Mobile mob)
         {
-            Account acct = mob.Account as Account;
+            Account? acct = mob.Account as Account;
 
             if (acct == null)
                 return 0;
@@ -120,7 +120,7 @@ namespace Server.Engines.VeteranRewards
             if (cur >= max)
                 return false;
 
-            Account acct = mob.Account as Account;
+            Account? acct = mob.Account as Account;
 
             if (acct == null)
                 return false;
@@ -140,7 +140,7 @@ namespace Server.Engines.VeteranRewards
 
         public static void ComputeRewardInfo(Mobile mob, out int cur, out int max, out int level)
         {
-            Account acct = mob.Account as Account;
+            Account? acct = mob.Account as Account;
 
             if (acct == null)
             {
@@ -156,7 +156,7 @@ namespace Server.Engines.VeteranRewards
                 return;
             }
 
-            string tag = acct.GetTag("numRewardsChosen");
+            string? tag = acct.GetTag("numRewardsChosen");
 
             if (tag == null || tag == "")
                 cur = 0;
@@ -169,7 +169,7 @@ namespace Server.Engines.VeteranRewards
                 max = 2 + level;
         }
 
-        public static bool CheckIsUsableBy(Mobile from, Item item, object[] args)
+        public static bool CheckIsUsableBy(Mobile from, Item item, object[]? args)
         {
             if (m_Lists == null)
                 SetupRewardTables();

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,13 +34,13 @@ namespace Server.Engines.Quests.Haven
     public class Cannon : BaseAddon
     {
         private CannonDirection m_CannonDirection;
-        private MilitiaCanoneer m_Canoneer;
+        private MilitiaCanoneer? m_Canoneer;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public CannonDirection CannonDirection { get { return m_CannonDirection; } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public MilitiaCanoneer Canoneer { get { return m_Canoneer; } set { m_Canoneer = value; } }
+        public MilitiaCanoneer? Canoneer { get { return m_Canoneer; } set { m_Canoneer = value; } }
 
         [Constructable]
         public Cannon(CannonDirection direction)
@@ -111,7 +111,7 @@ namespace Server.Engines.Quests.Haven
         {
             DoFireEffect(target);
 
-            target.Damage(Utility.RandomMinMax(50, 100), from, this);
+            target.Damage(Utility.RandomMinMax(50, 100), from, new DamageContext { Source = this });
         }
 
         public override bool HandlesOnMovement { get { return m_Canoneer != null && !m_Canoneer.Deleted && m_Canoneer.Active; } }
@@ -169,7 +169,7 @@ namespace Server.Engines.Quests.Haven
     public class CannonComponent : AddonComponent
     {
         [CommandProperty(AccessLevel.GameMaster)]
-        public MilitiaCanoneer Canoneer
+        public MilitiaCanoneer? Canoneer
         {
             get { return Addon is Cannon ? ((Cannon)Addon).Canoneer : null; }
             set { if (Addon is Cannon) ((Cannon)Addon).Canoneer = value; }

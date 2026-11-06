@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,14 +36,14 @@ namespace Server.Diagnostics
             }
         }
 
-        public static TargetProfile Acquire(Type type)
+        public static TargetProfile? Acquire(Type type)
         {
             if (!Core.Profiling)
             {
                 return null;
             }
 
-            TargetProfile prof;
+            TargetProfile? prof;
 
             if (!_profiles.TryGetValue(type, out prof))
             {
@@ -54,7 +54,7 @@ namespace Server.Diagnostics
         }
 
         public TargetProfile(Type type)
-            : base(type.FullName)
+            : base(type.FullName!) // profiled target types are concrete classes
         {
         }
     }

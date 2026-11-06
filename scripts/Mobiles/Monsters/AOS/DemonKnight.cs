@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,7 +77,7 @@ namespace Server.Mobiles
 				typeof( TheBeserkersMaul )
 			};
 */
-        public static Item CreateRandomArtifact()
+        public static Item? CreateRandomArtifact()
         {
             if (!Core.RuleSets.AOSRules())
                 return null;
@@ -102,7 +102,7 @@ namespace Server.Mobiles
 						*/
         }
 
-        public static Mobile FindRandomPlayer(BaseCreature creature)
+        public static Mobile? FindRandomPlayer(BaseCreature creature)
         {
             List<DamageStore> rights = BaseCreature.GetLootingRights(creature.DamageEntries, creature.HitsMax);
 
@@ -125,7 +125,7 @@ namespace Server.Mobiles
             DistributeArtifact(creature, CreateRandomArtifact());
         }
 
-        public static void DistributeArtifact(BaseCreature creature, Item artifact)
+        public static void DistributeArtifact(BaseCreature creature, Item? artifact)
         {
             DistributeArtifact(FindRandomPlayer(creature), artifact);
         }
@@ -135,7 +135,7 @@ namespace Server.Mobiles
             DistributeArtifact(to, CreateRandomArtifact());
         }
 
-        public static void DistributeArtifact(Mobile to, Item artifact)
+        public static void DistributeArtifact(Mobile? to, Item? artifact)
         {
             if (to == null || artifact == null)
                 return;
@@ -225,12 +225,12 @@ namespace Server.Mobiles
 
         private static bool m_InHere;
 
-        public override void OnDamage(int amount, Mobile from, bool willKill, object source_weapon)
+        public override void OnDamage(int amount, Mobile from, bool willKill, DamageContext context)
         {
             if (from != null && from != this && !m_InHere)
             {
                 m_InHere = true;
-                AOS.Damage(from, this, Utility.RandomMinMax(8, 20), 100, 0, 0, 0, 0, this);
+                AOS.Damage(from, this, Utility.RandomMinMax(8, 20), new DamageContext { Source = this });
 
                 MovingEffect(from, 0xECA, 10, 0, false, false, 0, 0);
                 PlaySound(0x491);
@@ -283,10 +283,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            PackGem();
-            PackGold(3500, 4700);
-            PackMagicEquipment(3, 3, 1.0, 1.0);
-            PackMagicEquipment(3, 3, 1.0, 1.0);
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=60
+            // 500 - 600 Gold
+            // Special: 4-8 Gems, Magic Weapons/Armor
+            // Cut Up: None
+
+            if (Spawning)
+            {
+                PackGold(500, 600);
+            }
+            else
+            {
+                PackGem(4, 8);
+
+                PackMagicEquipment(3, 4, 1.0, 1.0);
+                PackMagicEquipment(3, 4, 0.50, 0.50);
+            }
         }
 
         public override void Serialize(GenericWriter writer)

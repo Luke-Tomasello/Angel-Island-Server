@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -131,7 +131,7 @@ namespace Server.Mobiles
 
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    Mobile m = (Mobile)list[i];
+                    Mobile? m = (Mobile?)list[i];
 
                     int damage = (int)(m.Hits * scalar);
 
@@ -144,7 +144,7 @@ namespace Server.Mobiles
                     m.MovingParticles(this, 0x0001, 1, 0, false, true, 32, 0, 9535, 9536, 0, (EffectLayer)255, 0);
 
                     this.DoHarmful(m);
-                    this.Hits += AOS.Damage(m, this, damage, 100, 0, 0, 0, 0, this);
+                    this.Hits += AOS.Damage(m, this, damage, new DamageContext { Source = this });
                 }
 
                 this.Say(true, "If I cannot cleanse thy soul, I will destroy it!");
@@ -183,7 +183,7 @@ namespace Server.Mobiles
 
                 this.PlaySound(0x209);
                 this.DoHarmful(combatant);
-                this.Hits += AOS.Damage(combatant, this, Utility.RandomMinMax(30, 40) - (Core.RuleSets.AOSRules() ? 0 : 10), 100, 0, 0, 0, 0, this);
+                this.Hits += AOS.Damage(combatant, this, Utility.RandomMinMax(30, 40) - (Core.RuleSets.AOSRules() ? 0 : 10), new DamageContext { Source = this });
             }
         }
 
@@ -220,32 +220,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(450, 700);
+            // https://www.uoguide.com/Meer_Eternal
+            // Post-era creature (Mondain's Legacy). No Stratics-era entry.
+            // 500 - 700 Gold
+            // Special: 4-8 Gems, Magic Weapons/Armor
+            // Note: Excludes ML systems (artifacts, quest items, etc.)
 
-                PackScroll(3, 6);
-                PackScroll(3, 6);
-                PackScroll(7, 8);
-                PackScroll(7, 8);
+            if (Spawning)
+            {
+                PackGold(500, 700);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // no LBR
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    // TODO: standard runuo
-                }
+                PackGem(4, 8);
+
+                PackMagicEquipment(3, 4, 1.0, 1.0);
+                PackMagicEquipment(3, 4, 0.50, 0.50);
             }
         }
 

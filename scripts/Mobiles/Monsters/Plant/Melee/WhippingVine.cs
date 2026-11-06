@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -73,51 +73,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // no pages until...
+            // http://web.archive.org/web/20021019193742/uo.stratics.com/hunters/whippingvine.shtml
+            // Reagents, Fertile Dirt, Executioner's Cap, Vines
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackReg(6);
-                PackItem(new FertileDirt(Utility.RandomMinMax(5, 10)));
+
+            }
+            else
+            {
+                PackReg(3);
+                PackItem(new FertileDirt(Utility.RandomMinMax(1, 10)));
 
                 if (0.2 >= Utility.RandomDouble())
                     PackItem(new ExecutionersCap());
 
                 PackItem(new Vines());
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // no pages until...
-                    // http://web.archive.org/web/20021019193742/uo.stratics.com/hunters/whippingvine.shtml
-                    // Reagents, Fertile Dirt, Executioner's Cap, Vines
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                        PackReg(3);
-                        PackItem(new FertileDirt(Utility.RandomMinMax(1, 10)));
-
-                        if (0.2 >= Utility.RandomDouble())
-                            PackItem(new ExecutionersCap());
-
-                        PackItem(new Vines());
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                    {
-                        PackReg(3);
-                        PackItem(new FertileDirt(Utility.RandomMinMax(1, 10)));
-
-                        if (0.2 >= Utility.RandomDouble())
-                            PackItem(new ExecutionersCap());
-
-                        PackItem(new Vines());
-                    }
-                }
             }
         }
 

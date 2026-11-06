@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,32 @@
 
 /* Scripts/Commands/Jail.cs
  * CHANGELOG
+ *  10/18/26, Adam (confinement Stage 5)
+ *      First confinement wins: an automated (System profile) jailing of someone already confined (in a jail, or in a
+ *      prison as an inmate: ConfinementBookkeeping.IsConfined) changes nothing and moves no one; the offense is recorded
+ *      for staff and the result is a denial. Every JailPlayer.GoToJail caller is covered (Test Center, the macroer check,
+ *      the bank check and other exploit catches, the inmate cron). A prison trespasser is still jailed. Staff jailing is
+ *      unchanged.
+ *  10/17/26, Adam
+ *      Confinement Stage 2: the jail record, account flag and chat ban go through JailOperations /
+ *      ConfinementBookkeeping (ConfinementOperations.cs). Same changes, same order; jailing behaviour is unchanged
+ *      (system jailings still ban global chat, staff jailings still do not).
+ *      Confinement Stage 3: the staff DoJailing takes an optional facet (each facet has its own Jail region and cells);
+ *      null keeps Felucca, so every existing caller ([jail, the system jailings) is unchanged. The confinement
+ *      coordinator passes the destination facet.
+ *      Confinement Stage 4: [jail's Submit goes through the coordinator (CommandJailing), still to the Felucca jail with the
+ *      gump's cell, sentence and comment: a prisoner is now transferred (prison check-out first, no stale prison state);
+ *      someone already in jail is re-jailed by the legacy DoJailing, as before. Staff of strictly lower rank than the
+ *      jailer can now be jailed: they are demoted to Player first. Equal or higher rank is refused as before.
+ *  10/17/26, Adam (confinement admission refactor R4)
+ *      Both DoJailing overloads (and so JailPlayer.GoToJail) delegate to the shared admission runner (JailAdmission,
+ *      ConfinementAdmission.cs): the System profile (Felucca, global chat ban, "SYSTEM") and the Staff profile (the given
+ *      facet, account jailed flag, jailer told, command log). Same steps, texts and logs; a cell that is not inside a jail
+ *      on that facet, or a target that is not a player character, is refused before anything changes, and refusals and
+ *      failures are written to jail.log and the console. MoveToJail and LogJailing are gone (the runner's steps).
+ *  10/17/26, Adam (D5)
+ *      [jail on someone already in a jail goes through the coordinator too (Rejail, RenewSentence): re-jailed in the
+ *      Felucca jail with the gump's cell, sentence and comment, no check-out, as before; now logged to Confinement.log.
  *  7/09/21, Yoar
  *      Refactored:
  *          Added array of jail cells
@@ -31,7 +57,7 @@
  *      JailGump:
  *          Targeting a player with the [jail command now opens the JailGump to review/edit the parameters of the jailing
  *	3/25/09, Adam
- *		Add command version of Jail command to be called by PJUM ReportAsMacroer (JailPlayer)
+ *		Add command version of Jail command to be called by PlayerJusticeSystem ReportAsMacroer (JailPlayer)
  *		When auto stabling, 
  *			ignore pets over stable limit (you're going to jail .. too bad)
  *			ignore pets that have something in their pack (you're going to jail .. too bad)
@@ -60,6 +86,7 @@
 
 using Server.Accounting;
 using Server.Diagnostics;
+using Server.Engines.ConfinementSystem;
 using Server.Gumps;
 using Server.Items;
 using Server.Network;
@@ -89,7 +116,7 @@ namespace Server.Commands
                 new Point3D(5304, 1184, 0),
             };
 
-        private static Point3D GetCell(int cell)
+        internal static Point3D GetCell(int cell)       // internal: the confinement coordinator validates the cell before jailing
         {
             int index = cell - 1;
 
@@ -179,9 +206,11 @@ namespace Server.Commands
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                Mobile m = targeted as Mobile;
+                Mobile? m = targeted as Mobile;
 
-                if (m == null || !m.Player || m.AccessLevel != AccessLevel.Player)
+                // staff can be jailed only by staff of strictly higher rank (they are demoted to Player on Submit);
+                //  equal or higher rank is refused as before
+                if (m == null || !m.Player || (m.AccessLevel != AccessLevel.Player && from.AccessLevel <= m.AccessLevel))
                 {
                     from.SendMessage("Only players can be sent to jail.");
                     return;
@@ -207,7 +236,7 @@ namespace Server.Commands
                 m_ToJail = toJail;
                 m_Trouble = trouble;
 
-                Account acct = toJail.Account as Account;
+                Account? acct = toJail.Account as Account;
 
                 string username;
 
@@ -280,7 +309,7 @@ namespace Server.Commands
                                 return;
                             }
 
-                            DoJailing(from, m_ToJail, cell, comment, sentence, m_Trouble);
+                            CommandJailing(from, m_ToJail, cell, comment, sentence, m_Trouble);
                             break;
                         }
                     case 2: // view player props
@@ -299,7 +328,7 @@ namespace Server.Commands
                                 break;
                             }
 
-                            Account acct = m_ToJail.Account as Account;
+                            Account? acct = m_ToJail.Account as Account;
 
                             if (acct != null)
                                 from.SendGump(new AdminGump(from, AdminGumpPage.AccountDetails_Information, 0, null, null, acct));
@@ -317,12 +346,12 @@ namespace Server.Commands
 
         public class JailPlayer
         {
-            private Mobile m_ToJail;
+            private Mobile? m_ToJail;
             private int m_Cell;
             private string m_Comment;
             private bool m_Trouble;
 
-            public JailPlayer(Mobile toJail, int cell, string comment, bool trouble)
+            public JailPlayer(Mobile? toJail, int cell, string comment, bool trouble)
             {
                 m_ToJail = toJail;
                 m_Cell = cell;
@@ -348,7 +377,7 @@ namespace Server.Commands
 
             int sentence = 12; // 12 hour minimum sentence
 
-            Account acct = toJail.Account as Account;
+            Account? acct = toJail.Account as Account;
 
             if (acct != null)
             {
@@ -364,97 +393,96 @@ namespace Server.Commands
             return sentence;
         }
 
-        // do jailing by system
+        // do jailing by system: the shared admission runner's System jail profile (JailAdmission, ConfinementAdmission.cs),
+        //  always the Felucca jail: global chat banned, no account jailed flag, "SYSTEM" in the jail log, as before
         public static void DoJailing(Mobile toJail, int cell, string comment, int sentence, bool trouble)
         {
-            Account acct = toJail.Account as Account;
-
-            if (string.IsNullOrEmpty(comment))
-                comment = "None";
-
-            // stable the players pets
-            Utility.StablePets(toJail);
-
-            #region Disable Global Chat
-            Server.Engines.Chat.ChatHelper.SetChatBan(toJail, true);
-            #endregion Disable Global Chat
-
-            // move to jail
-            MoveToJail(toJail, cell);
-
-            // register inmate
-            JailExitSungate.AddInmate(toJail, sentence);
-
-            toJail.SendMessage("You have been jailed for {0} hours.", sentence);
-
-            // log the jailing to file
-            LogJailing("SYSTEM", toJail, cell, comment, sentence);
-
-            // add account comment
-            if (acct != null)
-                acct.Comments.Add(new AccountComment("SYSTEM", FormatComment(acct.Comments.Count + 1, comment, sentence, trouble)));
+            RunJailing(JailProfile.System, World.GetSystemAcct(), toJail, cell, comment, sentence, Map.Felucca);
         }
 
-        // do jailing by staff
-        public static void DoJailing(Mobile jailer, Mobile toJail, int cell, string comment, int sentence, bool trouble)
+        // [jail's Submit, through the confinement coordinator to the Felucca jail (the command's default): someone already in
+        //  a jail (any facet) is re-jailed there (Rejail: new cell, sentence and comment, as before), a prisoner is
+        //  transferred (prison check-out, then jailing), and lower-ranked staff are demoted first.
+        private static void CommandJailing(Mobile from, Mobile toJail, int cell, string comment, int sentence, bool trouble)
         {
-            Account acct = toJail.Account as Account;
+            ConfinementResult r = Confinement.Execute(new ConfinementRequest(toJail, from, TransitionAuthority.Staff, TransitionMode.Administrative,
+                ConfinementDestination.Jail(Map.Felucca))
+            { Comment = comment, JailCell = cell, JailHours = sentence, DemoteStaffTarget = toJail.AccessLevel > AccessLevel.Player, RenewSentence = true });
 
-            if (string.IsNullOrEmpty(comment))
-                comment = "None";
-
-            // stable the players pets
-            int count = Utility.StablePets(toJail);
-            if (count != 0)
-                jailer.SendMessage("{0} pets have been stabled", count);
-
-            // move to jail
-            MoveToJail(toJail, cell);
-
-            // register inmate
-            JailExitSungate.AddInmate(toJail, sentence);
-
-            toJail.SendMessage("You have been jailed for {0} hours.", sentence);
-            jailer.SendMessage("{0} has been jailed for {1} hours.", toJail.Name, sentence);
-
-            // log the jailing to file
-            LogJailing(jailer.Name, toJail, cell, comment, sentence);
-
-            // log the usage of the jail system
-            CommandLogging.WriteLine(jailer, "{0} jailed {1}(Username: {2}) into cell {3} for {4} hours with reason: {5}.", jailer.Name, toJail.Name, acct == null ? "-" : acct.Username, cell, sentence, comment);
-
-            // add account comment
-            if (acct != null)
-                acct.Comments.Add(new AccountComment(jailer.Name, FormatComment(acct.Comments.Count + 1, comment, sentence, trouble)));
+            if (r.Outcome == ConfinementOutcome.Denied)
+                from.SendMessage("{0} cannot be jailed right now: {1}", toJail.Name, r.Reason);
+            else if (r.Outcome == ConfinementOutcome.PartialFailure)
+                from.SendMessage(0x22, "{0}: the jailing did not complete ({1}). See Confinement.log.", toJail.Name, r.Message);
         }
-        private static void MoveToJail(Mobile m, int cell)
+
+        // do jailing by staff: the runner's Staff jail profile. map: the facet whose jail they go to (each facet has its own
+        //  Jail region); null = Felucca, as always. Account jailed flag, the jailer told, the command log, as before
+        public static void DoJailing(Mobile jailer, Mobile toJail, int cell, string comment, int sentence, bool trouble, Map? map = null)
         {
-            Point3D destPoint = Jail.GetCell(cell);
+            RunJailing(JailProfile.Staff, jailer, toJail, cell, comment, sentence, map ?? Map.Felucca);
+        }
 
-            m.MoveToWorld(destPoint, Map.Felucca);
-
-            if (m.NetState == null)
-            {
-                m.LogoutLocation = destPoint;
-                m.LogoutMap = Map.Felucca;
-                m.Map = Map.Internal;
+        /// <summary>
+        /// The jail admission through the shared runner (JailAdmission). Every refusal is checked first and changes nothing;
+        /// a refusal or a failed step is written to jail.log and the console, since the void callers cannot see the result.
+        /// Never throws. Returns the runner's result (null: not a player character, nothing done).
+        /// </summary>
+        internal static AdmissionResult? RunJailing(JailProfile profile, Mobile reporter, Mobile toJail, int cell, string comment, int sentence, Map map)
+        {
+            if (toJail is not Server.Mobiles.PlayerMobile pm)
+            {   // the jail record and the account comment have only ever applied to player characters
+                ReportJailing(toJail, "Jail admission refused, nothing changed: not a player character");
+                return null;
             }
+            if (profile == JailProfile.System && ConfinementBookkeeping.IsConfined(pm))
+            {   // first confinement wins: an automated jailing never moves someone already in a jail or a prison; the
+                //  offense is recorded for staff (each automated jailing is a discrete event, so it is always recorded)
+                ConfinementBookkeeping.RecordAdditionalOffense(pm, "system jailing", string.IsNullOrEmpty(comment) ? "None" : comment, dedupKeys: null);
+                return new AdmissionResult
+                {
+                    Profile = "jail " + profile,
+                    Denials = new[] { new ConfinementDenial(ConfinementDenialCode.OperationNotAllowed,
+                        "They are already confined: the offense was recorded and they were not moved.") },
+                };
+            }
+            AdmissionResult r = JailAdmission.Admit(new AdmissionContext(pm, reporter, map)
+            {
+                Comment = string.IsNullOrEmpty(comment) ? "None" : comment,
+                JailCell = cell,
+                JailHours = sentence,
+            }, profile);
+            if (!r.Completed)
+                ReportJailing(pm, (r.Denied ? "Jail admission refused, nothing changed: " : "Jail admission NOT completed: ") + r);
+            return r;
         }
 
-        private static void LogJailing(string jailer, Mobile toJail, int cell, string comment, int sentence)
+        private static void ReportJailing(Mobile? m, string text)
         {
-            LogHelper Logger = new LogHelper("jail.log", false, true);
-
-            // TODO: More readable format?
-            Logger.Log(LogType.Mobile, toJail, string.Format("{0}:{1}:{2}:{3}", jailer, cell, comment, sentence));
-
-            Logger.Finish();
+            Console.WriteLine("Jail: {0}: {1}", m, text);
+            try
+            {
+                LogHelper logger = new LogHelper("jail.log", overwrite: false, sline: true);
+                if (m != null && !m.Deleted)
+                    logger.Log(LogType.Mobile, m, text);
+                else
+                    logger.Log(LogType.Text, text);
+                logger.Finish();
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex);
+            }
         }
 
         private static string FormatComment(int tagCount, string comment, int sentence, bool trouble)
         {
             // TODO: Simplify comment? There's no need to add the current date or the tag count. But then update GetDefaultSentence!
-            return string.Format("{0}\nTag count: {1}\nJailed{2} for {3} hours. Reason: {4}", DateTime.UtcNow, tagCount, trouble ? "TroubleMaker" : "", sentence, comment);
+            return string.Format("{0}\nTag count: {1}\nJailed{2} for {3} hours. Reason: {4}",
+                DateTime.UtcNow,
+                tagCount,
+                trouble ? "TroubleMaker" : "",
+                sentence,
+                comment);
         }
     }
 }

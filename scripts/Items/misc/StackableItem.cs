@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -58,7 +58,7 @@ namespace Server.Items
             }
         }
         GraphicObjects m_graphicObjects = null;
-        private string m_plural;
+        private string? m_plural;
         [Constructable]
         public StackableItem(string name, int facing1)
             : base(facing1)
@@ -144,7 +144,7 @@ namespace Server.Items
                 return false;
             }
 
-            StackableItem new_item = null;
+            StackableItem? new_item = null;
             int amount = Amount - 1;
             if (m_graphicObjects == null) { System.Diagnostics.Debug.Assert(false); return false; }
             for (int ix = 0; ix < amount; ix++)

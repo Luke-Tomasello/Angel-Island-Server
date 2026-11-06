@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -74,100 +74,32 @@ namespace Server
             set { m_ArmorIgnore = value; }
         }
 
-        public static int Damage(Mobile m, Mobile from, int damage, int phys, int fire, int cold, int pois, int nrgy, object source_weapon)
+        public static int Damage(Mobile m, Mobile from, int damage, DamageContext context)
         {
-            return Damage(m, from, damage, phys, fire, cold, pois, nrgy, false, source_weapon);
+            return Damage(m, from, damage, false, context);
         }
 
-        public static int Damage(Mobile m, Mobile from, int damage, int phys, int fire, int cold, int pois, int nrgy, bool keepAlive, object source_weapon)
+        public static int Damage(Mobile m, Mobile from, int damage, bool keepAlive, DamageContext context)
         {
             if (m == null || m.Deleted || !m.Alive || damage <= 0)
                 return 0;
 
-            if (phys == 0 && fire == 100 && cold == 0 && pois == 0 && nrgy == 0)
-            {
-                Mobiles.MeerMage.StopEffect(m, true);
-                Engines.Apiculture.BeeSwarm.EndEffect(m, true);
-            }
+            //if (phys == 0 && fire == 100 && cold == 0 && pois == 0 && nrgy == 0)
+            //{
+            //    Mobiles.MeerMage.StopEffect(m, true);
+            //    Engines.Apiculture.BeeSwarm.EndEffect(m, true);
+            //}
 
             // Adam: only valid return path
-            //if ( !Core.AOS )
             {
-                m.Damage(damage, from, source_weapon);
+                m.Damage(damage, from, context);
                 return damage;
             }
-            /*
-						Fix( ref phys );
-						Fix( ref fire );
-						Fix( ref cold );
-						Fix( ref pois );
-						Fix( ref nrgy );
-
-						int resPhys = m.PhysicalResistance;
-						int resFire = m.FireResistance;
-						int resCold = m.ColdResistance;
-						int resPois = m.PoisonResistance;
-						int resNrgy = m.EnergyResistance;
-
-						if ( m_ArmorIgnore )
-							resPhys = 0;
-
-						int totalDamage;
-
-						totalDamage  = damage * phys * (100 - resPhys);
-						totalDamage += damage * fire * (100 - resFire);
-						totalDamage += damage * cold * (100 - resCold);
-						totalDamage += damage * pois * (100 - resPois);
-						totalDamage += damage * nrgy * (100 - resNrgy);
-
-						totalDamage /= 10000;
-
-						if ( totalDamage < 1 )
-							totalDamage = 1;
-
-#region Dragon Barding
-						if ( m.Player && m.Mount is SwampDragon )
-						{
-							SwampDragon pet = m.Mount as SwampDragon;
-
-							if ( pet != null && pet.HasBarding )
-							{
-								int percent = ( pet.BardingExceptional ? 20 : 10 );
-								int absorbed = Scale( totalDamage, percent );
-
-								totalDamage -= absorbed;
-								pet.BardingHP -= absorbed;
-
-								if ( pet.BardingHP < 0 )
-								{
-									pet.HasBarding = false;
-									pet.BardingHP = 0;
-
-									m.SendLocalizedMessage( 1053031 ); // Your dragon's barding has been destroyed!
-								}
-							}
-						}
-#endregion
-
-						if ( keepAlive && totalDamage > m.Hits )
-							totalDamage = m.Hits;
-
-						if ( from != null )
-						{
-							int reflectPhys = AosAttributes.GetValue( m, AosAttribute.ReflectPhysical );
-
-							if ( reflectPhys != 0 ) // TODO: should this damage be resistable by them?
-								from.Damage( Scale( (damage * phys * (100 - resPhys)) / 10000, reflectPhys ), m );
-						}
-
-						m.Damage( totalDamage, from );
-						return totalDamage;
-			*/
         }
 
-        public static int Damage(Mobile m, int damage, int phys, int fire, int cold, int pois, int nrgy, object source_weapon)
+        public static int Damage(Mobile m, int damage, DamageContext context)
         {
-            return Damage(m, null, damage, phys, fire, cold, pois, nrgy, source_weapon);
+            return Damage(m, null, damage, context);
         }
 
         public static void Fix(ref int val)
@@ -572,7 +504,7 @@ namespace Server
 
     public sealed class AosSkillBonuses : BaseAttributes
     {
-        private ArrayList m_Mods;
+        private ArrayList? m_Mods;
 
         public AosSkillBonuses(Item owner)
             : base(owner)

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -192,6 +192,7 @@ using Server.Targeting;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using static Server.Utility;
 
 namespace Server.Spells
@@ -300,10 +301,10 @@ namespace Server.Spells
         };
         public class TravelRect
         {
-            public Map m_Map;                       // map null applies to all maps
+            public Map? m_Map;                       // map null applies to all maps
             public Rectangle2D m_Rect;              // rect to monitor
             public List<TravelCheckType> m_Types;   // restricted types
-            public TravelRect(Map map, Rectangle2D rect, List<TravelCheckType> types)
+            public TravelRect(Map? map, Rectangle2D rect, List<TravelCheckType> types)
             {
                 m_Map = map;
                 m_Rect = rect;
@@ -318,7 +319,7 @@ namespace Server.Spells
             // entrance to Ice dungeon
             new TravelRect(null, new Rectangle2D(5196, 2310, 33, 32),AllTravel),//(5196, 2310)+(33, 32)
             // Dagger Island Trammel
-            new TravelRect(Map.Trammel, Utility.World.DaggerIsland,
+            new TravelRect(Map.Trammel, Utility.WorldMap.DaggerIsland,
                 new List<TravelCheckType>() {TravelCheckType.GateTo, TravelCheckType.GateFrom,TravelCheckType.RecallTo, TravelCheckType.RecallFrom,TravelCheckType.Mark }),
         };
         #endregion Rectangle based Travel Restrictions
@@ -327,228 +328,231 @@ namespace Server.Spells
         {
             jail = false;
 
-            if (IsInvalid(map, loc)) // null, internal, out of bounds
-                return false;
-
-            if (caster == null)
-                return false;
-
-            #region Rectangle based Travel Restrictions
-            foreach (var node in TravelRestrictions)
-                if (caster.Player)
-                    if (node.m_Types.Contains(type))
-                        if (node.m_Map == null || caster.Map == node.m_Map) // map null applies to all maps
-                            if (node.m_Rect.Contains(loc) || node.m_Rect.Contains(caster.Location))
-                                return false;
-            #endregion Rectangle based Travel Restrictions
-
-            #region Siege Recall
-            //double-check safety - if checking recall on siege, return false.
-            //  We don't prohibit NPCs from recalling (healers and guards recall back to their spawner)
-            if (caster.Player && (type == TravelCheckType.RecallFrom || type == TravelCheckType.RecallTo)
-                && (Core.RuleSets.SiegeStyleRules()) && caster.AccessLevel != AccessLevel.System)
+            try
             {
-                return false;
-            }
-            #endregion Siege Recall
+                if (IsInvalid(map, loc)) // null, internal, out of bounds
+                    return BlockTravel(caster, type, "Invalid location (null, internal, or out of bounds)");
 
-            #region World Zone
-            if ((type == TravelCheckType.RecallTo || type == TravelCheckType.GateTo || type == TravelCheckType.TeleportTo) && WorldZone.BlockTeleport(caster, loc, map))
-                return false;
-            #endregion
+                if (caster == null)
+                    return BlockTravel(caster, type, "Caster is null");
 
-            #region Winter Event
-            if (type == TravelCheckType.Mark && WinterEventSystem.Contains(loc, map))
-                return false;
-            #endregion
-
-            #region Static Region
-            StaticRegion srcReg = StaticRegion.FindStaticRegion(caster);
-            StaticRegion trgReg = StaticRegion.FindStaticRegion(loc, map);
-            if (srcReg != null && srcReg == trgReg && srcReg.AllowTravelSpellsInRegion)
-            {
-                // ignore regional travel restrictions
-            }
-            else
-            {
-                if (srcReg != null)
+                #region Rectangle based Travel Restrictions
+                foreach (var node in TravelRestrictions)
                 {
-                    if (type == TravelCheckType.RecallFrom && srcReg.IsRestrictedSpell(typeof(RecallSpell)) && caster.AccessLevel != AccessLevel.System)
-                        return false;
-                    if (type == TravelCheckType.GateFrom && srcReg.IsRestrictedSpell(typeof(GateTravelSpell)) && caster.AccessLevel != AccessLevel.System)
-                        return false;
-                    if (type == TravelCheckType.TeleportFrom && srcReg.IsRestrictedSpell(typeof(TeleportSpell)) && caster.AccessLevel != AccessLevel.System)
-                        return false;
-                    if (type == TravelCheckType.Mark && srcReg.IsRestrictedSpell(typeof(MarkSpell)) && caster.AccessLevel != AccessLevel.System)
-                        return false;
+                    if (caster.Player)
+                        if (node.m_Types.Contains(type))
+                            if (node.m_Map == null || caster.Map == node.m_Map)
+                                if (node.m_Rect.Contains(loc) || node.m_Rect.Contains(caster.Location))
+                                    return BlockTravel(caster, type, "Rectangle-based travel restriction");
                 }
-                if (trgReg != null)
+                #endregion
+
+                #region Siege Recall
+                if (caster.Player && (type == TravelCheckType.RecallFrom || type == TravelCheckType.RecallTo)
+                    && Core.RuleSets.SiegeRules() && caster.AccessLevel != AccessLevel.System)
                 {
-                    if (type == TravelCheckType.RecallTo && (trgReg.CannotEnter || trgReg.NoRecallInto) && caster.AccessLevel != AccessLevel.System)
-                        return false;
-                    if (type == TravelCheckType.GateTo && (trgReg.CannotEnter || trgReg.NoGateInto) && caster.AccessLevel != AccessLevel.System)
-                        return false;
-                    if (type == TravelCheckType.TeleportTo && trgReg.CannotEnter && caster.AccessLevel != AccessLevel.System)
-                        return false;
+                    return BlockTravel(caster, type, "Siege rules - Recall disabled");
                 }
-            }
-            #endregion
+                #endregion
 
-            #region Housing SecurePremises flag
-            //Deal with house SecurePremises flag
-            if ((type == TravelCheckType.GateTo || type == TravelCheckType.RecallTo ||
-                type == TravelCheckType.TeleportTo) && caster.AccessLevel != AccessLevel.System)
-            {
-                BaseHouse dst_house = null;
-                Sector sector = map.GetSector(loc);
-                foreach (BaseMulti mx in sector.Multis)
+                #region World Zone
+                if ((type == TravelCheckType.RecallTo || type == TravelCheckType.GateTo || type == TravelCheckType.TeleportTo)
+                    && WorldZone.BlockTeleport(caster, loc, map))
                 {
-                    BaseHouse _house = mx as BaseHouse;
-                    if (_house == null)
-                        continue;
+                    return BlockTravel(caster, type, "WorldZone blocked teleport");
+                }
+                #endregion
 
-                    if (_house != null && _house.Region.Contains(loc))
+                #region Winter Event
+                if (type == TravelCheckType.Mark && WinterEventSystem.Contains(loc, map))
+                    return BlockTravel(caster, type, "Winter Event - Mark blocked");
+                #endregion
+                #region Static Region
+                StaticRegion? srcReg = StaticRegion.FindStaticRegion(caster);
+                StaticRegion? trgReg = StaticRegion.FindStaticRegion(loc, map);
+
+                // If travel begins and ends inside the same static region, and that region explicitly
+                // allows intra-region travel spells, then bypass normal source/target containment checks.
+                if (srcReg != null && srcReg == trgReg && srcReg.AllowTravelSpellsInRegion)
+                {
+                    // internal travel allowed
+                }
+                else
+                {
+                    if (srcReg != null)
                     {
-                        dst_house = _house;
+                        // ThisRegionOnly means travel may not leave the source static region.
+                        // If no target static region exists, or if the target is a different static region,
+                        // then the attempted travel leaves the containment boundary and is blocked.
+                        if (srcReg.ThisRegionOnly && srcReg != trgReg && caster.AccessLevel != AccessLevel.System)
+                            return BlockTravel(caster, type, "StaticRegion - ThisRegionOnly blocked");
+
+                        // Source-region spell restrictions: controls what travel may originate here.
+                        if (type == TravelCheckType.RecallFrom && srcReg.IsRestrictedSpell(typeof(RecallSpell)) && caster.AccessLevel != AccessLevel.System)
+                            return BlockTravel(caster, type, "StaticRegion - RecallFrom restricted");
+
+                        if (type == TravelCheckType.GateFrom && srcReg.IsRestrictedSpell(typeof(GateTravelSpell)) && caster.AccessLevel != AccessLevel.System)
+                            return BlockTravel(caster, type, "StaticRegion - GateFrom restricted");
+
+                        if (type == TravelCheckType.TeleportFrom && srcReg.IsRestrictedSpell(typeof(TeleportSpell)) && caster.AccessLevel != AccessLevel.System)
+                            return BlockTravel(caster, type, "StaticRegion - TeleportFrom restricted");
+
+                        if (type == TravelCheckType.Mark && srcReg.IsRestrictedSpell(typeof(MarkSpell)) && caster.AccessLevel != AccessLevel.System)
+                            return BlockTravel(caster, type, "StaticRegion - Mark restricted");
+                    }
+
+                    if (trgReg != null)
+                    {
+                        // Target-region entry restrictions: controls what travel may arrive there.
+                        if (type == TravelCheckType.RecallTo && (trgReg.CannotEnter || trgReg.NoRecallInto) && caster.AccessLevel != AccessLevel.System)
+                            return BlockTravel(caster, type, "StaticRegion - RecallTo blocked");
+
+                        if (type == TravelCheckType.GateTo && (trgReg.CannotEnter || trgReg.NoGateInto) && caster.AccessLevel != AccessLevel.System)
+                            return BlockTravel(caster, type, "StaticRegion - GateTo blocked");
+
+                        if (type == TravelCheckType.TeleportTo && trgReg.CannotEnter && caster.AccessLevel != AccessLevel.System)
+                            return BlockTravel(caster, type, "StaticRegion - TeleportTo blocked");
+                    }
+                }
+                #endregion
+                #region Housing SecurePremises flag
+                if ((type == TravelCheckType.GateTo || type == TravelCheckType.RecallTo ||
+                type == TravelCheckType.TeleportTo) && caster.AccessLevel != AccessLevel.System)
+                {
+                    BaseHouse? dst_house = null;
+                    Sector sector = map.GetSector(loc);
+                    foreach (BaseMulti mx in sector.Multis)
+                    {
+                        BaseHouse? _house = mx as BaseHouse;
+                        if (_house != null && _house.Region.Contains(loc))
+                        {
+                            dst_house = _house;
+                            break;
+                        }
+                    }
+
+                    if (dst_house != null && dst_house.SecurePremises && !dst_house.IsFriend(caster))
+                        return BlockTravel(caster, type, "House SecurePremises flag");
+                }
+                #endregion
+
+                #region PreviewHouse exploit
+                if ((type == TravelCheckType.GateTo || type == TravelCheckType.RecallTo ||
+                    type == TravelCheckType.TeleportTo) && caster.AccessLevel != AccessLevel.System)
+                {
+                    if (PreviewHouseAt(caster.Map, loc))
+                    {
+                        RecordCheater.Cheater(caster, "Travel inside a PreviewHouse exploit.", true);
+                        jail = true;
+                        return BlockTravel(caster, type, "PreviewHouse exploit");
+                    }
+                }
+                #endregion
+
+                #region Various Exploits
+                if (type == TravelCheckType.TeleportTo && caster.AccessLevel != AccessLevel.System)
+                {
+                    if (iStack(caster, loc, 2) == false)
+                    {
+                        RecordCheater.Cheater(caster, "Tele onto a stack of movable items.", true);
+                        return BlockTravel(caster, type, "Teleport onto item stack exploit");
                     }
                 }
 
-                if (dst_house != null)
+                if (type == TravelCheckType.Mark && caster.AccessLevel != AccessLevel.System)
                 {
-                    if (dst_house.SecurePremises)
+                    if (iStack(caster, loc, 2) == false)
                     {
-                        if (!dst_house.IsFriend(caster))
+                        RecordCheater.Cheater(caster, "Mark on a stack of movable items.", true);
+                        return BlockTravel(caster, type, "Mark on item stack exploit");
+                    }
+                }
+
+                // disallow teleporting from outside the house into the inside if the doors are closed (no LOS)
+                if (type == TravelCheckType.TeleportTo && caster.AccessLevel != AccessLevel.System)
+                {
+                    BaseHouse? dst_house = null;
+                    Sector sector = map.GetSector(loc);
+                    foreach (BaseMulti mx in sector.Multis)
+                    {
+                        BaseHouse? _house = mx as BaseHouse;
+                        if (_house != null && _house.Region.Contains(loc))
                         {
-                            return false;
+                            dst_house = _house;
+                            break;
+                        }
+                    }
+
+                    if (dst_house != null)
+                    {
+                        if (!caster.InLOS(loc))
+                        {
+                            RecordCheater.Cheater(caster, "Try to teleport through front door (LOS)", true);
+                            return BlockTravel(caster, type, "Teleport through door without LOS");
+                        }
+
+                        if (!CanSpawnLandMobile(caster.Map, caster.Location.X, caster.Location.Y, caster.Location.Z, CanFitFlags.requireSurface))
+                        {
+                            RecordCheater.Cheater(caster, "Try to teleport over front door (Z Axis)", true);
+                            return BlockTravel(caster, type, "Teleport over door (Z Axis exploit)");
                         }
                     }
                 }
 
-            }
-            #endregion Housing SecurePremises flag
-
-            #region PreviewHouse exploit
-            // Gate inside a PreviewHouse exploit. Go directly to jail, don't collect $200.0
-            if ((type == TravelCheckType.GateTo || type == TravelCheckType.RecallTo ||
-                type == TravelCheckType.TeleportTo) && caster.AccessLevel != AccessLevel.System)
-            {
-                if (PreviewHouseAt(caster.Map, loc))
+                // special housing region/multi exploit
+                if (type == TravelCheckType.TeleportTo && caster.AccessLevel != AccessLevel.System)
                 {
-                    RecordCheater.Cheater(caster, "Travel inside a PreviewHouse exploit.", true);
-                    jail = true;
-                    return false;
-                }
-            }
-            #endregion PreviewHouse exploit
-
-            #region Various Exploits
-            // Teleport onto a stack of stuff =\
-            if (type == TravelCheckType.TeleportTo && caster.AccessLevel != AccessLevel.System)
-            {
-                // if we are teleporting onto a stack of movable items, and at least 3 reside on different Z planes
-                //  then it looks too much like an exploit to allow it.
-                if (iStack(caster, loc, 2) == false)
-                {
-                    RecordCheater.Cheater(caster, "Tele onto a stack of movable items.", true);
-                    return false;
-                }
-            }
-
-            // mark on a stack of stuff =\
-            // same as teleport above, but different limit and different message
-            if (type == TravelCheckType.Mark && caster.AccessLevel != AccessLevel.System)
-            {
-                // if we are marking on a stack of movable items, and at least 2 reside on different Z planes
-                //  then it looks too much like an exploit to allow it.
-                if (iStack(caster, loc, 2) == false)
-                {
-                    RecordCheater.Cheater(caster, "Mark on a stack of movable items.", true);
-                    return false;
-                }
-            }
-
-            // disallow teleporting from outside the house into the inside if the doors are closed (no LOS)
-            if ((type == TravelCheckType.TeleportTo) && caster.AccessLevel != AccessLevel.System)
-            {
-                BaseHouse dst_house = null;
-                Sector sector = map.GetSector(loc);
-                foreach (BaseMulti mx in sector.Multis)
-                {
-                    BaseHouse _house = mx as BaseHouse;
-                    if (_house == null)
-                        continue;
-
-                    if (_house != null && _house.Region.Contains(loc))
+                    if (HouseAt(caster.Map, loc) && CheckParity(caster.Map, caster.Location, loc) == false)
                     {
-                        dst_house = _house;
+                        RecordCheater.Cheater(caster, "Multi to multi teleport exploit.", true);
+                        return BlockTravel(caster, type, "Multi to multi teleport exploit");
                     }
                 }
+                #endregion
 
-                // is the user trying to shoot through a door without LOS?
-                if (dst_house != null)
+                #region Dueling
+                if (Region.Find(loc, map).IsPartOf(typeof(Engines.ConPVP.SafeZone)))
                 {
-                    if (!caster.InLOS(loc))
-                    {
-                        RecordCheater.Cheater(caster, "Try to teleport through front door (LOS)", true);
-                        return false;
-                    }
+                    PlayerMobile? pm = caster as PlayerMobile;
+                    bool tp = (type == TravelCheckType.TeleportTo || type == TravelCheckType.TeleportFrom);
+                    if (!tp || pm == null || pm.DuelPlayer == null || pm.DuelPlayer.Eliminated)
+                        return BlockTravel(caster, type, "Dueling SafeZone restriction");
+                }
+                #endregion
+
+                // Locale rules table (final check)
+                int v = (int)type;
+                bool isValid = true;
+                for (int i = 0; isValid && i < m_Validators.Length; ++i)
+                    isValid = (m_Rules[v, i] || !m_Validators[i](map, loc));
+
+                if (!isValid && caster != null && caster.AccessLevel == AccessLevel.System)
+                {
+                    if (type == TravelCheckType.Mark)
+                        caster.SendMessage("{0} is a restricted spell, but your godly powers allow you to transcend the laws of Britannia.", type.ToString());
+                    else
+                        caster.SendMessage("{0} this location is restricted, but your godly powers allow you to transcend the laws of Britannia.", type.ToString());
+                    return true;
                 }
 
-                // is the user not standing on the ground?
-                if (dst_house != null && dst_house.Region != null)
-                {
-                    if (!CanSpawnLandMobile(caster.Map, caster.Location.X, caster.Location.Y, caster.Location.Z, CanFitFlags.requireSurface))
-                    {
-                        RecordCheater.Cheater(caster, "Try to teleport over front door (Z Axis)", true);
-                        return false;
-                    }
-                }
-
+                return isValid;
             }
+            finally { }
+        }
 
-            // special housing region/multi exploit - teleport from multi to castle courtyard
-            // stop players from teleporting from one multi to another (includes PreviewHouses)
-            if (type == TravelCheckType.TeleportTo && caster.AccessLevel != AccessLevel.System)
+        // ===================================================================
+        // Debug Helper
+        // ===================================================================
+        private static bool BlockTravel(Mobile? caster, TravelCheckType type, string reason,
+            [CallerLineNumber] int lineNumber = 0)
+        {
+#if DEBUG
+            if (caster != null && caster.Player)
             {
-                // if there is a house at the destination, then..
-                //  if all the multis and regions do not match between src and dst, fail
-                if (HouseAt(caster.Map, loc) && CheckParity(caster.Map, caster.Location, loc) == false)
-                {
-                    RecordCheater.Cheater(caster, "Multi to multi teleport exploit.", true);
-                    return false;
-                }
+                caster.SendMessage($"[Travel Debug] Blocked at line {lineNumber}: {reason} | Type: {type}");
             }
-            #endregion Various Exploits
-
-            #region Dueling
-            if (Region.Find(loc, map).IsPartOf(typeof(Engines.ConPVP.SafeZone)))
-            {
-                PlayerMobile pm = caster as PlayerMobile;
-
-                bool tp = (type == TravelCheckType.TeleportTo || type == TravelCheckType.TeleportFrom);
-
-                if (!tp || pm == null || pm.DuelPlayer == null || pm.DuelPlayer.Eliminated)
-                    return false; // we may not travel from/to safe zones - exception: tp from/to while we are dueling
-            }
-            #endregion
-
-            // okay, now check our locale rules table
-            int v = (int)type;
-            bool isValid = true;
-
-            for (int i = 0; isValid && i < m_Validators.Length; ++i)
-                isValid = (m_Rules[v, i] || !m_Validators[i](map, loc));
-
-            if (!isValid && caster != null && caster.AccessLevel == AccessLevel.System)
-            {
-                if (type == TravelCheckType.Mark)
-                    caster.SendMessage("{0} is a restricted spell, but your godly powers allow you to transcend the laws of Britannia.", type.ToString());
-                else
-                    caster.SendMessage("{0} this location is restricted, but your godly powers allow you to transcend the laws of Britannia.", type.ToString());
-                return true;
-            }
-
-            return isValid;
+#endif
+            return false;
         }
 
         public static TimeSpan GetDamageDelayForSpell(Spell sp)
@@ -590,9 +594,9 @@ namespace Server.Spells
             return false;
         }
 
-        public static void Turn(Mobile from, object to)
+        public static void Turn(Mobile from, object? to)
         {
-            IPoint3D target = to as IPoint3D;
+            IPoint3D? target = to as IPoint3D;
 
             if (target == null)
                 return;
@@ -615,18 +619,49 @@ namespace Server.Spells
 
         public static bool CheckCombat(Mobile m)
         {
+            TimeSpan ignored;
+            Mobile ignoredMobile;
+            return CheckCombat(m, out ignored, out ignoredMobile);
+        }
+
+        public static bool CheckCombat(Mobile m, out TimeSpan remaining)
+        {
+            Mobile ignoredMobile;
+            return CheckCombat(m, out remaining, out ignoredMobile);
+        }
+
+        public static bool CheckCombat(Mobile m, out TimeSpan remaining, out Mobile longestAggressor)
+        {
+            remaining = TimeSpan.Zero;
+            longestAggressor = null;
+
             if (!RestrictTravelCombat)
                 return false;
+
+            DateTime now = DateTime.UtcNow;
 
             for (int i = 0; i < m.Aggressed.Count; ++i)
             {
                 AggressorInfo info = (AggressorInfo)m.Aggressed[i];
 
-                if (info.Defender.Player && (DateTime.UtcNow - info.LastCombatTime) < CombatHeatDelay)
-                    return true;
+                if (!info.Defender.Player)
+                    continue;
+
+                TimeSpan elapsed = now - info.LastCombatTime;
+
+                if (elapsed < CombatHeatDelay)
+                {
+                    TimeSpan wait = CombatHeatDelay - elapsed;
+
+                    if (wait > remaining)
+                    {
+                        remaining = wait;
+                        longestAggressor = info.Defender;
+                    }
+                }
             }
 
-            return false;
+            return remaining > TimeSpan.Zero;
         }
 
         public static bool AdjustField(ref Point3D p, Map map, int height, bool mobsBlock)
@@ -693,7 +728,7 @@ namespace Server.Spells
             int offset = bonus;
             string name = string.Format("[Magic] {0} Offset", type);
 
-            StatMod mod = target.GetStatMod(name);
+            StatMod? mod = target.GetStatMod(name);
 
             if (mod != null && mod.Offset < 0)
             {
@@ -719,7 +754,7 @@ namespace Server.Spells
             int offset = -curse;
             string name = string.Format("[Magic] {0} Offset", type);
 
-            StatMod mod = target.GetStatMod(name);
+            StatMod? mod = target.GetStatMod(name);
 
             if (mod != null && mod.Offset > 0)
             {
@@ -798,7 +833,7 @@ namespace Server.Spells
 
         public static Guild GetGuildFor(Mobile m)
         {
-            Guild g = m.Guild as Guild;
+            Guild? g = m.Guild as Guild;
 
             if (g == null && m is BaseCreature)
             {
@@ -825,7 +860,7 @@ namespace Server.Spells
             #region Static Region
             if (from != null && from.Spell != null && from.Region != to.Region)
             {
-                StaticRegion sr = StaticRegion.FindStaticRegion(to);
+                StaticRegion? sr = StaticRegion.FindStaticRegion(to);
                 if (sr != null && (sr.IsRestrictedSpell(from.Spell) || sr.IsMagicIsolated) && from.AccessLevel == AccessLevel.Player)
                     return false;
             }
@@ -835,9 +870,9 @@ namespace Server.Spells
                 return false;
 
             #region Dueling
-            BaseCreature bcFrom = from as BaseCreature;
-            PlayerMobile pmFrom = from as PlayerMobile;
-            PlayerMobile pmTarg = to as PlayerMobile;
+            BaseCreature? bcFrom = from as BaseCreature;
+            PlayerMobile? pmFrom = from as PlayerMobile;
+            PlayerMobile? pmTarg = to as PlayerMobile;
 
             if (pmFrom == null && bcFrom != null && bcFrom.Summoned)
                 pmFrom = bcFrom.SummonMaster as PlayerMobile;
@@ -866,6 +901,122 @@ namespace Server.Spells
 
             return true;
         }
+
+        public static List<Mobile> AOETargets(Mobile caster, Point3D origin, IEnumerable<Mobile> candidates, int penetrationDepth, bool requireLOS)
+        {
+            List<Mobile> result = new List<Mobile>();
+
+            if (caster == null || caster.Deleted || caster.Map == null)
+                return result;
+
+            if (candidates == null)
+                return result;
+
+            foreach (Mobile m in candidates)
+            {
+                if (m == null || m.Deleted)
+                    continue;
+
+                if (m.Map != caster.Map)
+                    continue;
+
+                if (!m.Alive)
+                    continue;
+
+                if (requireLOS && !caster.InLOS(m))
+                    continue;
+
+                if (!PassesHousePenetrationRule(caster, origin, m, penetrationDepth))
+                    continue;
+
+                result.Add(m);
+            }
+
+            return result;
+        }
+
+
+        private static bool PassesHousePenetrationRule(Mobile caster, Point3D origin, Mobile target, int penetrationDepth)
+        {
+            if (penetrationDepth < 0)
+                penetrationDepth = 0;
+
+            // If depth is 0, you may decide: no crossing at all, or allow normal.
+            // For your use case, depth=0 likely means "no penetration".
+            // I assume penetrationDepth >= 0 and enforce.
+
+            BaseHouse? hOrigin = BaseHouse.FindHouseAt(origin, map: caster.Map, height: 16);
+            BaseHouse? hTarget = BaseHouse.FindHouseAt(target.Location, map: target.Map, height: 16);
+
+            // If neither endpoint is in a house, no house rule applies.
+            if (hOrigin == null && hTarget == null)
+                return true;
+
+            // If both endpoints are in the same house, you probably want normal behavior.
+            // (EQ inside house affects house occupants, etc.)
+            if (hOrigin != null && hOrigin == hTarget)
+                return true;
+
+            // If both are in houses but different houses: treat as crossing, restrict heavily.
+            // Most sane rule: do not allow cross-house AoE.
+            if (hOrigin != null && hTarget != null && hOrigin != hTarget)
+                return false;
+
+            // We are crossing one boundary: either outside->inside or inside->outside.
+            BaseHouse? h = (hOrigin != null) ? hOrigin : hTarget;
+
+            // Compute penetration tiles: how far past the boundary the target is, along the ray.
+            int penetration = ComputePenetrationTiles(origin, target.Location, h);
+
+            return penetration <= penetrationDepth;
+        }
+        private static int ComputePenetrationTiles(Point3D origin, Point3D target, BaseHouse house)
+        {
+            // If you have a standard line algorithm in your codebase, use it.
+            // Pseudo: iterate Points along the 2D line from origin to target.
+            // Ignore Z for the boundary check, or clamp Z logic if needed.
+
+            bool? wasInside = null;
+            int stepsPastBoundary = 0;
+            bool counting = false;
+
+            foreach (Point2D p in Geometry.Line2D(origin.X, origin.Y, target.X, target.Y))
+            {
+                bool inside = house.Contains(p.X, p.Y);
+
+                if (wasInside == null)
+                {
+                    wasInside = inside;
+                }
+                else
+                {
+                    // Boundary crossing detected when inside state flips.
+                    if (inside != wasInside.Value)
+                    {
+                        // We just crossed the boundary. Start counting from the next tile.
+                        counting = true;
+                        stepsPastBoundary = 0;
+                        wasInside = inside;
+                        continue;
+                    }
+
+                    wasInside = inside;
+                }
+
+                if (counting)
+                {
+                    // Count tiles beyond boundary until we reach the target.
+                    stepsPastBoundary++;
+
+                    if (p.X == target.X && p.Y == target.Y)
+                        break;
+                }
+            }
+
+            // If no boundary crossing was detected, penetration is 0.
+            return counting ? stepsPastBoundary : 0;
+        }
+
 
         private static int[] m_Offsets = new int[]
             {
@@ -985,7 +1136,7 @@ namespace Server.Spells
             Region region = Server.Region.Find(location, Map.Felucca);
             if (region != null)
             {
-                return region.IsJailRules || region.IsAngelIslandRules || region.IsGreenAcresRules;
+                return region.IsJailRules || region.IsPrisonRules || region.IsGreenAcresRules;
             }
             return false;
         }
@@ -1335,7 +1486,7 @@ namespace Server.Spells
                 return false;
 
             #region Dueling
-            Engines.ConPVP.SafeZone sz = (Engines.ConPVP.SafeZone)Region.Find(loc, map).GetRegion(typeof(Engines.ConPVP.SafeZone));
+            Engines.ConPVP.SafeZone? sz = (Engines.ConPVP.SafeZone?)Region.Find(loc, map).GetRegion(typeof(Engines.ConPVP.SafeZone));
 
             if (sz != null)
             {
@@ -1346,7 +1497,7 @@ namespace Server.Spells
             }
             #endregion
 
-            GuardedRegion reg = Region.Find(loc, map) as GuardedRegion;
+            GuardedRegion? reg = Region.Find(loc, map) as GuardedRegion;
 
             return (reg != null && reg.IsGuarded);
         }
@@ -1364,7 +1515,7 @@ namespace Server.Spells
             #region Static Region
             if (caster != null && caster.Spell != null && caster.Region != Region.Find(loc, caster.Map))
             {
-                StaticRegion sr = StaticRegion.FindStaticRegion(loc, caster.Map);
+                StaticRegion? sr = StaticRegion.FindStaticRegion(loc, caster.Map);
                 if (sr != null && (sr.IsRestrictedSpell(caster.Spell) || sr.IsMagicIsolated) && caster.AccessLevel == AccessLevel.Player)
                     return false;
             }
@@ -1432,19 +1583,19 @@ namespace Server.Spells
             }
         }
 
-        public static void Damage(Spell spell, Mobile target, double damage)
+        public static void Damage(Spell spell, Mobile target, double damage, DamageContext context, bool conflict)
         {
             TimeSpan ts = GetDamageDelayForSpell(spell);
 
-            Damage(ts, target, spell.Caster, damage);
+            Damage(ts, target, spell.Caster, damage, context, true);
         }
 
-        public static void Damage(TimeSpan delay, Mobile target, double damage)
+        public static void Damage(TimeSpan delay, Mobile target, double damage, DamageContext context, bool conflict)
         {
-            Damage(delay, target, null, damage);
+            Damage(delay, target, null, damage, context, true);
         }
-
-        public static void Damage(TimeSpan delay, Mobile target, Mobile from, double damage)
+        // conflict is used here to differentiate this function from the version with a conflicting signature. Will resolve later
+        public static void Damage(TimeSpan delay, Mobile target, Mobile from, double damage, DamageContext context, bool conflict)
         {
             double Moddamage = damage;
             ISpell i = from.Spell;
@@ -1456,7 +1607,7 @@ namespace Server.Spells
             }
 
             if (delay == TimeSpan.Zero)
-                target.Damage((int)Moddamage, from, from);
+                target.Damage((int)Moddamage, from, context);
             else
                 new SpellDamageTimer(target, from, (int)Moddamage, delay).Start();
 
@@ -1464,31 +1615,29 @@ namespace Server.Spells
                 ((BaseCreature)target).OnDamagedBySpell(from);
         }
 
-        public static void Damage(Spell spell, Mobile target, double damage, int phys, int fire, int cold, int pois, int nrgy)
+        public static void Damage(Spell spell, Mobile target, double damage, DamageContext context)
         {
             TimeSpan ts = GetDamageDelayForSpell(spell);
 
-            Damage(ts, target, spell.Caster, damage, phys, fire, cold, pois, nrgy);
+            Damage(ts, target, spell.Caster, damage, context);
         }
-
-        public static void Damage(Spell spell, Mobile target, double damage, int phys, int fire, int cold, int pois, int nrgy, DFAlgorithm dfa)
+        public static void Damage(Spell spell, Mobile target, double damage, DFAlgorithm dfa, DamageContext context)
         {
             TimeSpan ts = GetDamageDelayForSpell(spell);
 
-            Damage(ts, target, spell.Caster, damage, phys, fire, cold, pois, nrgy, dfa);
+            Damage(ts, target, spell.Caster, damage, dfa, context);
         }
-
-        public static void Damage(TimeSpan delay, Mobile target, double damage, int phys, int fire, int cold, int pois, int nrgy)
+        public static void Damage(TimeSpan delay, Mobile target, double damage, DamageContext context)
         {
-            Damage(delay, target, null, damage, phys, fire, cold, pois, nrgy);
+            Damage(delay, target, null, damage, context);
         }
-
-        public static void Damage(TimeSpan delay, Mobile target, Mobile from, double damage, int phys, int fire, int cold, int pois, int nrgy)
+        public static void Damage(TimeSpan delay, Mobile target, Mobile from, double damage, DamageContext context)
         {
-            Damage(delay, target, from, damage, phys, fire, cold, pois, nrgy, DFAlgorithm.Standard);
+            Damage(delay, target, from, damage, DFAlgorithm.Standard, context);
         }
 
-        public static void Damage(TimeSpan delay, Mobile target, Mobile from, double damage, int phys, int fire, int cold, int pois, int nrgy, DFAlgorithm dfa)
+        public static void Damage(TimeSpan delay, Mobile target, Mobile from, double damage, DFAlgorithm dfa,
+            DamageContext context)
         {
             double Moddamage = damage;
             ISpell i = from.Spell;
@@ -1501,12 +1650,12 @@ namespace Server.Spells
             if (delay == TimeSpan.Zero)
             {
                 WeightOverloading.DFA = dfa;
-                AOS.Damage(target, from, (int)Moddamage, phys, fire, cold, pois, nrgy, from);
+                AOS.Damage(target, from, (int)Moddamage, context);
                 WeightOverloading.DFA = DFAlgorithm.Standard;
             }
             else
             {
-                new SpellDamageTimerAOS(target, from, (int)Moddamage, phys, fire, cold, pois, nrgy, delay, dfa).Start();
+                new SpellDamageTimerAOS(target, from, (int)Moddamage, delay, dfa, context).Start();
             }
 
             if (target is BaseCreature && from != null && delay == TimeSpan.Zero)
@@ -1530,7 +1679,7 @@ namespace Server.Spells
 
             protected override void OnTick()
             {
-                m_Target.Damage(m_Damage, m_From);
+                m_Target.Damage(m_Damage, new DamageContext { Source = this });
             }
         }
 
@@ -1538,21 +1687,18 @@ namespace Server.Spells
         {
             private Mobile m_Target, m_From;
             private int m_Damage;
-            private int m_Phys, m_Fire, m_Cold, m_Pois, m_Nrgy;
             private DFAlgorithm m_DFA;
+            private DamageContext m_Context;
 
-            public SpellDamageTimerAOS(Mobile target, Mobile from, int damage, int phys, int fire, int cold, int pois, int nrgy, TimeSpan delay, DFAlgorithm dfa)
+            public SpellDamageTimerAOS(Mobile target, Mobile from, int damage, TimeSpan delay, DFAlgorithm dfa,
+                DamageContext context)
                 : base(delay)
             {
                 m_Target = target;
                 m_From = from;
                 m_Damage = damage;
-                m_Phys = phys;
-                m_Fire = fire;
-                m_Cold = cold;
-                m_Pois = pois;
-                m_Nrgy = nrgy;
                 m_DFA = dfa;
+                m_Context = context;
 
                 Priority = TimerPriority.TwentyFiveMS;
             }
@@ -1560,7 +1706,7 @@ namespace Server.Spells
             protected override void OnTick()
             {
                 WeightOverloading.DFA = m_DFA;
-                AOS.Damage(m_Target, m_From, m_Damage, m_Phys, m_Fire, m_Cold, m_Pois, m_Nrgy, m_From);
+                AOS.Damage(m_Target, m_From, m_Damage, m_Context);
                 WeightOverloading.DFA = DFAlgorithm.Standard;
 
                 if (m_Target is BaseCreature && m_From != null)
@@ -1611,7 +1757,7 @@ namespace Server.Spells
 
         public static TransformContext GetContext(Mobile m)
         {
-            TransformContext context = null;
+            TransformContext? context = null;
 
             m_Table.TryGetValue(m, out context);
 
@@ -1659,7 +1805,7 @@ namespace Server.Spells
 
         public static bool OnCast(Mobile caster, Spell spell)
         {
-            ITransformationSpell transformSpell = spell as ITransformationSpell;
+            ITransformationSpell? transformSpell = spell as ITransformationSpell;
 
             if (transformSpell == null)
                 return false;

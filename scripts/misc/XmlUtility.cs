@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -23,7 +23,7 @@
  * CHANGELOG:
  *	01/13/06, Pix
  *		Needed Utility class for XML.
- *		(TCCS and BountyKeeper systems should be changed to use this class)
+ *		(TownCrierBulletinSystem and BountyKeeper systems should be changed to use this class)
  *		Any generic XML functions should be moved here.
  */
 
@@ -41,7 +41,7 @@ namespace Server
         {
         }
 
-        public static string GetText(XmlElement node, string defaultValue)
+        public static string GetText(XmlElement? node, string defaultValue)
         {
             if (node == null)
                 return defaultValue;

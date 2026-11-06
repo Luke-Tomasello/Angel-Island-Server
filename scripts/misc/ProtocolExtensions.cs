@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -45,7 +45,7 @@ namespace Server.Misc
         public static void QueryPartyLocations(NetState state, PacketReader pvSrc)
         {
             Mobile from = state.Mobile;
-            Party party = Party.Get(from);
+            Party? party = Party.Get(from);
 
             if (party != null)
             {
@@ -61,7 +61,7 @@ namespace Server.Misc
             m_Handlers[packetID] = new PacketHandler(packetID, 0, ingame, onReceive);
         }
 
-        public static PacketHandler GetHandler(int packetID)
+        public static PacketHandler? GetHandler(int packetID)
         {
             if (packetID >= 0 && packetID < m_Handlers.Length)
                 return m_Handlers[packetID];
@@ -73,7 +73,7 @@ namespace Server.Misc
         {
             int packetID = pvSrc.ReadByte();
 
-            PacketHandler ph = GetHandler(packetID);
+            PacketHandler? ph = GetHandler(packetID);
 
             if (ph != null)
             {
@@ -112,7 +112,7 @@ namespace Server.Misc
         {
             for (int i = 0; i < party.Members.Count; ++i)
             {
-                PartyMemberInfo pmi = (PartyMemberInfo)party.Members[i];
+                PartyMemberInfo? pmi = (PartyMemberInfo?)party.Members[i];
 
                 if (pmi == null || pmi.Mobile == from)
                     continue;

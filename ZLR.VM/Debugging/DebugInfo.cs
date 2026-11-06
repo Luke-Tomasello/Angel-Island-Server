@@ -4,7 +4,7 @@
  *   implementation          : (C) 2007-2023 Tara McGrew
  *   repository url          : https://foss.heptapod.net/zilf/zlr
  *   
- *   Angel Island UO Shard   : March 25, 2004
+ *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
@@ -19,12 +19,12 @@
  *
  ***************************************************************************/
 
+using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using JetBrains.Annotations;
 
 namespace ZLR.VM.Debugging
 {
@@ -62,7 +62,7 @@ namespace ZLR.VM.Debugging
             while (fromStream.Position < fromStream.Length)
             {
                 var type = br.ReadByte();
-                
+
                 try
                 {
                     int i;
@@ -71,7 +71,7 @@ namespace ZLR.VM.Debugging
                     string str;
                     LineRef line;
 
-                    /**
+                    /*
                      * Within each case, calls that may throw (like <see cref="DoubleMap{TKey, TValue}.Add(TKey, TValue)"/>)
                      * should happen after reads, to allow for error recovery.
                      */

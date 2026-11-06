@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -56,7 +56,7 @@ namespace Server.Items.Triggers
         public override Item Dupe(int amount)
         {
             TriggerRelay new_relay = new TriggerRelay();
-            Utility.CopyProperties(new_relay, this);
+            Utility.CopyProperties(this, new_relay);
             if (Links != null)
             {   // without this, 'duped' TriggerRelays will SHARE a Links list.
                 //  Add an item to one, it adds it to the other. Change a value in one, it changes it in the other.
@@ -66,7 +66,7 @@ namespace Server.Items.Triggers
             return base.Dupe(new_relay, amount);
         }
 
-        private Item GetLink(int index)
+        private Item? GetLink(int index)
         {
             if (index >= 0 && index < m_Links.Count)
                 return m_Links[index];
@@ -227,7 +227,7 @@ namespace Server.Items.Triggers
                 if (link.Links.Count >= Limit)
                     return;
 
-                Item item = targeted as Item;
+                Item? item = targeted as Item;
 
                 if (item == null)
                 {

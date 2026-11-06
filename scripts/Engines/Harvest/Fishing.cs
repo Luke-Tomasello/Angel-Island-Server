@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -65,7 +65,7 @@ namespace Server.Engines.Harvest
 {
     public class Fishing : HarvestSystem
     {
-        private static Fishing m_System;
+        private static Fishing? m_System;
 
         public static Fishing System
         {
@@ -199,7 +199,7 @@ namespace Server.Engines.Harvest
 
         public override bool SpecialHarvest(Mobile from, Item tool, HarvestDefinition def, Map map, Point3D loc)
         {
-            PlayerMobile player = from as PlayerMobile;
+            PlayerMobile? player = from as PlayerMobile;
 
             if (player != null)
             {
@@ -207,7 +207,7 @@ namespace Server.Engines.Harvest
 
                 if (qs is CollectorQuest)
                 {
-                    QuestObjective obj = qs.FindObjective(typeof(FishPearlsObjective));
+                    QuestObjective? obj = qs.FindObjective(typeof(FishPearlsObjective));
 
                     if (obj != null && !obj.Completed)
                     {
@@ -228,7 +228,7 @@ namespace Server.Engines.Harvest
             }
 
             #region Fish Controller
-            FishController controller = FishController.Find(from, loc);
+            FishController? controller = FishController.Find(from, loc);
 
             if (controller != null)
             {
@@ -260,7 +260,7 @@ namespace Server.Engines.Harvest
 
             MutateEntry[] mutateTable;
 
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
                 mutateTable = m_MutateTableSP;
             else
                 mutateTable = m_MutateTable;
@@ -296,21 +296,21 @@ namespace Server.Engines.Harvest
 
         private bool GoodFishingHere(Mobile from, Point2D loc)
         {
-            BaseBoat boat = BaseBoat.FindBoatAt(from);
+            BaseBoat? boat = BaseBoat.FindBoatAt(from);
 
             return (boat != null && boat.GoodFishing && Utility.GetDistanceToSqrt(loc, boat.GoodFishingTarget) < GoodFishingHereRange);
         }
 
         private bool GoodFishingNear(Mobile from, Point2D loc)
         {
-            BaseBoat boat = BaseBoat.FindBoatAt(from);
+            BaseBoat? boat = BaseBoat.FindBoatAt(from);
 
             return (boat != null && boat.GoodFishing && Utility.GetDistanceToSqrt(loc, boat.GoodFishingTarget) < GoodFishingNearRange);
         }
 
         private void GoodFishingAdvice(Mobile from, Point2D loc, bool noRes)
         {
-            string hint = null;
+            string? hint = null;
 
             if (GoodFishingHere(from, new Point2D(loc)))
             {
@@ -345,30 +345,14 @@ namespace Server.Engines.Harvest
 
         private double GoodFishingBonus(Mobile from, Point2D loc)
         {
-            BaseBoat boat = BaseBoat.FindBoatAt(from);
+            BaseBoat? boat = BaseBoat.FindBoatAt(from);
 
             if (boat != null && boat.GoodFishing && Utility.GetDistanceToSqrt(loc, boat.GoodFishingTarget) < GoodFishingHereRange)
             {
                 /* 7/7/23, Yoar: Make the bonus independent of sea chart level
                  * This way, lower level sea charts are worth people's time
                  */
-#if false
-                switch (boat.GoodFishingLevel)
-                {
-                    case 1:
-                        return 2.0;
-                    case 2:
-                        return 3.0;
-                    case 3:
-                        return 4.0;
-                    case 4:
-                        return 5.0;
-                    case 5:
-                        return 6.0;
-                }
-#else
                 return 4.0;
-#endif
             }
 
             return 1.0;
@@ -376,7 +360,7 @@ namespace Server.Engines.Harvest
 
         private int GoodFishingLevel(Mobile from, Point2D loc)
         {
-            BaseBoat boat = BaseBoat.FindBoatAt(from);
+            BaseBoat? boat = BaseBoat.FindBoatAt(from);
 
             if (boat != null && boat.GoodFishing && Utility.GetDistanceToSqrt(loc, boat.GoodFishingTarget) < GoodFishingHereRange)
                 return boat.GoodFishingLevel;
@@ -388,7 +372,7 @@ namespace Server.Engines.Harvest
 
         public static void GoodFishingHint(Mobile from, string message)
         {
-            BaseBoat boat = BaseBoat.FindBoatAt(from);
+            BaseBoat? boat = BaseBoat.FindBoatAt(from);
 
             if (boat != null && m_HintMemory.Recall(boat) == null)
             {
@@ -454,9 +438,6 @@ namespace Server.Engines.Harvest
                 /* 7/7/23, Yoar: Make the MiB level independent of sea chart level
                  * This way, lower level sea charts are worth people's time
                  */
-#if false
-                mibLevel = goodFishingLevel;
-#else
                 int rnd = (goodFishingLevel > 0 ? Utility.Random(100) : 100);
 
                 if (rnd < 2)
@@ -465,7 +446,6 @@ namespace Server.Engines.Harvest
                     mibLevel = 4; // 6% chance
                 else
                     mibLevel = 0; // otherwise, random level 1-3
-#endif
 
                 if (mibLevel > 0)
                     return new MessageInABottle(SafeMap(from.Map), mibLevel);
@@ -487,11 +467,10 @@ namespace Server.Engines.Harvest
                     {
                         if (from.Map == sos.TargetMap && from.InRange(sos.TargetLocation, 60))
                         {
-                            bool aimo = (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules());
+                            bool aimo = (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules());
 
-                            Item preLoot = null;
+                            Item? preLoot = null;
 
-#if true
                             #region RUNUO 2.6 PreLoot
                             switch (Utility.Random(8))
                             {
@@ -572,72 +551,8 @@ namespace Server.Engines.Harvest
                                 return preLoot;
                             }
                             #endregion RUNUO 2.6 PreLoot
-#else
-                            #region Old Angel Island PreLoot
-                            switch (Utility.Random(7))
-                            {
-                                case 0: // Body parts
-                                    {
-                                        int[] list = new int[]
-                                        {
-                                        0x1CDD, 0x1CE5, // arm
-										0x1CE0, 0x1CE8, // torso
-										0x1CE1, 0x1CE9, // head
-										0x1CE2, 0x1CEC // leg
-                                        };
 
-                                        preLoot = new ShipwreckedItem(Utility.RandomList(list));
-                                        break;
-                                    }
-                                case 1: // Bone parts
-                                    {
-                                        int[] list = new int[]
-                                        {
-                                        0x1AE0, 0x1AE1, 0x1AE2, 0x1AE3, 0x1AE4, // skulls
-										0x1B09, 0x1B0A, 0x1B0B, 0x1B0C, 0x1B0D, 0x1B0E, 0x1B0F, 0x1B10, // bone piles
-										0x1B15, 0x1B16 // pelvis bones
-                                        };
-
-                                        preLoot = new ShipwreckedItem(Utility.RandomList(list));
-                                        break;
-                                    }
-                                case 2: // Paintings and portraits
-                                    {
-                                        preLoot = new ShipwreckedItem(Utility.Random(0xE9F, 10));
-                                        break;
-                                    }
-                                case 3: // Pillows
-                                    {
-                                        preLoot = new ShipwreckedItem(Utility.Random(0x13A4, 11));
-                                        break;
-                                    }
-                                case 4: // Shells
-                                    {
-                                        preLoot = new ShipwreckedItem(Utility.Random(0xFC4, 9));
-                                        break;
-                                    }
-                                case 5: // Misc
-                                    {
-                                        int[] list = new int[]
-                                        {
-                                        0x1EB5, // unfinished barrel
-										0xA2A, // stool
-										0xC1F, // broken clock
-										0x1047, 0x1048, // globe
-										0x1EB1, 0x1EB2, 0x1EB3, 0x1EB4 // barrel staves
-                                        };
-
-                                        preLoot = new ShipwreckedItem(Utility.RandomList(list));
-                                        break;
-                                    }
-                            }
-
-                            if (preLoot != null)
-                                return preLoot;
-                            #endregion Old Angel Island PreLoot
-#endif
-
-                            Container chest = null;
+                            Container? chest = null;
 
                             if ((!aimo || sos.Level >= 4) && Utility.RandomChance(10))
                             {
@@ -993,12 +908,6 @@ namespace Server.Engines.Harvest
                 BaseCreature serp;
 
                 // 8/11/23, Yoar: If we spawn krakens for level 4/5 MiBs, it ruins the surprise of opening MiBs
-#if false
-                // mibs at levels 4&5 are on a kraken
-                if ((item is MessageInABottle) && (item as MessageInABottle).Level >= 4)
-                    serp = new Kraken();
-                else
-#endif
                 {
                     if (0.25 > Utility.RandomDouble())
                         serp = new DeepSeaSerpent();

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,8 +30,6 @@
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
-
-using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -80,43 +78,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020806192748/uo.stratics.com/hunters/teraveng.shtml
+            // 200 to 250 Gold, Magic Items, Gems, Scrolls
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(400, 500);
-                PackItem(new SpidersSilk(10));
-                PackMagicEquipment(1, 2, 0.20, 0.20);
-                PackMagicEquipment(1, 2, 0.05, 0.05);
-                // Category 4 MID 
-                PackMagicItem(2, 3, 0.10);
-                PackMagicItem(2, 3, 0.05);
-                PackMagicItem(2, 3, 0.02);
+                PackGold(200, 250);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020806192748/uo.stratics.com/hunters/teraveng.shtml
-                    // 200 to 250 Gold, Magic Items, Gems, Scrolls
-                    if (Spawning)
-                    {
-                        PackGold(200, 250);
-                    }
-                    else
-                    {
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 2);
-                        else
-                            PackMagicItem(2, 3, 0.05);
-
-                        PackGem(1, .9);
-                        PackGem(1, .5);
-                        PackScroll(1, 6);
-                    }
-                }
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 2);
                 else
-                {
-                    AddLoot(LootPack.Rich, 2);
-                }
+                    PackMagicItem(2, 3, 0.05);
+
+                PackGem(1, .9);
+                PackGem(1, .5);
+                PackScroll(1, 6);
             }
         }
 

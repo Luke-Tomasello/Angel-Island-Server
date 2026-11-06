@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -199,7 +199,7 @@ namespace Server.Items
                 m.SendGump(new Server.Gumps.PropertiesGump(m, this));
             }
         }
-        public static FishController Find(Mobile from, Point3D loc)
+        public static FishController? Find(Mobile from, Point3D loc)
         {
             Map map = from.Map;
 
@@ -233,7 +233,7 @@ namespace Server.Items
                 fish = SpawnEngine.Build<Item>(m_SpawnStr, ref reason);
 
                 if (reason != string.Empty)
-                    this.SendSystemMessage(string.Format("{0}: {1}", m_SpawnStr, reason));
+                    this.SendMessageNearby(string.Format("{0}: {1}", m_SpawnStr, reason));
 
                 if (fish != null)
                 {

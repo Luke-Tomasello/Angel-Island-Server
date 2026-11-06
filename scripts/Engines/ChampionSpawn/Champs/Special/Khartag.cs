@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,12 +21,18 @@
 
 /* Scripts\Engines\ChampionSpawn\Champs\Special\Khartag.cs
  * CHANGELOG
+ *	11/4/2026, Adam
+ *	    TerritoryCampaign (saved, version 2): the TerritoryControl campaign that placed this Warlord
+ *	        (TerritoryDistrict.CampaignID). Its death is written to the campaign journal (Logs/TerritoryCampaigns.log):
+ *	        time alive, where, damagers and the top damager. Empty for Warlords not placed by a campaign ([Nuke).
  *	3/30/2024, Adam
  *	    created - based on Barracoon
  */
 
 using Server.Diagnostics;
+using Server.Engines.Alignment;
 using Server.Engines.ChampionSpawn;
+using Server.Engines.DataRecorder;
 using Server.Items;
 using Server.Spells.Fifth;
 using Server.Spells.Seventh;
@@ -38,7 +44,40 @@ namespace Server.Mobiles
     [CorpseName("a dead orcish warlord")]
     public class Khartag : BaseChampion
     {
+        public override AlignmentType DefaultGuildAlignment { get { return AlignmentSystem.GetDynamicAlignment(this, new AlignmentType[] { AlignmentType.Orc }); } }
+        private bool m_allowReinforcements = true;
         public override ChampionSkullType SkullType { get { return ChampionSkullType.None; } }
+        [CommandProperty(AccessLevel.GameMaster)]
+        public override DefensiveSlayer SlayersDefensive { get; set; } = DefensiveSlayer.Repond | DefensiveSlayer.OrcSlaying;
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool AllowReinforcements
+        {
+            get => m_allowReinforcements && SpawnerHandle is ChampEngine;
+            set => m_allowReinforcements = value;
+        }
+        // the TerritoryControl campaign that placed this Warlord (TerritoryDistrict.CampaignID); empty otherwise
+        [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
+        public string TerritoryCampaign { get; set; } = string.Empty;
+
+        public override void OnDeath(Container c)
+        {
+            if (!string.IsNullOrEmpty(TerritoryCampaign))
+            {   // before the base: the damage entries are intact
+                List<DamageStore> rights = GetLootingRights(DamageEntries, HitsMax);
+                DamageStore? top = null;
+                foreach (DamageStore ds in rights)
+                    if (top == null || ds.m_Damage > top.m_Damage)
+                        top = ds;
+                TimeSpan alive = DateTime.UtcNow - Created;
+                Engines.TerritoryControl.TerritoryJournal.Write(TerritoryCampaign, string.Format(
+                    "Warlord 0x{0:X8} {1} killed at {2} after {3}d {4}h {5}m; {6} damager(s){7}",
+                    Serial.Value, Name, Location, alive.Days, alive.Hours, alive.Minutes, rights.Count,
+                    top == null ? "" : string.Format(", top {0} (0x{1:X8}) {2} damage", top.m_Mobile?.Name ?? "unknown", top.m_Mobile?.Serial.Value ?? 0, top.m_Damage)));
+            }
+
+            base.OnDeath(c);
+        }
 
         [Constructable]
         public Khartag()
@@ -48,11 +87,11 @@ namespace Server.Mobiles
             IOBAlignment = IOBAlignment.Orcish;
 
             Name = Utility.RandomList("Baloth Bloodtusk", "Thulgeg", "Gortwog gro-Nagorm", "Khartag", "Torug gro-Igron", "Orcus gro-Kurl", "Yashnag gro-Yazgu", "Kurog gro-Bagrakh");
-            Title = "Warlord";
+            Title = Utility.RandomList("Warlord", "War Chief", "Clan Chief", "Battlelord", "Horde Chief", "Warboss", "High Chieftain", "Blood Chief");
             Female = false;
             Body = 0x07;
             Hue = 0x83EC;
-            BardImmune = true;
+            BardImmune = (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()) ? false : true;
 
             SetStr(305, 425);
             SetDex(72, 150);
@@ -88,6 +127,15 @@ namespace Server.Mobiles
             return helpers;
         }
         #endregion DraggingMitigation
+
+        public override void OnDeathLeaderBoards(List<DamageStore> list)
+        {
+            AwardDeathRewards(
+                list,
+                awardTownship: true,
+                RecorderDomain.PvMPoints,
+                RecorderDomain.LaunchEventPoints);
+        }
         public override void DistributeLoot()
         {
             if (IsChampion)
@@ -99,16 +147,46 @@ namespace Server.Mobiles
                 }
             }
         }
+        public override bool IsEnemy(Mobile m, RelationshipFilter filter)
+        {
+            bool useMask = (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules());
+
+            if (useMask ||
+                (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled))
+            {
+                if (m.Player &&
+                    m.FindItemOnLayer(Layer.Helm) is OrcishKinMask)
+                {
+                    return false;
+                }
+            }
+
+            return base.IsEnemy(m, filter);
+        }
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
+        {
+            base.AggressiveAction(aggressor, criminal);
+
+            if (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled)
+            {
+                Item? item = aggressor.FindItemOnLayer(Layer.Helm);
+
+                if (item is OrcishKinMask)
+                {
+                    AOS.Damage(aggressor, 50, new DamageContext { Source = this });
+                    item.Delete();
+                    aggressor.FixedParticles(0x36BD, 20, 10, 5044, EffectLayer.Head);
+                    aggressor.PlaySound(0x307);
+                }
+            }
+        }
         public override void GenerateLoot()
         {
             if (IsChampion)
             {
-                if (!Core.RuleSets.AngelIslandRules())
+                if (Spawning) { }
+                else
                 {
-                    if (Spawning)
-                        return;
-
-                    //AddLoot(LootPack.UltraRich, 3);
                     switch (Utility.Random(3))
                     {
                         case 0:
@@ -132,14 +210,13 @@ namespace Server.Mobiles
                             }
 
                     }
-
                 }
             }
         }
         public override bool AlwaysMurderer { get { return true; } }
         public override Poison PoisonImmune { get { return Poison.Deadly; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override bool ShowFameTitle { get { return false; } }
         public override bool ClickTitle { get { return false; } }
 
@@ -158,7 +235,7 @@ namespace Server.Mobiles
 
             if (m.BeginAction(typeof(PolymorphSpell)))
             {
-                Item disarm = m.FindItemOnLayer(Layer.OneHanded);
+                Item? disarm = m.FindItemOnLayer(Layer.OneHanded);
 
                 if (disarm != null && disarm.Movable)
                     m.AddToBackpack(disarm);
@@ -171,7 +248,7 @@ namespace Server.Mobiles
                 m.BodyMod = 17; // orc
                 m.HueMod = 0;
 
-                new ExpirePolymorphTimer(m).Start();
+                PolymorphSpell.StartTimer(m, new ExpirePolymorphTimer(m));
             }
         }
 
@@ -200,6 +277,10 @@ namespace Server.Mobiles
 
         public void SpawnOrcs(Mobile target)
         {
+            // too tough? no reinforcements
+            if (!AllowReinforcements)
+                return;
+
             Map map = this.Map;
 
             if (map == null)
@@ -223,17 +304,8 @@ namespace Server.Mobiles
                 {
                     for (int i = 0; i < newOrcs; ++i)
                     {
-                        BaseCreature orc;
-
-                        switch (Utility.Random(5))
-                        {
-                            default:
-                            case 0:
-                            case 1: orc = new Orc(); break;
-                            case 2:
-                            case 3: orc = new OrcCaptain(); break;
-                            case 4: orc = new OrcishLord(); break;
-                        }
+                        // switch to SpawnedOrcishLord() to prevent 'loot milking'
+                        BaseCreature orc = new SpawnedOrcishLord();
 
                         orc.Team = this.Team;
 
@@ -253,6 +325,7 @@ namespace Server.Mobiles
                         }
 
                         orc.MoveToWorld(loc, map);
+                        orc.OnAfterSpawn();
 
                         orc.Combatant = target;
                     }
@@ -279,9 +352,9 @@ namespace Server.Mobiles
                 Polymorph(this);
         }
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
 
             DoSpecialAbility(from);
         }
@@ -302,7 +375,13 @@ namespace Server.Mobiles
         {
             base.Serialize(writer);
 
-            writer.Write((int)0); // version
+            writer.Write((int)2); // version
+
+            // version 2
+            writer.Write(TerritoryCampaign ?? string.Empty);
+
+            // version 1
+            writer.Write(m_allowReinforcements);
         }
 
         public override void Deserialize(GenericReader reader)
@@ -310,6 +389,26 @@ namespace Server.Mobiles
             base.Deserialize(reader);
 
             int version = reader.ReadInt();
+
+            switch (version)
+            {
+                case 2:
+                    {
+                        TerritoryCampaign = reader.ReadString() ?? string.Empty;
+                        goto case 1;
+                    }
+                case 1:
+                    {
+                        m_allowReinforcements = reader.ReadBool();
+                        break;
+                    }
+
+                case 0:
+                    {
+                        m_allowReinforcements = true;
+                        break;
+                    }
+            }
         }
     }
 }

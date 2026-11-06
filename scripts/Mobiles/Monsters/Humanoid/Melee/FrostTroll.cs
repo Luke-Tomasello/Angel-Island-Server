@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -78,43 +78,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020301014847/uo.stratics.com/hunters/frosttroll.shtml
+            // page not found
+            // http://web.archive.org/web/20080627205222/uo.stratics.com/database/view.php?db_content=hunters&id=179
+            // 25 - 175 Gold. 1 Gem, Weapon Carved: 2 Raw Ribs Special: Level 1 Treasure Map
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
-                PackPotion();
-                PackItem(new Arrow(10));
-                PackGold(50, 100);
-                PackItem(new DoubleAxe()); // TODO: Weapon??
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(25, 175);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020301014847/uo.stratics.com/hunters/frosttroll.shtml
-                    // page not found
-                    // http://web.archive.org/web/20080627205222/uo.stratics.com/database/view.php?db_content=hunters&id=179
-                    // 25 - 175 Gold. 1 Gem, Weapon Carved: 2 Raw Ribs Special: Level 1 Treasure Map
-                    if (Spawning)
-                    {
-                        PackGold(25, 175);
-                    }
-                    else
-                    {
-                        PackGem();
-                        PackItem(new DoubleAxe());
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new DoubleAxe()); // TODO: Weapon??
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Gems);
-                }
+                PackGem();
+                PackItem(new DoubleAxe());
             }
         }
 

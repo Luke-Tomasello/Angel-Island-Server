@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,6 +77,7 @@ namespace Server.Items
             BeginEffect(from, TimeSpan.FromMinutes(5.0));
 
             Consume();
+            BasePotion.GiveEmptyBottle(from);
         }
 
         private static readonly Dictionary<Mobile, Timer> m_Timers = new Dictionary<Mobile, Timer>();
@@ -95,7 +96,7 @@ namespace Server.Items
 
         public static void EndEffect(Mobile m)
         {
-            Timer timer;
+            Timer? timer;
 
             if (m_Timers.TryGetValue(m, out timer))
             {
@@ -108,7 +109,7 @@ namespace Server.Items
         {
             if (UnderEffect(attacker))
             {
-                SlayerEntry entry = SlayerGroup.GetEntryByName(SlayerName.Silver);
+                SlayerEntry? entry = SlayerGroup.GetEntryByName(SlayerName.Silver);
 
                 return (entry != null && entry.Slays(defender));
             }
@@ -120,7 +121,7 @@ namespace Server.Items
         {
             if (UnderEffect(defender))
             {
-                SlayerEntry entry = SlayerGroup.GetEntryByName(SlayerName.Silver);
+                SlayerEntry? entry = SlayerGroup.GetEntryByName(SlayerName.Silver);
 
                 return (entry != null && entry.Group.Opposition.Super.Slays(attacker));
             }

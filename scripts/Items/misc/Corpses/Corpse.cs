@@ -1,11 +1,11 @@
-/***************************************************************************
+﻿/***************************************************************************
  *
  *   RunUO                   : May 1, 2002
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -65,6 +65,7 @@
  */
 
 using Server.ContextMenus;
+using Server.Engines;
 using Server.Engines.PartySystem;
 using Server.Engines.Quests;
 using Server.Engines.Quests.Doom;
@@ -77,6 +78,7 @@ using Server.Regions;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using static Server.Mobile;
 
 namespace Server.Items
 {
@@ -114,6 +116,13 @@ namespace Server.Items
         {
             get { return m_StaticCorpse; }
             set { m_StaticCorpse = value; }
+        }
+
+        public override bool OnDragDrop(Mobile from, Item dropped)
+        {   // don't accept dropped items on a static corpse
+            if (m_StaticCorpse)
+                return false;
+            return base.OnDragDrop(from, dropped);
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -165,12 +174,14 @@ namespace Server.Items
         public ArrayList Looters
         {
             get { return m_Looters; }
+            protected set { m_Looters = value; }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
         public Mobile Killer
         {
             get { return m_Killer; }
+            protected set { m_Killer = value; }
         }
 
         public ArrayList EquipItems
@@ -232,11 +243,14 @@ namespace Server.Items
 
 			Delete();*/
         }
-
+#if DEBUG
+        private static TimeSpan m_DefaultDecayTime = TimeSpan.FromMinutes(1);
+        private static TimeSpan m_BoneDecayTime = TimeSpan.FromMinutes(1);
+#else
         private static TimeSpan m_DefaultDecayTime = TimeSpan.FromMinutes(7.0);
         private static TimeSpan m_BoneDecayTime = TimeSpan.FromMinutes(7.0);
-
-        private Timer m_DecayTimer;
+#endif
+        private Timer? m_DecayTimer;
         private DateTime m_DecayTime;
 
         private bool m_FriendlyFire = false;
@@ -254,6 +268,44 @@ namespace Server.Items
             m_DecayTimer = new InternalTimer(this, delay);
             m_DecayTimer.Start();
         }
+
+        public override void Delete()
+        {
+            // ─────────────────────────────────────────────────────────────────────────────
+            // Mortalis Doppelgänger Memorial System
+            // ─────────────────────────────────────────────────────────────────────────────
+            // When a player's real corpse decays, we promote the hidden DoppelgangerCorpse
+            // (created at death) into the world as a permanent memorial exhibit.
+            //
+            // Identity model:
+            //   Player.GUID → DoppelgangerPlayer.OwnerGUID → DoppelgangerCorpse.OwnerGUID
+            //
+            // See: OnDeathDoppelganger.cs for memorial creation logic.
+            // ─────────────────────────────────────────────────────────────────────────────
+            if (Core.RuleSets.UseDoppelgangers())
+            {
+                if (this.Owner != null && this.Owner.Player)
+                {
+                    uint playerGUID = this.Owner.AcctGUID;
+                    Point3D loc = this.Location;
+                    Map map = this.Map;
+
+                    // Fast lookup using our new static tracker instead of scanning World.Items
+                    DoppelgangerCorpse memorial = DoppelgangerCorpse.GetMemorialFor(playerGUID);
+
+                    if (memorial != null && memorial.IsIntMapStorage)
+                    {
+                        // Copy forensic data before promoting the memorial
+                        memorial.CopyForensicData(this);
+
+                        memorial.RetrieveItemFromIntStorage(loc, map);
+                    }
+                }
+            }
+
+            base.Delete();
+        }
+
 
         public override void OnAfterDelete()
         {
@@ -283,7 +335,7 @@ namespace Server.Items
             }
         }
 
-        public static string GetCorpseName(Mobile m)
+        public static string? GetCorpseName(Mobile m)
         {
             Type t = m.GetType();
 
@@ -291,7 +343,7 @@ namespace Server.Items
 
             if (attrs != null && attrs.Length > 0)
             {
-                CorpseNameAttribute attr = attrs[0] as CorpseNameAttribute;
+                CorpseNameAttribute? attr = attrs[0] as CorpseNameAttribute;
 
                 if (attr != null)
                 {
@@ -333,6 +385,10 @@ namespace Server.Items
             Corpse c;
             if (owner is MilitiaFighter)
                 c = new MilitiaFighterCorpse(owner, shouldFillCorpse ? equipItems : new ArrayList());
+            else if (owner is DoppelgangerPlayer)
+            {
+                c = new DoppelgangerCorpse(owner, shouldFillCorpse ? equipItems : new ArrayList());
+            }
             else
                 c = new Corpse(owner, shouldFillCorpse ? equipItems : new ArrayList());
 
@@ -340,7 +396,7 @@ namespace Server.Items
             {
                 for (int i = 0; i < initialContent.Count; ++i)
                 {
-                    Item item = (Item)initialContent[i];
+                    Item? item = (Item?)initialContent[i];
 
                     if (Core.RuleSets.AOSRules() && owner.Player && item.Parent == owner.Backpack)
                         c.AddItem(item);
@@ -393,6 +449,12 @@ namespace Server.Items
                 case 162:   /*a poison elemental*/
                 case 163:   /*a snow elemental*/
                     return new Body(0x33);  // slime - these guys have a messed up corpse.. the click rect is like 4 square tiles
+
+                // Gorilla: Our version of CUO fails to render this corpse correctly. (OSI has no such problem)
+                // for now, we substitute the Denkou Yajuu corpse.
+                // Don't substitute - as it breaks other clients that don't have the problem. sigh
+                //case 29:    /* gorilla */
+                //return new Body(196);
 
                 default:
                     return owner.Body;      // standard corpse mechanism
@@ -464,15 +526,9 @@ namespace Server.Items
             m_Kills = owner.LongTermMurders;
             m_Criminal = owner.Criminal;
 
-#if false
-			// This corpse does not turn to bones if:
-			//    (the owner is not a player) and (the owner doesn't have a human body)
-			m_NoBones = !owner.Player && !owner.Body.IsHuman;
-#else
             // This corpse does not turn to bones if:
             //    (the owner is not a player)
             m_NoBones = !owner.Player;
-#endif
 
             m_Looters = new ArrayList();
             m_EquipItems = equipItems;
@@ -514,7 +570,7 @@ namespace Server.Items
             //	we will pass this information along to the bounty system to prevent bounty farming by the murderer.
             if (m_Killer != null)
             {   // no need to serialize this value as it's only good as long as the corpse lasts
-                m_FriendlyFire = BountySystem.BountyKeeper.SharedAccount(m_Owner, m_Killer);
+                m_FriendlyFire = BountyKeeper.SharedAccount(m_Owner, m_Killer);
             }
 
             if (!addToAggressors)
@@ -548,13 +604,21 @@ namespace Server.Items
         {
             base.Serialize(writer);
 
-            writer.Write((int)11); // version
+            writer.Write((int)14); // version
 
+            // obsolete
+            //// version 13
+            //writer.Write(m_OwnerGuid);
+
+            //// version 12
+            //writer.Write(m_CorpseKey);
+
+            // version 11
             writer.Write(m_StaticCorpse);
 
             writer.WriteDeltaTime(m_TimeOfDeath);
 
-            ArrayList list = (m_RestoreTable == null ? null : new ArrayList(m_RestoreTable));
+            ArrayList? list = (m_RestoreTable == null ? null : new ArrayList(m_RestoreTable));
             int count = (list == null ? 0 : list.Count);
 
             writer.Write(count);
@@ -617,7 +681,25 @@ namespace Server.Items
 
             switch (version)
             {
-
+                case 14:
+                    {
+                        // removed m_OwnerGuid and m_CorpseKey
+                        goto case 13;
+                    }
+                case 13:
+                    {
+                        if (version <= 13)
+                            /*m_OwnerGuid =*/
+                            reader.ReadUInt();
+                        goto case 12;
+                    }
+                case 12:
+                    {
+                        if (version <= 13)
+                            /*m_CorpseKey =*/
+                            reader.ReadInt();
+                        goto case 11;
+                    }
                 case 11:
                     {
                         m_StaticCorpse = reader.ReadBool();
@@ -636,7 +718,7 @@ namespace Server.Items
 
                         for (int i = 0; i < count; ++i)
                         {
-                            Item item = reader.ReadItem();
+                            Item? item = reader.ReadItem();
 
                             if (reader.ReadBool())
                                 SetRestoreInfo(item, reader.ReadPoint3D());
@@ -721,7 +803,7 @@ namespace Server.Items
 
                         for (int i = 0; i < count; ++i)
                         {
-                            Item item = reader.ReadItem();
+                            Item? item = reader.ReadItem();
 
                             if (item != null)
                                 m_EquipItems.Add(item);
@@ -752,10 +834,23 @@ namespace Server.Items
             if (from == m_Owner || from.AccessLevel >= AccessLevel.GameMaster)
                 return false;
 
+            // on mortalis, your reincarnated self can always loot your own corpse
+            if (Core.RuleSets.MortalisRules())
+            {
+                if (this is Corpse corpse &&
+                    corpse.Owner != null &&
+                    from != null &&
+                    from.AcctGUID == corpse.Owner.AcctGUID)
+                {
+                    return false;
+                }
+            }
+
+
             if (m_Owner is PlayerVendor && from == ((PlayerVendor)m_Owner).Owner)
                 return false;
 
-            Party p = Party.Get(m_Owner);
+            Party? p = Party.Get(m_Owner);
 
             if (p != null && p.Contains(from))
             {
@@ -771,7 +866,7 @@ namespace Server.Items
         public bool CheckLooting(Mobile from)
         {
             #region Static Region
-            StaticRegion sr = StaticRegion.FindStaticRegion(this);
+            StaticRegion? sr = StaticRegion.FindStaticRegion(this);
             if (sr != null && sr.BlockLooting && from.AccessLevel == AccessLevel.Player)
                 return false;
             #endregion
@@ -784,8 +879,9 @@ namespace Server.Items
             if (!base.CheckItemUse(from, item))
                 return false;
 
-            if (m_StaticCorpse)
-                return false;
+            if ((item as Corpse) != null)
+                if ((item as Corpse).StaticCorpse)
+                    return false;
 
             if (!IsCriminalAction(from))
                 return true;
@@ -810,7 +906,9 @@ namespace Server.Items
                 return false;
 
             if (m_StaticCorpse)
+            {
                 return false;
+            }
 
             if (!IsCriminalAction(from))
                 return true;
@@ -832,21 +930,6 @@ namespace Server.Items
 
             // 6/29/2023, Adam: Opening a corpse is not criminal, nor a RevealingAction.
             // this logic is handled in OnItemLifted()
-#if false
-            if (from != m_Owner)
-                //if (IsCriminalAction(from)/*adam*/)
-                from.RevealingAction();
-                
-
-            // Looting an evil corpse will make you gray to all evils for two minutes as well. 
-            if (item != this && IsCriminalAction(from) && !from.Evil && !from.Hero && m_Owner is PlayerMobile && (m_Owner as PlayerMobile).Evil)
-                from.ExpirationFlags.Add(new Mobile.ExpirationFlag(from, Mobile.ExpirationFlagID.EvilNoto, TimeSpan.FromMinutes(2)));
-            else if (item != this && IsCriminalAction(from))
-                from.CriminalAction(true);
-
-            if (!m_Looters.Contains(from))
-                m_Looters.Add(from);
-#endif
         }
 
         public override void OnItemLifted(Mobile from, Item item)
@@ -860,7 +943,14 @@ namespace Server.Items
             if (item != this && IsCriminalAction(from) && !from.Evil && !from.Hero && m_Owner is PlayerMobile && (m_Owner as PlayerMobile).Evil)
                 from.ExpirationFlags.Add(new Mobile.ExpirationFlag(from, Mobile.ExpirationFlagID.EvilNoto, TimeSpan.FromMinutes(2)));
             else if (item != this && IsCriminalAction(from) && !IsGuardIgnore())
-                from.CriminalAction(true);
+                from.CriminalAction(true, from.CreateCriminalityContext(m_Owner, source: "CorpseLoot"),
+                    CriminalitySource.Criminal);
+            //{
+            //    Source = "CorpseLoot",
+            //    Target = m_Owner,
+            //    Location = from.Location,
+            //    Text = "Looted an innocent corpse"
+            //});
 
             if (!m_Looters.Contains(from))
                 m_Looters.Add(from);
@@ -883,7 +973,7 @@ namespace Server.Items
 
             public override void OnClick()
             {
-                Corpse corpse = Owner.Target as Corpse;
+                Corpse? corpse = Owner.Target as Corpse;
 
                 if (corpse != null && Owner.From.CheckAlive())
                     corpse.Open(Owner.From, false);
@@ -898,14 +988,14 @@ namespace Server.Items
                 list.Add(new OpenCorpseEntry());
         }
 
-        private Hashtable m_RestoreTable;
+        private Hashtable? m_RestoreTable;
 
         public bool GetRestoreInfo(Item item, ref Point3D loc)
         {
             if (m_RestoreTable == null || item == null)
                 return false;
 
-            object obj = m_RestoreTable[item];
+            object? obj = m_RestoreTable[item];
 
             if (obj == null)
                 return false;
@@ -914,7 +1004,7 @@ namespace Server.Items
             return true;
         }
 
-        public void SetRestoreInfo(Item item, Point3D loc)
+        public void SetRestoreInfo(Item? item, Point3D loc)
         {
             if (item == null)
                 return;
@@ -925,22 +1015,21 @@ namespace Server.Items
             m_RestoreTable[item] = loc;
         }
 
-        public void ClearRestoreInfo(Item item)
-        {
-            if (m_RestoreTable == null || item == null)
-                return;
-
-            m_RestoreTable.Remove(item);
-
-            if (m_RestoreTable.Count == 0)
-                m_RestoreTable = null;
-        }
-
         public virtual void Open(Mobile from, bool checkSelfLoot)
         {
             if (from.AccessLevel > AccessLevel.Player || from.InRange(this.GetWorldLocation(), 2))
             {
-                bool selfLoot = (checkSelfLoot && (from == m_Owner));
+                bool selfLoot = false;
+                if (Core.RuleSets.MortalisRules())
+                {
+                    // Mortalis: corpse ownership determined strictly by matching guids.
+                    selfLoot = (from.AcctGUID == OwnerGUID);
+                }
+                else
+                {
+                    // Classic shards: original self-loot rules.
+                    selfLoot = (checkSelfLoot && from == m_Owner);
+                }
 
                 if (selfLoot)
                 {
@@ -955,7 +1044,7 @@ namespace Server.Items
 
                     for (int i = 0; !didntFit && i < items.Count; ++i)
                     {
-                        Item item = (Item)items[i];
+                        Item? item = (Item?)items[i];
                         Point3D loc = item.Location;
 
                         if ((item.Layer == Layer.Hair || item.Layer == Layer.FacialHair) || !item.Movable || !GetRestoreInfo(item, ref loc))
@@ -963,7 +1052,7 @@ namespace Server.Items
 
                         if (checkRobe)
                         {
-                            DeathRobe robe = from.FindItemOnLayer(Layer.OuterTorso) as DeathRobe;
+                            DeathRobe? robe = from.FindItemOnLayer(Layer.OuterTorso) as DeathRobe;
 
                             if (robe != null)
                             {
@@ -1012,7 +1101,7 @@ namespace Server.Items
                         from.SendLocalizedMessage(1062472); // You gather some of your belongings. The rest remain on the corpse.
                 }
 
-                if (IsCriminalAction(from))
+                if (!selfLoot && IsCriminalAction(from))
                 {
                     Map map = this.Map;
 
@@ -1036,7 +1125,7 @@ namespace Server.Items
                     }
                 }
 
-                PlayerMobile player = from as PlayerMobile;
+                PlayerMobile? player = from as PlayerMobile;
 
                 if (player != null)
                 {
@@ -1044,7 +1133,7 @@ namespace Server.Items
 
                     if (qs is UzeraanTurmoilQuest)
                     {
-                        GetDaemonBoneObjective obj = qs.FindObjective(typeof(GetDaemonBoneObjective)) as GetDaemonBoneObjective;
+                        GetDaemonBoneObjective? obj = qs.FindObjective(typeof(GetDaemonBoneObjective)) as GetDaemonBoneObjective;
 
                         if (obj != null && obj.CorpseWithBone == this && (!obj.Completed || UzeraanTurmoilQuest.HasLostDaemonBone(player)))
                         {
@@ -1069,7 +1158,7 @@ namespace Server.Items
                     }
                     else if (qs is TheSummoningQuest)
                     {
-                        VanquishDaemonObjective obj = qs.FindObjective(typeof(VanquishDaemonObjective)) as VanquishDaemonObjective;
+                        VanquishDaemonObjective? obj = qs.FindObjective(typeof(VanquishDaemonObjective)) as VanquishDaemonObjective;
 
                         if (obj != null && obj.Completed && obj.CorpseWithSkull == this)
                         {
@@ -1094,10 +1183,6 @@ namespace Server.Items
 
                 // 6/29/2023, Adam: Opening a corpse is not criminal, nor a RevealingAction.
                 // this logic is handled in OnItemLifted()
-#if false
-                if (from != m_Owner)
-                    from.RevealingAction();
-#endif
             }
             else
             {

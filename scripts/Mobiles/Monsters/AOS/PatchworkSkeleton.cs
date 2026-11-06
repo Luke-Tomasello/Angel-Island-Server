@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -37,7 +37,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -91,28 +90,20 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=739
+            // 150 - 200 Gold
+            // Special: 2-4 Gems, Magic Weapons/Armor
+            // Cut Up: None
+
+            if (Spawning)
             {
-                PackGem();
-                PackGold(100, 150);
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(150, 200);
             }
-            else if (Core.RuleSets.AllShards)
-            {   // https://web.archive.org/web/20211026173029/https://uo.stratics.com/database/view.php?db_content=hunters&id=683
-                //  50-100 gold
-                PackGold(50, 100);
+            else
+            {
+                PackGem(2, 4);
+
+                PackMagicEquipment(1, 2, 0.75, 0.75);
             }
         }
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -134,7 +134,7 @@ namespace Server
     {
         public static void OnUse(Mobile from, Item item, bool targetSelf = false)
         {
-            IMagicItem magicItem = item as IMagicItem;
+            IMagicItem? magicItem = item as IMagicItem;
 
             if (magicItem == null)
                 return;
@@ -188,7 +188,7 @@ namespace Server
 
         public static void OnHit(Mobile attacker, Mobile defender, Item item)
         {
-            IMagicItem magicItem = item as IMagicItem;
+            IMagicItem? magicItem = item as IMagicItem;
 
             if (magicItem == null || item.Parent != attacker || !attacker.CanBeginAction(GetLock(attacker, item)) || magicItem.MagicCharges <= 0)
                 return;
@@ -209,7 +209,7 @@ namespace Server
 
         private static bool CastSpell(int spellID, Mobile from, Item item)
         {
-            Spell spell = SpellRegistry.NewSpell(spellID, from, item);
+            Spell? spell = SpellRegistry.NewSpell(spellID, from, item);
 
             if (spell == null)
                 return false;
@@ -237,7 +237,7 @@ namespace Server
                 from.Target.Invoke(from, target);
 
             // if somehow our target remains up, ensure that we deal with it
-            Target remainingTarget = from.Target;
+            Target? remainingTarget = from.Target;
 
             // reset our existing target
             from.Target = null;
@@ -253,7 +253,7 @@ namespace Server
 
         public static int GetLabel(MagicItemEffect effect)
         {
-            EffectInfo info = GetInfo(effect);
+            EffectInfo? info = GetInfo(effect);
 
             if (info == null)
                 return 0;
@@ -263,12 +263,12 @@ namespace Server
 
         public static string GetOldSuffix(MagicItemEffect effect, int charges)
         {
-            EffectInfo info = GetInfo(effect);
+            EffectInfo? info = GetInfo(effect);
 
             if (info == null)
                 return string.Empty;
 
-            string name = info.OldName;
+            string? name = info.OldName;
 
             if (name == null && !Server.Text.Cliloc.Lookup.TryGetValue(info.Label, out name))
                 return string.Empty;
@@ -278,7 +278,7 @@ namespace Server
 
         public static void ConsumeCharge(Mobile from, Item item)
         {
-            IMagicItem magicItem = item as IMagicItem;
+            IMagicItem? magicItem = item as IMagicItem;
 
             if (magicItem == null || magicItem.MagicCharges <= 0)
                 return;
@@ -383,7 +383,7 @@ namespace Server
             m_Table[65] = new EffectInfo(1075867, 1017348, "Restoration"); // Restoration
         }
 
-        private static EffectInfo GetInfo(MagicItemEffect effect)
+        private static EffectInfo? GetInfo(MagicItemEffect effect)
         {
             int index = (int)effect;
 
@@ -399,7 +399,7 @@ namespace Server
             public readonly int ChargeLabel;
             public readonly string OldName;
 
-            public EffectInfo(int label, int chargeLabel = 0, string oldName = null)
+            public EffectInfo(int label, int chargeLabel = 0, string? oldName = null)
             {
                 Label = label;
                 ChargeLabel = chargeLabel;
@@ -427,16 +427,12 @@ namespace Server
 
         public static object GetLock(Mobile from, Item item)
         {
-#if false
-            return item;
-#else
             return typeof(BaseWand); // lock ALL magic items
-#endif
         }
 
         public static TimeSpan GetLockDelay(Mobile from, Item item)
         {
-            IMagicItem magicItem = item as IMagicItem;
+            IMagicItem? magicItem = item as IMagicItem;
 
             if (magicItem == null)
                 return TimeSpan.Zero;

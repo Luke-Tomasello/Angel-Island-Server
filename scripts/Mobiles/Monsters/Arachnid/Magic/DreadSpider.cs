@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -78,42 +78,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20011205081312/uo.stratics.com/hunters/dreadspider.shtml
+            // 	200 to 250 Gold, Potions, Arrows, 8 spider silk
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackMagicEquipment(1, 2, 0.20, 0.20);
-                PackGold(180, 200);
+                PackGold(200, 250);
 
-                // Category 2 MID 
-                PackMagicItem(1, 1, 0.05);
-
-                // pack bulk reg
-                PackItem(new SpidersSilk(Utility.RandomMinMax(10, 20)));
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20011205081312/uo.stratics.com/hunters/dreadspider.shtml
-                    // 	200 to 250 Gold, Potions, Arrows, 8 spider silk
-                    if (Spawning)
-                    {
-                        PackGold(200, 250);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
-                        if (Spawning)
-                            PackItem(new SpidersSilk(8));
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new SpidersSilk(8));
-
-                    AddLoot(LootPack.FilthyRich);
-                }
+                PackPotion();
+                PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
+                PackItem(new SpidersSilk(8));
             }
         }
 

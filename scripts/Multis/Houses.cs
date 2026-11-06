@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -52,10 +52,10 @@ namespace Server.Multis
         public SmallOldHouse(Mobile owner, int id)
             : base(id, owner, 270, 2, 2)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 425;
-                this.MaxSecuresRaw = 3;
+                this.MaxSecureContainersRaw = 3;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -114,10 +114,10 @@ namespace Server.Multis
         public GuildHouse(Mobile owner)
             : base(0x74, owner, 600, 4, 2)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 1100;
-                this.MaxSecuresRaw = 8;
+                this.MaxSecureContainersRaw = 8;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -161,12 +161,12 @@ namespace Server.Multis
         public override int DefaultPrice { get { return 192400; } }
 
         public TwoStoryHouse(Mobile owner, int id)
-            : base(id, owner, 750, 5, 3)
+            : base(id, owner, maxLockDowns: 750, maxSecureContainers: 5, maxLockboxContainers: 3)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 1370;
-                this.MaxSecuresRaw = 10;
+                this.MaxSecureContainersRaw = 10;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -223,10 +223,10 @@ namespace Server.Multis
         public Tower(Mobile owner)
             : base(0x7A, owner, 1150, 8, 4)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 2119;
-                this.MaxSecuresRaw = 15;
+                this.MaxSecureContainersRaw = 15;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -273,10 +273,10 @@ namespace Server.Multis
         public Keep(Mobile owner)
             : base(0x7C, owner, 1300, 9, 5)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 2625;
-                this.MaxSecuresRaw = 18;
+                this.MaxSecureContainersRaw = 18;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -319,10 +319,10 @@ namespace Server.Multis
         public Castle(Mobile owner)
             : base(0x7E, owner, 1950, 14, 7)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 4076;
-                this.MaxSecuresRaw = 28;
+                this.MaxSecureContainersRaw = 28;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -372,10 +372,10 @@ namespace Server.Multis
         public LargePatioHouse(Mobile owner)
             : base(0x8C, owner, 600, 4, 2)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 1100;
-                this.MaxSecuresRaw = 8;
+                this.MaxSecureContainersRaw = 8;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -425,10 +425,10 @@ namespace Server.Multis
         public LargeMarbleHouse(Mobile owner)
             : base(0x96, owner, 750, 5, 3)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 1370;
-                this.MaxSecuresRaw = 10;
+                this.MaxSecureContainersRaw = 10;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -473,10 +473,10 @@ namespace Server.Multis
         public SmallTower(Mobile owner)
             : base(0x98, owner, 300, 2, 2)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 580;
-                this.MaxSecuresRaw = 4;
+                this.MaxSecureContainersRaw = 4;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -521,10 +521,10 @@ namespace Server.Multis
         public LogCabin(Mobile owner)
             : base(0x9A, owner, 600, 4, 2)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 1100;
-                this.MaxSecuresRaw = 8;
+                this.MaxSecureContainersRaw = 8;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -572,10 +572,10 @@ namespace Server.Multis
         public SandStonePatio(Mobile owner)
             : base(0x9C, owner, 450, 3, 2)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 850;
-                this.MaxSecuresRaw = 6;
+                this.MaxSecureContainersRaw = 6;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -620,10 +620,10 @@ namespace Server.Multis
         public TwoStoryVilla(Mobile owner)
             : base(0x9E, owner, 600, 4, 2)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 1100;
-                this.MaxSecuresRaw = 8;
+                this.MaxSecureContainersRaw = 8;
             }
 
             uint keyValue = CreateKeys(owner);
@@ -672,10 +672,10 @@ namespace Server.Multis
         public SmallShop(Mobile owner, int id)
             : base(id, owner, 275, 2, 2)
         {
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 this.MaxLockDownsRaw = 425;
-                this.MaxSecuresRaw = 3;
+                this.MaxSecureContainersRaw = 3;
             }
 
             uint keyValue = CreateKeys(owner);

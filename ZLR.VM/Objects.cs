@@ -4,7 +4,7 @@
  *   implementation          : (C) 2007-2023 Tara McGrew
  *   repository url          : https://foss.heptapod.net/zilf/zlr
  *   
- *   Angel Island UO Shard   : March 25, 2004
+ *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
@@ -19,8 +19,8 @@
  *
  ***************************************************************************/
 
-using System;
 using JetBrains.Annotations;
+using System;
 
 namespace ZLR.VM
 {
@@ -210,10 +210,10 @@ namespace ZLR.VM
                 var b = GetByte(address - 1);
                 if ((b & 128) == 0)
                 {
-                    return (b & 64) == 0 ? (short) 1 : (short) 2;
+                    return (b & 64) == 0 ? (short)1 : (short)2;
                 }
                 var len = (short)(b & 63);
-                return len == 0 ? (short) 64 : len;
+                return len == 0 ? (short)64 : len;
             }
         }
 
@@ -321,8 +321,8 @@ namespace ZLR.VM
         private ushort GetObjectAddress(ushort obj)
         {
             if (zversion <= 3)
-                return (ushort) (objectTable + 2 * 31 + 9 * (obj - 1));
-            return (ushort) (objectTable + 2 * 63 + 14 * (obj - 1));
+                return (ushort)(objectTable + 2 * 31 + 9 * (obj - 1));
+            return (ushort)(objectTable + 2 * 63 + 14 * (obj - 1));
         }
 
 #pragma warning disable 0169

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -87,7 +87,7 @@ namespace Server.Items
         {
             get
             {
-                SendSystemMessage("ScheduleIgnite: Milliseconds until ignition");
+                SendMessageNearby("ScheduleIgnite: Milliseconds until ignition");
                 return m_ScheduleIgnite;
             }
             set
@@ -178,7 +178,7 @@ namespace Server.Items
             Effects.SendMovingEffect(new Entity(Serial.Zero, startLoc, map), new Entity(Serial.Zero, endLoc, map),
                 0x36E4, 5, 0, false, false);
 
-            Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(FinishLaunch), new object[] { null, endLoc, map });
+            Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(FinishLaunch), new object?[] { null, endLoc, map });
         }
         private void FinishLaunch(object state)
         {

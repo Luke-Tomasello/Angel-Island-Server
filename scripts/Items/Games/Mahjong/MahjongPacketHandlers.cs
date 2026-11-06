@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,7 +34,7 @@ namespace Server.Engines.Mahjong
             m_SubCommandDelegates[subCmd] = onReceive;
         }
 
-        public static OnMahjongPacketReceive GetSubCommandDelegate(int cmd)
+        public static OnMahjongPacketReceive? GetSubCommandDelegate(int cmd)
         {
             if (cmd >= 0 && cmd < 0x100)
             {
@@ -66,7 +66,7 @@ namespace Server.Engines.Mahjong
 
         public static void OnPacket(NetState state, PacketReader pvSrc)
         {
-            MahjongGame game = World.FindItem(pvSrc.ReadInt32()) as MahjongGame;
+            MahjongGame? game = World.FindItem(pvSrc.ReadInt32()) as MahjongGame;
 
             if (game != null)
                 game.Players.CheckPlayers();
@@ -75,7 +75,7 @@ namespace Server.Engines.Mahjong
 
             int cmd = pvSrc.ReadByte();
 
-            OnMahjongPacketReceive onReceive = GetSubCommandDelegate(cmd);
+            OnMahjongPacketReceive? onReceive = GetSubCommandDelegate(cmd);
 
             if (onReceive != null)
             {

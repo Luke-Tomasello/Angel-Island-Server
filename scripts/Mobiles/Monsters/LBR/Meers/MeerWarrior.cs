@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,15 +66,15 @@ namespace Server.Mobiles
         public override bool CanRummageCorpses { get { return Core.RuleSets.AngelIslandRules() ? true : true; } }
         public override bool InitialInnocent { get { return true; } }
 
-        public override void OnDamage(int amount, Mobile from, bool willKill, object source_weapon)
+        public override void OnDamage(int amount, Mobile from, bool willKill, DamageContext context)
         {
             if (from != null && !willKill && amount > 3 && from != null && !InRange(from, 7))
             {
                 this.MovingEffect(from, 0xF51, 10, 0, false, false);
-                SpellHelper.Damage(TimeSpan.FromSeconds(1.0), from, this, Utility.RandomMinMax(30, 40) - (Core.RuleSets.AOSRules() ? 0 : 10), 100, 0, 0, 0, 0);
+                SpellHelper.Damage(TimeSpan.FromSeconds(1.0), from, this, Utility.RandomMinMax(30, 40) - (Core.RuleSets.AOSRules() ? 0 : 10), new DamageContext { Source = this });
             }
 
-            base.OnDamage(amount, from, willKill, source_weapon);
+            base.OnDamage(amount, from, willKill, context);
         }
 
         public override int GetHurtSound()
@@ -94,27 +94,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://www.uoguide.com/Meer_Warrior
+            // Post-era creature (Mondain's Legacy). No Stratics-era entry.
+            // 250 - 400 Gold
+            // Special: 2-5 Gems, Magic Weapons/Armor
+            // Note: Excludes ML systems (artifacts, quest items, etc.)
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(25, 50);
+                PackGold(250, 400);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // no LBR
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    // TODO: standard runuo
-                }
+                PackGem(2, 5);
+
+                PackMagicEquipment(2, 3, 1.0, 1.0);
+                PackMagicEquipment(2, 3, 0.50, 0.50);
             }
         }
 

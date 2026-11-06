@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -148,14 +148,14 @@ namespace Server.Items
             }
         }
 
-        private Hashtable m_Entries;
+        private Hashtable? m_Entries;
 
         private ScoreEntry GetEntryFor(Mobile from)
         {
             if (m_Entries == null)
                 m_Entries = new Hashtable();
 
-            ScoreEntry e = (ScoreEntry)m_Entries[from];
+            ScoreEntry? e = (ScoreEntry?)m_Entries[from];
 
             if (e == null)
                 m_Entries[from] = e = new ScoreEntry();
@@ -165,7 +165,7 @@ namespace Server.Items
 
         public void Fire(Mobile from)
         {
-            BaseRanged bow = from.Weapon as BaseRanged;
+            BaseRanged? bow = from.Weapon as BaseRanged;
 
             if (bow == null)
             {

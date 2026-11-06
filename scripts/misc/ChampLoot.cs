@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -55,7 +55,7 @@ namespace Server
             for (int i = 0; i < CoreChamp.AmountOfChampMagicItems; ++i)
             {
                 int level = (int)Utility.RandomEnumMinMaxScaled<Loot.ImbueLevel>(CoreChamp.MinChampMagicDropLevel, CoreChamp.MaxChampMagicDropLevel);
-                Item reward = null;
+                Item? reward = null;
                 if (Utility.RandomBool())
                     reward = CreateWeapon(level);
                 else
@@ -72,7 +72,7 @@ namespace Server
             List<Item> rewards = new(CoreChamp.AmountOfChampSpecialItems);
             for (int i = 0; i < CoreChamp.AmountOfChampSpecialItems; ++i)
             {
-                Item reward = null;
+                Item? reward = null;
                 switch (Utility.Random(5))
                 {
                     case 0:     // hair/beard dye
@@ -81,6 +81,14 @@ namespace Server
                                 reward = new SpecialHairDye();
                             else
                                 reward = new SpecialBeardDye();
+
+                            // On Mortalis, special dyes are NOT flagged Rare or KeepOnDeath.
+                            // We do not persist inventory items across death. Instead, identity
+                            // reimbursement is handled separately when a dye is actually applied.
+                            // This prevents stockpiling while still preserving earned identity.
+                            if (reward != null)
+                                if (Core.RuleSets.MortalisRules())
+                                    reward.LootType = LootType.UnStealable;
                             break;
                         }
 
@@ -92,6 +100,10 @@ namespace Server
                                 reward.Hue = Utility.RandomList(2213, 2219, 2207, 2425, 1109);
                             else
                                 reward.Hue = 0x01;  // black cloth
+
+                            if (reward != null)
+                                if (Core.RuleSets.MortalisRules())
+                                    reward.LootType = LootType.KeepOnDeath;
                             break;
                         }
 
@@ -130,6 +142,10 @@ namespace Server
                     case 4:     // drop a few single-color leather dye tubs with 100 charges
                         {       // i in 5 chance
                             reward = new LeatherArmorDyeTub();
+
+                            if (reward != null)
+                                if (Core.RuleSets.MortalisRules())
+                                    reward.LootType = LootType.KeepOnDeath;
                             break;
                         }
                 }
@@ -137,6 +153,7 @@ namespace Server
                 // may be null;
                 if (reward != null && reward is not BaseWand && reward is not BaseJewel && reward is not BaseClothing)
                     reward.LootType = LootType.Rare;
+
                 rewards.Add(reward);
             }
 
@@ -145,7 +162,7 @@ namespace Server
         public static List<Item> GetHarrowerRewardLoot(int maxGifts)
         {
             List<Item> rewards = new();
-            Item reward = null;
+            Item? reward = null;
             int select = 0;
             for (int i = 0; i < maxGifts; ++i)
             {
@@ -171,9 +188,20 @@ namespace Server
                     case 6:     // hair/beard dye
                         {       // 1 in 10 chance
                             if (Utility.RandomBool())
-                                rewards.Add(new SpecialHairDye());
+                                reward = new SpecialHairDye();
                             else
-                                rewards.Add(new SpecialBeardDye());
+                                reward = new SpecialBeardDye();
+
+                            // On Mortalis, special dyes are NOT flagged Rare or KeepOnDeath.
+                            // We do not persist inventory items across death. Instead, identity
+                            // reimbursement is handled separately when a dye is actually applied.
+                            // This prevents stockpiling while still preserving earned identity.
+                            if (reward != null)
+                                if (Core.RuleSets.MortalisRules())
+                                    reward.LootType = LootType.UnStealable;
+
+                            rewards.Add(reward);
+                            reward = null;
                             break;
                         }
                     case 7:     // special cloth
@@ -348,7 +376,8 @@ namespace Server
             // free up unused stuffs
             foreach (Item item in list)
                 if (!magicItems.Contains(item))
-                    item.Delete();
+                    if (item != null && !item.Deleted)
+                        item.Delete();
 
             return magicItems;
         }
@@ -376,7 +405,8 @@ namespace Server
             // free up unused stuffs
             foreach (Item item in list)
                 if (!specialRewards.Contains(item))
-                    item.Delete();
+                    if (item != null && !item.Deleted)
+                        item.Delete();
 
             return specialRewards;
         }
@@ -404,14 +434,14 @@ namespace Server
         }
         private static Item CreateWeapon(int level)
         {
-            BaseWeapon weapon = Loot.RandomWeapon();
-            weapon = (BaseWeapon)Loot.ImbueWeaponOrArmor(weapon, level);
+            Item weapon = Loot.RandomWeapon();
+            weapon = Loot.ImbueWeaponOrArmor(weapon, level);
             return weapon;
         }
         private static Item CreateArmor(int level)
         {
-            BaseArmor armor = Loot.RandomArmorOrShield();
-            armor = (BaseArmor)Loot.ImbueWeaponOrArmor(armor, level);
+            Item armor = Loot.RandomArmorOrShield();
+            armor = Loot.ImbueWeaponOrArmor(armor, level);
             return armor;
         }
     }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -130,7 +130,7 @@ namespace Server.Gumps
 
             for (int i = 0; i < allies.Count; i++)
             {
-                Guild ally = (Guild)allies[i];
+                Guild? ally = (Guild?)allies[i];
 
                 if (option.IsConflict(ally))
                 {
@@ -151,18 +151,6 @@ namespace Server.Gumps
                 list.Add(new OrderChaosOption(GuildType.Regular, 1013063)); // Standard guild
                 list.Add(new OrderChaosOption(GuildType.Order, 1013064)); // Order guild
                 list.Add(new OrderChaosOption(GuildType.Chaos, 1013065)); // Chaos guild
-            }
-
-            if (Core.RuleSets.KinSystemEnabled())
-            {
-                list.Add(new IOBOption(IOBAlignment.None));
-                list.Add(new IOBOption(IOBAlignment.Brigand));
-                list.Add(new IOBOption(IOBAlignment.Council));
-                list.Add(new IOBOption(IOBAlignment.Good));
-                list.Add(new IOBOption(IOBAlignment.Orcish));
-                list.Add(new IOBOption(IOBAlignment.Pirate));
-                list.Add(new IOBOption(IOBAlignment.Savage));
-                list.Add(new IOBOption(IOBAlignment.Undead));
             }
 
             if (AlignmentSystem.Enabled)
@@ -219,43 +207,6 @@ namespace Server.Gumps
             }
         }
 
-        private sealed class IOBOption : GuildOption
-        {
-            private IOBAlignment m_Type;
-
-            public IOBOption(IOBAlignment type)
-                : base(Engines.IOBSystem.IOBSystem.GetIOBName(type))
-            {
-                m_Type = type;
-            }
-
-            public override bool Validate(Guild g)
-            {
-                return Core.RuleSets.KinSystemEnabled();
-            }
-
-            public override bool IsConflict(Guild g)
-            {
-                return (m_Type != IOBAlignment.None && g.IOBAlignment != IOBAlignment.None && g.IOBAlignment != m_Type);
-            }
-
-            public override void OnSelect(Mobile m, Guild g)
-            {
-                if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.GuildKinChangeDisabled))
-                {
-                    m.SendMessage("Guild Kin Alignment change is currently disabled.");
-                    return;
-                }
-
-                g.IOBAlignment = m_Type;
-
-                if (g.IOBAlignment != IOBAlignment.None)
-                    g.GuildMessage("Your guild is now allied with the " + Label);
-                else
-                    g.GuildMessage("Your guild has broken its kin alignment, it is now unaligned.");
-            }
-        }
-
         private sealed class AlignmentOption : GuildOption
         {
             private AlignmentType m_Type;
@@ -268,7 +219,7 @@ namespace Server.Gumps
 
             public override bool Validate(Guild g)
             {
-                Alignment alignment = Alignment.Get(m_Type);
+                Alignment? alignment = Alignment.Get(m_Type);
 
                 return (AlignmentSystem.Enabled && (m_Type == AlignmentType.None || (alignment != null && alignment.Definition.Available)));
             }

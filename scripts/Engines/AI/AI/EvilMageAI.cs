@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -144,7 +144,7 @@ namespace Server.Mobiles
                 {
                     if (m_Mobile.Poison != null)
                     {
-                        Spell curespell;
+                        Spell? curespell;
 
                         if ((((m_Mobile.Skills[SkillName.Magery].Value / (m_Mobile.Poison.Level + 1)) - 20) * 7.5) > 50)
                         {
@@ -286,7 +286,7 @@ namespace Server.Mobiles
                 return ChooseSpell(toDispel);
             }
 
-            Spell spell = null;
+            Spell? spell = null;
 
             if (!m_Mobile.Summoned && Utility.Random(0, 4 + (m_Mobile.Hits == 0 ? m_Mobile.HitsMax : (m_Mobile.HitsMax / m_Mobile.Hits))) >= 3)
             {
@@ -331,7 +331,7 @@ namespace Server.Mobiles
                 return new ReactiveArmorSpell(m_Mobile, null);
 
 
-            Spell spell = null;
+            Spell? spell = null;
 
             int healChance = (m_Mobile.Hits == 0 ? m_Mobile.HitsMax : (m_Mobile.HitsMax / m_Mobile.Hits));
 
@@ -403,12 +403,10 @@ namespace Server.Mobiles
         }
 
         protected int m_Combo = -1;
-        protected int m_Combo2 = -1;
-        protected int m_Combo3 = -1;
 
-        public virtual Spell DoCombo(Mobile c)
+        public virtual Spell? DoCombo(Mobile c)
         {
-            Spell spell = null;
+            Spell? spell = null;
 
             if (m_Combo == 0)
             {
@@ -477,130 +475,9 @@ namespace Server.Mobiles
             return spell;
         }
 
-        public virtual Spell DoCombo2(Mobile c)
-        {
-            Spell spell = null;
-
-            if (m_Combo2 == 0)
-            {
-                spell = new ExplosionSpell(m_Mobile, null);
-                ++m_Combo2; // Move to next spell
-            }
-            else if (m_Combo2 == 1)
-            {
-                spell = new WeakenSpell(m_Mobile, null);
-                ++m_Combo2; // Move to next spell
-            }
-            else if (m_Combo2 == 2)
-            {
-                if (!c.Poisoned)
-                    spell = new PoisonSpell(m_Mobile, null);
-
-                ++m_Combo2; // Move to next spell
-            }
-
-            if (m_Combo2 == 3 && spell == null)
-            {
-                switch (Utility.Random(3))
-                {
-                    default:
-                    case 0:
-                        {
-                            if (c.Int < c.Dex)
-                                spell = new FeeblemindSpell(m_Mobile, null);
-                            else
-                                spell = new ClumsySpell(m_Mobile, null);
-
-                            ++m_Combo2; // Move to next spell
-
-                            break;
-                        }
-                    case 1:
-                        {
-                            spell = new EnergyBoltSpell(m_Mobile, null);
-                            m_Combo2 = -1; // Reset combo state
-                            break;
-                        }
-                    case 2:
-                        {
-                            spell = new FlameStrikeSpell(m_Mobile, null);
-                            m_Combo2 = -1; // Reset combo state
-                            break;
-                        }
-                }
-            }
-            else if (m_Combo2 == 4 && spell == null)
-            {
-                spell = new MindBlastSpell(m_Mobile, null);
-                m_Combo2 = -1;
-            }
-
-            return spell;
-        }
-
-        public virtual Spell DoCombo3(Mobile c)
-        {
-            Spell spell = null;
-
-            if (m_Combo3 == 0)
-            {
-                spell = new ExplosionSpell(m_Mobile, null);
-                ++m_Combo3; // Move to next spell
-            }
-            else if (m_Combo3 == 1)
-            {
-                spell = new WeakenSpell(m_Mobile, null);
-                ++m_Combo3; // Move to next spell
-            }
-            else if (m_Combo3 == 2)
-            {
-                if (!c.Poisoned)
-                    spell = new PoisonSpell(m_Mobile, null);
-
-                ++m_Combo3; // Move to next spell
-            }
-
-            if (m_Combo == 3 && spell == null)
-            {
-                switch (Utility.Random(3))
-                {
-                    default:
-                    case 0:
-                        {
-                            if (c.Int < c.Dex)
-                                spell = new FeeblemindSpell(m_Mobile, null);
-                            else
-                                spell = new ClumsySpell(m_Mobile, null);
-
-                            ++m_Combo3; // Move to next spell
-
-                            break;
-                        }
-                    case 1:
-                        {
-                            spell = new EnergyBoltSpell(m_Mobile, null);
-                            m_Combo3 = -1; // Reset combo state
-                            break;
-                        }
-                    case 2:
-                        {
-                            spell = new FlameStrikeSpell(m_Mobile, null);
-                            m_Combo3 = -1; // Reset combo state
-                            break;
-                        }
-                }
-            }
-            else if (m_Combo == 4 && spell == null)
-            {
-                spell = new MindBlastSpell(m_Mobile, null);
-                m_Combo3 = -1;
-            }
-
-            return spell;
-        }
         public override bool DoActionCombat(MobileInfo info)
         {
-            Mobile combatant = info.target;
+            Mobile? combatant = info.target;
             m_Mobile.Warmode = true;
 
             if (combatant == null || info.gone || info.dead || info.hidden || info.fled)
@@ -700,8 +577,8 @@ namespace Server.Mobiles
             {
                 // We are ready to cast a spell
 
-                Spell spell = null;
-                Mobile toDispel = FindDispelTarget(true);
+                Spell? spell = null;
+                Mobile? toDispel = FindDispelTarget(true);
 
                 if (m_Mobile.Poisoned) // Top cast priority is cure
                 {
@@ -889,7 +766,7 @@ namespace Server.Mobiles
             return true;
         }
 
-        public Mobile FindDispelTarget(bool activeOnly)
+        public Mobile? FindDispelTarget(bool activeOnly)
         {
             if (m_Mobile.Deleted || m_Mobile.Int < 95 || CanDispel(m_Mobile) || m_Mobile.AutoDispel)
                 return null;
@@ -899,7 +776,7 @@ namespace Server.Mobiles
                 List<AggressorInfo> aggressed = m_Mobile.Aggressed;
                 List<AggressorInfo> aggressors = m_Mobile.Aggressors;
 
-                Mobile active = null;
+                Mobile? active = null;
                 double activePrio = 0.0;
 
                 Mobile comb = m_Mobile.Combatant;
@@ -961,7 +838,7 @@ namespace Server.Mobiles
 
                 if (map != null)
                 {
-                    Mobile active = null, inactive = null;
+                    Mobile? active = null, inactive = null;
                     double actPrio = 0.0, inactPrio = 0.0;
 
                     Mobile comb = m_Mobile.Combatant;
@@ -1042,7 +919,7 @@ namespace Server.Mobiles
             bool isTeleport = (targ is TeleportSpell.InternalTarget);
             bool teleportAway = false;
 
-            Mobile toTarget;
+            Mobile? toTarget;
 
             if (isDispel)
             {

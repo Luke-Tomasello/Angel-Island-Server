@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -18,8 +18,6 @@
  *   (at your option) any later version.
  *
  ***************************************************************************/
-
-using System;
 
 namespace Server.Items
 {
@@ -173,7 +171,12 @@ namespace Server.Items
         {
             if (Deleted || !from.CanSee(this)) return false;
 
-            base.ScissorHelper(scissors, from, new Leather(), 1);
+            // we track starting loot with the FamilyID.
+            //  Various restrictions are placed on FamilyID (player does not control this id, vendors don't buy, etc.)
+            Item new_item = new Leather();
+            new_item.FamilyID = this.FamilyID;
+
+            base.ScissorHelper(scissors, from, new_item, 1);
 
             return true;
         }
@@ -230,7 +233,12 @@ namespace Server.Items
         {
             if (Deleted || !from.CanSee(this)) return false;
 
-            base.ScissorHelper(scissors, from, new SpinedLeather(), 1);
+            // we track starting loot with the FamilyID.
+            //  Various restrictions are placed on FamilyID (player does not control this id, vendors don't buy, etc.)
+            Item new_item = new SpinedLeather();
+            new_item.FamilyID = this.FamilyID;
+
+            base.ScissorHelper(scissors, from, new_item, 1);
 
             return true;
         }
@@ -287,7 +295,12 @@ namespace Server.Items
         {
             if (Deleted || !from.CanSee(this)) return false;
 
-            base.ScissorHelper(scissors, from, new HornedLeather(), 1);
+            // we track starting loot with the FamilyID.
+            //  Various restrictions are placed on FamilyID (player does not control this id, vendors don't buy, etc.)
+            Item new_item = new HornedLeather();
+            new_item.FamilyID = this.FamilyID;
+
+            base.ScissorHelper(scissors, from, new_item, 1);
 
             return true;
         }
@@ -344,7 +357,12 @@ namespace Server.Items
         {
             if (Deleted || !from.CanSee(this)) return false;
 
-            base.ScissorHelper(scissors, from, new BarbedLeather(), 1);
+            // we track starting loot with the FamilyID.
+            //  Various restrictions are placed on FamilyID (player does not control this id, vendors don't buy, etc.)
+            Item new_item = new BarbedLeather();
+            new_item.FamilyID = this.FamilyID;
+
+            base.ScissorHelper(scissors, from, new_item, 1);
 
             return true;
         }

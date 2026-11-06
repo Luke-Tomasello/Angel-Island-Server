@@ -1,11 +1,11 @@
-/***************************************************************************
+﻿/***************************************************************************
  *
  *   RunUO                   : May 1, 2002
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,54 @@
 
 /* Scripts/Engines/Help/StuckMenu.cs
  * Changelog:
+ *  10/15/2026, Adam (Help Stuck: HelpStuck.log history)
+ *      Overview only: HelpStuck.log now records every move carried out (immediate ones too) and each refusal at
+ *      request, with what the player was told (see HelpStuck).
+ *  10/14/2026, Adam (Help Stuck: stranded on a boat; module overview)
+ *      Aboard a boat, Help Stuck now decides StrandedOnABoat (see StuckRules.PlanStrandedOnABoat) and nothing else:
+ *      no local unblock or town menu aboard. The HELP-STUCK SYSTEM overview below is rewritten for the system as it
+ *      now is (the pipeline, immediate and delayed rescues, revalidation, uses, the rescue kinds, dungeons, the
+ *      refusals, the layout, diagnostics); the pre-refactor operational summary is gone.
+ *  10/13/2026, Adam (Help Stuck refactor)
+ *      Behavior-preserving refactor. The Help Stuck engine moved out of StuckMenu.cs into HelpStuck/:
+ *          HelpStuckStatus.cs      StuckStatus: the facts (cheap ones read at once, expensive ones on demand)
+ *          HelpStuckRules.cs       the policies, gates and decision trees, and the decision trace
+ *          HelpStuckRescue.cs      carrying out the decision: the request, the delayed rescue (RescueTicket,
+ *                                  formerly TeleportTimer) and its execution
+ *          HelpStuckProbes.cs      world probes and searches (unblock destination, exit options, ...)
+ *          HelpStuckRecovery.cs    the dungeon evacuation recovery chest
+ *      StuckMenu keeps the town menu, the commands and DoHelpStuck (now HelpStuck.Request).
+ *      [HelpStuckTest is now a dry run: it reports the facts, rules and plan and changes nothing.
+ *      [HelpStuckTest live is the previous [HelpStuckTest.
+ *      When Core.Debug, any access level may use [HelpStuckTest, [HelpStuckReset and [HelpStuckUses.
+ *      Out of daily uses now says so, instead of the generic 'not a valid stuck location' message.
+ *      Inside a house they own, co-own or are a friend of, Help Stuck moves them (and their pets) to the house ban
+ *      location as an authorized house rescue: no use charged, weight ignored. Anyone else inside a house is unchanged.
+ *      A chargeable rescue now costs exactly one use, when it is carried out; scheduling or a cancelled rescue costs none.
+ *      [HelpStuckUses: shows a player's recorded uses, uses left and any pending rescue, read only.
+ *      In a dungeon they can walk around, a reachable exit is now pointed out instead of "But, you're not stuck.",
+ *      and exit hints are given even with no Help Stuck use left (they move nobody and cost nothing).
+ *      Only an outcome that needs a use is refused for having none left: with no use left, exit hints, "But, you're
+ *      not stuck.", the quest-area message, a house rescue and any other refusal (with its own reason) still come through.
+ *      Physically blocked in a dungeon, the short local move (DungeonUnblock) no longer requires dropping weight; it still
+ *      costs one use on success. House, township and overworld local unblocks still enforce weight.
+ *  1/2/2026, Adam
+ *      Help-Stuck: fix dungeon evacuation logic; replace kill with recovery chest; refactor TeleportTimer
+ *      Fixed a logic bug where players could be killed (or penalized) even when Help-Stuck successfully performed a local unblock (short-range move).
+ *      Introduced an explicit evacuation check (isEvac) so dungeon consequences apply only when the player is being extracted (e.g., town relocation), not for nearby remediation.
+ *      Replaced dungeon “kill on evac” behavior with a recovery-chest consequence on all shards:
+ *      Cursor-held items are dropped first to prevent exploits.
+ *      Non-essential carried items are moved to a locked, immovable chest spawned near the original stuck location.
+ *      Chest is re-keyed, key is given to the player at teleport time, and chest decays after 1 hour.
+ *      Prevents free loot transport without killing the player.
+ *      Refactored consequence handling into a dedicated routine (ApplyDungeonEvacuationConsequences) and cleaned up TeleportTimer.OnTick() flow for clarity.
+ *      General cleanup and comment improvements around Help-Stuck relocation paths (local unblock vs. evac).
+ *      Help-Stuck: finalize recovery chest behavior (decay, keying, lockpick)
+ *      Moved recovery chest decay logic into the chest itself; expiry time is now owned, serialized, and enforced across restarts.
+ *      Added explicit expiration timestamp and self-managed decay timer to prevent indefinite recovery chests after shard reboot.
+ *      Recovery chest is now re-keyed per instance and provides the evac’d player with a Blessed key at teleport time.
+ *      Enabled lockpicking on recovery chests with high-tier dungeon difficulty (level 4), allowing opportunistic recovery by skilled pickers.
+ *      Preserves anti–loot-transport guarantees while enabling emergent dungeon gameplay.
  *  6/7/2023, Adam (exit options)
  *      Add public moongates to the list of exit options.
  *      Also exclude teleporters and moongates as exit options if they lead to a dungeon.
@@ -91,8 +139,160 @@
  *		Merged in 1.0RC0 code.
  */
 
+/*
+===============================================================
+                     HELP-STUCK SYSTEM
+===============================================================
+
+    Purpose
+    -------
+    Help Stuck gets a player out of a place they genuinely cannot leave
+    (world geometry, a dungeon corner, open water, a boat they cannot
+    sail) without staff, and without becoming a free teleport, a way to
+    carry goods out, or a way to escape a fight or the law. Two
+    principles, in this order:
+
+        1. A player who is genuinely stuck gets out.
+        2. A player who is not stuck, or who arranged to look stuck,
+           gets advice or a refusal, never a free ride.
+
+    So Help Stuck prefers the least it can do: point out a way out, make
+    a short local move, and only when nothing else works, a move ashore
+    or to a town. Help Stuck never falls back to a staff page.
+
+    Pipeline
+    --------
+        StuckStatus (facts) -> gates (eligibility) -> rescue planning
+            -> use check (and an immediate rescue's weight check) -> execution
+
+    o Facts (StuckStatus): what is true about the player and their
+      surroundings at one moment. Cheap facts are read at once, expensive
+      ones (pathfinding, area scans) when a rule first reads them. Facts are
+      side-effect free (the region's own refusal message aside).
+    o Gates (StuckRules.Eligible): the refusals, in a fixed order; the first
+      that fails is the one the player hears. Staff bypass them, except
+      under [HelpStuckTest, which judges staff as players.
+    o Planning (StuckRules.PlanRequest): exactly one RescuePlan per request.
+      The rules decide; they never message, charge, schedule or move.
+    o Use check: decided on the outcome. Only an outcome that needs a use
+      (RescuePolicy.NeedsUse) is refused for having none left.
+    o Execution (HelpStuck): refuse, hint, open the town menu, move now, or
+      schedule a RescueTicket. Rescue kinds are policies (RescuePolicies):
+      delay, exemptions, use accounting, checks at expiry.
+
+    Immediate and delayed rescues
+    -----------------------------
+    Immediate (stranded at sea, stranded on a boat): carried out at
+    request, no ticket. With no expiry, the weight gate is applied at
+    request (stranded at sea is exempt from it; stranded on a boat is not).
+    Delayed (local unblock, dungeon unblock, house rescue: 10-60 s; the
+    town move: 10-120 s, at once and forced when staff send the menu): the
+    player is frozen until it comes due (hidden too, for a dungeon
+    evacuation).
+
+    Revalidation at expiry (StuckRules.ValidAtExpiry), on fresh facts:
+    the player must not have moved; the gates run again (uses included,
+    weight unless exempt or a dungeon evacuation); a house rescue needs them
+    to still be a friend inside the same house; and most rescues are
+    cancelled by a reachable exit. A forced staff move goes ahead anyway.
+
+    Uses
+    ----
+    Two per character per 24 hours. A chargeable rescue costs exactly one
+    use, charged once, when it is carried out (a move that actually
+    happened). Scheduling, a cancelled rescue, and a rescue that could not
+    move them cost nothing. Free, whatever the use count: refusals with
+    their reasons, exit hints, the quest-area message, the house rescue,
+    and every "you are not stranded" answer aboard a boat.
+
+    Rescue kinds
+    ------------
+    o HouseRescue: an owner, co-owner or friend of the house they are
+      inside is moved, with pets, to its ban location. Free, weight exempt;
+      a reachable exit does not cancel it. Anyone else in a house gets the
+      ordinary local unblock.
+    o StrandedAtSea: in the water without a boat. Moved ashore where
+      Strandedness puts stranded players; pets stay. Weight does not apply.
+    o StrandedOnABoat: aboard a boat with no way off it. A boat is special
+      because getting off it depends on who controls it: a player is not
+      stranded if they can leave by a plank or sail it, or an associated
+      captain aboard can, and another captain aboard is not help merely
+      because they could sail (they may be a stranger or a captor). Once
+      aboard, the boat rules are terminal: no local unblock or town menu
+      (that would be a boat-to-shore shuttle). Moved ashore as for
+      stranded at sea; pets stay; weight applies. The policy and its
+      reasoning: StuckRules.PlanStrandedOnABoat. The boat mechanics it asks:
+      BaseBoat (GetCommandAuthority, FindTillerObstruction, DecayDue) and
+      Plank (FindDisembarkLocation). The two sea states are deliberately
+      separate; neither is a special case of the other.
+    o LocalUnblock: a short move. First a designated way out (a house's
+      ban location, a township edge), which leaves the region by design.
+      Otherwise, only when physically blocked: a spot within 4 tiles that
+      they cannot walk to, in line of sight and in the same region. A move
+      never goes through a wall or into another region, and never straight
+      up or down (Z correction was removed: it was an unchecked vertical
+      teleport). Blocked only by movable items (a manufactured blockage of
+      crates, kegs, ...): no local unblock, and the scene is recorded for
+      staff (RecordCheater, with possible accomplices; a record, not a
+      sanction). The other rescues still apply.
+    o DungeonUnblock: the physically blocked local unblock, in a dungeon.
+      Weight not enforced (the move stays in the dungeon).
+    o ExitHints: a reachable exit (moongate, teleporter, healer for a
+      ghost) is pointed out instead of a move. Free.
+    o QuestArea: off Felucca with no way out: nothing Help Stuck can do.
+    o TownChoice / TownMove: hopeless: the town menu, then a delayed move.
+
+    Dungeons
+    --------
+    Dungeons all have exits. A player who can walk 8+ tiles in a dungeon is
+    not stuck (they are shown a reachable exit if there is one). A town move
+    out of a dungeon is an evacuation: their belongings are placed in a
+    locked, decaying recovery chest at the spot they left (key given to
+    them), so nothing is carried out and weight is not enforced
+    (HelpStuckRecovery).
+
+    Where Help Stuck is refused
+    ---------------------------
+    Disabled (feature bit), Test Center clones, prison and jail, a dungeon
+    they can walk around, criminal travel locked, recent combat (a fight
+    they started, within 30 s), carrying a sigil or the flag, overweight (101+
+    stones; see above for when), a loaded pack animal, and any region that
+    refuses it (Region.CanUseStuckMenu: Angel Island, duel safe zones, ...).
+
+    Code layout (HelpStuck/)
+    ------------------------
+        StuckMenu.cs            this overview; the town menu; the commands; DoHelpStuck
+        HelpStuckStatus.cs      StuckStatus: the facts
+        HelpStuckProbes.cs      the world questions behind the facts (no side effects)
+        HelpStuckRules.cs       policies, gates, the request and expiry decisions, StuckTrace
+        HelpStuckRescue.cs      HelpStuck: carrying out a plan; RescueTicket; use charging
+        HelpStuckRecovery.cs    the dungeon evacuation recovery chest
+    Boat and sea mechanics stay in their own code (BaseBoat, Plank,
+    Strandedness); Help Stuck asks them side-effect-free questions.
+
+    Diagnostics and logs
+    --------------------
+    [HelpStuckTest: a dry run. Judges the caller as a player, changes
+    nothing, and reports every rule checked, the facts it read, and what
+    the plan would do. [HelpStuckTest live: carries it out (a local unblock
+    moves at once; a test is never charged). [HelpStuckUses: a player's
+    uses and any pending rescue. [HelpStuckReset: clears uses (not on
+    production).
+    HelpStuckDecisions.log: one line per request and per expiry, with the
+    deciding rule. HelpStuck.log: the history, not the reasoning: each move
+    carried out (delayed, immediate, house rescue: "Moved stuck player to
+    ...", the record's location being where they were) and each refusal at
+    request ("Refused stuck player: ..." with what they were told).
+    Cheater.log / Watchlist.log: recorded suspicious circumstances
+    (RecordCheater).
+    Messages: exit hints overhead (the character noticing a way out);
+    everything else in the system channel.
+    ===============================================================
+*/
+
+
 using Server.Diagnostics;
-using Server.Engines.Alignment;
+using Server.Engines;
 using Server.Gumps;
 using Server.Items;
 using Server.Misc;
@@ -100,6 +300,7 @@ using Server.Mobiles;
 using Server.Multis;
 using Server.Network;
 using Server.Regions;
+using Server.Targeting;
 using System;
 using System.Collections.Generic;
 using static Server.Utility;
@@ -107,7 +308,7 @@ namespace Server.Menus.Questions
 {
     public class StuckMenu : Gump
     {
-        public const int MAXHELPSTUCKALIVEWEIGHT = 101;
+        public const int MAXHELPSTUCKALIVEWEIGHT = StuckRules.MaxWeight;
 
         private static readonly Point3D m_DefaultLocation = new Point3D(1420, 1698, 0); // WBB
 
@@ -171,7 +372,7 @@ namespace Server.Menus.Questions
         private Mobile m_Mobile, m_Sender;
         private bool m_MarkUse;
 
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         public StuckMenu(Mobile beholder, Mobile beheld, bool markUse)
             : base(150, 50)
@@ -233,35 +434,6 @@ namespace Server.Menus.Questions
             AddHtmlLocalized(90, 340, 320, 40, 1011012, false, false); // CANCEL
         }
 
-        public void AutoSelect()
-        {
-            if (m_Mobile != null)
-            {
-                Point3D[] locations = GetUnstuckLocations(m_Mobile);
-
-                int index;
-
-                if (locations == m_Locations)
-                {
-                    if (m_Mobile.Criminal || (m_Mobile.ShortTermMurders >= 5 && !Core.RedsInTown))
-                    {
-                        //don't send murderers or criminals to guarded town
-                        index = Utility.RandomList(7, 11, 12, 13, 14, 15, 16);
-                    }
-                    else
-                    {
-                        index = Utility.RandomList(0, 3, 7, 11, 12, 13, 14, 15, 16);
-                    }
-                }
-                else
-                {
-                    index = Utility.Random(locations.Length);
-                }
-
-                Teleport(index);
-            }
-        }
-
         public void BeginClose()
         {
             StopClose();
@@ -308,34 +480,37 @@ namespace Server.Menus.Questions
             {
                 m_Mobile.SendLocalizedMessage(1010589); // You will be teleported within the next two minutes.
 
-                new TeleportTimer(m_Mobile, loc, Map.Felucca, TimeSpan.FromSeconds(10.0 + (Utility.RandomDouble() * 110.0)), m_Sender.AccessLevel > AccessLevel.Player).Start();
+                HelpStuck.Schedule(m_Mobile, loc, Map.Felucca, TimeSpan.FromSeconds(10.0 + (Utility.RandomDouble() * 110.0)), m_Sender.AccessLevel > AccessLevel.Player, RescuePolicies.TownMove);
             }
             else
             {
-                new TeleportTimer(m_Mobile, loc, Map.Felucca, TimeSpan.Zero, m_Sender.AccessLevel > AccessLevel.Player).Start();
+                HelpStuck.Schedule(m_Mobile, loc, Map.Felucca, TimeSpan.Zero, m_Sender.AccessLevel > AccessLevel.Player, RescuePolicies.TownMove);
             }
         }
 
         public static void Initialize()
         {
-            CommandSystem.Register("HelpStuckTest", AccessLevel.Counselor, new CommandEventHandler(HelpStuckTest_OnCommand));
-            CommandSystem.Register("HelpStuckReset", AccessLevel.Player, new CommandEventHandler(HelpStuckReset_OnCommand));
+            // Core.Debug: anyone may use the Help Stuck test commands
+            CommandSystem.Register("HelpStuckTest", Core.Debug ? AccessLevel.Player : AccessLevel.Counselor, new CommandEventHandler(HelpStuckTest_OnCommand));
+            if (Core.Debug || TestCenterServer.Enabled == true || Core.ReleasePhase < ReleasePhase.Production)
+                CommandSystem.Register("HelpStuckReset", AccessLevel.Player, new CommandEventHandler(HelpStuckReset_OnCommand));
+            CommandSystem.Register("HelpStuckUses", Core.Debug ? AccessLevel.Player : AccessLevel.Counselor, new CommandEventHandler(HelpStuckUses_OnCommand));
         }
 
         #region Commands
 
+        [Usage("HelpStuckTest [live]")]
+        [Description("Judges you as a player would be judged by Help Stuck. Without 'live': reports the facts, rules and plan, changing nothing. With 'live': carries it out (a local unblock moves you at once and is not charged).")]
         private static void HelpStuckTest_OnCommand(CommandEventArgs e)
         {
-            m_Testing = true;
+            bool live = e.Arguments.Length > 0 && Insensitive.Equals(e.Arguments[0], "live");
 
-            DoHelpStuck(e.Mobile);
-
-            m_Testing = false;
+            HelpStuck.Request(e.Mobile, live ? StuckMode.LiveTest : StuckMode.DryRun);
         }
 
         private static void HelpStuckReset_OnCommand(CommandEventArgs e)
         {
-            if (Core.ReleasePhase == ReleasePhase.Production)
+            if (Core.ReleasePhase == ReleasePhase.Production && !Core.Debug)
             {
                 e.Mobile.SendMessage("You cannot reset help stuck on this shard.");
             }
@@ -345,6 +520,59 @@ namespace Server.Menus.Questions
                     ((PlayerMobile)e.Mobile).ClearStuckMenu();
 
                 e.Mobile.SendMessage("Help Stuck reset.");
+            }
+        }
+
+        [Usage("HelpStuckUses")]
+        [Description("Shows a player's Help Stuck uses: each recorded use, how many are left, and any pending rescue. Changes nothing.")]
+        private static void HelpStuckUses_OnCommand(CommandEventArgs e)
+        {
+            e.Mobile.SendMessage("Target the player whose Help Stuck uses you wish to see.");
+            e.Mobile.Target = new HelpStuckUsesTarget();
+        }
+
+        private class HelpStuckUsesTarget : Target
+        {
+            public HelpStuckUsesTarget()
+                : base(-1, false, TargetFlags.None)
+            {
+            }
+
+            protected override void OnTarget(Mobile from, object targeted)
+            {
+                if (targeted is not PlayerMobile pm)
+                {
+                    from.SendMessage("That is not a player.");
+                    return;
+                }
+
+                // read only: Mobile.StuckMenuUses is a copy
+                DateTime now = DateTime.UtcNow;
+                DateTime[]? uses = pm.StuckMenuUses;
+                int left = HelpStuck.UsesRemaining(pm);
+
+                from.SendMessage($"Help Stuck uses for {pm.Name} at {now:yyyy-MM-dd HH:mm:ss} UTC:");
+                from.SendMessage($"  {left} of {HelpStuck.UsesPerDay} left, can use now={pm.CanUseStuckMenu()}");
+
+                if (uses == null)
+                    from.SendMessage("  no uses recorded (never used, or reset)");
+                else
+                    for (int i = 0; i < uses.Length; i++)
+                    {
+                        if (uses[i] == DateTime.MinValue)
+                            from.SendMessage($"  slot {i}: never used");
+                        else if (now - uses[i] > HelpStuck.UseLifetime)
+                            from.SendMessage($"  slot {i}: used {uses[i]:yyyy-MM-dd HH:mm:ss} UTC, free again ({(now - uses[i]).TotalHours:F1} h ago)");
+                        else
+                            from.SendMessage($"  slot {i}: used {uses[i]:yyyy-MM-dd HH:mm:ss} UTC, ACTIVE, frees at {uses[i] + HelpStuck.UseLifetime:yyyy-MM-dd HH:mm:ss} UTC");
+                    }
+
+                RescueTicket? pending = HelpStuck.Pending(pm);
+                if (pending == null)
+                    from.SendMessage("  no rescue pending");
+                else
+                    from.SendMessage($"  pending: {pending.Policy.Kind} to {pending.TargetLocation} {pending.TargetMap}, due in {Math.Max(0, (pending.Due - now).TotalSeconds):F0} s, "
+                        + (pending.Policy.Chargeable ? "will charge 1 use if it happens" : "free"));
             }
         }
 
@@ -378,718 +606,12 @@ namespace Server.Menus.Questions
             }
         }
 
-        private static Dictionary<Mobile, TeleportTimer> m_Table = new Dictionary<Mobile, TeleportTimer>();
-
-        public static bool IsTeleporting(Mobile m)
-        {
-            return m_Table.ContainsKey(m);
-        }
-
-        public class TeleportTimer : Timer
-        {
-            private Mobile m_Mobile;
-            private Point3D m_TargetLocation;
-            private Map m_TargetMap;
-            private DateTime m_End;
-
-            private bool m_Force;
-
-            private Point3D m_OriginalLocation;
-            private Map m_OriginalMap;
-
-            public TeleportTimer(Mobile m, Point3D targetLoc, Map targetMap, TimeSpan delay, bool force)
-                : base(TimeSpan.Zero, TimeSpan.FromSeconds(1.0))
-            {
-                Priority = TimerPriority.TwoFiftyMS;
-
-                m_Mobile = m;
-                m_TargetLocation = targetLoc;
-                m_TargetMap = targetMap;
-                m_End = DateTime.UtcNow + delay;
-
-                m_Force = force;
-
-                m_OriginalLocation = m.Location;
-                m_OriginalMap = m.Map;
-
-                TeleportTimer concurrent;
-
-                if (m_Table.TryGetValue(m, out concurrent))
-                    concurrent.Stop();
-
-                m_Table[m] = this;
-            }
-
-            protected override void OnTick()
-            {
-                if (!Running)
-                    return; // we got a queued tick after we stopped the timer .. just ignore it
-
-                if (DateTime.UtcNow < m_End)
-                {
-                    m_Mobile.Frozen = true;
-                }
-                else
-                {
-                    m_Mobile.Frozen = false;
-
-                    Stop();
-                    Flush();
-
-                    m_Table.Remove(m_Mobile);
-
-                    try
-                    {
-                        bool valid = (m_Mobile.Location == m_OriginalLocation && m_Mobile.Map == m_OriginalMap);
-
-                        if (valid && !AllowUnstuck(m_Mobile))
-                            valid = false;
-
-                        if (valid && !IsHopeless(m_Mobile))
-                            valid = false;
-
-                        if (!m_Force && !valid)
-                        {
-                            m_Mobile.SendMessage("You do not appear to be in a valid stuck location. Use help-stuck again for more information.");
-                        }
-                        else
-                        {
-                            LogHelper log = new LogHelper("HelpStuck.log");
-                            log.Log(LogType.Mobile, m_Mobile, string.Format("Moved stuck player to {0} ({1}) (T2A={2})", m_TargetLocation, m_TargetMap, Utility.World.LostLandsWrap.Contains(m_TargetLocation)));
-                            log.Finish();
-
-                            if (m_Mobile.Alive && m_Mobile.Region.IsDungeonRules)
-                                m_Mobile.Kill();
-
-                            BaseCreature.TeleportPets(m_Mobile, m_TargetLocation, m_TargetMap);
-                            m_Mobile.MoveToWorld(m_TargetLocation, m_TargetMap);
-                            m_Mobile.UsedStuckMenu();
-                        }
-                    }
-                    catch (Exception exc)
-                    {
-                        LogHelper.LogException(exc);
-                        Console.WriteLine("Exception caught in TeleportTimer.OnTick: " + exc.Message);
-                        Console.WriteLine(exc.StackTrace.ToString());
-                    }
-                }
-            }
-        }
-#if false
-        public class RectifyZTimer : Timer
-        {
-            private Mobile m_Mobile;
-            private Point3D m_TargetLocation;
-            private Map m_TargetMap;
-            private DateTime m_End;
-
-            private bool m_Force;
-
-            private Point3D m_OriginalLocation;
-            private Map m_OriginalMap;
-
-            public RectifyZTimer(Mobile m, Point3D targetLoc, Map targetMap, TimeSpan delay, bool force)
-                : base(TimeSpan.Zero, TimeSpan.FromSeconds(1.0))
-            {
-                Priority = TimerPriority.TwoFiftyMS;
-
-                m_Mobile = m;
-                m_TargetLocation = targetLoc;
-                m_TargetMap = targetMap;
-                m_End = DateTime.UtcNow + delay;
-
-                m_Force = force;
-
-                m_OriginalLocation = m.Location;
-                m_OriginalMap = m.Map;
-
-                TeleportTimer concurrent;
-
-                if (m_Table.TryGetValue(m, out concurrent))
-                    concurrent.Stop();
-
-                m_Table[m] = this;
-            }
-
-            protected override void OnTick()
-            {
-                if (!Running)
-                    return; // we got a queued tick after we stopped the timer .. just ignore it
-
-                if (DateTime.UtcNow < m_End)
-                {
-                    m_Mobile.Frozen = true;
-                }
-                else
-                {
-                    m_Mobile.Frozen = false;
-
-                    Stop();
-                    Flush();
-
-                    m_Table.Remove(m_Mobile);
-
-                    try
-                    {
-                        bool valid = (m_Mobile.Location == m_OriginalLocation && m_Mobile.Map == m_OriginalMap);
-
-                        if (valid && !AllowUnstuck(m_Mobile))
-                            valid = false;
-
-                        if (valid && !IsHopeless(m_Mobile))
-                            valid = false;
-
-                        if (!m_Force && !valid)
-                        {
-                            m_Mobile.SendMessage("You do not appear to be in a valid stuck location. Use help-stuck again for more information.");
-                        }
-                        else
-                        {
-                            LogHelper log = new LogHelper("HelpStuck.log");
-                            log.Log(LogType.Mobile, m_Mobile, string.Format("Moved stuck player to {0} ({1}) (T2A={2})", m_TargetLocation, m_TargetMap, Utility.World.LostLandsWrap.Contains(m_TargetLocation)));
-                            log.Finish();
-
-                            if (m_Mobile.Alive && m_Mobile.Region.IsDungeonRules)
-                                m_Mobile.Kill();
-
-                            BaseCreature.TeleportPets(m_Mobile, m_TargetLocation, m_TargetMap);
-                            m_Mobile.MoveToWorld(m_TargetLocation, m_TargetMap);
-                            m_Mobile.UsedStuckMenu();
-                        }
-                    }
-                    catch (Exception exc)
-                    {
-                        LogHelper.LogException(exc);
-                        Console.WriteLine("Exception caught in TeleportTimer.OnTick: " + exc.Message);
-                        Console.WriteLine(exc.StackTrace.ToString());
-                    }
-                }
-            }
-        }
-#endif
-        private static bool m_Testing;
-
+        // HelpGump: Help -> Stuck. See HelpStuck (HelpStuck/HelpStuckRescue.cs).
         public static bool DoHelpStuck(Mobile from)
         {
-            Utility.Monitor.WriteLine(string.Format("Player {0} is unstucking...", from), ConsoleColor.Magenta);
-
-            if (Utility.BadZ(from) && !Utility.CheatingZ(from))
-            {
-                TeleportTimer tele = new TeleportTimer(from, new Point3D(from.X, from.Y, Utility.GoodZ(from)), from.Map, TimeSpan.FromSeconds(Utility.RandomMinMax(10, 60)), force: true);
-                tele.Start();
-                from.SendMessage("You will be moved sometime in the next minute.");
-                return true;
-            }
-
-            if (!AllowUnstuck(from))
-            {
-                Utility.Monitor.WriteLine("We do not allow them to unstuck.", ConsoleColor.Magenta);
-                return true;
-            }
-
-            if (TryUnblock(from, false))
-            {
-                Utility.Monitor.WriteLine("We unblocked them.", ConsoleColor.Magenta);
-
-                if (!m_Testing)
-                    from.UsedStuckMenu();
-
-                return true;
-            }
-
-            List<object> exitOptions = new List<object>();
-
-            GetExitOptions(from, exitOptions);
-
-            if (exitOptions.Count != 0)
-            {
-                Utility.Monitor.WriteLine("Not hopeless, describing options.", ConsoleColor.Magenta);
-
-                foreach (object o in exitOptions)
-                    DescribeExitOption(from, o);
-
-                // 5/19/23, Yoar: Let's not use up a stuck attempt here
-                return true;
-            }
-
-            // we're probably in a quest zone
-            if (from.Map != Map.Felucca)
-            {
-                Utility.Monitor.WriteLine("Probably a quest area. Too bad.", ConsoleColor.Magenta);
-                from.SendMessage("You appear to be in a quest area. Sorry, there is no help stuck available here.");
-                return true;
-            }
-
-            Utility.Monitor.WriteLine("Giving up, getting them some help.", ConsoleColor.Magenta);
-
-            int staffOnline = 0;
-
-            // 4/4/23, Adam: just give them the menu, currently I don't trust we will have enough staff to field requests
-#if false
-            foreach (NetState ns in NetState.Instances)
-            {
-                Mobile m = ns.Mobile;
-
-                if (m != null && m.AccessLevel >= AccessLevel.Counselor && m.AutoPageNotify)
-                    staffonline++;
-            }
-#endif
-
-            if (staffOnline == 0)
-            {
-                StuckMenu menu = new StuckMenu(from, from, true);
-                menu.BeginClose();
-                from.SendGump(menu);
-                return true;
-            }
-
-            return false;
+            return HelpStuck.Request(from, StuckMode.Normal);
         }
 
-        public static bool AllowUnstuck(Mobile from)
-        {
-            if (!m_Testing && from.AccessLevel > AccessLevel.Player)
-                return true;
-
-            if (!from.CanUseStuckMenu())
-                return false;
-
-            if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.HelpStuckDisabled))
-            {
-                from.SendMessage("Sorry, help stuck is unavailable at this time. Please page for staff assistance.");
-                return false;
-            }
-
-            if (from.Region != null && (from.Region.IsAngelIslandRules || from.Region.IsJailRules))
-            {
-                if (from.Region.IsAngelIslandRules)
-                    from.SendMessage("Nice try Louie.");
-                else
-                    from.SendLocalizedMessage(1041530, "", 0x23); // You'll need a better jailbreak plan then that!
-                return false;
-            }
-
-            if (from.Region != null && from.Region.IsDungeonRules && CanMoveFreely(from))
-            {
-                from.SendMessage("But, you're not stuck.");
-                return false;
-            }
-
-            if (from.Region != null && from.Region.IsAngelIslandRules)
-            {
-                from.SendLocalizedMessage(1041530, "", 0x23); // You'll need a better jailbreak plan then that!
-                return false;
-            }
-
-            // 5/19/23, Yoar: Disabled this. Towns can have legit stuck locations.
-#if false
-            GuardedRegion guarded = from.Region.GetRegion(typeof(GuardedRegion)) as GuardedRegion;
-
-            if (guarded != null && guarded.IsGuarded)
-            {
-                from.SendMessage("But you're in town!");
-                return false;
-            }
-#endif
-
-            if (from.Criminal)
-            {
-                from.SendLocalizedMessage(1005270, "", 0x23); // Thou'rt a criminal and cannot escape so easily...
-                return false;
-            }
-
-            if (CheckCombat(from))
-            {
-                from.SendLocalizedMessage(1005271, "", 0x23); // Wouldst thou flee during the heat of battle??
-                return false;
-            }
-
-            if (Factions.Sigil.ExistsOn(from))
-            {
-                from.SendLocalizedMessage(1061632); // You can't do that while carrying the sigil.
-                return false;
-            }
-
-            if (Engines.Alignment.TheFlag.ExistsOn(from))
-            {
-                from.SendMessage("You can't do that while carrying the flag.");
-                return false;
-            }
-
-            if (from.TotalWeight >= MAXHELPSTUCKALIVEWEIGHT && !StrandedAtSea(from))
-            {
-                from.SendMessage("You are too encumbered to be moved, drop some of your stuff and try again.");
-                return false;
-            }
-
-            if (HasPackie(from))
-            {
-                from.SendMessage("You cannot be transported because you have loaded pack animal!");
-                return false;
-            }
-
-            // TODO: Handle this as an exit option?
-            //  ya, we can issue the tillerman a command or two
-            ShipKeyLocation shipKeyLocation = FindShipKey(from);
-
-            if (shipKeyLocation != ShipKeyLocation.None)
-            {
-                switch (shipKeyLocation)
-                {
-                    case ShipKeyLocation.Hand: from.SendMessage("But the key is in your hands!"); break;
-                    case ShipKeyLocation.Pack: from.SendMessage("But the key is in your backpack!"); break;
-                    case ShipKeyLocation.Hold: from.SendMessage("But the key is in the hold!"); break;
-                    case ShipKeyLocation.Deck: from.SendMessage("But the key is right there!"); break;
-                }
-
-                return false;
-            }
-
-            if (from.Region != null && !from.Region.CanUseStuckMenu(from))
-                return false;
-
-            return true;
-        }
-        private static bool StrandedAtSea(Mobile m)
-        {
-            if (BaseBoat.FindBoatAt(m, m.Map) == null && Utility.CanSpawnWaterMobile(m.Map, m.Location, Utility.CanFitFlags.none))
-                return true;
-            return false;
-        }
-        private static bool CanMoveFreely(Mobile m)
-        {   // all dungeons have exit teles.
-            if (m != null && m.Region != null && m.Region.IsDungeonRules)
-                for (int ix = 0; ix < 10; ix++)
-                {   // can they walk 8-10 tiles? If so, they are looking for a free ride
-                    Point3D newLocation = Spawner.GetSpawnPosition(m.Map, m.Location, 10, SpawnFlags.SpawnFar, m);
-                    if (newLocation != m.Location && m.GetDistanceToSqrt(newLocation) >= 8)
-                        if (Spawner.ClearPathLand(m.Location, newLocation, map: m.Map, true))
-                            return true;
-                }
-            return false;
-        }
-
-        private static bool CheckCombat(Mobile m)
-        {
-            for (int i = 0; i < m.Aggressed.Count; i++)
-            {
-                AggressorInfo info = m.Aggressed[i];
-
-                if (DateTime.UtcNow - info.LastCombatTime < TimeSpan.FromSeconds(30.0))
-                    return true;
-            }
-
-            return false;
-        }
-
-        private static bool HasPackie(Mobile m)
-        {
-            foreach (Mobile check in m.GetMobilesInRange(3))
-            {
-                BaseCreature bc = check as BaseCreature;
-
-                if (bc == null)
-                    continue;
-
-                if (!bc.Controlled || bc.ControlMaster != m)
-                    continue;
-
-                if (bc.ControlOrder != OrderType.Come && bc.ControlOrder != OrderType.Follow && bc.ControlOrder != OrderType.Guard)
-                    continue;
-
-                if (!IsPackie(bc))
-                    continue;
-
-                if (bc.Backpack == null || bc.Backpack.Items.Count == 0)
-                    continue;
-
-                return true;
-            }
-
-            return false;
-        }
-
-        private static bool IsPackie(Mobile m)
-        {
-            return (m is PackHorse || m is PackLlama || m is Beetle || m is HordeMinion);
-        }
-
-        private enum ShipKeyLocation : byte
-        {
-            None,
-            Hand,
-            Pack,
-            Hold,
-            Deck,
-        }
-
-        private static ShipKeyLocation FindShipKey(Mobile from)
-        {
-            if (!from.Alive)
-                return ShipKeyLocation.None;
-
-            BaseBoat boat = BaseBoat.FindBoatAt(from);
-
-            if (boat == null)
-                return ShipKeyLocation.None;
-
-            if (from.Holding is Key)
-            {
-                Key heldKey = (Key)from.Holding;
-
-                if (heldKey.Link == boat)
-                    return ShipKeyLocation.Hand;
-            }
-
-            if (from.Backpack != null)
-            {
-                foreach (Key packKey in from.Backpack.FindItemsByType<Key>())
-                {
-                    if (packKey.Link == boat)
-                        return ShipKeyLocation.Pack;
-                }
-            }
-
-            if (boat.Hold != null)
-            {
-                foreach (Key holdKey in boat.Hold.FindItemsByType<Key>())
-                {
-                    if (holdKey.Link == boat)
-                        return ShipKeyLocation.Hold;
-                }
-            }
-
-            if (boat.Map != null)
-            {
-                MultiComponentList mcl = boat.Components;
-
-                foreach (Item item in boat.Map.GetItemsInBounds(new Rectangle2D(boat.X + mcl.Min.X, boat.Y + mcl.Min.Y, mcl.Width, mcl.Height)))
-                {
-                    if (boat.Contains(item) && item is Key)
-                    {
-                        Key deckKey = (Key)item;
-
-                        if (deckKey.Link == boat)
-                            return ShipKeyLocation.Deck;
-                    }
-                }
-            }
-
-            return ShipKeyLocation.None;
-        }
-
-        public static bool TryUnblock(Mobile from, bool force)
-        {
-            if (StrandedAtSea(from))
-            {
-                Strandedness.ProcessStranded(from, false);
-                return true;
-            }
-            Point3D loc = FindUnblockLocation(from);
-
-            if (loc != Point3D.Zero)
-            {
-                if (m_Testing)
-                {
-                    BaseCreature.TeleportPets(from, loc, from.Map);
-                    from.MoveToWorld(loc, from.Map);
-                    return true;
-                }
-
-                TeleportTimer tele = new TeleportTimer(from, loc, from.Map, TimeSpan.FromSeconds(Utility.RandomMinMax(10, 60)), force);
-                tele.Start();
-                from.SendMessage("You will be moved sometime in the next minute.");
-                return true;
-            }
-
-            return false;
-        }
-
-        public const int UnblockRange = 4;
-
-        private static Point3D FindUnblockLocation(Mobile from)
-        {
-            Map map = from.Map;
-
-            if (map == null)
-                return Point3D.Zero; // sanity
-
-            HouseRegion hr = from.Region.GetRegion(typeof(HouseRegion)) as HouseRegion;
-
-            if (hr != null && hr.House != null && hr.House.IsInside(from))
-                return hr.GoLocation;
-
-            TownshipRegion tsr = from.Region.GetRegion(typeof(TownshipRegion)) as TownshipRegion;
-
-            if (tsr != null)
-            {
-                List<Point3D> edgeLocations = new List<Point3D>();
-
-                if (tsr.Coords.Count != 0)
-                    Utility.CalcRegionBounds(tsr, ref edgeLocations);
-
-                Utility.Shuffle(edgeLocations);
-
-                for (int i = 0; i < edgeLocations.Count; i++)
-                {
-                    Point3D edgeLocation = edgeLocations[i];
-
-                    if (tsr.Map.CanSpawnLandMobile(edgeLocation))
-                        return edgeLocation;
-                }
-            }
-
-            if (from.IsBlocked(UnblockRange))
-            {
-                for (int i = 0; i < 8; i++)
-                {
-                    Point3D edgeLoc = GetPointInDirection(from.Location, (Direction)i, UnblockRange);
-
-                    bool isValid = Utility.CanSpawnLandMobile(map, edgeLoc);
-
-                    if (!isValid)
-                    {
-                        edgeLoc.Z = map.GetAverageZ(edgeLoc.X, edgeLoc.Y);
-
-                        isValid = Utility.CanSpawnLandMobile(map, edgeLoc);
-                    }
-
-                    // Yoar: make sure we *cannot* path there, else there would be no point in TPing us there
-                    if (isValid && !CanGetThere(from.Location, edgeLoc, from))
-                        return edgeLoc;
-                }
-
-                Point3D spawnLoc = Spawner.GetSpawnPosition(map, from.Location, UnblockRange, SpawnFlags.None, from);
-
-                // Yoar: make sure we *cannot* path there, else there would be no point in TPing us there
-                if (spawnLoc != Point3D.Zero && spawnLoc != from.Location && !CanGetThere(from.Location, spawnLoc, from))
-                    return spawnLoc;
-            }
-
-            return Point3D.Zero;
-        }
-
-        private static Point3D GetPointInDirection(Point3D loc, Direction dir, int range)
-        {
-            int dx = 0;
-            int dy = 0;
-            Movement.Movement.Offset(dir, ref dx, ref dy);
-
-            return new Point3D(loc.X + dx * range, loc.Y + dy * range, loc.Z);
-        }
-
-        public static bool IsHopeless(Mobile from)
-        {
-            List<object> exitOptions = new List<object>();
-
-            GetExitOptions(from, exitOptions);
-
-            return (exitOptions.Count == 0);
-        }
-
-        public static void GetExitOptions(Mobile from, List<object> exitOptions)
-        {
-            Map map = from.Map;
-
-            if (map == null || map == Map.Internal)
-                return;
-
-            Rectangle2D rect = new Rectangle2D(from.X - 128 / 2, from.Y - 128 / 2, 128, 128);
-
-            foreach (object o in from.Map.GetObjectsInBounds(rect))
-            {
-                if (!from.Alive && !from.Red && o is BaseHealer healer)
-                {
-                    if (CanGetThere(from.Location, healer.Location, from))
-                        exitOptions.Add(healer);
-                }
-                else if (!from.Alive && o is EvilWanderingHealer evilHealer)
-                {
-                    if (CanGetThere(from.Location, evilHealer.Location, from))
-                        exitOptions.Add(evilHealer);
-                }
-                else if (o is PublicMoongate public_moongate)
-                {
-                    if (CanGetThere(from.Location, public_moongate.Location, from) && public_moongate.Visible)
-                        exitOptions.Add(public_moongate);
-                }
-                else if (o is Moongate moongate)
-                {
-                    if (CanGetThere(from.Location, moongate.Location, from) && moongate.Visible && !Utility.IsDungeon(moongate.PointDest))
-                        exitOptions.Add(moongate);
-                }
-                else if (o is Sungate sungate && sungate.Running && !Utility.IsDungeon(sungate.PointDest))
-                {
-                    if (CanGetThere(from.Location, sungate.Location, from))
-                        exitOptions.Add(sungate);
-                }
-                else if (o is Teleporter tele && !(o is HouseTeleporter) && tele.Running && !Utility.IsDungeon(tele.PointDest))
-                {
-                    if (CanGetThere(from.Location, tele.Location, from))
-                        exitOptions.Add(tele);
-                }
-            }
-        }
-
-        public static void DescribeExitOption(Mobile from, object o)
-        {
-            IPoint3D p = o as IPoint3D;
-
-            if (p == null)
-                return; // sanity
-
-            string name;
-
-            if (o is BaseHealer)
-                name = "a healer";
-            else if (o is Moongate || o is Sungate)
-                name = "a moongate";
-            else if (o is Teleporter)
-                name = "a teleporter";
-            else
-                name = "an exit";
-
-            Direction dir = from.GetDirectionTo(p);
-
-            string dirStr = dir.ToString().ToLower();
-
-            switch (dir)
-            {
-                case Direction.Right: dirStr = "north-east"; break;
-                case Direction.Down: dirStr = "south-east"; break;
-                case Direction.Left: dirStr = "south-west"; break;
-                case Direction.Up: dirStr = "north-west"; break;
-            }
-
-            double distance = from.GetDistanceToSqrt(p);
-
-            string format;
-
-            if (distance > 200)
-                format = "There's {0} a long journey {1} from here.";
-            else if (distance > 150)
-                format = "There's {0} quite a long {1} distance from here.";
-            else if (distance > 100)
-                format = "There's {0} a long way {1} from here.";
-            else if (distance > 75)
-                format = "There's {0} a fair distance {1} from there.";
-            else if (distance > 50)
-                format = "There's {0} quite a ways {1} from here.";
-            else if (distance > 40)
-                format = "There's {0} just a short way {1} from here.";
-            else if (distance > 20)
-                format = "There's {0} but a few steps {1} from here.";
-            else
-                format = "There's {0} is nearby!";
-
-            from.LocalOverheadMessage(MessageType.Regular, 0x3B2, false, string.Format(format, name, dirStr));
-        }
-
-        private static bool CanGetThere(Point3D here, Point3D there, Mobile from)
-        {
-            Movement.MovementObject obj_start = new Movement.MovementObject(here, there, from.Map);
-
-            return MovementPath.PathTo(obj_start);
-        }
+        public const int UnblockRange = HelpStuckProbes.UnblockRange;
     }
 }

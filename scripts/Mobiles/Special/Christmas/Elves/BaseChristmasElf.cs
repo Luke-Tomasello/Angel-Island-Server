@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -86,9 +86,9 @@ namespace Server.Mobiles
             }
         }
 
-        public override void OnDamage(int amount, Mobile from, bool willKill, object source_weapon)
+        public override void OnDamage(int amount, Mobile from, bool willKill, DamageContext context)
         {
-            base.OnDamage(amount, from, willKill, source_weapon);
+            base.OnDamage(amount, from, willKill, context);
 
             if (IsEasilyScared)
                 CheckRout(from);
@@ -98,7 +98,7 @@ namespace Server.Mobiles
 
         protected bool CheckThrowSnowball()
         {
-            Item snowPile = FindSnowPile();
+            Item? snowPile = FindSnowPile();
 
             if (snowPile == null)
                 return false;
@@ -124,7 +124,7 @@ namespace Server.Mobiles
             return false;
         }
 
-        private Item FindSnowPile()
+        private Item? FindSnowPile()
         {
             if (Backpack == null)
                 return null;
@@ -208,7 +208,7 @@ namespace Server.Mobiles
 
                 foreach (Mobile m in GetMobilesInRange(RangePerception))
                 {
-                    BaseChristmasElf elf = m as BaseChristmasElf;
+                    BaseChristmasElf? elf = m as BaseChristmasElf;
 
                     if (elf != null && elf.IsEasilyScared && GetDistanceToSqrt(m) <= RangePerception && elf.AIObject != null && elf.AIObject.Action != ActionType.Flee)
                     {

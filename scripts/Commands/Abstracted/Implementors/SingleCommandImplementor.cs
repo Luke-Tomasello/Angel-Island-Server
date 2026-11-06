@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,6 +34,7 @@
  */
 
 
+using Server.Engines;
 using Server.Targeting;
 using System.Collections.Generic;
 
@@ -60,7 +61,7 @@ namespace Server.Commands
 
         public void Redirect(CommandEventArgs e)
         {
-            BaseCommand command = (BaseCommand)Commands[e.Command];
+            BaseCommand? command = (BaseCommand?)Commands[e.Command];
 
             if (command == null)
                 e.Mobile.SendMessage("That is either an invalid command name or one that does not support this modifier.");
@@ -112,7 +113,7 @@ namespace Server.Commands
 
             args = AllowParentheticals(args);
 
-            if (command is BountySystem.BountyCommand)
+            if (command is BountyCommand)
             {
                 //from.SendMessage("Use the bountycommand, Luke!");
             }

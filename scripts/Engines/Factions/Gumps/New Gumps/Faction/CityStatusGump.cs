@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -27,7 +27,6 @@
 
 using Server.Gumps;
 using Server.Network;
-using System;
 using System.Collections.Generic;
 
 namespace Server.Factions.NewGumps.FactionMenu
@@ -57,7 +56,7 @@ namespace Server.Factions.NewGumps.FactionMenu
             {
             }
 
-            public int Compare(Town x, Town y)
+            public int Compare(Town? x, Town? y)
             {
                 if (x.Owner == null && y.Owner == null)
                     return 0;
@@ -83,7 +82,7 @@ namespace Server.Factions.NewGumps.FactionMenu
             {
             }
 
-            public int Compare(Town x, Town y)
+            public int Compare(Town? x, Town? y)
             {
                 return Insensitive.Compare(x.Definition.FriendlyName, y.Definition.FriendlyName);
             }
@@ -97,7 +96,7 @@ namespace Server.Factions.NewGumps.FactionMenu
             {
             }
 
-            public int Compare(Town x, Town y)
+            public int Compare(Town? x, Town? y)
             {
                 if (x.Owner == null && y.Owner == null)
                     return 0;
@@ -118,7 +117,7 @@ namespace Server.Factions.NewGumps.FactionMenu
             {
             }
 
-            public int Compare(Town x, Town y)
+            public int Compare(Town? x, Town? y)
             {
                 return x.Silver.CompareTo(y.Silver);
             }
@@ -132,7 +131,7 @@ namespace Server.Factions.NewGumps.FactionMenu
             {
             }
 
-            public int Compare(Town x, Town y)
+            public int Compare(Town? x, Town? y)
             {
                 return x.Tax.CompareTo(y.Tax);
             }

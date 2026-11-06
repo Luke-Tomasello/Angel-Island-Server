@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -50,7 +50,7 @@ namespace Server.Misc
 
     public class InhumanSpeech
     {
-        private static InhumanSpeech m_RatmanSpeech;
+        private static InhumanSpeech? m_RatmanSpeech;
 
         public static InhumanSpeech Ratman
         {
@@ -126,7 +126,7 @@ namespace Server.Misc
             }
         }
 
-        private static InhumanSpeech m_OrcSpeech;
+        private static InhumanSpeech? m_OrcSpeech;
 
         public static InhumanSpeech Orc
         {
@@ -213,7 +213,7 @@ namespace Server.Misc
             }
         }
 
-        private static InhumanSpeech m_LizardmanSpeech;
+        private static InhumanSpeech? m_LizardmanSpeech;
 
         public static InhumanSpeech Lizardman
         {
@@ -277,7 +277,7 @@ namespace Server.Misc
             }
         }
 
-        private static InhumanSpeech m_WispSpeech;
+        private static InhumanSpeech? m_WispSpeech;
 
         public static InhumanSpeech Wisp
         {
@@ -341,7 +341,7 @@ namespace Server.Misc
         private string[] m_Keywords;
         private string[] m_Responses;
 
-        private Hashtable m_KeywordHash;
+        private Hashtable? m_KeywordHash;
 
         private int m_Hue;
         private int m_Sound;
@@ -355,7 +355,7 @@ namespace Server.Misc
         }
         class myComparer : IEqualityComparer
         {
-            public new bool Equals(object x, object y)
+            public new bool Equals(object? x, object? y)
             {
                 return x.Equals(y);
             }
@@ -380,7 +380,7 @@ namespace Server.Misc
                 myComparer = new CaseInsensitiveComparer(myCulture);
             }
 
-            public new bool Equals(object x, object y)
+            public new bool Equals(object? x, object? y)
             {
                 return myComparer.Compare(x, y) == 0;
             }
@@ -537,7 +537,7 @@ namespace Server.Misc
 
             for (int i = 0; i < split.Length; ++i)
             {
-                string keyword = (string)m_KeywordHash[split[i]];
+                string? keyword = (string?)m_KeywordHash[split[i]];
 
                 if (keyword != null)
                     keywordsFound.Add(keyword);
@@ -545,7 +545,7 @@ namespace Server.Misc
 
             if (keywordsFound.Count > 0)
             {
-                string responseWord;
+                string? responseWord;
 
                 if (Utility.RandomBool())
                     responseWord = GetRandomResponseWord(keywordsFound);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -88,9 +88,12 @@ namespace Server.Items
             if (m.Location == oldLocation)
                 return;
 
-            // leave hidden staff alone.
-            //  Also, don't process wild creatures.
-            if ((m.AccessLevel > AccessLevel.Player && m.Hidden) || !(m is BaseCreature bc && bc.Controlled))
+            // Ignore hidden staff entirely
+            if (m.AccessLevel > AccessLevel.Player && m.Hidden)
+                return;
+
+            // Ignore *wild* creatures, but still process controlled ones
+            if (m is BaseCreature bc && !bc.Controlled)
                 return;
 
             // 9/5/2023, Adam: Add LOS for things like mushrooms that would otherwise pop on the other side of a wall

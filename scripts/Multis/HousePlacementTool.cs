@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,7 +66,7 @@ namespace Server.Items
         {
             if (IsChildOf(from.Backpack))
             {
-                if (Core.UOTC_CFG || from.AccessLevel > AccessLevel.GameMaster)
+                if (Core.GMNTC_CFG || from.AccessLevel > AccessLevel.GameMaster)
                     from.SendGump(new HousePlacementCategoryGump(from));
                 else
                     from.SendMessage("This tool cannot be used on the Angel Island Live server.");
@@ -121,7 +121,7 @@ namespace Server.Items
             {
                 height += 20;
 
-                if (Core.UOTC_CFG && from.AccessLevel >= AccessLevel.GameMaster)
+                if (Core.GMNTC_CFG && from.AccessLevel >= AccessLevel.GameMaster)
                     height += 20;
             }
 
@@ -148,7 +148,7 @@ namespace Server.Items
                 AddButton(10, y += 20, 4005, 4007, 4, GumpButtonType.Reply, 0);
                 AddHtml(45, y, 200, 20, "<BASEFONT COLOR=#FFFFFF>Custom Houses</BASEFONT>", false, false);
 
-                if (Core.UOTC_CFG && from.AccessLevel >= AccessLevel.GameMaster)
+                if (Core.GMNTC_CFG && from.AccessLevel >= AccessLevel.GameMaster)
                 {
                     AddButton(10, y += 20, 4005, 4007, 5, GumpButtonType.Reply, 0);
                     AddHtml(45, y, 200, 20, "<BASEFONT COLOR=#FFFFFF>Custom Houses (Under Review)</BASEFONT>", false, false);
@@ -198,7 +198,7 @@ namespace Server.Items
                     }
                 case 5: // Custom Houses (Under Review)
                     {
-                        if (Core.RuleSets.StaticHousingRules() && Core.UOTC_CFG && m_From.AccessLevel >= AccessLevel.GameMaster)
+                        if (Core.RuleSets.StaticHousingRules() && Core.GMNTC_CFG && m_From.AccessLevel >= AccessLevel.GameMaster)
                             m_From.SendGump(new HousePlacementListGump(m_From, StaticHouseHelper.PlacementEntriesTest));
                         break;
                     }
@@ -294,7 +294,7 @@ namespace Server.Items
 
             if (index >= 0 && index < m_Entries.Length)
             {
-                if (m_From.AccessLevel < AccessLevel.GameMaster && BaseHouse.HasAccountHouse(m_From))
+                if (m_From.AccessLevel < AccessLevel.GameMaster && BaseHouse.HasAccountHouseDirect(m_From))
                     m_From.SendLocalizedMessage(501271); // You already own a house, you may not place another!
                 else
                     m_From.Target = new NewHousePlacementTarget(m_Entries, m_Entries[index]);
@@ -327,7 +327,7 @@ namespace Server.Items
             if (!from.CheckAlive())
                 return;
 
-            IPoint3D ip = o as IPoint3D;
+            IPoint3D? ip = o as IPoint3D;
 
             if (ip != null)
             {
@@ -343,8 +343,6 @@ namespace Server.Items
 
                 if (from.AccessLevel >= AccessLevel.GameMaster || (reg.AllowHousing(p) && (!isFoundation || (StaticHouseHelper.HouseFoundationsEnabled && (Core.RuleSets.AOSRules() || reg.IsGreenAcresRules)))))
                     m_Placed = m_Entry.OnPlacement(from, p);
-                else if (reg is TreasureRegion)
-                    from.SendLocalizedMessage(1043287); // The house could not be created here.  Either something is blocking the house, or the house would not be on valid terrain.
                 else
                     from.SendLocalizedMessage(501265); // Housing can not be created in this area.
             }
@@ -369,7 +367,7 @@ namespace Server.Items
         void AddToGump(Gump g, int y);
         bool OnPlacement(Mobile from, Point3D p);
         PreviewHouse GetPreview();
-        BaseHouse ConstructHouse(Mobile from);
+        BaseHouse? ConstructHouse(Mobile from);
     }
 
     public class HousePlacementEntry : IHousePlacementEntry
@@ -423,7 +421,7 @@ namespace Server.Items
             return new PreviewHouse(m_MultiID);
         }
 
-        public BaseHouse ConstructHouse(Mobile from)
+        public BaseHouse? ConstructHouse(Mobile from)
         {
             // Adam: hack this value for custom houses until we know where it should come from
             int LockBoxes = 3;
@@ -481,20 +479,19 @@ namespace Server.Items
             prevHouse.Delete();
 
             ArrayList toMove;
-            //Point3D center = new Point3D( p.X - m_Offset.X, p.Y - m_Offset.Y, p.Z - m_Offset.Z );
             HousePlacementResult res = HousePlacement.Check(from, e.MultiID, center, out toMove);
 
             switch (res)
             {
                 case HousePlacementResult.Valid:
                     {
-                        if (from.AccessLevel < AccessLevel.GameMaster && BaseHouse.HasAccountHouse(from))
+                        if (from.AccessLevel < AccessLevel.GameMaster && BaseHouse.HasAccountHouseDirect(from))
                         {
                             from.SendLocalizedMessage(501271); // You already own a house, you may not place another!
                         }
                         else
                         {
-                            BaseHouse house = e.ConstructHouse(from);
+                            BaseHouse? house = e.ConstructHouse(from);
 
                             if (house == null)
                                 return;
@@ -518,7 +515,7 @@ namespace Server.Items
 
                             for (int i = 0; i < toMove.Count; ++i)
                             {
-                                object o = toMove[i];
+                                object? o = toMove[i];
 
                                 if (o is Tent)
                                     (o as Tent).Annex(house);
@@ -561,7 +558,7 @@ namespace Server.Items
             {
                 case HousePlacementResult.Valid:
                     {
-                        if (from.AccessLevel < AccessLevel.GameMaster && BaseHouse.HasAccountHouse(from))
+                        if (from.AccessLevel < AccessLevel.GameMaster && BaseHouse.HasAccountHouseDirect(from))
                         {
                             from.SendLocalizedMessage(501271); // You already own a house, you may not place another!
                         }
@@ -590,7 +587,7 @@ namespace Server.Items
 
                             for (int i = 0; i < toMove.Count; ++i)
                             {
-                                object o = toMove[i];
+                                object? o = toMove[i];
 
                                 if (o is Tent)
                                     (o as Tent).Annex(null);
@@ -651,9 +648,9 @@ namespace Server.Items
             FillTable(m_ThreeStoryFoundations);
         }
 
-        public static HousePlacementEntry Find(BaseHouse house)
+        public static HousePlacementEntry? Find(BaseHouse house)
         {
-            object obj = m_Table[house.GetType()];
+            object? obj = m_Table[house.GetType()];
 
             if (obj is HousePlacementEntry)
             {
@@ -665,7 +662,7 @@ namespace Server.Items
 
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    HousePlacementEntry e = (HousePlacementEntry)list[i];
+                    HousePlacementEntry? e = (HousePlacementEntry?)list[i];
 
                     if (e.m_MultiID == (house.ItemID & 0x3FFF))
                         return e;
@@ -690,7 +687,7 @@ namespace Server.Items
             {
                 HousePlacementEntry e = (HousePlacementEntry)entries[i];
 
-                object obj = m_Table[e.m_Type];
+                object? obj = m_Table[e.m_Type];
 
                 if (obj == null)
                 {

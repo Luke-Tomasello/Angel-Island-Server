@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -27,7 +27,7 @@
  *      Cap chest level at 4 for all shards but Angel Island
  *  5/27/2023, Adam
  *      Turn off chest guardians if not Angel Island.
- *  5/19/23, Adam (SiegeStyleRules())
+ *  5/19/23, Adam (SiegeRules())
  *   Add these items to dungeon chests
  *   https://web.archive.org/web/20020808081919/http://uo.stratics.com:80/thb/info/dungeon/dungeonguide.shtml 
  *  12/22/21, Adam (IsIntMapStorage)
@@ -217,10 +217,10 @@ namespace Server.Items
 
         private int m_Level;
         private DateTime m_DeleteTime;
-        private Timer m_Timer;
-        private Mobile m_Owner;
+        private Timer? m_Timer;
+        private Mobile? m_Owner;
         private Mobile m_Guardian;
-        private Item m_XItem;
+        private Item? m_XItem;
         private bool m_HasStartedQuickDecay = false;
 
         // We generate our own items on dupe, therefore DeepDupe need not dupe our items
@@ -246,7 +246,7 @@ namespace Server.Items
         {
         }
 
-        public DungeonTreasureChest(Mobile owner, int level)
+        public DungeonTreasureChest(Mobile? owner, int level)
             : base(0xE41)
         {
             m_Owner = owner;
@@ -375,11 +375,6 @@ namespace Server.Items
                     table = Utility.RandomNSumM(level, amount);
 
                 #region Debug Verifier
-#if false
-                Utility.Monitor.DebugOut(string.Format("Dropping:{0} piles totaling:{1} Match:{2}", table.Length, amount, table.Sum() == amount), ConsoleColor.Green);
-                if (table.Sum() != amount)
-                    Utility.Monitor.DebugOut(string.Format("Table:{0} != amount:{1}", table.Length, amount), ConsoleColor.Red);
-#endif
                 #endregion Debug Verifier
 
                 for (int ix = 0; ix < table.Length; ix++)
@@ -469,96 +464,139 @@ namespace Server.Items
                 //https://web.archive.org/web/20020808081919/http://uo.stratics.com:80/thb/info/dungeon/dungeonguide.shtml
                 switch (level)
                 {
-                    default: break; // only levels 1-4 on normal shards.
+                    default:
+                        break; // only levels 1-4 on normal shards.
+
                     case 1:
+                        // ~66.7% chance normal loot, ~33.3% chance hybrid junk loot
                         if (Utility.Random(3) != 0)
-                        {   // normal level one
+                        {
+                            // normal level one
                             // 10 bolts, gems, non-magical weapons, armor, clothing and jewelry.
-                            cont.DropItem(new Bolt(10)); TreasureMapChest.PackGems(cont, level * 10);
-                            cont.DropItem(Loot.RandomWeapon()); if (Utility.Random(3) == 0) cont.DropItem(Loot.RandomWeapon());
-                            cont.DropItem(Loot.RandomArmor()); if (Utility.Random(3) == 0) cont.DropItem(Loot.RandomArmor());
-                            cont.DropItem(Loot.RandomClothing()); if (Utility.Random(3) == 0) cont.DropItem(Loot.RandomClothing());
+                            cont.DropItem(new Bolt(10));
+                            TreasureMapChest.PackGems(cont, level * 10);
+
+                            cont.DropItem(Loot.RandomWeapon());
+                            if (Utility.Random(3) == 0) cont.DropItem(Loot.RandomWeapon());
+
+                            cont.DropItem(Loot.RandomArmor());
+                            if (Utility.Random(3) == 0) cont.DropItem(Loot.RandomArmor());
+
+                            cont.DropItem(Loot.RandomClothing());
+                            if (Utility.Random(3) == 0) cont.DropItem(Loot.RandomClothing());
+
                             cont.DropItem(Loot.RandomJewelry());
                         }
                         else
-                        {   // Hybrid level one
+                        {
+                            // Hybrid level one
                             // 5 bolts, shoes, sandals, candles, bottles of ale or liquor, jugs of cider.
-                            cont.DropItem(new Bolt(5)); cont.DropItem(Utility.RandomBool() ? new Shoes() : new Sandals());
+                            cont.DropItem(new Bolt(5));
+                            cont.DropItem(Utility.RandomBool() ? new Shoes() : new Sandals());
                             cont.DropItem(new Candle());
+
                             for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
-                                cont.DropItem(Utility.RandomBool() ? new FillableBvrge(1, typeof(BeverageBottle), BeverageType.Ale).Construct() : new FillableBvrge(1, typeof(BeverageBottle), BeverageType.Liquor).Construct());
+                                cont.DropItem(Utility.RandomBool()
+                                    ? new FillableBvrge(1, typeof(BeverageBottle), BeverageType.Ale).Construct()
+                                    : new FillableBvrge(1, typeof(BeverageBottle), BeverageType.Liquor).Construct());
+
                             for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
                                 cont.DropItem(new FillableBvrge(1, typeof(Jug), BeverageType.Cider).Construct());
                         }
                         break;
+
                     case 2:
-                        {   // 10 arrows, reagents, scrolls(level 1 to 6), potions, gems
+                        {
+                            // 10 arrows, reagents, scrolls (level 1 to 6), potions, gems
                             cont.DropItem(new Arrow(10));
-                            TreasureMapChest.PackRegs(cont, level * 5 /*?*/);
-                            for (int ix = Utility.RandomMinMax(1, level + 1)/*?*/; ix > 0; ix--)
+                            TreasureMapChest.PackRegs(cont, level * 5);
+
+                            for (int ix = Utility.RandomMinMax(1, level + 1); ix > 0; ix--)
                                 PackScroll(cont, minCircle: 1, maxCircle: 6);
-                            for (int ix = Utility.RandomMinMax(1, level + 1)/*?*/; ix > 0; ix--)
+
+                            for (int ix = Utility.RandomMinMax(1, level + 1); ix > 0; ix--)
                                 cont.DropItem(Loot.RandomPotion());
-                            TreasureMapChest.PackGems(cont, level * 3/*?*/);
+
+                            TreasureMapChest.PackGems(cont, level * 3);
                         }
                         break;
+
                     case 3:
-                        {   // 10 arrows, reagents, scroll (level 1 to 7), potion, gems, magic wands, magic armor, weapons, clothing and jewelry.
+                        {
+                            // 10 arrows, reagents, scroll (level 1 to 7), potion, gems, magic wands, magic armor, weapons, clothing and jewelry.
                             cont.DropItem(new Arrow(10));
-                            TreasureMapChest.PackRegs(cont, level * 5 /*?*/);
-                            for (int ix = Utility.RandomMinMax(1, level + 1)/*?*/; ix > 0; ix--)
+                            TreasureMapChest.PackRegs(cont, level * 5);
+
+                            for (int ix = Utility.RandomMinMax(1, level + 1); ix > 0; ix--)
                                 PackScroll(cont, minCircle: 1, maxCircle: 7);
-                            for (int ix = Utility.RandomMinMax(1, level + 1)/*?*/; ix > 0; ix--)
+
+                            for (int ix = Utility.RandomMinMax(1, level + 1); ix > 0; ix--)
                                 cont.DropItem(Loot.RandomPotion());
-                            TreasureMapChest.PackGems(cont, level * 3/*?*/);
-                            for (int ix = Utility.RandomMinMax(1, 2)/*?*/; ix > 0; ix--)
-                                cont.DropItem(Loot.RandomMagicWand(minLevel: 1, maxLevel: 2, chance: ix - 1 == 0 ? CoreAI.MagicWandDropChance : CoreAI.MagicWandDropChance / 2));
-                            for (int ix = Utility.RandomMinMax(1, 2)/*?*/; ix > 0; ix--)
-                                cont.DropItem(Loot.RandomMagicArmor(minLevel: 2, maxLevel: 4, chance: ix - 1 == 0 ? 0.5 : 0.2));
-                            for (int ix = Utility.RandomMinMax(1, 2)/*?*/; ix > 0; ix--)
-                                cont.DropItem(Loot.RandomMagicWeapon(minLevel: 2, maxLevel: 4, chance: ix - 1 == 0 ? 0.5 : 0.2));
-                            for (int ix = Utility.RandomMinMax(1, 2)/*?*/; ix > 0; ix--)
-                                cont.DropItem(Loot.RandomMagicClothing(minLevel: 1, maxLevel: 2, chance: ix - 1 == 0 ? 0.1 : 0.5));
-                            for (int ix = Utility.RandomMinMax(1, 2)/*?*/; ix > 0; ix--)
-                                cont.DropItem(Loot.RandomMagicJewelry(minLevel: 1, maxLevel: 2, chance: ix - 1 == 0 ? 0.1 : 0.5));
+
+                            TreasureMapChest.PackGems(cont, level * 3);
+
+                            for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
+                                cont.DropItem(Loot.RandomMagicWand(minLevel: 1, maxLevel: 2,
+                                    chance: ix == 1 ? CoreAI.MagicWandDropChance : CoreAI.MagicWandDropChance / 2));
+
+                            for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
+                                cont.DropItem(Loot.RandomMagicArmor(minLevel: 2, maxLevel: 4,
+                                    chance: ix == 1 ? 0.5 : 0.2));
+
+                            for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
+                                cont.DropItem(Loot.RandomMagicWeapon(minLevel: 2, maxLevel: 4,
+                                    chance: ix == 1 ? 0.5 : 0.2));
+
+                            for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
+                                cont.DropItem(Loot.RandomMagicClothing(minLevel: 1, maxLevel: 2,
+                                    chance: ix == 1 ? 0.1 : 0.5));
+
+                            for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
+                                cont.DropItem(Loot.RandomMagicJewelry(minLevel: 1, maxLevel: 2,
+                                    chance: ix == 1 ? 0.1 : 0.5));
                         }
                         break;
+
                     case 4:
                         {
                             // reagents, scrolls(level 1 to 7), blank scrolls, gems, magic wands, magic armor, weapons, clothing and jewelry, crystal balls.
-                            TreasureMapChest.PackRegs(cont, level * 5 /*?*/);
-                            for (int ix = Utility.RandomMinMax(1, level + 1)/*?*/; ix > 0; ix--)
+                            TreasureMapChest.PackRegs(cont, level * 5);
+
+                            for (int ix = Utility.RandomMinMax(1, level + 1); ix > 0; ix--)
                                 PackScroll(cont, minCircle: 1, maxCircle: 7);
+
                             cont.DropItem(new BlankScroll(Utility.RandomMinMax(1, level + 1)));
-                            TreasureMapChest.PackGems(cont, level * 3/*?*/);
-                            for (int ix = Utility.RandomMinMax(1, 2)/*?*/; ix > 0; ix--)
-                                cont.DropItem(Loot.RandomMagicWand(minLevel: 2, maxLevel: 3, chance: ix - 1 == 0 ? CoreAI.MagicWandDropChance : CoreAI.MagicWandDropChance / 2));
-                            for (int ix = Utility.RandomMinMax(1, 2)/*?*/; ix > 0; ix--)
-                                cont.DropItem(Loot.RandomMagicArmor(minLevel: 3, maxLevel: 5, chance: ix - 1 == 0 ? 0.5 : 0.2));
-                            for (int ix = Utility.RandomMinMax(1, 2)/*?*/; ix > 0; ix--)
-                                cont.DropItem(Loot.RandomMagicWeapon(minLevel: 3, maxLevel: 5, chance: ix - 1 == 0 ? 0.5 : 0.2));
-                            for (int ix = Utility.RandomMinMax(1, 2)/*?*/; ix > 0; ix--)
-                                cont.DropItem(Loot.RandomMagicClothing(minLevel: 2, maxLevel: 3, chance: ix - 1 == 0 ? 0.1 : 0.5));
-                            for (int ix = Utility.RandomMinMax(1, 2)/*?*/; ix > 0; ix--)
-                                cont.DropItem(Loot.RandomMagicJewelry(minLevel: 2, maxLevel: 3, chance: ix - 1 == 0 ? 0.1 : 0.5));
+                            TreasureMapChest.PackGems(cont, level * 3);
+
+                            for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
+                                cont.DropItem(Loot.RandomMagicWand(minLevel: 2, maxLevel: 3,
+                                    chance: ix == 1 ? CoreAI.MagicWandDropChance : CoreAI.MagicWandDropChance / 2));
+
+                            for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
+                                cont.DropItem(Loot.RandomMagicArmor(minLevel: 3, maxLevel: 5,
+                                    chance: ix == 1 ? 0.5 : 0.2));
+
+                            for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
+                                cont.DropItem(Loot.RandomMagicWeapon(minLevel: 3, maxLevel: 5,
+                                    chance: ix == 1 ? 0.5 : 0.2));
+
+                            for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
+                                cont.DropItem(Loot.RandomMagicClothing(minLevel: 2, maxLevel: 3,
+                                    chance: ix == 1 ? 0.1 : 0.5));
+
+                            for (int ix = Utility.RandomMinMax(1, 2); ix > 0; ix--)
+                                cont.DropItem(Loot.RandomMagicJewelry(minLevel: 2, maxLevel: 3,
+                                    chance: ix == 1 ? 0.1 : 0.5));
+
                             // crystal ball: wtf, sounds stupid.
                         }
                         break;
                 }
+
+                if (Core.RuleSets.SeasonsRules(2))
+                    ApplySeasons2Loot(cont, level);
             }
         }
-        public static void PackScroll(LockableContainer cont, int minCircle, int maxCircle)
-        {
-            PackScroll(cont, Utility.RandomMinMax(minCircle, maxCircle));
-        }
-
-        public static void PackScroll(LockableContainer cont, int circle)
-        {
-            int min = (circle - 1) * 8;
-
-            cont.DropItem(Loot.RandomScroll(min, min + 7, SpellbookType.Regular));
-        }
-
         public static void PackMagicItem(LockableContainer cont, int minLevel, int maxLevel, double chance)
         {
             if (chance <= Utility.RandomDouble())
@@ -584,7 +622,7 @@ namespace Server.Items
             if (m_Owner == null || m == m_Owner)
                 return true;
 
-            Party p = Party.Get(m_Owner);
+            Party? p = Party.Get(m_Owner);
 
             if (p != null && p.Contains(m))
                 return true;
@@ -627,21 +665,11 @@ namespace Server.Items
         public override void OnItemLifted(Mobile from, Item item)
         {
             bool notYetLifted = !m_Lifted.Contains(item);
-            BaseCreature witness = null;
+            BaseCreature? witness = null;
 
             if (notYetLifted)
             {
-                // Adam: Insure IOB wearers are not stealing from their kin
-                if (Core.RuleSets.AngelIslandRules() && Engines.IOBSystem.IOBSystem.IsIOBAligned(from) && CheckThief(from, out witness))
-                {
-                    from.SendMessage("You have been discovered stealing from your kin!");
-                    if (from.Hidden)
-                        from.RevealingAction();
-
-                    // attack kin to make them come after you
-                    from.DoHarmful(witness);
-                }
-                else if (Core.RuleSets.AngelIslandRules() && Utility.RandomDouble() < 0.30 && CheckGuardian(from, out witness))
+                if (Core.RuleSets.AngelIslandRules() && Utility.RandomDouble() < 0.30 && CheckGuardian(from, out witness))
                 {
                     from.SendMessage("You have been discovered stealing pirate booty!");
                     if (from.Hidden)
@@ -660,37 +688,6 @@ namespace Server.Items
             }
 
             base.OnItemLifted(from, item);
-        }
-
-        public bool CheckThief(Mobile from, out BaseCreature witness)
-        {
-            witness = null;
-
-            if (from == null || !(from is PlayerMobile))
-                return false;
-
-            PlayerMobile pm = (PlayerMobile)from;
-
-            IPooledEnumerable eable = pm.GetMobilesInRange(12);
-            foreach (Mobile m in eable)
-            {
-                if (m == null || !(m is BaseCreature))
-                    continue;
-
-                BaseCreature bc = (BaseCreature)m;
-                if (bc.Controlled == true)
-                    continue;
-
-                if (pm.IOBAlignment == bc.IOBAlignment)
-                {
-                    witness = bc;
-                    eable.Free();
-                    return true;
-                }
-            }
-            eable.Free();
-
-            return false;
         }
 
         /*
@@ -751,7 +748,7 @@ namespace Server.Items
                     try
                     {
                         m_Arguments[0] = amounts[i];
-                        Item item = (Item)Activator.CreateInstance(types[i], m_Arguments);
+                        Item? item = (Item?)Activator.CreateInstance(types[i], m_Arguments);
 
                         cont.DropItem(item);
                     }
@@ -868,7 +865,7 @@ namespace Server.Items
             }
         }
 
-        public static void DeleteGuardian(DungeonTreasureChest tc)
+        public static void DeleteGuardian(DungeonTreasureChest? tc)
         {
             if (tc == null || (tc as DungeonTreasureChest).Guardian == null || (tc as DungeonTreasureChest).Guardian.Alive == false || (tc as DungeonTreasureChest).Guardian.Deleted == true)
                 return;
@@ -930,14 +927,6 @@ namespace Server.Items
             from.SendLocalizedMessage(501857); // This spell won't work on that!
         }
 
-        public override bool AutoResetTrap
-        {
-            /* 5/21/23, Yoar: Treasure chest traps auto-reset on AI/MO
-             * Remove trap is necessary to open these chests
-             */
-            get { return SkillHandlers.RemoveTrap.EraAI; }
-        }
-
         public override bool ExecuteTrap(Mobile from, bool bAutoReset)
         {
             bool bReturn = base.ExecuteTrap(from, bAutoReset);
@@ -983,10 +972,16 @@ namespace Server.Items
 
         public override void LockPick(Mobile from)
         {
+            if (from == null)
+                return;
+
             base.LockPick(from);
 
             // call data recorder here to attribute this picker with the 'earned gold' points
-            DataRecorder.LockPick(from, this);
+            int gold = GetLootGold();
+
+            if (gold > 0)
+                DataRecorder.Add(from, RecorderDomain.ChestGold, gold);
 
             if (Core.RuleSets.AngelIslandRules())
             {
@@ -1003,18 +998,21 @@ namespace Server.Items
 
         public Mobile SpawnGuardian(string name, int level, double PlayersHidingSkill)
         {
-            Type type = ScriptCompiler.FindTypeByName(name);
-            BaseCreature c = null;
+            Type? type = ScriptCompiler.FindTypeByName(name);
+            BaseCreature? c = null;
 
             if (type != null)
             {
                 try
                 {
-                    object o = Activator.CreateInstance(type);
+                    object? o = Activator.CreateInstance(type);
 
                     if (o is BaseCreature)
                     {
                         c = o as BaseCreature;
+
+                        // what generated us
+                        c.SpawningChest = this;
 
                         // decay time of a chest once it's opened
                         c.Lifespan = TimeSpan.FromMinutes(15);
@@ -1097,7 +1095,7 @@ namespace Server.Items
 
         public virtual void ShiteTalk_Callback(object state)
         {
-            Mobile guardian = state as Mobile;
+            Mobile? guardian = state as Mobile;
 
             if (guardian == null || guardian.Alive == false || guardian.Deleted == true)
                 return;

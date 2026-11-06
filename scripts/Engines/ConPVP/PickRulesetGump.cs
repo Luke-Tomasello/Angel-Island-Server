@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -35,17 +35,17 @@ namespace Server.Engines.ConPVP
     public class PickRulesetGump : Gump
     {
         private Mobile m_From;
-        private DuelContext m_Context;
+        private DuelContext? m_Context;
         private Ruleset m_Ruleset;
         private Ruleset[] m_Defaults;
         private Ruleset[] m_Flavors;
-        private RulesetClosedHandler m_OnRulesetClosed;
+        private RulesetClosedHandler? m_OnRulesetClosed;
 
         public PickRulesetGump(Mobile from, DuelContext context, Ruleset ruleset) : this(from, context, ruleset, null)
         {
         }
 
-        public PickRulesetGump(Mobile from, DuelContext context, Ruleset ruleset, RulesetClosedHandler onRulesetClosed) : base(50, 50)
+        public PickRulesetGump(Mobile from, DuelContext? context, Ruleset ruleset, RulesetClosedHandler? onRulesetClosed) : base(50, 50)
         {
             m_From = from;
             m_Context = context;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -183,7 +183,7 @@ namespace Server.Mobiles
         }
         public void SpawnBob(Mobile caster)
         {
-            Mobile target = caster;
+            Mobile? target = caster;
 
             if (Map == null || Map == Map.Internal)
                 return;
@@ -231,6 +231,8 @@ namespace Server.Mobiles
                 if (!validLocation)
                     helper.Location = target.Location;
 
+                helper.OnAfterSpawn();
+
                 helper.Combatant = target;
             }
         }
@@ -275,7 +277,7 @@ namespace Server.Mobiles
                 }
             }
         }
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
             Mobile combatant = this.Combatant;
 
@@ -284,21 +286,37 @@ namespace Server.Mobiles
                 if (Utility.RandomBool())
                 {
 
-                    /*                    int phrase = Utility.Random(4);
+                    if (combatant != null && combatant.Map == this.Map && combatant.InRange(this, 8))
+                    {
+                        if (Utility.RandomBool())
+                        {
+                            int phrase = Utility.Random(12);
 
-										switch (phrase)
-										{
-											case 0: this.Say(true, "Har! The mackerel wiggles!"); break;
-											case 1: this.Say(true, "Ye stink like a rotten clam! Bring it on yet!?"); break;
-											case 2: this.Say(true, "Arr, treacherous monkey!"); break;
-											case 3: this.Say(true, "Ye'll not get my swag!"); break;
-										}
-                    
-										m_NextSpeechTime = DateTime.UtcNow + m_SpeechDelay;*/
+                            switch (phrase)
+                            {
+                                case 0: this.Say(true, "Ye picked the wrong Bob today!"); break;
+                                case 1: this.Say(true, "I watched a duel once! I know what I'm doin'!"); break;
+                                case 2: this.Say(true, "Stand still so I can hit ye proper!"); break;
+                                case 3: this.Say(true, "I've almost got ye now!"); break;
+
+                                case 4: this.Say(true, "Hold on, I dropped me bandages!"); break;
+                                case 5: this.Say(true, "Wait! That wasn't supposed to happen!"); break;
+                                case 6: this.Say(true, "I've got a plan! I just forgot it!"); break;
+                                case 7: this.Say(true, "Ye won't send me back to town again!"); break;
+
+                                case 8: this.Say(true, "This time's different! I can feel it!"); break;
+                                case 9: this.Say(true, "I trained on skeletons for this!"); break;
+                                case 10: this.Say(true, "Why won't ye stand still!?"); break;
+                                case 11: this.Say(true, "If I fall, another Bob will take me place!"); break;
+                            }
+
+                            m_NextSpeechTime = DateTime.UtcNow + m_SpeechDelay;
+                        }
+                    }
                 }
             }
 
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
         }
         public override void GetContextMenuEntries(Mobile from, ArrayList list)
         {

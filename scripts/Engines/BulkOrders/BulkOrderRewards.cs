@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -110,12 +110,12 @@ namespace Server.Engines.BulkOrders
 
         public abstract Item Construct();
 
-        protected static Item Construct(Type type, object[] args = null)
+        protected static Item? Construct(Type type, object[]? args = null)
         {
             if (!typeof(Item).IsAssignableFrom(type))
                 return null;
 
-            Item item;
+            Item? item;
 
             try
             {
@@ -154,7 +154,7 @@ namespace Server.Engines.BulkOrders
     {
         private Type[] m_Types;
 
-        public Type[] Types { get { return m_Types; } }
+        public Type[]? Types { get { return m_Types; } }
 
         public RandomReward(params Type[] types)
         {
@@ -170,7 +170,7 @@ namespace Server.Engines.BulkOrders
         }
     }
 
-    public delegate Item ConstructCallback(int type);
+    public delegate Item? ConstructCallback(int type);
 
     public class CustomReward : BaseReward
     {
@@ -188,7 +188,7 @@ namespace Server.Engines.BulkOrders
 
         public override Item Construct()
         {
-            Item item;
+            Item? item;
 
             try
             {

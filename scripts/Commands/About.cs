@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -25,6 +25,7 @@
  *	    Initial Version
  */
 
+using Server.Misc;
 using System;
 
 namespace Server.Commands
@@ -42,12 +43,26 @@ namespace Server.Commands
         {
             try
             {
-                string output = string.Format("{0}{5}{6} - Version {1}.{2}.{3}, Build {4}",
-                Core.Server, Utility.BuildMajor(), Utility.BuildMinor(),
-                Utility.BuildRevision(), Utility.BuildBuild(),
-                Core.ReleasePhase < ReleasePhase.Production ? string.Format(" ({0})",
-                Utility.GetCustomEnumNames(typeof(ReleasePhase))[(int)Core.ReleasePhase]) : "",
-                Core.UOTC_CFG ? " (Test Center)" : "");
+
+                string serverName = Core.Server;
+
+                if (Core.ServerID == ServerID.Seasons)
+                    serverName = string.Format("{0} S{1}", serverName, Core.SeasonVariant);
+
+                string phase = Core.ReleasePhase < ReleasePhase.Production
+                    ? string.Format(" ({0})", Utility.GetCustomEnumNames(typeof(ReleasePhase))[(int)Core.ReleasePhase])
+                    : "";
+
+                string testCenter = Core.GMNTC_CFG ? " (Test Center)" : "";
+
+                string output = string.Format("{0}{1}{2} - Version {3}.{4}.{5}, Build {6}",
+                    serverName,
+                    phase,
+                    testCenter,
+                    Utility.BuildMajor(),
+                    Utility.BuildMinor(),
+                    Utility.BuildRevision(),
+                    Utility.BuildBuild());
 
                 e.Mobile.SendMessage(0x35, output);
 
@@ -56,6 +71,16 @@ namespace Server.Commands
                     PublishInfo.Publish, PublishInfo.PublishDate.ToString("dd-MM-yyyy"));
 
                 e.Mobile.SendMessage(0x35, output);
+
+                if (Core.ServerID == ServerID.Seasons)
+                {
+                    string next = SeasonsHelper.SeasonInfo(SeasonsHelper.SeasonRequest.Reset, "MMM d, yyyy HH:mm");
+                    string countdown = SeasonsHelper.SeasonInfo(SeasonsHelper.SeasonRequest.Countdown, "{days}d {hours2}h {minutes2}m");
+                    //e.Mobile.SendMessage(0x3C, $"Seasonal wipes • Next: {next} • {countdown} remaining");
+                    e.Mobile.SendMessage(0x3C, "This is a seasonal wipe shard.");
+                    e.Mobile.SendMessage(0x3C, $"Next wipe: {next}");
+                    e.Mobile.SendMessage(0x3E, $"{countdown}");
+                }
             }
             catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
         }

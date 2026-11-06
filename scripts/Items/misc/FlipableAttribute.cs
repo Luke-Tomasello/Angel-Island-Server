@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -72,7 +72,7 @@ namespace Server.Items
                         return;
                     }
 
-                    FlipableAttribute fa = null;
+                    FlipableAttribute? fa = null;
                     if (AttributeArray.Length != 0)
                         fa = AttributeArray[0];
                     else
@@ -118,7 +118,7 @@ namespace Server.Items
             {
                 try
                 {
-                    MethodInfo flipMethod = item.GetType().GetMethod("Flip", Type.EmptyTypes);
+                    MethodInfo? flipMethod = item.GetType().GetMethod("Flip", Type.EmptyTypes);
                     if (flipMethod != null)
                         flipMethod.Invoke(item, new object[0]);
                 }

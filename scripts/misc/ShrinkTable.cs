@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,7 +28,7 @@ namespace Server
     {
         private const int DefaultItemID = 0x1870; // Yellow virtue stone
 
-        private static int[] m_Table;
+        private static int[]? m_Table;
 
         public static int Lookup(Mobile m)
         {

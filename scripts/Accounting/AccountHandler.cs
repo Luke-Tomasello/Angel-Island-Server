@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -190,12 +190,10 @@ namespace Server.Misc
         }
         private static TimeSpan DeleteDelay = TimeSpan.FromDays(7.0);
         public static bool ProtectPasswords = true;
-        private static AccessLevel m_LockdownLevel;
-        //private static Dictionary<IPAddress,string> AccountLoginLookup = new Dictionary<IPAddress,string>();
         public static AccessLevel LockdownLevel
         {
-            get { return m_LockdownLevel; }
-            set { m_LockdownLevel = value; }
+            get { return CoreAI.LockdownLevel; }
+            set { CoreAI.LockdownLevel = value; }
         }
         public static int MaxAccountsPerIP
         {
@@ -246,40 +244,6 @@ namespace Server.Misc
              * - Clients between 6.0.0.0 and 7.0.12.1 always send cityIndex 0
              * - Client version is not always available at this point (for example in 6.0.0.0), but in newer clients (7.0?) it is
              */
-#if false
-            if (PublishInfo.Publish >= 5) // introduction of trammel
-            {
-                if (PublishInfo.Publish >= 44 && PublishInfo.Publish < 70)
-                {
-                    // between ML and HS everyone started in New Haven
-                    StartingCities = new CityInfo[] { m_NewHaven };
-                }
-                else
-                {
-                    System.Collections.Generic.List<CityInfo> startingCities = new System.Collections.Generic.List<CityInfo>(StartingCities);
-
-                    if (PublishInfo.Publish >= 43) // emergence of New Haven
-                        startingCities.Insert(0, m_NewHaven);
-                    else
-                        startingCities.Insert(0, m_OldHaven);
-
-                    if (PublishInfo.Publish >= 60) // destruction of Magincia
-                    {
-                        for (int i = startingCities.Count - 1; i >= 0; i--)
-                        {
-                            if (startingCities[i].City == "Magincia")
-                            {
-                                startingCities.RemoveAt(i);
-                                break;
-                            }
-                        }
-                    }
-
-                    StartingCities = startingCities.ToArray();
-                }
-            }
-            else
-#endif
             {
                 for (int i = 0; i < StartingCities.Length; i++)
                     StartingCities[i].Map = Map.Felucca;
@@ -392,7 +356,7 @@ namespace Server.Misc
             NetState state = e.State;
             int index = e.Index;
 
-            Account acct = state.Account as Account;
+            Account? acct = state.Account as Account;
 
             if (acct == null)
             {
@@ -439,7 +403,7 @@ namespace Server.Misc
                         {
                             if (acct.Count > 1)
                             {
-                                Mobile newOwner = null;
+                                Mobile? newOwner = null;
                                 //find a non-deleted, non-null character on the account
                                 for (int i = 0; i < acct.Count; i++)
                                 {
@@ -467,7 +431,7 @@ namespace Server.Misc
                                     {
                                         if (houses[i] is Server.Multis.BaseHouse)
                                         {
-                                            Server.Multis.BaseHouse house = (Server.Multis.BaseHouse)houses[i];
+                                            Server.Multis.BaseHouse? house = (Server.Multis.BaseHouse?)houses[i];
                                             if (house != null)
                                             {
                                                 if (house.Owner == m) //another sanity check - house.Owner should always be m at this point!
@@ -499,7 +463,7 @@ namespace Server.Misc
                 }
             }
         }
-        private static Account CreateAccount(NetState state, string un, string pw)
+        private static Account? CreateAccount(NetState state, string un, string pw)
         {
             if (un.Length == 0 || pw.Length == 0)
                 return null;
@@ -529,7 +493,7 @@ namespace Server.Misc
 
             return acct;
         }
-        private static Account CreateAccountFromDB(string un)
+        private static Account? CreateAccountFromDB(string un)
         {
             if (Core.UseLoginDB)
             {
@@ -549,7 +513,7 @@ namespace Server.Misc
         {
             SyncAccountToFromDB(null, acct);
         }
-        private static void SyncAccountToFromDB(IPAddress ip, Account acct)
+        private static void SyncAccountToFromDB(IPAddress? ip, Account acct)
         {
             if (acct != null && Core.UseLoginDB)
             {
@@ -604,12 +568,43 @@ namespace Server.Misc
 
             return;
         }
-        private static bool GrandfatheredAccount(bool grandfathered)
+        public static Account? GetLiveAccountByReservedName(string name)
         {
-            if (Core.RuleSets.SiegeRules() || Core.RuleSets.MortalisRules())
+            if (string.IsNullOrWhiteSpace(name))
+                return null;
+
+            string candidate = name.Trim();
+
+            foreach (Accounting.Account a in Accounting.Accounts.Table.Values)
+            {
+                foreach (string p in a.GetReservedNames())
+                {
+                    if (string.IsNullOrWhiteSpace(p))
+                        continue;
+
+                    string playerName = p.Trim();
+
+                    if (string.Equals(playerName, candidate, StringComparison.OrdinalIgnoreCase))
+                        return a;
+                }
+            }
+
+            return null;
+        }
+        /// <summary>
+        /// Grandfathered accounts are those that were previously allowed via IPExceptions, but since we no longer have
+        /// these exceptions, we allow accounts beyond the max account list assuming they were once allowed.
+        /// Only for Angel Island
+        /// </summary>
+        /// <param name="grandfathered"></param>
+        /// <returns></returns>
+        private static bool GrandfatheredAccount(bool grandfathered)
+        {   // looks like all shards but Angel Island
+            //if (Core.RuleSets.SiegeRules() || Core.RuleSets.MortalisStyleRules())
+            if (!Core.RuleSets.AngelIslandRules())
             {
                 if (grandfathered)
-                    Utility.Monitor.WriteLine(string.Format("no grandfathering on Siege or Mortalis"), ConsoleColor.Red);
+                    Utility.Monitor.WriteLine(string.Format($"no grandfathering on {Core.Server}"), ConsoleColor.Red);
                 return false;
             }
 
@@ -733,11 +728,7 @@ namespace Server.Misc
             // don't check login server here as it's likely to have more accounts than allowed on any one shard
             else if (!loginServer && !grandfathered && !AccountTotalIPLimiter.IsOk(acct, ip, ref count))
             {
-#if false
-                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Account '{1}' not created, ip already has {2} account{3}.", e.State, un, count, count == 1 ? "" : "s"));
-#else
                 Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Account '{1}' blackholed, ip already has {2} account{3}.", e.State, un, count, count == 1 ? "" : "s"));
-#endif
                 // tell other accounts on this IP what's going on
                 AccountTotalIPLimiter.Notify(acct, ip, count);
                 // write the accounts to the console
@@ -762,7 +753,7 @@ namespace Server.Misc
             else if (!acct.HasAccess(e.State))
             {
                 Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Access denied for '{1}'", e.State, un));
-                e.RejectReason = (m_LockdownLevel > AccessLevel.Player ? ALRReason.BadComm : ALRReason.BadPass);
+                e.RejectReason = (LockdownLevel > AccessLevel.Player ? ALRReason.BadComm : ALRReason.BadPass);
             }
             else if (!acct.CheckPassword(pw))
             {
@@ -790,7 +781,7 @@ namespace Server.Misc
                     //Audit email
                     try
                     {
-                        string regSubject = "Account Created Dynamically";
+                        string regSubject = $"Account Created Dynamically for {Core.Server}";
                         string regBody = "Account created dynamically, auto-account.\n";
                         regBody += "Info: \n";
                         regBody += "\n";
@@ -803,7 +794,11 @@ namespace Server.Misc
                     }
                     catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
 
-                    Utility.Monitor.WriteLine(string.Format("Login: {0}: Creating new account '{1}'"), ConsoleColor.DarkYellow, e.State, un);
+                    Utility.Monitor.WriteLine(
+                        "Login: {0}: Creating new account '{1}'",
+                        ConsoleColor.DarkYellow,
+                        e.State,
+                        un);
                 }
             }
 
@@ -834,11 +829,11 @@ namespace Server.Misc
             }
 
             // we handle "valid_client" in a new way - we no longer block login, but rather disconnect them after login
-            Account acct = null;
+            Account? acct = null;
             bool valid_client = true;
             GameLogin_Internal(e, ref acct, valid_client);
             if (acct != null)
-                acct.SetFlag(Account.AccountFlag.InvalidClient, false);
+                acct.SetFlag(Account.AccountFlags.InvalidClient, false);
         }
         private static void GameLogin_Internal(GameLoginEventArgs e, ref Account acct, bool valid_client)
         {
@@ -920,7 +915,7 @@ namespace Server.Misc
             List<Account.AccountInfraction> offenses = new();
             if (acct != null)
             {
-                acct.InfractionStatus = Account.AccountInfraction.none;
+                acct.InfractionStatus = Account.AccountInfraction.None;
                 #region Obsolete pre-login checks, now checked after login
                 // 8/26/2023, Adam: We no longer use the invalid client check at login, but rather later after login
                 //  during a packet exchange
@@ -929,19 +924,20 @@ namespace Server.Misc
                 if (invalidClient) offenses.Add(Account.AccountInfraction.TorExitNode);
                 #endregion Obsolete pre-login checks, now checked after login
                 accountConcurrentIPLimiter = AccountConcurrentIPLimiter.IsOk(acct, ip, filter_mortal_inmates: true);
-                if (!accountConcurrentIPLimiter) offenses.Add(Account.AccountInfraction.concurrentIPLimiter);
+                if (!accountConcurrentIPLimiter) offenses.Add(Account.AccountInfraction.ConcurrentIpLimiter);
                 accountTotalIPLimiter = AccountTotalIPLimiter.IsOk(acct, ip, ref count);
-                if (!accountTotalIPLimiter) offenses.Add(Account.AccountInfraction.totalIPLimiter);
+                if (!accountTotalIPLimiter) offenses.Add(Account.AccountInfraction.TotalIpLimiter);
                 accountHardwareLimiter = AccountHardwareLimiter.IsOk(acct);
-                if (!accountHardwareLimiter) offenses.Add(Account.AccountInfraction.totalHardwareLimiter);
+                if (!accountHardwareLimiter) offenses.Add(Account.AccountInfraction.TotalHardwareLimiter);
                 IPStillHot = AccountConcurrentIPLimiter.IPStillHot(acct, e.State.Address);
                 if (IPStillHot) offenses.Add(Account.AccountInfraction.IPStillHot);
-                hasAccess = acct.HasAccess(e.State);
-                if (!hasAccess) offenses.Add(Account.AccountInfraction.hasAccess);
+                hasAccess = acct.HasAccess(e.State, out string accessReason);
+                if (!hasAccess) offenses.Add(Account.AccountInfraction.HasAccess);
+                else if (accessReason != null) Utility.Monitor.WriteLine(accessReason, ConsoleColor.Yellow);
                 checkPassword = acct.CheckPassword(pw);
-                if (!checkPassword) offenses.Add(Account.AccountInfraction.checkPassword);
+                if (!checkPassword) offenses.Add(Account.AccountInfraction.CheckPassword);
                 banned = acct.Banned;
-                if (banned) offenses.Add(Account.AccountInfraction.banned);
+                if (banned) offenses.Add(Account.AccountInfraction.Banned);
             }
 
             if (acct == null)
@@ -961,7 +957,7 @@ namespace Server.Misc
             #endregion Obsolete pre-login checks, now checked after login
             else if (!accountConcurrentIPLimiter)
             {
-                acct.InfractionStatus = Account.AccountInfraction.concurrentIPLimiter;
+                acct.InfractionStatus = Account.AccountInfraction.ConcurrentIpLimiter;
                 e.RejectReason = ALRReason.InUse;
                 Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Past IP limit threshold", e.State));
                 // tell other accounts on this IP what's going on
@@ -969,7 +965,7 @@ namespace Server.Misc
             }
             else if (!grandfathered && !accountTotalIPLimiter)
             {
-                acct.InfractionStatus = Account.AccountInfraction.totalIPLimiter;
+                acct.InfractionStatus = Account.AccountInfraction.TotalIpLimiter;
                 Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Account '{1}' blackholed, ip already has {2} account{3}.", e.State, un, count, count == 1 ? "" : "s"));
                 // tell other accounts on this IP what's going on
                 AccountTotalIPLimiter.Notify(acct, ip, count);
@@ -977,7 +973,7 @@ namespace Server.Misc
             }
             else if (!grandfathered && !accountHardwareLimiter)
             {
-                acct.InfractionStatus = Account.AccountInfraction.totalHardwareLimiter;
+                acct.InfractionStatus = Account.AccountInfraction.TotalHardwareLimiter;
                 Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Past machine limit threshold", e.State));
                 // tell other accounts on this machine what's going on
                 AccountHardwareLimiter.Notify(acct);
@@ -992,21 +988,21 @@ namespace Server.Misc
             }
             else if (!hasAccess)
             {
-                acct.InfractionStatus = Account.AccountInfraction.hasAccess;
+                acct.InfractionStatus = Account.AccountInfraction.HasAccess;
                 Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Access denied for '{1}'", e.State, un));
-                e.RejectReason = (m_LockdownLevel > AccessLevel.Player ? ALRReason.BadComm : ALRReason.BadPass);
+                e.RejectReason = (LockdownLevel > AccessLevel.Player ? ALRReason.BadComm : ALRReason.BadPass);
                 e.Accepted = false;
             }
             else if (!checkPassword)
             {
-                acct.InfractionStatus = Account.AccountInfraction.checkPassword;
+                acct.InfractionStatus = Account.AccountInfraction.CheckPassword;
                 Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Invalid password for '{1}'", e.State, un));
                 e.RejectReason = ALRReason.BadPass;
                 e.Accepted = false;
             }
             else if (banned)
             {
-                acct.InfractionStatus = Account.AccountInfraction.banned;
+                acct.InfractionStatus = Account.AccountInfraction.Banned;
                 Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Banned account '{1}'", e.State, un));
                 e.RejectReason = ALRReason.Blocked;
                 e.Accepted = false;
@@ -1017,9 +1013,9 @@ namespace Server.Misc
 
             // these cases here are the exceptions. We allow the player to hang at "Creating Character" screen
             bool BlockedLogin =
-                acct.InfractionStatus == Account.AccountInfraction.hasAccess &&
-                acct.InfractionStatus == Account.AccountInfraction.checkPassword &&
-                acct.InfractionStatus == Account.AccountInfraction.banned;
+                acct.InfractionStatus == Account.AccountInfraction.HasAccess &&
+                acct.InfractionStatus == Account.AccountInfraction.CheckPassword &&
+                acct.InfractionStatus == Account.AccountInfraction.Banned;
 
             bool ContinueLogin = !CoreAI.JailLogin ? e.Accepted == true : !BlockedLogin;
 
@@ -1045,7 +1041,7 @@ namespace Server.Misc
                     //Audit email
                     try
                     {
-                        string regSubject = "Account Created Dynamically";
+                        string regSubject = $"Account created dynamically for {Core.Server}";
                         string regBody = "Account created dynamically, auto-account.\n";
                         regBody += "Info: \n";
                         regBody += "\n";
@@ -1068,9 +1064,9 @@ namespace Server.Misc
         private static Account.AccountInfraction OffensePrioritization(Account acct, List<Account.AccountInfraction> offenses)
         {
             bool BlockedLogin =
-                acct.InfractionStatus == Account.AccountInfraction.hasAccess &&
-                acct.InfractionStatus == Account.AccountInfraction.checkPassword &&
-                acct.InfractionStatus == Account.AccountInfraction.banned;
+                acct.InfractionStatus == Account.AccountInfraction.HasAccess &&
+                acct.InfractionStatus == Account.AccountInfraction.CheckPassword &&
+                acct.InfractionStatus == Account.AccountInfraction.Banned;
 
             if (!BlockedLogin)
             {
@@ -1083,11 +1079,11 @@ namespace Server.Misc
                     return Account.AccountInfraction.TorExitNode;
                 #endregion Obsolete pre-login checks, now checked after login
 
-                if (offenses.Contains(Account.AccountInfraction.totalIPLimiter))
-                    return Account.AccountInfraction.totalIPLimiter;
+                if (offenses.Contains(Account.AccountInfraction.TotalIpLimiter))
+                    return Account.AccountInfraction.TotalIpLimiter;
 
-                if (offenses.Contains(Account.AccountInfraction.totalHardwareLimiter))
-                    return Account.AccountInfraction.totalHardwareLimiter;
+                if (offenses.Contains(Account.AccountInfraction.TotalHardwareLimiter))
+                    return Account.AccountInfraction.TotalHardwareLimiter;
             }
 
             return acct.InfractionStatus;
@@ -1103,31 +1099,6 @@ namespace Server.Misc
         }
         private static void UnFuck(GameLoginEventArgs e)
         {
-#if false
-            // Version 1 of ClassicUO 'binding' discontinued
-            string clear_text_username = ShuffleExtensions.DeShuffle(e.Username, e.State.m_Seed);
-            string clear_text_password = ShuffleExtensions.DeShuffle(e.Password, e.State.m_Seed);
-            bool valid_client = false;
-            if (!IsGMNUO(clear_text_username) || !IsGMNUO(clear_text_password))
-            {   
-                // accept the old client, it will be enforced elsewhere
-                valid_client = false;
-            }
-            else
-            {
-                // Remove last 2 characters from text ("$g")
-                clear_text_username = clear_text_username.Remove(clear_text_username.Length - 2, 2);
-                clear_text_password = clear_text_password.Remove(clear_text_password.Length - 2, 2);
-                e.Username = clear_text_username;
-                e.Password = clear_text_password;
-                valid_client = true;
-            }
-            
-            Account acct = null;
-            GameLogin_Internal(e, ref acct, valid_client);
-            if (acct != null)
-                acct.ValidClient = valid_client;
-#endif
             // Version 2 of ClassicUO 'binding' patch to support older scheme (above)
             // we will remove this after a couple weeks. We need to unfuck their name, although
             //  If we have ForceGMNCUO turned on, they will be disconnected some time after logging in

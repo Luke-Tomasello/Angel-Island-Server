@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -114,32 +114,32 @@ namespace Server
             m_SourceString = ToString();
         }
 
-        public static bool operator ==(ClientVersion l, ClientVersion r)
+        public static bool operator ==(ClientVersion? l, ClientVersion? r)
         {
             return (Compare(l, r) == 0);
         }
 
-        public static bool operator !=(ClientVersion l, ClientVersion r)
+        public static bool operator !=(ClientVersion? l, ClientVersion? r)
         {
             return (Compare(l, r) != 0);
         }
 
-        public static bool operator >=(ClientVersion l, ClientVersion r)
+        public static bool operator >=(ClientVersion? l, ClientVersion? r)
         {
             return (Compare(l, r) >= 0);
         }
 
-        public static bool operator >(ClientVersion l, ClientVersion r)
+        public static bool operator >(ClientVersion? l, ClientVersion? r)
         {
             return (Compare(l, r) > 0);
         }
 
-        public static bool operator <=(ClientVersion l, ClientVersion r)
+        public static bool operator <=(ClientVersion? l, ClientVersion? r)
         {
             return (Compare(l, r) <= 0);
         }
 
-        public static bool operator <(ClientVersion l, ClientVersion r)
+        public static bool operator <(ClientVersion? l, ClientVersion? r)
         {
             return (Compare(l, r) < 0);
         }
@@ -149,12 +149,12 @@ namespace Server
             return m_Major ^ m_Minor ^ m_Revision ^ m_Patch ^ (int)m_Type;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj == null)
                 return false;
 
-            ClientVersion v = obj as ClientVersion;
+            ClientVersion? v = obj as ClientVersion;
 
             if (v == null)
                 return false;
@@ -296,12 +296,12 @@ namespace Server
             }
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             if (obj == null)
                 return 1;
 
-            ClientVersion o = obj as ClientVersion;
+            ClientVersion? o = obj as ClientVersion;
 
             if (o == null)
                 throw new ArgumentException();
@@ -329,12 +329,12 @@ namespace Server
 				return 0;*/
         }
 
-        public static bool IsNull(object x)
+        public static bool IsNull([System.Diagnostics.CodeAnalysis.NotNullWhen(false)] object? x)
         {
             return Object.ReferenceEquals(x, null);
         }
 
-        public int Compare(object x, object y)
+        public int Compare(object? x, object? y)
         {
             if (IsNull(x) && IsNull(y))
                 return 0;
@@ -343,8 +343,8 @@ namespace Server
             else if (IsNull(y))
                 return 1;
 
-            ClientVersion a = x as ClientVersion;
-            ClientVersion b = y as ClientVersion;
+            ClientVersion? a = x as ClientVersion;
+            ClientVersion? b = y as ClientVersion;
 
             if (IsNull(a) || IsNull(b))
                 throw new ArgumentException();
@@ -352,7 +352,7 @@ namespace Server
             return a.CompareTo(b);
         }
 
-        public static int Compare(ClientVersion a, ClientVersion b)
+        public static int Compare(ClientVersion? a, ClientVersion? b)
         {
             if (IsNull(a) && IsNull(b))
                 return 0;

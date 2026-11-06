@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,7 +76,7 @@ namespace Server.Mobiles
         { // override this to establish keyword/conversation combinations
         }
 
-        protected string IsTrigger(string text)
+        protected string? IsTrigger(string text)
         {   //is the text a recognized trigger?
             foreach (string key in m_ConversationTriggers.Keys)
                 if (text.Contains(key))
@@ -116,7 +116,7 @@ namespace Server.Mobiles
 
                     // we are not currently having a private conversation with this mobile
                     // does this text contain a conversation trigger?
-                    string key = IsTrigger(e.Speech.ToLower());
+                    string? key = IsTrigger(e.Speech.ToLower());
 
                     // invoke a conversation if we are not already conversing
                     if (key != null)
@@ -158,7 +158,7 @@ namespace Server.Mobiles
             List<Serial> delete = new List<Serial>();
             foreach (Serial serial in m_Conversations.Keys)
             {
-                Mobile m = World.FindMobile(serial);
+                Mobile? m = World.FindMobile(serial);
                 if (m == null)
                 {                                   // um, wtf
                     delete.Add(serial);
@@ -497,18 +497,18 @@ namespace Server.Mobiles
                 // not implemented
             }
 
-            public System.IO.Stream OpenSaveFile(int size)
+            public System.IO.Stream? OpenSaveFile(int size)
             {
-                PlayerMobile pm = (m_conversation.With as PlayerMobile);
+                PlayerMobile? pm = (m_conversation.With as PlayerMobile);
                 if (pm == null) return null;
                 pm.ZCodeMiniGameData = new byte[size];
                 pm.ZCodeMiniGameID = m_conversation.StoryFile.GetHashCode();
                 return new MemoryStream(pm.ZCodeMiniGameData);
             }
 
-            public System.IO.Stream OpenRestoreFile()
+            public System.IO.Stream? OpenRestoreFile()
             {
-                PlayerMobile pm = (m_conversation.With as PlayerMobile);
+                PlayerMobile? pm = (m_conversation.With as PlayerMobile);
                 if (pm == null) return null;
                 if (pm.ZCodeMiniGameID == 0)
                 {
@@ -523,13 +523,13 @@ namespace Server.Mobiles
                 return new MemoryStream(pm.ZCodeMiniGameData);
             }
 
-            public System.IO.Stream OpenAuxiliaryFile(string name, int size, bool writing)
+            public System.IO.Stream? OpenAuxiliaryFile(string name, int size, bool writing)
             {
                 // not implemented
                 return null;
             }
 
-            public System.IO.Stream OpenCommandFile(bool writing)
+            public System.IO.Stream? OpenCommandFile(bool writing)
             {
                 // not implemented
                 return null;

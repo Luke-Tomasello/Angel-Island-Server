@@ -1,0 +1,48 @@
+# Song: Another Saturday Night (Sam Cooke)
+# Author: Galois
+# Price: 2000
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: False
+say '[play +eh 0.23 +eh 0.23 +fsh 0.22' 
+say '[play -a +cs 0.23 +cs 0.20 csl e +a 0.22 -a +cs 0.23 0.20 csl a +cs 0.23 +eh 0.22 -a +fsh 0.23' 
+say '[play -d 0.23 +dh 0.20 d fs a 0.22 -d +dh 0.23 +dh 0.20 d fs a 0.23 +dh 0.23 -d 0.23' 
+say '[play -a 0.23 +cs 0.20 csl a +cs 0.22 -a +b 0.23 +cs 0.20 csl e +b 0.23 +a 0.22 -a +fs 0.22' 
+say '[play -e +b 0.23 +b 0.20 e gs b 0.22 -e +b 0.23 +cs 0.20 e gs b 0.23 0.22 -e +a 0.22' 
+say '[play -a +cs 0.23 +cs 0.20 csl e a 0.22 -a +cs 0.23 0.20 csl a +cs 0.23 +eh 0.22 -a +fsh 0.23' 
+say '[play -d 0.23 +dh 0.20 d fs a 0.22 -d +a 0.23 +dh 0.20 d fs a 0.23 +a 0.23 -d 0.20' 
+say '[play -e gs b 0.23 +cs 0.20 -e gs +cs 0.23 +a 0.20 -d fs +b 0.20 -d a +b 0.23 0.20 -a csl +a 0.23' 
+say '[play 0.24 0.24 0.24 a 0.23 a 0.23 0.24 0.24 0.24' 
+say '[play -a 0.23 0.20 csl e a 0.22 -a +e 0.23 +cs 0.20 csl a +eh 0.23 +eh 0.22 -a +cs 0.22' 
+say '[play -e +dh 0.23 +b 0.20 e gs +b 0.23 -e 0.23 0.20 e gs b 0.23 0.22 -e +a 0.20' 
+say '[play -a +cs 0.23 +eh 0.20 csl a +eh 0.22 -a +cs 0.23 +fsh 0.20 csl e a 0.23 0.22 -a +fsh 0.22' 
+say '[play -d +eh 0.23 +dh 0.20 d fs a 0.23 -d 0.23 0.20 d fs +a 0.23 +b 0.22 -d +a 0.20' 
+say '[play -a +cs 0.11 +eh 0.32 csl a +eh 0.22 -a +cs 0.23 +eh 0.11 +fsh 0.08 csl e a 0.23 0.22 -a +a 0.11 a 0.10' 
+say '[play -d +eh 0.23 +dh 0.20 d fs +dh 0.22 -d +a 0.23 +eh 0.11 +dh 0.08 d fs a 0.23 0.22 -d +a 0.20' 
+say '[play -e gs +cs 0.23 +b 0.20 -e gs +cs 0.23 +a 0.20 -d fs +b 0.20 -d a +b 0.23 0.20 -a csl +a 0.23' 
+say '[play 0.24 0.24 0.23 +eh 0.23 0.23 +eh 0.23 +eh 0.23 +fsh 0.22' 
+say '[play -a +cs 0.23 +cs 0.20 csl e +a 0.22 -a +cs 0.23 0.20 csl a +cs 0.23 +eh 0.22 -a +fsh 0.23' 
+say '[play -d 0.23 +dh 0.20 d fs a 0.22 -d +dh 0.23 +dh 0.20 d fs a 0.23 +dh 0.23 -d 0.23' 
+say '[play -a 0.23 +cs 0.20 csl a +cs 0.22 -a +b 0.23 +cs 0.20 csl e +b 0.23 +a 0.22 -a +fs 0.22' 
+say '[play -e +b 0.23 +b 0.20 e gs b 0.22 -e +b 0.23 +cs 0.20 e gs b 0.23 0.22 -e +a 0.22' 
+say '[play -a +cs 0.23 +cs 0.20 csl e a 0.22 -a +cs 0.23 0.20 csl a +cs 0.23 +eh 0.22 -a +fsh 0.23' 
+say '[play -d 0.23 +dh 0.20 d fs a 0.22 -d +a 0.23 +dh 0.20 d fs a 0.23 +a 0.23 -d 0.20' 
+say '[play -e gs b 0.23 +cs 0.20 -e gs +cs 0.23 +a 0.20 -d fs +b 0.20 -d a +b 0.23 0.20 -a csl +a 0.23' 
+say '[play 0.24 0.24 0.24 a 0.23 a 0.23 0.24 0.24 0.24' 
+say '[play -a 0.23 0.20 csl e a 0.22 -a +e 0.23 +cs 0.20 csl a +eh 0.23 +eh 0.22 -a +cs 0.22' 
+say '[play -e +dh 0.23 +b 0.20 e gs +b 0.23 -e 0.23 0.20 e gs b 0.23 0.22 -e +a 0.20' 
+say '[play -a +cs 0.23 +eh 0.20 csl a +eh 0.22 -a +cs 0.23 +fsh 0.20 csl e a 0.23 0.22 -a +fsh 0.22' 
+say '[play -d +eh 0.23 +dh 0.20 d fs a 0.23 -d 0.23 0.20 d fs +a 0.23 +b 0.22 -d +a 0.20' 
+say '[play -a +cs 0.11 +eh 0.32 csl a +eh 0.22 -a +cs 0.23 +eh 0.11 +fsh 0.08 csl e a 0.23 0.22 -a +a 0.11 a 0.10' 
+say '[play -d +eh 0.23 +dh 0.20 d fs +dh 0.22 -d +a 0.23 +eh 0.11 +dh 0.08 d fs a 0.23 0.22 -d +a 0.20' 
+say '[play -e gs +cs 0.23 +b 0.20 -e gs +cs 0.23 +a 0.20 -d fs +b 0.20 -d a +b 0.23 0.20 -a csl +a 0.23' 
+say '[play 0.24 0.24 0.23 +eh 0.23 0.23 +eh 0.23 +eh 0.23 +fsh 0.22' 
+say '[play -a +cs 0.23 +cs 0.20 csl e +a 0.22 -a +cs 0.23 0.20 csl a +cs 0.23 +eh 0.22 -a +fsh 0.23' 
+say '[play -d 0.23 +dh 0.20 d fs a 0.22 -d +dh 0.23 +dh 0.20 d fs a 0.23 +dh 0.23 -d 0.23' 
+say '[play -a 0.23 +cs 0.20 csl a +cs 0.22 -a +b 0.23 +cs 0.20 csl e +b 0.23 +a 0.22 -a +fs 0.22' 
+say '[play -e +b 0.23 +b 0.20 e gs b 0.22 -e +b 0.23 +cs 0.20 e gs b 0.23 0.22 -e +a 0.22' 
+say '[play -a +cs 0.23 +cs 0.20 csl e a 0.22 -a +cs 0.23 0.20 csl a +cs 0.23 +eh 0.22 -a +fsh 0.23' 
+say '[play -d 0.23 +dh 0.20 d fs a 0.22 -d +a 0.23 +dh 0.20 d fs a 0.23 +a 0.23 -d 0.20' 
+say '[play -e gs b 0.23 +cs 0.20 -e gs +cs 0.23 +a 0.20 -d fs +b 0.20 -d a +b 0.23 0.20 -a csl +a 0.23' 

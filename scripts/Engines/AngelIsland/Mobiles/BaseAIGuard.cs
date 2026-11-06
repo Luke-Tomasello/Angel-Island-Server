@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -22,6 +22,9 @@
 /* Scripts/Engines/AngelIsland/BaseAIGuard.cs
  
  *	ChangeLog
+ *	10/16/26, Adam
+ *	    Replace the static AfterHoursClub door with FindClubDoor(): the GuardPostDoor near the guard's own
+ *	    champion engine (SpawnerEngine). Felucca and Trammel (and any other engine) each manage their own door.
  *	8/6/2021, Adam
  *	    Gards were too slow. Speed them up a bit. 
  *	5/17/04, mith
@@ -35,32 +38,112 @@
  *		Replaced halberd with Broadsword so they don't deal quite so much damage as quick.
  *	Created 4/3/04 by mith
  */
+using Server.Diagnostics;
+using Server.Engines.ChampionSpawn;
 using Server.Items;
-using System.Collections;
 
 namespace Server.Mobiles
 {
     public class BaseAIGuard : BaseCreature
     {
-        private static BaseDoor m_after_hours_club = null;
-        public static BaseDoor AfterHoursClub { get { return m_after_hours_club; } set { m_after_hours_club = value; } }
+        #region After Hours Club
+        // The club door is the GuardPostDoor next to the guard champion engine (3 tiles away),
+        //  so each engine, on each facet, manages its own door.
+        public const int ClubDoorRange = 4;
+
+        /// <summary>
+        /// The After Hours Club door belonging to the champion engine that spawned this guard.
+        /// Null for guards not spawned by a champion engine, when no door is found, or when the
+        /// nearby doors are ambiguous (more than one door that are not linked halves of each other).
+        /// </summary>
+        public static BaseDoor? FindClubDoor(Mobile guard)
+        {
+            ChampEngine? engine = guard.SpawnerEngine;
+            if (engine == null || engine.Deleted || engine.Map == null || engine.Map == Map.Internal)
+                return null;
+
+            BaseDoor? found = null;
+            bool ambiguous = false;
+            IPooledEnumerable eable = engine.Map.GetItemsInRange(engine.Location, ClubDoorRange);
+            foreach (Item item in eable)
+                if (item is GuardPostDoor door && !door.Deleted)
+                {
+                    if (found == null || (door.GetChain().Contains(found) && door.GetDistanceToSqrt(engine) < found.GetDistanceToSqrt(engine)))
+                        found = door;
+                    else if (!door.GetChain().Contains(found))
+                        ambiguous = true;
+                }
+            eable.Free();
+
+            if (ambiguous)
+            {
+                LogHelper logger = new LogHelper("AfterHoursClub.log", false);
+                logger.Log(LogType.Item, engine, string.Format("More than one club door near this champion engine; no club door used (guard {0})", guard));
+                logger.Finish();
+                return null;
+            }
+
+            return found;
+        }
+        #endregion After Hours Club
 
         [Constructable]
         public BaseAIGuard()
             : base(AIType.AI_Melee, FightMode.Aggressor, 10, 1, 0.25, 0.5)
         {
-            InitStats(400, 100, 100);
             Title = "the guard";
 
+            InitStats(400, 100, 100);
             SpeechHue = Utility.RandomSpeechHue();
 
+            SetSkill(SkillName.Anatomy, 70.1, 80.0);
+            SetSkill(SkillName.Tactics, 70.1, 80.0);
+            SetSkill(SkillName.Swords, 70.1, 80.0);
+            SetSkill(SkillName.MagicResist, 70.1, 80.0);
+
+            InitBody();
+            InitOutfit();
+        }
+
+        public override void InitBody()
+        {
             Hue = Utility.RandomSkinHue();
 
-            if (Female = Utility.RandomBool())
+            Female = Utility.RandomBool();
+
+            if (Female)
             {
                 Body = 0x191;
                 Name = NameList.RandomName("female");
+            }
+            else
+            {
+                Body = 0x190;
+                Name = NameList.RandomName("male");
+            }
+        }
 
+        public override void InitOutfit()
+        {
+            // Hair
+            Item hair = new Item(Utility.RandomList(0x203B, 0x203C, 0x203D, 0x2044, 0x2045, 0x2047, 0x2049, 0x204A));
+            hair.Hue = Utility.RandomHairHue();
+            hair.Layer = Layer.Hair;
+            hair.Movable = false;
+            AddItem(hair);
+
+            // Beard (male only)
+            if (!Female && Utility.RandomBool())
+            {
+                Item beard = new Item(Utility.RandomList(0x203E, 0x203F, 0x2040, 0x2041, 0x204B, 0x204C, 0x204D));
+                beard.Hue = hair.Hue;
+                beard.Layer = Layer.FacialHair;
+                beard.Movable = false;
+                AddItem(beard);
+            }
+
+            if (Female)
+            {
                 switch (Utility.Random(2))
                 {
                     case 0: AddItem(new LeatherSkirt()); break;
@@ -78,96 +161,41 @@ namespace Server.Mobiles
             }
             else
             {
-                Body = 0x190;
-                Name = NameList.RandomName("male");
-
                 AddItem(new PlateChest());
                 AddItem(new PlateArms());
                 AddItem(new PlateGorget());
                 AddItem(new PlateLegs());
             }
 
-            Item hair = new Item(Utility.RandomList(0x203B, 0x203C, 0x203D, 0x2044, 0x2045, 0x2047, 0x2049, 0x204A));
-
-            hair.Hue = Utility.RandomHairHue();
-            hair.Layer = Layer.Hair;
-            hair.Movable = false;
-
-            AddItem(hair);
-
-            if (Utility.RandomBool() && !this.Female)
+            // Weapon
+            Broadsword weapon = new Broadsword
             {
-                Item beard = new Item(Utility.RandomList(0x203E, 0x203F, 0x2040, 0x2041, 0x204B, 0x204C, 0x204D));
-
-                beard.Hue = hair.Hue;
-                beard.Layer = Layer.FacialHair;
-                beard.Movable = false;
-
-                AddItem(beard);
-            }
-
-            Broadsword weapon = new Broadsword();
-
-            weapon.Movable = false;
-            weapon.Crafter = this;
-            weapon.Quality = WeaponQuality.Exceptional;
+                Movable = false,
+                Crafter = this,
+                Quality = WeaponQuality.Exceptional
+            };
 
             AddItem(weapon);
-
-            Container pack = new Backpack();
-
-            pack.Movable = false;
-
-            pack.DropItem(new Gold(10, 25));
-
-            AddItem(pack);
-
-            SetSkill(SkillName.Anatomy, 70.1, 80.0);
-            SetSkill(SkillName.Tactics, 70.1, 80.0);
-            SetSkill(SkillName.Swords, 70.1, 80.0);
-            SetSkill(SkillName.MagicResist, 70.1, 80.0);
         }
 
-        public BaseAIGuard(Serial serial)
-            : base(serial)
-        {
-        }
+        public BaseAIGuard(Serial serial) : base(serial) { }
 
         public override bool OnBeforeDeath()
         {
-            ArrayList items = new ArrayList(this.Items);
+            // 4/28/2026, Adam:
+            // Legacy Angel Island behavior deleted all armor and clothing on death,
+            // likely to limit inmate item access. This has been disabled.
+            // The restriction adds little mechanical value and results in undesirable
+            // visuals (e.g., naked corpses). Items are now preserved.
 
-            foreach (Item i in items)
-            {
-                if (i is BaseArmor || i is BaseClothing)
-                    i.Delete();
-            }
+            //ArrayList items = new ArrayList(this.Items);
+            //foreach (Item i in items)
+            //{
+            //    if (i is BaseArmor || i is BaseClothing)
+            //        i.Delete();
+            //}
 
             return base.OnBeforeDeath();
-        }
-
-        public void DropItem(Item item)
-        {
-            if (Summoned || item == null)
-            {
-                if (item != null)
-                    item.Delete();
-
-                return;
-            }
-
-            Container pack = Backpack;
-
-            if (pack == null)
-            {
-                pack = new Backpack();
-
-                pack.Movable = false;
-
-                AddItem(pack);
-            }
-
-            pack.DropItem(item);
         }
 
         public bool DropWeapon(int minLevel, int maxLevel)
@@ -185,23 +213,17 @@ namespace Server.Mobiles
 
             double random = Utility.RandomDouble();
             if (random >= .75)
-            { weapon = new WarFork(); }
+                weapon = new WarFork();
             else if (random >= .50)
-            { weapon = new WarMace(); }
+                weapon = new WarMace();
             else if (random >= .25)
             {
                 weapon = new Bow();
-                Arrow arrows = new Arrow();
-                arrows.Amount = 25;
-                DropItem(arrows);
+                PackItem(new Arrow { Amount = 25 });
             }
 
-            if (weapon == null)
-                return false;
-
-            Item item = Loot.ImbueWeaponOrArmor((Item)weapon, minLevel, maxLevel);
-
-            DropItem(item);
+            Item item = Loot.ImbueWeaponOrArmor(weapon, minLevel, maxLevel);
+            PackItem(item);
 
             return true;
         }
@@ -209,14 +231,12 @@ namespace Server.Mobiles
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-
-            writer.Write((int)0); // version
+            writer.Write((int)0);
         }
 
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
-
             int version = reader.ReadInt();
         }
     }

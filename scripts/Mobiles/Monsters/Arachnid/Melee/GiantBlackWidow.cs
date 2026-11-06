@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -75,40 +75,17 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20021015000846/uo.stratics.com/hunters/blackwidow.shtml
+            // 5 Spider Silk, 2 Poison Potions
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackItem(new SpidersSilk(5));
-                PackGold(60, 90);
-                PackItem(new LesserPoisonPotion());
-                PackItem(new LesserPoisonPotion());
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                // no gold
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021015000846/uo.stratics.com/hunters/blackwidow.shtml
-                    // 5 Spider Silk, 2 Poison Potions
-
-                    if (Spawning)
-                    {
-                        // no gold
-                    }
-                    else
-                    {
-                        PackItem(new SpidersSilk(5));
-                        PackItem(new PoisonPotion(2));
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new SpidersSilk(7));
-
-                    AddLoot(LootPack.Meager);
-                    AddLoot(LootPack.Poor);
-                }
+                PackItem(new SpidersSilk(5));
+                PackItem(new PoisonPotion(2));
             }
         }
 

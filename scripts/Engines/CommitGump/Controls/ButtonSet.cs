@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -63,8 +63,8 @@ namespace Server.Engines.CommitGump.Controls
         Dictionary<int, string> _setData = new Dictionary<int, string>();
 
         //delegates
-        private ButtonPressedDelegate m_ButtonPress;
-        private QueryButtonStatusDelegate m_QueryButtonStatus;
+        private ButtonPressedDelegate? m_ButtonPress;
+        private QueryButtonStatusDelegate? m_QueryButtonStatus;
         private QueryLabelColourDelegate m_QueryButtonTextColour;
 
         #endregion

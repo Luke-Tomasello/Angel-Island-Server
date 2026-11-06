@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -94,13 +94,14 @@ namespace Server.Commands
             public Serial m_serial;
             public Type m_type;
             public int m_count;
-            public string m_damage;
-            public string m_accuracy;
-            public string m_durability;
-            public string m_quality;
-            public string m_slayer;
-            public string m_magicEffect; // magic effect: jewelry, clothing, armor, weapons
+            public string? m_damage;
+            public string? m_accuracy;
+            public string? m_durability;
+            public string? m_quality;
+            public string? m_slayer;
+            public string? m_magicEffect; // magic effect: jewelry, clothing, armor, weapons
             public string m_description;
+            public string? m_lootType;
 
             public InvItem(Type type)
             {
@@ -108,9 +109,9 @@ namespace Server.Commands
                 m_type = type;
             }
 
-            public Int32 CompareTo(Object obj)
+            public Int32 CompareTo(Object? obj)
             {
-                InvItem tmpObj = (InvItem)obj;
+                InvItem? tmpObj = (InvItem?)obj;
                 return (this.m_description.CompareTo(tmpObj.m_description));
             }
 
@@ -145,7 +146,7 @@ namespace Server.Commands
                 {
                     string typeName = sx.Substring(5);
                     // We have an argument, so try to convert to a type
-                    Type itemType = ScriptCompiler.FindTypeByName(typeName);
+                    Type? itemType = ScriptCompiler.FindTypeByName(typeName);
                     if (itemType == null)
                     {
                         // Invalid
@@ -178,16 +179,18 @@ namespace Server.Commands
             LogHelper Logger = new LogHelper("inventory.log", true);
             if (!m_bare)
             {
-                Logger.Log(LogType.Text, string.Format("{0}\t{1,-45}\t{8,-25}\t{2,-25}\t{3,-20}\t{4,-20}\t{5,-20}\t{6,-20}\t{7,-20}",
-                    "Qty ---",
-                    "Item ------------",
-                    "Damage / Protection --",
-                    "Durability -----",
-                    "Accuracy -----",
-                    "Exceptional",
-                    "Slayer ----",
-                    "Magic Effect ----",
-                    "Serial ----"));
+                Logger.Log(LogType.Text,
+                    $"{Col("Qty ---", 6)}\t" +
+                    $"{Col("Item ------------", 45)}\t" +
+                    $"{Col("Serial ----", 25)}\t" +
+                    $"{Col("Damage / Protection --", 25)}\t" +
+                    $"{Col("Durability -----", 20)}\t" +
+                    $"{Col("Accuracy -----", 20)}\t" +
+                    $"{Col("Exceptional", 20)}\t" +
+                    $"{Col("Slayer ----", 20)}\t" +
+                    $"{Col("Magic Effect ----", 20)}\t" +
+                    $"{Col("Loot Type ----", 20)}"
+                );
 
                 // Loop through and add objects returned
                 foreach (object obj in eable)
@@ -223,33 +226,34 @@ namespace Server.Commands
                 // Loop and log
                 foreach (InvItem ir in m_Inv)
                 {
-                    string output = string.Format("{0}\t{1,-45}\t{8,-25}\t{2,-25}\t{3,-20}\t{4,-20}\t{5,-20}\t{6,-20}\t{7,-20}",
-                        ir.m_count + ",",
-                        (ir.GetDescription()) + ",",
-                        (ir.m_damage != null ? ir.m_damage : "N/A") + ",",
-                        (ir.m_durability != null ? ir.m_durability : "N/A") + ",",
-                        (ir.m_accuracy != null ? ir.m_accuracy : "N/A") + ",",
-                        (ir.m_quality != null ? ir.m_quality : "N/A") + ",",
-                        (ir.m_slayer != null ? ir.m_slayer : "N/A") + ",",
-                        (ir.m_magicEffect != null ? ir.m_magicEffect : "N/A") + ",",
-                        ir.m_serial.ToString()
-                        );
+                    string output =
+                        $"{Col(ir.m_count + ",", 6)}\t" +
+                        $"{Col(ir.GetDescription() + ",", 45)}\t" +
+                        $"{Col(ir.m_serial.ToString(), 25)}\t" +
+                        $"{Col((ir.m_damage ?? "N/A") + ",", 25)}\t" +
+                        $"{Col((ir.m_durability ?? "N/A") + ",", 20)}\t" +
+                        $"{Col((ir.m_accuracy ?? "N/A") + ",", 20)}\t" +
+                        $"{Col((ir.m_quality ?? "N/A") + ",", 20)}\t" +
+                        $"{Col((ir.m_slayer ?? "N/A") + ",", 20)}\t" +
+                        $"{Col((ir.m_magicEffect ?? "N/A") + ",", 20)}\t" +
+                        $"{Col((ir.m_lootType ?? "N/A") + ",", 20)}";
 
                     Logger.Log(LogType.Text, output);
 
                     if (m_verbose)
                     {
-                        output = string.Format("{0}{1}{7}{2}{3}{4}{5}{6}{7}",
+                        output = string.Format("{0}{1}{8}{2}{3}{4}{5}{6}{7}{8}{9}",
                             ir.m_count + ",",
-                            (ir.GetDescription()) + ",",
-                            (ir.m_damage != null ? ir.m_damage : "N/A") + ",",
-                            (ir.m_durability != null ? ir.m_durability : "N/A") + ",",
-                            (ir.m_accuracy != null ? ir.m_accuracy : "N/A") + ",",
-                            (ir.m_quality != null ? ir.m_quality : "N/A") + ",",
-                            (ir.m_slayer != null ? ir.m_slayer : "N/A") + ",",
-                            (ir.m_magicEffect != null ? ir.m_magicEffect : "N/A") + ",",
+                            ir.GetDescription() + ",",
+                            (ir.m_damage ?? "N/A") + ",",
+                            (ir.m_durability ?? "N/A") + ",",
+                            (ir.m_accuracy ?? "N/A") + ",",
+                            (ir.m_quality ?? "N/A") + ",",
+                            (ir.m_slayer ?? "N/A") + ",",
+                            (ir.m_magicEffect ?? "N/A") + ",",
+                            (ir.m_lootType ?? "N/A") + ",",
                             ir.m_serial.ToString()
-                            );
+                        );
 
                         from.SendMessage(output);
                     }
@@ -274,6 +278,10 @@ namespace Server.Commands
                 }
             }
             Logger.Finish();
+        }
+        private static string Col(string value, int width)
+        {
+            return string.Format("{0,-" + width + "}", value);
         }
         private static void AddInv(object o)
         {
@@ -303,13 +311,6 @@ namespace Server.Commands
                             break;
                         }
                 }
-#if false
-                // Do we want to inventory this container, or return?
-                Type ct = o.GetType();
-
-                if (!(m_ItemType == null) && !ct.IsSubclassOf(m_ItemType) && ct != m_ItemType)
-                    return;
-#endif
             }
 
             // Convert 'named' corpses to generic 'corpse' so they are simply counted instead of being listed separately.
@@ -395,6 +396,8 @@ namespace Server.Commands
 
                 if (enchanted)
                     ir.m_description += " (scroll)";
+
+                ir.m_lootType = it.LootType.ToString();
             }
 
             // Make sure there are no others like this
@@ -409,7 +412,8 @@ namespace Server.Commands
                     ii.m_durability == ir.m_durability &&
                     ii.m_slayer == ir.m_slayer &&
                     ii.m_magicEffect == ir.m_magicEffect &&
-                    ii.m_description == ir.m_description) //pla: include new field in this check
+                    ii.m_description == ir.m_description && //pla: include new field in this check
+                    ii.m_lootType == ir.m_lootType)
                 {
 
                     // It exists, so increment and return

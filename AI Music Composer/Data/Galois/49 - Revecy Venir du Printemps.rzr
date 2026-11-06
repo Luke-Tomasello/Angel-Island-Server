@@ -1,0 +1,56 @@
+#
+# Revecy Venir Du Printemps
+# Author: Galois
+# Song: Revecy Venir du Printemps
+# Instrument: lapharp
+# Price: 2000
+# NewTimer: true
+# Prefetch: false
+# Tempo: 90
+#
+#meas 1 - rechant a cinc
+say '[play c 0.1 c 0.1 a 0.3 c 0.1 f 0.3 as 0.1 a 0.3 g 0.3'
+wait 2500
+say '[play a 0.1 as 0.1 c 0.3 dh 0.1 eh 0.3 fh 0.1 gh 0.3 fh 0.3'
+wait 2500
+say '[play c 0.1 c 0.1 a 0.3 c 0.1 f 0.3 as 0.1 a 0.3 g 0.3'
+wait 2500
+say '[play a 0.1 as 0.1 c 0.3 dh 0.1 eh 0.3 fh 0.1 gh 0.3 fh 0.3'
+wait 2500
+#meas 3 - chant a deux
+say '[play c 0.1 fh 0.1 eh 0.3 dh 0.1 c 0.3 c 0.1 dh 0.3 c as a g f 0.1 as 0.1 a 0.3 g 0.1 f 0.3 f 0.1 g 0.3 f 0.3'
+wait 5000
+say '[play c 0.1 as 0.1 a 0.3 dh 0.3 c 0.1 as a as 0.3 a 0.3 as 0.1 a 0.1 g 0.3 f 0.1 e 0.3 e 0.1 d 0.3 cl 0.3'
+wait 5000
+#meas 7
+say '[play f 0.1 g 0.1 a 0.3 as 0.1 c 0.3 a 0.1 as c dh 0.1 c 0.3 fh 0.1 eh 0.1 dh 0.3 eh 0.1 c 0.3 dh 0.1 as 0.3 a 0.3'
+wait 5000
+say '[play a 0.1 g 0.1 f g a as c 0.1 as 0.3 a g a 0.3 g 0.3 f 0.1 as 0.1 a 0.3 as 0.1 c dh eh c fh 0.1 eh dh eh 0.1 fh 0.3'
+wait 6000
+#meas 11 - rechant a cinc
+say '[play c a c f a 0.3 c 0.1 f 0.3 as 0.1 a 0.3 g e f g'
+wait 2500
+say '[play a 0.1 as 0.1 c f a c dh 0.1 eh 0.3 fh 0.1 gh c dh eh fh 0.3'
+wait 2500
+say '[play c a c f a 0.3 c 0.1 f 0.3 as 0.1 a 0.3 g e f g'
+wait 2500
+say '[play a f as 0.1 c 0.3 dh 0.1 eh 0.3 fh 0.1 eh dh eh 0.1 fh 0.3'
+wait 2500
+#meas 13 - chant a trois
+say '[play c a fh 0.1 eh c e g dh 0.1 c cl e g c 0.1 dh 0.3 c as a g f cl as 0.1 a cl f cl g 0.1 f 0.3 f 0.1 g cl d e f cl e cl'
+wait 5000
+say '[play f cl g 0.1 a cl f a as 0.1 c cl e cl a 0.1 dh 0.3 c 0.1 dh eh fh 0.1 eh 0.1 dh d f a eh 0.1 c 0.3 dh 0.1 as e f g a 0.3'
+wait 5000
+say '[play as f a 0.1 g cl e cl f 0.1 e cl d e f 0.1 d 0.3 cl f e f'
+wait 3000
+say '[play a f g cl f g a as c 0.1 as d f d a g a 0.3 g 0.3 f 0.1 as 0.1 a 0.1 as c dh 0.1 c dh eh 0.1 fh 0.1 eh dh eh 0.1 fh 0.3'
+wait 5000
+#meas 17 - rechant a cinc
+say '[play c a c 0.1 a cl f a c 0.1 f cl a f as 0.1 a cl f a g cl e g'
+wait 2800
+say '[play a f as 0.1 c cl f a dh 0.1 eh g c eh fh 0.1 gh c eh gh fh a c fh'
+wait 2800
+say '[play c a c 0.1 a cl f a c 0.1 f cl a f as 0.1 a cl f a g cl e g'
+wait 2800
+say '[play a f as 0.1 c cl f a dh 0.1 eh g c eh fh 0.1 eh dh eh 0.1 fh 0.8'
+wait 3500

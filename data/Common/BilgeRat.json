@@ -1,0 +1,25 @@
+{
+  "Type": "BilgeRat",
+  "SavedLocal": "2026-03-05 16:29:22",
+  "Stats": {
+    "Str": 88,
+    "Dex": 61,
+    "Int": 28,
+    "Hits": 65,
+    "VirtualArmor": 27,
+    "Damage": 3
+  },
+  "Behavior": {
+    "UsesHumanWeapons": false,
+    "UsesBandages": false,
+    "UsesPotions": false,
+    "CanRun": false,
+    "CanReveal": false
+  },
+  "Skills": {
+    "Meditation": 0.3,
+    "MagicResist": 11.2,
+    "Tactics": 31.3,
+    "Wrestling": 24.1
+  }
+}

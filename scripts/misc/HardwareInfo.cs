@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -180,7 +180,7 @@ namespace Server
                 {
                     #region Hardware Info Logging
                     LogHelper Logger = new LogHelper("HardwareInfo.log", false, true);
-                    Account acct = e.Mobile.Account as Account;
+                    Account? acct = e.Mobile.Account as Account;
                     string hi = "{null}";
                     if (acct.HardwareInfo != null)
                     {
@@ -228,7 +228,7 @@ namespace Server
                     if (CoreAI.FakeBadGMNCUO)
                         // pervert the seed to force a failure
                         seed = ~seed;
-                    Timer CUOCodeTimer;
+                    Timer? CUOCodeTimer;
                     e.Mobile.Send(new ExchangeCUOCode(seed));
                     if (m_Table.ContainsKey(seed))
                     {
@@ -245,11 +245,11 @@ namespace Server
         }
         private static void OnCUOCodeTimeout(object state)
         {
-            Timer t = null;
+            Timer? t = null;
             if (state == null || state is not Mobile || (state as Mobile).NetState == null)
                 return;
 
-            Mobile m = state as Mobile;
+            Mobile? m = state as Mobile;
             uint seed = (uint)Utility.GetStableHashCode(string.Format("{0}{1}", CUOCodeHandshake, (uint)(state as Mobile).NetState.m_Seed));
 
             m_Table.Remove(seed);
@@ -262,9 +262,9 @@ namespace Server
                 if (!logger.Contains(text))
                     logger.Log(text);
                 logger.Finish();
-                Accounting.Account acct = (state as Mobile).Account as Accounting.Account;
+                Accounting.Account? acct = (state as Mobile).Account as Accounting.Account;
                 if (acct != null)
-                    acct.SetFlag(AccountFlag.InvalidClient, true);
+                    acct.SetFlag(AccountFlags.InvalidClient, true);
 
                 //m.SendGump(new Gumps.WarningGump(1060635, 30720, HardwareInfo.CUOCodeWarning, 0xFFC000, 420, 250, null, null));
             }
@@ -323,7 +323,7 @@ namespace Server
             if (obj is Mobile && ((Mobile)obj).Player)
             {
                 Mobile m = (Mobile)obj;
-                Account acct = m.Account as Account;
+                Account? acct = m.Account as Account;
 
                 if (acct != null)
                 {
@@ -428,7 +428,7 @@ namespace Server
             HandleHandshakeCode(state, (uint)info.m_Distribution,/*code*/ (uint)info.m_PhysicalMemory/*payload*/);
 
             #region Hardware Info Maintenance and Logging
-            Account acct = state.Account as Account;
+            Account? acct = state.Account as Account;
             if (acct != null)
             {
                 acct.HardwareInfo = info;
@@ -474,7 +474,7 @@ namespace Server
             uint NeededCode = ServerVerify(seed);
             if (NeededCode == ResponseCode)
             {
-                Timer t = null;
+                Timer? t = null;
                 if (m_Table.Contains(seed))
                 {
                     t = m_Table[seed] as Timer;
@@ -517,10 +517,10 @@ namespace Server
                     // tell other accounts on this machine what's going on
                     AccountHardwareLimiter.Notify(acct);
                     // bye bye! (See Cron for the 'kick player' job)
-                    acct.SetFlag(Account.AccountFlag.ExceedsMachineInfoLimit, true);
+                    acct.SetFlag(Account.AccountFlags.ExceedsMachineInfoLimit, true);
                 }
                 else
-                    acct.SetFlag(Account.AccountFlag.ExceedsMachineInfoLimit, false);
+                    acct.SetFlag(Account.AccountFlags.ExceedsMachineInfoLimit, false);
             }
         }
     }

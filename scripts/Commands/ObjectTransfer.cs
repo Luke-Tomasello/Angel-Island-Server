@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -43,10 +43,10 @@ namespace Server.Commands
 
             logger.Log(LogType.Text, string.Format("Exporting objects to {0}.", filename));
 
-            FileStream idxStream = null;
-            FileStream binStream = null;
-            GenericWriter idxWriter = null;
-            GenericWriter binWriter = null;
+            FileStream? idxStream = null;
+            FileStream? binStream = null;
+            GenericWriter? idxWriter = null;
+            GenericWriter? binWriter = null;
 
             try
             {
@@ -119,12 +119,12 @@ namespace Server.Commands
             ImportResult[] imported = new ImportResult[0];
             int count = 0;
 
-            FileStream idxStream = null;
-            FileStream binStream = null;
-            BinaryReader idxFile = null;
-            BinaryReader binFile = null;
-            GenericReader idxReader = null;
-            GenericReader binReader = null;
+            FileStream? idxStream = null;
+            FileStream? binStream = null;
+            BinaryReader? idxFile = null;
+            BinaryReader? binFile = null;
+            GenericReader? idxReader = null;
+            GenericReader? binReader = null;
 
             try
             {
@@ -140,7 +140,7 @@ namespace Server.Commands
 
                     for (int i = 0; i < imported.Length; i++)
                     {
-                        string typeName = idxReader.ReadString();
+                        string? typeName = idxReader.ReadString();
                         Serial oldSerial = idxReader.ReadInt();
                         long start = idxReader.ReadLong();
                         int length = idxReader.ReadInt();
@@ -163,7 +163,7 @@ namespace Server.Commands
                             continue;
                         }
 
-                        ConstructorInfo ctor = type.GetConstructor(new Type[] { typeof(Serial) });
+                        ConstructorInfo? ctor = type.GetConstructor(new Type[] { typeof(Serial) });
 
                         if (ctor == null)
                         {
@@ -193,7 +193,7 @@ namespace Server.Commands
 
                     for (int i = 0; i < imported.Length; i++)
                     {
-                        string typeName = idxReader.ReadString();
+                        string? typeName = idxReader.ReadString();
                         idxReader.ReadInt(); // old serial
                         long start = idxReader.ReadLong();
                         int length = idxReader.ReadInt();

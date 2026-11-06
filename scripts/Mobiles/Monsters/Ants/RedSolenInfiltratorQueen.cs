@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -92,36 +92,20 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=116
+            // 250 - 300 Gold
+            // Special: 4-16 Zoogi Fungus, Picnic Basket
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                SolenHelper.PackPicnicBasket(this);
-                PackGold(150, 200);
-                // TODO: 4-16 zoogi fungus
+                PackGold(250, 300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        SolenHelper.PackPicnicBasket(this);
+                PackItem(new ZoogiFungus(Utility.RandomMinMax(4, 16)));
 
-                        PackItem(new ZoogiFungus((0.05 < Utility.RandomDouble()) ? 4 : 16));
-                    }
-
-                    AddLoot(LootPack.Rich);
-                }
+                if (Utility.RandomDouble() < 0.02) // 2%
+                    SolenHelper.PackPicnicBasket(this);
             }
         }
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,6 +41,7 @@
 		Merged in 1.0RC0 code.
 */
 
+using Server.Engines.Consoles;
 using Server.Targeting;
 using System;
 
@@ -56,7 +57,7 @@ namespace Server.Spells.Third
                 Reagent.Nightshade
             );
 
-        public PoisonSpell(Mobile caster, Item scroll)
+        public PoisonSpell(Mobile caster, Item? scroll)
             : base(caster, scroll, m_Info)
         {
         }
@@ -66,8 +67,8 @@ namespace Server.Spells.Third
             SpellCircle circle = Circle;
 
             #region Tuning Console
-            if (Server.Items.Consoles.TuningConsole.Enabled)
-                circle = Server.Items.Consoles.PoisonStickMCi.SpellCircle;
+            if (TuningConsole.Enabled)
+                circle = PoisonStickMCi.SpellCircle;
             #endregion
 
             return GetResistPercentForCircle(target, circle);
@@ -164,7 +165,7 @@ namespace Server.Spells.Third
                     }
 
                     //Pix- 7/4/04 - this assures that the caster is added to the target's aggressors list.
-                    SpellHelper.Damage(TimeSpan.FromSeconds(0.1), m, Caster, 1, 0, 0, 0, 100, 0);
+                    SpellHelper.Damage(TimeSpan.FromSeconds(0.1), m, Caster, 1, new DamageContext { Source = this });
 
                     m.ApplyPoison(Caster, Poison.GetPoison(level));
                 }

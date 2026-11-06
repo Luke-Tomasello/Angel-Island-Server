@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -72,7 +72,7 @@ namespace Server.Engines.Craft
             get { return 1044007; } // <CENTER>TINKERING MENU</CENTER>
         }
 
-        private static CraftSystem m_CraftSystem;
+        private static CraftSystem? m_CraftSystem;
 
         public static CraftSystem CraftSystem
         {
@@ -108,7 +108,7 @@ namespace Server.Engines.Craft
             return 0;
         }
 
-        public override void PlayCraftEffect(Mobile from, object obj = null)
+        public override void PlayCraftEffect(Mobile from, object? obj = null)
         {
             // no sound
             //from.PlaySound( 0x241 );
@@ -247,6 +247,71 @@ namespace Server.Engines.Craft
             AddCraft(typeof(Hinge), 1044047, 1024181, 5.0, 55.0, typeof(IronIngot), 1044036, 2, 1044037);
             AddCraft(typeof(BolaBall), 1044047, 1023699, 45.0, 95.0, typeof(IronIngot), 1044036, 10, 1044037);
 
+            #region Shipbuilding
+            TextDefinition shipbuildingGroup = "Shipbuilding";
+
+            #region Precursor Materials
+            int index = AddCraft(typeof(MarinePulley), shipbuildingGroup, "marine pulley",
+                55.0, 80.0,
+                typeof(IronIngot), 1044036,
+                5,
+                1044037);
+
+            AddRes(index, typeof(Beeswax), "bees wax", 1, "You do not have enough bees wax.");
+            #endregion Precursor Materials
+
+            // Rigging
+            index = AddCraft(typeof(ShipRiggingCraft), shipbuildingGroup, "ship rigging",
+                ShipPlans.GetMinSkill(null, ShipAssemblyParts.Rigging),
+                ShipPlans.GetMaxSkill(null, ShipAssemblyParts.Rigging),
+                typeof(MarineRope), "marine rope",
+                ShipPlans.GetRequiredAmount(null, ShipAssemblyParts.Rigging, typeof(MarineRope)),
+                "You do not have enough marine rope.");
+
+            AddRes(index, typeof(MarinePulley), "marine pulley",
+                ShipPlans.GetRequiredAmount(null, ShipAssemblyParts.Rigging, typeof(MarinePulley)),
+                "You do not have enough marine pullies.");
+
+            SetNeedShipPlans(index, null, ShipAssemblyParts.Rigging);
+
+            // Hardware
+            index = AddCraft(typeof(ShipHardwareCraft), shipbuildingGroup, "ship hardware",
+                ShipPlans.GetMinSkill(null, ShipAssemblyParts.Hardware),
+                ShipPlans.GetMaxSkill(null, ShipAssemblyParts.Hardware),
+                typeof(IronIngot), 1044036,
+                ShipPlans.GetRequiredAmount(null, ShipAssemblyParts.Hardware, typeof(IronIngot)),
+                1044037);
+
+            AddRes(index, typeof(Board), 1044041,
+                ShipPlans.GetRequiredAmount(null, ShipAssemblyParts.Hardware, typeof(Board)),
+                1044351);
+
+            SetNeedShipPlans(index, null, ShipAssemblyParts.Hardware);
+
+            // Navigation
+            index = AddCraft(typeof(ShipNavigationCraft), shipbuildingGroup, "ship navigation",
+                ShipPlans.GetMinSkill(null, ShipAssemblyParts.Navigation),
+                ShipPlans.GetMaxSkill(null, ShipAssemblyParts.Navigation),
+                typeof(WorldMap), 1015233,
+                ShipPlans.GetRequiredAmount(null, ShipAssemblyParts.Navigation, typeof(WorldMap)),
+                1044441);
+
+            AddRes(index, typeof(Gears), 1044254,
+                ShipPlans.GetRequiredAmount(null, ShipAssemblyParts.Navigation, typeof(Gears)),
+                1044253);
+
+            AddRes(index, typeof(SextantParts), 1024185,
+                ShipPlans.GetRequiredAmount(null, ShipAssemblyParts.Navigation, typeof(SextantParts)),
+                1044253);
+
+            AddRes(index, typeof(ClockParts), 1044173,
+                ShipPlans.GetRequiredAmount(null, ShipAssemblyParts.Navigation, typeof(ClockParts)),
+                1044253);
+
+            SetNeedShipPlans(index, null, ShipAssemblyParts.Navigation);
+
+            #endregion Shipbuilding
+
             // Utensils
             AddCraft(typeof(ButcherKnife), 1044048, 1025110, 25.0, 75.0, typeof(IronIngot), 1044036, 2, 1044037);
             AddCraft(typeof(SpoonLeft), 1044048, 1044158, 0.0, 50.0, typeof(IronIngot), 1044036, 1, 1044037);
@@ -271,7 +336,7 @@ namespace Server.Engines.Craft
             AddCraft(typeof(Lantern), 1044050, 1022597, 30.0, 80.0, typeof(IronIngot), 1044036, 2, 1044037);
             AddCraft(typeof(HeatingStand), 1044050, 1026217, 60.0, 110.0, typeof(IronIngot), 1044036, 4, 1044037);
 
-            int index = 0;
+            index = 0;
             if (Core.RuleSets.AngelIslandRules())
             {
                 // wea: added siege tent
@@ -328,6 +393,11 @@ namespace Server.Engines.Craft
             AddRes(index, typeof(ClockParts), 1044173, 1, 1044253);
 
             AddCraft(typeof(Sextant), 1044051, 1024183, 0.0, 0.0, typeof(SextantParts), 1044175, 1, 1044253);
+
+            index = AddCraft(typeof(CartographersSextant), 1044051, "cartographer's sextant", 75.0, 100.0, typeof(SextantParts), "sextant parts", 1, "You need sextant parts to make this.");
+            AddRes(index, typeof(BlankMap), "blank map", 1, "You need a blank map to make this.");
+            AddRes(index, typeof(IronIngot), "iron ingot", 5, "You need iron ingots to make this.");
+            AddSkill(index, SkillName.Cartography, 50.0, 80.0);
 
             index = AddCraft(typeof(Bola), 1044051, 1046441, 60.0, 110.0, typeof(BolaBall), 1046440, 4, 1042613);
             AddRes(index, typeof(Leather), 1044462, 3, 1044463);
@@ -428,7 +498,7 @@ namespace Server.Engines.Craft
         {
         }
 
-        private int Verify(LockableContainer container)
+        private int Verify(LockableContainer? container)
         {
             if (container == null || container.KeyValue == 0)
                 return 1005638; // You can only trap lockable chests.
@@ -448,7 +518,7 @@ namespace Server.Engines.Craft
 
         private bool Acquire(object target, out int message)
         {
-            LockableContainer container = target as LockableContainer;
+            LockableContainer? container = target as LockableContainer;
 
             message = Verify(container);
 
@@ -574,11 +644,11 @@ namespace Server.Engines.Craft
 		 * tinkering skill.
 		 * http://www.gatecentral.com/ultima/wissen/sk_tinkering_l12.php
 		 */
-        public Mobile CalcTrapper()
+        public Mobile? CalcTrapper()
         {
             // on the floor of your house or on the deck of your boat are the only safe places to trap this container.
-            Multis.BaseBoat boat = Multis.BaseBoat.FindBoatAt(From);
-            Multis.BaseHouse house = Multis.BaseHouse.FindHouseAt(From);
+            Multis.BaseBoat? boat = Multis.BaseBoat.FindBoatAt(From);
+            Multis.BaseHouse? house = Multis.BaseHouse.FindHouseAt(From);
 
             if (boat != null)
             {   // they are on a boat

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -88,7 +88,7 @@ namespace Server.Mobiles
     [CorpseName("an ancient tree")]
     public class TreeOfKnowledge : BaseCreature
     {
-        private DrainTimer m_Timer;
+        private DrainTimer? m_Timer;
 
         [Constructable]
         public TreeOfKnowledge()
@@ -122,7 +122,7 @@ namespace Server.Mobiles
 
         public override bool DisallowAllMoves { get { return true; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
         public override Poison PoisonImmune { get { return Poison.Lethal; } }
 
         public override bool CanBandage { get { return true; } }
@@ -166,7 +166,7 @@ namespace Server.Mobiles
                 int toDrain = Utility.RandomMinMax(10, 40);
 
                 Hits += toDrain;
-                m.Damage(toDrain, this, this);
+                m.Damage(toDrain, this, new DamageContext { Source = this });
             }
         }
 
@@ -292,7 +292,7 @@ namespace Server.Mobiles
                         if (m_Owner != null)
                             m_Owner.Hits += 20;
 
-                        m.Damage(20, m_Owner, this);
+                        m.Damage(20, m_Owner, new DamageContext { Source = this });
                     }
 
                     m_ToDrain.Clear();
@@ -348,10 +348,13 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // ai special
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
                 PackGold(28000, 32000);
+            }
+            else
+            {
                 PackItem(new Log(Utility.Random(2500, 3500)));
                 GenerateRegs();
 
@@ -364,23 +367,7 @@ namespace Server.Mobiles
                 item = Loot.RandomArmorOrShieldOrWeapon();
                 PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6 /*6*/, 0, false));
             }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    // ai special
-                }
-            }
+
         }
 
         private void GenerateRegs()
@@ -878,7 +865,7 @@ namespace Server.Mobiles
 
                 int price = GetPrice(pet);
 
-                TOKRequest request;
+                TOKRequest? request;
 
                 if (tok.m_Requests.TryGetValue(from, out request) && request.Price == price)
                 {
@@ -918,7 +905,7 @@ namespace Server.Mobiles
 
             private BaseCreature FindPet(TreeOfKnowledge tok, Mobile master, string petName)
             {
-                BaseCreature found = null;
+                BaseCreature? found = null;
 
                 foreach (Mobile m in World.Mobiles.Values)
                 {
@@ -967,7 +954,7 @@ namespace Server.Mobiles
 
             public virtual bool HandleGoldGiven(TreeOfKnowledge tok, Mobile from, int given)
             {
-                TOKRequest request;
+                TOKRequest? request;
 
                 if (!tok.m_Requests.TryGetValue(from, out request) || request.Service != Service)
                     return false;
@@ -1032,7 +1019,7 @@ namespace Server.Mobiles
 
         public void Unregister(Mobile m)
         {
-            TOKRequest request;
+            TOKRequest? request;
 
             if (m_Requests.TryGetValue(m, out request))
                 request.Stop();

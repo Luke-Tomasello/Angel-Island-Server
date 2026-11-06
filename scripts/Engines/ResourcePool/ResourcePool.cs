@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -148,7 +148,7 @@ namespace Server.Engines.ResourcePool
             m_Amount = amount;
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             if (obj is ResourceConsignment)
                 return m_Amount.CompareTo(((ResourceConsignment)obj).Amount);
@@ -252,7 +252,7 @@ namespace Server.Engines.ResourcePool
 
         public List<EquivalentResource> EquivalentResources { get { return m_EquivalentResources; } }
 
-        private EquivalentResource GetEquivalentResourceAt(int index)
+        private EquivalentResource? GetEquivalentResourceAt(int index)
         {
             if (index >= 0 && index < m_EquivalentResources.Count)
                 return m_EquivalentResources[index];
@@ -263,22 +263,22 @@ namespace Server.Engines.ResourcePool
         #region Equivalent Resource Accessors
 
         [CommandProperty(AccessLevel.Counselor)]
-        public EquivalentResource EquivRes1 { get { return GetEquivalentResourceAt(0); } set { } }
+        public EquivalentResource? EquivRes1 { get { return GetEquivalentResourceAt(0); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public EquivalentResource EquivRes2 { get { return GetEquivalentResourceAt(1); } set { } }
+        public EquivalentResource? EquivRes2 { get { return GetEquivalentResourceAt(1); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public EquivalentResource EquivRes3 { get { return GetEquivalentResourceAt(2); } set { } }
+        public EquivalentResource? EquivRes3 { get { return GetEquivalentResourceAt(2); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public EquivalentResource EquivRes4 { get { return GetEquivalentResourceAt(3); } set { } }
+        public EquivalentResource? EquivRes4 { get { return GetEquivalentResourceAt(3); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public EquivalentResource EquivRes5 { get { return GetEquivalentResourceAt(4); } set { } }
+        public EquivalentResource? EquivRes5 { get { return GetEquivalentResourceAt(4); } set { } }
 
         [CommandProperty(AccessLevel.Counselor)]
-        public EquivalentResource EquivRes6 { get { return GetEquivalentResourceAt(5); } set { } }
+        public EquivalentResource? EquivRes6 { get { return GetEquivalentResourceAt(5); } set { } }
 
         #endregion
 
@@ -308,7 +308,7 @@ namespace Server.Engines.ResourcePool
             m_EquivalentResources = new List<EquivalentResource>();
         }
 
-        public EquivalentResource GetEquivalentResource(Type type)
+        public EquivalentResource? GetEquivalentResource(Type type)
         {
             foreach (EquivalentResource er in m_EquivalentResources)
             {
@@ -422,7 +422,7 @@ namespace Server.Engines.ResourcePool
             m_ResalePrice = BaseVendor.PlayerPays(m_Type);
             m_WholesalePrice = BaseVendor.PlayerPays(m_Type);
         }
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             if (obj is ResourceData)
                 return m_Name.CompareTo(((ResourceData)obj).m_Name);
@@ -577,16 +577,16 @@ namespace Server.Engines.ResourcePool
             return GetResource(type, false);
         }
 
-        public static ResourceData GetResource(Type type, bool equivalent)
+        public static ResourceData? GetResource(Type type, bool equivalent)
         {
-            ResourceData rd;
+            ResourceData? rd;
 
             if (m_Resources.TryGetValue(type, out rd))
                 return rd;
 
             if (equivalent)
             {
-                Type equivalentType = GetEquivalentType(type);
+                Type? equivalentType = GetEquivalentType(type);
 
                 if (equivalentType != null && m_Resources.TryGetValue(equivalentType, out rd))
                     return rd;
@@ -595,9 +595,9 @@ namespace Server.Engines.ResourcePool
             return null;
         }
 
-        public static Type GetEquivalentType(Type type)
+        public static Type? GetEquivalentType(Type type)
         {
-            Type equivalentType;
+            Type? equivalentType;
 
             if (m_Equivalents.TryGetValue(type, out equivalentType))
                 return equivalentType;
@@ -605,12 +605,12 @@ namespace Server.Engines.ResourcePool
             return null;
         }
 
-        public static bool IsPooledResource(Type type)
+        public static bool IsPooledResource(Type? type)
         {
             return IsPooledResource(type, false);
         }
 
-        public static bool IsPooledResource(Type type, bool equivalent)
+        public static bool IsPooledResource(Type? type, bool equivalent)
         {
             if (type == null)
                 return false;
@@ -619,7 +619,7 @@ namespace Server.Engines.ResourcePool
 
         public static List<ResourceConsignment> GetConsignmentList(Type type)
         {
-            List<ResourceConsignment> rcList;
+            List<ResourceConsignment>? rcList;
 
             if (!m_Consignments.TryGetValue(type, out rcList))
                 m_Consignments[type] = rcList = new List<ResourceConsignment>();
@@ -679,7 +679,7 @@ namespace Server.Engines.ResourcePool
             if (!Enabled)
                 return false;
 
-            CommodityDeed cd = item as CommodityDeed;
+            CommodityDeed? cd = item as CommodityDeed;
 
             if (cd != null && (cd.Commodity == null || cd.Commodity.Deleted))
                 return false; // invalid commodity deed
@@ -691,7 +691,7 @@ namespace Server.Engines.ResourcePool
             else
                 type = item.GetType();
 
-            ResourceData rd = GetResource(type, true);
+            ResourceData? rd = GetResource(type, true);
 
             if (rd == null)
                 return false; // this is not a pooled resource
@@ -703,7 +703,7 @@ namespace Server.Engines.ResourcePool
 
             if (type != rd.Type) // this is an equivalent resource
             {
-                EquivalentResource er = rd.GetEquivalentResource(type);
+                EquivalentResource? er = rd.GetEquivalentResource(type);
 
                 if (er == null)
                     return false; // sanity
@@ -733,7 +733,7 @@ namespace Server.Engines.ResourcePool
             if (!Enabled)
                 return false;
 
-            CommodityDeed cd = item as CommodityDeed;
+            CommodityDeed? cd = item as CommodityDeed;
 
             if (cd != null && (cd.Commodity == null || cd.Commodity.Deleted || amount != 1))
                 return false; // invalid commodity deed
@@ -745,7 +745,7 @@ namespace Server.Engines.ResourcePool
             else
                 type = item.GetType();
 
-            ResourceData rd = GetResource(type, true);
+            ResourceData? rd = GetResource(type, true);
 
             if (rd == null)
                 return false; // this is not a pooled resource
@@ -761,7 +761,7 @@ namespace Server.Engines.ResourcePool
 
             if (type != rd.Type) // this is an equivalent resource
             {
-                EquivalentResource er = rd.GetEquivalentResource(type);
+                EquivalentResource? er = rd.GetEquivalentResource(type);
 
                 if (er == null)
                     return false; // sanity
@@ -774,16 +774,6 @@ namespace Server.Engines.ResourcePool
             }
 
             // TODO: Needed?
-#if false
-            bool betterInBulk = false;
-
-            if (cd == null && (int)salePrice != salePrice)
-            {
-                salePrice = Math.Floor(salePrice); // truncate the sale price
-
-                betterInBulk = true;
-            }
-#endif
 
             if (salePrice <= 0.0)
                 return false;
@@ -795,17 +785,11 @@ namespace Server.Engines.ResourcePool
 
             if (cd != null)
             {
-#if true
                 // our CDs are kinda wonky. You'd think you want to delete the Commodity here, but referencing
                 // Commodity at all will create a new Commodity. I.e., cd.Commodity.Consume(amount)
                 //  what you need to do is simply consume the deed itself.
                 //  Our Cron IntMapItemCleanup() will handle the orphaned Commodity here.
                 cd.Consume(amount);
-#else
-                cd.Commodity.Consume(amount);
-                if (cd.Commodity.Amount <= 0)
-                    item.Delete();
-#endif
             }
             else
             {
@@ -818,10 +802,6 @@ namespace Server.Engines.ResourcePool
             vendor.SayTo(seller, true, "Thank you. I will sell these for you at {0} gp each, minus my commission.", friendlyPrice);
 
             // TODO: Needed?
-#if false
-            if (betterInBulk)
-                vendor.SayTo(seller, true, "I can give you a slightly better price if you sell in bulk with commodity deeds.");
-#endif
 
             AddConsignment(rd.Type, seller, salePrice, iToPool);
 
@@ -883,7 +863,7 @@ namespace Server.Engines.ResourcePool
 
         private static GenericBuyInfo GetBuyInfo(Type type, bool bunch)
         {
-            GBIEntry entry;
+            GBIEntry? entry;
 
             if (!m_GBICache.TryGetValue(type, out entry))
                 m_GBICache[type] = entry = new GBIEntry(type);
@@ -894,18 +874,18 @@ namespace Server.Engines.ResourcePool
             return entry.Single;
         }
 
-        public static GenericBuyInfo LookupBuyInfo(object obj)
+        public static GenericBuyInfo? LookupBuyInfo(object obj)
         {
             bool bunch;
 
             return LookupBuyInfo(obj, out bunch);
         }
 
-        private static GenericBuyInfo LookupBuyInfo(object obj, out bool bunch)
+        private static GenericBuyInfo? LookupBuyInfo(object obj, out bool bunch)
         {
             bunch = false;
 
-            GBIEntry entry;
+            GBIEntry? entry;
 
             if (!m_GBICache.TryGetValue(obj.GetType(), out entry))
                 return null;
@@ -952,7 +932,7 @@ namespace Server.Engines.ResourcePool
                         price *= 100.0;
                         amount = GetTotalAmount(rd.Type) / 100;
 
-                        object obj = gbi.GetDisplayObject();
+                        object? obj = gbi.GetDisplayObject();
 
                         if (obj is Item)
                             ((Item)obj).Name = name;
@@ -979,7 +959,7 @@ namespace Server.Engines.ResourcePool
         private static Item DeLocalize(Item item, string name)
         {   // remove LabenNumber from item which prevents robust naming the object (client-side)
             Item delocalized_item = new Item(item.ItemID);
-            Utility.CopyProperties(delocalized_item, item);
+            Utility.CopyProperties(item, delocalized_item);
             delocalized_item.Name = name;
             //item.Delete();
             return delocalized_item;
@@ -1011,7 +991,7 @@ namespace Server.Engines.ResourcePool
 
             if (gbiBunch.Amount > 0)
             {
-                IEntity disp = gbiBunch.GetDisplayObject() as IEntity;
+                IEntity? disp = gbiBunch.GetDisplayObject() as IEntity;
 
                 //if (disp is Item)
                 //disp = DeLocalize(disp as Item, gbiBunch.Name);
@@ -1040,7 +1020,7 @@ namespace Server.Engines.ResourcePool
 
             if (gbiSingle.Amount > 0)
             {
-                IEntity disp = gbiSingle.GetDisplayObject() as IEntity;
+                IEntity? disp = gbiSingle.GetDisplayObject() as IEntity;
 
                 buyInfo.Add(new BuyItemState(
                     gbiSingle.Name,
@@ -1118,7 +1098,7 @@ namespace Server.Engines.ResourcePool
 
                 if (rc.Seller == null || rc.Seller.Deleted)
                 {
-                    BountySystem.BountyKeeper.LBFund += (int)addToDebt;
+                    Engines.BountyKeeper.LBFund += (int)addToDebt;
                     continue;
                 }
 
@@ -1251,7 +1231,7 @@ namespace Server.Engines.ResourcePool
 
             foreach (BuyItemResponse buy in list)
             {
-                object obj = World.FindEntity(buy.Serial);
+                object? obj = World.FindEntity(buy.Serial);
 
                 if (obj == null)
                     continue;
@@ -1444,11 +1424,11 @@ namespace Server.Engines.ResourcePool
                         double amountFactor = Double.Parse(reader.ReadElementString("AmountFactor"));
                         double priceFactor = Double.Parse(reader.ReadElementString("PriceFactor"));
                         string redirectTypeName = reader.ReadElementString("Redirect");
-                        Type redirectType = Type.GetType(redirectTypeName);
+                        Type? redirectType = Type.GetType(redirectTypeName);
                         string message = reader.ReadElementString("Message");
 
                         string typeName = reader.ReadElementString("Type");
-                        Type type = Type.GetType(typeName);
+                        Type? type = Type.GetType(typeName);
 
                         if (redirectType == null)
                             throw new Exception(string.Format("ResourcePool Error: Resource type \"{0}\" does not exist.", redirectTypeName));
@@ -1529,7 +1509,7 @@ namespace Server.Engines.ResourcePool
                 read++;
                 if (rc.Seller != null)
                 {
-                    List<ResourceConsignment> rcList;
+                    List<ResourceConsignment>? rcList;
 
                     if (!m_Consignments.TryGetValue(rc.Type, out rcList))
                         m_Consignments[rc.Type] = rcList = new List<ResourceConsignment>();
@@ -1594,7 +1574,7 @@ namespace Server.Engines.ResourcePool
 
             while ((count == -1) ? (!reader.End()) : (i < count))
             {
-                Mobile m = reader.ReadMobile();
+                Mobile? m = reader.ReadMobile();
                 double debt = reader.ReadDouble();
                 read++;
                 if (m != null)

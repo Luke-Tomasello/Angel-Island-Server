@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -144,7 +144,7 @@ namespace Server.Items
             {
                 Mobile m = (Mobile)RootParent;
                 Region reg = m.Region;
-                if (reg != null && reg.IsAngelIslandRules)
+                if (reg != null && reg.IsPrisonRules)
                 {
                     return true;
                 }
@@ -155,7 +155,7 @@ namespace Server.Items
                 if (pack.Parent is Mobiles.PlayerMobile)
                 {
                     Region reg = ((Mobiles.PlayerMobile)pack.Parent).Region;
-                    if (reg != null && reg.IsAngelIslandRules)
+                    if (reg != null && reg.IsPrisonRules)
                     {
                         return true;
                     }
@@ -165,7 +165,7 @@ namespace Server.Items
             {
                 Item item = (Item)RootParent;
                 Region reg = Region.Find(item.Location, item.Map);
-                if (reg != null && reg.IsAngelIslandRules)
+                if (reg != null && reg.IsPrisonRules)
                 {
                     return true;
                 }

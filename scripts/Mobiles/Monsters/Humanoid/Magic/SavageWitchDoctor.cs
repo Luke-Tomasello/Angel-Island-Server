@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -151,12 +151,23 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // ai special creature
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
+                int gold = Utility.RandomMinMax(600, 700);
+
+                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
+                {
+                    // 30% boost to gold
+                    gold += gold / 3;
+                }
+
+                PackGold(gold);
+            }
+            else
+            {
                 PackMagicEquipment(1, 3, 0.80, 0.80);
                 PackMagicEquipment(1, 3, 0.10, 0.10);
-                PackGold(600, 700);
 
                 // Category 3 MID
                 PackMagicItem(1, 2, 0.10);
@@ -173,35 +184,21 @@ namespace Server.Mobiles
                     if (Utility.RandomDouble() < 0.05)
                         PackItem(new BolaBall());
                 }
+            }
+        }
 
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+        public override void GenerateNonStandardLoot()
+        {
+            if (Spawning)
+            {
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // ai special creature
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
+                // Froste: 12% random IOB drop
+                if (0.12 > Utility.RandomDouble())
                 {
-                    // ai special creature
+                    Item? iob = Loot.RandomIOB();
+                    PackItem(iob);
                 }
             }
         }

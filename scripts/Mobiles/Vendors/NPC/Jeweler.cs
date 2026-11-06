@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -53,7 +53,7 @@ namespace Server.Mobiles
             // 3/26/23. Adam: Old UO had a special black sandals on this NPC once in a while.
             if (0.18 >= Utility.RandomDouble())
             {
-                Item old = this.FindItemOnLayer(Layer.Shoes);
+                Item? old = this.FindItemOnLayer(Layer.Shoes);
                 if (old != null)
                 {
                     RemoveItem(old);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -32,7 +32,6 @@
  */
 
 using Server.Items;
-using System;
 
 namespace Server.Mobiles
 {
@@ -72,7 +71,7 @@ namespace Server.Mobiles
             // TODO: Bandage self
         }
 
-        public override void OnDamage(int amount, Mobile from, bool willKill, object source_weapon)
+        public override void OnDamage(int amount, Mobile from, bool willKill, DamageContext context)
         {
             if (from != null && !willKill && amount > 5 && from.Player && 5 > Utility.Random(100))
             {
@@ -87,7 +86,7 @@ namespace Server.Mobiles
                 this.Say(true, string.Format(toSay[Utility.Random(toSay.Length)], from.Name));
             }
 
-            base.OnDamage(amount, from, willKill, source_weapon);
+            base.OnDamage(amount, from, willKill, context);
         }
 
         public override int GetIdleSound()
@@ -116,44 +115,22 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackItem(new Arrow(Utility.RandomMinMax(25, 35)), lootType: LootType.UnStealable);
-                PackItem(new Arrow(Utility.RandomMinMax(25, 35)), lootType: LootType.UnStealable);
-                PackItem(new Bandage(Utility.RandomMinMax(5, 15)), lootType: LootType.UnStealable);
-                PackItem(new Bandage(Utility.RandomMinMax(5, 15)), lootType: LootType.UnStealable);
-                PackItem(Loot.RandomGem());
-                PackItem(new ArcaneGem());
+            // https://www.uoguide.com/Juka_Lord
+            // ML-era creature (Samurai Empire). No Stratics-era entry.
+            // 400 - 600 Gold
+            // Special: 4-8 Gems, Magic Weapons/Armor
+            // Note: Excludes ML/SE systems (faction items, minor artifacts, etc.)
 
-                PackGold(250, 300);
+            if (Spawning)
+            {
+                PackGold(400, 600);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // no LBR
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackItem(new Arrow(Utility.RandomMinMax(25, 35)), lootType: LootType.UnStealable);
-                        PackItem(new Arrow(Utility.RandomMinMax(25, 35)), lootType: LootType.UnStealable);
-                        PackItem(new Bandage(Utility.RandomMinMax(5, 15)), lootType: LootType.UnStealable);
-                        PackItem(new Bandage(Utility.RandomMinMax(5, 15)), lootType: LootType.UnStealable);
-                        PackItem(Loot.RandomGem());
-                        PackItem(new ArcaneGem());
-                    }
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.Average);
-                }
+                PackGem(4, 8);
+
+                PackMagicEquipment(3, 4, 1.0, 1.0);
+                PackMagicEquipment(3, 4, 0.50, 0.50);
             }
         }
 

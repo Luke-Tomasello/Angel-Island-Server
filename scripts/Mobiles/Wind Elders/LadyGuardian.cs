@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -165,50 +165,35 @@ namespace Server.Mobiles
             : base(serial)
         {
         }
-        private void AICrossShardLoot()
-        {   // Angel Island creatures that exist on multiple shards use common loot
-            //  i.e., that loot doesn't change across different shard configs
-            PackReg(20);
-            PackReg(20);
-            PackGold(450, 600);
 
-            PackItem(new TheGuardianBook());
-
-            // Froste: 12% random IOB drop
-            if (0.12 > Utility.RandomDouble())
-            {
-                Item iob = Loot.RandomIOB();
-                PackItem(iob);
-            }
-
-            if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-            {
-                // 30% boost to gold
-                PackGold(base.GetGold() / 3);
-            }
-        }
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {   // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                AICrossShardLoot();
+            if (Spawning)
+            {
+                int gold = Utility.RandomMinMax(450, 600);
+
+                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
+                {
+                    // 30% boost to gold
+                    gold += gold / 3;
+                }
+
+                PackGold(gold);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                        AICrossShardLoot();
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    // ai special
+                // Angel Island creatures that exist on multiple shards use common loot
+                //  i.e., that loot doesn't change across different shard configs
+                PackReg(20);
+                PackReg(20);
+
+                PackItem(new TheGuardianBook());
+
+                // Froste: 12% random IOB drop
+                if (0.12 > Utility.RandomDouble())
+                {
+                    Item? iob = Loot.RandomIOB();
+                    PackItem(iob);
                 }
             }
         }
@@ -221,7 +206,7 @@ namespace Server.Mobiles
             return base.OnBeforeDeath();
         }
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
             Mobile combatant = this.Combatant;
 
@@ -245,7 +230,7 @@ namespace Server.Mobiles
                 }
             }
 
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
         }
 
         public override void OnMovement(Mobile m, Point3D oldLocation)
@@ -253,7 +238,7 @@ namespace Server.Mobiles
 
             if (m.Player && m.Alive && m.InRange(this, 10) && m.AccessLevel == AccessLevel.Player && DateTime.UtcNow >= m_NextSpeechTime && Combatant == null)
             {
-                Item item = m.FindItemOnLayer(Layer.Helm);
+                Item? item = m.FindItemOnLayer(Layer.Helm);
 
                 if (this.InLOS(m) && this.CanSee(m))
                 {

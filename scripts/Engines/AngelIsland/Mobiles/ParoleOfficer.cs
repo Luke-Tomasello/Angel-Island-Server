@@ -1,11 +1,11 @@
-/***************************************************************************
+﻿/***************************************************************************
  *
  *   RunUO                   : May 1, 2002
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -145,7 +145,7 @@ namespace Server.Mobiles
             base.OnSpeech(e);
         }
 
-        public override void AggressiveAction(Mobile aggressor, bool criminal, object source = null)
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
         {
             if (!Server.Misc.AttackMessage.CheckAggressions(aggressor, this))
             {
@@ -163,38 +163,62 @@ namespace Server.Mobiles
 
         public override bool OnGoldGiven(Mobile from, Gold dropped)
         {
-            if (from is PlayerMobile && dropped.Amount >= 500)
+            if (from is not PlayerMobile pm || dropped.Amount < 500)
             {
-                PlayerMobile pm = (PlayerMobile)from;
-
-                //reduce Timer by X for each 500 gold drop by 1/2 hour
-                double timeReduced = 0;
-                for (int i = 500; i <= dropped.Amount; i += 500)
-                {
-                    pm.ReduceKillTimersByHours(.5);
-                    timeReduced += .5;
-                }
-                if (pm.ShortTermMurders == 0 && pm.LongTermMurders == 0 && pm.MinimumSentence > System.DateTime.UtcNow)
-                {
-                    TimeSpan delta = pm.MinimumSentence - DateTime.UtcNow;
-                    int days = delta.Days;
-                    int hours = delta.Hours;
-                    int minutes = delta.Minutes;
-                    Say("The courts have ordered a sentence of {0} days, {1} hours, and {2} minutes.", days, hours, minutes);
-                    Say("The Warden is watching me. I cannot help you.");
-                    Say("But thank you for the gold!");
-                }
-                else
-                {
-                    Say("My thanks!  We'll see what we can do about your time here");
-                    from.SendMessage("Your time has been reduced by " + timeReduced + " hours.");
-                }
+                Say("My thanks, I'll be sure to use this wisely.");
                 dropped.Delete();
+                return true;
+            }
+
+            // Calculate total reduction (still needed internally)
+            double timeReduced = 0;
+            for (int i = 500; i <= dropped.Amount; i += 500)
+            {
+                pm.ReduceKillTimersByHours(0.5);
+                timeReduced += 0.5;
+            }
+
+            dropped.Delete();
+
+            // Now all feedback is through Say() — pure RP
+
+            if (pm.ShortTermMurders == 0 && pm.LongTermMurders == 0 && pm.MinimumSentence > DateTime.UtcNow)
+            {
+                TimeSpan delta = pm.MinimumSentence - DateTime.UtcNow;
+                int days = delta.Days;
+                int hours = delta.Hours;
+                int minutes = delta.Minutes;
+
+                Say("The courts have ordered a sentence of {0} days, {1} hours, and {2} minutes.", days, hours, minutes);
+                Say("The Warden is watching me. I cannot help you.");
+                Say("But thank you for the gold!");
             }
             else
             {
-                Say("My thanks, I'll be sure to use this wisely");
-                dropped.Delete();
+                // Tiered RP response based on amount (hints at value without numbers)
+                if (timeReduced >= 10)  // large bribe → strong hint of meaningful impact
+                {
+                    Say("My thanks... such generosity speaks volumes.");
+                    Say("I shall whisper to the right ears. Your path out of here may shorten... noticeably.");
+                    Say("Be patient. The wheels turn slowly, but they do turn.");
+                }
+                else if (timeReduced >= 3)  // moderate bribe → positive but vague
+                {
+                    Say("My thanks, this will not go unnoticed.");
+                    Say("I'll see what can be done... perhaps a few more doors will open for you.");
+                    Say("Keep your head down. Progress comes to those who wait... and contribute.");
+                }
+                else  // small bribe → minimal but still encouraging
+                {
+                    Say("My thanks for the coin.");
+                    Say("Every bit helps grease the wheels. We'll see what can be done.");
+                }
+
+                // Optional subtle confirmation that *something* happened (still RP)
+                if (timeReduced > 0)
+                {
+                    Say("Consider your time here... slightly less burdensome.");
+                }
             }
 
             return true;

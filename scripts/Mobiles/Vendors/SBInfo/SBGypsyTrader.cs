@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,8 @@
 
 /* Scripts/Mobiles/Vendors/SBInfo/SBGypsyTrader.cs
  * ChangeLog
+ *  1/4/2026, Adam
+ *      Allow Mortalis to access certain Gypsy Trader goods
  *  11/8/22, Adam: (Vendor System)
  *  Complete overhaul of the vendor system:
  * - DisplayCache:
@@ -86,7 +88,7 @@ namespace Server.Mobiles
                     Add(new GenericBuyInfo("Orcish Vendor Body Deed", typeof(OrcishBodyDeed), BaseVendor.PlayerPays(typeof(OrcishBodyDeed)), 20, 0x14F0, 0x0));
                 }
 
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules())
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules() || Core.RuleSets.MortalisRules() || Core.RuleSets.SeasonsRules() || Core.RuleSets.UpheavalRules())
                 {
                     Add(new GenericBuyInfo("Vendor Name Change Deed", typeof(NpcNameChangeDeed), BaseVendor.PlayerPays(typeof(NpcNameChangeDeed)), 20, 0x14F0, 0x0));
                     Add(new GenericBuyInfo("Vendor Title Change Deed", typeof(NpcTitleChangeDeed), BaseVendor.PlayerPays(typeof(NpcTitleChangeDeed)), 20, 0x14F0, 0x0));

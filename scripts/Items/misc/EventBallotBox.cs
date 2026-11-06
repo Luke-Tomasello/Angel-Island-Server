@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -35,7 +35,6 @@ using Server.ContextMenus;
 using Server.Gumps;
 using Server.Network;
 using Server.Prompts;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
@@ -54,7 +53,7 @@ namespace Server.Items
 
         public override int LabelNumber { get { return 1041006; } } // a ballot box
 
-        private string m_Topic;
+        private string? m_Topic;
         private List<Candidate> m_Candidates;
         private HashSet<Mobile> m_VotedChars; // votes are anonymous! only keep track of *who* voted
         private HashSet<string> m_VotedAccts;
@@ -69,7 +68,7 @@ namespace Server.Items
         public HashSet<IPAddress> VotedIPs { get { return m_VotedIPs; } set { m_VotedIPs = value; } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public string Topic
+        public string? Topic
         {
             get { return m_Topic; }
             set
@@ -124,7 +123,7 @@ namespace Server.Items
 
         #region Candidate Accessors
 
-        private Candidate GetCandidate(int index)
+        private Candidate? GetCandidate(int index)
         {
             if (index >= 0 && index < m_Candidates.Count)
                 return m_Candidates[index];
@@ -133,49 +132,49 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate1 { get { return GetCandidate(0); } set { } }
+        public Candidate? Candidate1 { get { return GetCandidate(0); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate2 { get { return GetCandidate(1); } set { } }
+        public Candidate? Candidate2 { get { return GetCandidate(1); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate3 { get { return GetCandidate(2); } set { } }
+        public Candidate? Candidate3 { get { return GetCandidate(2); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate4 { get { return GetCandidate(3); } set { } }
+        public Candidate? Candidate4 { get { return GetCandidate(3); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate5 { get { return GetCandidate(4); } set { } }
+        public Candidate? Candidate5 { get { return GetCandidate(4); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate6 { get { return GetCandidate(5); } set { } }
+        public Candidate? Candidate6 { get { return GetCandidate(5); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate7 { get { return GetCandidate(6); } set { } }
+        public Candidate? Candidate7 { get { return GetCandidate(6); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate8 { get { return GetCandidate(7); } set { } }
+        public Candidate? Candidate8 { get { return GetCandidate(7); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate9 { get { return GetCandidate(8); } set { } }
+        public Candidate? Candidate9 { get { return GetCandidate(8); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate10 { get { return GetCandidate(9); } set { } }
+        public Candidate? Candidate10 { get { return GetCandidate(9); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate11 { get { return GetCandidate(10); } set { } }
+        public Candidate? Candidate11 { get { return GetCandidate(10); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate12 { get { return GetCandidate(11); } set { } }
+        public Candidate? Candidate12 { get { return GetCandidate(11); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate13 { get { return GetCandidate(12); } set { } }
+        public Candidate? Candidate13 { get { return GetCandidate(12); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate14 { get { return GetCandidate(13); } set { } }
+        public Candidate? Candidate14 { get { return GetCandidate(13); } set { } }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Candidate Candidate15 { get { return GetCandidate(14); } set { } }
+        public Candidate? Candidate15 { get { return GetCandidate(14); } set { } }
 
         #endregion
 
@@ -379,14 +378,14 @@ namespace Server.Items
             private const int MaxTopicLines = 100; // arbitrary cap
 
             private EventBallotBox m_Box;
-            private List<string> m_Lines;
+            private List<string>? m_Lines;
 
             public TopicPrompt(EventBallotBox box)
                 : this(box, null)
             {
             }
 
-            private TopicPrompt(EventBallotBox box, List<string> lines)
+            private TopicPrompt(EventBallotBox box, List<string>? lines)
             {
                 m_Box = box;
                 m_Lines = lines;
@@ -752,8 +751,8 @@ namespace Server.Items
                         int count = reader.ReadInt();
                         for (int ix = 0; ix < count; ix++)
                         {
-                            Mobile m = reader.ReadMobile();
-                            string username = reader.ReadString();
+                            Mobile? m = reader.ReadMobile();
+                            string? username = reader.ReadString();
                             m_WhoVotedForWho.Add(m, username);
                         }
                         m_proximityLink = reader.ReadBool();
@@ -772,7 +771,7 @@ namespace Server.Items
 
                         for (int i = 0; i < count; i++)
                         {
-                            Mobile voted = reader.ReadMobile();
+                            Mobile? voted = reader.ReadMobile();
 
                             if (voted != null)
                                 m_VotedChars.Add(voted);

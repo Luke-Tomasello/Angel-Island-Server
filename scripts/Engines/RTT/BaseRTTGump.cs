@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,41 +36,44 @@
  *      InitialVersion
  */
 
+using Server.Engines;
 using Server.Gumps;
 using Server.Mobiles;
 using System;
 
 namespace Server.RTT
 {
+    public enum RTTResult
+    {
+        Passed,
+        Failed,
+        TimedOut
+    }
+
+    public delegate void RTTCallback(Mobile from, RTTResult result, object state);
+
     class RTTTimer : Timer
     {
-        private Mobile m_from;
+        private BaseRTTGump m_owner;
 
-        public RTTTimer(Mobile from, TimeSpan ts)
+        public RTTTimer(BaseRTTGump owner, TimeSpan ts)
             : base(ts)
         {
-            m_from = from;
+            m_owner = owner;
         }
 
         protected override void OnTick()
         {
             try
             {
-                if (m_from != null && m_from is PlayerMobile && m_from.Deleted == false)
-                {
-                    //close all RTT gumps first
-                    m_from.CloseGump(typeof(BaseRTTGump));
-
-                    //player did not answer RTT gump - timeout, assume we've got an AFK macroer - auto [macroer him!
-                    PJUM.MacroerCommand.ReportAsMacroer(World.GetSystemAcct(), m_from as PlayerMobile);
-                }
+                if (m_owner != null)
+                    m_owner.HandleTimeout();
             }
             catch (Exception exc)
             {
                 Server.Diagnostics.LogHelper.LogException(exc);
             }
         }
-
     }
 
     abstract class BaseRTTGump : Gump
@@ -81,7 +84,14 @@ namespace Server.RTT
         private int m_CorrectResponse = -1;
         private int m_CorrectResponseOffset = 0;
         private DateTime m_RTTLaunched;
-        private RTTTimer m_timeout = null;
+        private RTTTimer? m_timeout = null;
+
+        // New: optional callback + state (when provided, RTT does not apply legacy punishment paths)
+        private RTTCallback m_Callback;
+        private object m_CallbackState;
+
+        // New: guard to prevent double-resolution (timeout + response race)
+        private bool m_Resolved;
 
         protected Mobile Mobile
         {
@@ -113,24 +123,34 @@ namespace Server.RTT
             set { m_CorrectResponseOffset = value; }
         }
 
+        // Existing ctor (legacy behavior unchanged)
         public BaseRTTGump(Mobile from, string strNotice, string strSkill, int x, int y)
+            : this(from, strNotice, strSkill, x, y, null, null)
+        {
+        }
+
+        // New ctor overload: caller can supply callback/state
+        public BaseRTTGump(Mobile from, string strNotice, string strSkill, int x, int y, RTTCallback callback, object callbackState)
             : base(x, y)
         {
             m_Mobile = from;
             m_strNotify = strNotice;
             m_strSkill = strSkill;
 
+            m_Callback = callback;
+            m_CallbackState = callbackState;
+
             this.Closable = false;
 
-            //close any other RTT gumps
+            // close any other RTT gumps
             from.CloseGump(typeof(BaseRTTGump));
 
             // notify staff
             if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.RTTNotifyEnabled))
             {
                 Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Administrator,
-                0x482,
-                string.Format("{0}({1}) is taking the RTT ({2}).", m_Mobile.Name, m_Mobile.Serial, strSkill));
+                    0x482,
+                    string.Format("{0}({1}) is taking the RTT ({2}).", m_Mobile.Name, m_Mobile.Serial, strSkill));
             }
 
             // record the fact that the RTT test is being taken
@@ -138,19 +158,87 @@ namespace Server.RTT
             lh.Log(Server.Diagnostics.LogType.Mobile, m_Mobile, string.Format("({0}) RTT Launched.", strSkill));
             lh.Finish();
 
-            //This will call any child-gump's SetupGump and set it up like the child wants.
+            // child sets up gump UI + correct response
             SetupGump();
 
-            //Save when we launched the gump for later recording
             m_RTTLaunched = DateTime.UtcNow;
 
-            // if the player fails to respond in 'timeout' time, then we will count this as an RTT failure.
-            //	this does two things: (1) makes the next test 5 minutes from now, (2) will move them closer to being counted as a macroer
-            m_timeout = new RTTTimer(m_Mobile, TimeSpan.FromSeconds(Utility.RandomList(90, 120, 180)));
+            // timeout => counts as failure (legacy behavior may macroer-report)
+            m_timeout = new RTTTimer(this, TimeSpan.FromSeconds(Utility.RandomList(90, 120, 180)));
             m_timeout.Start();
         }
 
         protected abstract void SetupGump();
+
+        // New: called by RTTTimer
+        internal void HandleTimeout()
+        {
+            try
+            {
+                // Stop timer
+                if (m_timeout != null)
+                {
+                    m_timeout.Stop();
+                    m_timeout = null;
+                }
+
+                if (m_Mobile == null || m_Mobile.Deleted)
+                    return;
+
+                // Close RTT gump (same as legacy)
+                m_Mobile.CloseGump(typeof(BaseRTTGump));
+
+                Resolve(RTTResult.TimedOut);
+            }
+            catch (Exception e)
+            {
+                Server.Diagnostics.LogHelper.LogException(e);
+            }
+        }
+
+        // New: single choke point for outcomes
+        private void Resolve(RTTResult result)
+        {
+            if (m_Resolved)
+                return;
+
+            m_Resolved = true;
+
+            PlayerMobile? pm = m_Mobile as PlayerMobile;
+
+            // If caller provided a callback, RTT becomes "present challenge, return result" only.
+            if (m_Callback != null)
+            {
+                try
+                {
+                    m_Callback(m_Mobile, result, m_CallbackState);
+                }
+                catch (Exception e)
+                {
+                    Server.Diagnostics.LogHelper.LogException(e);
+                }
+
+                return;
+            }
+
+            // Legacy behavior (unchanged semantics)
+            if (pm == null || m_Mobile == null || m_Mobile.Deleted)
+                return;
+
+            if (result == RTTResult.Passed)
+            {
+                pm.RTTResult(true);
+            }
+            else if (result == RTTResult.Failed)
+            {
+                pm.RTTResult(false);
+            }
+            else // TimedOut
+            {
+                // Legacy: timeout assumes AFK macroer
+                MacroerCommand.ReportAsMacroer(World.GetSystemAcct(), pm);
+            }
+        }
 
         public override void OnResponse(Server.Network.NetState sender, RelayInfo info)
         {
@@ -174,7 +262,6 @@ namespace Server.RTT
                     lh.Finish();
 
                     m_Mobile.SendMessage("Thanks for verifying that you're at your computer.");
-                    ((PlayerMobile)m_Mobile).RTTResult(true);
 
                     if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.RTTNotifyEnabled))
                     {
@@ -191,7 +278,6 @@ namespace Server.RTT
                                 string.Format("{0}({1}) has passed the RTT ({2} ms).  ({3})", m_Mobile.Name, m_Mobile.Serial, diff.TotalMilliseconds, m_strNotify));
                         }
 
-                        // Look for and record suspiciously fast answers
                         if (diff <= TimeSpan.FromSeconds(3.0))
                         {
                             Server.Diagnostics.LogHelper lh2 = new Server.Diagnostics.LogHelper("RTTAlert.log", false, true);
@@ -199,6 +285,8 @@ namespace Server.RTT
                             lh2.Finish();
                         }
                     }
+
+                    Resolve(RTTResult.Passed);
                 }
                 else
                 {
@@ -208,14 +296,15 @@ namespace Server.RTT
                     lh.Finish();
 
                     m_Mobile.SendMessage("You have failed the AFK test.");
-                    ((PlayerMobile)m_Mobile).RTTResult(false);
 
                     if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.RTTNotifyEnabled))
                     {
                         Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor,
-                        0x482,
-                        string.Format("{0}({1}) has failed the RTT. ({2})", m_Mobile.Name, m_Mobile.Serial, this.m_strNotify));
+                            0x482,
+                            string.Format("{0}({1}) has failed the RTT. ({2})", m_Mobile.Name, m_Mobile.Serial, this.m_strNotify));
                     }
+
+                    Resolve(RTTResult.Failed);
                 }
             }
             catch (Exception e)
@@ -225,3 +314,4 @@ namespace Server.RTT
         }
     }
 }
+

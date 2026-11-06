@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -109,34 +109,23 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                // adam: 20-30 arrows seem about right
-                PackItem(new Arrow(Utility.RandomMinMax(20, 30)));
-                PackGold(175, 225);
+            // http://web.archive.org/web/20020214225651/uo.stratics.com/hunters/ratmanarcher.shtml
+            // Loot: Unknown (documentation gap in early Stratics)
 
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=285
+            // 300 - 350 Gold, Bow, 50-70 Arrows
+            // Cut Up: 8 Spined Hides, 1 Raw Rib
+            // Note: Later Stratics DB fills in the earlier "unknown" entry
+
+            if (Spawning)
+            {
+                //PackGold(300, 350); // historically recorded, but inflated
+                PackGold(75, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020214225651/uo.stratics.com/hunters/ratmanarcher.shtml
-                    // ? (unknown) - use RunUO loot
-
-                    if (Spawning)
-                        PackItem(new Arrow(Utility.RandomMinMax(50, 70)));
-
-                    AddLoot(LootPack.Rich);
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new Arrow(Utility.RandomMinMax(50, 70)));
-
-                    AddLoot(LootPack.Rich);
-                }
+                PackItem(new Bow());
+                PackItem(new Arrow(Utility.RandomMinMax(50, 70)));
             }
         }
 

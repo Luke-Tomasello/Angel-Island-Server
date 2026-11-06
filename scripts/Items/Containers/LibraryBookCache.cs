@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -59,7 +59,7 @@ namespace Server.Items
             {
                 Console.WriteLine("LibraryBookCache Saving...");
 
-                string directoryName = Path.GetDirectoryName(FilePath);
+                string? directoryName = Path.GetDirectoryName(FilePath);
 
                 if (!string.IsNullOrEmpty(directoryName) && !Directory.Exists(directoryName))
                     Directory.CreateDirectory(directoryName);
@@ -128,14 +128,14 @@ namespace Server.Items
 
         #endregion
 
-        public static BaseBook Generate()
+        public static BaseBook? Generate()
         {
-            BaseBook source = GetRandom();
+            BaseBook? source = GetRandom();
 
             if (source == null)
                 return null;
 
-            BaseBook target = Construct(source.GetType());
+            BaseBook? target = Construct(source.GetType());
 
             if (target == null)
                 return null;
@@ -145,7 +145,7 @@ namespace Server.Items
             return target;
         }
 
-        public static BaseBook GetRandom()
+        public static BaseBook? GetRandom()
         {
             int count = 0;
 
@@ -180,12 +180,12 @@ namespace Server.Items
             return null;
         }
 
-        private static BaseBook Construct(Type bookType)
+        private static BaseBook? Construct(Type bookType)
         {
             if (!typeof(BaseBook).IsAssignableFrom(bookType))
                 return null;
 
-            BaseBook book;
+            BaseBook? book;
 
             try
             {

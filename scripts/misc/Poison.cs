@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,9 +66,9 @@ namespace Server
             Register(new PoisonImpl("Lethal", 4, 9, 26, 25.000, 3.5, 5.0, 10, 2));
         }
 
-        public static Poison IncreaseLevel(Poison oldPoison)
+        public static Poison? IncreaseLevel(Poison oldPoison)
         {
-            Poison newPoison = (oldPoison == null ? null : GetPoison(oldPoison.Level + 1));
+            Poison? newPoison = (oldPoison == null ? null : GetPoison(oldPoison.Level + 1));
 
             return (newPoison == null ? oldPoison : newPoison);
         }
@@ -173,7 +173,7 @@ namespace Server
                     //Console.WriteLine("Old Damage {0}, new Damage {1}",damage,Moddamage);
                 }
 
-                AOS.Damage(m_Mobile, (int)Moddamage, 0, 0, 0, 100, 0, this);
+                AOS.Damage(m_Mobile, (int)Moddamage, new DamageContext { Source = this });
 
                 if ((m_Index % m_Poison.m_MessageInterval) == 0)
                 {

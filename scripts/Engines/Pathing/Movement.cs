@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -101,7 +101,7 @@ namespace Server.Movement
 
             for (int i = 0; i < items.Count; ++i)
             {
-                Item item = (Item)items[i];
+                Item? item = (Item?)items[i];
                 int itemID = item.ItemID & 0x3FFF;
                 ItemData itemData = TileData.ItemTable[itemID];
                 TileFlag flags = itemData.Flags;
@@ -135,15 +135,6 @@ namespace Server.Movement
 
             StaticTile[] tiles = obj_start.Map.Tiles.GetStaticTiles(x, y, true);
             LandTile landTile = obj_start.Map.Tiles.GetLandTile(x, y);
-#if false
-            bool landBlocks = (TileData.LandTable[landTile.ID & 0x3FFF].Flags & TileFlag.Impassable) != 0;
-            bool considerLand = !landTile.Ignored;
-
-            if (landBlocks && obj_start.CanSwim && (TileData.LandTable[landTile.ID & 0x3FFF].Flags & TileFlag.Wet) != 0)
-                landBlocks = false;
-            else if (obj_start.CantWalkLand && (TileData.LandTable[landTile.ID & 0x3FFF].Flags & TileFlag.Wet) == 0)
-                landBlocks = true;
-#else
             bool landBlocks = (TileData.LandTable[landTile.ID & 0x3FFF].Flags & TileFlag.Impassable) != 0;
             bool wet = ((TileData.LandTable[landTile.ID & 0x3FFF].Flags & TileFlag.Wet) != 0);
             bool considerLand = !landTile.Ignored;
@@ -152,7 +143,6 @@ namespace Server.Movement
                 landBlocks = false;
             else if (obj_start.CantWalkLand && !wet)
                 landBlocks = true;
-#endif
             int landZ = 0, landCenter = 0, landTop = 0;
 
             obj_start.Map.GetAverageZ(x, y, ref landZ, ref landCenter, ref landTop);
@@ -218,7 +208,7 @@ namespace Server.Movement
 
             for (int i = 0; i < items.Count; ++i)
             {
-                Item item = (Item)items[i];
+                Item? item = (Item?)items[i];
                 ItemData itemData = item.ItemData;//TileData.ItemTable[item.ItemID & 0x3FFF];
                 TileFlag flags = itemData.Flags;
 
@@ -368,7 +358,7 @@ namespace Server.Movement
 
                 for (int i = 0; i < sectors.Count; ++i)
                 {
-                    Sector sector = (Sector)sectors[i];
+                    Sector? sector = (Sector?)sectors[i];
 
                     items = sector.Items;
 
@@ -560,7 +550,7 @@ namespace Server.Movement
 
             for (int i = 0; i < itemList.Count; ++i)
             {
-                Item item = (Item)itemList[i];
+                Item? item = (Item?)itemList[i];
 
                 ItemData id = item.ItemData;
 

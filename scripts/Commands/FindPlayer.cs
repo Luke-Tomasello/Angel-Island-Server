@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -43,7 +43,7 @@ namespace Server.Commands
         [Description("Finds a player by name fast.")]
         public static void FindPlayer_OnCommand(CommandEventArgs e)
         {
-            PlayerMobile caller = e.Mobile as PlayerMobile;
+            PlayerMobile? caller = e.Mobile as PlayerMobile;
             caller.JumpIndex = 0;
             caller.JumpList = new System.Collections.ArrayList();
             List<PlayerMobile> list = new();
@@ -67,7 +67,7 @@ namespace Server.Commands
                     foreach (var px in list)
                         caller.SendMessage("{0}: {1}", px.Name, px.Serial);
 
-                    PlayerMobile match = list.FirstOrDefault(p => p.Name.Equals(text, StringComparison.OrdinalIgnoreCase));
+                    PlayerMobile? match = list.FirstOrDefault(p => p.Name.Equals(text, StringComparison.OrdinalIgnoreCase));
                     if (match != null)
                     {
                         caller.SendMessage("player {0}: {1} is an exact match", match.Name, match.Serial);

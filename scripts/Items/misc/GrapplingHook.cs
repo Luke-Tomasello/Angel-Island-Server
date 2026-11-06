@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -65,7 +65,7 @@ namespace Server.Items
                 from.SendLocalizedMessage(1062334); // This item must be in your backpack to be used.
                 return;
             }
-            BaseBoat bt = BaseBoat.FindBoatAt(from);
+            BaseBoat? bt = BaseBoat.FindBoatAt(from);
             if (bt == null || !bt.IsOnDeck(from))
             {
                 from.SendMessage("You must be on a boat to use this.");
@@ -102,7 +102,7 @@ namespace Server.Items
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                BaseBoat bt = null;
+                BaseBoat? bt = null;
                 Point3D loc = new Point3D();
 
                 //Check we have a hook

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,17 +34,6 @@ namespace Server.Items
 {
     public class UtilityItem
     {
-        static public int RandomChoice(int itemID1, int itemID2)
-        {
-            int iRet = 0;
-            switch (Utility.Random(2))
-            {
-                default:
-                case 0: iRet = itemID1; break;
-                case 1: iRet = itemID2; break;
-            }
-            return iRet;
-        }
     }
 
     // ********** Dough **********
@@ -365,13 +354,18 @@ namespace Server.Items
                 if (m_Item.Deleted || !from.InRange(m_Item.GetWorldLocation(), 2))
                     return;
 
+                // merchant provenance passes to what the ingredients become (see ArbitrageTable)
+                bool storeBought = m_Item.StoreBought || (targeted is Item ingredient && ingredient.StoreBought);
+
                 if (targeted is Dough)
                 {
                     m_Item.Consume();
 
                     ((Item)targeted).Consume();
 
-                    from.AddToBackpack(new SweetDough());
+                    Item sweet = new SweetDough();
+                    Server.Engines.Economy.Provenance.Inherit(storeBought, sweet);
+                    from.AddToBackpack(sweet);
                 }
                 else if (targeted is BowlFlour)
                 {
@@ -379,7 +373,9 @@ namespace Server.Items
 
                     ((Item)targeted).Delete();
 
-                    from.AddToBackpack(new CookieMix());
+                    Item mix = new CookieMix();
+                    Server.Engines.Economy.Provenance.Inherit(storeBought, mix);
+                    from.AddToBackpack(mix);
                 }
             }
         }
@@ -418,11 +414,14 @@ namespace Server.Items
         {
             if (bev.Content == BeverageType.Water && bev.Quantity > 0)
             {
+                bool storeBought = StoreBought;     // the dough keeps the flour's merchant provenance (ArbitrageTable)
                 Delete();
                 bev.Quantity--;
 
                 from.AddToBackpack(new EmptyWoodenBowl());
-                from.AddToBackpack(new Dough());
+                Item dough = new Dough();
+                Server.Engines.Economy.Provenance.Inherit(storeBought, dough);
+                from.AddToBackpack(dough);
 
                 from.SendLocalizedMessage(500844); // You make some dough and put it in your backpack
 
@@ -433,37 +432,6 @@ namespace Server.Items
         }
     }
 
-#if false
-    // ********** WoodenBowl **********
-    public class WoodenBowl : Item
-    {
-        [Constructable]
-        public WoodenBowl()
-            : base(0x15f8)
-        {
-            Weight = 1.0;
-        }
-
-        public WoodenBowl(Serial serial)
-            : base(serial)
-        {
-        }
-
-        public override void Serialize(GenericWriter writer)
-        {
-            base.Serialize(writer);
-
-            writer.Write((int)0); // version
-        }
-
-        public override void Deserialize(GenericReader reader)
-        {
-            base.Deserialize(reader);
-
-            int version = reader.ReadInt();
-        }
-    }
-#endif
 
     // ********** PitcherWater **********
     /*public class PitcherWater : Item
@@ -633,13 +601,18 @@ namespace Server.Items
                 if (m_Item.Deleted || !from.InRange(m_Item.GetWorldLocation(), 2))
                     return;
 
+                // merchant provenance passes to what the flour becomes (see ArbitrageTable)
+                bool storeBought = m_Item.StoreBought || (targeted is Item ingredient && ingredient.StoreBought);
+
                 if (targeted is EmptyWoodenBowl)
                 {
                     m_Item.Quantity--;
 
                     ((Item)targeted).Delete();
 
-                    from.AddToBackpack(new BowlFlour());
+                    Item bowl = new BowlFlour();
+                    Server.Engines.Economy.Provenance.Inherit(storeBought, bowl);
+                    from.AddToBackpack(bowl);
                 }
                 else if (targeted is TribalBerry)
                 {
@@ -649,7 +622,9 @@ namespace Server.Items
 
                         ((Item)targeted).Consume();
 
-                        from.AddToBackpack(new TribalPaint());
+                        Item paint = new TribalPaint();
+                        Server.Engines.Economy.Provenance.Inherit(storeBought, paint);
+                        from.AddToBackpack(paint);
 
                         from.SendLocalizedMessage(1042002); // You combine the berry and the flour into the tribal paint worn by the savages.
                     }
@@ -665,10 +640,13 @@ namespace Server.Items
         {
             if (bev.Content == BeverageType.Water && bev.Quantity > 0)
             {
+                bool storeBought = StoreBought;     // the dough keeps the flour's merchant provenance (ArbitrageTable)
                 this.Quantity--;
                 bev.Quantity--;
 
-                from.AddToBackpack(new Dough());
+                Item dough = new Dough();
+                Server.Engines.Economy.Provenance.Inherit(storeBought, dough);
+                from.AddToBackpack(dough);
 
                 from.SendLocalizedMessage(500844); // You make some dough and put it in your backpack
 
@@ -679,84 +657,6 @@ namespace Server.Items
         }
     }
 
-#if false
-	// ********** SackFlourOpen **********
-	public class SackFlourOpen : Item
-	{
-		public override int LabelNumber{ get{ return 1024166; } } // open sack of flour
-
-		[Constructable]
-		public SackFlourOpen() : base(UtilityItem.RandomChoice( 0x1046, 0x103a ))
-		{
-			Weight = 1.0;
-		}
-
-		public SackFlourOpen( Serial serial ) : base( serial )
-		{
-		}
-
-		public override void Serialize( GenericWriter writer )
-		{
-			base.Serialize( writer );
-
-			writer.Write( (int) 0 ); // version
-		}
-
-		public override void Deserialize( GenericReader reader )
-		{
-			base.Deserialize( reader );
-
-			int version = reader.ReadInt();
-		}
-
-		public override void OnDoubleClick( Mobile from )
-		{
-			if ( !Movable )
-				return;
-
-			from.Target = new InternalTarget( this );
-		}
-
-		private class InternalTarget : Target
-		{
-			private SackFlourOpen m_Item;
-
-			public InternalTarget( SackFlourOpen item ) : base( 1, false, TargetFlags.None )
-			{
-				m_Item = item;
-			}
-
-			protected override void OnTarget( Mobile from, object targeted )
-			{
-				if ( m_Item.Deleted ) return;
-
-				if ( targeted is WoodenBowl )
-				{
-					m_Item.Delete();
-					((WoodenBowl)targeted).Delete();
-
-					from.AddToBackpack( new BowlFlour() );
-				}
-				else if ( targeted is TribalBerry )
-				{
-					if ( from.Skills[SkillName.Cooking].Base >= 80.0 )
-					{
-						m_Item.Delete();
-						((TribalBerry)targeted).Delete();
-
-						from.AddToBackpack( new TribalPaint() );
-
-						from.SendLocalizedMessage( 1042002 ); // You combine the berry and the flour into the tribal paint worn by the savages.
-					}
-					else
-					{
-						from.SendLocalizedMessage( 1042003 ); // You don't have the cooking skill to create the body paint.
-					}
-				}
-			}
-		}
-	}
-#endif
 
     // ********** Eggshells **********
     public class Eggshells : Item
@@ -816,7 +716,7 @@ namespace Server.Items
             if (obj is AddonComponent)
                 obj = (obj as AddonComponent).Addon;
 
-            IFlourMill mill = obj as IFlourMill;
+            IFlourMill? mill = obj as IFlourMill;
 
             if (mill != null)
             {
@@ -824,6 +724,11 @@ namespace Server.Items
 
                 if (needs > this.Amount)
                     needs = this.Amount;
+
+                // merchant-bought wheat in the mill marks the flour it becomes: the mill's own StoreBought flag (saved
+                //  with it) holds that until the sack is made (FlourMill*Addon.FinishWorking_Callback, ArbitrageTable)
+                if (StoreBought && needs > 0 && mill is Item millItem)
+                    millItem.StoreBought = true;
 
                 mill.CurFlour += needs;
                 Consume(needs);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -155,7 +155,7 @@ namespace Server.Engines.Alignment
                 {
                     m_CarryHue = value;
 
-                    Mobile m = RootParent as Mobile;
+                    Mobile? m = RootParent as Mobile;
 
                     if (m != null)
                         m.HueMod = m_CarryHue;
@@ -185,7 +185,7 @@ namespace Server.Engines.Alignment
                         else
                             ItemID = m_BannerSouthID;
 
-                        IEntity ent = RootParent as IEntity;
+                        IEntity? ent = RootParent as IEntity;
 
                         if (ent != null)
                             MoveToWorld(ent.Location, ent.Map);
@@ -468,7 +468,7 @@ namespace Server.Engines.Alignment
         {
             base.OnAdded(parent);
 
-            Mobile mob = FindOwner(parent);
+            Mobile? mob = FindOwner(parent);
 
             if (mob != null)
             {
@@ -488,13 +488,13 @@ namespace Server.Engines.Alignment
         {
             base.OnRemoved(parent);
 
-            Mobile mob = FindOwner(parent);
+            Mobile? mob = FindOwner(parent);
 
             if (mob != null)
                 mob.SolidHueOverride = -1;
         }
 
-        private Mobile FindOwner(object parent)
+        private Mobile? FindOwner(object parent)
         {
             if (parent is Item)
                 return ((Item)parent).RootParent as Mobile;
@@ -634,7 +634,7 @@ namespace Server.Engines.Alignment
                 StartTimer();
         }
 
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         public void StartTimer()
         {
@@ -797,7 +797,7 @@ namespace Server.Engines.Alignment
             }
         }
 
-        private static string ToUpper(string value)
+        private static string? ToUpper(string? value)
         {
             return (value == null ? null : value.ToUpper());
         }

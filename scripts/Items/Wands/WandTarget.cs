@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -29,30 +29,3 @@
  *	    Rewrote WandTarget so that it supports IWand
  */
 
-#if false
-using Server.Items;
-using System;
-
-namespace Server.Targeting
-{
-    [Obsolete]
-    public class WandTarget : Target
-    {
-        private BaseWand m_Wand;
-
-        public WandTarget(BaseWand wand) : base(6, false, TargetFlags.None)
-        {
-            m_Wand = wand;
-        }
-
-        protected override void OnTarget(Mobile from, object targeted)
-        {
-            if (m_Wand.Deleted || m_Wand.Parent != from || m_Wand.MagicEffect == MagicItemEffect.None || m_Wand.MagicCharges <= 0 || !from.CanBeginAction(MagicItems.GetLock(from, m_Wand)) || targeted is StaticTarget || targeted is LandTarget)
-                return;
-
-            if (m_Wand.OnWandTarget(from, targeted))
-                MagicItems.ConsumeCharge(from, m_Wand);
-        }
-    }
-}
-#endif

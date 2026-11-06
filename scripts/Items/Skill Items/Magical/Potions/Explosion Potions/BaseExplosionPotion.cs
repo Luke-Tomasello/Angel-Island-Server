@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -96,6 +96,7 @@
  *		Merged in 1.0RC0 code.
  */
 
+using Scripts.Misc;
 using Server.Mobiles;
 using Server.Network;
 using Server.Spells;
@@ -118,7 +119,7 @@ namespace Server.Items
          */
         public static bool NewDamageRanges
         {
-            get { return (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()); }
+            get { return PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules(); }
         }
 
         /* 5/5/23, Yoar: Hearsay would have us know that explosion potion damage was *not* impacted by alchemy skill.
@@ -127,9 +128,18 @@ namespace Server.Items
          * 
          * AI/MO will keep alchemy scaling regardless.
          */
+
+        /* 1/13/26, Adam: More info
+         * UO.COM explicitly states
+         *  If the user of explosion potions has any alchemy skill the damage will be increased by 1 for every 5 points of alchemy skill the user has.
+         *  The effects of Enhance Potion items are also added to explosion potions. Explosion potions cannot be used if you are [frozen].
+         *  Furthermore, AI states the following:
+         *  OSI introduced the mechanic where a player's Alchemy skill increases the damage of explosion potions in Publish 25,
+         * released in June 2004
+         */
         public static bool AlchemyScaling
         {
-            get { return (PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()); }
+            get { return PublishInfo.Publish >= 16.0 || Core.RuleSets.AngelIslandRules(); }
         }
 
         public abstract int MinDamage { get; }
@@ -191,7 +201,7 @@ namespace Server.Items
         {
             Mobile m = this.HeldBy;
 
-            if (m != null && m.Holding == this)
+            if (m != null && m.Dragging == this)
                 return m;
 
             object obj = this.RootParent;
@@ -205,12 +215,73 @@ namespace Server.Items
             return this;
         }
 
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
+        public override void OnDoubleClick(Mobile from)
+        {
+            if (!Movable)
+                return;
+
+            if (!from.InRange(GetWorldLocation(), 1))
+            {
+                from.SendLocalizedMessage(502138); // That is too far away for you to use
+                return;
+            }
+
+            // Ownership check first
+            if (this is Item it && !StartingLootMonitor.CanUse(from, it))
+            {
+                from.SendMessage("This potion is bound to another soul.");
+                return;
+            }
+
+            if (RequireFreeHand && !HasFreeHand(from))
+            {
+                from.SendLocalizedMessage(502172); // You must have a free hand to drink a potion.
+                return;
+            }
+
+            BaseExplosionPotion p = EnsureSingleExplosionPotion(from);
+            if (p == null)
+                return;
+
+            p.Drink(from);
+        }
+
+        private BaseExplosionPotion EnsureSingleExplosionPotion(Mobile from)
+        {
+            if (Amount <= 1)
+                return this;
+
+            // Create one of the exact same concrete type (ExplosionLesser/Explosion/ExplosionGreater).
+            BaseExplosionPotion? one = (BaseExplosionPotion?)Activator.CreateInstance(GetType());
+
+            // Make sure it cannot merge back into the stack while armed.
+            one.Stackable = false;
+            one.Amount = 1;
+
+            // Decrement the original stack first (no dupes if something goes wrong later).
+            Consume(1);
+
+            // Put the single potion where the player expects it to be.
+            Item? parent = Parent as Item;
+
+            if (parent is Container c)
+            {
+                c.DropItem(one); // wont restack because one.Stackable = false
+            }
+            else
+            {
+                // Stacked on ground: peel one off onto ground at same location.
+                one.MoveToWorld(Location, Map);
+            }
+
+            return one;
+        }
         // users are simply those players that double clicked the potion - if it was on the ground, it may be more than one
         //	when it explodes, and users targets are canceled.
         //	A second player can double click a potion thrown at them and toss it elsewhere. 
-        private ArrayList m_Users;
+        private ArrayList? m_Users;
 
         public override void Drink(Mobile from)
         {
@@ -251,7 +322,7 @@ namespace Server.Items
             }
 
             //reset from's swingtimer
-            BaseWeapon weapon = from.Weapon as BaseWeapon;
+            BaseWeapon? weapon = from.Weapon as BaseWeapon;
             if (weapon != null)
             {
                 from.NextCombatTime = DateTime.UtcNow + weapon.GetDelay(from);
@@ -260,7 +331,7 @@ namespace Server.Items
             // no target if lit on the ground
             if (!on_the_ground)
             {
-                ThrowTarget targ = from.Target as ThrowTarget;
+                ThrowTarget? targ = from.Target as ThrowTarget;
 
                 if (targ != null && targ.Potion == this)
                     return;
@@ -443,7 +514,7 @@ namespace Server.Items
             protected override void OnTarget(Mobile from, object targeted)
             {
                 //reset from's swingtimer
-                BaseWeapon weapon = from.Weapon as BaseWeapon;
+                BaseWeapon? weapon = from.Weapon as BaseWeapon;
                 if (weapon != null)
                 {
                     from.NextCombatTime = DateTime.UtcNow + weapon.GetDelay(from);
@@ -452,7 +523,7 @@ namespace Server.Items
                 if (m_Potion.Deleted || m_Potion.Map == Map.Internal)
                     return;
 
-                IPoint3D p = targeted as IPoint3D;
+                IPoint3D? p = targeted as IPoint3D;
 
                 if (p == null)
                     return;
@@ -570,7 +641,7 @@ namespace Server.Items
 
             // if the potion is exploded in your backpack, you are flagged as a SuicideBomber
             //	guards will cast InvisibleShield on you to nerf the bombs potential
-            if (InTown(from) && (from.Holding == this || this.IsChildOf(from.Backpack)))
+            if (InTown(from) && (from.Dragging == this || this.IsChildOf(from.Backpack)))
             {   // reset the timer
                 from.SuicideBomber = false;
                 from.ConvictSuicideBomber(TimeSpan.FromMinutes(2.0));
@@ -581,8 +652,8 @@ namespace Server.Items
 
             for (int i = 0; m_Users != null && i < m_Users.Count; ++i)
             {
-                Mobile m = (Mobile)m_Users[i];
-                ThrowTarget targ = m.Target as ThrowTarget;
+                Mobile? m = (Mobile?)m_Users[i];
+                ThrowTarget? targ = m.Target as ThrowTarget;
 
                 if (targ != null && targ.Potion == this)
                     Target.Cancel(m);
@@ -598,37 +669,8 @@ namespace Server.Items
 
             if (AlchemyScaling && direct)
                 alchemyBonus = (int)(from.Skills.Alchemy.Value / (Core.RuleSets.AOSRules() ? 5 : 10));
-#if false
-            IPooledEnumerable eable = LeveledExplosion ? map.GetObjectsInRange(loc, ExplosionRange) : map.GetMobilesInRange(loc, ExplosionRange);
-            ArrayList toExplode = new ArrayList();
-
-            int toDamage = 0;
-
-            foreach (object o in eable)
-            {
-                if (o is IPoint3D)
-                {
-                    IPoint3D i = o as IPoint3D;
-                    if (Math.Abs(i.Z - this.Z) > ExplosionRange * 8)
-                        continue;
-                }
-
-                if (o is Mobile)
-                {
-                    toExplode.Add(o);
-                    ++toDamage;
-                }
-                else if (o is BaseExplosionPotion && o != this)
-                {
-                    toExplode.Add(o);
-                }
-            }
-
-            eable.Free();
-#else
             int toDamage = 0;
             ArrayList toExplode = new ArrayList(AffectedObjects(ref toDamage, loc, map));
-#endif
             int min = Scale(from, MinDamage);
             int max = Scale(from, MaxDamage);
 
@@ -645,7 +687,7 @@ namespace Server.Items
 
             for (int i = 0; i < toExplode.Count; ++i)
             {
-                object o = toExplode[i];
+                object? o = toExplode[i];
 
                 if (o is Mobile)
                 {
@@ -677,7 +719,7 @@ namespace Server.Items
                         if (GetFlag(PotFlags.Dud1pt) == true)
                             damage = 1;
 
-                        AOS.Damage(m, from, damage, 0, 100, 0, 0, 0, this);
+                        AOS.Damage(m, from, damage, new DamageContext { Source = this });
                     }
                 }
                 else if (o is BaseExplosionPotion)
@@ -721,7 +763,7 @@ namespace Server.Items
             }
             return false;
         }
-        public List<object> AffectedObjects(ref int mobilesToDamage, Point3D loc, Map map, List<Mobile> ignore = null)
+        public List<object> AffectedObjects(ref int mobilesToDamage, Point3D loc, Map map, List<Mobile>? ignore = null)
         {
             IPooledEnumerable eable = LeveledExplosion ? map.GetObjectsInRange(loc, ExplosionRange) : map.GetMobilesInRange(loc, ExplosionRange);
             List<object> toExplode = new();
@@ -730,7 +772,7 @@ namespace Server.Items
             {
                 if (o is IPoint3D)
                 {
-                    IPoint3D i = o as IPoint3D;
+                    IPoint3D? i = o as IPoint3D;
                     if (Math.Abs(i.Z - loc.Z) > ExplosionRange * 8)
                         continue;
                 }
@@ -768,9 +810,5 @@ namespace Server.Items
             m_Flags |= fb;
         }
 
-        public void ClearFlag(PotFlags fb)
-        {
-            m_Flags &= ~fb;
-        }
     }
 }

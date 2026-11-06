@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,7 +62,7 @@ namespace Server.Items
                 "You're the rare in my dungeon chest, {0}. Signed: {1}",
             };
 
-        private static string RandomFormat()
+        private static string? RandomFormat()
         {
             if (m_Table.Length == 0)
                 return null;
@@ -135,7 +135,7 @@ namespace Server.Items
             if (Deleted || !IsChildOf(from.Backpack))
                 return;
 
-            Mobile target = targeted as Mobile;
+            Mobile? target = targeted as Mobile;
 
             if (target == null)
             {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -68,12 +68,12 @@ namespace Server.Misc
                 AddDynamicWeather(+15, 100, 5, 8, 400, 400, new Rectangle2D(0, 0, 5120, 4096));
         }
 
-        public static ArrayList GetWeatherList(Map facet)
+        public static ArrayList? GetWeatherList(Map facet)
         {
             if (facet == null)
                 return null;
 
-            ArrayList list = (ArrayList)m_WeatherByFacet[facet];
+            ArrayList? list = (ArrayList?)m_WeatherByFacet[facet];
 
             if (list == null)
                 m_WeatherByFacet[facet] = list = new ArrayList();
@@ -115,16 +115,16 @@ namespace Server.Misc
                 new Weather(m_Facets[i], area, temperature, chanceOfPercipitation, chanceOfExtremeTemperature, TimeSpan.FromSeconds(30.0));
         }
 
-        public static bool CheckWeatherConflict(Map facet, Weather exclude, Rectangle2D area)
+        public static bool CheckWeatherConflict(Map facet, Weather? exclude, Rectangle2D area)
         {
-            ArrayList list = GetWeatherList(facet);
+            ArrayList? list = GetWeatherList(facet);
 
             if (list == null)
                 return false;
 
             for (int i = 0; i < list.Count; ++i)
             {
-                Weather w = (Weather)list[i];
+                Weather? w = (Weather?)list[i];
 
                 if (w != exclude && w.IntersectsWith(area))
                     return true;
@@ -209,7 +209,7 @@ namespace Server.Misc
             m_ChanceOfPercipitation = chanceOfPercipitation;
             m_ChanceOfExtremeTemperature = chanceOfExtremeTemperature;
 
-            ArrayList list = GetWeatherList(facet);
+            ArrayList? list = GetWeatherList(facet);
 
             if (list != null)
                 list.Add(this);
@@ -333,7 +333,7 @@ namespace Server.Misc
                 //ArrayList states = NetState.Instances;
                 List<NetState> states = NetState.Instances;
 
-                Packet weatherPacket = null;
+                Packet? weatherPacket = null;
 
                 for (int i = 0; i < states.Count; ++i)
                 {
@@ -371,7 +371,7 @@ namespace Server.Misc
             if (m_Timer != null)
                 m_Timer.Stop();
 
-            ArrayList list = GetWeatherList(m_Facet);
+            ArrayList? list = GetWeatherList(m_Facet);
 
             if (list != null)
                 list.Remove(this);
@@ -394,13 +394,13 @@ namespace Server.Misc
             if (facet == null)
                 return;
 
-            ArrayList list = Weather.GetWeatherList(facet);
+            ArrayList? list = Weather.GetWeatherList(facet);
 
             ClearPins();
 
             for (int i = 0; i < list.Count; ++i)
             {
-                Weather w = (Weather)list[i];
+                Weather? w = (Weather?)list[i];
 
                 for (int j = 0; j < w.Area.Length; ++j)
                     AddWorldPin(w.Area[j].X + (w.Area[j].Width / 2), w.Area[j].Y + (w.Area[j].Height / 2));

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -60,19 +60,19 @@ namespace Server.Commands
 
         private class MemberComparer : IComparer
         {
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
                 if (x == y)
                     return 0;
 
-                ConstructorInfo aCtor = x as ConstructorInfo;
-                ConstructorInfo bCtor = y as ConstructorInfo;
+                ConstructorInfo? aCtor = x as ConstructorInfo;
+                ConstructorInfo? bCtor = y as ConstructorInfo;
 
-                PropertyInfo aProp = x as PropertyInfo;
-                PropertyInfo bProp = y as PropertyInfo;
+                PropertyInfo? aProp = x as PropertyInfo;
+                PropertyInfo? bProp = y as PropertyInfo;
 
-                MethodInfo aMethod = x as MethodInfo;
-                MethodInfo bMethod = y as MethodInfo;
+                MethodInfo? aMethod = x as MethodInfo;
+                MethodInfo? bMethod = y as MethodInfo;
 
                 bool aStatic = GetStaticFor(aCtor, aProp, aMethod);
                 bool bStatic = GetStaticFor(bCtor, bProp, bMethod);
@@ -122,7 +122,7 @@ namespace Server.Commands
                 return v;
             }
 
-            private bool GetStaticFor(ConstructorInfo ctor, PropertyInfo prop, MethodInfo method)
+            private bool GetStaticFor(ConstructorInfo? ctor, PropertyInfo? prop, MethodInfo? method)
             {
                 if (ctor != null)
                     return ctor.IsStatic;
@@ -131,8 +131,8 @@ namespace Server.Commands
 
                 if (prop != null)
                 {
-                    MethodInfo getMethod = prop.GetGetMethod();
-                    MethodInfo setMethod = prop.GetGetMethod();
+                    MethodInfo? getMethod = prop.GetGetMethod();
+                    MethodInfo? setMethod = prop.GetGetMethod();
 
                     return (getMethod != null && getMethod.IsStatic) || (setMethod != null && setMethod.IsStatic);
                 }
@@ -140,7 +140,7 @@ namespace Server.Commands
                 return false;
             }
 
-            private string GetNameFrom(ConstructorInfo ctor, PropertyInfo prop, MethodInfo method)
+            private string GetNameFrom(ConstructorInfo? ctor, PropertyInfo? prop, MethodInfo? method)
             {
                 if (ctor != null)
                     return ctor.DeclaringType.Name;
@@ -155,7 +155,7 @@ namespace Server.Commands
 
         private class TypeComparer : IComparer
         {
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
                 if (x == null && y == null)
                     return 0;
@@ -164,8 +164,8 @@ namespace Server.Commands
                 else if (y == null)
                     return 1;
 
-                TypeInfo a = x as TypeInfo;
-                TypeInfo b = y as TypeInfo;
+                TypeInfo? a = x as TypeInfo;
+                TypeInfo? b = y as TypeInfo;
 
                 if (a == null || b == null)
                     throw new ArgumentException();
@@ -176,7 +176,7 @@ namespace Server.Commands
 
         private class NamespaceComparer : IComparer
         {
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
                 DictionaryEntry a = (DictionaryEntry)x;
                 DictionaryEntry b = (DictionaryEntry)y;
@@ -246,12 +246,12 @@ namespace Server.Commands
 
         private static int m_AliasLength = m_Aliases.GetLength(0);
 
-        public static string GetPair(Type varType, string name, bool ignoreRef)
+        public static string GetPair(Type varType, string? name, bool ignoreRef)
         {
             string prepend = "";
             StringBuilder append = new StringBuilder();
 
-            Type realType = varType;
+            Type? realType = varType;
 
             if (varType.IsByRef)
             {
@@ -308,10 +308,10 @@ namespace Server.Commands
                 append.Append(' ');
             }
 
-            string fullName = realType.FullName;
-            string aliased = null;// = realType.Name;
+            string? fullName = realType.FullName;
+            string? aliased = null;// = realType.Name;
 
-            TypeInfo info = (TypeInfo)m_Types[realType];
+            TypeInfo? info = (TypeInfo?)m_Types[realType];
 
             if (info != null)
             {
@@ -850,7 +850,7 @@ namespace Server.Commands
 
             for (int i = 0; i < items.Count; ++i)
             {
-                Item item = (Item)items[i];
+                Item? item = (Item?)items[i];
 
                 if (item is Sandals)
                     rewards[5] = true;
@@ -904,8 +904,8 @@ namespace Server.Commands
                 item.Delete();
             }
 
-            string style = null;
-            string name = null;
+            string? style = null;
+            string? name = null;
 
             switch (material)
             {
@@ -1088,7 +1088,7 @@ namespace Server.Commands
 
             for (int i = 0; i < items.Count; ++i)
             {
-                Item item = (Item)items[i];
+                Item? item = (Item?)items[i];
 
                 if (item is SturdyPickaxe || item is SturdyShovel)
                     rewards[0] = true;
@@ -1142,8 +1142,8 @@ namespace Server.Commands
                 item.Delete();
             }
 
-            string style = null;
-            string name = null;
+            string? style = null;
+            string? name = null;
 
             switch (material)
             {
@@ -1254,7 +1254,7 @@ namespace Server.Commands
 
                     for (int i = 0; i < list.Count; ++i)
                     {
-                        BodyEntry entry = (BodyEntry)list[i];
+                        BodyEntry? entry = (BodyEntry?)list[i];
                         ModelBodyType type = entry.BodyType;
 
                         if (type != lastType)
@@ -1313,7 +1313,7 @@ namespace Server.Commands
 
                 for (int p = 0; p < 1 && p < tables.Count; ++p)
                 {
-                    Hashtable table = (Hashtable)tables[p];
+                    Hashtable? table = (Hashtable?)tables[p];
 
                     if (p > 0)
                         html.WriteLine("      <br>");
@@ -1328,7 +1328,7 @@ namespace Server.Commands
 
                     for (int i = 0; i < list.Count; ++i)
                     {
-                        SpeechEntry entry = (SpeechEntry)list[i];
+                        SpeechEntry? entry = (SpeechEntry?)list[i];
 
                         html.Write("         <tr><td class=\"lentry\">0x{0:X4}</td><td class=\"rentry\">", entry.Index);
 
@@ -1339,7 +1339,7 @@ namespace Server.Commands
                             if (j > 0)
                                 html.Write("<br>");
 
-                            string v = (string)entry.Strings[j];
+                            string? v = (string?)entry.Strings[j];
 
                             for (int k = 0; k < v.Length; ++k)
                             {
@@ -1390,10 +1390,10 @@ namespace Server.Commands
 
         private class SpeechEntrySorter : IComparer
         {
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
-                SpeechEntry a = (SpeechEntry)x;
-                SpeechEntry b = (SpeechEntry)y;
+                SpeechEntry? a = (SpeechEntry?)x;
+                SpeechEntry? b = (SpeechEntry?)y;
 
                 return a.Index.CompareTo(b.Index);
             }
@@ -1404,7 +1404,7 @@ namespace Server.Commands
             ArrayList tables = new ArrayList();
             int lastIndex = -1;
 
-            Hashtable table = null;
+            Hashtable? table = null;
 
             string path = Core.FindDataFile("Speech.mul");
 
@@ -1433,7 +1433,7 @@ namespace Server.Commands
 
                         lastIndex = index;
 
-                        SpeechEntry entry = (SpeechEntry)table[index];
+                        SpeechEntry? entry = (SpeechEntry?)table[index];
 
                         if (entry == null)
                             table[index] = entry = new SpeechEntry(index);
@@ -1472,10 +1472,10 @@ namespace Server.Commands
 
         private class CommandEntrySorter : IComparer
         {
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
-                DocCommandEntry a = (DocCommandEntry)x;
-                DocCommandEntry b = (DocCommandEntry)y;
+                DocCommandEntry? a = (DocCommandEntry?)x;
+                DocCommandEntry? b = (DocCommandEntry?)y;
 
                 int v = b.AccessLevel.CompareTo(a.AccessLevel);
 
@@ -1509,7 +1509,7 @@ namespace Server.Commands
 
                 for (int i = 0; i < commands.Count; ++i)
                 {
-                    CommandEntry e = (CommandEntry)commands[i];
+                    CommandEntry? e = (CommandEntry?)commands[i];
 
                     MethodInfo mi = e.Handler.Method;
 
@@ -1518,21 +1518,21 @@ namespace Server.Commands
                     if (attrs.Length == 0)
                         continue;
 
-                    UsageAttribute usage = attrs[0] as UsageAttribute;
+                    UsageAttribute? usage = attrs[0] as UsageAttribute;
 
                     attrs = mi.GetCustomAttributes(typeof(DescriptionAttribute), false);
 
                     if (attrs.Length == 0)
                         continue;
 
-                    DescriptionAttribute desc = attrs[0] as DescriptionAttribute;
+                    DescriptionAttribute? desc = attrs[0] as DescriptionAttribute;
 
                     if (usage == null || desc == null)
                         continue;
 
                     attrs = mi.GetCustomAttributes(typeof(AliasesAttribute), false);
 
-                    AliasesAttribute aliases = (attrs.Length == 0 ? null : attrs[0] as AliasesAttribute);
+                    AliasesAttribute? aliases = (attrs.Length == 0 ? null : attrs[0] as AliasesAttribute);
 
                     string descString = desc.Description.Replace("<", "&lt;").Replace(">", "&gt;");
 
@@ -1546,7 +1546,7 @@ namespace Server.Commands
 
                 for (int i = 0; i < commands.Count; ++i)
                 {
-                    BaseCommand command = (BaseCommand)commands[i];
+                    BaseCommand? command = (BaseCommand?)commands[i];
 
                     string usage = command.Usage;
                     string desc = command.Description;
@@ -1604,7 +1604,7 @@ namespace Server.Commands
 
                 for (int i = 0; i < commands.Count; ++i)
                 {
-                    BaseCommandImplementor command = (BaseCommandImplementor)commands[i];
+                    BaseCommandImplementor? command = (BaseCommandImplementor?)commands[i];
 
                     string usage = command.Usage;
                     string desc = command.Description;
@@ -1667,11 +1667,11 @@ namespace Server.Commands
         {
             for (int i = 0; i < list.Count; ++i)
             {
-                CommandEntry e = (CommandEntry)list[i];
+                CommandEntry? e = (CommandEntry?)list[i];
 
                 for (int j = i + 1; j < list.Count; ++j)
                 {
-                    CommandEntry c = (CommandEntry)list[j];
+                    CommandEntry? c = (CommandEntry?)list[j];
 
                     if (e.Handler.Method == c.Handler.Method)
                     {
@@ -1720,7 +1720,7 @@ namespace Server.Commands
             {
                 Type type = types[i];
 
-                string nspace = type.Namespace;
+                string? nspace = type.Namespace;
 
                 if (nspace == null || type.IsSpecialName)
                     continue;
@@ -1728,7 +1728,7 @@ namespace Server.Commands
                 TypeInfo info = new TypeInfo(type);
                 m_Types[type] = info;
 
-                ArrayList nspaces = (ArrayList)m_Namespaces[nspace];
+                ArrayList? nspaces = (ArrayList?)m_Namespaces[nspace];
 
                 if (nspaces == null)
                     m_Namespaces[nspace] = nspaces = new ArrayList();
@@ -1739,7 +1739,7 @@ namespace Server.Commands
 
                 if (baseType != null && InAssemblies(baseType, asms))
                 {
-                    TypeInfo baseInfo = (TypeInfo)m_Types[baseType];
+                    TypeInfo? baseInfo = (TypeInfo?)m_Types[baseType];
 
                     if (baseInfo == null)
                         m_Types[baseType] = baseInfo = new TypeInfo(baseType);
@@ -1754,7 +1754,7 @@ namespace Server.Commands
 
                 if (decType != null)
                 {
-                    TypeInfo decInfo = (TypeInfo)m_Types[decType];
+                    TypeInfo? decInfo = (TypeInfo?)m_Types[decType];
 
                     if (decInfo == null)
                         m_Types[decType] = decInfo = new TypeInfo(decType);
@@ -1772,7 +1772,7 @@ namespace Server.Commands
                     if (!InAssemblies(iface, asms))
                         continue;
 
-                    TypeInfo ifaceInfo = (TypeInfo)m_Types[iface];
+                    TypeInfo? ifaceInfo = (TypeInfo?)m_Types[iface];
 
                     if (ifaceInfo == null)
                         m_Types[iface] = ifaceInfo = new TypeInfo(iface);
@@ -1831,7 +1831,7 @@ namespace Server.Commands
 
             for (int i = 0; i < types.Count; ++i)
             {
-                Type t = ((TypeInfo)types[i]).m_Type;
+                Type? t = ((TypeInfo)types[i]).m_Type;
                 bool isItem;
 
                 if (t.IsAbstract || !IsConstructable(t, out isItem))
@@ -1914,7 +1914,7 @@ namespace Server.Commands
                 {
                     html.Write(" <a ");
 
-                    TypeInfo typeInfo = (TypeInfo)m_Types[parms[j].ParameterType];
+                    TypeInfo? typeInfo = (TypeInfo?)m_Types[parms[j].ParameterType];
 
                     if (typeInfo != null)
                         html.Write("href=\"types/{0}\" ", typeInfo.m_FileName);
@@ -1976,7 +1976,7 @@ namespace Server.Commands
 
                 if (attributes != null && attributes.Length > 0)
                 {
-                    CustomEnumAttribute attr = attributes[0] as CustomEnumAttribute;
+                    CustomEnumAttribute? attr = attributes[0] as CustomEnumAttribute;
 
                     if (attr != null)
                     {
@@ -2040,7 +2040,7 @@ namespace Server.Commands
                 {
                     DictionaryEntry de = (DictionaryEntry)nspaces[i];
                     string name = (string)de.Key;
-                    ArrayList types = (ArrayList)de.Value;
+                    ArrayList? types = (ArrayList?)de.Value;
 
                     types.Sort(new TypeComparer());
 
@@ -2118,7 +2118,7 @@ namespace Server.Commands
 
             for (int i = 0; i < values.Length; ++i)
             {
-                object value = values.GetValue(i);
+                object? value = values.GetValue(i);
 
                 typeHtml.WriteLine(format, value, value, i < (values.Length - 1) ? "," : "");
             }
@@ -2138,7 +2138,7 @@ namespace Server.Commands
 
                 typeHtml.Write('(');
 
-                TypeInfo decInfo = (TypeInfo)m_Types[decType];
+                TypeInfo? decInfo = (TypeInfo?)m_Types[decType];
 
                 if (decInfo == null)
                     typeHtml.Write(decType.Name);
@@ -2159,7 +2159,7 @@ namespace Server.Commands
             {
                 typeHtml.Write(" : ");
 
-                TypeInfo baseInfo = (TypeInfo)m_Types[baseType];
+                TypeInfo? baseInfo = (TypeInfo?)m_Types[baseType];
 
                 if (baseInfo == null)
                     typeHtml.Write(baseType.Name);
@@ -2177,7 +2177,7 @@ namespace Server.Commands
                 for (int i = 0; i < ifaces.Length; ++i)
                 {
                     Type iface = ifaces[i];
-                    TypeInfo ifaceInfo = (TypeInfo)m_Types[iface];
+                    TypeInfo? ifaceInfo = (TypeInfo?)m_Types[iface];
 
                     if (extendCount != 0)
                         typeHtml.Write(", ");
@@ -2203,7 +2203,7 @@ namespace Server.Commands
 
                 for (int i = 0; i < derived.Count; ++i)
                 {
-                    TypeInfo derivedInfo = (TypeInfo)derived[i];
+                    TypeInfo? derivedInfo = (TypeInfo?)derived[i];
 
                     if (i != 0)
                         typeHtml.Write(", ");
@@ -2224,7 +2224,7 @@ namespace Server.Commands
 
                 for (int i = 0; i < nested.Count; ++i)
                 {
-                    TypeInfo nestedInfo = (TypeInfo)nested[i];
+                    TypeInfo? nestedInfo = (TypeInfo?)nested[i];
 
                     if (i != 0)
                         typeHtml.Write(", ");
@@ -2256,8 +2256,8 @@ namespace Server.Commands
         {
             html.Write("      ");
 
-            MethodInfo getMethod = pi.GetGetMethod();
-            MethodInfo setMethod = pi.GetSetMethod();
+            MethodInfo? getMethod = pi.GetGetMethod();
+            MethodInfo? setMethod = pi.GetSetMethod();
 
             if ((getMethod != null && getMethod.IsStatic) || (setMethod != null && setMethod.IsStatic))
                 html.Write(StaticString);
@@ -2382,9 +2382,9 @@ namespace Server.Commands
             m_Name = name;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            BodyEntry e = (BodyEntry)obj;
+            BodyEntry? e = (BodyEntry?)obj;
 
             return (m_Body == e.m_Body && m_BodyType == e.m_BodyType && m_Name == e.m_Name);
         }
@@ -2397,10 +2397,10 @@ namespace Server.Commands
 
     public class BodyEntrySorter : IComparer
     {
-        public int Compare(object x, object y)
+        public int Compare(object? x, object? y)
         {
-            BodyEntry a = (BodyEntry)x;
-            BodyEntry b = (BodyEntry)y;
+            BodyEntry? a = (BodyEntry?)x;
+            BodyEntry? b = (BodyEntry?)y;
 
             int v = a.BodyType.CompareTo(b.BodyType);
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -119,7 +119,7 @@ namespace Server.Engines.Craft
             return false;
         }
 
-        public CraftContext GetContext(Mobile m)
+        public CraftContext? GetContext(Mobile m)
         {
             if (m == null)
                 return null;
@@ -130,7 +130,7 @@ namespace Server.Engines.Craft
                 return null;
             }
 
-            CraftContext c = (CraftContext)m_ContextTable[m];
+            CraftContext? c = (CraftContext?)m_ContextTable[m];
 
             if (c == null)
                 m_ContextTable[m] = c = new CraftContext();
@@ -140,7 +140,7 @@ namespace Server.Engines.Craft
 
         public void OnMade(Mobile m, CraftItem item)
         {
-            CraftContext c = GetContext(m);
+            CraftContext? c = GetContext(m);
 
             if (c != null)
                 c.OnMade(item);
@@ -199,7 +199,7 @@ namespace Server.Engines.Craft
         public void CreateItem(Mobile from, Type type, Type typeRes, BaseTool tool, CraftItem realCraftItem)
         {
             // Verify if the type is in the list of the craftable item
-            CraftItem craftItem = m_CraftItems.SearchFor(type);
+            CraftItem? craftItem = m_CraftItems.SearchFor(type);
             if (craftItem != null)
             {
                 // The item is in the list, try to create it
@@ -269,7 +269,7 @@ namespace Server.Engines.Craft
         }
         public static int InitCraftTable()
         {   // this calls the InitCraftList for each craft whereby loading our IsCraftable table with craftable types
-            CraftSystem temp;
+            CraftSystem? temp;
             int patched = 0;
             temp = DefAlchemy.CraftSystem; patched++;
             temp = DefBlacksmithy.CraftSystem; patched++;
@@ -285,12 +285,19 @@ namespace Server.Engines.Craft
             temp = DefTownshipCraft.CraftSystem; patched++;
             return patched;
         }
-        public int AddCraft(Type typeItem, TextDefinition groupName, TextDefinition itemName, SkillName skillToMake, double minSkill, double maxSkill, Type typeRes, TextDefinition nameRes, int amount, TextDefinition message, Predicate<Item> predicate, params object[] args)
+        public int AddCraft(Type typeItem, TextDefinition groupName, TextDefinition itemName, SkillName skillToMake, double minSkill, double maxSkill, Type typeRes, TextDefinition nameRes, int amount, TextDefinition message, Predicate<Item>? predicate, params object[] args)
         {
             if (!m_CraftableTypes.Contains(typeItem))
                 m_CraftableTypes.Add(typeItem);
 
             CraftItem craftItem = new CraftItem(typeItem, groupName, itemName);
+
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()) &&
+                typeItem == typeof(WoodFortificationWall) &&
+                typeRes == typeof(Log))
+            {
+                amount = (int)Math.Ceiling(amount * CoreAI.TownshipWallCostFactor);
+            }
 
             craftItem.AddRes(typeRes, nameRes, amount, message, predicate);
             craftItem.AddSkill(skillToMake, minSkill, maxSkill);
@@ -325,12 +332,6 @@ namespace Server.Engines.Craft
             craftItem.ItemID = id;
         }
 
-        public void SetItemHue(int index, int hue)
-        {
-            CraftItem craftItem = m_CraftItems.GetAt(index);
-            craftItem.ItemHue = hue;
-        }
-
         public void SetPicture(int index, ItemPicture picture)
         {
             CraftItem craftItem = m_CraftItems.GetAt(index);
@@ -341,18 +342,6 @@ namespace Server.Engines.Craft
         {
             CraftItem craftItem = m_CraftItems.GetAt(index);
             craftItem.Mana = mana;
-        }
-
-        public void SetStamReq(int index, int stam)
-        {
-            CraftItem craftItem = m_CraftItems.GetAt(index);
-            craftItem.Stam = stam;
-        }
-
-        public void SetHitsReq(int index, int hits)
-        {
-            CraftItem craftItem = m_CraftItems.GetAt(index);
-            craftItem.Hits = hits;
         }
 
         public void SetUseAllRes(int index, bool useAll)
@@ -366,7 +355,19 @@ namespace Server.Engines.Craft
             CraftItem craftItem = m_CraftItems.GetAt(index);
             craftItem.NeedHeat = needHeat;
         }
+        public void SetNeedShipPlans(int index, BoatType? boatType, ShipAssemblyParts needPart)
+        {
+            CraftItem craftItem = m_CraftItems.GetAt(index);
 
+            craftItem.NeedShipBoatType = boatType;
+            craftItem.NeedShipPart = needPart;
+        }
+        public void SetNeedCompletedShipPlans(int index)
+        {
+            CraftItem craftItem = m_CraftItems.GetAt(index);
+
+            craftItem.NeedCompletedShipPlans = true;
+        }
         public void SetNeedOven(int index, bool needOven)
         {
             CraftItem craftItem = m_CraftItems.GetAt(index);
@@ -395,7 +396,7 @@ namespace Server.Engines.Craft
             AddRes(index, type, name, amount, message, null);
         }
 
-        public void AddRes(int index, Type type, TextDefinition name, int amount, TextDefinition message, Predicate<Item> predicate)
+        public void AddRes(int index, Type type, TextDefinition name, int amount, TextDefinition message, Predicate<Item>? predicate)
         {
             CraftItem craftItem = m_CraftItems.GetAt(index);
             craftItem.AddRes(type, name, amount, message, predicate);
@@ -485,7 +486,7 @@ namespace Server.Engines.Craft
 
         public abstract void InitCraftList();
 
-        public abstract void PlayCraftEffect(Mobile from, object obj = null);
+        public abstract void PlayCraftEffect(Mobile from, object? obj = null);
         public abstract TextDefinition PlayEndingEffect(Mobile from, bool failed, bool lostMaterial, bool toolBroken, int quality, bool makersMark, CraftItem item);
 
         public abstract TextDefinition CanCraft(Mobile from, BaseTool tool, Type itemType);

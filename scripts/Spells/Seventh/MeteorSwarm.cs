@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,7 +34,9 @@
 
 using Server.Multis;
 using Server.Targeting;
+using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Server.Spells.Seventh
 {
@@ -66,163 +68,153 @@ namespace Server.Spells.Seventh
 
         public void Target(IPoint3D p)
         {
-            // adam: add target 'under house' exploit check
-            if (!Caster.CanSee(p) || (p is LandTarget && BaseHouse.FindHouseAt(((LandTarget)(p)).Location, Caster.Map, 16) != null))
+
+            // Meteor Swarm is always location-centered;
+            // unlike Chain Lightning, it never centers on a mobile and always uses the targeted location,
+            // requiring normal LOS checks before any audio or visual effects are played.
+
+            // NOTE: Keep all early rejects (CanSee / LOS / town / sequence) before any audio/visuals.
+            Map map = Caster.Map;
+
+            // Disallow targeting tiles that are not visible or that are inside/under a house footprint.
+            if (!Caster.CanSee(p) || (p is LandTarget && BaseHouse.FindHouseAt(((LandTarget)p).Location, Caster.Map, 16) != null))
             {
                 Caster.SendLocalizedMessage(500237); // Target can not be seen.
+                FinishSequence();
+                return;
             }
-            else if (SpellHelper.CheckTown(p, Caster) && CheckSequence())
+
+            // Normalize to world location before any LOS / AOE center calculations.
+            if (p is Item)
+                p = ((Item)p).GetWorldLocation();
+
+            Point3D origin = map != null ? new Point3D(p) : Point3D.Zero;
+
+            // Disallow targeting tiles around corners or otherwise cannot be seen.
+            // If this fails, treat it like a normal targeting failure (no sound/FX).
+            if (map == null || !Utility.LineOfSight(map, Caster, origin, true))
             {
-                SpellHelper.Turn(Caster, p);
+                Caster.SendLocalizedMessage(500237); // Target can not be seen.
+                FinishSequence();
+                return;
+            }
 
-                if (p is Item)
-                    p = ((Item)p).GetWorldLocation();
+            // No casting in town
+            if (!SpellHelper.CheckTown(p, Caster))
+            {   // actually handled by region
+                Caster.SendLocalizedMessage(500946); // You cannot cast this in town!
+                FinishSequence();
+                return;
+            }
 
-                double damage;
+            // ensure we have enough mana/reagents/etc.
+            if (!CheckSequence())
+            {
+                FinishSequence();
+                return;
+            }
 
-                if (Core.RuleSets.AOSRules())
-                    damage = GetNewAosDamage(48, 1, 5);
-                else
-                    damage = Utility.Random(27, 22);
+            SpellHelper.Turn(Caster, p);
 
-                ArrayList targets = new ArrayList();
+            double damage = Core.RuleSets.AOSRules()
+                ? GetNewAosDamage(48, 1, 5)
+                : Utility.Random(27, 22);
 
-                Map map = Caster.Map;
+            ArrayList targets = new ArrayList();
 
-                if (map != null)
+            if (map != null)
+            {
+                int radius = 2;                   // Meteor Swarm radius around the impact point
+                int penetrationDepth = 2;         // Allowed bleed depth through walls/house boundaries
+                bool requirePlayerLOS = Core.RuleSets.AOSRules();
+
+                // Always play the impact sound for a valid cast, even if no mobiles are affected.
+                Effects.PlaySound(origin, map, 0x160);
+
+                // 1) Gather candidate mobiles near the impact point.
+                List<Mobile> candidates = new List<Mobile>();
+
+                IPooledEnumerable eable = map.GetMobilesInRange(origin, radius);
+                try
                 {
-                    IPooledEnumerable eable = map.GetMobilesInRange(new Point3D(p), 2);
-
                     foreach (Mobile m in eable)
                     {
-                        // See full explanation in BaseHouse.cs
-                        if (BaseHouse.TargetExploitCheck(this.Name, Caster, m, new Point3D(p)) != BaseHouse.ExploitType.None)
-                        {   // we've already sent the caster a message
-                            FinishSequence();
-                            return;
+                        if (m == null || m.Deleted)
+                            continue;
+
+                        if (m == Caster)
+                            continue;
+
+                        if (!SpellHelper.ValidIndirectTarget(Caster, m))
+                            continue;
+
+                        if (!Caster.CanBeHarmful(m, false))
+                            continue;
+
+                        // Per-target exploit guard: validates THIS (caster, target, origin) combination.
+                        // If tripped, the caster is messaged; we skip this target and continue evaluating others.
+                        if (Utility.TargetExploitCheck(this.Name, Caster, m, origin) != Utility.ExploitType.None)
+                        {
+#if DEBUG
+                            // Debug-only: audible indicator that a filter fired (avoid breakpoints).
+                            Caster.PlaySound(0xC4);
+#endif
+                            continue;
                         }
-                        else if (BaseHouse.ProximityToDamage(Caster, m) <= 2)
-                            if (Caster != m && SpellHelper.ValidIndirectTarget(Caster, m) && Caster.CanBeHarmful(m, false))
-                                targets.Add(m);
+
+                        candidates.Add(m);
                     }
+                }
+                finally
+                {
                     eable.Free();
                 }
 
-                if (targets.Count > 0)
+                // 2) Apply LOS + house/wall penetration filtering.
+                List<Mobile> filtered = SpellHelper.AOETargets(Caster, origin, candidates, penetrationDepth, requirePlayerLOS);
+
+                for (int i = 0; i < filtered.Count; i++)
+                    targets.Add(filtered[i]);
+            }
+
+            if (targets.Count > 0)
+            {
+                if (Core.RuleSets.AOSRules() && targets.Count > 1)
+                    damage = (damage * 2) / targets.Count;
+                else if (!Core.RuleSets.AOSRules())
+                    damage /= targets.Count;
+
+                for (int i = 0; i < targets.Count; ++i)
                 {
-                    Effects.PlaySound(p, Caster.Map, 0x160);
+                    Mobile? m = (Mobile?)targets[i];
 
-                    if (Core.RuleSets.AOSRules() && targets.Count > 1)
-                        damage = (damage * 2) / targets.Count;
-                    else if (!Core.RuleSets.AOSRules())
-                        damage /= targets.Count;
+                    double toDeal = damage;
 
-                    for (int i = 0; i < targets.Count; ++i)
+                    if (!Core.RuleSets.AOSRules() && CheckResisted(m))
                     {
-                        Mobile m = (Mobile)targets[i];
-
-                        double toDeal = damage;
-
-                        if (!Core.RuleSets.AOSRules() && CheckResisted(m))
-                        {
-                            toDeal *= GetResistScaler(0.5);
-
-                            m.SendLocalizedMessage(501783); // You feel yourself resisting magical energy.
-                        }
-
-                        if (toDeal < 7)
-                            toDeal = 7;
-
-                        Caster.DoHarmful(m);
-                        SpellHelper.Damage(this, m, toDeal, 0, 100, 0, 0, 0);
-
-                        Caster.MovingParticles(m, 0x36D4, 7, 0, false, true, 9501, 1, 0, 0x100);
+                        toDeal *= GetResistScaler(0.5);
+                        m.SendLocalizedMessage(501783); // You feel yourself resisting magical energy.
                     }
+
+                    if (toDeal < 7)
+                        toDeal = 7;
+
+                    Caster.DoHarmful(m);
+
+                    SpellHelper.Damage(
+                        this,
+                        m,
+                        toDeal,
+                        new DamageContext { Source = this, ImpactLocation = origin, TimestampUtc = DateTime.UtcNow }
+                    );
+
+                    // Visuals are per-target (projectiles from caster to affected mobiles).
+                    Caster.MovingParticles(m, 0x36D4, 7, 0, false, true, 9501, 1, 0, 0x100);
                 }
             }
 
             FinishSequence();
         }
-
-        #region TargetExploitCheck(m)
-#if UNUSED
-        public bool TargetExploitCheck(Mobile caster, Mobile m, Point3D target_loc)
-        {
-            Server.Multis.BaseHouse hm = Server.Multis.BaseHouse.FindHouseAt(m);
-            if (hm == null)
-                return false;
-
-            ArrayList c = hm.Region.Coords;
-            Point2D p = new Point2D(m.Location);
-            for (int i = 0; i < c.Count; i++)
-            {
-                if (c[i] is Rectangle2D)
-                    if (((Rectangle2D)c[i]).Contains(m.Location))
-                    {
-                        Rectangle2D rect = (Rectangle2D)c[i];
-
-        #region logging
-                        // TargetExploitCheck of player
-                        LogHelper Logger = new LogHelper("MeteorSwarmExploit.log", false);
-                        Point3D target;
-                        // DistanceToTarget target of cast
-                        target = target_loc;
-                        Logger.Log(LogType.Text, string.Format("Attacker {0} distance to target: {1}", caster, caster.GetDistanceToSqrt(target)));
-                        Logger.Log(LogType.Text,string.Format("Victim {0} distance to target: {1}", m, m.GetDistanceToSqrt(target)));
-
-                        if (caster.Map.LineOfSight(caster, target_loc, true))
-                            Logger.Log(LogType.Text, string.Format("Caster see: {0}", target_loc));
-                        else
-                            Logger.Log(LogType.Text, string.Format("Caster cannot see: {0}", target_loc));
-
-                        Logger.Finish();
-        #endregion logging
-
-                        // must be able to see what you are targeting
-                        if (caster.Map.LineOfSight(caster, target_loc, true) == false)
-                        {   // Target can not be seen.
-
-                            caster.SendLocalizedMessage(500237); // Target can not be seen.
-                            // exploit! They somehow circumvented the LOS checks. Probably done on the client, and and then fudged packets on the way back to the server.
-                            //  We double down on the LOS checks here, server-side
-                            //Logger = new LogHelper("MeteorSwarmExploit.log", false);
-                            //Logger.Log(LogType.Mobile, caster, string.Format("exploit! They somehow circumvented the LOS checks in MeteorSwarm."));
-                            //Logger.Finish();
-                            // jail time
-                            //Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(Tick), new object[] { caster, "They somehow circumvented the LOS checks in MeteorSwarm." });
-                            //Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor, 0x482, string.Format("Staff message from SYSTEM:"));
-                            //Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor, 0x482, string.Format("{0} was sent to jail. They somehow circumvented the LOS checks in MeteorSwarm.", caster as Mobiles.PlayerMobile));
-                            return true;
-                        }
-
-                        // 12 is the max range on the spell, 2 is the area effect from the targeted item
-                        if (caster.GetDistanceToSqrt(target) + m.GetDistanceToSqrt(target) > (12+2))
-                        {   // That is too far away.
-                            caster.SendLocalizedMessage(500446); // That is too far away.
-                            // exploit! They somehow circumvented the range checks. Probably done on the client, and and then fudged packets on the way back to the server.
-                            //  We double down on the range checks here, server-side
-                            //Logger = new LogHelper("MeteorSwarmExploit.log", false);
-                            //Logger.Log(LogType.Mobile, caster, string.Format("exploit! They somehow circumvented the range checks in MeteorSwarm."));
-                            //Logger.Finish();
-                            // jail time
-                            //Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(Tick), new object[] { caster, "They somehow circumvented the range checks in MeteorSwarm." });
-                            //Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor, 0x482, string.Format("Staff message from SYSTEM:"));
-                            //Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor, 0x482, string.Format("{0} was sent to jail. They somehow circumvented the range checks in MeteorSwarm.", caster as Mobiles.PlayerMobile));
-                            return true;
-                        }
-                    }
-            }
-
-            return false;
-        }
-        private void Tick(object state)
-        {
-            object[] aState = (object[])state;
-            Server.Commands.Jail.JailPlayer jt = new Server.Commands.Jail.JailPlayer(aState[0] as Mobiles.PlayerMobile, 3, aState[1] as string, false);
-            jt.GoToJail();
-        }
-#endif
-        #endregion TargetExploitCheck(m)
 
         private class InternalTarget : Target
         {
@@ -236,7 +228,7 @@ namespace Server.Spells.Seventh
 
             protected override void OnTarget(Mobile from, object o)
             {
-                IPoint3D p = o as IPoint3D;
+                IPoint3D? p = o as IPoint3D;
 
                 if (p != null)
                     m_Owner.Target(p);

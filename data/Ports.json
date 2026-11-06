@@ -1,9 +1,10 @@
 {
+  "LoginServerPortBase": 2593,
   "AngelIslandPort": 3593,
-  "TestCenterPort": 3594,
-  "SiegePerilousPort": 3595,
-  "MortalisPort": 3596,
-  "RenaissancePort": 3597,
-  "EventShardPort": 3598,
-  "LoginServerPortBase": 2593
+  "SiegePerilousPort": 3594,
+  "MortalisPort": 3595,
+  "SeasonsPort": 3596,
+  "UpheavalPort": 3597,
+  "EventShardPort": 3601,
+  "TestCenterPort": 3602
 }

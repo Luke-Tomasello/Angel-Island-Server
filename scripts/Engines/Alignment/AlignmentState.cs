@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,9 +30,9 @@ namespace Server.Engines.Alignment
     [PropertyObject]
     public class AlignmentState
     {
-        public static AlignmentState GetState(AlignmentType type)
+        public static AlignmentState? GetState(AlignmentType type)
         {
-            Alignment alignment = Alignment.Get(type);
+            Alignment? alignment = Alignment.Get(type);
 
             if (alignment != null)
                 return alignment.State;

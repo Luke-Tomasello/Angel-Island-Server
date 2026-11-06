@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -110,7 +110,7 @@ namespace Server.Engines.Breeding
 
         public static bool TryGetValue(object obj, string gene, out double value)
         {
-            PropertyInfo prop = GetProperty(obj.GetType(), gene);
+            PropertyInfo? prop = GetProperty(obj.GetType(), gene);
 
             if (prop != null)
             {
@@ -131,7 +131,7 @@ namespace Server.Engines.Breeding
 
         public static bool SetValue(object obj, string gene, double value)
         {
-            PropertyInfo prop = GetProperty(obj.GetType(), gene);
+            PropertyInfo? prop = GetProperty(obj.GetType(), gene);
 
             if (prop != null)
             {
@@ -149,17 +149,17 @@ namespace Server.Engines.Breeding
             return false;
         }
 
-        private static PropertyInfo GetProperty(Type type, string gene)
+        private static PropertyInfo? GetProperty(Type type, string gene)
         {
             if (!typeof(BaseCreature).IsAssignableFrom(type) || type.IsAbstract)
                 return null;
 
-            Dictionary<string, PropertyInfo> dict;
+            Dictionary<string, PropertyInfo>? dict;
 
             if (!m_Cache.TryGetValue(type, out dict))
                 m_Cache[type] = dict = new Dictionary<string, PropertyInfo>();
 
-            PropertyInfo prop;
+            PropertyInfo? prop;
 
             if (dict.TryGetValue(gene, out prop))
                 return prop;
@@ -168,7 +168,7 @@ namespace Server.Engines.Breeding
             {
                 foreach (PropertyInfo check in type.GetProperties())
                 {
-                    GeneAttribute attr = (GeneAttribute)Attribute.GetCustomAttribute(check, typeof(GeneAttribute), true);
+                    GeneAttribute? attr = (GeneAttribute?)Attribute.GetCustomAttribute(check, typeof(GeneAttribute), true);
 
                     if (attr != null && attr.Name == gene)
                         return dict[gene] = check;
@@ -208,7 +208,7 @@ namespace Server.Engines.Breeding
                 {
                     PropertyInfo prop = props[i];
 
-                    GeneAttribute attr = (GeneAttribute)Attribute.GetCustomAttribute(prop, typeof(GeneAttribute), true);
+                    GeneAttribute? attr = (GeneAttribute?)Attribute.GetCustomAttribute(prop, typeof(GeneAttribute), true);
 
                     if (attr == null)
                         continue;
@@ -269,7 +269,7 @@ namespace Server.Engines.Breeding
                 {
                     PropertyInfo prop = childsProps[i];
 
-                    GeneAttribute attr = (GeneAttribute)Attribute.GetCustomAttribute(prop, typeof(GeneAttribute), true);
+                    GeneAttribute? attr = (GeneAttribute?)Attribute.GetCustomAttribute(prop, typeof(GeneAttribute), true);
 
                     if (attr == null)
                         continue;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -262,7 +262,7 @@ namespace Server.Items
 
         public void ApplyAttributesTo(BaseWeapon weapon)
         {
-            CraftResourceInfo resInfo = CraftResources.GetInfo(m_Resource);
+            CraftResourceInfo? resInfo = CraftResources.GetInfo(m_Resource);
 
             if (resInfo == null)
                 return;
@@ -279,12 +279,12 @@ namespace Server.Items
             ApplyAttributesTo(weapon, true, 0, attributeCount, min, max);
         }
 
-        public static void ApplyAttributesTo(BaseWeapon weapon, int attributeCount, int min, int max)
+        public static void ApplyAttributesTo(BaseWeapon? weapon, int attributeCount, int min, int max)
         {
             ApplyAttributesTo(weapon, false, 0, attributeCount, min, max);
         }
 
-        public static void ApplyAttributesTo(BaseWeapon weapon, bool isRunicTool, int luckChance, int attributeCount, int min, int max)
+        public static void ApplyAttributesTo(BaseWeapon? weapon, bool isRunicTool, int luckChance, int attributeCount, int min, int max)
         {
             /*
 			m_IsRunicTool = isRunicTool;
@@ -402,7 +402,7 @@ namespace Server.Items
 
         public void ApplyAttributesTo(BaseArmor armor)
         {
-            CraftResourceInfo resInfo = CraftResources.GetInfo(m_Resource);
+            CraftResourceInfo? resInfo = CraftResources.GetInfo(m_Resource);
 
             if (resInfo == null)
                 return;

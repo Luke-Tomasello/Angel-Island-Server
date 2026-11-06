@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -93,38 +93,20 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=114
+            // 50 - 75 Gold
+            // Special: 1-4 Zoogi Fungus, Picnic Basket
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                SolenHelper.PackPicnicBasket(this);
-                PackGold(50, 100);
-                // TODO: 1-6 zoogi fungus
+                PackGold(50, 75);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackGold(Utility.Random(100, 180));
+                PackItem(new ZoogiFungus(Utility.RandomMinMax(1, 4)));
 
-                        SolenHelper.PackPicnicBasket(this);
-
-                        PackItem(new ZoogiFungus());
-                    }
-
-                    AddLoot(LootPack.Gems, Utility.RandomMinMax(1, 2));
-                }
+                if (Utility.RandomDouble() < 0.02) // 2%
+                    SolenHelper.PackPicnicBasket(this);
             }
         }
 

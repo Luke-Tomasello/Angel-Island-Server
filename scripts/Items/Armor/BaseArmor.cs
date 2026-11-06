@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -507,7 +507,7 @@ namespace Server.Items
             {
                 double bonus = EquipDexBonus + m_DexBonus;
 
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules())
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
                 {
                     // reduce DEX decrease based on the armor's craft resource
                     if (bonus < 0)
@@ -606,29 +606,6 @@ namespace Server.Items
 			*/
         }
 
-        public CraftAttributeInfo GetResourceAttrs()
-        {
-            CraftResourceInfo info = CraftResources.GetInfo(m_Resource);
-
-            if (info == null)
-                return CraftAttributeInfo.Blank;
-
-            return info.AttributeInfo;
-        }
-
-        public int GetProtOffset()
-        {
-            switch (m_Protection)
-            {
-                case ArmorProtectionLevel.Guarding: return 1;
-                case ArmorProtectionLevel.Hardening: return 2;
-                case ArmorProtectionLevel.Fortification: return 3;
-                case ArmorProtectionLevel.Invulnerability: return 4;
-            }
-
-            return 0;
-        }
-
         public void UnscaleDurability()
         {
             int scale = 100 + GetDurabilityBonus();
@@ -682,7 +659,7 @@ namespace Server.Items
                 case ArmorDurabilityLevel.Indestructible: bonus += 120; break;
             }
 
-            EventResourceSystem ers = EventResourceSystem.Find(m_Resource);
+            EventResourceSystem? ers = EventResourceSystem.Find(m_Resource);
 
             if (ers != null && ers.Validate(this))
                 bonus += (ers.DurabilityScalar - 100);
@@ -722,17 +699,21 @@ namespace Server.Items
 
             CraftSystem system = DefTailoring.CraftSystem;
 
-            CraftItem item = system.CraftItems.SearchFor(GetType());
+            CraftItem? item = system.CraftItems.SearchFor(GetType());
 
             if (item != null && item.Resources.Count == 1 && item.Resources.GetAt(0).Amount >= 2)
             {
                 try
                 {
-                    Item res = (Item)Activator.CreateInstance(CraftResources.GetInfo(m_Resource).ResourceTypes[0]);
+                    Item? res = (Item?)Activator.CreateInstance(CraftResources.GetInfo(m_Resource).ResourceTypes[0]);
 
                     // event dyed leather, when cut, produce 0-hued leather
                     if (this.m_EventHue != -1)
                         PopHue();
+
+                    // we track starting loot with the FamilyID.
+                    //  Various restrictions are placed on FamilyID (player does not control this id, vendors don't buy, etc.)
+                    res.FamilyID = this.FamilyID;
 
                     ScissorHelper(scissors, from, res, PlayerCrafted ? (item.Resources.GetAt(0).Amount / 2) : 1);
                     return true;
@@ -871,7 +852,7 @@ namespace Server.Items
                 // Adam: Cap quality bonus at Exceptional
                 ar += -8 + (8 * QualityLookup(m_Quality));
 
-                EventResourceSystem ers = EventResourceSystem.Find(m_Resource);
+                EventResourceSystem? ers = EventResourceSystem.Find(m_Resource);
 
                 if (ers != null && ers.Validate(this))
                     ar += ers.ArmorBonus;
@@ -976,7 +957,7 @@ namespace Server.Items
         {
             SaveFlag flags = SaveFlag.None;
             SetSaveFlag(ref flags, SaveFlag.__unused, false);    // added in version 11, removed in version 12
-            SetSaveFlag(ref flags, SaveFlag.IOBAlignment, m_IOBAlignment != IOBAlignment.None);
+            SetSaveFlag(ref flags, SaveFlag.IOBAlignment, false); // retired in version 15
             SetSaveFlag(ref flags, SaveFlag.Attributes, false); // removed in version 8
             SetSaveFlag(ref flags, SaveFlag.ArmorAttributes, false); // removed in version 8
             SetSaveFlag(ref flags, SaveFlag.PhysicalBonus, false); // removed in version 8
@@ -1012,13 +993,17 @@ namespace Server.Items
             base.Serialize(writer);
 
             // always write version, then save flags followed by usual data
-            int version = 14;
+            int version = 15;
             writer.Write((int)version); // version
             SaveFlag flags = PreSerialize();
             writer.WriteEncodedInt((int)flags);
 
             switch (version)
             {
+                case 15:
+                    {   // version 15: retired IOBAlignment is no longer written
+                        goto case 14;
+                    }
                 case 14:
                     {
                         writer.Write(m_ImbueLevel);
@@ -1050,8 +1035,6 @@ namespace Server.Items
                         if (GetSaveFlag(flags, SaveFlag.SaveHue))
                             writer.Write(m_EventHue);
 
-                        if (GetSaveFlag(flags, SaveFlag.IOBAlignment))
-                            writer.WriteEncodedInt((int)m_IOBAlignment); ;
 
                         if (GetSaveFlag(flags, SaveFlag.MaxHitPoints))
                             writer.WriteEncodedInt((int)m_MaxHitPoints);
@@ -1112,6 +1095,10 @@ namespace Server.Items
 
             switch (version)
             {
+                case 15:
+                    {   // version 15: retired IOBAlignment is no longer read
+                        goto case 14;
+                    }
                 case 14:
                     {
                         m_ImbueLevel = reader.ReadByte();
@@ -1156,8 +1143,8 @@ namespace Server.Items
                 case 6:
                 case 5:
                     {
-                        if (GetSaveFlag(flags, SaveFlag.IOBAlignment))
-                            m_IOBAlignment = (IOBAlignment)reader.ReadEncodedInt();
+                        if (version < 15 && GetSaveFlag(flags, SaveFlag.IOBAlignment))
+                            reader.ReadEncodedInt(); // Retired IOBAlignment; consume legacy value for save compatibility.
 
 
                         // obsolete AOS attributes from version 8 on
@@ -1476,7 +1463,7 @@ namespace Server.Items
                 return false;
 
             #region Kin
-            if (Core.RuleSets.MortalisRules() || Core.RuleSets.AngelIslandRules())
+            if (Core.RuleSets.KinSystemEnabled())
                 if (this.IOBAlignment != IOBAlignment.None)
                 {
                     if (from is PlayerMobile)
@@ -1798,7 +1785,7 @@ namespace Server.Items
 
         public virtual int GetLuckBonus()
         {
-            CraftResourceInfo resInfo = CraftResources.GetInfo(m_Resource);
+            CraftResourceInfo? resInfo = CraftResources.GetInfo(m_Resource);
 
             if (resInfo == null)
                 return 0;
@@ -1952,7 +1939,7 @@ namespace Server.Items
 
             if (EventResourceSystem.Find(m_Resource) != null)
             {
-                CraftResourceInfo info = CraftResources.GetInfo(m_Resource);
+                CraftResourceInfo? info = CraftResources.GetInfo(m_Resource);
 
                 if (info != null)
                 {
@@ -2023,14 +2010,14 @@ namespace Server.Items
 
             Resource = CraftResources.GetFromType(resourceType);
 
-            CraftContext context = craftSystem.GetContext(from);
+            CraftContext? context = craftSystem.GetContext(from);
 
             if (context != null && context.DoNotColor)
                 Hue = 0;
 
             if (Quality == ArmorQuality.Exceptional)
             {
-                DistributeBonuses((tool is BaseRunicTool ? 6 : Core.RuleSets.SERules() ? 15 : 14)); // Not sure since when, but right now 15 points are added, not 14.
+                DistributeBonuses((tool is BaseRunicTool ? 6 : Core.RuleSets.SamuraiEmpireRules() ? 15 : 14)); // Not sure since when, but right now 15 points are added, not 14.
             }
 
             #region Magic Craft
@@ -2079,6 +2066,15 @@ namespace Server.Items
                 return;
 
             m_MagicEffect = Loot.ArmorEnchantments[Utility.Random(Loot.ArmorEnchantments.Length)];
+
+            if (Core.RuleSets.SeasonsRules(2) &&
+                m_MagicEffect != MagicEquipEffect.None &&
+                !Loot.IsAllowedEquipEffect(m_MagicEffect))
+            {
+                m_MagicEffect = MagicEquipEffect.None;
+                m_MagicCharges = 0;
+                return;
+            }
 
             int NewLevel = Utility.RandomMinMax(MinLevel, MaxLevel);
             switch (NewLevel)

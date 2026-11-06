@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -58,7 +58,7 @@ namespace Server.Ethics.Evil
 
             int maxRange = 18 + from.Power;
 
-            Player primary = null;
+            Player? primary = null;
 
             foreach (Player pl in opposition.Players)
             {
@@ -148,7 +148,7 @@ namespace Server.Ethics.Evil
 
         public static void EndLock(object state)
         {
-            Mobile m = state as Mobile;
+            Mobile? m = state as Mobile;
 
             if (m != null)
                 m.EndAction(typeof(UnholySense));

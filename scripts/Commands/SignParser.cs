@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,9 +28,11 @@
  */
 
 using Server.Items;
+using Server.Text;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Server.Commands
 {
@@ -64,9 +66,9 @@ namespace Server.Commands
             Parse(c.Mobile);
         }
 
-        public static void Parse(Mobile from, List<Rectangle2D> boundingRects = null, Map[] includeMaps = null)
+        public static void Parse(Mobile from, List<Rectangle2D>? boundingRects = null, Map[]? includeMaps = null)
         {
-            string cfg = Path.Combine(Core.BaseDirectory, Path.Combine(Core.DataDirectory, "signs.cfg"));
+            string cfg = Path.Combine(Core.ExeDirectory, Path.Combine(Core.DataDirectory, "signs.cfg"));
             if (includeMaps == null)
                 includeMaps = new Map[] { Map.Felucca, Map.Trammel, Map.Ilshenar, Map.Malas, Map.Tokuno };
 
@@ -102,7 +104,7 @@ namespace Server.Commands
                 for (int i = 0; i < list.Count; ++i)
                 {
                     SignEntry e = list[i];
-                    Map[] maps = null;
+                    Map[]? maps = null;
 
                     switch (e.m_Map)
                     {
@@ -207,5 +209,163 @@ namespace Server.Commands
 
             sign.MoveToWorld(location, map);
         }
+
+        #region Runtime use of a sign's name => location lookup
+        public sealed class SignLocation
+        {
+            public string Name { get; set; }
+            public string Key { get; set; }
+            public Point3D Location { get; set; }
+            public Map? Map { get; set; }
+        }
+
+        public static void Configure()
+        {
+            EventSink.WorldLoad += OnWorldLoad;
+        }
+        private static readonly Dictionary<string, List<SignLocation>> m_SignLocations =
+            new Dictionary<string, List<SignLocation>>(StringComparer.OrdinalIgnoreCase);
+
+        private static void OnWorldLoad() => LoadSignLocations();
+        public static void LoadSignLocations()
+        {
+            m_SignLocations.Clear();
+
+            string path = Path.Combine(Core.DataDirectory, "signs.cfg");
+
+            if (!File.Exists(path))
+                return;
+
+            foreach (string rawLine in File.ReadAllLines(path))
+            {
+                string line = rawLine.Trim();
+
+                if (line.Length == 0 || line.StartsWith("#"))
+                    continue;
+
+                string[] split = line.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+
+                if (split.Length < 6)
+                    continue;
+
+                if (!int.TryParse(split[0], out int mapIndex))
+                    continue;
+
+                if (!int.TryParse(split[2], out int x))
+                    continue;
+
+                if (!int.TryParse(split[3], out int y))
+                    continue;
+
+                if (!int.TryParse(split[4], out int z))
+                    continue;
+
+                string clilocToken = split[5].TrimStart('#');
+
+                if (!int.TryParse(clilocToken, out int clilocNumber))
+                    continue;
+
+                if (!Cliloc.Lookup.TryGetValue(clilocNumber, out string? name))
+                    continue;
+
+                Map map = Map.Maps[mapIndex];
+
+                if (map == null || map == Map.Internal)
+                    continue;
+
+                AddSignLocation(name, new Point3D(x, y, z), map);
+            }
+        }
+        private static void AddSignLocation(string name, Point3D loc, Map map)
+        {
+            string? key = NormalizeSignName(name);
+
+            if (string.IsNullOrWhiteSpace(key))
+                return;
+
+            if (!m_SignLocations.TryGetValue(key, out List<SignLocation>? list))
+                m_SignLocations[key] = list = new List<SignLocation>();
+
+            list.Add(new SignLocation
+            {
+                Name = name,
+                Key = key,
+                Location = loc,
+                Map = map
+            });
+        }
+        private static string? NormalizeSignName(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return null;
+
+            text = text.Trim().ToLowerInvariant();
+
+            if (text.StartsWith("the "))
+                text = text.Substring(4);
+
+            return text;
+        }
+        public static SignLocation? FindSignLocation(Mobile from, string raw)
+        {
+            if (from == null || string.IsNullOrWhiteSpace(raw))
+                return null;
+
+            string? key = NormalizeSignName(raw);
+
+            if (key == null)
+                return null;
+
+            if (!m_SignLocations.TryGetValue(key, out List<SignLocation>? list) || list.Count == 0)
+                return null;
+
+            // Prefer exact/current-map match.
+            SignLocation? match = list.FirstOrDefault(s => s.Map == from.Map);
+
+            if (match != null)
+                return new SignLocation
+                {
+                    Name = match.Name,
+                    Key = match.Key,
+                    Location = match.Location,
+                    Map = match.Map
+                };
+
+            // Player convenience: allow familiar sign names from another facet,
+            // but project the destination onto the player's current map.
+            // This prevents map-hopping while allowing Felucca names to work in TestCenter/Trammel.
+            if (from.AccessLevel == AccessLevel.Player && from.Map != null && from.Map != Map.Internal)
+            {
+                SignLocation? fallback = list.FirstOrDefault(s => s.Map != null && s.Map != Map.Internal);
+
+                if (fallback != null)
+                    return new SignLocation
+                    {
+                        Name = fallback.Name,
+                        Key = fallback.Key,
+                        Location = fallback.Location,
+                        Map = from.Map
+                    };
+            }
+
+            // Staff fallback: if no current-map match, use first valid sign location.
+            if (from.AccessLevel > AccessLevel.Player)
+            {
+                SignLocation? fallback = list.FirstOrDefault(s => s.Map != null && s.Map != Map.Internal);
+
+                if (fallback != null)
+                    return new SignLocation
+                    {
+                        Name = fallback.Name,
+                        Key = fallback.Key,
+                        Location = fallback.Location,
+                        Map = fallback.Map
+                    };
+            }
+
+            return null;
+        }
+
+        #endregion Runtime use of a sign's name => location lookup
     }
 }

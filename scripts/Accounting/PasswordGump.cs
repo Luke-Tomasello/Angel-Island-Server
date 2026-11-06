@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -122,7 +122,7 @@ namespace Server.Gumps
                                                 string regBody = "Password reset reqest made.\n";
                                                 regBody += "Info of from: \n";
                                                 regBody += "\n";
-                                                Accounting.Account from_account = m_From.Account as Accounting.Account;
+                                                Accounting.Account? from_account = m_From.Account as Accounting.Account;
                                                 regBody += "Account: " + (from_account == null ? "<unknown>" : from_account.Username) + "\n";
                                                 regBody += "Character: " + from.Name + "\n";
                                                 regBody += "IP: " + sender.Address.ToString() + "\n";

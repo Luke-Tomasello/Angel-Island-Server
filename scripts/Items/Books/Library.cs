@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -132,7 +132,7 @@ namespace Server.Items
                 return false;
             }
 
-            BaseHouse house = BaseHouse.FindHouseAt(from);
+            BaseHouse? house = BaseHouse.FindHouseAt(from);
             int lockdowns = 0;
             if (house != null)
                 lockdowns = house.SumLockDownSecureCount;
@@ -171,7 +171,7 @@ namespace Server.Items
                 return true;
             }
 
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             if (house != null
                 && house.IsCoOwner(from)
@@ -198,7 +198,7 @@ namespace Server.Items
             // adam: please see IBlockRazorSearch for a description of ReadyState()
             if (from.InRange(GetWorldLocation(), 2))
             {
-                BaseHouse house = BaseHouse.FindHouseAt(this);
+                BaseHouse? house = BaseHouse.FindHouseAt(this);
                 bool owner = false;
                 if (from.AccessLevel >= AccessLevel.GameMaster || (house != null && (house.IsOwner(from)
                     || house.IsCoOwner(from)) && house.Contains(this))
@@ -210,7 +210,7 @@ namespace Server.Items
             }
         }
 
-        public string GetBookTitle(Item item)
+        public string GetBookTitle(Item? item)
         {
             if (item is BaseBook)
                 return ((BaseBook)item).Title;
@@ -229,7 +229,7 @@ namespace Server.Items
                 return "Error!";
         }
 
-        public void Remove(Mobile from, Item item)
+        public void Remove(Mobile from, Item? item)
         {
             if (item == null) //sanity check 
                 return;
@@ -291,10 +291,10 @@ namespace Server.Items
                 m_Library = library;
             }
 
-            int IComparer.Compare(object x, object y)
+            int IComparer.Compare(object? x, object? y)
             {
-                Item itemX = (Item)x;
-                Item itemY = (Item)y;
+                Item? itemX = (Item?)x;
+                Item? itemY = (Item?)y;
 
                 string descX = Library.GetBookTitle(itemX);
                 string descY = Library.GetBookTitle(itemY);

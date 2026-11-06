@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,15 +36,15 @@ namespace Server.Ethics
             return Find(mob, false);
         }
 
-        public static Player Find(Mobile mob, bool inherit)
+        public static Player? Find(Mobile mob, bool inherit)
         {
-            PlayerMobile pm = mob as PlayerMobile;
+            PlayerMobile? pm = mob as PlayerMobile;
 
             if (pm == null)
             {
                 if (inherit && mob is BaseCreature)
                 {
-                    BaseCreature bc = mob as BaseCreature;
+                    BaseCreature? bc = mob as BaseCreature;
 
                     if (bc != null && bc.Controlled)
                         pm = bc.ControlMaster as PlayerMobile;
@@ -70,8 +70,8 @@ namespace Server.Ethics
         private int m_Power;
         private int m_History;
 
-        private Mobile m_Steed;
-        private Mobile m_Familiar;
+        private Mobile? m_Steed;
+        private Mobile? m_Familiar;
 
         private DateTime m_Shield;
 
@@ -85,10 +85,10 @@ namespace Server.Ethics
         public int History { get { return m_History; } set { m_History = value; } }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
-        public Mobile Steed { get { return m_Steed; } set { m_Steed = value; } }
+        public Mobile? Steed { get { return m_Steed; } set { m_Steed = value; } }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
-        public Mobile Familiar { get { return m_Familiar; } set { m_Familiar = value; } }
+        public Mobile? Familiar { get { return m_Familiar; } set { m_Familiar = value; } }
 
         [CommandProperty(AccessLevel.GameMaster)]
         public bool IsShielded

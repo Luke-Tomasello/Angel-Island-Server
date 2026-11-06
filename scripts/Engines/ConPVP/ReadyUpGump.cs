@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,7 +28,6 @@
 using Server.Gumps;
 using Server.Mobiles;
 using Server.Network;
-using System;
 using System.Collections;
 
 namespace Server.Engines.ConPVP
@@ -75,7 +74,7 @@ namespace Server.Engines.ConPVP
 
                 for (int i = 0; i < parts.Count; ++i)
                 {
-                    Participant p = (Participant)parts[i];
+                    Participant? p = (Participant?)parts[i];
 
                     height += 4;
 
@@ -96,7 +95,7 @@ namespace Server.Engines.ConPVP
 
                 for (int i = 0; i < parts.Count; ++i)
                 {
-                    Participant p = (Participant)parts[i];
+                    Participant? p = (Participant?)parts[i];
 
                     y += 4;
 
@@ -192,7 +191,7 @@ namespace Server.Engines.ConPVP
                     {
                         if (defs[i] != opts[i])
                         {
-                            string name = ruleset.Layout.FindByIndex(i);
+                            string? name = ruleset.Layout.FindByIndex(i);
 
                             if (name != null) // sanity
                             {
@@ -231,7 +230,7 @@ namespace Server.Engines.ConPVP
             {
                 case 1: // okay
                     {
-                        PlayerMobile pm = m_From as PlayerMobile;
+                        PlayerMobile? pm = m_From as PlayerMobile;
 
                         if (pm == null)
                             break;

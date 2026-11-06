@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -69,7 +69,8 @@ namespace Server.Mobiles
         }
 
         public override int Meat { get { return 1; } }
-        public override int Hides { get { return Core.RuleSets.AngelIslandRules() ? 6 : Utility.Random(3) == 0 ? 6 : 0; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
+        public override int Hides { get { return Utility.RandomBool() ? 6 : 0; } }
         public override FoodType FavoriteFood { get { return FoodType.Fish | FoodType.Meat | FoodType.FruitsAndVegies | FoodType.Eggs; } }
 
         public GiantRat(Serial serial)
@@ -79,25 +80,14 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-                PackGold(0, 25);
+            // http://web.archive.org/web/20020313115208/uo.stratics.com/hunters/giantrat.shtml
+            // 1 Raw Ribs (carved), 6 Hides (carved) (sometimes)
+            if (Spawning)
+            {
+
+            }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020313115208/uo.stratics.com/hunters/giantrat.shtml
-                    // 1 Raw Ribs (carved), 6 Hides (carved) (sometimes)
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Poor);
-                }
             }
         }
 
@@ -127,6 +117,7 @@ namespace Server.Mobiles
             Body = 0xD7;
             BaseSoundID = 0x188;
 
+            // a bit stronger than a Giant Rat
             Utility.CopyStats(typeof(GiantRat), this, stat_multiplier: 1.5, damage_multiplier: 1.2, skill_multiplier: 1.2);
 
             Fame = 300;
@@ -136,7 +127,9 @@ namespace Server.Mobiles
         }
 
         public override int Meat { get { return 1; } }
-        public override int Hides { get { return Core.RuleSets.AngelIslandRules() ? 6 : Utility.Random(3) == 0 ? 6 : 0; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
+        public override int Hides { get { return Utility.RandomBool() ? 6 : 0; } }
+        public override FoodType FavoriteFood { get { return FoodType.Fish | FoodType.Meat | FoodType.FruitsAndVegies | FoodType.Eggs; } }
 
         public BilgeRat(Serial serial)
             : base(serial)
@@ -145,25 +138,14 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-                PackGold(0, 25);
+            // http://web.archive.org/web/20020313115208/uo.stratics.com/hunters/giantrat.shtml
+            // 1 Raw Ribs (carved), 6 Hides (carved) (sometimes)
+            if (Spawning)
+            {
+
+            }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020313115208/uo.stratics.com/hunters/giantrat.shtml
-                    // 1 Raw Ribs (carved), 6 Hides (carved) (sometimes)
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Poor);
-                }
             }
         }
 

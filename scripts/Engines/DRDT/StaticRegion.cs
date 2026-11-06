@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,25 @@
 
 /* Scripts/Engines/DRDT/StaticRegion.cs
  * CHANGELOG
+ *  10/18/2026, Adam (AllowHarmful message)
+ *      AllowHarmful now overrides the message-aware Region.AllowHarmful(from, target, message): "You may not do that in
+ *      jail." and the staff "transcend" notice are sent only when the caller asked for messages. A silent check (the
+ *      combat timer's CanBeHarmful(target, false) on someone moved to jail mid-fight) no longer floods the journal.
+ *      The rules themselves (jail, AllowHarmfulActions, staff) are unchanged. The two-argument AllowHarmful still applies
+ *      the same rules, with messages, by forwarding to the three-argument one.
+ *  10/18/2026, Adam (OnCombatantChange)
+ *      Jail rules still refuse a player acquiring or switching to a combatant, but no longer refuse clearing it: the
+ *      combat timer's and the combat expiry's Combatant = null was reverted, so someone moved into jail mid-fight stayed
+ *      in combat indefinitely (CombatTimer evaluating the combatant every tick). Staff are unchanged.
+ *  5/13/2025, Adam
+ *      Added temporary guard suppression support through GuardsDisabledUntil.
+ *      Guard suppression operates as a runtime policy overlay without mutating
+ *      the underlying EnableGuards region configuration.
+ *
+ *      This allows events/shards/seasons to temporarily disable guard protection
+ *      on a per-region basis while preserving the region's intended guarded state.
+ *
+ *      Expired suppression state is not persisted to XML.
  *  7/13/23, Yoar
  *      Added Season
  *  5/28/23, Yoar
@@ -56,7 +75,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 using Server.Mobiles;
 using Server.Multis;
@@ -73,40 +91,43 @@ namespace Server.Regions
     [Flags]
     public enum RegionFlag : ulong
     {
-        None = 0x00000000,
+        None = 0UL,
 
-        EnableHousing = 0x00000001,
-        EnableStuckMenu = 0x00000002,
-        ShowEnterMessage = 0x00000004,
-        ShowExitMessage = 0x00000008,
-        CannotEnter = 0x00000010,
-        CanUsePotions = 0x00000020,
-        EnableGuards = 0x00000040,
-        NoMurderCounts = 0x00000080,
-        CanRessurect = 0x00000100,
-        IOBArea = 0x00000200,
-        NoGateInto = 0x00000400,
-        NoRecallInto = 0x00000800,
-        ShowIOBMessage = 0x00001000,
-        IsIsolated = 0x00002000, // wea: controls outside mobile visibility
-        EnableMusic = 0x00004000,
-        IsMagicIsolated = 0x00008000,
-        RestrictCreatureMagic = 0x00010000,
-        AllowTravelSpellsInRegion = 0x00020000,
-        //OverrideMaxFollowers = 0x00040000,
-        NoExternalHarmful = 0x00080000,
-        NoGhostBlindness = 0x00100000, // adam: ghosts go blind in this region
-        //UseHouseRules       = 0x00200000, // adam: implement some house region systems
-        //UseDungeonRules     = 0x00400000, // adam: Convert IsDungeonRules to flag
-        IsCaptureArea = 0x00800000, // plasma: factions sigil capture region
-        BlockLooting = 0x01000000, // adam: disallow looting in this region
-        //UseJailRules        = 0x02000000, // adam: implement jail region systems
-        //UseGreenAcresRules  = 0x04000000, // adam: implement GreenAcres region systems
-        //UseAngelIslandRules = 0x08000000, // adam: implement AngelIsland region systems
-        EnableSmartGuards = 0x10000000, // adam: use smart guards against players bank griefing
+        EnableHousing = 1UL << 0,
+        EnableStuckMenu = 1UL << 1,
+        ShowEnterMessage = 1UL << 2,
+        ShowExitMessage = 1UL << 3,
+        CannotEnter = 1UL << 4,
+        CanUsePotions = 1UL << 5,
+        EnableGuards = 1UL << 6,
+        NoMurderCounts = 1UL << 7,
+        CanResurrect = 1UL << 8,
+        [Obsolete("Use CanResurrect")]
+        CanRessurect = CanResurrect, // legacy XML compatibility
+        IOBArea = 1UL << 9,
+        NoGateInto = 1UL << 10,
+        NoRecallInto = 1UL << 11,
+        ShowIOBMessage = 1UL << 12,
+        IsIsolated = 1UL << 13, // Controls outside mobile visibility
+        EnableMusic = 1UL << 14,
+        IsMagicIsolated = 1UL << 15,
+        RestrictCreatureMagic = 1UL << 16,
+        AllowTravelSpellsInRegion = 1UL << 17,
+        AllowReds = 1UL << 18, // Allow murderous players
+        NoExternalHarmful = 1UL << 19,
+        NoGhostBlindness = 1UL << 20, // Disable ghost blindness
+        AllowHarmful = 1UL << 21,
+        AllowBeneficial = 1UL << 22,
+        IsCaptureArea = 1UL << 23, // Factions sigil capture region
+        BlockLooting = 1UL << 24,
+        NoMounts = 1UL << 25,
+        TestCenter = 1UL << 26, // Test Center / Green Acres behavior
+        ThisRegionOnly = 1UL << 27, // Travel is only allowed within this region (no gating/recalling in or out, but internal travel is allowed)
+        EnableSmartGuards = 1UL << 28, // Smart guards (anti-bank griefing)
+        IsConquerable = 1UL << 29, // Determines whether this StaticRegion can be included in the TerritoryControl system.
 
         Default = EnableHousing | EnableStuckMenu | CanUsePotions |
-            CanRessurect | EnableMusic,
+                  CanResurrect | EnableMusic,
     }
 
     public enum RegionRuleset : byte
@@ -159,7 +180,7 @@ namespace Server.Regions
             CommandSystem.Register("ConvertToStaticRegion", AccessLevel.Administrator, ConvertToStaticRegion_OnCommand);
         }
 
-        public static StaticRegion FindStaticRegion(Mobile m)
+        public static StaticRegion? FindStaticRegion(Mobile m)
         {
             if (m == null || m.Deleted)
                 return null;
@@ -167,7 +188,7 @@ namespace Server.Regions
             return FindStaticRegion(m.Location, m.Map);
         }
 
-        public static StaticRegion FindStaticRegion(Item item)
+        public static StaticRegion? FindStaticRegion(Item item)
         {
             if (item == null || item.Deleted)
                 return null;
@@ -175,7 +196,7 @@ namespace Server.Regions
             return FindStaticRegion(item.GetWorldLocation(), item.Map);
         }
 
-        public static StaticRegion FindStaticRegion(Point3D p, Map map)
+        public static StaticRegion? FindStaticRegion(Point3D p, Map map)
         {
             return FindRegion<StaticRegion>(p, map);
         }
@@ -193,7 +214,7 @@ namespace Server.Regions
 
             return null;
         }
-        public static StaticRegionControl Controller(StaticRegion reg)
+        public static StaticRegionControl? Controller(StaticRegion reg)
         {
             for (int i = StaticRegionControl.Instances.Count - 1; i >= 0; i--)
             {
@@ -209,13 +230,13 @@ namespace Server.Regions
 
         private static void EventSink_Login(LoginEventArgs e)
         {
-            StaticRegion sr = FindStaticRegion(e.Mobile);
+            StaticRegion? sr = FindStaticRegion(e.Mobile);
 
             #region House Ruleset
 
             if (sr != null && sr.UseHouseRules)
             {
-                BaseHouse house = BaseHouse.FindHouseAt(e.Mobile);
+                BaseHouse? house = BaseHouse.FindHouseAt(e.Mobile);
 
                 if (house != null && !house.Public && !house.IsFriend(e.Mobile))
                     e.Mobile.Location = house.BanLocation;
@@ -340,11 +361,66 @@ namespace Server.Regions
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
+        public bool AllowReds
+        {
+            get { return GetFlag(RegionFlag.AllowReds); }
+            set { SetFlag(RegionFlag.AllowReds, value); }
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool NoMounts
+        {
+            get { return GetFlag(RegionFlag.NoMounts); }
+            set { SetFlag(RegionFlag.NoMounts, value); }
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool AllowHarmfulActions
+        {
+            get { return GetFlag(RegionFlag.AllowHarmful); }
+            set { SetFlag(RegionFlag.AllowHarmful, value); }
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool AllowBeneficialActions
+        {
+            get { return GetFlag(RegionFlag.AllowBeneficial); }
+            set { SetFlag(RegionFlag.AllowBeneficial, value); }
+        }
+
+        #region Guards
+        [CommandProperty(AccessLevel.GameMaster)]
         public bool EnableGuards
         {
-            get { return GetFlag(RegionFlag.EnableGuards); }
+            get { return GetFlag(RegionFlag.EnableGuards) && !GuardLocked(); }
             set { SetFlag(RegionFlag.EnableGuards, value); }
         }
+        [CommandProperty(AccessLevel.GameMaster)]
+        public string EnableGuardsOn
+        {
+            get
+            {
+                if (!GetFlag(RegionFlag.EnableGuards))
+                    return "Disabled";
+
+                if (!GuardLocked())
+                    return "Now";
+
+                return m_GuardsDisabledUntil.ToString();
+            }
+        }
+        private DateTime m_GuardsDisabledUntil = DateTime.MinValue;
+        public bool GuardLocked()
+        {
+            return m_GuardsDisabledUntil > DateTime.UtcNow;
+        }
+        [CommandProperty(AccessLevel.GameMaster)]
+        public DateTime GuardsDisabledUntil
+        {
+            get { return m_GuardsDisabledUntil; }
+            set { m_GuardsDisabledUntil = value; }
+        }
+        #endregion Guards
 
         [CommandProperty(AccessLevel.GameMaster)]
         public bool NoMurderCounts
@@ -354,10 +430,10 @@ namespace Server.Regions
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public bool CanRessurect
+        public bool CanResurrect
         {
-            get { return GetFlag(RegionFlag.CanRessurect); }
-            set { SetFlag(RegionFlag.CanRessurect, value); }
+            get { return GetFlag(RegionFlag.CanResurrect); }
+            set { SetFlag(RegionFlag.CanResurrect, value); }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -441,6 +517,7 @@ namespace Server.Regions
             set { SetFlag(RegionFlag.RestrictCreatureMagic, value); }
         }
 
+        // 4/14/2026, Adam: hiding this for the time being, it's not hooked up
         [CommandProperty(AccessLevel.GameMaster)]
         public bool AllowTravelSpellsInRegion
         {
@@ -460,6 +537,38 @@ namespace Server.Regions
         {
             get { return !GetFlag(RegionFlag.NoGhostBlindness); }
             set { SetFlag(RegionFlag.NoGhostBlindness, !value); }
+        }
+
+
+        /// <summary>
+        /// Determines whether this StaticRegion can be included in the TerritoryControl system.
+        /// If false, the region will be skipped during district/zone generation and will not
+        /// receive guardian spawners or conquest mechanics.
+        /// 
+        /// Default: true (most regions should be conquerable)
+        /// </summary>
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool IsConquerable
+        {
+            get { return GetFlag(RegionFlag.IsConquerable); }
+            set { SetFlag(RegionFlag.IsConquerable, value); }
+        }
+
+        // In SpellHelper: ThisRegionOnly means travel may not leave the source static region.
+        // If no target static region exists, or if the target is a different static region,
+        // then the attempted travel leaves the containment boundary and is blocked.
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool ThisRegionOnly
+        {
+            get { return GetFlag(RegionFlag.ThisRegionOnly); }
+            set { SetFlag(RegionFlag.ThisRegionOnly, value); }
+        }
+
+        [CommandProperty(AccessLevel.GameMaster, AccessLevel.System)]
+        public virtual bool TestCenter
+        {
+            get { return GetFlag(RegionFlag.TestCenter); }
+            set { SetFlag(RegionFlag.TestCenter, value); }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -639,7 +748,7 @@ namespace Server.Regions
 
                     int season = (m_Season == SeasonType.Default ? Map.Season : (int)m_Season);
 
-                    Packet p = null;
+                    Packet? p = null;
 
                     foreach (Mobile m in Players.Values)
                     {
@@ -661,7 +770,7 @@ namespace Server.Regions
         public override bool IsHouseRules { get { return UseHouseRules; } }
         public override bool IsJailRules { get { return UseJailRules; } }
         public override bool IsGreenAcresRules { get { return UseGreenAcresRules; } }
-        public override bool IsAngelIslandRules { get { return UseAngelIslandRules; } }
+        public override bool IsPrisonRules { get { return UseAngelIslandRules; } }
         public override bool IsTownRules { get { return UseTownRules; } }
 
         private bool m_WasRegistered; // indicating whether the region was registered on serialization
@@ -688,6 +797,11 @@ namespace Server.Regions
             PriorityType = RegionPriorityType.High;
             LoadFromXml = false; // indicate that this region was not loaded from RunUO's "Data/Regions.xml" file
             m_ShardConfig = Spawner.ShardConfig.Core;
+
+            // default to the shard default. I.e., reds are allowed in town for Siege
+            AllowReds = Core.DefaultRedsInTown;
+            AllowBeneficialActions = true;
+            AllowHarmfulActions = true;
         }
 
         public virtual void OnRegionRegistrationChanged()
@@ -704,18 +818,18 @@ namespace Server.Regions
 
         public override bool AllowHousing(Point3D p)
         {
-            if (IsJailRules || IsAngelIslandRules)
+            if (IsJailRules || IsPrisonRules)
                 return false;
 
             if (IsGreenAcresRules)
-                return Server.Misc.TestCenter.Enabled; // we allow players to place houses on Green Acres on Test Center
+                return Server.Engines.TestCenterServer.Enabled; // we allow players to place houses on Green Acres on Test Center
 
             return EnableHousing;
         }
 
         public override bool CanUseStuckMenu(Mobile m, bool quiet = false)
         {
-            if (IsAngelIslandRules || !EnableStuckMenu)
+            if (IsPrisonRules || !EnableStuckMenu)
             {
                 if (quiet == false)
                     m.SendMessage("You cannot use the stuck menu here.");
@@ -724,23 +838,61 @@ namespace Server.Regions
 
             return true;
         }
-
-        public override bool AllowBenificial(Mobile from, Mobile target)
+        public override bool AllowBeneficial(Mobile from, Mobile target)
         {
-            if (IsJailRules && from.AccessLevel == AccessLevel.Player)
+            bool staff = from.AccessLevel > AccessLevel.Player;
+
+            if (IsJailRules && !staff)
             {
                 from.SendMessage("You may not do that in jail.");
                 return false;
             }
 
-            return base.AllowBenificial(from, target); ;
-        }
+            if (!AllowBeneficialActions)
+            {
+                if (staff)
+                {
+                    from.SendMessage("Your staff powers allow you to transcend the laws of this region.");
+                    return true;
+                }
 
+                // caller will message
+                //from.SendLocalizedMessage(1001017); // You can not perform beneficial acts on your target.
+                return false;
+            }
+
+            return base.AllowBeneficial(from, target);
+        }
+        // the two-argument check enforces the same rules, with the messages (as it always did). No recursion: the
+        //  three-argument check below ends with base.AllowHarmful(from, target), a non-virtual call to Region's own
         public override bool AllowHarmful(Mobile from, Mobile target)
         {
-            if (IsJailRules && from.AccessLevel == AccessLevel.Player)
+            return AllowHarmful(from, target, message: true);
+        }
+
+        // message: the caller's choice (Mobile.CanBeHarmful); a silent check, such as the combat timer's, sends nothing
+        public override bool AllowHarmful(Mobile from, Mobile target, bool message)
+        {
+            bool staff = from.AccessLevel > AccessLevel.Player;
+
+            if (IsJailRules && !staff)
             {
-                from.SendMessage("You may not do that in jail.");
+                if (message)
+                    from.SendMessage("You may not do that in jail.");
+                return false;
+            }
+
+            if (!AllowHarmfulActions)
+            {
+                if (staff)
+                {
+                    if (message)
+                        from.SendMessage("Your staff powers allow you to transcend the laws of this region.");
+                    return true;
+                }
+
+                // caller will message
+                //from.SendLocalizedMessage(1001018); // You cannot perform negative acts on your target.
                 return false;
             }
 
@@ -749,7 +901,7 @@ namespace Server.Regions
 
         public override bool OnResurrect(Mobile m)
         {
-            if (!CanRessurect && m.AccessLevel == AccessLevel.Player)
+            if (!CanResurrect && m.AccessLevel == AccessLevel.Player)
             {
                 m.SendMessage("You cannot ressurect here.");
                 return false;
@@ -760,7 +912,7 @@ namespace Server.Regions
 
         public override bool OnBeginSpellCast(Mobile from, ISpell s)
         {
-            if (IsAngelIslandRules && (s is Spells.Third.TeleportSpell || s is Spells.Fourth.RecallSpell || s is Spells.Sixth.MarkSpell || s is Spells.Seventh.GateTravelSpell) && from.AccessLevel == AccessLevel.Player)
+            if (IsPrisonRules && (s is Spells.Third.TeleportSpell || s is Spells.Fourth.RecallSpell || s is Spells.Sixth.MarkSpell || s is Spells.Seventh.GateTravelSpell) && from.AccessLevel == AccessLevel.Player)
             {
                 from.SendMessage("You cannot cast that spell here.");
                 return false;
@@ -777,9 +929,12 @@ namespace Server.Regions
                 from.SendLocalizedMessage(502629); // You cannot cast spells here.
                 return false;
             }
-
             if (IsRestrictedSpell(s) && (!(from is BaseCreature) || RestrictCreatureMagic) && from.AccessLevel == AccessLevel.Player)
-            {
+            {   // Travel spells may require source/target-aware validation in SpellHelper.
+                // Do not block them here unless this region intends a hard cast-time ban.
+                if (Spell.IsTravelSpell(s))
+                    return base.OnBeginSpellCast(from, s);
+
                 if (RestrictedMagicMessage == null)
                     from.SendMessage("You cannot cast that spell here.");
                 else
@@ -787,7 +942,6 @@ namespace Server.Regions
 
                 return false;
             }
-
             return base.OnBeginSpellCast(from, s);
         }
 
@@ -810,24 +964,22 @@ namespace Server.Regions
 
         public override bool OnCombatantChange(Mobile from, Mobile Old, Mobile New)
         {
-            if (IsJailRules && from.AccessLevel == AccessLevel.Player)
+            // jail: no acquiring or switching to a combatant; clearing it (New == null: the combat timer, combat expiry)
+            //  is always allowed, so combat ends for someone moved into jail mid-fight
+            if (IsJailRules && from.AccessLevel == AccessLevel.Player && New != null)
                 return false;
 
             return base.OnCombatantChange(from, Old, New);
         }
-
-        public static TimeSpan IOBMessageDelay = TimeSpan.FromMinutes(5.0);
-
-        private DateTime m_IOBNextMessage;
 
         public override void OnEnter(Mobile m)
         {
             if (IsGreenAcresRules)
                 return;
 
-            PlayerMobile pm = m as PlayerMobile;
+            PlayerMobile? pm = m as PlayerMobile;
 
-            Region lastRegionIn = null;
+            Region? lastRegionIn = null;
 
             if (pm != null)
                 lastRegionIn = pm.LastRegionIn;
@@ -909,25 +1061,6 @@ namespace Server.Regions
             if (m_MaxFollowerSlots >= 0)
                 m.FollowersMax = m_MaxFollowerSlots;
 
-            #region IOB
-
-            //if is a iob zone/region and a iob aligned mobile with a differnt alignment then the zone enters
-            //find all players of the zones alignment and send them a message
-            //plasma: refactored the send message code into its own method within KinSystem
-            if (DateTime.UtcNow >= m_IOBNextMessage && IOBZone && ShowIOBMessage && pm != null && pm.IOBAlignment != IOBAlignment.None && pm.IOBAlignment != m_IOBAlignment && m.AccessLevel == AccessLevel.Player)
-            {
-                string regionName = this.Name;
-
-                if (string.IsNullOrEmpty(regionName))
-                    regionName = "your stronghold";
-
-                IOBSystem.SendKinMessage(m_IOBAlignment, string.Format("Come quickly, the {0} are attacking {1}!", IOBSystem.GetIOBName(pm.IOBRealAlignment), regionName));
-
-                m_IOBNextMessage = DateTime.UtcNow + IOBMessageDelay;
-            }
-
-            #endregion
-
             #region Alignment
             if (AlignmentSystem.Enabled)
                 AlignmentSystem.OnEnterRegion(this, m);
@@ -935,6 +1068,36 @@ namespace Server.Regions
 
             if (m_Season != SeasonType.Default)
                 m.Send(new SeasonChange((int)m_Season, true));
+
+            #region Mounts
+
+            if (m.Player && NoMounts && m.Mounted && m.AccessLevel == AccessLevel.Player)
+            {
+                BaseMount.Dismount(m);
+                m.SendMessage("A strange force compels you to dismount.");
+            }
+
+            // Delay one tick so teleport/region transition completes
+            // before forcing the player to dismount.
+            if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()) && m.Player)
+            {
+                Timer.DelayCall(TimeSpan.Zero, delegate
+                {
+                    if (m == null || m.Deleted || m.Map == null)
+                        return;
+
+                    if (!Utility.WorldMap.Dungeons.Contains(m.Location))
+                        return;
+
+                    //if (BaseMount.GetMount(m) == null)
+                    if (m.Mount == null)
+                        return;
+
+                    BaseMount.Dismount(m);
+                    m.SendMessage("Your mount's fear overwhelms its training, forcing you to dismount.");
+                });
+            }
+            #endregion Mounts
 
             base.OnEnter(m);
         }
@@ -1044,7 +1207,7 @@ namespace Server.Regions
 
             if (IsHouseRules)
             {
-                BaseHouse house = BaseHouse.FindHouseAt(from);
+                BaseHouse? house = BaseHouse.FindHouseAt(from);
 
                 if (house != null)
                     return house.CheckAccessibility(item, from);
@@ -1063,7 +1226,7 @@ namespace Server.Regions
 
             if (IsHouseRules)
             {
-                BaseHouse house = BaseHouse.FindHouseAt(m);
+                BaseHouse? house = BaseHouse.FindHouseAt(m);
 
                 if (house != null)
                 {
@@ -1083,12 +1246,11 @@ namespace Server.Regions
                         m.Location = house.BanLocation;
                         m.SendLocalizedMessage(501284); // You may not enter.
                     }
-                    //Adam: no AOS rules here
-                    /*else if ( house.IsAosRules && !house.Public && !house.HasAccess( m ) && house.IsInside( m ) )
-					{
-						m.Location = house.BanLocation;
-						m.SendLocalizedMessage( 501284 ); // You may not enter.
-					}*/
+                    else if (house.IsAosRules && !house.Public && !house.HasAccess(m) && house.IsInside(m))
+                    {
+                        m.Location = house.BanLocation;
+                        m.SendLocalizedMessage(501284); // You may not enter.
+                    }
                     else if (house is HouseFoundation)
                     {
                         HouseFoundation foundation = (HouseFoundation)house;
@@ -1106,14 +1268,14 @@ namespace Server.Regions
 
         public override bool OnMoveInto(Mobile m, Direction d, Point3D newLocation, Point3D oldLocation)
         {
-            if (IsAngelIslandRules && m is PlayerMobile && !((PlayerMobile)m).PrisonInmate && m.AccessLevel == AccessLevel.Player)
+            if (IsPrisonRules && m is PlayerMobile && !((PlayerMobile)m).PrisonInmate && m.AccessLevel == AccessLevel.Player)
                 return false;
 
             #region House Ruleset
 
             if (IsHouseRules)
             {
-                BaseHouse house = BaseHouse.FindHouseAt(m);
+                BaseHouse? house = BaseHouse.FindHouseAt(m);
                 if (house != null)
                 {
                     if (m is BaseCreature && ((BaseCreature)m).NoHouseRestrictions)
@@ -1128,12 +1290,12 @@ namespace Server.Regions
                         m.SendLocalizedMessage(501284); // You may not enter.
                         return false;
                     }
-                    //Adam: no AOS rules here
-                    /*else if ( house.IsAosRules && !house.Public && !house.HasAccess( from ) && house.IsInside( newLocation, 16 ) )
-					{
-						from.SendLocalizedMessage( 501284 ); // You may not enter.
-						return false;
-					}*/
+                    else if (house.IsAosRules && !house.Public && !house.HasAccess(m) && house.IsInside(newLocation, 16))
+                    {
+                        m.Location = house.BanLocation;
+                        m.SendLocalizedMessage(501284); // You may not enter.
+                        return false;
+                    }
                     else if (house is HouseFoundation)
                     {
                         HouseFoundation foundation = (HouseFoundation)house;
@@ -1160,7 +1322,7 @@ namespace Server.Regions
         public override void OnMobileAdd(Mobile m)
         {
             base.OnMobileAdd(m);
-            if (IsAngelIslandRules && m is PlayerMobile pm)
+            if (IsPrisonRules && m is PlayerMobile pm)
             {
                 // Move to special Angel Island kick region
                 if (!pm.PrisonInmate && !pm.PrisonVisitor && m.AccessLevel == AccessLevel.Player)
@@ -1175,7 +1337,7 @@ namespace Server.Regions
 
             if (IsHouseRules)
             {
-                BaseHouse house = BaseHouse.FindHouseAt(item);
+                BaseHouse? house = BaseHouse.FindHouseAt(item);
 
                 if (house != null && (house.IsLockedDown(item) || house.IsSecure(item)) && house.IsInside(item))
                     return false;
@@ -1190,14 +1352,14 @@ namespace Server.Regions
         {
             // Murderers and criminals will not be able to kick/ban others from their home, nor will they be able to log out instantly
             // https://www.uoguide.com/Siege_Perilous
-            if (m.Criminal || m.IsMurderer && Core.RuleSets.SiegeStyleRules())
+            if (m.Criminal || m.IsMurderer && Core.RuleSets.SiegeRules())
                 return base.GetLogoutDelay(m);
 
             #region House Ruleset
 
             if (IsHouseRules)
             {
-                BaseHouse house = BaseHouse.FindHouseAt(m);
+                BaseHouse? house = BaseHouse.FindHouseAt(m);
 
                 if (house != null)
                 {
@@ -1236,7 +1398,7 @@ namespace Server.Regions
 
             if (IsHouseRules)
             {
-                BaseHouse house = BaseHouse.FindHouseAt(e.Mobile);
+                BaseHouse? house = BaseHouse.FindHouseAt(e.Mobile);
 
                 if (house != null)
                 {
@@ -1264,7 +1426,8 @@ namespace Server.Regions
                             from.SendLocalizedMessage(502094); // You must be in your house to do this.
                         }
                     }
-                    else if (e.Speech.ToLower() == "i wish to make this decorative" && (Core.RuleSets.AngelIslandRules())) // i wish to make this decorative
+                    // i wish to make this decorative
+                    else if (e.Speech.ToLower() == "i wish to make this decorative" && Core.RuleSets.DecorativeFurniture())
                     {
                         if (!isFriend)
                         {
@@ -1272,11 +1435,12 @@ namespace Server.Regions
                         }
                         else
                         {
-                            from.SendMessage("Make what decorative?"); // 
+                            from.SendMessage("Make what decorative?");
                             from.Target = new HouseDecoTarget(true, house);
                         }
                     }
-                    else if (e.Speech.ToLower() == "i wish to make this functional" && (Core.RuleSets.AngelIslandRules())) // i wish to make this functional
+                    // i wish to make this functional
+                    else if (e.Speech.ToLower() == "i wish to make this functional" && Core.RuleSets.DecorativeFurniture())
                     {
                         if (!isFriend)
                         {
@@ -1284,7 +1448,7 @@ namespace Server.Regions
                         }
                         else
                         {
-                            from.SendMessage("Make what functional?"); // 
+                            from.SendMessage("Make what functional?");
                             from.Target = new HouseDecoTarget(false, house);
                         }
                     }
@@ -1402,7 +1566,7 @@ namespace Server.Regions
                         if (isCoOwner)
                         {
                             // ask the playermobile to deal with this item request
-                            Item item = from.RequestItem(typeof(Server.Items.Guildstone));
+                            Item? item = from.RequestItem(typeof(Server.Items.Guildstone));
                             if (item == null)
                                 from.SendMessage("You do not seem to have one of those.");
                             else
@@ -1454,7 +1618,7 @@ namespace Server.Regions
 
             if (IsHouseRules)
             {
-                BaseHouse house = BaseHouse.FindHouseAt(m);
+                BaseHouse? house = BaseHouse.FindHouseAt(m);
 
                 if (house != null)
                 {
@@ -1485,7 +1649,7 @@ namespace Server.Regions
 
             if (IsHouseRules)
             {
-                BaseHouse house = BaseHouse.FindHouseAt(from);
+                BaseHouse? house = BaseHouse.FindHouseAt(from);
 
                 if (house != null)
                 {
@@ -1795,12 +1959,16 @@ namespace Server.Regions
             if (m_Ruleset != RegionRuleset.Standard)
                 Write(xml, "ruleset", m_Ruleset);
 
+            if (m_GuardsDisabledUntil > DateTime.UtcNow)
+                Write(xml, "guardsdisableduntil",
+                    XmlConvert.ToString(m_GuardsDisabledUntil, XmlDateTimeSerializationMode.Utc));
+
             if (m_LightLevel != -1)
                 Write(xml, "lightlevel", m_LightLevel);
 
             foreach (int spellID in m_RestrictedSpells)
             {
-                Type spellType = null;
+                Type? spellType = null;
 
                 if (spellID >= 0 && spellID < SpellRegistry.Types.Length)
                     spellType = SpellRegistry.Types[spellID];
@@ -1857,7 +2025,7 @@ namespace Server.Regions
 
         public virtual void Load(XmlElement xml)
         {
-            Map map = null;
+            Map? map = null;
             if (ReadMap(xml, "map", ref map))
                 Map = map;
 
@@ -1865,11 +2033,11 @@ namespace Server.Regions
             if (ReadInt32(xml, "priority", ref priority, false))
                 Priority = priority;
 
-            string prefix = null;
+            string? prefix = null;
             if (ReadString(xml, "prefix", ref prefix, false))
                 Prefix = prefix;
 
-            string name = null;
+            string? name = null;
             if (ReadString(xml, "name", ref name, false))
                 Name = name;
 
@@ -1931,6 +2099,12 @@ namespace Server.Regions
             }
 
             ReadEnum<RegionRuleset>(xml, "ruleset", ref m_Ruleset, false);
+
+            ReadDateTime(xml, "guardsdisableduntil", ref m_GuardsDisabledUntil, false);
+
+            if (m_GuardsDisabledUntil <= DateTime.UtcNow)
+                m_GuardsDisabledUntil = DateTime.MinValue;
+
             ReadInt32(xml, "lightlevel", ref m_LightLevel, false);
 
             foreach (XmlElement restrictedSpell in xml.GetElementsByTagName("restrictedspell"))
@@ -1938,7 +2112,7 @@ namespace Server.Regions
                 int spellID = -1;
                 if (!ReadInt32(restrictedSpell, "id", ref spellID, false))
                 {
-                    Type spellType = null;
+                    Type? spellType = null;
                     if (ReadType(restrictedSpell, "name", ref spellType))
                         spellID = Array.IndexOf(SpellRegistry.Types, spellType);
                 }
@@ -1961,7 +2135,7 @@ namespace Server.Regions
 
             foreach (XmlElement restrictedItem in xml.GetElementsByTagName("restricteditem"))
             {
-                string itemTypeName = null;
+                string? itemTypeName = null;
                 if (ReadString(restrictedItem, "name", ref itemTypeName))
                     m_RestrictedItems.Add(itemTypeName);
             }
@@ -1985,25 +2159,11 @@ namespace Server.Regions
                 xml.SetAttribute(attribute, value.ToString());
         }
 
-        public static void WritePoint2D(XmlElement xml, Point2D value)
-        {
-            Write(xml, "x", value.X);
-            Write(xml, "y", value.Y);
-        }
-
         public static void WritePoint3D(XmlElement xml, Point3D value)
         {
             Write(xml, "x", value.X);
             Write(xml, "y", value.Y);
             Write(xml, "z", value.Z);
-        }
-
-        public static void WriteRectangle2D(XmlElement xml, Rectangle2D value)
-        {
-            Write(xml, "x", value.X);
-            Write(xml, "y", value.Y);
-            Write(xml, "width", value.Width);
-            Write(xml, "height", value.Height);
         }
 
         public static void WriteRectangle3D(XmlElement xml, Rectangle3D value)
@@ -2016,7 +2176,7 @@ namespace Server.Regions
             Write(xml, "zmax", value.End.Z);
         }
 
-        public static string GetAttribute(XmlElement xml, string attribute, bool mandatory)
+        public static string? GetAttribute(XmlElement? xml, string attribute, bool mandatory)
         {
             if (xml == null)
             {
@@ -2045,7 +2205,7 @@ namespace Server.Regions
 
         public static bool ReadString(XmlElement xml, string attribute, ref string value, bool mandatory)
         {
-            string s = GetAttribute(xml, attribute, mandatory);
+            string? s = GetAttribute(xml, attribute, mandatory);
 
             if (s == null)
                 return false;
@@ -2061,7 +2221,7 @@ namespace Server.Regions
 
         public static bool ReadInt32(XmlElement xml, string attribute, ref int value, bool mandatory)
         {
-            string s = GetAttribute(xml, attribute, mandatory);
+            string? s = GetAttribute(xml, attribute, mandatory);
 
             if (s == null)
                 return false;
@@ -2086,7 +2246,7 @@ namespace Server.Regions
 
         public static bool ReadBoolean(XmlElement xml, string attribute, ref bool value, bool mandatory)
         {
-            string s = GetAttribute(xml, attribute, mandatory);
+            string? s = GetAttribute(xml, attribute, mandatory);
 
             if (s == null)
                 return false;
@@ -2111,7 +2271,7 @@ namespace Server.Regions
 
         public static bool ReadDateTime(XmlElement xml, string attribute, ref DateTime value, bool mandatory)
         {
-            string s = GetAttribute(xml, attribute, mandatory);
+            string? s = GetAttribute(xml, attribute, mandatory);
 
             if (s == null)
                 return false;
@@ -2136,18 +2296,14 @@ namespace Server.Regions
 
         public static bool ReadTimeSpan(XmlElement xml, string attribute, ref TimeSpan value, bool mandatory)
         {
-            string s = GetAttribute(xml, attribute, mandatory);
+            string? s = GetAttribute(xml, attribute, mandatory);
 
             if (s == null)
                 return false;
 
             try
             {
-#if false
-                value = XmlConvert.ToTimeSpan(s);
-#else
                 value = TimeSpan.Parse(s);
-#endif
             }
             catch
             {
@@ -2163,13 +2319,13 @@ namespace Server.Regions
             return ReadEnum(xml, attribute, ref value, true);
         }
 
-        public static bool ReadEnum<T>(XmlElement xml, string attribute, ref T value, bool mandatory) where T : struct // We can't limit the where clause to Enums only
+        public static bool ReadEnum<T>(XmlElement? xml, string attribute, ref T value, bool mandatory) where T : struct // We can't limit the where clause to Enums only
         {
-            string s = GetAttribute(xml, attribute, mandatory);
+            string? s = GetAttribute(xml, attribute, mandatory);
 
             if (s == null)
                 return false;
-
+            // need to support the old name "CanRessurect" here: new name is "CanResurrect"
             try
             {
                 value = (T)Enum.Parse(typeof(T), s, true);
@@ -2190,7 +2346,7 @@ namespace Server.Regions
 
         public static bool ReadMap(XmlElement xml, string attribute, ref Map value, bool mandatory)
         {
-            string s = GetAttribute(xml, attribute, mandatory);
+            string? s = GetAttribute(xml, attribute, mandatory);
 
             if (s == null)
                 return false;
@@ -2215,12 +2371,12 @@ namespace Server.Regions
 
         public static bool ReadType(XmlElement xml, string attribute, ref Type value, bool mandatory)
         {
-            string s = GetAttribute(xml, attribute, mandatory);
+            string? s = GetAttribute(xml, attribute, mandatory);
 
             if (s == null)
                 return false;
 
-            Type type = ScriptCompiler.FindTypeByName(s, false);
+            Type? type = ScriptCompiler.FindTypeByName(s, false);
 
             if (type == null)
             {
@@ -2345,7 +2501,7 @@ namespace Server.Regions
 
             foreach (Region r in Region.Regions)
             {
-                StaticRegion sr = r as StaticRegion;
+                StaticRegion? sr = r as StaticRegion;
 
                 if (sr != null && !sr.IsDynamicRegion)
                     toSave.Add(sr);
@@ -2406,7 +2562,7 @@ namespace Server.Regions
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load(fileName);
 
-                XmlElement xmlRoot = xmlDoc["StaticRegions"];
+                XmlElement? xmlRoot = xmlDoc["StaticRegions"];
 
                 foreach (XmlElement xmlElem in xmlRoot.GetElementsByTagName("region"))
                 {
@@ -2540,12 +2696,12 @@ namespace Server.Regions
                 from.SendMessage("Done.");
         }
 
-        public static CustomRegionControl ConvertToCustom(StaticRegionControl src)
+        public static CustomRegionControl? ConvertToCustom(StaticRegionControl src)
         {
             return (src.StaticRegion == null ? null : ConvertToCustom(src.StaticRegion, src.Location, src.Map));
         }
 
-        public static CustomRegionControl ConvertToCustom(StaticRegion sr, Point3D controllerLoc, Map controllerMap)
+        public static CustomRegionControl? ConvertToCustom(StaticRegion sr, Point3D controllerLoc, Map controllerMap)
         {
             CustomRegionControl crc = new CustomRegionControl();
             CustomRegion cr = crc.CustomRegion;
@@ -2577,12 +2733,12 @@ namespace Server.Regions
             return crc;
         }
 
-        public static StaticRegionControl ConvertToStatic(CustomRegionControl crc)
+        public static StaticRegionControl? ConvertToStatic(CustomRegionControl crc)
         {
             return (crc.CustomRegion == null ? null : ConvertToStatic(crc.CustomRegion));
         }
 
-        public static StaticRegionControl ConvertToStatic(CustomRegion cr)
+        public static StaticRegionControl? ConvertToStatic(CustomRegion cr)
         {
             StaticRegion sr = new StaticRegion();
 

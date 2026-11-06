@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -82,16 +82,6 @@ namespace Server.Engines
             return new Rectangle3D(new Point3D(x1, x2, zmin), new Point3D(x2, y2, zmax));
         }
 
-        public static Region CreateRegionFromXML(ref string outputText, string regionName)
-        {
-            List<Region> regions = CreateCacheFromXML("Regions.xml", ref outputText, regionName);
-            if (regions.Count == 1)
-            {
-                return regions[0];
-            }
-            return null;
-        }
-
         public static List<Region> CreateCacheFromXML(ref string outputText)
         {
             return CreateCacheFromXML("Regions.xml", ref outputText, string.Empty);
@@ -121,7 +111,7 @@ namespace Server.Engines
             XmlDocument doc = new XmlDocument();
             doc.Load(Path.Combine(Core.DataDirectory, fileName));
 
-            XmlElement root = doc["ServerRegions"];
+            XmlElement? root = doc["ServerRegions"];
             foreach (XmlElement facet in root.GetElementsByTagName("Facet"))
             {
                 bool exit = false;
@@ -132,7 +122,7 @@ namespace Server.Engines
                     Utility.Monitor.WriteLine("\nIgnoring facet {0}", ConsoleColor.Yellow, facetName);
                     continue;
                 }
-                Map map = Map.Parse(facetName);
+                Map? map = Map.Parse(facetName);
 
                 if (map == null || map == Map.Internal)
                 {
@@ -174,7 +164,7 @@ namespace Server.Engines
                             r.Priority = Region.TownPriority;
                         }
 
-                        XmlElement el;
+                        XmlElement? el;
 
                         el = reg["go"];
                         if (el != null)
@@ -196,7 +186,7 @@ namespace Server.Engines
                             try
                             {
                                 //public static bool TryParse(Type enumType, string? value, out object? result);
-                                object o;
+                                object? o;
                                 if (Enum.TryParse(typeof(MusicName), el.GetAttribute("name"), out o))
                                     r.Music = (MusicName)o;// (MusicName)Enum.Parse(typeof(MusicName), el.GetAttribute("name"), true);
                             }

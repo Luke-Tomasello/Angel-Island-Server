@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -97,87 +97,36 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020403232027/uo.stratics.com/hunters/efreet.shtml
+            // 	250 to 500 Gold, Potions, Arrows, Magic Items, Gems, Daemon Bone Armor
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGem();
-
-                PackItem(new Arrow(10));
-                PackGold(200, 250);
-
-                PackMagicEquipment(1, 2, 0.15, 0.15);
-
-                // 5% drop chance
-                if (Utility.RandomChance(5))
-                    switch (Utility.Random(1, 5))
-                    {
-                        case 1: PackItem(new DaemonHelm()); break;
-                        case 2: PackItem(new DaemonChest()); break;
-                        case 3: PackItem(new DaemonGloves()); break;
-                        case 4: PackItem(new DaemonLegs()); break;
-                        case 5: PackItem(new DaemonArms()); break;
-                    }
-
-                // Category 3 MID
-                PackMagicItem(1, 2, 0.10);
-                PackMagicItem(1, 2, 0.05);
+                PackGold(250, 500);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020403232027/uo.stratics.com/hunters/efreet.shtml
-                    // 	250 to 500 Gold, Potions, Arrows, Magic Items, Gems, Daemon Bone Armor
-                    if (Spawning)
-                    {
-                        PackGold(250, 500);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackPotion(.8);
-                        PackPotion(.5);
-                        PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
+                PackPotion();
+                PackPotion(.8);
+                PackPotion(.5);
+                PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
 
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(1, 2, 0.15, 0.15);
-                        else
-                            PackMagicItem(1, 1, 0.05);
-
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-
-                        if (DaemonBoneRate > Utility.RandomDouble())
-                            switch (Utility.Random(5))
-                            {
-                                case 0: PackItem(new DaemonArms()); break;
-                                case 1: PackItem(new DaemonChest()); break;
-                                case 2: PackItem(new DaemonGloves()); break;
-                                case 3: PackItem(new DaemonLegs()); break;
-                                case 4: PackItem(new DaemonHelm()); break;
-                            }
-                    }
-                }
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 2, 0.15, 0.15);
                 else
-                {
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Gems);
+                    PackMagicItem(1, 1, 0.05);
 
-                    // I think RunUO has this wrong. They are calling this random drop in both GenerateLoot invocations, 
-                    // Spawning and not Spawning. I'm assuming it should really be !Spawning, i.e., onDeath
-                    if (!Spawning)
-                        if (DaemonBoneRate > Utility.RandomDouble())
-                        {
-                            switch (Utility.Random(5))
-                            {
-                                case 0: PackItem(new DaemonArms()); break;
-                                case 1: PackItem(new DaemonChest()); break;
-                                case 2: PackItem(new DaemonGloves()); break;
-                                case 3: PackItem(new DaemonLegs()); break;
-                                case 4: PackItem(new DaemonHelm()); break;
-                            }
-                        }
-                }
+                PackGem(1, .9);
+                PackGem(1, .05);
+
+                if (DaemonBoneRate > Utility.RandomDouble())
+                    switch (Utility.Random(5))
+                    {
+                        case 0: PackItem(new DaemonArms()); break;
+                        case 1: PackItem(new DaemonChest()); break;
+                        case 2: PackItem(new DaemonGloves()); break;
+                        case 3: PackItem(new DaemonLegs()); break;
+                        case 4: PackItem(new DaemonHelm()); break;
+                    }
             }
         }
 

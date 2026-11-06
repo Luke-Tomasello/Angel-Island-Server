@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -102,7 +102,7 @@ namespace Server.Mobiles
             protected override void OnTick()
             {
                 m_Mobile.PlaySound(0x4CF);
-                AOS.Damage(m_Mobile, m_From, Utility.RandomMinMax(1, 40), 90, 10, 0, 0, 0, this);
+                AOS.Damage(m_Mobile, m_From, Utility.RandomMinMax(1, 40), new DamageContext { Source = this });
             }
         }
 
@@ -113,47 +113,27 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020606082014/uo.stratics.com/hunters/sandvortex.shtml
+            // ?
+            // http://web.archive.org/web/20020606082014/uo.stratics.com/hunters/sandvortex.shtml
+            // ?
+            // http://web.archive.org/web/20021015000744/uo.stratics.com/hunters/sandvortex.shtml
+            // 250-300 Gold, Bones
+            // "Loot was a few hundred gold and a spine."
+            // I think the "Bone" dropped by RunUO is incorrect, bones are different than 'Bone' (bone reagent vs 'human bones'
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(60, 90);
-                PackItem(new Bone());
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(250, 300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020606082014/uo.stratics.com/hunters/sandvortex.shtml
-                    // ?
-                    // http://web.archive.org/web/20020606082014/uo.stratics.com/hunters/sandvortex.shtml
-                    // ?
-                    // http://web.archive.org/web/20021015000744/uo.stratics.com/hunters/sandvortex.shtml
-                    // 250-300 Gold, Bones
-                    // "Loot was a few hundred gold and a spine."
-                    // I think the "Bone" dropped by RunUO is incorrect, bones are different than 'Bone' (bone reagent vs 'human bones'
-                    if (Spawning)
-                    {
-                        PackGold(250, 300);
-                    }
-                    else
-                    {
-                        switch (Utility.Random(5))
-                        {
-                            case 0: PackItem(new BoneShards()); break;
-                            case 1: PackItem(new SpineBone()); break;
-                            case 2: PackItem(new RibCage()); break; ;
-                            case 3: PackItem(new PelvisBone()); break;
-                            case 4: PackItem(new Skull()); break;
-                        }
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                        PackItem(new Bone());
-
-                    AddLoot(LootPack.Meager, 2);
+                switch (Utility.Random(5))
+                {
+                    case 0: PackItem(new BoneShards()); break;
+                    case 1: PackItem(new SpineBone()); break;
+                    case 2: PackItem(new RibCage()); break; ;
+                    case 3: PackItem(new PelvisBone()); break;
+                    case 4: PackItem(new Skull()); break;
                 }
             }
         }

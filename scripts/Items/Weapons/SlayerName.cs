@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -69,11 +69,11 @@ namespace Server.Items
             return 1017383 + (int)name; // Silver | ...
         }
 
-        public static string GetString(SlayerName name)
+        public static string? GetString(SlayerName name)
         {
             int number = GetNumber(name);
 
-            string str;
+            string? str;
 
             if (Cliloc.Lookup.TryGetValue(number, out str))
                 return str;
@@ -96,7 +96,7 @@ namespace Server.Items
                     }
                 default:
                     {
-                        string suffix = GetString(name);
+                        string? suffix = GetString(name);
 
                         if (suffix != null)
                             suffix = suffix.ToLower();

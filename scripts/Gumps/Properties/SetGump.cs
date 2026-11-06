@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -103,8 +103,8 @@ namespace Server.Gumps
             bool canDye = prop.IsDefined(typeof(HueAttribute), false);
             bool isBody = prop.IsDefined(typeof(BodyAttribute), false);
 
-            object val = prop.GetValue(m_Object, null);
-            string initialText;
+            object? val = prop.GetValue(m_Object, null);
+            string? initialText;
 
             if (val == null)
                 initialText = "";
@@ -223,14 +223,14 @@ namespace Server.Gumps
 
         public override void OnResponse(NetState sender, RelayInfo info)
         {
-            object toSet;
+            object? toSet;
             bool shouldSet, shouldSend = true;
 
             switch (info.ButtonID)
             {
                 case 1:
                     {
-                        TextRelay text = info.GetTextEntry(0);
+                        TextRelay? text = info.GetTextEntry(0);
 
                         if (text != null)
                         {

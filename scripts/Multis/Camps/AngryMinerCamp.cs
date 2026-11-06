@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -118,9 +118,9 @@ namespace Server.Multis
             AddItem(floor, 0, 0, 0);
 
             // Deco
-            Item anvil = Activator.CreateInstance(ScriptCompiler.FindTypeByName("Anvil")) as Item;
+            Item? anvil = Activator.CreateInstance(ScriptCompiler.FindTypeByName("Anvil")) as Item;
             AddItem(anvil, -1, 0, 0);
-            Item box = Activator.CreateInstance(ScriptCompiler.FindTypeByName("MagicBox")) as Item;
+            Item? box = Activator.CreateInstance(ScriptCompiler.FindTypeByName("MagicBox")) as Item;
             box.ItemID = 0xE80;
             box.Movable = false;
             // level 1 chest lock strength (magic unlock ok)
@@ -128,20 +128,22 @@ namespace Server.Multis
             (box as MagicBox).LockLevel = 42;
             (box as MagicBox).MaxLockLevel = 92;
             AddItem(box, 0, -1, 0);
-            Item ingotStack = CreateIngotStack(m_resourceType);
+            // ensure we have a valid rosource
+            m_resourceType = m_resourceType ?? "IronOre";
+            Item ingotStack = CreateIngotStack(m_resourceType ?? "IronOre");
             ingotStack.Movable = false;
             AddItem(ingotStack, -1, -1, 0);
             // special rare
-            Item tool;
+            Item? tool;
             if (Utility.RandomBool())
             {
                 tool = Activator.CreateInstance(ScriptCompiler.FindTypeByName("AncientSmithyHammer")) as Item;
-                CraftResourceInfo ri = CraftResources.GetInfo(CraftResources.GetFromType(ScriptCompiler.FindTypeByName(m_resourceType)));
+                CraftResourceInfo? ri = CraftResources.GetInfo(CraftResources.GetFromType(ScriptCompiler.FindTypeByName(m_resourceType)));
 
                 if (ri != null)
                 {
                     tool.Hue = ri.Hue;
-                    BaseOre temp = Activator.CreateInstance(ScriptCompiler.FindTypeByName(m_resourceType)) as BaseOre;
+                    BaseOre? temp = Activator.CreateInstance(ScriptCompiler.FindTypeByName(m_resourceType)) as BaseOre;
                     if (temp != null)
                     {
                         (tool as AncientSmithyHammer).Resource = temp.Resource;
@@ -154,11 +156,11 @@ namespace Server.Multis
             else
             {
                 tool = Activator.CreateInstance(ScriptCompiler.FindTypeByName("GargoylesPickaxe")) as Item;
-                CraftResourceInfo ri = CraftResources.GetInfo(CraftResources.GetFromType(ScriptCompiler.FindTypeByName(m_resourceType)));
+                CraftResourceInfo? ri = CraftResources.GetInfo(CraftResources.GetFromType(ScriptCompiler.FindTypeByName(m_resourceType)));
                 if (ri != null)
                 {
                     tool.Hue = ri.Hue;
-                    BaseOre temp = Activator.CreateInstance(ScriptCompiler.FindTypeByName(m_resourceType)) as BaseOre;
+                    BaseOre? temp = Activator.CreateInstance(ScriptCompiler.FindTypeByName(m_resourceType)) as BaseOre;
                     if (temp != null)
                     {
                         (tool as GargoylesPickaxe).Resource = temp.Resource;
@@ -181,7 +183,7 @@ namespace Server.Multis
                 tool.Movable = false;
 
             // create some angry miners
-            Mobile m = null;
+            Mobile? m = null;
             for (int jx = 0; jx < m_level; jx++)
                 switch (jx)
                 {
@@ -381,6 +383,8 @@ namespace Server.Multis
         }
         private bool HighPowerTameNearby()
         {
+            // 2/5/2026, Adam: Non obvious. If they got this far, let them have it.
+            return false;
             IPooledEnumerable eable = Map.GetMobilesInRange(this.Location, Map.MaxLOSDistance);
             foreach (Mobile m in eable)
             {

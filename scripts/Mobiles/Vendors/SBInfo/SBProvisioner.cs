@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -97,10 +97,6 @@ namespace Server.Mobiles
                     foreach (Type type in BBSTypes)
                         if (ResourcePool.IsPooledResource(type))
                             Add(new GenericBuyInfo(type));
-#if false
-                    Add(new GenericBuyInfo(typeof(Arrow)));
-                    Add(new GenericBuyInfo(typeof(Bolt)));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersSellResourcesRules())
                 {
@@ -156,6 +152,9 @@ namespace Server.Mobiles
                     Add(new GenericBuyInfo("Tourney Stone Deed", typeof(TourneyStoneAddonDeed), BaseVendor.PlayerPays(typeof(TourneyStoneAddonDeed)), 20, 0x14f0, 0x0));
                 }
 
+                if (!Core.RuleSets.MortalisRules())
+                    Add(new GenericBuyInfo("forensic notebook", typeof(ForensicNotebook), BaseVendor.PlayerPays(typeof(ForensicNotebook)), 20, 0x2252, 0));
+
                 if (Engines.Plants.PlantSystem.Enabled)
                     Add(new GenericBuyInfo("1060834", typeof(Engines.Plants.PlantBowl), BaseVendor.PlayerPays(typeof(PlantBowl)), 20, 0x15FD, 0));
 
@@ -181,10 +180,6 @@ namespace Server.Mobiles
                 {   // balanced buyback system
                     foreach (Type type in BBSTypes)
                         AddToResourcePool(type);
-#if false
-                    AddToResourcePool(typeof(Arrow));
-                    AddToResourcePool(typeof(Bolt));
-#endif
                 }
                 else if (Core.RuleSets.ShopkeepersBuyResourcesRules())
                 {   // cash buyback

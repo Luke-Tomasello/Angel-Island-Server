@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,12 +41,12 @@ namespace Server.Mobiles
     [CorpseName("lifeless tentacles")] // TODO: Corpse name?
     public class HarrowerTentacles : BaseCreature
     {
-        private Mobile m_Harrower;
+        private Mobile? m_Harrower;
 
-        private DrainTimer m_Timer;
+        private DrainTimer? m_Timer;
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Mobile Harrower
+        public Mobile? Harrower
         {
             get
             {
@@ -64,7 +64,7 @@ namespace Server.Mobiles
         {
         }
 
-        public HarrowerTentacles(Mobile harrower)
+        public HarrowerTentacles(Mobile? harrower)
             : base(AIType.AI_Melee, FightMode.All | FightMode.Closest, 10, 1, 0.2, 0.4)
         {
             m_Harrower = harrower;
@@ -108,20 +108,16 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
                 PackGold(400, 650);
+            }
+            else
+            {
                 PackMagicEquipment(1, 3, 1.0, 1.0);
                 PackMagicEquipment(1, 3, 0.75, 0.75);
                 PackReg(25);
                 PackReg(25);
-            }
-            else
-            {
-                AddLoot(LootPack.FilthyRich, 2);
-                AddLoot(LootPack.MedScrolls, 3);
-                AddLoot(LootPack.HighScrolls, 2);
             }
         }
 
@@ -210,7 +206,7 @@ namespace Server.Mobiles
                     if (m_Owner.Harrower != null)
                         m_Owner.Harrower.Hits += 20;
 
-                    m.Damage(20, m_Owner, this);
+                    m.Damage(20, m_Owner, new DamageContext { Source = this });
                 }
 
                 m_ToDrain.Clear();

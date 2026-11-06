@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -91,10 +91,23 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            PackGem();
-            PackGold(2000, 2500);
-            PackMagicEquipment(2, 3, 1.0, 1.0);
-            PackMagicEquipment(2, 3, 0.50, 0.50);
+            // https://web.archive.org/web/20011201000000/http://uo.stratics.com/hunters/abysmalhorror.shtml
+            // 400 - 500 Gold
+            // Special: 4-9 Gems, Magic Items
+            // Note: No post-AoS/ML style properties; keep classic magic item rolls only
+
+            if (Spawning)
+            {
+                PackGold(400, 500);
+            }
+            else
+            {
+                PackGem(4, 9);
+
+                // Classic-era magic item (weapon/armor)
+                PackMagicEquipment(2, 3, 1.0, 1.0);
+                PackMagicEquipment(2, 3, 0.50, 0.50);
+            }
         }
 
         public override void Serialize(GenericWriter writer)

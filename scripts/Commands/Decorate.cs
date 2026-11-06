@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -112,7 +112,7 @@ namespace Server.Commands
 
         public static Dictionary<Item, Tuple<Point3D, Map, bool>>
             Generate(string folder, DecoMode mode, string file = "*.cfg", bool listOnly = false,
-            Type[] types = null, Type[] exclude = null, List<Rectangle2D> boundingRect = null, params Map[] maps)
+            Type[]? types = null, Type[]? exclude = null, List<Rectangle2D>? boundingRect = null, params Map[] maps)
         {
             Dictionary<Item, Tuple<Point3D, Map, bool>> changeLog = new();
             if (!Directory.Exists(folder))
@@ -175,7 +175,7 @@ namespace Server.Commands
 
         public Item Construct()
         {
-            Item item;
+            Item? item;
 
             try
             {
@@ -239,7 +239,7 @@ namespace Server.Commands
                 {
                     bool bone = false;
                     bool locked = false;
-                    Map map = Map.Malas;
+                    Map? map = Map.Malas;
 
                     for (int i = 0; i < m_Params.Length; ++i)
                     {
@@ -271,9 +271,9 @@ namespace Server.Commands
                 {
                     int range = 0;
                     int messageNumber = 0;
-                    string messageString = null;
+                    string? messageString = null;
                     int hintNumber = 0;
-                    string hintString = null;
+                    string? hintString = null;
                     TimeSpan resetDelay = TimeSpan.Zero;
 
                     for (int i = 0; i < m_Params.Length; ++i)
@@ -334,7 +334,7 @@ namespace Server.Commands
                 {
                     int range = 0;
                     int messageNumber = 0;
-                    string messageString = null;
+                    string? messageString = null;
                     TimeSpan resetDelay = TimeSpan.Zero;
 
                     for (int i = 0; i < m_Params.Length; ++i)
@@ -395,7 +395,7 @@ namespace Server.Commands
                 }
                 else if (m_Type == typeofSerpentPillar)
                 {
-                    string word = null;
+                    string? word = null;
                     Rectangle2D destination = new Rectangle2D();
 
                     for (int i = 0; i < m_Params.Length; ++i)
@@ -502,7 +502,7 @@ namespace Server.Commands
 
                     for (int i = 0; i < comps.Count; ++i)
                     {
-                        AddonComponent comp = comps[i] as AddonComponent;
+                        AddonComponent? comp = comps[i] as AddonComponent;
 
                         if (comp == null)
                             continue;
@@ -959,7 +959,7 @@ namespace Server.Commands
 
         private void FindItems(int itemID, List<Item> list, int x, int y, int z, Map map)
         {
-            if (Utility.World.InaccessibleMapLoc(new Point3D(x, y, z), map) == true)
+            if (Utility.WorldMap.InaccessibleMapLoc(new Point3D(x, y, z), map) == true)
             {   // RunUO 2.6 can access these locations, we cannot.
                 //  we need to upgrade our Map.cs and likely Sector.cs
 
@@ -979,7 +979,7 @@ namespace Server.Commands
 
         private bool FindItemAndDeleteOld(int x, int y, int z, Map map, Item srcItem, List<Item> deleteList, bool listOnly = false)
         {
-            if (Utility.World.InaccessibleMapLoc(new Point3D(x, y, z), map) == true)
+            if (Utility.WorldMap.InaccessibleMapLoc(new Point3D(x, y, z), map) == true)
             {   // RunUO 2.6 can access these locations, we cannot.
                 //  we need to upgrade our Map.cs and likely Sector.cs
 
@@ -1095,11 +1095,11 @@ namespace Server.Commands
             return res;
         }
 
-        public int Generate(Decorate.DecoMode mode, Map[] maps, bool listOnly = false, Dictionary<Item, Tuple<Point3D, Map, bool>> ChangeLog = null, Type[] types = null, Type[] exclude = null, List<Rectangle2D> boundingRect = null)
+        public int Generate(Decorate.DecoMode mode, Map[] maps, bool listOnly = false, Dictionary<Item, Tuple<Point3D, Map, bool>>? ChangeLog = null, Type[]? types = null, Type[]? exclude = null, List<Rectangle2D>? boundingRect = null)
         {
             int count = 0;
-            Item template = null;
-            LogHelper log = null;
+            Item? template = null;
+            LogHelper? log = null;
             bool m_ListOnly = listOnly;
 
             if (ChangeLog == null)
@@ -1110,7 +1110,7 @@ namespace Server.Commands
 
             for (int i = 0; i < m_Entries.Count; ++i)
             {
-                DecorationEntry entry = (DecorationEntry)m_Entries[i];
+                DecorationEntry? entry = (DecorationEntry?)m_Entries[i];
                 Point3D loc = entry.Location;
                 string extra = entry.Extra;
 
@@ -1120,7 +1120,7 @@ namespace Server.Commands
                     if (maps[j] == null)
                         continue;
 
-                    if (Utility.World.InaccessibleMapLoc(loc, maps[j]) == true)
+                    if (Utility.WorldMap.InaccessibleMapLoc(loc, maps[j]) == true)
                     {   // RunUO 2.6 can access these locations, we cannot.
                         //  we need to upgrade our Map.cs and likely Sector.cs
 
@@ -1290,7 +1290,7 @@ namespace Server.Commands
 
         private static string[] m_EmptyParams = new string[0];
 
-        public static DecorationList Read(StreamReader ip)
+        public static DecorationList? Read(StreamReader ip)
         {
             string line;
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -139,12 +139,12 @@ namespace Server.Engines.Craft
                 if (CraftResources.GetType(resource) != ResourceType)
                     return RecycleResult.Invalid;
 
-                CraftResourceInfo info = CraftResources.GetInfo(resource);
+                CraftResourceInfo? info = CraftResources.GetInfo(resource);
 
                 if (info == null || info.ResourceTypes.Length == 0)
                     return RecycleResult.Invalid;
 
-                CraftItem craftItem = craftSystem.CraftItems.SearchFor(item.GetType());
+                CraftItem? craftItem = craftSystem.CraftItems.SearchFor(item.GetType());
 
                 if (craftItem == null || craftItem.Resources.Count == 0)
                     return RecycleResult.Invalid;
@@ -160,12 +160,14 @@ namespace Server.Engines.Craft
                     return RecycleResult.NoSkill;
 
                 Type resourceType = info.ResourceTypes[0];
-                Item recycled = (Item)Activator.CreateInstance(resourceType);
+                Item? recycled = (Item?)Activator.CreateInstance(resourceType);
 
                 if (playerCrafted)
                     recycled.Amount = craftResource.Amount / 2;
                 else
                     recycled.Amount = 1;
+
+                Server.Engines.Economy.Provenance.Inherit(item, recycled);  // made from or bought as shop goods (ArbitrageTable)
 
                 item.Delete();
                 from.AddToBackpack(recycled);
@@ -194,7 +196,7 @@ namespace Server.Engines.Craft
 
         private class DefMetal : Recycle
         {
-            private static Recycle m_Instance;
+            private static Recycle? m_Instance;
 
             public static Recycle Instance
             {
@@ -245,7 +247,7 @@ namespace Server.Engines.Craft
 
         private class DefLumber : Recycle
         {
-            private static Recycle m_Instance;
+            private static Recycle? m_Instance;
 
             public static Recycle Instance
             {

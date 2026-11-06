@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,7 +71,7 @@ namespace Server.Engines.Quests.Collector
 
         public override bool CanTalkTo(PlayerMobile to)
         {
-            QuestSystem qs = to.Quest as CollectorQuest;
+            QuestSystem? qs = to.Quest as CollectorQuest;
 
             if (qs == null)
                 return false;
@@ -85,7 +85,7 @@ namespace Server.Engines.Quests.Collector
 
             if (qs is CollectorQuest)
             {
-                FindSheetMusicObjective obj = qs.FindObjective(typeof(FindSheetMusicObjective)) as FindSheetMusicObjective;
+                FindSheetMusicObjective? obj = qs.FindObjective(typeof(FindSheetMusicObjective)) as FindSheetMusicObjective;
 
                 if (obj != null && !obj.Completed)
                 {
@@ -165,7 +165,7 @@ namespace Server.Engines.Quests.Collector
         {
             if (info.ButtonID == 1 && info.IsSwitched(1))
             {
-                PlayerMobile player = sender.Mobile as PlayerMobile;
+                PlayerMobile? player = sender.Mobile as PlayerMobile;
 
                 if (player != null)
                 {
@@ -173,7 +173,7 @@ namespace Server.Engines.Quests.Collector
 
                     if (qs is CollectorQuest)
                     {
-                        FindSheetMusicObjective obj = qs.FindObjective(typeof(FindSheetMusicObjective)) as FindSheetMusicObjective;
+                        FindSheetMusicObjective? obj = qs.FindObjective(typeof(FindSheetMusicObjective)) as FindSheetMusicObjective;
 
                         if (obj != null && !obj.Completed)
                         {

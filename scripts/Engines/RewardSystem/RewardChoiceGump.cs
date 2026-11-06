@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -57,7 +57,7 @@ namespace Server.Engines.RewardSystem
 
             for (int i = 0; i < entries.Count; ++i)
             {
-                RewardEntry entry = (RewardEntry)entries[i];
+                RewardEntry? entry = (RewardEntry?)entries[i];
 
                 AddButton(55 + ((i / 4) * 250), 80 + ((i % 4) * 50), 5540, 5541, GetButtonID(index, i), GumpButtonType.Reply, 0);
 
@@ -74,7 +74,7 @@ namespace Server.Engines.RewardSystem
         {
             if (entry != null)
             {
-                Item item = Activator.CreateInstance(entry.ItemType, entry.Args) as Item;
+                Item? item = Activator.CreateInstance(entry.ItemType, entry.Args) as Item;
 
                 AddItem(x, y, item.ItemID);
                 item.Delete();
@@ -128,7 +128,7 @@ namespace Server.Engines.RewardSystem
 
                     if (index >= 0 && index < category.Entries.Count)
                     {
-                        RewardEntry entry = (RewardEntry)category.Entries[index];
+                        RewardEntry? entry = (RewardEntry?)category.Entries[index];
 
                         //						if ( !RewardSystem.HasAccess( m_From, entry ) )
                         //							return;

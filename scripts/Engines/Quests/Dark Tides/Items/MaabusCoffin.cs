@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,11 +26,11 @@ namespace Server.Engines.Quests.Necro
 {
     public class MaabusCoffin : BaseAddon
     {
-        private Maabus m_Maabus;
+        private Maabus? m_Maabus;
         private Point3D m_SpawnLocation;
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Maabus Maabus { get { return m_Maabus; } }
+        public Maabus? Maabus { get { return m_Maabus; } }
 
         [CommandProperty(AccessLevel.GameMaster)]
         public Point3D SpawnLocation { get { return m_SpawnLocation; } set { m_SpawnLocation = value; } }

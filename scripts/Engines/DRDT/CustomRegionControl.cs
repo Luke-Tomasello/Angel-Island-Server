@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -137,19 +137,11 @@ namespace Server.Items
     [TypeAlias("Server.Items.RegionControl")]
     public class CustomRegionControl : Item, IRegionControl
     {
-        private static readonly List<CustomRegionControl> m_Instances = new List<CustomRegionControl>();
-
-        public static List<CustomRegionControl> Instances { get { return m_Instances; } }
-
-        public override string DefaultName { get { return "Custom Region Controller"; } }
-
-        private CustomRegion m_Region; // may never be null
-
         public override Item Dupe(int amount)
-        {   // when duping a CustomRegionControl, we don't actually want the region itself as it's already
-            //  been 'registered' with its own UId.
-            // The region carries all the following info, which we will need for our dupe
+        {
             CustomRegionControl new_crc = new();
+            //new_crc.CreateRegion(new_crc);
+            Utility.CopyProperties(this, new_crc);
             if (m_Region != null)
             {
                 Utility.CopyProperties(new_crc.CustomRegion, m_Region);
@@ -157,6 +149,13 @@ namespace Server.Items
             }
             return base.Dupe(new_crc, amount);
         }
+        private static readonly List<CustomRegionControl> m_Instances = new List<CustomRegionControl>();
+
+        public static List<CustomRegionControl> Instances { get { return m_Instances; } }
+
+        public override string DefaultName { get { return "Custom Region Controller"; } }
+
+        private CustomRegion m_Region; // may never be null
 
         [CopyableAttribute(CopyType.DoNotCopy)] // see Dupe()
         [CommandProperty(AccessLevel.GameMaster)]
@@ -263,7 +262,7 @@ namespace Server.Items
                         int kwdb_count = reader.ReadInt();
                         for (int ix = 0; ix < kwdb_count; ix++)
                         {
-                            string key = reader.ReadString();
+                            string? key = reader.ReadString();
                             int obj_count = reader.ReadInt();
                             List<object> list = new List<object>();
                             for (int jx = 0; jx < obj_count; jx++)
@@ -286,7 +285,7 @@ namespace Server.Items
                         int idb_count = reader.ReadInt();
                         for (int ix = 0; ix < idb_count; ix++)
                         {
-                            Item key = reader.ReadItem();
+                            Item? key = reader.ReadItem();
                             int obj_count = reader.ReadInt();
                             List<object> list = new List<object>();
                             for (int jx = 0; jx < obj_count; jx++)

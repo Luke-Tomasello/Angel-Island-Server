@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -81,50 +81,25 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020220114118/uo.stratics.com/hunters/ophappmage.shtml
+            // http://web.archive.org/web/20020414130837/uo.stratics.com/hunters/ophshaman.shtml
+            // (same creature)
+            // 50 to 150 Gold, Potions, Arrows, Scrolls (circles 1 to 7), Reagents
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(60, 90);
-                PackScroll(1, 3);
-                PackScroll(1, 6);
-                PackReg(10);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(50, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020220114118/uo.stratics.com/hunters/ophappmage.shtml
-                    // http://web.archive.org/web/20020414130837/uo.stratics.com/hunters/ophshaman.shtml
-                    // (same creature)
-                    // 50 to 150 Gold, Potions, Arrows, Scrolls (circles 1 to 7), Reagents
-
-                    if (Spawning)
-                    {
-                        PackGold(50, 150);
-                    }
-                    else
-                    {
-                        PackPotion(0.9);
-                        PackPotion(0.6);
-                        PackPotion(0.2);
-                        PackItem(new Arrow(Utility.Random(1, 4)));
-                        PackScroll(1, 7);
-                        PackScroll(1, 7);
-                        PackScroll(1, 7, 0.3);
-                        PackReg(10);
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                        PackReg(10);
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.LowScrolls);
-                    AddLoot(LootPack.MedScrolls);
-                    AddLoot(LootPack.Potions);
-                }
+                PackPotion(0.9);
+                PackPotion(0.6);
+                PackPotion(0.2);
+                PackItem(new Arrow(Utility.Random(1, 4)));
+                PackScroll(1, 7);
+                PackScroll(1, 7);
+                PackScroll(1, 7, 0.3);
+                PackReg(10);
             }
         }
 

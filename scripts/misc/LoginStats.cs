@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -39,8 +39,11 @@
  *		Notify of TC functionality if enabled.
  */
 
+using Server.Mobiles;
 using Server.Network;
 using Server.Regions;
+using System;
+using System.IO;
 
 namespace Server.Misc
 {
@@ -56,33 +59,117 @@ namespace Server.Misc
         {
             Mobile m = args.Mobile;
 
-            if (Core.UOTC_CFG && m.AccessLevel == AccessLevel.Player)
-            {   // if we're on a test center server, send a detailed message to the player telling what flavor of test center they are on
-                //m.SendMessage(string.Format("Welcome to {0} Test Center{1}", Core.Server, Core.UOEV ? " Event Shard." : "."));
-                // 6/25/2021, Adam: Seems reduntant with the WelcomeTimer
-                // revisit this when we have time.
-                //m.SendMessage(string.Format("Welcome to {0}{1}{2}.", Core.Server, Core.UOTC ? " Test Center" : "", Core.UOEV ? " Event Shard" : ""));
+            // New players get the full WelcomeTimer (handled automatically in character creation)
+            // Returning players get the fast login greeting
+            if (m.Age > TimeSpan.FromMinutes(5) && m is PlayerMobile pm)
+            {
+                // Returning from Test Center performs a login-equivalent transition.
+                // Suppress the next welcome message to avoid confusing the player.
+                if (!pm.GetPlayerBool(PlayerBoolTable.SuppressNextWelcomeMessage))
+                    WelcomeTimer.SendGreeting(m, WelcomeTimer.GreetingType.Returning);
+                else
+                {
+                    // clear it now
+                    pm.SetPlayerBool(PlayerBoolTable.SuppressNextWelcomeMessage, false);
+                }
             }
-            else if (Core.RuleSets.SiegeRules() && m.AccessLevel == AccessLevel.Player)
-            {   // regular player on siege
-                m.SendMessage("Welcome, {0}!", args.Mobile.Name);
-            }
-            else
-            {   // regular player on ai or mort
-                m.SendMessage("Welcome, {0}! {1}", args.Mobile.Name, Server.Misc.Stats.Format(m.AccessLevel));
-            }
-
-            m.SendMessage("type [about to learn about this shard.");
-#if !CORE_UOBETA
-            if (TestCenter.Enabled)
-                m.SendMessage("Test Center functionality is enabled. You are able to customize your character's stats and skills at anytime to anything you wish.  To see the commands to do this just say 'help'.");
-#endif
         }
-
     }
 
     public static class Stats
     {
+        #region Average Daily Users
+        public static int MaxPlayerCount { get; private set; }
+        public static int AverageDailyUsers { get; private set; }
+
+        private static DateTime m_ADUDate;
+        private static int m_ADUSampleTotal;
+        private static int m_ADUSampleCount;
+
+        private static readonly string m_FilePath = Path.Combine("Saves", "Stats.bin");
+
+        public static void Configure()
+        {
+            EventSink.WorldLoad += new WorldLoadEventHandler(EventSink_WorldLoad);
+            EventSink.WorldSave += new WorldSaveEventHandler(EventSink_WorldSave);
+        }
+
+        private static void EventSink_WorldLoad()
+        {
+            Load();
+        }
+
+        private static void EventSink_WorldSave(WorldSaveEventArgs e)
+        {
+            UpdatePopulationStats();
+            Save();
+        }
+
+        private static void UpdatePopulationStats()
+        {
+            int users = NetState.Instances.Count;
+
+            if (users > MaxPlayerCount)
+                MaxPlayerCount = users;
+
+            DateTime today = DateTime.UtcNow.Date;
+
+            if (m_ADUDate == DateTime.MinValue)
+                m_ADUDate = today;
+
+            if (m_ADUDate != today)
+            {
+                if (m_ADUSampleCount > 0)
+                    AverageDailyUsers = m_ADUSampleTotal / m_ADUSampleCount;
+
+                m_ADUDate = today;
+                m_ADUSampleTotal = 0;
+                m_ADUSampleCount = 0;
+            }
+
+            m_ADUSampleTotal += users;
+            m_ADUSampleCount++;
+        }
+
+        private static void Save()
+        {
+            BinaryFileWriter writer = new BinaryFileWriter(m_FilePath, true);
+
+            writer.Write(0); // version
+
+            writer.Write(MaxPlayerCount);
+            writer.Write(AverageDailyUsers);
+            writer.Write(m_ADUDate);
+            writer.Write(m_ADUSampleTotal);
+            writer.Write(m_ADUSampleCount);
+
+            writer.Close();
+        }
+
+        private static void Load()
+        {
+            if (!File.Exists(m_FilePath))
+                return;
+
+            BinaryFileReader reader = new BinaryFileReader(new BinaryReader(File.OpenRead(m_FilePath)));
+
+            int version = reader.ReadInt();
+
+            switch (version)
+            {
+                case 0:
+                    MaxPlayerCount = reader.ReadInt();
+                    AverageDailyUsers = reader.ReadInt();
+                    m_ADUDate = reader.ReadDateTime();
+                    m_ADUSampleTotal = reader.ReadInt();
+                    m_ADUSampleCount = reader.ReadInt();
+                    break;
+            }
+
+            reader.Close();
+        }
+        #endregion Average Daily Users
+
         private static Memory m_AggressiveActionMemory = new Memory();
 
         public static void Initialize()
@@ -114,17 +201,23 @@ namespace Server.Misc
             int adventurers = CountAdventurers();
 
             if (pvpers > 1)
-                sx += string.Format(" {0} {1} to be involved in player conflict", pvpers, pvpers == 1 ? "appears" : "appear");
+                sx += string.Format(" {0} {1} to be involved in player conflict",
+                    pvpers, pvpers == 1 ? "appears" : "appear");
 
             if (adventurers > 1)
             {
                 if (pvpers > 1)
                     sx += ", ";
-                sx += string.Format(" {0} {1} to be out adventuring", adventurers, adventurers == 1 ? "appears" : "appear");
+                sx += string.Format(" {0} {1} to be out adventuring",
+                    adventurers, adventurers == 1 ? "appears" : "appear");
             }
 
             if (pvpers > 1 || adventurers > 1)
                 sx += ".";
+
+            // --- Server Wars Notice ---
+            if (Server.Misc.Maintenance.InServerWars)
+                sx += "\nServer Wars are currently active!";
 
             return sx;
         }

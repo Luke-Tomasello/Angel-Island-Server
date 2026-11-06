@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -45,12 +45,12 @@ namespace Server.Engines
         private TimeSpan m_Countdown = TimeSpan.Zero;           // For example: event will start in 24 hours
         private int m_OffsetFromUTC = -8;                       // default to pacific time
         DateTime m_EventStart, m_EventEnd;                      // start/end of event (calculated, not serialized.)
-        private Server.Timer m_Timer;                           // not serialized
+        private Server.Timer? m_Timer;                           // not serialized
         private bool m_Running = false;                         // true if the event is running (all event objects need to start in the disabled state)
         private Item m_item;                                    // the caller (spawner, sungate, teleporter, etc.)
         private object m_context;                               // optional caller context object
-        private string m_startedCallbackName;                   // optional caller event started function
-        private string m_endedCallbackName;                     // optional caller event ended function
+        private string? m_startedCallbackName;                   // optional caller event started function
+        private string? m_endedCallbackName;                     // optional caller event ended function
         private bool m_durationOverride;                        // shard owners can set this to allow staff to create a long running event
         /// <summary>
         /// Include this class in your 'Event' class and provide accessors for all the properties described herein.
@@ -61,7 +61,7 @@ namespace Server.Engines
         /// <param name="startedCallback"> optional callback when the event starts. Usually Activate the object.</param>
         /// <param name="endedCallback"> optional callback when the event ends. Usually Deactivate the object.</param>
         [Constructable]
-        public Event(Item you, object context = null, Action<object> startedCallback = null, Action<object> endedCallback = null)
+        public Event(Item you, object? context = null, Action<object>? startedCallback = null, Action<object>? endedCallback = null)
         {
             m_item = you;
             m_context = context;
@@ -87,11 +87,11 @@ namespace Server.Engines
                     {
                         m_ConsoleHue = Utility.RandomConsoleColor(m_item.Serial.Value);
                         m_sayHue = Utility.RandomSpeechHue();
-                        m_item.SendSystemMessage("debug on.", AccessLevel.GameMaster, m_sayHue);
+                        m_item.SendMessageNearby("debug on.", AccessLevel.GameMaster, m_sayHue);
                     }
                 }
                 else if (m_item != null)
-                    m_item.SendSystemMessage("debug off.", AccessLevel.GameMaster, m_sayHue);
+                    m_item.SendMessageNearby("debug off.", AccessLevel.GameMaster, m_sayHue);
                 m_Debug = value;
             }
         }
@@ -200,8 +200,8 @@ namespace Server.Engines
             {
                 if (value > TimeSpan.FromDays(20) && !m_durationOverride)
                 {
-                    m_item.SendSystemMessage("An event may last no longer than 20 days.", AccessLevel.GameMaster, m_sayHue);
-                    m_item.SendSystemMessage("If your event needs to be longer, get a shard Owner to override this limitation.", AccessLevel.GameMaster, m_sayHue);
+                    m_item.SendMessageNearby("An event may last no longer than 20 days.", AccessLevel.GameMaster, m_sayHue);
+                    m_item.SendMessageNearby("If your event needs to be longer, get a shard Owner to override this limitation.", AccessLevel.GameMaster, m_sayHue);
                 }
                 else
                 {   // probably don't have to CheckReset() here. Normal timer processing should handle it fine.
@@ -268,7 +268,7 @@ namespace Server.Engines
             {
                 EventEnded();           // end this event
                 m_Running = false;      // we will call start again when we reach countdown
-                m_item.SendSystemMessage("You have canceled this event and rescheduled it.", AccessLevel.GameMaster, m_sayHue);
+                m_item.SendMessageNearby("You have canceled this event and rescheduled it.", AccessLevel.GameMaster, m_sayHue);
             }
         }
         private void CheckBeginEnd()
@@ -323,7 +323,7 @@ namespace Server.Engines
 
             if (start && TimerRunning == false)
             {
-                m_Timer = Timer.DelayCall(TimerMode(), new TimerStateCallback(Tick), new object[] { null });
+                m_Timer = Timer.DelayCall(TimerMode(), new TimerStateCallback(Tick), new object?[] { null });
                 return;
             }
             else if (start)
@@ -436,13 +436,13 @@ namespace Server.Engines
             //  Okay, see if we need to Start/Stop an event
             //  We need this delay to Start/Stop events as we want to ensure the object
             //      we are managing is completely initialized.
-            Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(Initializing), new object[] { null });
+            Timer.DelayCall(TimeSpan.FromSeconds(2), new TimerStateCallback(Initializing), new object?[] { null });
         }
         private void EventStarted()
         {
             if (!string.IsNullOrEmpty(m_startedCallbackName))
             {
-                MethodInfo mis = m_item.GetType().GetMethod(m_startedCallbackName);
+                MethodInfo? mis = m_item.GetType().GetMethod(m_startedCallbackName);
                 mis.Invoke(m_item, new object[] { m_context });
             }
             if (this.EventDebug)
@@ -452,7 +452,7 @@ namespace Server.Engines
         {
             if (!string.IsNullOrEmpty(m_endedCallbackName))
             {
-                MethodInfo mie = m_item.GetType().GetMethod(m_endedCallbackName);
+                MethodInfo? mie = m_item.GetType().GetMethod(m_endedCallbackName);
                 mie.Invoke(m_item, new object[] { m_context });
             }
             if (this.EventDebug)
@@ -461,7 +461,7 @@ namespace Server.Engines
         private void DebugOut(string text, ConsoleColor color)
         {
             Utility.Monitor.WriteLine(text, color);
-            if (m_item != null) m_item.SendSystemMessage(text, AccessLevel.GameMaster, m_sayHue);
+            if (m_item != null) m_item.SendMessageNearby(text, AccessLevel.GameMaster, m_sayHue);
         }
         public override string ToString()
         {

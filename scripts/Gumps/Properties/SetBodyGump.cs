@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -42,7 +42,7 @@ namespace Server.Gumps
         private int m_Page;
         private ArrayList m_List;
         private int m_OurPage;
-        private ArrayList m_OurList;
+        private ArrayList? m_OurList;
         private ModelBodyType m_OurType;
 
         private const int LabelColor32 = 0xFFFFFF;
@@ -62,7 +62,7 @@ namespace Server.Gumps
             AddHtml(x + 35, y, 200, 20, Color(text, isSelection ? SelectedColor32 : LabelColor32), false, false);
         }
 
-        public SetBodyGump(PropertyInfo prop, Mobile mobile, object o, Stack stack, int page, ArrayList list, int ourPage, ArrayList ourList, ModelBodyType ourType)
+        public SetBodyGump(PropertyInfo prop, Mobile mobile, object o, Stack stack, int page, ArrayList list, int ourPage, ArrayList? ourList, ModelBodyType ourType)
             : base(20, 30)
         {
             m_Property = prop;
@@ -105,7 +105,7 @@ namespace Server.Gumps
             {
                 for (int i = 0, index = (ourPage * 12); i < 12 && index >= 0 && index < ourList.Count; ++i, ++index)
                 {
-                    InternalEntry entry = (InternalEntry)ourList[index];
+                    InternalEntry? entry = (InternalEntry?)ourList[index];
                     int itemID = entry.ItemID;
 
                     Rectangle2D bounds = ItemBounds.Table[itemID & 0x3FFF];
@@ -181,7 +181,7 @@ namespace Server.Gumps
                     {
                         try
                         {
-                            InternalEntry entry = (InternalEntry)m_OurList[index];
+                            InternalEntry? entry = (InternalEntry?)m_OurList[index];
 
                             Server.Commands.CommandLogging.LogChangeProperty(m_Mobile, m_Object, m_Property.Name, entry.Body.ToString());
                             m_Property.SetValue(m_Object, entry.Body, null);
@@ -211,13 +211,13 @@ namespace Server.Gumps
 
             for (int i = 0; i < entries.Count; ++i)
             {
-                BodyEntry oldEntry = (BodyEntry)entries[i];
+                BodyEntry? oldEntry = (BodyEntry?)entries[i];
                 int bodyID = oldEntry.Body.BodyID;
 
                 if (((Body)bodyID).IsEmpty)
                     continue;
 
-                ArrayList list = null;
+                ArrayList? list = null;
 
                 switch (oldEntry.BodyType)
                 {
@@ -293,9 +293,9 @@ namespace Server.Gumps
                 m_DisplayName = m_DisplayName.Replace('_', ' ');
             }
 
-            public int CompareTo(object obj)
+            public int CompareTo(object? obj)
             {
-                InternalEntry comp = (InternalEntry)obj;
+                InternalEntry? comp = (InternalEntry?)obj;
 
                 int v = m_Name.CompareTo(comp.m_Name);
 

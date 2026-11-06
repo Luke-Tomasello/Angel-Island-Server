@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -67,17 +67,17 @@ namespace Server.Commands
                         return;
                     }
 
-                    PlayerMobile pm = e.Mobile as PlayerMobile;
+                    PlayerMobile? pm = e.Mobile as PlayerMobile;
                     LogHelper Logger = new LogHelper("FindMobileByType.log", e.Mobile, false);
                     string name = e.GetString(0);
-                    Region region = null;
+                    Region? region = null;
                     if (e.Length > 1)
                         region = Region.FindByName(e.GetString(1), e.Mobile.Map);
 
                     // reset jump table
                     pm.JumpIndex = 0;
                     pm.JumpList = new ArrayList();
-                    Type tx = ScriptCompiler.FindTypeByName(name);
+                    Type? tx = ScriptCompiler.FindTypeByName(name);
 
                     if (tx != null)
                     {

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,15 +19,13 @@
  *
  ***************************************************************************/
 
-using System;
-
 namespace Server.Items
 {
     [Server.Engines.Craft.Forge]
     public class LargeForgeWest : Item
     {
-        private InternalItem m_Item;
-        private InternalItem2 m_Item2;
+        private InternalItem? m_Item;
+        private InternalItem2? m_Item2;
 
         [Constructable]
         public LargeForgeWest()
@@ -93,7 +91,7 @@ namespace Server.Items
         [Server.Engines.Craft.Forge]
         private class InternalItem : Item
         {
-            private LargeForgeWest m_Item;
+            private LargeForgeWest? m_Item;
 
             public InternalItem(LargeForgeWest item)
                 : base(0x1996)
@@ -150,7 +148,7 @@ namespace Server.Items
         [Server.Engines.Craft.Forge]
         private class InternalItem2 : Item
         {
-            private LargeForgeWest m_Item;
+            private LargeForgeWest? m_Item;
 
             public InternalItem2(LargeForgeWest item)
                 : base(0x1992)
@@ -208,8 +206,8 @@ namespace Server.Items
     [Server.Engines.Craft.Forge]
     public class LargeForgeEast : Item
     {
-        private InternalItem m_Item;
-        private InternalItem2 m_Item2;
+        private InternalItem? m_Item;
+        private InternalItem2? m_Item2;
 
         [Constructable]
         public LargeForgeEast()
@@ -229,7 +227,7 @@ namespace Server.Items
         {   // these composite items are problematic because we have no BaseAddon which we would used to reconstruct
             //  Instead we just dupe the graphic.
             Item new_component = new Item(this.ItemID);
-            Utility.CopyProperties(new_component, this);
+            Utility.CopyProperties(this, new_component);
             return base.Dupe(new_component, amount);
         }
         public override void OnLocationChange(Point3D oldLocation)
@@ -281,7 +279,7 @@ namespace Server.Items
         [Server.Engines.Craft.Forge]
         private class InternalItem : Item
         {
-            private LargeForgeEast m_Item;
+            private LargeForgeEast? m_Item;
 
             public InternalItem(LargeForgeEast item)
                 : base(0x197E)
@@ -299,7 +297,7 @@ namespace Server.Items
             {   // these composite items are problematic because we have no BaseAddon which we would used to reconstruct
                 //  Instead we just dupe the graphic.
                 Item new_component = new Item(this.ItemID);
-                Utility.CopyProperties(new_component, this);
+                Utility.CopyProperties(this, new_component);
                 return base.Dupe(new_component, amount);
             }
             public override void OnLocationChange(Point3D oldLocation)
@@ -344,7 +342,7 @@ namespace Server.Items
         [Server.Engines.Craft.Forge]
         private class InternalItem2 : Item
         {
-            private LargeForgeEast m_Item;
+            private LargeForgeEast? m_Item;
 
             public InternalItem2(LargeForgeEast item)
                 : base(0x1982)
@@ -362,7 +360,7 @@ namespace Server.Items
             {   // these composite items are problematic because we have no BaseAddon which we would used to reconstruct
                 //  Instead we just dupe the graphic.
                 Item new_component = new Item(this.ItemID);
-                Utility.CopyProperties(new_component, this);
+                Utility.CopyProperties(this, new_component);
                 return base.Dupe(new_component, amount);
             }
             public override void OnLocationChange(Point3D oldLocation)

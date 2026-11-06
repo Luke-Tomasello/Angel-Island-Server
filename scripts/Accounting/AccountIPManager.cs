@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -79,7 +79,7 @@ namespace Server.Accounting
         {
             get
             {
-                string temp = Environment.GetEnvironmentVariable("AI.MMAccountId");
+                string? temp = Environment.GetEnvironmentVariable("AI.MMAccountId");
                 if (int.TryParse(temp, out int id))
                     return id;
                 else
@@ -90,7 +90,7 @@ namespace Server.Accounting
         {
             get
             {
-                string temp = Environment.GetEnvironmentVariable("AI.MMlicenseKey");
+                string? temp = Environment.GetEnvironmentVariable("AI.MMlicenseKey");
                 return temp;
             }
         }
@@ -98,7 +98,7 @@ namespace Server.Accounting
         public static void AcquireIpInfo()
         {
             List<UserIPInfo> RetryList = new List<UserIPInfo>();
-            UserIPInfo userIPInfo = null;
+            UserIPInfo? userIPInfo = null;
             while (UserIPRequest.TryDequeue(out userIPInfo))
             {
                 if (ServerList.IsPrivateNetwork(userIPInfo.Ip))
@@ -110,7 +110,7 @@ namespace Server.Accounting
                 using (var client = new MaxMind.GeoIP2.WebServiceClient(accountId: MMAccountId, licenseKey: MMlicenseKey, host: MMHost))
                 {
                     // Do the lookup
-                    CityResponse response = null;
+                    CityResponse? response = null;
                     try
                     {
                         if (userIPInfo != null)
@@ -119,20 +119,20 @@ namespace Server.Accounting
                             continue; // error, should never happen
 
                         #region TEST CODE
-#if false
-                        Console.WriteLine(response.Country.IsoCode);        // 'US'
-                        Console.WriteLine(response.Country.Name);           // 'United States'
-
-                        Console.WriteLine(response.MostSpecificSubdivision.Name);    // 'Minnesota'
-                        Console.WriteLine(response.MostSpecificSubdivision.IsoCode); // 'MN'
-
-                        Console.WriteLine(response.City.Name); // 'Minneapolis'
-
-                        Console.WriteLine(response.Postal.Code); // '55455'
-
-                        Console.WriteLine(response.Location.Latitude);  // 44.9733
-                        Console.WriteLine(response.Location.Longitude); // -93.2323
-#endif
+                        string? playerTimeZoneId = response.Location.TimeZone;
+                        if (!string.IsNullOrEmpty(playerTimeZoneId))
+                        {
+                            try
+                            {
+                                TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(playerTimeZoneId);
+                                // Now you can use tz for offsets, DST rules, conversions, etc.
+                                Console.WriteLine($"Player TZ: {tz.DisplayName} (ID: {tz.Id})");
+                            }
+                            catch (TimeZoneNotFoundException)
+                            {
+                                // Rare fallback: invalid or unsupported TZ string
+                            }
+                        }
                         #endregion TEST CODE
                     }
                     catch (Exception ex)
@@ -145,7 +145,7 @@ namespace Server.Accounting
                     // if the key exists, replace it
                     if (UserIPProfile.ContainsKey(userIPInfo.Username))
                     {
-                        CityResponse oldResponse = null;
+                        CityResponse? oldResponse = null;
                         bool replaced = false;
                         if (UserIPProfile.TryGetValue(userIPInfo.Username, out oldResponse))
                             if (UserIPProfile.TryRemove(userIPInfo.Username, out oldResponse))
@@ -204,13 +204,13 @@ namespace Server.Accounting
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                PlayerMobile pm = targeted as Mobiles.PlayerMobile;
+                PlayerMobile? pm = targeted as Mobiles.PlayerMobile;
 
                 if (pm != null)
                 {
-                    List<string> reason = null;
-                    CityResponse response = GetIpInfo(pm, ref reason);
-                    Accounting.Account account = pm.Account as Accounting.Account;
+                    List<string>? reason = null;
+                    CityResponse? response = GetIpInfo(pm, ref reason);
+                    Accounting.Account? account = pm.Account as Accounting.Account;
                     if (response != null)
                     {
                         try
@@ -244,17 +244,17 @@ namespace Server.Accounting
                 return;
             }
         }
-        public static CityResponse GetIpInfo(PlayerMobile pm, ref List<string> reason)
+        public static CityResponse? GetIpInfo(PlayerMobile pm, ref List<string> reason)
         {
             reason = new List<string>();
             if (pm != null)
             {
-                Accounting.Account account = pm.Account as Accounting.Account;
+                Accounting.Account? account = pm.Account as Accounting.Account;
                 if (account != null && account.Username != null)
                 {
                     if (UserIPProfile.ContainsKey(account.Username))
                     {
-                        CityResponse response = null;
+                        CityResponse? response = null;
                         if (UserIPProfile.TryGetValue(account.Username, out response))
                             return response;
                         else

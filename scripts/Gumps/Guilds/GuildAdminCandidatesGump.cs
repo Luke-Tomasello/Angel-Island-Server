@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -67,16 +67,16 @@ namespace Server.Gumps
 
                             if (index >= 0 && index < m_List.Count)
                             {
-                                Mobile m = (Mobile)m_List[index];
+                                Mobile? m = (Mobile?)m_List[index];
 
                                 if (m != null && !m.Deleted)
                                 {
                                     #region Factions
-                                    PlayerState guildState = PlayerState.Find(m_Guild.Leader);
-                                    PlayerState targetState = PlayerState.Find(m);
+                                    PlayerState? guildState = PlayerState.Find(m_Guild.Leader);
+                                    PlayerState? targetState = PlayerState.Find(m);
 
-                                    Faction guildFaction = (guildState == null ? null : guildState.Faction);
-                                    Faction targetFaction = (targetState == null ? null : targetState.Faction);
+                                    Faction? guildFaction = (guildState == null ? null : guildState.Faction);
+                                    Faction? targetFaction = (targetState == null ? null : targetState.Faction);
 
                                     if (guildFaction != targetFaction)
                                     {
@@ -122,7 +122,7 @@ namespace Server.Gumps
 
                             if (index >= 0 && index < m_List.Count)
                             {
-                                Mobile m = (Mobile)m_List[index];
+                                Mobile? m = (Mobile?)m_List[index];
 
                                 if (m != null && !m.Deleted)
                                 {

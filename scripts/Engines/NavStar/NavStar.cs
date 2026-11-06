@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -107,7 +107,7 @@ namespace Server.Engines
                 NavContext.Remove(kvp.Key);
             ;
         }
-        public static NavBeacon ProcessRequest(Mobile m)
+        public static NavBeacon? ProcessRequest(Mobile m)
         {
             // defrag
             while (NavContext.ContainsKey(m) && NavContext[m].Count > 0 && NavContext[m].Peek().Deleted)
@@ -194,12 +194,12 @@ namespace Server.Engines
                             int record_count = reader.ReadInt();           // number of records
                             for (int ix = 0; ix < record_count; ix++)
                             {
-                                Mobile m = reader.ReadMobile();             // the mobile
+                                Mobile? m = reader.ReadMobile();             // the mobile
                                 Queue<NavBeacon> temp = new();              // defrag buffer
                                 int point_count = reader.ReadInt();
                                 for (int jx = 0; jx < point_count; jx++)
                                 {                                           // defrag buffer
-                                    NavBeacon temp_beacon = (NavBeacon)reader.ReadItem();
+                                    NavBeacon? temp_beacon = (NavBeacon?)reader.ReadItem();
                                     if (temp_beacon != null)
                                         temp.Enqueue(temp_beacon);
                                 }

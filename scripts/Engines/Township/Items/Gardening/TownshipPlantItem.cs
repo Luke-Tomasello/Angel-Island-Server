@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -372,7 +372,7 @@ namespace Server.Engines.Plants
             return new string[0];
         }
 
-        public static string GetAddonID(TreeType treeType)
+        public static string? GetAddonID(TreeType treeType)
         {
             int index;
 
@@ -718,11 +718,7 @@ namespace Server.Engines.Plants
         public virtual void OnBuild(Mobile from)
         {
             // 8/23/23, Yoar: Tree addons are no longer attackable
-#if false
-            int hits = 100;
-#else
             int hits = 0;
-#endif
 
             this.HitsMax = hits;
             this.Hits = hits;

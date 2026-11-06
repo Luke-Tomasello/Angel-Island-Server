@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -38,13 +38,12 @@
  *		Merged in 1.0RC0 code.
  */
 
+using Newtonsoft.Json;
 using Server.Network;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using Newtonsoft;
-using Newtonsoft.Json;
 namespace Server
 {
     public class SocketOptions
@@ -53,30 +52,31 @@ namespace Server
         private const int CoalesceBufferSize = 512; // MSS that the core will use when buffering packets
         private const int PooledSockets = 32; // The number of sockets to initially pool. Ideal value is expected client count. 
 
+        public static int LoginServerPortBase
+        {
+            get
+            {
+                string json = File.ReadAllText("Ports.json");
+                Dictionary<string, int>? portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                return portsTable["LoginServerPortBase"];
+            }
+        }
         public static int AngelIslandPort
         {
             get
             {
                 string json = File.ReadAllText("Ports.json");
-                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                Dictionary<string, int>? portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
                 return portsTable["AngelIslandPort"];
             }
         }
-        public static int TestCenterPort
-        {
-            get
-            {
-                string json = File.ReadAllText("Ports.json");
-                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
-                return portsTable["TestCenterPort"];
-            }
-        }
+
         public static int SiegePerilousPort
         {
             get
             {
                 string json = File.ReadAllText("Ports.json");
-                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                Dictionary<string, int>? portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
                 return portsTable["SiegePerilousPort"];
             }
         }
@@ -85,17 +85,26 @@ namespace Server
             get
             {
                 string json = File.ReadAllText("Ports.json");
-                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                Dictionary<string, int>? portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
                 return portsTable["MortalisPort"];
             }
         }
-        public static int RenaissancePort
+        public static int SeasonsPort
         {
             get
             {
                 string json = File.ReadAllText("Ports.json");
-                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
-                return portsTable["RenaissancePort"];
+                Dictionary<string, int>? portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                return portsTable["SeasonsPort"];
+            }
+        }
+        public static int UpheavalPort
+        {
+            get
+            {
+                string json = File.ReadAllText("Ports.json");
+                Dictionary<string, int>? portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                return portsTable["UpheavalPort"];
             }
         }
         public static int EventShardPort
@@ -103,19 +112,20 @@ namespace Server
             get
             {
                 string json = File.ReadAllText("Ports.json");
-                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                Dictionary<string, int>? portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
                 return portsTable["EventShardPort"];
             }
         }
-        public static int LoginServerPortBase
+        public static int TestCenterPort
         {
             get
             {
                 string json = File.ReadAllText("Ports.json");
-                Dictionary<string, int> portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
-                return portsTable["LoginServerPortBase"];
+                Dictionary<string, int>? portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                return portsTable["TestCenterPort"];
             }
         }
+
 
         private static IPEndPoint[] m_ListenerEndPoints;
         //        = new IPEndPoint[] {
@@ -143,7 +153,7 @@ namespace Server
                 m_ListenerEndPoints[portnext] = new IPEndPoint(IPAddress.Any, LoginServerPortBase + portnext++ + 80);
                 m_ListenerEndPoints[portnext] = new IPEndPoint(IPAddress.Any, LoginServerPortBase + portnext++ + 90);
             }
-            else if (Core.UOEV_CFG)
+            else if (Core.GMNEV_CFG)
             {
                 // Core EventShard can be turned on with all other server configurations and overrides the default port for that shard.
                 //  For example, one can turn on -uoev -uomo yielding an event shard with the Mortalis rule set, but a port number that
@@ -156,7 +166,7 @@ namespace Server
                 // Core TestCenter can be turned on with Core.UOSP giving us a SP TC
                 //  otherwise it is the usual AI TC
                 //  but whatever the test center mode, it always gets its own port
-                if (Core.UOTC_CFG)
+                if (Core.GMNTC_CFG)
                 {
 #if CORE_UOBETA
                     m_ListenerEndPoints[0] = new IPEndPoint(IPAddress.Any, AngelIslandPort);
@@ -166,12 +176,22 @@ namespace Server
                 }
                 else
                 {
-                    if (Core.RuleSets.SiegeRules())
+                    if (Core.RuleSets.AngelIslandRules())
+                        m_ListenerEndPoints[0] = new IPEndPoint(IPAddress.Any, AngelIslandPort);
+
+                    else if (Core.RuleSets.SiegeRules())
                         m_ListenerEndPoints[0] = new IPEndPoint(IPAddress.Any, SiegePerilousPort);
+
                     else if (Core.RuleSets.MortalisRules())
                         m_ListenerEndPoints[0] = new IPEndPoint(IPAddress.Any, MortalisPort);
-                    else if (Core.RuleSets.RenaissanceRules())
-                        m_ListenerEndPoints[0] = new IPEndPoint(IPAddress.Any, RenaissancePort);
+
+                    else if (Core.RuleSets.SeasonsRules())
+                        m_ListenerEndPoints[0] = new IPEndPoint(IPAddress.Any, SeasonsPort);
+
+                    else if (Core.RuleSets.UpheavalRules())
+                        m_ListenerEndPoints[0] = new IPEndPoint(IPAddress.Any, UpheavalPort);
+
+                    // default
                     else
                         m_ListenerEndPoints[0] = new IPEndPoint(IPAddress.Any, AngelIslandPort);
                 }

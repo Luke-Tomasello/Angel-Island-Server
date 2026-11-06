@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -89,7 +89,7 @@ namespace Server.Mobiles
         public override bool IsInvulnerable { get { return false; } }
         public IList<BaseCreature> GetStabledPets(Mobile m)
         {
-            List<BaseCreature> list;
+            List<BaseCreature>? list;
 
             if (!m_Table.TryGetValue(m, out list))
                 return new BaseCreature[0];
@@ -296,7 +296,7 @@ namespace Server.Mobiles
         }
         public void AddStabledPet(Mobile m, BaseCreature pet)
         {
-            List<BaseCreature> list;
+            List<BaseCreature>? list;
 
             if (!m_Table.TryGetValue(m, out list))
                 m_Table[m] = list = new List<BaseCreature>();
@@ -308,7 +308,7 @@ namespace Server.Mobiles
         }
         public void RemoveStabledPet(Mobile m, BaseCreature pet)
         {
-            List<BaseCreature> list;
+            List<BaseCreature>? list;
 
             if (!m_Table.TryGetValue(m, out list))
                 return;
@@ -371,7 +371,7 @@ namespace Server.Mobiles
 
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    BaseCreature pet = list[i] as BaseCreature;
+                    BaseCreature? pet = list[i] as BaseCreature;
 
                     if (pet == null || pet.Deleted)
                         continue;
@@ -453,7 +453,7 @@ namespace Server.Mobiles
             else
                 NoAnimals(from); // But I have no animals stabled with me at the moment!
         }
-        public void EndClaimList(Mobile from, BaseCreature pet)
+        public void EndClaimList(Mobile from, BaseCreature? pet)
         {
             if (pet == null || pet.Deleted || pet.GetCreatureBool(CreatureBoolTable.StableHold) || from.Map != this.Map || !from.InRange(this, 14) || !GetStabledPets(from).Contains(pet) || !from.CheckAlive())
                 return;
@@ -566,7 +566,7 @@ namespace Server.Mobiles
 
                 for (int i = 0; i < count; i++)
                 {
-                    Mobile m = reader.ReadMobile();
+                    Mobile? m = reader.ReadMobile();
                     List<BaseCreature> pets = reader.ReadStrongMobileList<BaseCreature>();
 
                     if (m != null)

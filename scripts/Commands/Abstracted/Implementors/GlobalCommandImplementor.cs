@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,7 +62,7 @@ namespace Server.Commands
                 LogHelper Logger = new LogHelper("global.log", from, false);
 
                 // reset jump table
-                Mobiles.PlayerMobile pm = from as Mobiles.PlayerMobile;
+                Mobiles.PlayerMobile? pm = from as Mobiles.PlayerMobile;
                 pm.JumpIndex = 0;
                 pm.JumpList = new System.Collections.ArrayList();
 
@@ -118,8 +118,18 @@ namespace Server.Commands
             catch (Exception ex)
             {
                 LogHelper.LogException(ex);
-                from.SendMessage(ex.Message);
+                if (from != null)
+                {
+                    ExampleUsage(from);
+                    from.SendMessage(ex.Message);
+                }
             }
+        }
+
+        private static void ExampleUsage(Mobile from)
+        {
+            from.SendSystemMessage("Usage: Condition where <Type> <Property> <Operator> <Value> [and/or ...]");
+            from.SendSystemMessage("Example: Condition where FillableContainer ContentType == Rare");
         }
     }
 }

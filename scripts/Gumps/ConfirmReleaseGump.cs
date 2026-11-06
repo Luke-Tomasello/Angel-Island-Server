@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -95,8 +95,18 @@ namespace Server.Gumps
                             // no warning here, they're doing something fucked up anyway.
                             // before we release, check to see if this is a malicious act, and...
                             //  if so, flag the owners as criminal.
-                            if (ReleasingEvilMonsterRule(m_Pet.ControlMaster, m_Pet.ControlMaster.Region, m_Pet))
-                                m_Pet.ControlMaster.CriminalAction(true); // // You've committed a criminal act!!
+                            if (ReleasingEvilMonsterRule(m_Pet.ControlMaster, m_Pet))
+                            {
+                                if (Core.RuleSets.MortalisRules())
+                                {
+                                    // on mortalis, we just whack the pet.
+                                    m_Pet.Region.MakeGuard(m_Pet);
+                                }
+                                else
+                                {
+                                    m_Pet.ControlMaster.CriminalAction(message: true); // You've committed a criminal act!!
+                                }
+                            }
 
                             if (m_Pet.OnBeforeRelease(m_Pet.ControlMaster))
                             {
@@ -106,7 +116,8 @@ namespace Server.Gumps
                                 // pet, if there were no players around, the pet would not release until a player
                                 // got in range of the pet.  This wasn't an issue before because there was 
                                 // a range check involved so there was always a player around when releasing the pet.
-                                m_Pet.AIObject.Obey();
+                                if (m_Pet.AIObject != null)
+                                    m_Pet.AIObject.Obey();
                             }
                         }
                     }
@@ -118,36 +129,43 @@ namespace Server.Gumps
             }
         }
 
-        public bool ReleasingEvilMonsterRule(Mobile player, Region r, Mobile beast)
-        {   // special pet release rule logic
+        public bool ReleasingEvilMonsterRule(Mobile player, Mobile beast)
+        {
+            // Special pet release rule logic
 
-            // are we in a in a guarded region
-            if (!(r is Regions.GuardedRegion && r.IsGuarded))
+            if (player == null || beast == null)
                 return false;
 
-            // and the mobile is not in a guarded region
-            if (!(beast.Region is Regions.GuardedRegion && beast.Region.IsGuarded))
+            Region pr = player.Region;
+            Region br = beast.Region;
+
+            // Player must be in a guarded region
+            bool playerInGuarded = (pr is Regions.GuardedRegion) && pr.IsGuarded;
+
+            // Beast must be in a guarded region
+            bool beastInGuarded = (br is Regions.GuardedRegion) && br.IsGuarded;
+
+            // Must be the same region
+            bool sameRegion = (pr != null && pr == br);
+
+            // Must be a creature
+            BaseCreature? bc = beast as BaseCreature;
+            bool beastIsCreature = (bc != null);
+
+            // Must be alive and "evil/aggressive" per your rule
+            bool beastIsEvil = beastIsCreature && bc.Alive && bc.FightMode.HasFlag(FightMode.All);
+
+            if (!playerInGuarded)
                 return false;
 
-            // is the beast in this region
-            if (!(r == beast.Region))
+            if (!beastInGuarded)
                 return false;
 
-            // and the mobile is a creature
-            if (!(beast is BaseCreature))
+            if (!sameRegion)
                 return false;
 
-            // falls under the ReleasingEvilMonsterRule()
-            if (beast.Alive)
-            {
-                if ((beast as BaseCreature).FightMode.HasFlag(FightMode.All))
-                    return true;
-            }
-            else
-            {
-            }
-
-            return false;
+            return beastIsEvil;
         }
+
     }
 }

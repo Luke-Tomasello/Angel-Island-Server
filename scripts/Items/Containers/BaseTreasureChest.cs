@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,7 +34,7 @@ namespace Server.Items
         private TreasureLevel m_TreasureLevel;
         private short m_MaxSpawnTime = 60;
         private short m_MinSpawnTime = 10;
-        private TreasureResetTimer m_ResetTimer;
+        private TreasureResetTimer? m_ResetTimer;
         // We generate our own items on dupe, therefore DeepDupe need not dupe our items
         public override bool AutoFills { get { return true; } }
         [CommandProperty(AccessLevel.GameMaster)]
@@ -84,7 +84,7 @@ namespace Server.Items
             Movable = false;
             Name = "a locked treasure chest";
 
-            Key key = (Key)FindItemByType(typeof(Key));
+            Key? key = (Key?)FindItemByType(typeof(Key));
 
             if (key != null)
                 key.Delete();

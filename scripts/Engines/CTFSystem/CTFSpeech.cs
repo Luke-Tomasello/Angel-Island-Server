@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -104,7 +104,7 @@ namespace Server.Engines
 
                         if (CurrentState == States.PlayRound)
                         {
-                            Dictionary<PlayerMobile, PlayerContextData> team = GetTeam((GetTeam(e.Mobile)));
+                            Dictionary<PlayerMobile, PlayerContextData>? team = GetTeam((GetTeam(e.Mobile)));
                             if (team != null)
                             {
                                 e.Mobile.SendMessage(e.Mobile.SpeechHue, "You have {0} kill{1}.", team[e.Mobile as PlayerMobile].Points, team[e.Mobile as PlayerMobile].Points == 1 ? "" : "s");
@@ -150,7 +150,7 @@ namespace Server.Engines
                             // you may only kick someone your own team
                             if (GetTeam(GetTeam(e.Mobile)) != null)
                             {
-                                PlayerMobile pm = null;
+                                PlayerMobile? pm = null;
                                 foreach (KeyValuePair<PlayerMobile, PlayerContextData> kvp in GetTeam(GetTeam(e.Mobile)))
                                 {
                                     if (kvp.Key.Name.ToLower() == name)

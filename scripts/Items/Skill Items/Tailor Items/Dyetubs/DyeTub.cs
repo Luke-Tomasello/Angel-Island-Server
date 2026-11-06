@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -55,6 +55,11 @@ namespace Server.Items
         }
 
         public virtual bool AllowStatuettes
+        {
+            get { return false; }
+        }
+
+        public virtual bool AllowStatues
         {
             get { return false; }
         }
@@ -267,7 +272,7 @@ namespace Server.Items
                             {
                                 if (item.Parent == null)
                                 {
-                                    BaseHouse house = BaseHouse.FindHouseAt(item);
+                                    BaseHouse? house = BaseHouse.FindHouseAt(item);
 
                                     if (house == null || !house.IsLockedDown(item))
                                         from.SendLocalizedMessage(501022); // Furniture must be locked down to paint it.
@@ -311,7 +316,7 @@ namespace Server.Items
                                 m_Tub.ConsumeUse(from);
                         }
                     }
-                    else if (item is MonsterStatuette && m_Tub.AllowStatuettes)
+                    else if (item is MonsterStatuette && m_Tub.AllowStatuettes || item is BaseStatue && m_Tub.AllowStatues)
                     {
                         if (!from.InRange(m_Tub.GetWorldLocation(), 1) || !from.InRange(item.GetWorldLocation(), 1))
                         {

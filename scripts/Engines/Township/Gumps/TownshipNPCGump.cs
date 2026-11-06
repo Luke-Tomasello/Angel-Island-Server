@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,13 @@
 
 /* Engines/Township/TownshipNPCGump.cs
  * CHANGELOG:
+ *  7/16/2026, Adam (confirmation gump)
+ *      Historically, certain NPCs (e.g. the Town Crier) required special
+ *      confirmation because redeeding would immediately revoke the township
+ *      enhancement they provided (such as an extended township).
+ *      Today, redeeding creates a stashed NPC which continues to satisfy the
+ *      township requirement while in deed form. The township retains all
+ *      associated rights and enhancements until the NPC is truly removed.
  *  1/12/2024, Adam (WanterRange)
  *      ITownshipNPCc now have a wander range, use this when adjusting the NPCc RangeHome
  *  9/3/2023, Adam (enable/disable wander)
@@ -36,7 +43,6 @@ using Server.Gumps;
 using Server.Mobiles;
 using Server.Network;
 using Server.Targeting;
-using System;
 using static Server.Utility;
 
 namespace Server.Township
@@ -130,12 +136,21 @@ namespace Server.Township
                 case 4: // redeed
                     {
                         from.CloseGump(typeof(ConfirmRedeedNPCGump));
-                        from.CloseGump(typeof(ConfirmRedeedNPCWarningGump));
-                        if (m_NPC.GetType() == typeof(TSTownCrier) && m_Stone.Extended)
-                        {
-                            from.SendGump(new ConfirmRedeedNPCWarningGump(m_NPC, m_Stone));
-                        }
-                        else
+                        /*
+                         * Historically, certain NPCs (e.g. the Town Crier) required special
+                         * confirmation because redeeding would immediately revoke the township
+                         * enhancement they provided (such as an extended township).
+                         *
+                         * Today, redeeding creates a stashed NPC which continues to satisfy the
+                         * township requirement while in deed form. The township retains all
+                         * associated rights and enhancements until the NPC is truly removed.
+                         */
+                        //from.CloseGump(typeof(ConfirmRedeedNPCWarningGump));
+                        //if (m_NPC.GetType() == typeof(TSTownCrier) && m_Stone.Extended)
+                        //{
+                        //    from.SendGump(new ConfirmRedeedNPCWarningGump(m_NPC, m_Stone));
+                        //}
+                        //else
                         {
                             from.SendGump(new ConfirmRedeedNPCGump(m_NPC, m_Stone));
                         }

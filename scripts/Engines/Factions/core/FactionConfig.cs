@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -95,10 +95,10 @@ namespace Server.Factions
         /* Sigil Options */
 
         // Time corrupting faction has to return the sigil before corruption time resets
-        public static TimeSpan SigilCorruptionGrace = TimeSpan.FromMinutes((Core.RuleSets.SERules()) ? 30.0 : 15.0);
+        public static TimeSpan SigilCorruptionGrace = TimeSpan.FromMinutes((Core.RuleSets.SamuraiEmpireRules()) ? 30.0 : 15.0);
 
         // Sigil must be held at a stronghold for this amount of time in order to become corrupted
-        public static TimeSpan SigilCorruptionPeriod = ((Core.RuleSets.SERules()) ? TimeSpan.FromHours(10.0) : TimeSpan.FromHours(24.0));
+        public static TimeSpan SigilCorruptionPeriod = ((Core.RuleSets.SamuraiEmpireRules()) ? TimeSpan.FromHours(10.0) : TimeSpan.FromHours(24.0));
 
         // After a sigil has been corrupted it must be returned to the town within this period of time
         public static TimeSpan SigilReturnPeriod = TimeSpan.FromHours(1.0);
@@ -120,7 +120,7 @@ namespace Server.Factions
             {
                 Console.WriteLine("FactionConfig Saving...");
 
-                string directoryName = Path.GetDirectoryName(FilePath);
+                string? directoryName = Path.GetDirectoryName(FilePath);
 
                 if (!string.IsNullOrEmpty(directoryName) && !Directory.Exists(directoryName))
                     Directory.CreateDirectory(directoryName);

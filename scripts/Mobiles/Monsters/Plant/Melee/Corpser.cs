@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,54 +71,27 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020207054322/uo.stratics.com/hunters/corpser.shtml
+            // 0 to 50 Gold, Logs or Boards, Executioner's Cap reagent
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
+                PackGold(0, 50);
+            }
+            else
+            {
                 if (0.25 > Utility.RandomDouble())
                     PackItem(new Board(10));
                 else
                     PackItem(new Log(10));
-
-                PackReg(3);
-                PackGold(25, 50);
             }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020207054322/uo.stratics.com/hunters/corpser.shtml
-                    // 0 to 50 Gold, Logs or Boards, Executioner's Cap reagent
+        }
 
-                    if (Spawning)
-                    {
-                        PackGold(0, 50);
-                    }
-                    else
-                    {
-                        if (0.25 > Utility.RandomDouble())
-                            PackItem(new Board(10));
-                        else
-                            PackItem(new Log(10));
-
-                        //	http://uo.stratics.com/content/basics/reagenttome.shtml
-                        if (0.2 >= Utility.RandomDouble())
-                            PackItem(new ExecutionersCap());
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        if (0.25 > Utility.RandomDouble())
-                            PackItem(new Board(10));
-                        else
-                            PackItem(new Log(10));
-
-                        PackItem(new MandrakeRoot(3));
-                    }
-
-                    AddLoot(LootPack.Meager);
-                }
-            }
+        public override void GenerateNonStandardLoot()
+        {
+            //	http://uo.stratics.com/content/basics/reagenttome.shtml
+            if (0.2 >= Utility.RandomDouble())
+                PackItem(new ExecutionersCap());
         }
 
         public override void Serialize(GenericWriter writer)

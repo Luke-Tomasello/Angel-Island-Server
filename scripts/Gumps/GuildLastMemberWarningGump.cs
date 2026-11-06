@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -44,12 +44,12 @@ namespace Server.Gumps
         private GuildWarning m_ExitType;
         public static bool CheckTownship(Mobile from)
         {
-            Guild guild = from.Guild as Guild;
+            Guild? guild = from.Guild as Guild;
             return from != null && guild != null && guild.TownshipStone != null;
         }
         public static bool CheckLastMember(Mobile from)
         {
-            Guild guild = from.Guild as Guild;
+            Guild? guild = from.Guild as Guild;
             return from != null && guild != null && guild.Members != null && guild.IsMember(from) && guild.Members.Count == 1;
         }
         public GuildLastMemberWarningGump(Mobile mobile, GuildWarning exit_type)
@@ -105,7 +105,7 @@ namespace Server.Gumps
         public override void OnResponse(NetState state, RelayInfo info)
         {
             Mobile from = state.Mobile;
-            Guild guild = from.Guild as Guild;
+            Guild? guild = from.Guild as Guild;
             if (true)
             {
                 if (info.ButtonID == 1)

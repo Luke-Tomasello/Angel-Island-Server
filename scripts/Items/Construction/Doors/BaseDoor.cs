@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Items/Construction/Doors/BaseDoor.cs
  * ChangeLog:
+ *  10/17/26, Adam: RustyLock doors (After Hours Club) do not open with a key carried in the pack or on a key ring.
+ *      The key must be used on the door (Key.cs), which unlocks it and breaks the key. Leaving from the inside is unchanged.
+ *      Added LockAll()/UnlockAll() to keep linked halves in step (the guards re-key the club door with LockAll).
  *  2/29/2024, Adam: Don't let staff refresh players house in this way (double clicking door) (unless it is their own house.)
  *  1/2/2021, Adam: disallow non-friends of a private house from using auto open/close macros on doors.
  *      ClassicUO's auto-open doors and Smooth Doors allow a non-friend of a private house to, what amounts to, 
@@ -78,7 +81,7 @@ namespace Server.Items
         private int m_ClosedID, m_CustomClosedID, m_ClosedSound;
         private Point3D m_Offset;
         private DoorFacing m_Facing;
-        private BaseDoor m_Link;
+        private BaseDoor? m_Link;
         private uint m_KeyValue;
 
         private Timer m_Timer;
@@ -113,7 +116,7 @@ namespace Server.Items
 
         private static void Link_OnFirstTarget(Mobile from, object targeted)
         {
-            BaseDoor door = targeted as BaseDoor;
+            BaseDoor? door = targeted as BaseDoor;
 
             if (door == null)
             {
@@ -130,7 +133,7 @@ namespace Server.Items
         private static void Link_OnSecondTarget(Mobile from, object targeted, object state)
         {
             BaseDoor first = (BaseDoor)state;
-            BaseDoor second = targeted as BaseDoor;
+            BaseDoor? second = targeted as BaseDoor;
 
             if (second == null)
             {
@@ -155,7 +158,7 @@ namespace Server.Items
 
         private static void ChainLink_OnTarget(Mobile from, object targeted, object state)
         {
-            BaseDoor door = targeted as BaseDoor;
+            BaseDoor? door = targeted as BaseDoor;
 
             if (door == null)
             {
@@ -648,11 +651,11 @@ namespace Server.Items
         public virtual void Use(Mobile from)
         {
             //Pix: 2010.11.21 - not sure if this is a great place for this, but on UOSP, when a friend uses a house door, the house is refreshed
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
             {
                 try
                 {
-                    BaseHouse house = BaseHouse.FindHouseAt(this);
+                    BaseHouse? house = BaseHouse.FindHouseAt(this);
                     if (house != null)
                     {   // 2/29/2024, Adam: Don't let staff refresh players house in this way (unless it is their own house.)
                         if ((house.IsFriend(from) && from.AccessLevel == AccessLevel.Player) || from == house.Owner)
@@ -680,14 +683,20 @@ namespace Server.Items
                 if (from.AccessLevel >= AccessLevel.GameMaster)
                 {
                     from.LocalOverheadMessage(MessageType.Regular, 0x3B2, 502502); // That is locked, but you open it with your godly powers.
-                                                                                   //from.Send( new MessageLocalized( Serial, ItemID, MessageType.Regular, 0x3B2, 3, 502502, "", "" ) ); // That is locked, but you open it with your godly powers.
+
+                    // 2/9/2026, Adam: Added this so staff can know which side of the door they are on (which side has the lock)
+                    if (IsInside(from))
+                        from.LocalOverheadMessage(MessageType.Regular, 0x38, 501280); // That is locked, but is usable from the inside.
+                    else
+                        from.LocalOverheadMessage(MessageType.Regular, 0x38, 501282); // You quickly unlock, open, and relock the door
                 }
                 else
                 {
                     Container pack = from.Backpack;
                     bool found = false;
 
-                    if (pack != null)
+                    // a rusty lock won't turn this way, the key must be used on the door (see Key.cs)
+                    if (pack != null && !m_RustyLock)
                     {
                         Item[] items = pack.FindItemsByType(typeof(Key));
 
@@ -761,6 +770,27 @@ namespace Server.Items
             }
         }
 
+        /// <summary>
+        /// Sets the key value and locks this door and every door linked to it.
+        /// </summary>
+        public void LockAll(uint keyValue)
+        {
+            foreach (BaseDoor door in GetChain())
+            {
+                door.KeyValue = keyValue;
+                door.Locked = true;
+            }
+        }
+
+        /// <summary>
+        /// Unlocks this door and every door linked to it. Key values are unchanged.
+        /// </summary>
+        public void UnlockAll()
+        {
+            foreach (BaseDoor door in GetChain())
+                door.Locked = false;
+        }
+
         public virtual void OnOpened(Mobile from)
         {
         }
@@ -803,54 +833,7 @@ namespace Server.Items
             : this(closedID, openedID, -1, -1, openedSound, closedSound, facing, Point3D.Zero)
         {
         }
-        //public override Item Dupe(Item item, int amount)
-        //{
-        //    BaseDoor new_door = item as BaseDoor;
-        //    //new_door.ClosedID = m_ClosedID;
-        //    //new_door.OpenedID = m_OpenedID;
-        //    //new_door.OpenedSound = m_OpenedSound;
-        //    //new_door.ClosedSound = m_ClosedSound;
-        //    //new_door.Facing = m_Facing;
 
-        //    new_door.CustomClosedID = m_CustomClosedID;
-        //    new_door.CustomClosedID = m_CustomOpenedID;
-        //    new_door.Facing = m_Facing;
-        //    new_door.KeyValue = m_KeyValue;
-        //    new_door.Open = m_Open;
-        //    new_door.Locked = m_Locked;
-        //    new_door.OpenedID = m_OpenedID;
-        //    new_door.ClosedID = m_ClosedID;
-        //    new_door.OpenedSound = m_OpenedSound;
-        //    new_door.ClosedSound = m_ClosedSound;
-        //    new_door.Offset = m_Offset;
-        //    new_door.Link = m_Link;
-
-        //    return base.Dupe(new_door, amount);
-        //}
-        //public override Item Dupe(int amount)
-        //{
-        //    return base.Dupe(new BaseDoor(m_Facing), amount);
-        //}
-        public override void CopyProperties(Item item)
-        {
-            base.CopyProperties(item);
-            BaseDoor new_door = item as BaseDoor;
-            if (new_door != null)
-            {
-                new_door.CustomClosedID = this.CustomClosedID;
-                new_door.CustomClosedID = this.CustomOpenedID;
-                new_door.Facing = this.Facing;
-                new_door.KeyValue = this.KeyValue;
-                new_door.Open = this.Open;
-                new_door.Locked = this.Locked;
-                new_door.OpenedID = (this.OpenedID - (2 * (int)this.Facing));
-                new_door.ClosedID = (this.ClosedID - (2 * (int)this.Facing));
-                new_door.OpenedSound = this.OpenedSound;
-                new_door.ClosedSound = this.ClosedSound;
-                new_door.Offset = this.Offset;
-                new_door.Link = this.Link;
-            }
-        }
         public BaseDoor(Serial serial)
             : base(serial)
         {

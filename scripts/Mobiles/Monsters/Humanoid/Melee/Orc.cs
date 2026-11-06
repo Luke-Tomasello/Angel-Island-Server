@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -46,7 +46,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 using Server.Misc;
 
@@ -88,10 +87,6 @@ namespace Server.Mobiles
             VirtualArmor = 28;
         }
 
-        public override bool CanRummageCorpses { get { return Core.RuleSets.AngelIslandRules() ? true : true; } }
-        public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 1 : 0; } }
-        public override int Meat { get { return 1; } }
-
         public override OppositionGroup OppositionGroup
         {
             get { return OppositionGroup.SavagesAndOrcs; }
@@ -99,24 +94,32 @@ namespace Server.Mobiles
 
         public override bool IsEnemy(Mobile m, RelationshipFilter filter)
         {
-            if (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled)
-                if (m.Player && m.FindItemOnLayer(Layer.Helm) is OrcishKinMask)
+            bool useMask = (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules());
+
+            if (useMask ||
+                (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled))
+            {
+                if (m.Player &&
+                    m.FindItemOnLayer(Layer.Helm) is OrcishKinMask)
+                {
                     return false;
+                }
+            }
 
             return base.IsEnemy(m, filter);
         }
 
-        public override void AggressiveAction(Mobile aggressor, bool criminal, object source = null)
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
         {
             base.AggressiveAction(aggressor, criminal);
 
             if (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled)
             {
-                Item item = aggressor.FindItemOnLayer(Layer.Helm);
+                Item? item = aggressor.FindItemOnLayer(Layer.Helm);
 
                 if (item is OrcishKinMask)
                 {
-                    AOS.Damage(aggressor, 50, 0, 100, 0, 0, 0, item);
+                    AOS.Damage(aggressor, 50, new DamageContext { Source = this });
                     item.Delete();
                     aggressor.FixedParticles(0x36BD, 20, 10, 5044, EffectLayer.Head);
                     aggressor.PlaySound(0x307);
@@ -138,12 +141,23 @@ namespace Server.Mobiles
             : base(serial)
         {
         }
+        public override bool CanRummageCorpses { get { return Core.RuleSets.AngelIslandRules() ? true : true; } }
+        public override int TreasureMapLevel { get { return Core.RuleSets.AllServerRules() ? 1 : 0; } }
+        public override int Meat { get { return 1; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20011217145644/uo.stratics.com/hunters/orc.shtml
+            // 0 to 50 Gold, Weapon, Thigh Boots, 1 Raw Ribs (carved)
+            // note: when you open the page for orcish lord from the 2002 stratics archive, you get this 2001 page
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
+                PackGold(0, 50);
+            }
+            else
+            {
                 switch (Utility.Random(20))
                 {
                     case 0: PackItem(new Scimitar()); break;
@@ -155,90 +169,6 @@ namespace Server.Mobiles
                 }
 
                 PackItem(new ThighBoots());
-                PackGold(25, 50);
-
-                switch (Utility.Random(3))
-                {
-                    case 0: PackItem(new Ribs()); break;
-                    case 1: PackItem(new Shaft()); break;
-                    case 2: PackItem(new Candle()); break;
-                }
-
-                if (0.2 > Utility.RandomDouble())
-                    PackItem(new BolaBall());
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20011217145644/uo.stratics.com/hunters/orc.shtml
-                    // 0 to 50 Gold, Weapon, Thigh Boots, 1 Raw Ribs (carved)
-                    // note: when you open the page for orcish lord from the 2002 stratics archive, you get this 2001 page
-
-                    if (Spawning)
-                    {
-                        PackGold(0, 50);
-                    }
-                    else
-                    {
-                        switch (Utility.Random(20))
-                        {
-                            case 0: PackItem(new Scimitar()); break;
-                            case 1: PackItem(new Katana()); break;
-                            case 2: PackItem(new WarMace()); break;
-                            case 3: PackItem(new WarHammer()); break;
-                            case 4: PackItem(new Kryss()); break;
-                            case 5: PackItem(new Pitchfork()); break;
-                        }
-
-                        PackItem(new ThighBoots());
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        switch (Utility.Random(20))
-                        {
-                            case 0: PackItem(new Scimitar()); break;
-                            case 1: PackItem(new Katana()); break;
-                            case 2: PackItem(new WarMace()); break;
-                            case 3: PackItem(new WarHammer()); break;
-                            case 4: PackItem(new Kryss()); break;
-                            case 5: PackItem(new Pitchfork()); break;
-                        }
-
-                        PackItem(new ThighBoots());
-
-                        switch (Utility.Random(3))
-                        {
-                            case 0: PackItem(new Ribs()); break;
-                            case 1: PackItem(new Shaft()); break;
-                            case 2: PackItem(new Candle()); break;
-                        }
-
-                        // http://www.uoguide.com/Savage_Empire
-                        // http://uo.stratics.com/secrets/archive/orcsavage.shtml
-                        // Bola balls have appeared as loot on Orc Bombers. Balls on Bombers are rather common, around a 50/50% chance of getting a ball or not. They are only appearing as loot on bombers.
-                        if (PublishInfo.PublishDate >= Core.EraSAVE)
-                            if (0.2 > Utility.RandomDouble())
-                                PackItem(new BolaBall());
-                    }
-
-                    AddLoot(LootPack.Meager);
-                }
             }
         }
 

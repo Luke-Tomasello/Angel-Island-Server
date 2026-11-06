@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -57,7 +57,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 using System;
 
@@ -177,44 +176,18 @@ namespace Server.Mobiles
         }
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020207053514/uo.stratics.com/hunters/brigand.shtml
+            // 100 - 200 Gold, Clothing
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=126
+            // 50 - 150 Gold
+            // Special: Clothes, Weapon
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(100, 150);
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                // if we are in our own stronghold, add 1/3 more gold+
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(100, 200);
             }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020207053514/uo.stratics.com/hunters/brigand.shtml
-                    // 100 - 200 Gold, Clothing
 
-                    if (Spawning)
-                    {
-                        PackGold(100, 200);
-                    }
-
-                    // note: I believe the stratics docs are incomplete here as I'm sure the brigand also drops "weapon carried"
-                    //	in lieu of new information we will drop this weapon.
-                }
-                else
-                {
-                    AddLoot(LootPack.Average);
-                }
-            }
+            // his clothes and weapons drop by default
         }
 
         public override void Serialize(GenericWriter writer)

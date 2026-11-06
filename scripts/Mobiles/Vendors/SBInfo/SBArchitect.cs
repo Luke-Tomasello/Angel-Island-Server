@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -93,7 +93,7 @@ namespace Server.Mobiles
                     Add(new GenericBuyInfo("Survey Tool", typeof(SurveyTool), BaseVendor.PlayerPays(typeof(SurveyTool)), 20, 0x14F6, 0));
 
                 // 2/3/24, Yoar: Added house door addon for Siege II
-                if (Core.RuleSets.AngelIslandRules() || Core.SiegeII_CFG)
+                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules(2) || Core.RuleSets.UpheavalRules())
                 {
                     Add(new GenericBuyInfo(typeof(MetalHouseDoorDeed), BaseVendor.PlayerPays(typeof(MetalHouseDoorDeed)), 20, 0x14F0, 0));
                     Add(new GenericBuyInfo(typeof(DarkWoodHouseDoorDeed), BaseVendor.PlayerPays(typeof(DarkWoodHouseDoorDeed)), 20, 0x14F0, 0));

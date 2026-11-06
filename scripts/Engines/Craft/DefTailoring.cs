@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -60,7 +60,7 @@ namespace Server.Engines.Craft
             get { return 1044005; } // <CENTER>TAILORING MENU</CENTER>
         }
 
-        private static CraftSystem m_CraftSystem;
+        private static CraftSystem? m_CraftSystem;
 
         public static CraftSystem CraftSystem
         {
@@ -97,9 +97,9 @@ namespace Server.Engines.Craft
             return 0;
         }
 
-        private Type GetResourceType(Type itemType)
+        private Type? GetResourceType(Type itemType)
         {
-            CraftItem craftItem = CraftItems.SearchFor(itemType);
+            CraftItem? craftItem = CraftItems.SearchFor(itemType);
 
             if (craftItem != null && craftItem.Resources.Count == 1)
                 return craftItem.Resources.GetAt(0).ItemType;
@@ -107,7 +107,7 @@ namespace Server.Engines.Craft
             return null;
         }
 
-        public override void PlayCraftEffect(Mobile from, object obj = null)
+        public override void PlayCraftEffect(Mobile from, object? obj = null)
         {
             from.PlaySound(0x248);
         }
@@ -165,8 +165,8 @@ namespace Server.Engines.Craft
             AddCraft(typeof(PlainDress), 1015269, 1027937, 12.4, 37.4, typeof(Cloth), 1044286, 10, 1044287);
             AddCraft(typeof(FancyDress), 1015269, 1027935, 33.1, 58.1, typeof(Cloth), 1044286, 12, 1044287);
             AddCraft(typeof(Cloak), 1015269, 1025397, 41.4, 66.4, typeof(Cloth), 1044286, 14, 1044287);
-            double minSkill = ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) ? 53.9 : 53.9);
-            double maxSkill = ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) ? 75.9 : 78.9);
+            double minSkill = ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) ? 53.9 : 53.9);
+            double maxSkill = ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) ? 75.9 : 78.9);
             AddCraft(typeof(Robe), 1015269, 1027939, minSkill, maxSkill, typeof(Cloth), 1044286, 16, 1044287);
             AddCraft(typeof(JesterSuit), 1015269, 1028095, 8.2, 33.2, typeof(Cloth), 1044286, 24, 1044287);
 
@@ -190,8 +190,8 @@ namespace Server.Engines.Craft
             AddCraft(typeof(BodySash), 1015283, 1025441, 4.1, 29.1, typeof(Cloth), 1044286, 4, 1044287);
             AddCraft(typeof(HalfApron), 1015283, 1025435, 20.7, 45.7, typeof(Cloth), 1044286, 6, 1044287);
             AddCraft(typeof(FullApron), 1015283, 1025437, 29.0, 54.0, typeof(Cloth), 1044286, 10, 1044287);
-            minSkill = ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) ? 74.6 : 74.6);
-            maxSkill = ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) ? 75.9 : 99.6);
+            minSkill = ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) ? 74.6 : 74.6);
+            maxSkill = ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) ? 75.9 : 99.6);
             AddCraft(typeof(OilCloth), 1015283, 1041498, minSkill, maxSkill, typeof(Cloth), 1044286, 1, 1044287);
 
             int index = AddCraft(typeof(UncutCloth), 1015283, 1025988, 0.0, 0.0, typeof(Cloth), 1044286, 1, 1044287); // transform cloth into "folded cloth"
@@ -199,6 +199,88 @@ namespace Server.Engines.Craft
 
             if (Core.RuleSets.AngelIslandRules())
                 AddCraft(typeof(ClothGloves), 1015283, "cloth gloves", SkillName.Tailoring, 74.6, 75.6,/*74.6, 99.9,*/ typeof(Cloth), "Cloth", 3, 1044287);
+
+            #region Shipbuilding
+            TextDefinition shipbuildingGroup = "Shipbuilding";
+
+            #region Precursor Materials
+            index = AddCraft(typeof(MarineRope), shipbuildingGroup, "marine rope",
+                50.0, 75.0,
+                typeof(SpoolOfThread), "spools of thread",
+                3,
+                "You do not have enough spools of thread.");
+
+            AddRes(index, typeof(Beeswax), "bees wax", 1,
+                "You do not have enough bees wax.");
+            #endregion Precursor Materials
+
+            index = AddCraft(typeof(SmallBoatSailsCraft), shipbuildingGroup, "small boat sails",
+                ShipPlans.GetMinSkill(BoatType.SmallBoat, ShipAssemblyParts.Sails),
+                ShipPlans.GetMaxSkill(BoatType.SmallBoat, ShipAssemblyParts.Sails),
+                typeof(Cloth), 1044286,
+                ShipPlans.GetRequiredAmount(BoatType.SmallBoat, ShipAssemblyParts.Sails, typeof(Cloth)),
+                1044287);
+            AddRes(index, typeof(SpoolOfThread), "spools of thread",
+                ShipPlans.GetRequiredAmount(BoatType.SmallBoat, ShipAssemblyParts.Sails, typeof(SpoolOfThread)),
+                "You do not have enough spools of thread.");
+            SetNeedShipPlans(index, BoatType.SmallBoat, ShipAssemblyParts.Sails);
+
+            index = AddCraft(typeof(SmallDragonBoatSailsCraft), shipbuildingGroup, "small dragon boat sails",
+                ShipPlans.GetMinSkill(BoatType.SmallDragonBoat, ShipAssemblyParts.Sails),
+                ShipPlans.GetMaxSkill(BoatType.SmallDragonBoat, ShipAssemblyParts.Sails),
+                typeof(Cloth), 1044286,
+                ShipPlans.GetRequiredAmount(BoatType.SmallDragonBoat, ShipAssemblyParts.Sails, typeof(Cloth)),
+                1044287);
+            AddRes(index, typeof(SpoolOfThread), "spools of thread",
+                ShipPlans.GetRequiredAmount(BoatType.SmallDragonBoat, ShipAssemblyParts.Sails, typeof(SpoolOfThread)),
+                "You do not have enough spools of thread.");
+            SetNeedShipPlans(index, BoatType.SmallDragonBoat, ShipAssemblyParts.Sails);
+
+            index = AddCraft(typeof(MediumBoatSailsCraft), shipbuildingGroup, "medium boat sails",
+                ShipPlans.GetMinSkill(BoatType.MediumBoat, ShipAssemblyParts.Sails),
+                ShipPlans.GetMaxSkill(BoatType.MediumBoat, ShipAssemblyParts.Sails),
+                typeof(Cloth), 1044286,
+                ShipPlans.GetRequiredAmount(BoatType.MediumBoat, ShipAssemblyParts.Sails, typeof(Cloth)),
+                1044287);
+            AddRes(index, typeof(SpoolOfThread), "spools of thread",
+                ShipPlans.GetRequiredAmount(BoatType.MediumBoat, ShipAssemblyParts.Sails, typeof(SpoolOfThread)),
+                "You do not have enough spools of thread.");
+            SetNeedShipPlans(index, BoatType.MediumBoat, ShipAssemblyParts.Sails);
+
+            index = AddCraft(typeof(MediumDragonBoatSailsCraft), shipbuildingGroup, "medium dragon boat sails",
+                ShipPlans.GetMinSkill(BoatType.MediumDragonBoat, ShipAssemblyParts.Sails),
+                ShipPlans.GetMaxSkill(BoatType.MediumDragonBoat, ShipAssemblyParts.Sails),
+                typeof(Cloth), 1044286,
+                ShipPlans.GetRequiredAmount(BoatType.MediumDragonBoat, ShipAssemblyParts.Sails, typeof(Cloth)),
+                1044287);
+            AddRes(index, typeof(SpoolOfThread), "spools of thread",
+                ShipPlans.GetRequiredAmount(BoatType.MediumDragonBoat, ShipAssemblyParts.Sails, typeof(SpoolOfThread)),
+                "You do not have enough spools of thread.");
+            SetNeedShipPlans(index, BoatType.MediumDragonBoat, ShipAssemblyParts.Sails);
+
+            index = AddCraft(typeof(LargeBoatSailsCraft), shipbuildingGroup, "large boat sails",
+                ShipPlans.GetMinSkill(BoatType.LargeBoat, ShipAssemblyParts.Sails),
+                ShipPlans.GetMaxSkill(BoatType.LargeBoat, ShipAssemblyParts.Sails),
+                typeof(Cloth), 1044286,
+                ShipPlans.GetRequiredAmount(BoatType.LargeBoat, ShipAssemblyParts.Sails, typeof(Cloth)),
+                1044287);
+            AddRes(index, typeof(SpoolOfThread), "spools of thread",
+                ShipPlans.GetRequiredAmount(BoatType.LargeBoat, ShipAssemblyParts.Sails, typeof(SpoolOfThread)),
+                "You do not have enough spools of thread.");
+            SetNeedShipPlans(index, BoatType.LargeBoat, ShipAssemblyParts.Sails);
+
+            index = AddCraft(typeof(LargeDragonBoatSailsCraft), shipbuildingGroup, "large dragon boat sails",
+                ShipPlans.GetMinSkill(BoatType.LargeDragonBoat, ShipAssemblyParts.Sails),
+                ShipPlans.GetMaxSkill(BoatType.LargeDragonBoat, ShipAssemblyParts.Sails),
+                typeof(Cloth), 1044286,
+                ShipPlans.GetRequiredAmount(BoatType.LargeDragonBoat, ShipAssemblyParts.Sails, typeof(Cloth)),
+                1044287);
+            AddRes(index, typeof(SpoolOfThread), "spools of thread",
+                ShipPlans.GetRequiredAmount(BoatType.LargeDragonBoat, ShipAssemblyParts.Sails, typeof(SpoolOfThread)),
+                "You do not have enough spools of thread.");
+            SetNeedShipPlans(index, BoatType.LargeDragonBoat, ShipAssemblyParts.Sails);
+
+            #endregion Shipbuilding
 
             // Footwear
             if (Core.RuleSets.AOSRules())

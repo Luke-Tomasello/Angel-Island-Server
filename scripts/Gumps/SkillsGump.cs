@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -94,7 +94,7 @@ namespace Server.Scripts.Gumps
                 {
                     if (m_From.AccessLevel >= AccessLevel.GameMaster)
                     {
-                        TextRelay text = info.GetTextEntry(0);
+                        TextRelay? text = info.GetTextEntry(0);
 
                         if (text != null)
                         {
@@ -224,7 +224,7 @@ namespace Server.Scripts.Gumps
         private Mobile m_Target;
 
         private SkillsGumpGroup[] m_Groups;
-        private SkillsGumpGroup m_Selected;
+        private SkillsGumpGroup? m_Selected;
 
         public override void OnResponse(NetState sender, RelayInfo info)
         {
@@ -316,7 +316,7 @@ namespace Server.Scripts.Gumps
         {
         }
 
-        public SkillsGump(Mobile from, Mobile target, SkillsGumpGroup selected)
+        public SkillsGump(Mobile from, Mobile target, SkillsGumpGroup? selected)
             : base(GumpOffsetX, GumpOffsetY)
         {
             m_From = from;
@@ -477,7 +477,7 @@ namespace Server.Scripts.Gumps
             {
             }
 
-            public int Compare(object x, object y)
+            public int Compare(object? x, object? y)
             {
                 SkillName a = (SkillName)x;
                 SkillName b = (SkillName)y;

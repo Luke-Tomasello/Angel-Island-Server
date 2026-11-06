@@ -1,0 +1,27 @@
+{
+  "Type": "PirateDeckHand",
+  "SavedLocal": "2026-03-05 17:11:02",
+  "Stats": {
+    "Str": 186,
+    "Dex": 94,
+    "Int": 67,
+    "Hits": 164,
+    "VirtualArmor": 31,
+    "Damage": 24
+  },
+  "Behavior": {
+    "UsesHumanWeapons": false,
+    "UsesBandages": true,
+    "UsesPotions": false,
+    "CanRun": true,
+    "CanReveal": true
+  },
+  "Skills": {
+    "Meditation": 0.1,
+    "MagicResist": 38.0,
+    "Healing": 58.0,
+    "Swords": 64.0,
+    "Tactics": 64.5,
+    "Anatomy": 57.1
+  }
+}

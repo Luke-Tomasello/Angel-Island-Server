@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -90,11 +90,6 @@ namespace Server.Items
         public TeleporterPairAddon(Serial serial)
             : base(serial)
         {
-        }
-
-        public void AddTeleporterPiece(AddonComponent component, int x, int y, int z)
-        {
-            AddComponent(component, x, y, z);
         }
 
         public override void Serialize(GenericWriter writer)
@@ -241,8 +236,8 @@ namespace Server.Items
                 m_Deed.SecondLocation = targettedPoint;
                 m_Deed.m_Map = from.Map;
 
-                BaseHouse h1 = Server.Multis.BaseHouse.FindHouseAt(m_Deed.FirstLocation, from.Map, 2);
-                BaseHouse h2 = Server.Multis.BaseHouse.FindHouseAt(m_Deed.SecondLocation, from.Map, 2);
+                BaseHouse? h1 = Server.Multis.BaseHouse.FindHouseAt(m_Deed.FirstLocation, from.Map, 2);
+                BaseHouse? h2 = Server.Multis.BaseHouse.FindHouseAt(m_Deed.SecondLocation, from.Map, 2);
                 if (h1 == null || h2 == null || h1 != h2)
                 {
                     from.SendMessage("The two targets are not in the same house.");
@@ -272,7 +267,7 @@ namespace Server.Items
         private Map m_MapDest;
 
         private bool m_SparkleOn;
-        private Item m_Sparkle;
+        private Item? m_Sparkle;
 
         public TeleporterAC()
             : base(6174)
@@ -356,7 +351,7 @@ namespace Server.Items
 
         public override void OnDoubleClick(Mobile from)
         {
-            BaseHouse house = Server.Multis.BaseHouse.FindHouseAt(this);
+            BaseHouse? house = Server.Multis.BaseHouse.FindHouseAt(this);
 
             if (from.AccessLevel >= AccessLevel.GameMaster)
             {

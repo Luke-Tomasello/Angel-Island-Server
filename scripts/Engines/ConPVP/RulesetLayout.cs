@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -32,7 +32,7 @@ namespace Server.Engines.ConPVP
 {
     public class RulesetLayout
     {
-        private static RulesetLayout m_Root;
+        private static RulesetLayout? m_Root;
 
         public static RulesetLayout Root
         {
@@ -102,188 +102,16 @@ namespace Server.Engines.ConPVP
                             } )
                         },
                         // Yoar: not relevant
-#if false
-                        Core.RuleSets.AOSRules() ? new string[] { "OSI Casting" } : new string[0]));
-#else
                         new string[0])); // no options
-#endif
 
                     if (Core.RuleSets.AOSRules())
                     {
                         // Yoar: not relevant
-#if false
-                        entries.Add(new RulesetLayout("Chivalry", new string[]
-                            {
-                                "Cleanse by Fire",
-                                "Close Wounds",
-                                "Consecrate Weapon",
-                                "Dispel Evil",
-                                "Divine Fury",
-                                "Enemy of One",
-                                "Holy Light",
-                                "Noble Sacrifice",
-                                "Remove Curse",
-                                "Sacred Journey"
-                            }));
-
-                        entries.Add(new RulesetLayout("Necromancy", new string[]
-                            {
-                                "Animate Dead",
-                                "Blood Oath",
-                                "Corpse Skin",
-                                "Curse Weapon",
-                                "Evil Omen",
-                                "Horrific Beast",
-                                "Lich Form",
-                                "Mind Rot",
-                                "Pain Spike",
-                                "Poison Strike",
-                                "Strangle",
-                                "Summon Familiar",
-                                "Vampiric Embrace",
-                                "Vengeful Spirit",
-                                "Wither",
-                                "Wraith Form"
-                            }));
-
-                        if (Core.RuleSets.SERules())
-                        {
-                            entries.Add(new RulesetLayout("Bushido", new string[]
-                                {
-                                    "Confidence",
-                                    "Counter Attack",
-                                    "Evasion",
-                                    "Honorable Execution",
-                                    "Lightning Strike",
-                                    "Momentum Strike"
-                                }));
-
-                            entries.Add(new RulesetLayout("Ninjitsu", new string[]
-                                {
-                                    "Animal Form",
-                                    "Backstab",
-                                    "Death Strike",
-                                    "Focus Attack",
-                                    "Ki Attack",
-                                    "Mirror Image",
-                                    "Shadow Jump",
-                                    "Surprise Attack"
-                                }));
-
-                            if (Core.RuleSets.MLRules())
-                            {
-                                entries.Add(new RulesetLayout("Spellweaving", new string[]
-                                    {
-                                        "Arcane Circle",
-                                        "Arcane Empowerment",
-                                        "Attune Weapon",
-                                        "Dryad Allure",
-                                        "Essence of Wind",
-                                        "Ethereal Voyage",
-                                        "Gift of Life",
-                                        "Gift of Renewal",
-                                        "Immolating Weapon",
-                                        "Nature's Fury",
-                                        "Reaper Form",
-                                        "Summon Fey",
-                                        "Summon Fiend",
-                                        "Thunderstorm",
-                                        "Wildfire",
-                                        "Word of Death"
-                                    }));
-                            }
-                        }
-#endif
                     }
 
                     if (Core.RuleSets.AOSRules())
                     {
                         // Yoar: not relevant
-#if false
-                        if (Core.RuleSets.MLRules())
-                        {
-                            entries.Add(new RulesetLayout("Combat Abilities", new string[]
-                                {
-                                    "Armor Ignore",
-                                    "Bleed Attack",
-                                    "Concussion Blow",
-                                    "Crushing Blow",
-                                    "Disarm",
-                                    "Dismount",
-                                    "Double Strike",
-                                    "Infectious Strike",
-                                    "Mortal Strike",
-                                    "Moving Shot",
-                                    "Paralyzing Blow",
-                                    "Shadow Strike",
-                                    "Whirlwind Attack",
-                                    "Riding Swipe",
-                                    "Frenzied Whirlwind",
-                                    "Block",
-                                    "Defense Mastery",
-                                    "Nerve Strike",
-                                    "Talon Strike",
-                                    "Feint",
-                                    "Dual Wield",
-                                    "Double Shot",
-                                    "Armor Pierce",
-                                    "Bladeweave",
-                                    "Force Arrow",
-                                    "Lightning Arrow",
-                                    "Psychic Attack",
-                                    "Serpent Arrow",
-                                    "Force Of Nature",
-                                }));
-                        }
-                        else if (Core.RuleSets.SERules())
-                        {
-                            entries.Add(new RulesetLayout("Combat Abilities", new string[]
-                                {
-                                    "Armor Ignore",
-                                    "Bleed Attack",
-                                    "Concussion Blow",
-                                    "Crushing Blow",
-                                    "Disarm",
-                                    "Dismount",
-                                    "Double Strike",
-                                    "Infectious Strike",
-                                    "Mortal Strike",
-                                    "Moving Shot",
-                                    "Paralyzing Blow",
-                                    "Shadow Strike",
-                                    "Whirlwind Attack",
-                                    "Riding Swipe",
-                                    "Frenzied Whirlwind",
-                                    "Block",
-                                    "Defense Mastery",
-                                    "Nerve Strike",
-                                    "Talon Strike",
-                                    "Feint",
-                                    "Dual Wield",
-                                    "Double Shot",
-                                    "Armor Pierce"
-                                }));
-                        }
-                        else
-                        {
-                            entries.Add(new RulesetLayout("Combat Abilities", new string[]
-                                {
-                                    "Armor Ignore",
-                                    "Bleed Attack",
-                                    "Concussion Blow",
-                                    "Crushing Blow",
-                                    "Disarm",
-                                    "Dismount",
-                                    "Double Strike",
-                                    "Infectious Strike",
-                                    "Mortal Strike",
-                                    "Moving Shot",
-                                    "Paralyzing Blow",
-                                    "Shadow Strike",
-                                    "Whirlwind Attack"
-                                }));
-                        }
-#endif
                     }
                     else
                     {
@@ -313,22 +141,6 @@ namespace Server.Engines.ConPVP
                     if (Core.RuleSets.AngelIslandRules())
                     {
                         // Yoar: not relevant
-#if false
-                        entries.Add(new RulesetLayout("Weapons", new string[]
-                            {
-                                "Magical",
-                                "Melee",
-                                "Ranged",
-                                "Poisoned",
-                                "Wrestling"
-                            }));
-
-                        entries.Add(new RulesetLayout("Armor", new string[]
-                            {
-                                "Magical",
-                                "Shields"
-                            }));
-#endif
                     }
                     else
                     {
@@ -350,44 +162,9 @@ namespace Server.Engines.ConPVP
                             }));
                     }
 
-                    if (Core.RuleSets.SERules())
+                    if (Core.RuleSets.SamuraiEmpireRules())
                     {
                         // Yoar: not relevant
-#if false
-                        entries.Add(new RulesetLayout("Items", new RulesetLayout[]
-                            {
-                                new RulesetLayout( "Potions", new string[]
-                                {
-                                    "Agility",
-                                    "Cure",
-                                    "Explosion",
-                                    "Heal",
-                                    "Nightsight",
-                                    "Poison",
-                                    "Refresh",
-                                    "Strength",
-                                    // TODO: Move to ML case?
-                                    "Confusion Blast",
-                                    "Conflagration",
-                                    "Invisibility"
-                                } )
-                            },
-                            new string[]
-                            {
-                                "Bandages",
-                                "Wands",
-                                "Trapped Containers",
-                                "Bolas",
-                                "Mounts",
-                                "Orange Petals",
-                                "Shurikens",
-                                "Fukiya Darts",
-                                "Fire Horns",
-                                "Free Consume",
-                                // TODO: Move to ML case?
-                                "Enchanted Food"
-                            }));
-#endif
                     }
                     else
                     {
@@ -584,126 +361,6 @@ namespace Server.Engines.ConPVP
                     else
                     {
                         // Yoar: not relevant
-#if false
-                        #region Standard All Skills
-
-                        Ruleset all = new Ruleset(m_Root);
-
-                        all.Title = "Standard All Skills";
-
-
-                        all.SetOptionRange("Spells", true);
-
-                        all.SetOption("Spells", "Wall of Stone", false);
-                        all.SetOption("Spells", "Fire Field", false);
-                        all.SetOption("Spells", "Poison Field", false);
-                        all.SetOption("Spells", "Energy Field", false);
-                        all.SetOption("Spells", "Teleport", false);
-                        all.SetOption("Spells", "Wall of Stone", false);
-                        all.SetOption("Spells", "Arch Protection", false);
-                        all.SetOption("Spells", "Recall", false);
-                        all.SetOption("Spells", "Blade Spirits", false);
-                        all.SetOption("Spells", "Incognito", false);
-                        all.SetOption("Spells", "Magic Reflection", false);
-                        all.SetOption("Spells", "Paralyze", false);
-                        all.SetOption("Spells", "Summon Creature", false);
-                        all.SetOption("Spells", "Invisibility", false);
-                        all.SetOption("Spells", "Mark", false);
-                        all.SetOption("Spells", "Paralyze Field", false);
-                        all.SetOption("Spells", "Energy Field", false);
-                        all.SetOption("Spells", "Gate Travel", false);
-                        all.SetOption("Spells", "Polymorph", false);
-                        all.SetOption("Spells", "Energy Vortex", false);
-                        all.SetOption("Spells", "Air Elemental", false);
-                        all.SetOption("Spells", "Summon Daemon", false);
-                        all.SetOption("Spells", "Earth Elemental", false);
-                        all.SetOption("Spells", "Fire Elemental", false);
-                        all.SetOption("Spells", "Water Elemental", false);
-                        all.SetOption("Spells", "Earthquake", false);
-                        all.SetOption("Spells", "Meteor Swarm", false);
-                        all.SetOption("Spells", "Chain Lightning", false);
-                        all.SetOption("Spells", "Resurrection", false);
-
-                        all.SetOption("Spells", "OSI Casting", false);
-
-                        all.SetOptionRange("Necromancy", true);
-                        all.SetOption("Necromancy", "Summon Familiar", false);
-                        all.SetOption("Necromancy", "Vengeful Spirit", false);
-                        all.SetOption("Necromancy", "Animate Dead", false);
-                        all.SetOption("Necromancy", "Wither", false);
-                        all.SetOption("Necromancy", "Poison Strike", false);
-
-                        all.SetOptionRange("Chivalry", true);
-                        all.SetOption("Chivalry", "Sacred Journey", false);
-                        all.SetOption("Chivalry", "Enemy of One", false);
-                        all.SetOption("Chivalry", "Noble Sacrifice", false);
-
-                        all.SetOptionRange("Combat Abilities", true);
-                        all.SetOption("Combat Abilities", "Paralyzing Blow", false);
-                        all.SetOption("Combat Abilities", "Shadow Strike", false);
-
-                        all.SetOption("Skills", "Anatomy", true);
-                        all.SetOption("Skills", "Detect Hidden", true);
-                        all.SetOption("Skills", "Poisoning", true);
-                        all.SetOption("Skills", "Spirit Speak", true);
-                        all.SetOption("Skills", "Evaluating Intelligence", true);
-
-                        all.SetOptionRange("Weapons", true);
-                        all.SetOption("Weapons", "Poisoned", false);
-
-                        all.SetOptionRange("Armor", true);
-
-                        all.SetOptionRange("Ninjitsu", true);
-                        all.SetOption("Ninjitsu", "Animal Form", false);
-                        all.SetOption("Ninjitsu", "Mirror Image", false);
-                        all.SetOption("Ninjitsu", "Backstab", false);
-                        all.SetOption("Ninjitsu", "Surprise Attack", false);
-                        all.SetOption("Ninjitsu", "Shadow Jump", false);
-
-                        all.SetOptionRange("Bushido", true);
-
-                        all.SetOptionRange("Spellweaving", true);
-                        all.SetOption("Spellweaving", "Gift of Life", false);
-                        all.SetOption("Spellweaving", "Summon Fey", false);
-                        all.SetOption("Spellweaving", "Summon Fiend", false);
-                        all.SetOption("Spellweaving", "Nature's Fury", false);
-                        all.SetOption("Spellweaving", "Essence of Wind", false);
-
-                        all.SetOption("Potions", "Refresh", true);
-                        all.SetOption("Items", "Bandages", true);
-                        all.SetOption("Items", "Trapped Containers", true);
-
-                        Ruleset field = new Ruleset(m_Root);
-
-                        field.Title = "Standard Field Rules";
-
-                        field.Options.SetAll(true);
-
-                        field.SetOption("Items", "Free Consume", false);
-                        field.SetOption("Spells", "OSI Casting", false);
-
-                        // No travel spells
-                        field.SetOption("Spells", "Recall", false);
-                        field.SetOption("Spells", "Gate Travel", false);
-                        field.SetOption("Spells", "Mark", false);
-                        field.SetOption("Chivalry", "Sacred Journey", false);
-
-                        // No resurrection
-                        field.SetOption("Spells", "Resurrection", false);
-                        field.SetOption("Chivalry", "Noble Sacrifice", false);
-
-                        // No hiding/stealth
-                        field.SetOption("Skills", "Hiding", false);
-                        field.SetOption("Skills", "Stealth", false);
-                        field.SetOption("Spells", "Invisibility", false);
-                        field.SetOption("Potions", "Invisibility", false);
-                        field.SetOption("Ninjitsu", "Backstab", false);
-                        field.SetOption("Ninjitsu", "Surprise Attack", false);
-                        field.SetOption("Ninjitsu", "Shadow Jump", false);
-
-                        m_Root.Defaults = new Ruleset[] { all, field };
-                        #endregion
-#endif
                     }
 
                     // Set up flavors
@@ -715,11 +372,6 @@ namespace Server.Engines.ConPVP
                     pots.SetOptionRange("Potions", true);
                     pots.SetOption("Potions", "Explosion", false);
                     // Yoar: not relevant
-#if false
-                    pots.SetOption("Potions", "Confusion Blast", false);
-                    pots.SetOption("Potions", "Conflagration", false);
-                    pots.SetOption("Potions", "Invisibility", false);
-#endif
 
                     Ruleset para = new Ruleset(m_Root);
 
@@ -727,9 +379,6 @@ namespace Server.Engines.ConPVP
                     para.SetOption("Spells", "Paralyze", true);
                     para.SetOption("Spells", "Paralyze Field", true);
                     // Yoar: not relevant
-#if false
-                    para.SetOption("Combat Abilities", "Paralyzing Blow", true);
-#endif
 
                     Ruleset fields = new Ruleset(m_Root);
 
@@ -739,9 +388,6 @@ namespace Server.Engines.ConPVP
                     fields.SetOption("Spells", "Poison Field", true);
                     fields.SetOption("Spells", "Energy Field", true);
                     // Yoar: not relevant
-#if false
-                    fields.SetOption("Spells", "Wildfire", true);
-#endif
 
                     Ruleset area = new Ruleset(m_Root);
 
@@ -750,11 +396,6 @@ namespace Server.Engines.ConPVP
                     area.SetOption("Spells", "Meteor Swarm", true);
                     area.SetOption("Spells", "Chain Lightning", true);
                     // Yoar: not relevant
-#if false
-                    area.SetOption("Necromancy", "Wither", true);
-                    area.SetOption("Necromancy", "Poison Strike", true);
-                    area.SetOption("Spellweaving", "Essence of Wind", true);
-#endif
 
                     Ruleset summons = new Ruleset(m_Root);
 
@@ -767,15 +408,6 @@ namespace Server.Engines.ConPVP
                     summons.SetOption("Spells", "Fire Elemental", true);
                     summons.SetOption("Spells", "Water Elemental", true);
                     // Yoar: not relevant
-#if false
-                    summons.SetOption("Necromancy", "Summon Familiar", true);
-                    summons.SetOption("Necromancy", "Vengeful Spirit", true);
-                    summons.SetOption("Necromancy", "Animate Dead", true);
-                    summons.SetOption("Ninjitsu", "Mirror Image", true);
-                    summons.SetOption("Spellweaving", "Summon Fey", true);
-                    summons.SetOption("Spellweaving", "Summon Fiend", true);
-                    summons.SetOption("Spellweaving", "Nature's Fury", true);
-#endif
 
                     m_Root.Flavors = new Ruleset[] { pots, para, fields, area, summons };
                 }
@@ -808,14 +440,14 @@ namespace Server.Engines.ConPVP
         public Ruleset[] Defaults { get { return m_Defaults; } set { m_Defaults = value; } }
         public Ruleset[] Flavors { get { return m_Flavors; } set { m_Flavors = value; } }
 
-        public RulesetLayout FindByTitle(string title)
+        public RulesetLayout? FindByTitle(string title)
         {
             if (m_Title == title)
                 return this;
 
             for (int i = 0; i < m_Children.Length; ++i)
             {
-                RulesetLayout layout = m_Children[i].FindByTitle(title);
+                RulesetLayout? layout = m_Children[i].FindByTitle(title);
 
                 if (layout != null)
                     return layout;
@@ -824,14 +456,14 @@ namespace Server.Engines.ConPVP
             return null;
         }
 
-        public string FindByIndex(int index)
+        public string? FindByIndex(int index)
         {
             if (index >= m_Offset && index < (m_Offset + m_Options.Length))
                 return m_Description + ": " + m_Options[index - m_Offset];
 
             for (int i = 0; i < m_Children.Length; ++i)
             {
-                string opt = m_Children[i].FindByIndex(index);
+                string? opt = m_Children[i].FindByIndex(index);
 
                 if (opt != null)
                     return opt;
@@ -840,7 +472,7 @@ namespace Server.Engines.ConPVP
             return null;
         }
 
-        public RulesetLayout FindByOption(string title, string option, ref int index)
+        public RulesetLayout? FindByOption(string? title, string option, ref int index)
         {
             if (title == null || m_Title == title)
             {
@@ -854,7 +486,7 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < m_Children.Length; ++i)
             {
-                RulesetLayout layout = m_Children[i].FindByOption(title, option, ref index);
+                RulesetLayout? layout = m_Children[i].FindByOption(title, option, ref index);
 
                 if (layout != null)
                     return layout;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -31,9 +31,42 @@
  *	        Key to 'gate' not chest, on guard.
  */
 
+/* BasePrisonerCamp - overview
+ *  Purpose
+ *      The 'prisoner' encounters of the dungeon Wrong. Each camp sits in or near a jail cell and spawns:
+ *          o a DungeonTreasureChest (level 1-4, scaled; 20% chance of a PortKey)
+ *          o a guard, outside the cell (base: Brigand, 10% BrigandLeader). The guard carries the gold key
+ *              to the cell door(s), not the chest.
+ *          o a prisoner, inside the cell (base: Noble or SeekerOfAdventure, both escortable). The prisoner
+ *              yells for help when a player comes within EventRange.
+ *      The variants live in PrisonerCamps.cs:
+ *          WrongPrisonerNorth      Brigand/BrigandLeader guard, Noble/Seeker prisoner
+ *          WrongPrisonerLizardman  no guard, Lizardman prisoner
+ *          WrongPrisonerWest       EvilMage/EvilMageLord guard, GolemController prisoner
+ *          WrongPrisonerLastMeal   Brigand/BrigandLeader guard, Noble/Seeker prisoner
+ *          WrongExecuteNoble       Executioner guard, Noble/Seeker prisoner
+ *          WrongExecuteController  Executioner guard, GolemController prisoner
+ *      These camps are the main source of the red (murderer) NPCs in Wrong. If the camps stop being built,
+ *      Wrong loses its reds.
+ *
+ *  Gate and key
+ *      ManageLock() waits (polling every 0.5 s) until the guard is off the internal map, then finds this
+ *      camp's cell: every BarredMetalDoor within 3 tiles of the guard's post (Home) plus its Link'ed half.
+ *      Those doors are locked to a new random key value and the matching gold key (UnStealable, but
+ *      lootable from the corpse) is always packed on the guard. A camp with no barred cell door at its
+ *      guard post gets no key and touches no doors. The 3-tile radius matters: the camp's own doors are 2-3
+ *      tiles from the post, and the nearest neighboring cell door is 4 or more.
+ *
+ *  Respawn
+ *      This class does not manage respawn. It inherits BaseCamp's corruption model: killing the guard or
+ *      the prisoner, escorting the prisoner away, or unlocking the chest corrupts the camp. The whole camp
+ *      then decays and its spawner rebuilds it. See BaseCamp.cs for the details.
+ */
+
 using Server.Items;
 using Server.Mobiles;
 using System;
+using System.Collections.Generic;
 
 namespace Server.Multis
 {
@@ -63,7 +96,7 @@ namespace Server.Multis
             int x = 0;
             int y = 9;
 
-            Mobile m = null;
+            Mobile? m = null;
             if (Utility.Chance(0.10))
                 m = new BrigandLeader();
             else
@@ -89,23 +122,41 @@ namespace Server.Multis
                     return;
                 }
 
-                Point3D loc = m.Location;
-                Key key = new Key(KeyType.Gold);
-                key.KeyValue = Key.RandomValue();
-                IPooledEnumerable eable = Map.GetItemsInRange(loc, 6);
+                // only this camp's cell: the barred door(s) next to the guard's post (Home, not where he happened
+                //  to land) plus their linked halves. Neighboring cells and other dungeon doors are left alone.
+                Point3D anchor = m is BaseCreature guard ? guard.Home : m.Location;
+                List<BaseDoor> doors = new();
+                IPooledEnumerable eable = Map.GetItemsInRange(anchor, 3);
                 foreach (Item item in eable)
-                    if (item is BaseDoor bd)
+                    if (item is BarredMetalDoor bd)
                     {
-                        bd.KeyValue = key.KeyValue;
-                        bd.Locked = true;
+                        if (!doors.Contains(bd))
+                            doors.Add(bd);
+
+                        if (bd.Link is BarredMetalDoor link && !doors.Contains(link))
+                            doors.Add(link);
                     }
 
                 eable.Free();
 
+                // no cell, no key
+                if (doors.Count == 0)
+                    return;
+
+                Key key = new Key(KeyType.Gold);
+                key.KeyValue = Key.RandomValue();
+                foreach (BaseDoor bd in doors)
+                {
+                    bd.KeyValue = key.KeyValue;
+                    bd.Locked = true;
+                }
+
                 // no more thief steal-griefing the players
                 key.LootType = LootType.UnStealable;
-                if (m.Backpack == null && m is BaseCreature bc)
-                    bc.PackItem(key);
+                if (m is BaseCreature bc)
+                    bc.PackItem(key);   // creates the backpack if needed
+                else
+                    key.Delete();       // don't leave it orphaned on the internal map
             }
 
             // no key for you!

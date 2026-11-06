@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -71,7 +71,7 @@ namespace Server.Mobiles
                 {
                     if (m is PlayerMobile pm)
                     {
-                        Server.Memory.ObjectMemory o = FarmableCrop.Pickers.Recall(m as object);
+                        Server.Memory.ObjectMemory? o = FarmableCrop.Pickers.Recall(m as object);
                         if (o == null || o.Context == null || o.Context is not Server.Mobiles.Spawner || m.GetDistanceToSqrt((o.Context as Spawner)) > 20)
                             // maybe the teleported to a field where they have not picked anything yet
                             continue;
@@ -114,30 +114,14 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020221204551/uo.stratics.com/hunters/eagle.shtml
+            // 1 Raw bird (carved), 36 Feathers (carved)
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(25, 50);
-                PackItem(new BlackPearl(4));
+
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020221204551/uo.stratics.com/hunters/eagle.shtml
-                    // 1 Raw bird (carved), 36 Feathers (carved)
-
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    // no loot in RunUO 2.0
-                }
             }
         }
 

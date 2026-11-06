@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -210,11 +210,11 @@ namespace Server.Mobiles
                 AddItem(pack);
             }
 
-            Item hair = this.FindItemOnLayer(Layer.Hair);
+            Item? hair = this.FindItemOnLayer(Layer.Hair);
             if (hair != null)
                 hair.Delete();
 
-            Item FacialHair = this.FindItemOnLayer(Layer.FacialHair);
+            Item? FacialHair = this.FindItemOnLayer(Layer.FacialHair);
             if (FacialHair != null)
                 FacialHair.Delete();
 
@@ -297,7 +297,7 @@ namespace Server.Mobiles
             if (Misc.Diagnostics.Assert(item != null, "item == null", Utility.FileInfo()))
             {
                 LogHelper lh = new LogHelper(GetLogName(), false, true);
-                string ItemName = null;
+                string? ItemName = null;
                 if (item != null)
                     if (item.Name != null)
                         ItemName = item.Name;
@@ -333,7 +333,7 @@ namespace Server.Mobiles
         public virtual void OnAuctionFinish()
         {
             this.Say(string.Format("The auction has finished."));
-            PlayerMobile pm = World.FindMobile(m_HighBidMobile) as PlayerMobile;
+            PlayerMobile? pm = World.FindMobile(m_HighBidMobile) as PlayerMobile;
             if (CheckID() && pm != null)
             {
                 this.Say(string.Format("The winning bid was placed by {0} for {1} gold.", pm.Name, m_HighBid));
@@ -364,7 +364,7 @@ namespace Server.Mobiles
 
         protected Item GetAuctionItem()
         {
-            Item item = null;
+            Item? item = null;
             if (Misc.Diagnostics.Assert(Backpack != null, "Backpack == null", Utility.FileInfo()))
                 if (Backpack.Items.Count == 1)
                     item = Backpack.Items[0] as Item;
@@ -460,7 +460,7 @@ namespace Server.Mobiles
 
         private void RefundBid()
         {
-            Mobile m = World.FindMobile(m_HighBidMobile);
+            Mobile? m = World.FindMobile(m_HighBidMobile);
             if (CheckID() && m != null)
             {
                 // deposit the refund
@@ -610,7 +610,7 @@ namespace Server.Mobiles
 
         protected bool CheckID()
         {
-            PlayerMobile pm = World.FindMobile(m_HighBidMobile) as PlayerMobile;
+            PlayerMobile? pm = World.FindMobile(m_HighBidMobile) as PlayerMobile;
             if (Misc.Diagnostics.Assert(pm != null && pm.Account != null && pm.Account.ToString().GetHashCode() == m_HighBidMobileHC, "Hash Code mismatch", Utility.FileInfo()))
                 return true;
 

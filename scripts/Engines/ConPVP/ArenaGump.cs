@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -110,7 +110,7 @@ namespace Server.Engines.ConPVP
         private ArenasMoongate m_Gate;
         private List<Arena> m_Arenas;
 
-        private void Append(StringBuilder sb, LadderEntry le)
+        private void Append(StringBuilder sb, LadderEntry? le)
         {
             if (le == null)
                 return;
@@ -224,7 +224,7 @@ namespace Server.Engines.ConPVP
                     if (ladder == null)
                         continue;
 
-                    LadderEntry p1 = null, p2 = null, p3 = null, p4 = null;
+                    LadderEntry? p1 = null, p2 = null, p3 = null, p4 = null;
 
                     for (int j = 0; j < ar.Players.Count; ++j)
                     {
@@ -296,7 +296,7 @@ namespace Server.Engines.ConPVP
 
         private int m_ColumnX = 12;
 
-        private void AddColumnHeader(int width, string name)
+        private void AddColumnHeader(int width, string? name)
         {
             AddBackground(m_ColumnX, 12, width, 20, 0x242C);
             AddImageTiled(m_ColumnX + 2, 14, width - 4, 16, 0x2430);

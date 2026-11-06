@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -82,8 +82,8 @@
 
 using Server.Accounting;
 using Server.Diagnostics;
+using Server.Engines;
 using Server.Items;
-using Server.Misc;
 using Server.Mobiles;
 using Server.Multis;
 using Server.Network;
@@ -152,7 +152,7 @@ namespace Server.Commands
 
                 int found = 0;
                 int visited = 0;
-                BaseHouse house = null;
+                BaseHouse? house = null;
                 if (targ is HouseSign sign)
                 {
                     house = sign.Structure;
@@ -193,11 +193,17 @@ namespace Server.Commands
         [Description("Display Angel Island version info.")]
         public static void Version_OnCommand(CommandEventArgs args)
         {
-            System.Reflection.Assembly m_Assembly = System.Reflection.Assembly.GetEntryAssembly();
-            Version ver = m_Assembly.GetName().Version;
-            string version = string.Format("{0}.{1} [Build {2}] [.NET 8, 64 bit]", Utility.BuildMajor(), Utility.BuildMinor(), Utility.BuildBuild());
-            string text = string.Format("Angel Island core version {0}, launched March 2004.", version);
-            args.Mobile.SendMessage(0x35, text);
+            Mobile m = args.Mobile;
+
+            var assembly = System.Reflection.Assembly.GetEntryAssembly();
+            var ver = assembly.GetName().Version;
+
+            string version = $"{Utility.BuildMajor()}.{Utility.BuildMinor()} [Build {Utility.BuildBuild()}] [.NET 8, 64-bit]";
+            string text = $"{Core.Server}, {Core.ReleasePhase} Release, Publish {PublishInfo.Publish}";
+            string core = $"GmnUO Core version {version}, launched March 2004.";
+
+            m.SendMessage(0x35, text);
+            m.SendMessage(0x35, core);
         }
         #endregion Version
         #region Push/Pop
@@ -215,7 +221,7 @@ namespace Server.Commands
             Push(e.Mobile as PlayerMobile, e.GetString(0), out string reason);
             e.Mobile.SendMessage(reason);
         }
-        public static bool Push(PlayerMobile pm, string prop, out string reason)
+        public static bool Push(PlayerMobile? pm, string prop, out string reason)
         {
             reason = string.Empty;
             try
@@ -223,7 +229,7 @@ namespace Server.Commands
                 if (pm == null) return false;
                 try
                 {
-                    object o = null;
+                    object? o = null;
                     PropertyInfo[] props = Utility.MobileRWProperties(pm);
                     for (int i = 0; i < props.Length; i++)
                     {
@@ -283,7 +289,7 @@ namespace Server.Commands
             Pop(e.Mobile as PlayerMobile, out string reason);
             e.Mobile.SendMessage(reason);
         }
-        public static bool Pop(PlayerMobile pm, out string reason)
+        public static bool Pop(PlayerMobile? pm, out string reason)
         {
             reason = string.Empty;
             try
@@ -377,7 +383,7 @@ namespace Server.Commands
                 if (!string.IsNullOrEmpty(e.ArgString))
                     int.TryParse(e.ArgString, out step);
 
-                PlayerMobile pm = e.Mobile as PlayerMobile;
+                PlayerMobile? pm = e.Mobile as PlayerMobile;
 
                 if (pm.JumpIndex + step < 0)
                     pm.JumpIndex = 0;
@@ -405,20 +411,20 @@ namespace Server.Commands
                                 {
                                     if ((pm.JumpList[pm.JumpIndex] as Item).RootParent is Item)
                                     {
-                                        Item ix = (pm.JumpList[pm.JumpIndex] as Item).RootParent as Item;
+                                        Item? ix = (pm.JumpList[pm.JumpIndex] as Item).RootParent as Item;
                                         e.Mobile.Location = ix.Location;
                                         e.Mobile.Map = ix.Map;
                                     }
                                     else
                                     {
-                                        Mobile mx = (pm.JumpList[pm.JumpIndex] as Item).RootParent as Mobile;
+                                        Mobile? mx = (pm.JumpList[pm.JumpIndex] as Item).RootParent as Mobile;
                                         e.Mobile.Location = mx.Location;
                                         e.Mobile.Map = mx.Map;
                                     }
                                 }
                                 else
                                 {
-                                    Item ix = (Item)pm.JumpList[pm.JumpIndex];
+                                    Item? ix = (Item?)pm.JumpList[pm.JumpIndex];
                                     e.Mobile.Location = ix.Location;
                                     e.Mobile.Map = ix.Map;
                                 }
@@ -441,7 +447,7 @@ namespace Server.Commands
                             }
                             else
                             {
-                                Mobile ix = (Mobile)pm.JumpList[pm.JumpIndex];
+                                Mobile? ix = (Mobile?)pm.JumpList[pm.JumpIndex];
                                 e.Mobile.Location = ix.Location;
                                 e.Mobile.Map = ix.Map;
                                 if (e.Mobile.Region != null && !string.IsNullOrEmpty(e.Mobile.Region.Name))
@@ -507,7 +513,7 @@ namespace Server.Commands
                 LogHelper.LogException(ex);
             }
         }
-        private static object ObjectAtLocation(Mobile m, Map map, Point3D px)
+        private static object? ObjectAtLocation(Mobile m, Map map, Point3D px)
         {
             if (map != null)
                 foreach (object o in map.GetItemsInRange(px, 0))
@@ -536,7 +542,7 @@ namespace Server.Commands
                 if (e == null || e.Mobile == null || e.Mobile is PlayerMobile == false)
                     return;
 
-                PlayerMobile pm = e.Mobile as PlayerMobile;
+                PlayerMobile? pm = e.Mobile as PlayerMobile;
 
                 if (pm.JumpList != null && pm.JumpList.Count > 0)
                 {
@@ -585,7 +591,7 @@ namespace Server.Commands
                     return;
                 }
 
-                PlayerMobile pm = e.Mobile as PlayerMobile;
+                PlayerMobile? pm = e.Mobile as PlayerMobile;
 
                 if (pm.JumpList != null && pm.JumpList.Count > 0)
                 {
@@ -660,7 +666,7 @@ namespace Server.Commands
                     int nullHardwareInfo = 0;
                     foreach (DictionaryEntry de in ClientMon.list)
                     {
-                        ArrayList al = de.Value as ArrayList;
+                        ArrayList? al = de.Value as ArrayList;
 
                         if (al == null)
                             continue;
@@ -670,7 +676,7 @@ namespace Server.Commands
                             if (acct == null)
                                 continue;   // bogus
 
-                            PlayerMobile pm = GetActiveCharacter(acct);
+                            PlayerMobile? pm = GetActiveCharacter(acct);
                             if (pm == null)
                                 continue;   // no longer logged in?
 
@@ -708,7 +714,7 @@ namespace Server.Commands
 
                     foreach (DictionaryEntry de in ClientMon.list)
                     {
-                        ArrayList al = de.Value as ArrayList;
+                        ArrayList? al = de.Value as ArrayList;
 
                         if (al == null)     // bogus
                             continue;
@@ -716,15 +722,15 @@ namespace Server.Commands
                         if (al.Count < 2)   // no more than 1 account for this IP
                             continue;
 
-                        PlayerMobile pm1 = null;
-                        PlayerMobile pm2 = null;
+                        PlayerMobile? pm1 = null;
+                        PlayerMobile? pm2 = null;
                         ArrayList seen = new ArrayList();
                         foreach (Account acct1 in al)
                         {
                             if (acct1 == null)
                                 continue;   // bogus
 
-                            if (!TestCenter.Enabled && acct1.GetAccessLevel() > AccessLevel.Player)
+                            if (!TestCenterServer.Enabled && acct1.GetAccessLevel() > AccessLevel.Player)
                                 continue;   // ignore staff
 
                             pm1 = GetActiveCharacter(acct1);
@@ -741,7 +747,7 @@ namespace Server.Commands
                                 if (seen.Contains(acct2))
                                     continue;   // already processed
 
-                                if (!TestCenter.Enabled && acct2.GetAccessLevel() > AccessLevel.Player)
+                                if (!TestCenterServer.Enabled && acct2.GetAccessLevel() > AccessLevel.Player)
                                     continue;   // ignore staff
 
                                 pm2 = GetActiveCharacter(acct2);
@@ -761,7 +767,7 @@ namespace Server.Commands
                     int ipaddresses = 0;
                     foreach (DictionaryEntry de in ClientMon.list)
                     {
-                        ArrayList al = de.Value as ArrayList;
+                        ArrayList? al = de.Value as ArrayList;
 
                         if (al == null)
                             continue;
@@ -801,7 +807,7 @@ namespace Server.Commands
             e.Mobile.SendMessage("done.");
         }
 
-        enum alert { LOW, MEDIUM, HIGH };
+        enum AlertLevel { LOW, MEDIUM, HIGH };
         private static void ProcessMatch(Mobile from, bool highOnly, PlayerMobile pm1, PlayerMobile pm2)
         {
             try
@@ -832,42 +838,42 @@ namespace Server.Commands
                 int pm2HWInfo = pm2Account.HardwareHash;    // most recent hardware info
                 string pm2Name = string.Format("{0}/{1}", pm2Account.Username, ns2.Mobile.Name);
 
-                alert alarm = alert.LOW;
+                AlertLevel alarm = AlertLevel.LOW;
                 if (pm1HWInfo == 0 && pm2HWInfo == 0 && ns1.Version == ns2.Version)
                 {
                     // unknown hardware, same client version
                     if (LineOfSight(pm1, pm2))
-                        alarm = alert.MEDIUM;
+                        alarm = AlertLevel.MEDIUM;
                 }
                 else if (pm1HWInfo == 0 || pm2HWInfo == 0 && ns1.Version == ns2.Version)
                 {
                     // unknown hardware, same client version
                     if (LineOfSight(pm1, pm2))
-                        alarm = alert.MEDIUM;
+                        alarm = AlertLevel.MEDIUM;
                 }
                 // we don't care about 'bad hardware' here as long as it matches!
                 /*else if ((pm1HWInfo != null && pm2HWInfo != null) && (pm1HWInfo.CpuClockSpeed == 0 || pm1HWInfo.OSMajor == 0 || pm2HWInfo.CpuClockSpeed == 0 || pm2HWInfo.OSMajor == 0))
 				{
 					// unknown hardware
 					if (LineOfSight(pm1, pm2))
-						alarm = alert.MEDIUM;
+						alarm = AlertLevel.MEDIUM;
 				}*/
                 else if ((pm1HWInfo != 0 && pm2HWInfo != 0) && pm1HWInfo == pm2HWInfo /*Server.Commands.MultiClientCommand.IsSameHWInfo(pm1HWInfo, pm2HWInfo)*/)
                 {
                     // same hardware
-                    alarm = alert.MEDIUM;
+                    alarm = AlertLevel.MEDIUM;
                     if (LineOfSight(pm1, pm2) && ns1.Version == ns2.Version)
-                        alarm = alert.HIGH;
+                        alarm = AlertLevel.HIGH;
                 }
                 else
                 {
                     // different hardware
                     if (LineOfSight(pm1, pm2) && ns1.Version == ns2.Version)
-                        alarm = alert.MEDIUM;
+                        alarm = AlertLevel.MEDIUM;
                 }
 
                 // caller wants to filter to HIGH alarms only
-                if (highOnly == true && alarm != alert.HIGH)
+                if (highOnly == true && alarm != AlertLevel.HIGH)
                     return;
 
                 from.SendMessage(string.Format("{0}, {1}, Alarm({2})", pm1Name, pm2Name, alarm.ToString()));
@@ -889,7 +895,7 @@ namespace Server.Commands
             return Utility.LineOfSight(from.Map, eyeFrom, eyeTo, false) || Utility.LineOfSight(from.Map, eyeTo, eyeFrom, false);
         }
 
-        private static PlayerMobile GetActiveCharacter(Account acct)
+        private static PlayerMobile? GetActiveCharacter(Account acct)
         {
             for (int i = 0; i < 5; ++i)
             {
@@ -921,14 +927,14 @@ namespace Server.Commands
                 int iphc = state.ToString().GetHashCode();          // hash code of IP address
                 if (m_list.Contains(iphc))                          // if we have it already
                 {
-                    ArrayList al = m_list[iphc] as ArrayList;       // get the list of clients at this IP address
+                    ArrayList? al = m_list[iphc] as ArrayList;       // get the list of clients at this IP address
                     if (al.Contains(m.Account) == false)
                         al.Add(m.Account);                          // add another client at this IP
                 }
                 else
                 {
                     m_list[iphc] = new ArrayList();                 // start a new list of clients at this IP address
-                    ArrayList al = m_list[iphc] as ArrayList;       // get the list of clients at this IP address
+                    ArrayList? al = m_list[iphc] as ArrayList;       // get the list of clients at this IP address
                     al.Add(m.Account);                              // add another client at this IP
                 }
             }
@@ -937,7 +943,7 @@ namespace Server.Commands
             {
                 foreach (DictionaryEntry de in list)
                 {
-                    ArrayList al = de.Value as ArrayList;
+                    ArrayList? al = de.Value as ArrayList;
 
                     if (al == null)
                         continue;
@@ -1091,7 +1097,7 @@ namespace Server.Commands
                     Container backpack = m.Backpack;
                     if (backpack != null)
                     {   // get players account
-                        Server.Accounting.Account ax = m.Account as Server.Accounting.Account;
+                        Server.Accounting.Account? ax = m.Account as Server.Accounting.Account;
                         if (ax == null)
                             continue;
 
@@ -1109,8 +1115,8 @@ namespace Server.Commands
                         // record all players that have a weapon on them
                         players++;
                         ArrayList stuff = backpack.FindAllItems();
-                        Item oneHanded = m.FindItemOnLayer(Layer.OneHanded);
-                        Item twoHanded = m.FindItemOnLayer(Layer.TwoHanded);
+                        Item? oneHanded = m.FindItemOnLayer(Layer.OneHanded);
+                        Item? twoHanded = m.FindItemOnLayer(Layer.TwoHanded);
                         if (oneHanded is BaseWeapon && (oneHanded as BaseWeapon).DamageLevel > WeaponDamageLevel.Force)
                             stuff.Add(oneHanded);
                         if (twoHanded is BaseWeapon && (twoHanded as BaseWeapon).DamageLevel > WeaponDamageLevel.Force)
@@ -1138,7 +1144,7 @@ namespace Server.Commands
                 {
                     if (m is PlayerVendor)
                     {
-                        PlayerVendor pv = m as PlayerVendor;
+                        PlayerVendor? pv = m as PlayerVendor;
                         Hashtable tab = pv.SellItems;
                         foreach (DictionaryEntry de in tab)
                         {
@@ -1146,7 +1152,7 @@ namespace Server.Commands
                             {
                                 if (de.Key is Item)
                                 {
-                                    Item ix = (de.Key as Item);
+                                    Item? ix = (de.Key as Item);
                                     if (ix is BaseWeapon && (ix as BaseWeapon).DamageLevel > WeaponDamageLevel.Force)
                                     {
                                         total_magic++;
@@ -1188,7 +1194,7 @@ namespace Server.Commands
                 int visited = 0;
                 try
                 {
-                    Item item = obj as Item;
+                    Item? item = obj as Item;
                     if (e.Arguments.Length == 0)
                     {
                         e.Mobile.SendMessage("Usage: FindItemInArea ItemID");
@@ -1338,7 +1344,7 @@ namespace Server.Commands
                     Item item = new Item((targ as StaticTarget).ItemID);
                     item.Location = (targ as StaticTarget).Location;
                     item.Map = from.Map;
-                    BaseHouse house = BaseHouse.FindHouseAt(item);
+                    BaseHouse? house = BaseHouse.FindHouseAt(item);
                     item.Delete();
                     if (house != null)
                     {

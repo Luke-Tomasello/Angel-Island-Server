@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -36,7 +36,7 @@ using System;
 
 namespace Server.Items
 {
-    public abstract class BaseStatue : Item, ICraftable, IMagicItem
+    public abstract class BaseStatue : Item, ICraftable, IMagicItem, IDyable
     {
         public override double DefaultWeight { get { return 10.0; } }
 
@@ -135,7 +135,7 @@ namespace Server.Items
 
             if (EventResourceSystem.Find(m_Resource) != null)
             {
-                CraftResourceInfo info = CraftResources.GetInfo(m_Resource);
+                CraftResourceInfo? info = CraftResources.GetInfo(m_Resource);
 
                 if (info != null)
                 {
@@ -181,6 +181,13 @@ namespace Server.Items
         public override void OnAfterDelete()
         {
             EventResourceSystem.CheckRegistry(this, false);
+        }
+
+        public bool Dye(Mobile from, DyeTub sender)
+        {
+            Hue = sender.DyedHue;
+
+            return true;
         }
 
         public BaseStatue(Serial serial)
@@ -253,7 +260,7 @@ namespace Server.Items
 
             Resource = CraftResources.GetFromType(resourceType);
 
-            CraftContext context = craftSystem.GetContext(from);
+            CraftContext? context = craftSystem.GetContext(from);
 
             if (context != null && context.DoNotColor)
                 Hue = 0;

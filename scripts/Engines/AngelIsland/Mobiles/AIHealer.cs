@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -62,7 +62,7 @@ namespace Server.Mobiles
         public override Characteristics MyCharacteristics { get { return base.MyCharacteristics & ~Characteristics.DamageSlows; } }
         private Memory m_aggressionMemory = new Memory();       // memory used to remember if we a saw a player in the area
         const int AggressionMemoryTime = 120;                    // how long (seconds) we remember this player
-        public override void OnHarmfulAction(Mobile aggressor, bool isCriminal, object source = null)
+        public override void OnHarmfulAction(Mobile aggressor, bool isCriminal, object? source = null)
         {   // call for reinforcements!
             base.OnHarmfulAction(aggressor, isCriminal, source);
             if (m_aggressionMemory.Recall(aggressor) == false)

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -75,10 +75,6 @@ namespace Server.Mobiles
             {
                 if (m != null && m is PlayerMobile && m.Alive && m.AccessLevel == AccessLevel.Player && !m.Hidden && m.Poison == null)
                 {
-                    PlayerMobile pm = (PlayerMobile)m;
-                    if (pm.IOBEquipped && pm.IOBAlignment == IOBAlignment.Council)
-                        return false;
-
                     return true;
                 }
             }
@@ -94,10 +90,6 @@ namespace Server.Mobiles
             {
                 if (m != null && m is PlayerMobile && m.Alive && m.AccessLevel == AccessLevel.Player && m.Hidden)
                 {
-                    PlayerMobile pm = (PlayerMobile)m;
-                    if (pm.IOBEquipped && pm.IOBAlignment == IOBAlignment.Council)
-                        return false;
-
                     return true;
                 }
             }
@@ -111,7 +103,7 @@ namespace Server.Mobiles
         {
             // tamable solution ---------------
             Mobile com = m_Mobile.Combatant;
-            Spell spell = null;
+            Spell? spell = null;
 
             if (com != null && com is BaseCreature && DateTime.UtcNow >= m_NextCouncilSpell)
             {

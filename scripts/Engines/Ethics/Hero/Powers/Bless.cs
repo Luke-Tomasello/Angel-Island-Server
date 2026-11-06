@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -45,9 +45,9 @@ namespace Server.Ethics.Hero
 
         private void Power_OnTarget(Mobile fromMobile, object obj, object state)
         {
-            Player from = state as Player;
+            Player? from = state as Player;
 
-            IPoint3D p = obj as IPoint3D;
+            IPoint3D? p = obj as IPoint3D;
 
             if (p == null)
                 return;

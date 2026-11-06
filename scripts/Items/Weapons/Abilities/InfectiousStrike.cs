@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -46,7 +46,7 @@ namespace Server.Items
 
             ClearCurrentAbility(attacker);
 
-            BaseWeapon weapon = attacker.Weapon as BaseWeapon;
+            BaseWeapon? weapon = attacker.Weapon as BaseWeapon;
 
             if (weapon == null)
                 return;
@@ -67,7 +67,7 @@ namespace Server.Items
             if ((attacker.Skills[SkillName.Poisoning].Value / 100.0) > Utility.RandomDouble())
             {
                 int level = p.Level + 1;
-                Poison newPoison = Poison.GetPoison(level);
+                Poison? newPoison = Poison.GetPoison(level);
 
                 if (newPoison != null)
                 {

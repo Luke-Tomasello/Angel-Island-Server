@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -147,7 +147,10 @@ namespace Server.Items
     public abstract class BaseHouseDoor : BaseDoor, ISecurable, IChopable
     {
         private SecureLevel m_Level;
-        int Hits = 0;                   // not serialized - reset on server up
+        int Hits = 0;                                   // not serialized - reset on server up
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool AllAccess { get; set; } = false;   // useful when dropping a door on a static structure
 
         [CommandProperty(AccessLevel.GameMaster)]
         public SecureLevel Level
@@ -177,7 +180,7 @@ namespace Server.Items
 
         public virtual void OnChop(Mobile from)
         {
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
 
             if (house != null && house.IsOwner(from))
             {
@@ -209,7 +212,7 @@ namespace Server.Items
 
         public override void OnDelete()
         {
-            BaseHouse house = BaseHouse.FindHouseAt(this);
+            BaseHouse? house = BaseHouse.FindHouseAt(this);
             if (house != null)
             {
                 house.RemoveDoor(this);
@@ -232,6 +235,9 @@ namespace Server.Items
 
         public bool CheckAccess(Mobile m)
         {
+            if (AllAccess)
+                return true;
+
             BaseHouse house = FindHouse();
 
             if (house == null)
@@ -291,7 +297,9 @@ namespace Server.Items
         {
             base.Serialize(writer);
 
-            writer.Write((int)2); // version
+            writer.Write((int)3); // version
+
+            writer.Write(AllAccess);
 
             writer.Write((int)m_Level);
 
@@ -307,6 +315,11 @@ namespace Server.Items
 
             switch (version)
             {
+                case 3:
+                    {
+                        AllAccess = reader.ReadBool();
+                        goto case 2;
+                    }
                 case 2:
                     {
                         m_Level = (SecureLevel)reader.ReadInt();

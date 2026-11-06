@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,10 @@
 
 /* Server/Region.cs
  * CHANGELOG:
+ *  10/18/2026, Adam (AllowHarmful message)
+ *      AllowHarmful(from, target, message): Mobile.CanBeHarmful passes its message choice to the region, so a silent check
+ *      (CanBeHarmful(target, false), e.g. the combat timer) gets no region feedback. The default defers to the two-argument
+ *      AllowHarmful, so regions that override only that one are unchanged.
  *  8/14/2023, Adam (MatchingRegions)
  *      MatchingRegions verifies all regions match between the player and the NPC (banker for instance.)
  *      A good example is standing in Wind Park, and yelling over the cave wall there to town to bank.
@@ -80,6 +84,10 @@
  *		Added virtual IsNoMurderZone property.
  */
 
+using Server.Diagnostics;
+using Server.Gumps;
+using Server.Items;
+using Server.Regions;
 using Server.Targeting;
 using System;
 using System.Collections;
@@ -180,6 +188,52 @@ namespace Server
         public static void Initialize()
         {
             CommandSystem.Register("RegionInfo", AccessLevel.Administrator, new CommandEventHandler(RegionInfo_OnCommand));
+            CommandSystem.Register("RegionControl", AccessLevel.Administrator, new CommandEventHandler(RegionControl_OnCommand));
+        }
+
+        [Usage("RegionControl")]
+        [Description("Launches properties related to this region.")]
+        public static void RegionControl_OnCommand(CommandEventArgs e)
+        {
+            Mobile from = e.Mobile;
+            Map map = from.Map;
+
+            if (from == null || map == null)
+                return;
+
+            try
+            {
+                ArrayList reglist = Region.FindAll(from.Location, map);
+
+                foreach (Region rx in reglist)
+                {
+                    if (rx is CustomRegion cr)
+                    {
+                        CustomRegionControl rc = cr.Controller;
+
+                        if (rc != null)
+                        {
+                            from.SendGump(new PropertiesGump(from, rc));
+                            return;
+                        }
+                    }
+                    else if (rx is StaticRegion && StaticRegion.Controller(rx as StaticRegion) != null)
+                    {
+                        StaticRegionControl? rc = StaticRegion.Controller(rx as StaticRegion);
+                        if (rc != null)
+                        {
+                            from.SendGump(new PropertiesGump(from, rc));
+                            return;
+                        }
+                    }
+                }
+
+                from.SendMessage("No custom region controller found at your location.");
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex);
+            }
         }
 
         [Usage("RegionInfo")]
@@ -211,7 +265,7 @@ namespace Server
             }
             m.SendMessage("You are in rectangle #{0}", mLocation);
         }
-        public int CompareTo(object o)
+        public int CompareTo(object? o)
         {
             if (!(o is Region))
                 return 0;
@@ -242,6 +296,9 @@ namespace Server
 		}*/
         public Region(string name, Map map, int priority, params Rectangle3D[] area)
         {
+            #region region creation
+            #endregion region creation
+
             m_Prefix = "";
             m_Name = name;
             m_Map = map;
@@ -262,6 +319,9 @@ namespace Server
         }
         public Region(string prefix, string name, Map map)
         {
+            #region region creation
+            #endregion region creation
+
             m_Prefix = prefix;
             m_Name = name;
             m_Map = map;
@@ -279,6 +339,18 @@ namespace Server
             m_Load = true;
 
             m_UId = m_RegionUID++;
+        }
+
+        // Dungeon rule: disallow dropping impassable items in dungeon regions.
+        // Blocking mechanics are permitted in PvP contexts, but dungeon spaces are
+        // protected from non-targeted access denial.
+        // Seasons, season 2 is exempt. Griefy!
+        public virtual bool DropToWorld(Item item, Mobile from, Point3D p)
+        {
+            if (!(Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()) && IsDungeonRules)
+                return !item.ItemData.Impassable;
+
+            return true;
         }
 
         public virtual bool IsNoMurderZone
@@ -384,7 +456,7 @@ namespace Server
         {
         }
 
-        public virtual void OnGotHarmful(Mobile harmer, Mobile harmed)
+        public virtual void OnGotHarmful(Mobile harmer, Mobile harmed, bool isCriminal)
         {
         }
 
@@ -411,6 +483,7 @@ namespace Server
 
         public virtual void OnLocationChanged(Mobile m, Point3D oldLocation)
         {
+
         }
 
         public virtual void PlayMusic(Mobile m)
@@ -449,20 +522,12 @@ namespace Server
                 OnMobileAdd(m);
             }
 
-            //OnEnter(m);
             PlayMusic(m);
         }
 
         public virtual void OnEnter(Mobile m)
         {
-            // 5/30/2023, Adam: Our StaticRegions now take care of this
-#if false
-            string s = ToString();
-            if (m.Map != Map.Internal && m.Map != null)
-                // "(null):" == unnamed region.
-                if (!string.IsNullOrEmpty(s) && !s.Contains("(null):") && this is not Server.Regions.HouseRegion)
-                    m.SendMessage("You have entered {0}", this);
-#endif
+            // 5/30/2023, Adam: Our StaticRegions now take care of "You have entered {0}"
             InternalEnter(m);
         }
 
@@ -488,13 +553,6 @@ namespace Server
         public virtual void OnExit(Mobile m)
         {
             // 5/30/2023, Adam: Our StaticRegions now take care of this
-#if false
-            string s = ToString();
-            if (m.Map != Map.Internal && m.Map != null)
-                // "(null):" == unnamed region.
-                if (!string.IsNullOrEmpty(s) && !s.Contains("(null):") && this is not Server.Regions.HouseRegion)
-                    m.SendMessage("You have left {0}", this);
-#endif
             InternalExit(m);
         }
 
@@ -528,6 +586,15 @@ namespace Server
             return true;
         }
 
+        /// <summary>
+        /// The harmful-action check with the caller's message choice (Mobile.CanBeHarmful passes its own): a region may tell
+        /// the mobile why it refuses only when message is true. By default the region's AllowHarmful(from, target) decides.
+        /// </summary>
+        public virtual bool AllowHarmful(Mobile from, Mobile target, bool message)
+        {
+            return AllowHarmful(from, target);
+        }
+
         public virtual bool AllowHarmful(Mobile from, Mobile target)
         {
             if (Mobile.AllowHarmfulHandler != null)
@@ -540,14 +607,15 @@ namespace Server
 			else
 				return true;*/
         }
-
         public virtual void OnCriminalAction(Mobile m, bool message)
-        {
-            if (message)
-                m.SendLocalizedMessage(1005040); // You've committed a criminal act!!
+        {   // Messaging responsibility has been moved to the Criminality System (CJS).
+            // Region.OnCriminalAction is now for side-effects only (e.g., guard logic).
+            // Do not emit player messages here to avoid duplicate or divergent narratives.
+            //if (message)
+            //    m.SendLocalizedMessage(1005040); // You've committed a criminal act!!
         }
 
-        public virtual bool AllowBenificial(Mobile from, Mobile target)
+        public virtual bool AllowBeneficial(Mobile from, Mobile target)
         {
             if (Mobile.AllowBeneficialHandler != null)
                 return Mobile.AllowBeneficialHandler(from, target);
@@ -618,7 +686,7 @@ namespace Server
         {
             // Murderers and criminals will not be able to kick/ban others from their home, nor will they be able to log out instantly
             // https://www.uoguide.com/Siege_Perilous
-            if (m.Criminal || m.IsMurderer && Core.RuleSets.SiegeStyleRules())
+            if (m.Criminal || m.IsMurderer && Core.RuleSets.SiegeRules())
                 return m_DefaultLogoutDelay;
             if (m.Aggressors.Count == 0 && m.Aggressed.Count == 0 && IsInInn(m.Location))
                 return m_InnLogoutDelay;
@@ -643,8 +711,8 @@ namespace Server
                 }
             }
 
-            Region oldR = oldRegion;
-            Region newR = newRegion;
+            Region? oldR = oldRegion;
+            Region? newR = newRegion;
 #if TODO
             // We don't have child regions on AI.. yet
             while (oldR != newR)
@@ -676,7 +744,7 @@ namespace Server
         public virtual bool IsJailRules { get { return false; } }
         public virtual bool IsHouseRules { get { return false; } }
         public virtual bool IsGreenAcresRules { get { return false; } }
-        public virtual bool IsAngelIslandRules { get { return false; } }
+        public virtual bool IsPrisonRules { get { return false; } }
         public virtual bool IsTownRules { get { return false; } }
         public virtual bool IsGuarded { get { return false; } set {; } }
         public virtual bool IsSmartGuards { get { return false; } set {; } }
@@ -686,7 +754,7 @@ namespace Server
             {   // 5/9/23, Adam, hack: we need Brit guards to protect the city during the Taking Back Sosaria event,
                 //  but the implications of making this more general solution is not immediately possible due to time constraints.
                 // I.e., we don't want effect Angel Island's use of GuardIgnore.
-                if (!string.IsNullOrEmpty(Name) && Core.RuleSets.SiegeStyleRules() && (Name.Equals("Britain Farms") || Name.Equals("Britain")))
+                if (!string.IsNullOrEmpty(Name) && Core.RuleSets.SiegeRules() && (Name.Equals("Britain Farms") || Name.Equals("Britain")))
                     return false;
                 else
                     return true;
@@ -867,7 +935,24 @@ namespace Server
         {
             get
             {
-                return m_GoLoc;
+                if (m_GoLoc != Point3D.Zero)
+                    return m_GoLoc;
+
+                if (Coords != null && Coords.Count > 0)
+                {
+                    Rectangle3D rect = Coords[0];
+
+                    int x = rect.Start.X + (rect.Width / 2);
+                    int y = rect.Start.Y + (rect.Height / 2);
+
+                    int z = Map != null
+                        ? Map.GetAverageZ(x, y)
+                        : rect.Start.Z;
+
+                    return new Point3D(x, y, z);
+                }
+
+                return Point3D.Zero;
             }
             set
             {
@@ -940,7 +1025,7 @@ namespace Server
             get { return (RegionPriorityType)m_Priority; }
             set { this.Priority = (int)value; }
         }
-
+        [CommandProperty(AccessLevel.Administrator)]
         public int UId
         {
             get
@@ -1057,7 +1142,7 @@ namespace Server
             return false;
         }
 
-        public Region GetRegion(Type regionType)
+        public Region? GetRegion(Type regionType)
         {
             if (regionType == null)
                 return null;
@@ -1076,7 +1161,7 @@ namespace Server
             return null;
         }
 
-        public Region GetRegion(string regionName)
+        public Region? GetRegion(string regionName)
         {
             if (regionName == null)
                 return null;
@@ -1121,13 +1206,13 @@ namespace Server
                 return Name;
         }
 
-        public static bool IsNull(Region r)
+        public static bool IsNull([System.Diagnostics.CodeAnalysis.NotNullWhen(false)] Region? r)
         {
             return Object.ReferenceEquals(r, null);
         }
 
         //high priorities first (high priority is less than low priority)
-        public static bool operator <(Region l, Region r)
+        public static bool operator <(Region? l, Region? r)
         {
             if (IsNull(l) && IsNull(r))
                 return false;
@@ -1139,7 +1224,7 @@ namespace Server
             return l.Priority > r.Priority;
         }
 
-        public static bool operator >(Region l, Region r)
+        public static bool operator >(Region? l, Region? r)
         {
             if (IsNull(l) && IsNull(r))
                 return false;
@@ -1151,7 +1236,7 @@ namespace Server
             return l.Priority < r.Priority;
         }
 
-        public static bool operator ==(Region l, Region r)
+        public static bool operator ==(Region? l, Region? r)
         {
             if (IsNull(l))
                 return IsNull(r);
@@ -1161,7 +1246,7 @@ namespace Server
             return l.UId == r.UId;
         }
 
-        public static bool operator !=(Region l, Region r)
+        public static bool operator !=(Region? l, Region? r)
         {
             if (IsNull(l))
                 return !IsNull(r);
@@ -1171,7 +1256,7 @@ namespace Server
             return l.UId != r.UId;
         }
 
-        public override bool Equals(object o)
+        public override bool Equals(object? o)
         {
             if (!(o is Region) || o == null)
                 return false;
@@ -1298,7 +1383,7 @@ namespace Server
                 return list.AsReadOnly();
             }
         }
-        public static Region FindByName(string name, Map map)
+        public static Region? FindByName(string name, Map map)
         {
             if (map != null && map != Map.Internal)
                 foreach (Region rx in Regions)
@@ -1307,7 +1392,7 @@ namespace Server
 
             return null;
         }
-        public static Region FindByUId(int uid)
+        public static Region? FindByUId(int uid)
         {
             if (m_Regions.ContainsKey(uid))
                 return m_Regions[uid];
@@ -1321,7 +1406,7 @@ namespace Server
             return Find(p, map, null);
         }*/
 
-        public static Region Find(Point3D p, Map map, Region ignore = null)
+        public static Region Find(Point3D p, Map map, Region? ignore = null)
         {
             // get a priority sorted list of regions
             ArrayList list = FindAll(p, map);
@@ -1331,7 +1416,7 @@ namespace Server
             {
                 for (int ix = 0; ix < list.Count; ix++)
                 {
-                    Region rx = list[ix] as Region;
+                    Region? rx = list[ix] as Region;
                     if (ignore.UId == rx.UId)
                     {
                         list.RemoveAt(ix);
@@ -1361,6 +1446,14 @@ namespace Server
             }
             */
             return list.Count > 0 ? list[0] as Region : map.DefaultRegion;
+        }
+        public static bool IsGuardedRegion(Point3D loc, Map map)
+        {
+            if (map == null || map == Map.Internal)
+                return false;
+
+            Region region = Region.Find(loc, map);
+            return region != null && region.IsGuarded;
         }
 
         public virtual bool IsMobileCountable(Mobile aggressor)
@@ -1467,7 +1560,7 @@ namespace Server
 
             return ids1.Except(ids2).ToList().Count == 0;
         }
-        public static ArrayList FindAll(Point3D p, Map map)
+        public static ArrayList FindAll(Point3D p, Map? map)
         {
             List<Region> all = new();
 

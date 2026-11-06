@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- MidiToAims command line: MIDI to AIMS (.rzr). The converter is MidiToAims.Core. No shard dependencies.
+       For players: dotnet publish -p:PublishProfile=Player (one native exe, Native AOT, see Properties\PublishProfiles). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- restore for the player publish too (win-x64), so a Release build can make the zip -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MidiToAims.Core\MidiToAims.Core.csproj" />
+  </ItemGroup>
+  <!-- MidiToAims preview compiles a song exactly as the shard does: the shard's own music compiler (plain C#, no shard
+       dependencies), linked, so there is one source. -->
+  <ItemGroup>
+    <Compile Include="..\..\Scripts\Engines\AIMusicSystem\Compiler\MusicCompiler.cs" Link="Linked\MusicCompiler.cs" />
+  </ItemGroup>
+
+  <!-- Release builds also make the player download, bin\Player\MidiToAims.zip: a MidiToAims folder with the single-file
+       exe (Player publish profile), the example "Minuet in A minor.mid" (Bach, public domain, Mutopia) and Docs\README.txt.
+       ..\Docs\MidiToAIMS.wiki is the source of the wiki page (game-master.net/aiwiki, MidiToAIMS), with the other music wiki pages: edit it there, then paste.
+       The inner publish passes MidiToAimsZip=false so it does not make the zip again. It runs as its own dotnet publish so
+       it can put vswhere (the Visual Studio Installer folder) on the PATH: Native AOT links with Visual Studio's C++
+       tools, and their vcvarsall.bat calls vswhere by name. -->
+  <Target Name="PlayerZip" AfterTargets="Build" Condition="'$(Configuration)' == 'Release' and '$(MidiToAimsZip)' != 'false'">
+    <PropertyGroup>
+      <ZipRoot>$(MSBuildProjectDirectory)\obj\PlayerZip\</ZipRoot>
+      <ZipStage>$(ZipRoot)MidiToAims\</ZipStage>
+      <PlayerPath>$([MSBuild]::Escape('$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer;$(PATH)'))</PlayerPath>
+    </PropertyGroup>
+    <Exec Command="dotnet publish &quot;$(MSBuildProjectFullPath)&quot; -nologo -p:PublishProfile=Player -p:MidiToAimsZip=false" EnvironmentVariables="PATH=$(PlayerPath)" />
+    <RemoveDir Directories="$(ZipRoot)" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\bin\Player\MidiToAims.exe;$(MSBuildProjectDirectory)\Docs\README.txt" DestinationFolder="$(ZipStage)" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\..\Data\Midi\Mutopia\BWV-120.mid" DestinationFiles="$(ZipStage)Minuet in A minor.mid" />
+    <ZipDirectory SourceDirectory="$(ZipRoot)" DestinationFile="$(MSBuildProjectDirectory)\bin\Player\MidiToAims.zip" Overwrite="true" />
+    <Message Importance="high" Text="MidiToAims: player download bin\Player\MidiToAims.zip" />
+  </Target>
+</Project>

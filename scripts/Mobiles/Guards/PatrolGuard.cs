@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -43,7 +43,9 @@
  *		These are guards designed for patrolling banks and other town areas without going *poof*
  */
 
+using Server.Accounting;
 using Server.Commands;
+using Server.Misc;
 using Server.Spells.Fourth;
 using System;
 using System.Collections.Generic;
@@ -61,7 +63,7 @@ namespace Server.Mobiles
         {
         }
 
-        public PatrolGuard(Mobile target)
+        public PatrolGuard(Mobile? target)
             : base(target)
         {
 
@@ -127,7 +129,7 @@ namespace Server.Mobiles
         private const int DoSomethingChance = 4;                    // chance we will do something with our mission: less on production
 #endif
         private Memory m_ignorePlayer = new Memory();               // memory used to remember players we cannot path to, or that another guard is already processing, or that we've already talked to
-        private Timer Metronome = null;                             // heartbeat timer
+        private Timer? Metronome = null;                             // heartbeat timer
         private double HeartBeat = Utility.RandomDouble(1.75, 2.5); // heartbeat timer
         private Stack<Point3D> m_destinations = new();              // Oh! The places you will go!
         private Direction m_saveDirection;
@@ -161,12 +163,12 @@ namespace Server.Mobiles
         public Status GetFocusStatus()
         {
             Defrag();
-            Info focus = GetFocusMobInfo();
+            Info? focus = GetFocusMobInfo();
             if (focus == null)
                 return Status.None;
             return focus.Status;
         }
-        private Info GetFocusMobInfo()
+        private Info? GetFocusMobInfo()
         {
             List<Mobile> list = new();
             foreach (var kvp in Memory)
@@ -174,14 +176,55 @@ namespace Server.Mobiles
             return null;
         }
         public override void OnSee(Mobile m)
-        {   // don't add the usual suspects, but also exclude those we remember as being inaccessible
-            if (m is PlayerMobile pm && pm.Alive && !pm.Hidden && !m_ignorePlayer.Recall(pm))
-            {   // only add mobile once
-                if (!Memory.Any(t => t.Item1 == m))
-                    Memory.Add(new Tuple<Mobile, Info>(m, new Info(m)));
+        {
+            PlayerMobile? pm = m as PlayerMobile;
+            Region reg = this.Region;
+            bool isGuarded = (reg != null && reg.IsGuarded);
+            if (!isGuarded) return;
+            DateTime now = DateTime.UtcNow;
+            bool whackable = Utility.GuardUtility.IsGuardRelevant(pm, reg, Utility.GuardRelevanceMode.Local);
+
+            if (pm == null || !pm.Alive || pm.Hidden || this.GetDistanceToSqrt(m) > 13 || (!whackable && m_ignorePlayer.Recall(pm)))
+            {
+                base.OnSee(m);
+                return;
             }
+
+            // TODO: we may want to consider making this more granular. For instance, we may want to allow patrol guards to still respond to players on the griefer list, but not respond to players with murderous offenses in town, or vice versa. For now, since the logic is the same for both, and since Seasons will use the same griefer list and murderous offense escalation as Mortalis, we'll just lump them together. If we add more guard types in the future, or if Seasons adds a different escalation system, then we can easily split these two up since the logic is already separated in GrieferEscalation.cs
+            // we will test this strict guard logic for Seasons as well
+            bool strict = Core.RuleSets.AllShards;
+
+            // 1. Griefer list escalation
+            if (strict &&
+                pm.Account is Account acct &&
+                CharacterCreation.GrieferHotList.TryGetValue(acct.GUID, out DateTime hotUntil) &&
+                hotUntil > now &&
+                pm.Criminal)
+            {
+                if (isGuarded)
+                    reg.MakeGuard(pm);
+
+                base.OnSee(m);
+                return;
+            }
+
+            // 2. In-town murderous offense escalation
+            if (whackable)
+            {
+                reg.MakeGuard(pm);
+
+                base.OnSee(m);
+                return;
+            }
+
+            // 3. Existing patrol behavior (wandering AI for non-griefers)
+            if (!Memory.Any(t => t.Item1 == m))
+                Memory.Add(new Tuple<Mobile, Info>(m, new Info(m)));
+
             base.OnSee(m);
         }
+
+
         public override bool IAIOkToInvestigate(Mobile playerToInvestigate)
         {   // This limits how often we will investigate a player
             // But since we are a guard, we won't be dissuaded
@@ -191,7 +234,7 @@ namespace Server.Mobiles
         {
             // called by InvestigativeAI when we've found a mobile we're interested in
             //  Note: IAIResult() can be called without an interleaving IAIQuerySuccess() if the InvestigativeAI cannot resolve the path
-            Info focus = GetFocusMobInfo();
+            Info? focus = GetFocusMobInfo();
             if (focus != null && focus.Mobile == m && canPath)
             {
                 if (focus.Status == Status.Adventuring)
@@ -226,7 +269,7 @@ namespace Server.Mobiles
             if (!Fighting())
             {
                 DebugSay(DebugFlags.Mobile, "({0})", GetFocusStatus().ToString());
-                Info focus = GetFocusMobInfo();
+                Info? focus = GetFocusMobInfo();
                 if (focus != null && focus.Mobile == m)
                 {
                     Status status = focus.Status;
@@ -253,9 +296,9 @@ namespace Server.Mobiles
                 Metronome = null;
                 return;
             }
-            Info focus = GetFocusMobInfo();
+            Info? focus = GetFocusMobInfo();
             StateMachine2Tick(focus);
-            Metronome = Timer.DelayCall(TimeSpan.FromSeconds(HeartBeat), new TimerStateCallback(MetronomeTick), new object[] { null });
+            Metronome = Timer.DelayCall(TimeSpan.FromSeconds(HeartBeat), new TimerStateCallback(MetronomeTick), new object?[] { null });
         }
         public override void IAmHome()
         {   // Called from BaseAI wonder when we are at out home
@@ -285,7 +328,7 @@ namespace Server.Mobiles
                 }
                 else if (WaitingAtHomeBase())
                 {   // we are back to our original home
-                    Info focus = GetFocusMobInfo();
+                    Info? focus = GetFocusMobInfo();
                     if (focus != null && focus.Status == Status.ReturningHome)
                     {
                         DebugSay(DebugFlags.Mobile, "I have returned home");
@@ -321,7 +364,7 @@ namespace Server.Mobiles
                     else if (GetFocusStatus() == Status.Adventuring)
                     {
                         // We reached our destination, time to do what we came here to do
-                        Info focus = GetFocusMobInfo();
+                        Info? focus = GetFocusMobInfo();
                         focus.Status = Status.WaitingOnMission;
                         m_missionTimeout = NewMissionTimeout();
                         DebugSay(DebugFlags.Mobile, "We're here");
@@ -340,7 +383,7 @@ namespace Server.Mobiles
                         GetFocusMobInfo().Status = Status.ReturningHome;
                         m_adventureTimeout = DateTime.MaxValue;
                         DebugSay(DebugFlags.Mobile, "Returning home");
-                        Info focus = GetFocusMobInfo();
+                        Info? focus = GetFocusMobInfo();
                         m_ignorePlayer.Remember(focus.Mobile, NewAntiSpamTimeout());  // Don't keep spamming the same mobile
                         DebugSay(DebugFlags.Mobile, "Ignoring {0} for 5 minutes", focus.Mobile.Name);
                     }
@@ -354,7 +397,7 @@ namespace Server.Mobiles
                 }
             }
         }
-        private bool CheckExceptions(Info focus)
+        private bool CheckExceptions(Info? focus)
         {
             bool noFocus = focus == null;
             bool noAI = AIObject == null;
@@ -497,7 +540,7 @@ namespace Server.Mobiles
         }
         public bool Message(Mobile m)
         {   // another guard is asking us if it's ok to ignore this player since they want to handle it
-            Info focus = GetFocusMobInfo();
+            Info? focus = GetFocusMobInfo();
             if (m_ignorePlayer.Recall(m))
             {   // already being ignored
                 m_ignorePlayer.Refresh(m);
@@ -528,7 +571,7 @@ namespace Server.Mobiles
         private int DoSomething()
         {
             int somethingLength = 0;
-            Mobile m = NearPlayer(TalkDistance);
+            Mobile? m = NearPlayer(TalkDistance);
             // one in five chance at hearing a Sun Tzu quote
             int index = Utility.Random(SunTzu.Count * DoSomethingChance);
             if (index < SunTzu.Count)
@@ -558,7 +601,7 @@ namespace Server.Mobiles
         {   // Sun Tzu uses a lot of compound sentences!
             return text.Count(c => c == '.' || c == ';');
         }
-        private void SmartSay(Mobile m, string sourcestring)
+        private void SmartSay(Mobile? m, string sourcestring)
         {
             if (sourcestring != null)
             {
@@ -592,7 +635,7 @@ namespace Server.Mobiles
 
             }
         }
-        private Mobile NearPlayer(int distance)
+        private Mobile? NearPlayer(int distance)
         {
             List<PlayerMobile> list = new();
             IPooledEnumerable eable = this.GetMobilesInRange(RangePerception);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -95,11 +95,13 @@ namespace Server.Mobiles
 
         public override bool HasBreath { get { return true; } } // fire breath enabled
                                                                 // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
+
         // See links below of era data for Hides
-        public override HideType HideType { get { return (PublishInfo.Publish >= 15) ? HideType.Barbed : HideType.Regular; } }
         public override int Hides { get { return 20; } }
+        public override HideType HideType { get { return (PublishInfo.Publish >= 15) ? HideType.Barbed : HideType.Regular; } }
         public override int Meat { get { return 19; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
         public override int Scales { get { return 12; } }
         public override ScaleType ScaleType { get { return (ScaleType)Utility.Random(4); } }
         public override Poison PoisonImmune { get { return Poison.Regular; } }
@@ -111,62 +113,52 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            if (SpawnerEngine != null)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGem();
-                PackGem();
-                PackGold(2500, 3500);
-                //PackMagicEquipment( 2, 3, 1.0, 1.0 );
-                //PackMagicEquipment( 2, 3, 0.60, 0.60 );
-                PackScroll(6, 8);
-                PackScroll(6, 8);
-                PackPotion();
+                GenerateMiniBossLoot();
+                return;
+            }
 
-                // adam: add 25% chance to get a Random Slayer Instrument
-                PackSlayerInstrument(.25);
+            // http://web.archive.org/web/20021014224951/uo.stratics.com/hunters/ancientwyrm.shtml
+            // 1100 to 1300 Gold, Magic Items, Gems, 19 Raw Ribs (carved), 20 Barbed Hides (carved), 12 Scales of any color except blue
+            // https://web.archive.org/web/20010808171621fw_/http://uo.stratics.com/hunters/wyrm.shtml
+            // 1100 to 1300 gold, Magic Items, 19 Raw Ribs (carved), 20 Hides (carved)
 
+            if (Spawning)
+            {
+                PackGold(1100, 1300);
+            }
+            else
+            {
+                PackMagicStuff(2, 3, 0.06); // TODO: no idea the level, but we'll guess the highest level
+                PackMagicStuff(2, 3, 0.06);
+                if (PublishInfo.Publish >= 15)
+                    PackGem(5);                 // runuo says 5, so we'll say 5
+
+                if (PublishInfo.Publish >= 15)
+                    ;                           // 12 Scales of any color except blue
+            }
+        }
+
+        private void GenerateMiniBossLoot()
+        {
+            if (Spawning)
+            {
+                PackGold(1100, 1300);
+            }
+            else
+            {
                 // Pigpen: Add the WyrmSkin (rare) armor to this mini-boss.
                 if (Core.RuleSets.MiniBossArmor())
                     DoMiniBossArmor();
 
-                // Use our unevenly weighted table for chance resolution
-                Item item;
-                item = Loot.RandomArmorOrShieldOrWeapon();
-                PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6 /*6*/, 0, false));
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20021014224951/uo.stratics.com/hunters/ancientwyrm.shtml
-                    // 1100 to 1300 Gold, Magic Items, Gems, 19 Raw Ribs (carved), 20 Barbed Hides (carved), 12 Scales of any color except blue
-                    // https://web.archive.org/web/20010808171621fw_/http://uo.stratics.com/hunters/wyrm.shtml
-                    // 1100 to 1300 gold, Magic Items, 19 Raw Ribs (carved), 20 Hides (carved)
+                PackMagicStuff(2, 3, 0.06); // TODO: no idea the level, but we'll guess the highest level
+                PackMagicStuff(2, 3, 0.06);
+                if (PublishInfo.Publish >= 15)
+                    PackGem(5);                 // runuo says 5, so we'll say 5
 
-                    if (Spawning)
-                    {
-                        PackGold(1100, 1300);
-                    }
-                    else
-                    {
-                        // Pigpen: Add the WyrmSkin (rare) armor to this mini-boss.
-                        if (Core.RuleSets.MiniBossArmor())
-                            DoMiniBossArmor();
-
-                        PackMagicStuff(2, 3, 0.06); // TODO: no idea the level, but we'll guess the highest level
-                        PackMagicStuff(2, 3, 0.06);
-                        if (PublishInfo.Publish >= 15)
-                            PackGem(5);                 // runuo says 5, so we'll say 5
-
-                        if (PublishInfo.Publish >= 15)
-                            ;                           // 12 Scales of any color except blue
-                    }
-                }
-                else
-                {   // standard runuo
-                    AddLoot(LootPack.FilthyRich, 3);
-                    AddLoot(LootPack.Gems, 5);
-                }
+                if (PublishInfo.Publish >= 15)
+                    ;                           // 12 Scales of any color except blue
             }
         }
         private void DoMiniBossArmor()

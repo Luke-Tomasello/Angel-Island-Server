@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -135,7 +135,7 @@ namespace Server.Factions
 
         public static void HireSheriff_OnTarget(Mobile from, object obj, object state)
         {
-            Town town = state as Town;
+            Town? town = state as Town;
 
             if (town == null)
                 return;
@@ -153,7 +153,7 @@ namespace Server.Factions
             else if (obj is Mobile)
             {
                 Mobile targ = (Mobile)obj;
-                PlayerState pl = PlayerState.Find(targ);
+                PlayerState? pl = PlayerState.Find(targ);
 
                 if (pl == null)
                 {
@@ -186,7 +186,7 @@ namespace Server.Factions
 
         public static void HireFinanceMinister_OnTarget(Mobile from, object obj, object state)
         {
-            Town town = state as Town;
+            Town? town = state as Town;
 
             if (town == null)
                 return;
@@ -204,7 +204,7 @@ namespace Server.Factions
             else if (obj is Mobile)
             {
                 Mobile targ = (Mobile)obj;
-                PlayerState pl = PlayerState.Find(targ);
+                PlayerState? pl = PlayerState.Find(targ);
 
                 if (pl == null)
                 {

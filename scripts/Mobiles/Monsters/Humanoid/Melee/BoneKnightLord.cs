@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -35,7 +35,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 
 namespace Server.Mobiles
@@ -75,9 +74,13 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // ai special
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
+                PackGold(100, 250);
+            }
+            else
+            {
                 switch (Utility.Random(6))
                 {
                     case 0: PackItem(new PlateArms()); break;
@@ -90,54 +93,6 @@ namespace Server.Mobiles
 
                 PackItem(new Scimitar());
                 PackItem(new WoodenShield());
-                PackItem(new Bone(Utility.Random(9, 16)));
-
-                PackGold(200, 400);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(100, 250);
-                    }
-                    else
-                    {
-                        switch (Utility.Random(6))
-                        {
-                            case 0: PackItem(new PlateArms()); break;
-                            case 1: PackItem(new PlateChest()); break;
-                            case 2: PackItem(new PlateGloves()); break;
-                            case 3: PackItem(new PlateGorget()); break;
-                            case 4: PackItem(new PlateLegs()); break;
-                            case 5: PackItem(new PlateHelm()); break;
-                        }
-
-                        PackItem(new Scimitar());
-                        PackItem(new WoodenShield());
-                    }
-                }
-                else
-                {   // ai special
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Meager);
-                }
             }
         }
 

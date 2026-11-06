@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,12 +48,12 @@ namespace Server.SkillHandlers
             int AllowedArmor = (int)(stealth / 100 * 21);           //armor allowed at current stealth skill
 
             //What sort of armor the player has on
-            Item helm = (Item)m.FindItemOnLayer(Layer.Helm);
-            Item gorget = (Item)m.FindItemOnLayer(Layer.Neck);
-            Item chest = (Item)m.FindItemOnLayer(Layer.InnerTorso);
-            Item arms = (Item)m.FindItemOnLayer(Layer.Arms);
-            Item legs = (Item)m.FindItemOnLayer(Layer.Pants);
-            Item gloves = (Item)m.FindItemOnLayer(Layer.Gloves);
+            Item? helm = (Item?)m.FindItemOnLayer(Layer.Helm);
+            Item? gorget = (Item?)m.FindItemOnLayer(Layer.Neck);
+            Item? chest = (Item?)m.FindItemOnLayer(Layer.InnerTorso);
+            Item? arms = (Item?)m.FindItemOnLayer(Layer.Arms);
+            Item? legs = (Item?)m.FindItemOnLayer(Layer.Pants);
+            Item? gloves = (Item?)m.FindItemOnLayer(Layer.Gloves);
 
             //If the player is wearing any non-plain-leather armor, decrese AllowedArmor to max of 15
             if ((helm != null && (helm is BaseArmor) && !(helm is LeatherCap)) ||

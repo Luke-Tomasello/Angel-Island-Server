@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -23,68 +23,61 @@
  * ChangeLog
  * 1/16/22: Adam
  *  initial creation
+ *  3/18/26, Luke
+ *      Refactored to inherit from BaseConsole.
  */
 
-namespace Server.Items
+namespace Server.Engines.Consoles
 {
-    [FlipableAttribute(0x1f14, 0x1f15, 0x1f16, 0x1f17)]
-    public class MultiBoxManagementConsole : Item
+    public class MultiBoxManagementConsole : BaseConsole
     {
         [Constructable]
         public MultiBoxManagementConsole()
-            : base(0x1F14)
+            : base("MultiBox Management Console")
         {
-            Weight = 1.0;
-            Hue = 0x31;
-            Name = "MultiBox Management Console";
         }
 
         public MultiBoxManagementConsole(Serial serial)
             : base(serial)
         {
         }
+
         [CommandProperty(AccessLevel.Administrator)]
         public double MultiBoxDelay
         {
-            get
-            {
-                return CoreAI.MultiBoxDelay;
-            }
-            set
-            {
-                CoreAI.MultiBoxDelay = value;
-            }
+            get => CoreAI.MultiBoxDelay;
+            set => CoreAI.MultiBoxDelay = value;
         }
+
         [CommandProperty(AccessLevel.Administrator)]
         public double MultiBoxPlayerStopped
         {
-            get
-            {
-                return CoreAI.MultiBoxPlayerStopped;
-            }
-            set
-            {
-                CoreAI.MultiBoxPlayerStopped = value;
-            }
+            get => CoreAI.MultiBoxPlayerStopped;
+            set => CoreAI.MultiBoxPlayerStopped = value;
         }
+
         [CommandProperty(AccessLevel.Administrator)]
         public double MultiBoxCensure
         {
-            get
-            {
-                return CoreAI.MultiBoxCensure;
-            }
-            set
-            {
-                CoreAI.MultiBoxCensure = value;
-            }
+            get => CoreAI.MultiBoxCensure;
+            set => CoreAI.MultiBoxCensure = value;
         }
+
         public override void OnDoubleClick(Mobile from)
         {
             if (from.AccessLevel > AccessLevel.Administrator)
-            {
                 from.SendGump(new Server.Gumps.PropertiesGump(from, this));
-            }
+        }
+        public override void Serialize(GenericWriter writer)
+        {
+            base.Serialize(writer);
+            writer.Write((int)0); // version
+        }
+
+        public override void Deserialize(GenericReader reader)
+        {
+            base.Deserialize(reader);
+            int version = reader.ReadInt();
         }
     }
 }

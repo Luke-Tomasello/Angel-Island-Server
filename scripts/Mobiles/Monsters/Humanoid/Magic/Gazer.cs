@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,41 +76,19 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20011217230049/uo.stratics.com/hunters/gazer.shtml
+            // 50 to 150 Gold, Potions, Arrows, Scrolls, Nightshade, Magic Items, 1 Raw Ribs (carved)
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackItem(new Nightshade(4));
-                PackGold(50, 100);
-                PackPotion();
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(50, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20011217230049/uo.stratics.com/hunters/gazer.shtml
-                    // 50 to 150 Gold, Potions, Arrows, Scrolls, Nightshade, Magic Items, 1 Raw Ribs (carved)
-                    if (Spawning)
-                    {
-                        PackGold(50, 150);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
-                        PackScroll(1, 6);
-                        PackItem(new Nightshade(4));
-                        PackMagicItem(1, 1, 0.05);
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                        PackItem(new Nightshade(4));
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Potions);
-                }
+                PackPotion();
+                PackItem(new Arrow(Utility.RandomMinMax(1, 4)));
+                PackScroll(1, 6);
+                PackItem(new Nightshade(4));
+                PackMagicItem(1, 1, 0.05);
             }
         }
 

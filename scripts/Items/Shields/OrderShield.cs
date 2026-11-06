@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -145,12 +145,12 @@ namespace Server.Items
                 base.OnSingleClick(from);
         }
 
-        public bool Validate(Mobile m)
+        public bool Validate(Mobile? m)
         {
             if (!Guild.OrderChaosEnabled || m == null || !m.Player || m.AccessLevel != AccessLevel.Player || Core.RuleSets.AOSRules())
                 return true;
 
-            Guild g = m.Guild as Guild;
+            Guild? g = m.Guild as Guild;
 
             if (g == null || g.Type != GuildType.Order)
             {

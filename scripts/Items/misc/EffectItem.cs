@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -32,11 +32,11 @@ namespace Server.Items
 
         public static EffectItem Create(Point3D p, Map map, TimeSpan duration)
         {
-            EffectItem item = null;
+            EffectItem? item = null;
 
             for (int i = m_Free.Count - 1; item == null && i >= 0; --i) // We reuse new entries first so decay works better
             {
-                EffectItem free = (EffectItem)m_Free[i];
+                EffectItem? free = (EffectItem?)m_Free[i];
 
                 m_Free.RemoveAt(i);
 

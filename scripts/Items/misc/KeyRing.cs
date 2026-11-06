@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Items/Misc/KeyRing.cs
  * ChangeLog:
+ *	10/17/26, Adam
+ *		Rusty locks (After Hours Club) won't turn with a key ring; the loose key must be used on the door (see Key.cs).
+ *		Previously the ring toggled the lock without breaking the key.
  *	5/27/2021, Adam (OnDelete())
  *		Add OnDelete to cleanup keys on the internal map.
  *		Note: A patch has already been run to cleanup these orphaned keys.
@@ -191,7 +194,7 @@ namespace Server.Items
             }
 
             bool bReturn = false;
-            Key key = item as Key;
+            Key? key = item as Key;
 
             if (key == null || key.KeyValue == 0)
             {
@@ -200,13 +203,7 @@ namespace Server.Items
             }
             else if (Count < MAX_KEYS)
             {
-#if false
-				m_Keys.Add(key);
-				key.MoveItemToIntStorage(false);    // put in protected storage
-				UpdateItemID();
-#else
                 AddKey(key);
-#endif
                 from.SendLocalizedMessage(501691); // You put the key on the keyring.
                 bReturn = true;
             }
@@ -286,9 +283,6 @@ namespace Server.Items
             if (descr != null)
                 list.Add(descr);
         }
-#if false
-		public override bool CanFreezeDry { get { return true; } }
-#endif
         public void AddKey(Key key)
         {
             m_Keys.Add(key);
@@ -400,31 +394,6 @@ namespace Server.Items
                 m_KeyRing = keyring;
                 CheckLOS = false;
             }
-#if false
-			private void DeleteKey(uint keyvalue)
-			{
-				List<Key> list = new List<Key>(m_KeyRing.Keys);
-				foreach (Key i in list)
-				{
-					if (i is Key)
-					{
-						if (i.KeyValue == keyvalue)
-						{
-							if (m_KeyRing.Keys.Contains(i))
-							{
-								m_KeyRing.Keys.Remove(i);
-								if (i.IsIntMapStorage)
-									i.IsIntMapStorage = false;
-								i.Delete();
-							}
-							// only delete the first one of these keys
-							m_KeyRing.UpdateItemID();
-							return;
-						}
-					}
-				}
-			}
-#endif
             protected override void OnTarget(Mobile from, object targeted)
             {
 
@@ -474,6 +443,10 @@ namespace Server.Items
                         {
                             //number = 501668;	// This key doesn't seem to unlock that.
                             number = 1008140;   // You do not have a key for that.
+                        }
+                        else if (o is BaseDoor rusty && rusty.RustyLock)
+                        {   // the key must be taken off the ring and used on the door (see Key.cs)
+                            from.SendMessage("The rusty lock won't turn.");
                         }
                         else
                         {

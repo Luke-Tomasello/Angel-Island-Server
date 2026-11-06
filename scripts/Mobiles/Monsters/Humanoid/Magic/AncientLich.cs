@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,10 +76,13 @@ namespace Server.Mobiles
     [CorpseName("an ancient lich corpse")] // TODO: Corpse name?
     public class AncientLich : BaseCreature
     {
-        public override AlignmentType DefaultGuildAlignment { get { return AlignmentSystem.GetDynamicAlignment(this, new AlignmentType[] { AlignmentType.Council }); } }
+        public override AlignmentType DefaultGuildAlignment
+        {
+            get { return AlignmentSystem.GetDynamicAlignment(this, new AlignmentType[] { AlignmentType.Council }); }
+        }
 
-        private Mobile m_Jadey;
-        private Mobile m_Adam;
+        private Mobile? m_Jadey;
+        private Mobile? m_Adam;
         private bool m_SpawnedGuardians;
 
         [Constructable]
@@ -115,9 +118,20 @@ namespace Server.Mobiles
         }
 
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
-        public override bool Unprovokable { get { return true; } }
-        public override Poison PoisonImmune { get { return Poison.Lethal; } }
+        public override bool AutoDispel
+        {
+            get { return Core.RuleSets.AutoDispelChance(this); }
+        }
+
+        public override bool Unprovokable
+        {
+            get { return true; }
+        }
+
+        public override Poison PoisonImmune
+        {
+            get { return Poison.Lethal; }
+        }
 
         public AncientLich(Serial serial)
             : base(serial)
@@ -131,11 +145,11 @@ namespace Server.Mobiles
                 // not really necessary for now, i guess?
                 //
                 /*switch( Utility.Random( 2 )
-				{
-					case 0: this.Say( "You evil defiler! You shall not escape my minions!" ); break;
-					case 1: this.Say( " Foul fiend, my guardians will show you the meaning of respect!" ); break
-					case 2: this.Say( "Be gone, fool, or your soul is mine!" ); break;
-				}*/
+                {
+                    case 0: this.Say( "You evil defiler! You shall not escape my minions!" ); break;
+                    case 1: this.Say( " Foul fiend, my guardians will show you the meaning of respect!" ); break
+                    case 2: this.Say( "Be gone, fool, or your soul is mine!" ); break;
+                }*/
 
                 m_Jadey = new LadyGuardian();
                 m_Adam = new LordGuardian();
@@ -161,7 +175,7 @@ namespace Server.Mobiles
             }
         }
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
             if (Core.RuleSets.AngelIslandRules())
             {
@@ -171,15 +185,58 @@ namespace Server.Mobiles
                     amount = 1;
             }
 
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
         }
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            if (SpawnerEngine != null)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(1200, 1600);
+                GenerateMiniBossLoot();
+                return;
+            }
+
+            // http://web.archive.org/web/20011218043901/uo.stratics.com/hunters/ancientlich.shtml
+            // 1500 Gold, Reagents, Magic Items, Bone Armor
+            if (Spawning)
+            {
+                PackGold(1500);
+            }
+            else
+            {
+                PackReg(30, 275);
+                if (Utility.RandomBool())
+                    PackMagicEquipment(2, 3);
+                else
+                    PackMagicItem(2, 3, 0.80);
+
+                switch (Utility.Random(5))
+                {
+                    case 0: PackItem(new BoneArms()); break;
+                    case 1: PackItem(new BoneChest()); break;
+                    case 2: PackItem(new BoneGloves()); break;
+                    case 3: PackItem(new BoneLegs()); break;
+                    case 4: PackItem(new BoneHelm()); break;
+                }
+            }
+        }
+
+        private void GenerateMiniBossLoot()
+        {
+            if (Spawning)
+            {
+                int gold = Utility.RandomMinMax(1200, 1600);
+
+                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
+                {
+                    // 30% boost to gold
+                    gold += gold / 3;
+                }
+
+                PackGold(gold);
+            }
+            else
+            {
                 PackScroll(6, 8);
                 PackScroll(6, 8);
                 PackReg(10);
@@ -195,12 +252,13 @@ namespace Server.Mobiles
                 // Froste: 12% random IOB drop
                 if (0.12 > Utility.RandomDouble())
                 {
-                    Item iob = Loot.RandomIOB();
+                    Item? iob = Loot.RandomIOB();
                     PackItem(iob);
                 }
 
                 // adam: add 25% chance to get a Random Slayer Instrument
-                PackSlayerInstrument(.25);
+                if (Core.RuleSets.SlayerInstruments())
+                    PackSlayerInstrument(.25);
 
                 // Pigpen: Add the CorpseSkin (rare) armor to this mini-boss.
                 if (Core.RuleSets.MiniBossArmor())
@@ -210,59 +268,9 @@ namespace Server.Mobiles
                 Item item;
                 item = Loot.RandomArmorOrShieldOrWeapon();
                 PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6 /*6*/, 0, false));
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20011218043901/uo.stratics.com/hunters/ancientlich.shtml
-                    // 1500 Gold, Reagents, Magic Items, Bone Armor
-                    if (Spawning)
-                    {
-                        PackGold(1500);
-                    }
-                    else
-                    {
-                        // Pigpen: Add the CorpseSkin (rare) armor to this mini-boss.
-                        if (Core.RuleSets.MiniBossArmor())
-                            DoMiniBossArmor();
-
-                        PackReg(30, 275);
-                        if (Utility.RandomBool())
-                            PackMagicEquipment(2, 3);
-                        else
-                            PackMagicItem(2, 3, 0.80);
-
-                        switch (Utility.Random(5))
-                        {
-                            case 0: PackItem(new BoneArms()); break;
-                            case 1: PackItem(new BoneChest()); break;
-                            case 2: PackItem(new BoneGloves()); break;
-                            case 3: PackItem(new BoneLegs()); break;
-                            case 4: PackItem(new BoneHelm()); break;
-                        }
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        if (Core.RuleSets.AOSRules())
-                            PackNecroReg(30, 275);
-
-                        PackItem(new GnarledStaff());
-                    }
-
-                    AddLoot(LootPack.FilthyRich, 3);
-                    AddLoot(LootPack.MedScrolls, 2);
-                }
             }
         }
+
         private void DoMiniBossArmor()
         {
             if (Utility.Chance(0.30))

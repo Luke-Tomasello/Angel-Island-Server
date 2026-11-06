@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,7 +34,7 @@ namespace Server.ContextMenus
         private bool m_Enabled;
         private int m_Range;
         private CMEFlags m_Flags;
-        private ContextMenu m_Owner;
+        private ContextMenu m_Owner = null!; // assigned by the owning ContextMenu's constructor before the entry is used
 
         /// <summary>
         /// Gets or sets additional <see cref="CMEFlags">flags</see> used in client communication.
@@ -121,7 +121,6 @@ namespace Server.ContextMenus
         /// The maximum range at which this entry can be used.
         /// <seealso cref="Range" />
         /// </param>
-#if true
         public ContextMenuEntry(int number, int range)
         {
             if (number <= 0x7FFF) // Legacy code support
@@ -133,15 +132,6 @@ namespace Server.ContextMenus
             m_Enabled = true;
             m_Color = 0xFFFF;
         }
-#else
-        public ContextMenuEntry(int number, int range)
-        {
-            m_Number = number;
-            m_Range = range;
-            m_Enabled = true;
-            m_Color = 0xFFFF;
-        }
-#endif
         /// <summary>
         /// Overridable. Virtual event invoked when the entry is clicked.
         /// </summary>

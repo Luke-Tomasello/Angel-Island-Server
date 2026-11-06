@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -113,7 +113,7 @@ namespace Server.Factions
 
         public static int GetMaxWearables(Mobile mob)
         {
-            PlayerState pl = PlayerState.Find(mob);
+            PlayerState? pl = PlayerState.Find(mob);
 
             if (pl == null)
                 return 0;
@@ -124,11 +124,11 @@ namespace Server.Factions
             return pl.Rank.MaxWearables;
         }
 
-        public static FactionItem Find(Item item)
+        public static FactionItem? Find(Item item)
         {
             if (item is IFactionItem)
             {
-                FactionItem state = ((IFactionItem)item).FactionItemState;
+                FactionItem? state = ((IFactionItem)item).FactionItemState;
 
                 if (state != null && state.HasExpired)
                 {
@@ -147,7 +147,7 @@ namespace Server.Factions
             if (!(item is IFactionItem))
                 return item;
 
-            FactionItem state = Find(item);
+            FactionItem? state = Find(item);
 
             if (state == null)
             {

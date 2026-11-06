@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,7 +76,7 @@ namespace Server
         private bool m_Running;
         private int m_Index, m_Count;
         private TimerPriority m_Priority;
-        private List<Timer> m_List;
+        private List<Timer>? m_List;
         private bool m_PrioritySet;
 
         private static string FormatDelegate(Delegate callback)
@@ -169,7 +169,7 @@ namespace Server
             }
         }
 
-        public TimerProfile GetProfile()
+        public TimerProfile? GetProfile()
         {
             if (!Core.Profiling)
             {
@@ -230,7 +230,7 @@ namespace Server
 
                         string key = t.ToString();
 
-                        List<Timer> list;
+                        List<Timer>? list;
                         hash.TryGetValue(key, out list);
 
                         if (list == null)
@@ -278,7 +278,7 @@ namespace Server
 
                 public static TimerChangeEntry GetInstance(Timer t, int newIndex, bool isAdd)
                 {
-                    TimerChangeEntry e = null;
+                    TimerChangeEntry? e = null;
 
                     lock (m_InstancePool)
                     {
@@ -449,7 +449,7 @@ namespace Server
                 while (index < m_BreakCount && m_Queue.Count != 0)
                 {
                     Timer t = m_Queue.Dequeue();
-                    TimerProfile prof = t.GetProfile();
+                    TimerProfile? prof = t.GetProfile();
 
                     if (prof != null)
                     {
@@ -483,7 +483,7 @@ namespace Server
 
         public void RegCreation()
         {
-            TimerProfile prof = GetProfile();
+            TimerProfile? prof = GetProfile();
 
             if (prof != null)
             {
@@ -728,7 +728,7 @@ namespace Server
                 m_Running = true;
                 TimerThread.AddTimer(this);
 
-                TimerProfile prof = GetProfile();
+                TimerProfile? prof = GetProfile();
 
                 if (prof != null)
                 {
@@ -744,7 +744,7 @@ namespace Server
                 m_Running = false;
                 TimerThread.RemoveTimer(this);
 
-                TimerProfile prof = GetProfile();
+                TimerProfile? prof = GetProfile();
 
                 if (prof != null)
                 {

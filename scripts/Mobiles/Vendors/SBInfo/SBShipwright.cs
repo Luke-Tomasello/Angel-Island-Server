@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,6 +19,7 @@
  *
  ***************************************************************************/
 
+using Server.Items;
 using Server.Multis;
 using System;
 using System.Collections;
@@ -47,6 +48,56 @@ namespace Server.Mobiles
                 Add(new GenericBuyInfo("1041208", typeof(MediumDragonBoatDeed), BaseVendor.PlayerPays(typeof(MediumDragonBoatDeed)), 20, 0x14F2, 0));
                 Add(new GenericBuyInfo("1041209", typeof(LargeBoatDeed), BaseVendor.PlayerPays(typeof(LargeBoatDeed)), 20, 0x14F2, 0));
                 Add(new GenericBuyInfo("1041210", typeof(LargeDragonBoatDeed), BaseVendor.PlayerPays(typeof(LargeDragonBoatDeed)), 20, 0x14F2, 0));
+
+
+                Add(new ConstructableBuyInfo("small boat plans",
+                    typeof(ShipPlans),
+                    new object[] { BoatType.SmallBoat },
+                    BaseVendor.PlayerPays(typeof(SmallBoatDeed)) / 2,
+                    20,
+                    0x14F2,
+                    0));
+
+                Add(new ConstructableBuyInfo("small dragon boat plans",
+                    typeof(ShipPlans),
+                    new object[] { BoatType.SmallDragonBoat },
+                    BaseVendor.PlayerPays(typeof(SmallDragonBoatDeed)) / 2,
+                    20,
+                    0x14F2,
+                    0));
+
+                Add(new ConstructableBuyInfo("medium boat plans",
+                    typeof(ShipPlans),
+                    new object[] { BoatType.MediumBoat },
+                    BaseVendor.PlayerPays(typeof(MediumBoatDeed)) / 2,
+                    20,
+                    0x14F2,
+                    0));
+
+                Add(new ConstructableBuyInfo("medium dragon boat plans",
+                    typeof(ShipPlans),
+                    new object[] { BoatType.MediumDragonBoat },
+                    BaseVendor.PlayerPays(typeof(MediumDragonBoatDeed)) / 2,
+                    20,
+                    0x14F2,
+                    0));
+
+                Add(new ConstructableBuyInfo("large boat plans",
+                    typeof(ShipPlans),
+                    new object[] { BoatType.LargeBoat },
+                    BaseVendor.PlayerPays(typeof(LargeBoatDeed)) / 2,
+                    20,
+                    0x14F2,
+                    0));
+
+                Add(new ConstructableBuyInfo("large dragon boat plans",
+                    typeof(ShipPlans),
+                    new object[] { BoatType.LargeDragonBoat },
+                    BaseVendor.PlayerPays(typeof(LargeDragonBoatDeed)) / 2,
+                    20,
+                    0x14F2,
+                    0));
+
             }
         }
 

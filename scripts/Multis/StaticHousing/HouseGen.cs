@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,9 +66,9 @@
  *      Initial creation, modified version of AddonGen.cs
  */
 
+using Server.Engines;
 using Server.Gumps;
 using Server.Items;
-using Server.Misc;
 using Server.Multis;
 using Server.Multis.StaticHousing;
 using Server.Network;
@@ -103,7 +103,7 @@ namespace Server.Commands
             // because we must keep rubish 'test' captures from ending up on Production, we have TC and PROD loading different XML files.
             // on Test Center we load/modify StaticHousingTC.xml, on production we load (read only) StaticHousingProd.xml.
             // we limit this tool to Test Center to help enforce this rule.
-            if (TestCenter.Enabled == false || Core.UOBETA_CFG == true)
+            if (TestCenterServer.Enabled == false || Core.GMNBETA_CFG == true)
             {
                 from.SendMessage(0x22, "Error: You may only capture houses on Test Center.");
                 return;
@@ -113,7 +113,7 @@ namespace Server.Commands
             from.SendGump(new InternalGump(new InternalState()));
         }
 
-        private static Mobile m_Mobile;
+        private static Mobile? m_Mobile;
         private static HouseBlueprint m_Captured;
 
         private static void HouseGen_OnTarget(Mobile from, object targeted, object obj)
@@ -122,7 +122,7 @@ namespace Server.Commands
 
             bool success = false;
 
-            HouseSign sign = targeted as HouseSign;
+            HouseSign? sign = targeted as HouseSign;
 
             if (sign == null)
             {
@@ -167,7 +167,7 @@ namespace Server.Commands
             }
         }
 
-        private static bool DoCapture(Mobile from, Map map, Rectangle2D bounds, BaseHouse house, InternalState state)
+        private static bool DoCapture(Mobile from, Map map, Rectangle2D bounds, BaseHouse? house, InternalState state)
         {
             m_Mobile = from;
 
@@ -215,7 +215,7 @@ namespace Server.Commands
             return success;
         }
 
-        private static bool Capture(Map map, Rectangle2D bounds, BaseHouse house, InternalState state)
+        private static bool Capture(Map map, Rectangle2D bounds, BaseHouse? house, InternalState state)
         {
             const bool statics = true; // we alwaye capture statics
             const bool doors = true; // we always capture doors
@@ -273,7 +273,7 @@ namespace Server.Commands
 
             // ************ FIND HOUSE SIGN ************
 
-            Item houseSign = null;
+            Item? houseSign = null;
 
             if (house != null)
                 houseSign = house.Sign;
@@ -397,7 +397,7 @@ namespace Server.Commands
                     int id = item.ItemID;
 
                     int hue = 0;
-                    string itemName = null;
+                    string? itemName = null;
 
                     TileType flags = TileType.Normal;
 
@@ -768,7 +768,7 @@ namespace Server.Commands
             if (!xmlDoc.HasChildNodes)
                 xmlDoc.AppendChild(xmlDoc.CreateElement("StaticHousing"));
 
-            XmlElement xmlRoot = (XmlElement)xmlDoc.FirstChild;
+            XmlElement? xmlRoot = (XmlElement?)xmlDoc.FirstChild;
 
             if (!xmlRoot.HasAttribute("Version"))
                 xmlRoot.SetAttribute("Version", fileVersion.ToString());

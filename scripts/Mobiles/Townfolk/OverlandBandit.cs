@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -286,116 +286,49 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
-            {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                // if it's being announced, it's better loot because more risk
+            // Announced overland bandits carry better loot because they create public risk.
+            // Manually spawned bandits get only modest fallback loot.
+
 #if DEBUG
-                if (true)
+            bool announced = true;
 #else
-                if (Announce == true)
+    bool announced = Announce;
 #endif
-                {
+
+            if (Spawning)
+            {
+                if (announced)
                     PackGold(1200, 1600);
-                    PackScroll(6, 8);
-                    PackScroll(6, 8);
-                    PackReg(10);
-                    PackReg(10);
-
-                    // Use our unevenly weighted table for chance resolution
-                    Item item;
-                    item = Loot.RandomArmorOrShieldOrWeapon();
-                    PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6 /*6*/, 0, false));
-
-                    // maybe some black cloth - 2 chances
-                    int black = 1;
-                    if ((Utility.RandomDouble() < .25))
-                        PackItem(new Cloak(black));
-
-                    if ((Utility.RandomDouble() < .25))
-                        PackItem(new FloppyHat(black));
-
-#if false
-                    // level 2 rare sword
-                    if (Utility.RandomChance(10))
-                    {
-                        //PackItem(Server.Engines.RareFactory.AcquireRare(2, "Swords"), false);
-                    }
-#endif
-                    if (Core.RuleSets.SiegeStyleRules())
-                        PackItem(Loot.RareFactoryItem(.3, Loot.RareType.DungeonChestDropL6));
-                }
                 else
-                {   // crappy loot if manually spawned 
                     PackGold(200, 250);
-                }
-            }
-            else if (Core.RuleSets.SiegeStyleRules())
-            {
-                // if it's being announced, it's better loot because more risk
-#if DEBUG
-                if (true)
-#else
-                if (Announce == true)
-#endif
-                {
-                    if (Spawning)
-                    {
-                        PackGold(1200, 1600);
-                        PackScroll(6, 8);
-                        PackScroll(6, 8);
-                        PackReg(10);
-                        PackReg(10);
-                    }
-                    else
-                    {
-                        // Use our unevenly weighted table for chance resolution
-                        Item item;
-                        item = Loot.RandomArmorOrShieldOrWeapon();
-                        PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6 /*6*/, 0, false));
 
-                        // maybe some black cloth - 2 chances
-                        int black = 1;
-                        if ((Utility.RandomDouble() < .25))
-                            PackItem(new Cloak(black));
-
-                        if ((Utility.RandomDouble() < .25))
-                            PackItem(new FloppyHat(black));
-
-#if false
-                    // level 2 rare sword
-                    if (Utility.RandomChance(10))
-                    {
-                        //PackItem(Server.Engines.RareFactory.AcquireRare(2, "Swords"), false);
-                    }
-#endif
-                        PackItem(Loot.RareFactoryItem(.3, Loot.RareType.DungeonChestDropL6));
-                    }
-                }
-                else
-                {   // crappy loot if manually spawned 
-                    PackGold(200, 250);
-                }
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    // ai special
-                }
+                return;
             }
 
-            return;
+            if (!announced)
+                return;
+
+            PackScroll(6, 8);
+            PackScroll(6, 8);
+
+            PackReg(10);
+            PackReg(10);
+
+            // High-end unevenly weighted armor/shield/weapon roll
+            Item item = Loot.RandomArmorOrShieldOrWeapon();
+            PackItem(Loot.ImbueWeaponOrArmor(noThrottle: false, item, Loot.ImbueLevel.Level6, 0, false));
+
+            // Black clothing flavor drops
+            if (Utility.RandomDouble() < 0.25)
+                PackItem(new Cloak(1));
+
+            if (Utility.RandomDouble() < 0.25)
+                PackItem(new FloppyHat(1));
+
+
+            // Siege-only rare dungeon-chest-style reward
+            if (Core.RuleSets.SiegeRules())
+                PackItem(Loot.RareFactoryItem(0.3, Loot.RareType.DungeonChestDropL6));
         }
 
         public override void Serialize(GenericWriter writer)

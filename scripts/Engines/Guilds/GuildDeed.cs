@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -83,7 +83,7 @@ namespace Server.Items
             }
             else
             {
-                BaseHouse house = BaseHouse.FindHouseAt(from);
+                BaseHouse? house = BaseHouse.FindHouseAt(from);
 
                 if (house == null)
                 {
@@ -129,9 +129,9 @@ namespace Server.Items
                 }
                 else
                 {
-                    BaseHouse house = BaseHouse.FindHouseAt(from);
+                    BaseHouse? house = BaseHouse.FindHouseAt(from);
 
-                    BaseGuild NameTest = Guild.FindByName(text);
+                    BaseGuild? NameTest = Guild.FindByName(text);
                     //make sure we dont initially create a guild with same name as a exsisting one.
                     if (NameTest != null)
                     {

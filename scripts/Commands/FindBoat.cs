@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -44,7 +44,7 @@ namespace Server.Commands
         [Description("Finds a boat by player name by name fast.")]
         public static void FindBoat_OnCommand(CommandEventArgs e)
         {
-            PlayerMobile caller = e.Mobile as PlayerMobile;
+            PlayerMobile? caller = e.Mobile as PlayerMobile;
             caller.JumpIndex = 0;
             caller.JumpList = new System.Collections.ArrayList();
             List<BaseBoat> list = new();
@@ -68,9 +68,8 @@ namespace Server.Commands
                     foreach (var px in list)
                         caller.SendMessage("{0}: {1}", px.Name, px.Serial);
 
-                    BaseBoat bmatch = list.FirstOrDefault(p => p.Owner.Name.Equals(text, StringComparison.OrdinalIgnoreCase));
-                    PlayerMobile match = bmatch.Owner != null ? bmatch.Owner as PlayerMobile : null;
-                    if (match != null)
+                    BaseBoat? bmatch = list.FirstOrDefault(p => p.Owner.Name.Equals(text, StringComparison.OrdinalIgnoreCase));
+                    if (bmatch != null && bmatch.Owner is PlayerMobile match)
                     {
                         caller.SendMessage("player {0}: {1} is an exact match", match.Name, match.Serial);
                         caller.SendGump(new PropertiesGump(caller, bmatch));

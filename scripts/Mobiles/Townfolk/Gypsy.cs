@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -34,9 +34,10 @@
  *
  */
 
-using Server.BountySystem;
 using Server.Diagnostics;
+using Server.Engines;
 using Server.Items;
+using Server.Regions;
 using System;
 
 namespace Server.Mobiles
@@ -94,38 +95,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // Gypsy (town NPC / vendor)
+            // No Stratics hunter entry (not a creature)
+            // Loot: None
+            // Cut Up: None
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                switch (Utility.Random(4))
-                {
-                    case 0: PackItem(new Drums()); break;
-                    case 1: PackItem(new Harp()); break;
-                    case 2: PackItem(new Lute()); break;
-                    case 3: PackItem(new Tambourine()); break;
-                }
+                // No gold
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // no stratics loot page for this mob
-                    // go with nothing for SP since RUNUO gives so much
-                    if (Spawning)
-                    {
-                        if (Core.RuleSets.MortalisRules())
-                            PackGold(250, 300);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    if (Spawning)
-                    {
-                        PackGold(250, 300);
-                    }
-                }
+                // No loot
             }
         }
 
@@ -133,34 +114,42 @@ namespace Server.Mobiles
         {
             bool obd = base.OnBeforeDeath();
 
-            // don't allow profitable farming of blue townsfolk from a region which is usually guarded.
-            //	Note: murders already only get 1/3 of creatures loot, so this is a double whammy for them
-            if (obd && Core.RuleSets.MortalisRules())
-                if (!(this.Spawner != null && Region.Find(this.Spawner.Location, this.Spawner.Map) as Regions.GuardedRegion != null && Region.Find(this.Spawner.Location, this.Spawner.Map).IsGuarded))
+            // Don't allow profitable farming of blue townsfolk from regions that are normally guarded.
+            // Note: murderers already receive only 1/3 creature loot, making this an additional deterrent.
+            if (obd && Core.RuleSets.MortalisRules() && !SpawnedInGuardedRegion())
+            {
+                // first find out how much gold this creature is dropping
+                int MobGold = this.GetGold();
+
+                // reds get 1/3 of usual gold
+                int NewGold = MobGold / 3;
+
+                // first delete all dropped gold
+                Container pack = this.Backpack;
+                if (pack != null)
                 {
-                    // first find out how much gold this creature is dropping
-                    int MobGold = this.GetGold();
-
-                    // reds get 1/3 of usual gold
-                    int NewGold = MobGold / 3;
-
-                    // first delete all dropped gold
-                    Container pack = this.Backpack;
-                    if (pack != null)
+                    // how much gold is on the creature?
+                    Item[] golds = pack.FindItemsByType(typeof(Gold), true);
+                    foreach (Item g in golds)
                     {
-                        // how much gold is on the creature?
-                        Item[] golds = pack.FindItemsByType(typeof(Gold), true);
-                        foreach (Item g in golds)
-                        {
-                            pack.RemoveItem(g);
-                            g.Delete();
-                        }
-
-                        this.PackGold(NewGold);
+                        pack.RemoveItem(g);
+                        g.Delete();
                     }
+
+                    this.PackGold(NewGold);
                 }
+            }
 
             return obd;
+        }
+        private bool SpawnedInGuardedRegion()
+        {
+            if (Spawner == null)
+                return false;
+
+            Region region = Region.Find(Spawner.Location, Spawner.Map);
+
+            return region is GuardedRegion gr && gr.IsGuarded;
         }
 
         public override bool OnDragDrop(Mobile from, Item dropped)

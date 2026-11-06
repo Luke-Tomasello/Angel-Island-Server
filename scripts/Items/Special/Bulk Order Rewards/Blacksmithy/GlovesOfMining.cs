@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,7 +30,12 @@ namespace Server.Items
     [FlipableAttribute(0x13c6, 0x13ce)]
     public class LeatherGlovesOfMining : BaseGlovesOfMining
     {
+        public override Item Dupe(int amount)
+        {
+            LeatherGlovesOfMining new_gom = new LeatherGlovesOfMining(Bonus);
 
+            return base.Dupe(new_gom, amount);
+        }
         public override int InitMinHits { get { return 30; } }
         public override int InitMaxHits { get { return 40; } }
 
@@ -76,7 +81,12 @@ namespace Server.Items
     [FlipableAttribute(0x13d5, 0x13dd)]
     public class StuddedGlovesOfMining : BaseGlovesOfMining
     {
+        public override Item Dupe(int amount)
+        {
+            StuddedGlovesOfMining new_gom = new StuddedGlovesOfMining(Bonus);
 
+            return base.Dupe(new_gom, amount);
+        }
         public override int InitMinHits { get { return 35; } }
         public override int InitMaxHits { get { return 45; } }
 
@@ -121,7 +131,12 @@ namespace Server.Items
     [FlipableAttribute(0x13eb, 0x13f2)]
     public class RingmailGlovesOfMining : BaseGlovesOfMining
     {
+        public override Item Dupe(int amount)
+        {
+            RingmailGlovesOfMining new_gom = new RingmailGlovesOfMining(Bonus);
 
+            return base.Dupe(new_gom, amount);
+        }
         public override int InitMinHits { get { return 40; } }
         public override int InitMaxHits { get { return 50; } }
 
@@ -166,7 +181,7 @@ namespace Server.Items
     public abstract class BaseGlovesOfMining : BaseArmor
     {
         private int m_Bonus;
-        private SkillMod m_SkillMod;
+        private SkillMod? m_SkillMod;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public int Bonus

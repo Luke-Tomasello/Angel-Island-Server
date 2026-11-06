@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -20,7 +20,6 @@
  ***************************************************************************/
 
 using Server.Network;
-using System;
 
 namespace Server.Gumps
 {
@@ -129,7 +128,7 @@ namespace Server.Gumps
 
         public override string Compile()
         {
-            return string.Format("{{ textentry {0} {1} {2} {3} {4} {5} {6} }}", m_X, m_Y, m_Width, m_Height, m_Hue, m_EntryID, Parent.Intern(m_InitialText));
+            return string.Format("{{ textentry {0} {1} {2} {3} {4} {5} {6} }}", m_X, m_Y, m_Width, m_Height, m_Hue, m_EntryID, Parent!.Intern(m_InitialText));
         }
 
         private static byte[] m_LayoutName = Gump.StringToBuffer("textentry");
@@ -143,7 +142,7 @@ namespace Server.Gumps
             disp.AppendLayout(m_Height);
             disp.AppendLayout(m_Hue);
             disp.AppendLayout(m_EntryID);
-            disp.AppendLayout(Parent.Intern(m_InitialText));
+            disp.AppendLayout(Parent!.Intern(m_InitialText));
 
             disp.TextEntries++;
         }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -37,6 +37,7 @@
  *	03/30/05, Kitaras
  *		Initial Creation
  */
+using Server.Items;
 using Server.Mobiles;
 using System;
 using static Server.Utility;
@@ -89,7 +90,7 @@ namespace Server.Misc
         }
 
         //spawns strongest mob in given theme based on spot 0 in  creature list or 0/1 for undead theme
-        public static BaseCreature SpawnHighestMob(ChestThemeType theme)
+        public static BaseCreature? SpawnHighestMob(ChestThemeType theme)
         {
             switch (theme)
             {
@@ -146,7 +147,7 @@ namespace Server.Misc
         }
 
         //returns string to send to player when chest is dug
-        public static string GetThemeMessage(ChestThemeType type)
+        public static string? GetThemeMessage(ChestThemeType type)
         {
             if ((int)type >= 0 && (int)type < ThemeMessages.Length)
             {
@@ -161,7 +162,7 @@ namespace Server.Misc
 
 
         //Begin Spawn mechanics based on level and if themed and theme type
-        private static BaseCreature Spawn(int level, bool IsThemed, ChestThemeType theme, bool guardian)
+        private static BaseCreature? Spawn(int level, bool IsThemed, ChestThemeType theme, bool guardian)
         {
             //handle standered spawn levels based on chest level
             if (IsThemed == false && level >= 0 && level < StanderedTypes.Length)
@@ -201,13 +202,15 @@ namespace Server.Misc
         }
 
         //Main spawn generation function called from any item that needs to generate treasure type spawn.
-        public static void Spawn(int level, Point3D p, Map map, Mobile target, bool IsThemed, ChestThemeType theme, bool guardian, bool guardian2)
+        public static void Spawn(LockableContainer chest, int level, Point3D p, Map map, Mobile? target, bool IsThemed,
+            ChestThemeType theme,
+            bool guardian, bool guardian2)
         {
             //bool guardian is designator for if theme type has special spawn mechanics and thus does not spawn its highest mobs at random
             //guardian2 is second flag indicating to spawn highest mob.
             if (map == null)
                 return;
-            BaseCreature c = null;
+            BaseCreature? c = null;
             if (guardian == false) c = Spawn(level, IsThemed, theme, guardian);
             if (guardian == true && guardian2 == false) c = Spawn(level, IsThemed, theme, true);
             if (guardian == true && guardian2 == true) c = SpawnHighestMob(theme);
@@ -215,6 +218,7 @@ namespace Server.Misc
             {
                 c.Home = p;
                 c.RangeHome = 8;
+                c.SpawningChest = chest;
 
                 // 9/8/2023, Adam: We have chests that can be dug up in town. Guards will ignore this spawn
                 c.GuardIgnore = true;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -78,38 +78,19 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020220114113/uo.stratics.com/hunters/firegargoyle.shtml
+            // 200-300 Gold, Magic Items, Gems, Lvl one Treasure Maps
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGem();
-                PackGold(200, 250);
-                PackMagicEquipment(1, 2, 0.20, 0.20);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(200, 300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020220114113/uo.stratics.com/hunters/firegargoyle.shtml
-                    // 200-300 Gold, Magic Items, Gems, Lvl one Treasure Maps
-
-                    if (Spawning)
-                    {
-                        PackGold(200, 300);
-                    }
-                    else
-                    {
-                        PackMagicEquipment(1, 2);
-                        PackMagicItem(1, 1, 0.05);
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Rich);
-                    AddLoot(LootPack.Gems);
-                }
+                PackMagicEquipment(1, 2);
+                PackMagicItem(1, 1, 0.05);
+                PackGem(1, .9);
+                PackGem(1, .05);
             }
         }
 

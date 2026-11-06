@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,7 +41,7 @@ namespace Server.Misc
 		 * 
 		 * private const string CustomPath = @"C:\Program Files\Ultima Online";
 		 */
-        private static string CustomPath = null;
+        private static string? CustomPath = null;
 
         /* The following is a list of files which a required for proper execution:
 		 * 
@@ -61,8 +61,8 @@ namespace Server.Misc
 
         public static void Configure()
         {
-            string pathReg = GetUOPath("Ultima Online");
-            string pathTD = GetUOPath("Ultima Online Third Dawn");
+            string? pathReg = GetUOPath("Ultima Online");
+            string? pathTD = GetUOPath("Ultima Online Third Dawn");
 
             if (CustomPath != null)
                 Core.DataDirectories.Add(CustomPath);
@@ -82,7 +82,7 @@ namespace Server.Misc
             }
         }
 
-        public static string GetUOPath(string subName)
+        public static string? GetUOPath(string subName)
         {
             try
             {
@@ -103,7 +103,7 @@ namespace Server.Misc
                         return null;
                     try
                     {
-                        string v = WOW6432Node.RegQueryValue(key, "ExePath") as String;
+                        string? v = WOW6432Node.RegQueryValue(key, "ExePath") as String;
 
                         if (v == null || v.Length <= 0)
                             return null;
@@ -130,28 +130,6 @@ namespace Server.Misc
                 }
                 else
                 {
-#if false
-                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(string.Format(@"SOFTWARE\Origin Worlds Online\{0}\1.0", subName)))
-                    {
-                        if (key == null)
-                            return null;
-
-                        string v = key.GetValue("ExePath") as string;
-
-                        if (v == null || v.Length <= 0)
-                            return null;
-
-                        if (!File.Exists(v))
-                            return null;
-
-                        v = Path.GetDirectoryName(v);
-
-                        if (v == null)
-                            return null;
-
-                        return v;
-                    }
-#endif
                     return null;
                 }
             }

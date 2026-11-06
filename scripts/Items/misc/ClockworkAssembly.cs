@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -54,6 +54,10 @@ namespace Server.Items
 
         public override void OnDoubleClick(Mobile from)
         {
+            // just colbber the whole craftable golem system here (leave as rares)
+            if (Core.RuleSets.MortalisStyleRules())
+                return;
+
             if (!IsChildOf(from.Backpack))
             {
                 from.SendLocalizedMessage(1042001); // That must be in your pack for you to use it.
@@ -69,7 +73,7 @@ namespace Server.Items
             }
             // 4 control slots is standard OSI
             // https://uo.stratics.com/database/view.php?db_content=hunters&id=197
-            else if ((from.FollowerCount + (Core.SiegeII_CFG ? 3 : 4)) > from.FollowersMax)
+            else if ((from.FollowerCount + (Core.RuleSets.SiegeRules(2) ? 3 : 4)) > from.FollowersMax)
             {
                 from.SendLocalizedMessage(1049607); // You have too many followers to control that creature.
                 return;

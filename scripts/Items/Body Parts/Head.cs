@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -68,13 +68,13 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public string GuildName
+        public string? GuildName
         {
             get { return (m_Player == null ? null : m_Player.GuildName); }
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public string GuildAbbreviation
+        public string? GuildAbbreviation
         {
             get { return (m_Player == null ? null : m_Player.GuildAbbreviation); }
         }
@@ -144,7 +144,7 @@ namespace Server.Items
             RecalculateName(m_Player?.Name);
         }
 
-        private void RecalculateName(string playerName)
+        private void RecalculateName(string? playerName)
         {
             if (string.IsNullOrEmpty(playerName))
             {

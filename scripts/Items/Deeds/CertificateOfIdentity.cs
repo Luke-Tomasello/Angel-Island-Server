@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -50,7 +50,7 @@ namespace Server.Items
                     from.SendMessage("This item is not player crafted.");
                 else if (item is BaseClothing || item is BaseArmor || item is BaseWeapon)
                 {
-                    Mobile Crafter = null;
+                    Mobile? Crafter = null;
                     if ((item is BaseClothing) && (item as BaseClothing).Crafter != null)
                         Crafter = (item as BaseClothing).Crafter.Mobile;
                     if ((item is BaseArmor) && (item as BaseArmor).Crafter != null)
@@ -75,7 +75,7 @@ namespace Server.Items
             }
             else if (target is PlayerMobile)
             {
-                PlayerMobile pm = target as PlayerMobile;
+                PlayerMobile? pm = target as PlayerMobile;
                 // create the identity
                 m_Cert.Used = true;
                 m_Cert.Mobile = pm;
@@ -108,7 +108,7 @@ namespace Server.Items
                     from.SendMessage("This item is not player crafted.");
                 else if (item is BaseClothing || item is BaseArmor || item is BaseWeapon)
                 {
-                    Mobile Crafter = null;
+                    Mobile? Crafter = null;
                     if ((item is BaseClothing) && (item as BaseClothing).Crafter != null)
                         Crafter = (item as BaseClothing).Crafter.Mobile;
                     if ((item is BaseArmor) && (item as BaseArmor).Crafter != null)
@@ -126,7 +126,7 @@ namespace Server.Items
             }
             else if (target is PlayerMobile)
             {
-                PlayerMobile pm = target as PlayerMobile;
+                PlayerMobile? pm = target as PlayerMobile;
                 if (m_Cert.Valid(pm))
                     from.SendMessage("The player you are targeting matches the identity of this certificate.");
                 else
@@ -141,7 +141,7 @@ namespace Server.Items
 
     public class CertificateOfIdentity : Item // Create the item class which is derived from the base item class
     {
-        private Mobile m_Mobile = null;
+        private Mobile? m_Mobile = null;
         private iFlags m_flags = iFlags.None;
 
         [Flags]
@@ -165,7 +165,7 @@ namespace Server.Items
         {
         }
 
-        public bool Valid(Mobile m)
+        public bool Valid(Mobile? m)
         {
             return m_Mobile != null && m != null && m_Mobile.Serial == m.Serial;
         }
@@ -178,7 +178,7 @@ namespace Server.Items
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Mobile Mobile
+        public Mobile? Mobile
         {
             get { return m_Mobile; }
             set { m_Mobile = value; }

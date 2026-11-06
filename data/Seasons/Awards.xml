@@ -1,0 +1,133 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Awards>
+	<!-- ============================================= -->
+	<!-- Tier 1 - Entry Level (500 – 999 points) -->
+	<!-- ============================================= -->
+	<Award type="BlackDyeTub" price="600" hue="0x01" name="1006008" />
+	<Award type="FurnitureDyeTub" price="650" hue="2213" name="1006013" />
+
+	<!-- Bronze Cloak -->
+	<Award type="Cloak" price="550" hue="0x972" name="1006009" />
+	<!-- Bronze Robe -->
+	<Award type="Robe" price="575" hue="0x972" name="1006010" />
+	<!-- Copper Cloak -->
+	<Award type="Cloak" price="650" hue="0x96D" name="1006011" />
+	<!-- Copper Robe -->
+	<Award type="Robe" price="675" hue="0x96D" name="1006012" />
+	<!-- True White Shirt -->
+	<Award type="Shirt" price="750" hue="0x47E" name="True White Shirt" />
+
+	<!-- Statue 1 -->
+	<Award type="Statue1" price="720" hue="0" name="Statue 1" />
+	<!-- Statue 2 -->
+	<Award type="Statue2" price="740" hue="0" name="Statue 2" />
+
+	<!-- Monster Statuettes -->
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Crocodile" name="1006024" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Daemon" name="1006025" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Dragon" name="1006026" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.EarthElemental" name="1006027" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Ettin" name="1006028" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Gargoyle" name="1006029" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Gorilla" name="1006030" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Lich" name="1006031" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Lizardman" name="1006032" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Ogre" name="1006033" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Orc" name="1006034" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Ratman" name="1006035" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Skeleton" name="1006036" />
+	<Award type="MonsterStatuette" price="800" args="Server.Items.MonsterStatuetteType.Troll" name="1006037" />
+
+	<!-- ============================================= -->
+	<!-- Tier 2 - Mid Tier (1000 – 1999 points) -->
+	<!-- ============================================= -->
+	<Award type="LeatherDyeTub" price="1100" hue="2208" name="1006052" />
+
+	<!-- Agapite Cloak -->
+	<Award type="Cloak" price="1200" hue="0x979" name="1006014" />
+	<!-- Agapite Robe -->
+	<Award type="Robe" price="1250" hue="0x979" name="1006015" />
+	<!-- Arcane Spellbook -->
+	<Award type="Spellbook" price="1350" hue="0x482" name="Arcane Spellbook" itemName="Arcane Spellbook" />
+	<!-- Golden Cloak -->
+	<Award type="Cloak" price="1400" hue="0x8A5" name="1006016" />
+	<!-- Golden Robe -->
+	<Award type="Robe" price="1450" hue="0x8A5" name="1006017" />
+	<!-- True White Fancy Shirt -->
+	<Award type="FancyShirt" price="1600" hue="0x47E" name="True White Fancy Shirt" />
+	<!-- True White Fancy Dress -->
+	<Award type="FancyDress" price="1700" hue="0x47E" name="True White Fancy Dress" />
+	<!-- Special Hair Dye -->
+	<Award type="SpecialHairDye" price="1750" name="Special Hair Dye" />
+	<!-- Special Beard Dye -->
+	<Award type="SpecialBeardDye" price="1750" name="1041087" />
+
+	<!-- Statue 3 -->
+	<Award type="Statue3" price="1450" hue="0" name="Statue 3" />
+	<!-- Statue 4 -->
+	<Award type="Statue4" price="1480" hue="0" name="Statue 4" />
+
+	<!-- ============================================= -->
+	<!-- Tier 3 - High Tier (2000 – 3499 points) -->
+	<!-- ============================================= -->
+	<!-- Verite Cloak -->
+	<Award type="Cloak" price="2100" hue="0x89F" name="1006020" />
+	<!-- Verite Robe -->
+	<Award type="Robe" price="2150" hue="0x89F" name="1006021" />
+	<!-- Valorite Cloak -->
+	<Award type="Cloak" price="2400" hue="0x8AB" name="1006022" />
+	<!-- Valorite Robe -->
+	<Award type="Robe" price="2450" hue="0x8AB" name="1006023" />
+	<!-- Greater Arcane Spellbook -->
+	<Award type="Spellbook" price="2500" hue="0xBE" name="Greater Arcane Spellbook" itemName="Greater Arcane Spellbook" />
+
+	<!-- ============================================= -->
+	<!-- Tier 4 - Premium Tier (3500 – 4499 points) -->
+	<!-- ============================================= -->
+	<Award type="RunebookDyeTub" price="3600" hue="0" name="1049740" />
+	<!-- Dark Gray Cloak -->
+	<Award type="Cloak" price="3700" hue="0x497" name="1049725" />
+	<!-- Dark Gray Robe -->
+	<Award type="Robe" price="3750" hue="0x497" name="1049726" />
+	<!-- Ancient Arcane Spellbook -->
+	<Award type="Spellbook" price="3800" hue="0xB" name="Ancient Arcane Spellbook" itemName="Ancient Arcane Spellbook" />
+
+	<!-- Bust -->
+	<Award type="Bust" price="3800" hue="0" name="Bust" />
+
+	<!-- Ice Green Cloak -->
+	<Award type="Cloak" price="3900" hue="0x47F" name="1049727" />
+	<!-- Ice Green Robe -->
+	<Award type="Robe" price="3950" hue="0x47F" name="1049728" />
+	<!-- Ice Blue Cloak -->
+	<Award type="Cloak" price="4100" hue="0x482" name="1049729" />
+	<!-- Ice Blue Robe -->
+	<Award type="Robe" price="4150" hue="0x482" name="1049730" />
+
+	<!-- ============================================= -->
+	<!-- Tier 5 - Legendary Tier (4500 – 5000 points) -->
+	<!-- ============================================= -->
+	<Award type="StatuetteDyeTub" price="4600" hue="0" name="Statue Dye Tub" ItemName="Statue Dye Tub"/>
+
+	<!-- Jet Black Cloak -->
+	<Award type="Cloak" price="4700" hue="0x001" name="1049731" />
+	<!-- Jet Black Robe -->
+	<Award type="Robe" price="4750" hue="0x001" name="1049732" />
+	<!-- Ice White Cloak -->
+	<Award type="Cloak" price="4900" hue="0x47E" name="1049733" />
+	<!-- Ice White Robe -->
+	<Award type="Robe" price="4950" hue="0x47E" name="1049734" />
+	<!-- Fire Cloak -->
+	<Award type="Cloak" price="5000" hue="0x489" name="1049735" />
+	<!-- Fire Robe -->
+	<Award type="Robe" price="5000" hue="0x489" name="1049736" />
+
+	<!-- High-end Monster Statuettes -->
+	<Award type="MonsterStatuette" price="4800" args="Server.Items.MonsterStatuetteType.Gazer" name="1049768" />
+	<Award type="MonsterStatuette" price="4850" args="Server.Items.MonsterStatuetteType.FireElemental" name="1049769" />
+	<Award type="MonsterStatuette" price="4900" args="Server.Items.MonsterStatuetteType.Wolf" name="1049770" />
+
+	<!-- Pegasus Statue -->
+	<Award type="StatuePegasus" price="4950" hue="0" name="Pegasus Statue" />
+
+</Awards>

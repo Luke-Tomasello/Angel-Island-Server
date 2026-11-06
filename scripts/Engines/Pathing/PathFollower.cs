@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -48,7 +48,7 @@ namespace Server
 
         private Mobile m_From;
         private IPoint3D m_Goal;
-        private MovementPath m_Path;
+        private MovementPath? m_Path;
         private int m_Index;
         private Point3D m_Next, m_LastGoalLoc;
         private DateTime m_LastPathTime;
@@ -136,7 +136,7 @@ namespace Server
             m_LastPathTime = DateTime.UtcNow - RepathDelay;
         }
 
-        private Point3D[] m_SectorPoints;
+        private Point3D[]? m_SectorPoints;
         private int m_NextSectorPoint;
         private Point3D m_LastEndGoalLoc;
         public bool CheckPath()

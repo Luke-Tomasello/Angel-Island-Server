@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -244,7 +244,7 @@ namespace Server.Mobiles
                 {
                     if (m_Mobile.Poison != null)
                     {
-                        Spell curespell;
+                        Spell? curespell;
 
                         if ((((m_Mobile.Skills[SkillName.Magery].Value / (m_Mobile.Poison.Level + 1)) - 20) * 7.5) > 50)
                         {
@@ -455,7 +455,7 @@ namespace Server.Mobiles
                 return ChooseSpell(toDispel);
             }
 
-            Spell spell = null;
+            Spell? spell = null;
 
             if (!m_Mobile.Summoned && Utility.Random(0, 4 + (m_Mobile.Hits == 0 ? m_Mobile.HitsMax : (m_Mobile.HitsMax / m_Mobile.Hits))) >= 3)
             {
@@ -498,7 +498,7 @@ namespace Server.Mobiles
                 return GetRandomDamageSpell(c);
             }
 
-            Spell spell = null;
+            Spell? spell = null;
 
             int healChance = (m_Mobile.Hits == 0 ? m_Mobile.HitsMax : (m_Mobile.HitsMax / m_Mobile.Hits));
 
@@ -574,7 +574,7 @@ namespace Server.Mobiles
 
         public virtual Spell DoCombo(Mobile c)
         {
-            Spell spell = null;
+            Spell? spell = null;
 
             if (m_Combo == 0)
             {
@@ -665,7 +665,7 @@ namespace Server.Mobiles
             bool tryReveal = false;
             double ss = m_Mobile.Skills.DetectHidden.Value;
             double ts = c.Skills[SkillName.Hiding].Value;
-            Memory.ObjectMemory om = ShortTermMemory.Recall(c as object);
+            Memory.ObjectMemory? om = ShortTermMemory.Recall(c as object);
 
             if (om == null)
                 return tryReveal;
@@ -706,7 +706,7 @@ namespace Server.Mobiles
                 int range = 1 + (int)(m_Mobile.Skills[SkillName.Magery].Value / 20.0);
 
                 //cancel spell
-                ISpell i = m_Mobile.Spell;
+                ISpell? i = m_Mobile.Spell;
                 if (i != null && i.IsCasting)
                 {
                     Spell s = (Spell)i;
@@ -732,7 +732,7 @@ namespace Server.Mobiles
         public override bool DoActionCombat(MobileInfo info)
         {
             m_Mobile.DebugSay(DebugFlags.AI, "doing MageAI base DoActionCombat()");
-            Mobile combatant = info.target;
+            Mobile? combatant = info.target;
             m_Mobile.Warmode = true;
 
             // if we can reveal and our target just hid and we Recall them, lets try to reveal
@@ -842,8 +842,8 @@ namespace Server.Mobiles
                     // We are ready to cast a spell
                     m_Mobile.DebugSay(DebugFlags.Pursuit, "Pausing to cast on {0}", combatant);
 
-                    Spell spell = null;
-                    Mobile toDispel = FindDispelTarget(true);
+                    Spell? spell = null;
+                    Mobile? toDispel = FindDispelTarget(true);
 
                     if (m_Mobile.Poisoned) // Top cast priority is cure
                     {
@@ -942,7 +942,7 @@ namespace Server.Mobiles
                 //	If we can Recall() a player via FindHiddenTarget, we will enter Combat mode and try to reveal them
                 //	Keep in mind, CombatTimer.OnTick() will set the Combatant to null if it sees that the mobile is hidden, 
                 //	for this reason, we will need to make this check again in DoActionCombat if the Combatant is null.
-                Mobile mx = FindHiddenTarget();
+                Mobile? mx = FindHiddenTarget();
                 if (mx != null)
                 {
                     m_Mobile.DebugSay(DebugFlags.AI, "G: Ah, I remembered {0}!", mx.Name);
@@ -1042,7 +1042,7 @@ namespace Server.Mobiles
             return true;
         }
 
-        public Mobile FindDispelTarget(bool activeOnly)
+        public Mobile? FindDispelTarget(bool activeOnly)
         {
             if (m_Mobile.Deleted || m_Mobile.Int < 80 || CanDispel(m_Mobile) || m_Mobile.AutoDispel)
                 return null;
@@ -1052,7 +1052,7 @@ namespace Server.Mobiles
                 List<AggressorInfo> aggressed = m_Mobile.Aggressed;
                 List<AggressorInfo> aggressors = m_Mobile.Aggressors;
 
-                Mobile active = null;
+                Mobile? active = null;
                 double activePrio = 0.0;
 
                 Mobile comb = m_Mobile.Combatant;
@@ -1114,7 +1114,7 @@ namespace Server.Mobiles
 
                 if (map != null)
                 {
-                    Mobile active = null, inactive = null;
+                    Mobile? active = null, inactive = null;
                     double actPrio = 0.0, inactPrio = 0.0;
 
                     Mobile comb = m_Mobile.Combatant;
@@ -1197,7 +1197,7 @@ namespace Server.Mobiles
             bool teleportAway = false;
             bool isReveal = (targ is RevealSpell.InternalTarget || targ is DetectHidden.InternalTarget);
 
-            Mobile toTarget;
+            Mobile? toTarget;
 
             if (isReveal)
             {

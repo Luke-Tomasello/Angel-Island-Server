@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,12 +66,12 @@ namespace Server.Engines.Craft
 		{
 		}*/
 
-        public CraftGump(Mobile from, CraftSystem craftSystem, BaseTool tool, TextDefinition notice)
+        public CraftGump(Mobile from, CraftSystem craftSystem, BaseTool tool, TextDefinition? notice)
             : this(from, craftSystem, tool, notice, CraftPage.None)
         {
         }
 
-        private CraftGump(Mobile from, CraftSystem craftSystem, BaseTool tool, TextDefinition notice, CraftPage page)
+        private CraftGump(Mobile from, CraftSystem craftSystem, BaseTool tool, TextDefinition? notice, CraftPage page)
             : base(40, 40)
         {
             m_From = from;
@@ -80,7 +80,7 @@ namespace Server.Engines.Craft
             m_Page = page;
             m_NumLines = Math.Max(10, m_CraftSystem.CraftGroups.Count);
 
-            CraftContext context = craftSystem.GetContext(from);
+            CraftContext? context = craftSystem.GetContext(from);
 
             from.CloseGump(typeof(CraftGump));
             from.CloseGump(typeof(CraftGumpItem));
@@ -254,7 +254,7 @@ namespace Server.Engines.Craft
                     if (i > 0)
                         AddButton(455, 60 + 20 * m_NumLines, 4014, 4015, 0, GumpButtonType.Page, i / m_NumLines);
 
-                    CraftContext context = m_CraftSystem.GetContext(m_From);
+                    CraftContext? context = m_CraftSystem.GetContext(m_From);
 
                     AddButton(220, 60 + 20 * m_NumLines, 4005, 4007, GetButtonID(6, 4), GumpButtonType.Reply, 0);
                     AddHtmlLocalized(255, 63 + 20 * m_NumLines, 200, 18, (context == null || !context.DoNotColor) ? 1061591 : 1061590, LabelColor, false, false);
@@ -281,7 +281,7 @@ namespace Server.Engines.Craft
 
         public void CreateMakeLastList()
         {
-            CraftContext context = m_CraftSystem.GetContext(m_From);
+            CraftContext? context = m_CraftSystem.GetContext(m_From);
 
             if (context == null)
                 return;
@@ -294,7 +294,7 @@ namespace Server.Engines.Craft
                 {
                     int index = i % m_NumLines;
 
-                    CraftItem craftItem = (CraftItem)items[i];
+                    CraftItem? craftItem = (CraftItem?)items[i];
 
                     if (index == 0)
                     {
@@ -405,9 +405,9 @@ namespace Server.Engines.Craft
             }
             else
             {
-                Type type = null;
+                Type? type = null;
 
-                CraftContext context = m_CraftSystem.GetContext(m_From);
+                CraftContext? context = m_CraftSystem.GetContext(m_From);
 
                 if (context != null)
                 {
@@ -433,7 +433,7 @@ namespace Server.Engines.Craft
 
             CraftSystem system = m_CraftSystem;
             CraftGroupCol groups = system.CraftGroups;
-            CraftContext context = system.GetContext(m_From);
+            CraftContext? context = system.GetContext(m_From);
 
             switch (type)
             {
@@ -572,7 +572,7 @@ namespace Server.Engines.Craft
                                     if (context == null)
                                         break;
 
-                                    CraftItem item = context.LastMade;
+                                    CraftItem? item = context.LastMade;
 
                                     if (item != null)
                                         CraftItem(item);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -96,23 +96,21 @@ namespace Server.Mobiles
 
             Scimitar weapon = new Scimitar();
 
-            if (Core.RuleSets.AngelIslandRules())
-            {
-                // 3% chance for Neira's sword to drop.
-                if (Utility.RandomDouble() <= 0.97)
-                    weapon.LootType = LootType.Newbied;
-                else
-                    weapon.LootType = LootType.Regular;
-                weapon.Name = "Corpse Cleaver";
-                weapon.Hue = 38;
-                weapon.Movable = false;
-            }
+            // 20% chance for Neira's sword to drop.
+            if (Utility.RandomChance(20))
+                weapon.LootType = LootType.Regular;
             else
-            {
-                weapon.Skill = SkillName.Wrestling;
-                weapon.Hue = 38;
-                weapon.Movable = false;
-            }
+                weapon.LootType = LootType.Newbied;
+
+            weapon.Name = "Corpse Cleaver";
+            weapon.Hue = 38;
+
+            // unmovable for now to prevent disarm steal
+            weapon.Movable = false;
+
+            // this was intentional by RunUO. Perpaps because as a swords skill it does too much damage? 
+            //  We will fix if we drop
+            weapon.Skill = SkillName.Wrestling;
 
             AddItem(weapon);
 
@@ -137,32 +135,14 @@ namespace Server.Mobiles
         {
             if (IsChampion)
             {
-                if (Core.RuleSets.AngelIslandRules())
-                {
-                    // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                    // Neira's sword can't drop unless it's movable
-                    if (Weapon is Scimitar)
-                    {   // add some attributes now to make it a tad more interesting
-                        Scimitar weapon = Loot.ImbueWeaponOrArmor(noThrottle: true, Weapon as Scimitar, Loot.ImbueLevel.Level6 /*6*/, 0, false) as Scimitar;
-                        weapon.Movable = true;
-                    }
-                }
+                if (Spawning) { }
                 else
                 {
-                    if (Core.RuleSets.AllShards)
-                    {   // TBD
-                        if (Spawning)
-                        {
-                            PackGold(0);
-                        }
-                        else
-                        {
-                        }
-                    }
-                    else
-                    {   // Standard RunUO
-                        AddLoot(LootPack.UltraRich, 3);
-                        AddLoot(LootPack.Meager);
+                    if (Weapon is Scimitar)
+                    {   // add some attributes now to make it a tad more interesting
+                        Scimitar? weapon = Loot.ImbueWeaponOrArmor(noThrottle: true, Weapon as Scimitar, Loot.ImbueLevel.Level6 /*6*/, 0, false) as Scimitar;
+                        weapon.Movable = true;
+                        weapon.Skill = SkillName.Swords;
                     }
                 }
             }
@@ -184,7 +164,7 @@ namespace Server.Mobiles
         public override bool AlwaysMurderer { get { return true; } }
         public override Poison PoisonImmune { get { return Poison.Deadly; } }
         // Auto-dispel is UOR - http://forums.uosecondage.com/viewtopic.php?f=8&t=6901
-        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(); } }
+        public override bool AutoDispel { get { return Core.RuleSets.AutoDispelChance(this); } }
 
         public override bool ShowFameTitle { get { return false; } }
         public override bool ClickTitle { get { return false; } }
@@ -197,9 +177,9 @@ namespace Server.Mobiles
                 AddUnholyBone(defender, 0.25);
         }
 
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
 
             if (from != null && from is PlayerMobile && from.InRange(this, 10) || from != null && from is BaseCreature && ((BaseCreature)from).Controlled)
             {
@@ -247,7 +227,7 @@ namespace Server.Mobiles
                 if (m_Mobile.CanBeHarmful(m_Target))
                 {
                     m_Mobile.DoHarmful(m_Target);
-                    AOS.Damage(m_Target, m_Mobile, Utility.RandomMinMax(10, 20), 100, 0, 0, 0, 0, this);
+                    AOS.Damage(m_Target, m_Mobile, Utility.RandomMinMax(10, 20), new DamageContext { Source = this });
                     new UnholyBone().MoveToWorld(m_Target.Location, m_Target.Map);
                 }
             }

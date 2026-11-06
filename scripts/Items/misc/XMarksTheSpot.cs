@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -196,7 +196,7 @@ namespace Server.Items
 
             if (m.NetState != null && Components.Count != 0)
             {
-                Item c = (Item)Components[0];
+                Item? c = (Item?)Components[0];
 
                 m.NetState.Send(new AsciiMessage(c.Serial, c.ItemID, MessageType.Regular, 0, 3, c.Name, "*You have uncovered buried treasure!*"));
 
@@ -208,7 +208,7 @@ namespace Server.Items
             StartHideTimer();
         }
 
-        private Timer m_HideTimer;
+        private Timer? m_HideTimer;
 
         private void StartHideTimer()
         {
@@ -260,7 +260,7 @@ namespace Server.Items
 
             Point3D loc = new Point3D((IPoint3D)targeted);
 
-            XMarksTheSpot found = null;
+            XMarksTheSpot? found = null;
 
             foreach (Item item in map.GetItemsInRange(loc, 0))
             {
@@ -306,7 +306,7 @@ namespace Server.Items
             return false;
         }
 
-        private DigTimer m_DigTimer;
+        private DigTimer? m_DigTimer;
 
         private void StartDigTimer(Mobile m, Item tool)
         {

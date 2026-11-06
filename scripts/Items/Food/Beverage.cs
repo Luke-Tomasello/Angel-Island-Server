@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -93,6 +93,36 @@ namespace Server.Items
     [TypeAlias("Server.Items.BottleAle", "Server.Items.BottleLiquor", "Server.Items.BottleWine")]
     public class BeverageBottle : BaseBeverage
     {
+        public override Item Dupe(int amount)
+        {
+            BaseBeverage? copy = null;
+
+            try
+            {
+                copy = Activator.CreateInstance(GetType(), new object[] { Content }) as BaseBeverage;
+            }
+            catch
+            {
+            }
+
+            if (copy == null)
+            {
+                try
+                {
+                    copy = Activator.CreateInstance(GetType()) as BaseBeverage;
+                }
+                catch
+                {
+                }
+            }
+
+            if (copy == null)
+                return null;
+
+            Utility.CopyProperties(this, copy);
+
+            return base.Dupe(copy, amount);
+        }
         public override int BaseLabelNumber { get { return 1042959; } } // a bottle of Ale
         public override int MaxQuantity { get { return 5; } }
         public override bool Fillable { get { return false; } }
@@ -761,7 +791,7 @@ namespace Server.Items
 
             if (!Movable && !Fillable)
             {
-                Multis.BaseHouse house = Multis.BaseHouse.FindHouseAt(this);
+                Multis.BaseHouse? house = Multis.BaseHouse.FindHouseAt(this);
 
                 if (house == null || !house.IsLockedDown(this))
                 {
@@ -793,7 +823,7 @@ namespace Server.Items
 
             if (targ is BaseBeverageCauldron || targ is AddonComponent && (targ as AddonComponent).Addon is BaseBeverageCauldron)
             {
-                BaseBeverageCauldron bev = null;
+                BaseBeverageCauldron? bev = null;
                 if (targ is BaseBeverageCauldron)
                     bev = (BaseBeverageCauldron)targ;
                 else
@@ -843,7 +873,7 @@ namespace Server.Items
             }
             else if (targ is BaseWaterContainer)
             {
-                BaseWaterContainer bwc = targ as BaseWaterContainer;
+                BaseWaterContainer? bwc = targ as BaseWaterContainer;
                 if (Utility.IsTownshipOrHouse(bwc, from) && !bwc.HasAccess(from))
                 {
                     from.SendLocalizedMessage(500364); // You can't use that, it belongs to someone else.
@@ -878,7 +908,7 @@ namespace Server.Items
             else if (targ is Item)
             {
                 Item item = (Item)targ;
-                IWaterSource src;
+                IWaterSource? src;
 
                 src = (item as IWaterSource);
 
@@ -920,11 +950,7 @@ namespace Server.Items
                     this.Content = BeverageType.Milk;
                     this.Quantity = MaxQuantity;
 
-#if false
-                    from.SendLocalizedMessage(1080197); // You fill the container with milk.
-#else
                     from.SendMessage("You fill the container with milk.");
-#endif
                 }
             }
             else if (targ is StaticTarget)
@@ -943,7 +969,7 @@ namespace Server.Items
             {
                 int tileID = ((LandTarget)targ).TileID;
 
-                PlayerMobile player = from as PlayerMobile;
+                PlayerMobile? player = from as PlayerMobile;
 
                 if (player != null)
                 {
@@ -951,7 +977,7 @@ namespace Server.Items
 
                     if (qs is WitchApprenticeQuest)
                     {
-                        FindIngredientObjective obj = qs.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
+                        FindIngredientObjective? obj = qs.FindObjective(typeof(FindIngredientObjective)) as FindIngredientObjective;
 
                         if (obj != null && !obj.Completed && obj.Ingredient == Ingredient.SwampWater)
                         {
@@ -1019,7 +1045,7 @@ namespace Server.Items
         {
             if (from.BAC > 0 && from.Map != Map.Internal && !from.Deleted)
             {
-                Timer t = (Timer)m_Table[from];
+                Timer? t = (Timer?)m_Table[from];
 
                 if (t == null)
                 {
@@ -1034,7 +1060,7 @@ namespace Server.Items
             }
             else
             {
-                Timer t = (Timer)m_Table[from];
+                Timer? t = (Timer?)m_Table[from];
 
                 if (t != null)
                 {
@@ -1184,7 +1210,7 @@ namespace Server.Items
             }
             else if (targ is BaseWaterContainer)
             {
-                BaseWaterContainer bwc = targ as BaseWaterContainer;
+                BaseWaterContainer? bwc = targ as BaseWaterContainer;
 
                 if (Content != BeverageType.Water)
                 {
@@ -1269,7 +1295,7 @@ namespace Server.Items
 
             for (int i = 0; i < items.Length; ++i)
             {
-                BaseBeverage bev = items[i] as BaseBeverage;
+                BaseBeverage? bev = items[i] as BaseBeverage;
 
                 if (bev != null && bev.Content == content && !bev.IsEmpty)
                     total += bev.Quantity;
@@ -1283,7 +1309,7 @@ namespace Server.Items
 
                 for (int i = 0; i < items.Length; ++i)
                 {
-                    BaseBeverage bev = items[i] as BaseBeverage;
+                    BaseBeverage? bev = items[i] as BaseBeverage;
 
                     if (bev == null || bev.Content != content || bev.IsEmpty)
                         continue;

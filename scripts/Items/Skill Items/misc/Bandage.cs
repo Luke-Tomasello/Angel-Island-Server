@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -53,6 +53,7 @@
  *	modified CheckSkill call to use max value of 100.0 instead of 120.0.
  */
 
+using Scripts.Misc;
 using Server.Commands;
 using Server.Diagnostics;
 using Server.Gumps;
@@ -88,7 +89,7 @@ namespace Server.Items
         }
 
         // Check proximity and report exploitive behavior
-        public static bool ProximityCheck(Mobile healer, Mobile patient, int distance)
+        public static bool ProximityCheck(Mobile healer, Mobile? patient, int distance)
         {
             if (healer is Mobile == false || patient is Mobile == false)
                 return false;
@@ -183,6 +184,10 @@ namespace Server.Items
             {
                 from.SendLocalizedMessage(1042001); //This must be in your backpack
             }
+            else if (!StartingLootMonitor.CanUse(from, this))
+            {
+                StartingLootMonitor.DenyWithMsg(from);
+            }
             else if (from.InRange(GetWorldLocation(), Core.RuleSets.AOSRules() ? 2 : 1))
             {
                 from.RevealingAction();
@@ -219,7 +224,7 @@ namespace Server.Items
 
                 if (targeted is Mobile)
                 {
-                    Mobile m = targeted as Mobile;
+                    Mobile? m = targeted as Mobile;
 
                     if (Bandage.ProximityCheck(from, m, Core.RuleSets.AOSRules() ? 2 : 1) == false)
                     {
@@ -251,7 +256,7 @@ namespace Server.Items
         private Mobile m_Healer;
         private Mobile m_Patient;
         private int m_Slips;
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         public Mobile Healer { get { return m_Healer; } }
         public Mobile Patient { get { return m_Patient; } }
@@ -368,7 +373,7 @@ namespace Server.Items
             SkillName primarySkill = GetPrimarySkill(m_Patient);
             SkillName secondarySkill = GetSecondarySkill(m_Patient);
 
-            BaseCreature petPatient = m_Patient as BaseCreature;
+            BaseCreature? petPatient = m_Patient as BaseCreature;
 
             if (!m_Healer.Alive)
             {
@@ -540,10 +545,45 @@ namespace Server.Items
 
             if (checkSkills)
             {
-                m_Healer.CheckSkill(secondarySkill, 0.0, 100.0, contextObj: new object[2]);
-                m_Healer.CheckSkill(primarySkill, 0.0, 100.0, contextObj: new object[2]);
+                if (CanGainBandageSkill(m_Healer, m_Patient, secondarySkill))
+                {
+                    m_Healer.CheckSkill(secondarySkill, 0.0, 100.0, contextObj: new object[2]);
+                }
+
+                if (CanGainBandageSkill(m_Healer, m_Patient, primarySkill))
+                {
+                    m_Healer.CheckSkill(primarySkill, 0.0, 100.0, contextObj: new object[2]);
+                }
             }
         }
+
+        // Somewhere in Bandage class (or a shared helper)
+
+        private static bool CanGainBandageSkill(Mobile healer, Mobile patient, SkillName skill)
+        {
+            if (skill == SkillName.Healing || skill == SkillName.Anatomy)
+            {
+                // Healing domain: humanoid targets only (players, NPCs, etc.)
+                // Tighten this to your shard’s definition of “humanoid” if needed.
+                return patient != null && patient.Body.IsHuman;
+            }
+
+            if (skill == SkillName.Veterinary || skill == SkillName.AnimalLore)
+            {
+                // Veterinary domain: tameable creatures only.
+                var bc = patient as BaseCreature;
+                if (bc == null)
+                    return false;
+
+                // You can choose between "tameable" vs "currently tamed".
+                // Classic intent is: Vet is for animals/tameables, not generic monsters.
+                return bc.Tamable; // or (bc.Tamable && (bc.Controlled || bc.Summoned))
+            }
+
+            // Default: allow other skills unless you explicitly want to restrict them.
+            return true;
+        }
+
 
         private class InternalTimer : Timer
         {
@@ -562,7 +602,7 @@ namespace Server.Items
             }
         }
 
-        public static BandageContext BeginHeal(Mobile healer, Mobile patient)
+        public static BandageContext? BeginHeal(Mobile healer, Mobile patient)
         {
             bool isDeadPet = (patient is BaseCreature && ((BaseCreature)patient).IsDeadPet);
 
@@ -592,30 +632,78 @@ namespace Server.Items
                 double seconds;
                 double resDelay = (patient.Alive ? 0.0 : 5.0);
 
-                if (onSelf)
+                // Mortalis:
+                // Self-heal bandage timing keeps the Angel Island baseline at lower dex, but increases
+                // the payoff for Dexterity so that self-heal at 100 Dex resolves to ~8.0s.
+                // This is a measured middle ground between the long-standing Angel Island timing
+                // and the recent faster experiments.
+                //
+                // Target breakpoints (self):
+                //   Dex  60 -> 13.0s  (matches Angel Island)
+                //   Dex 100 ->  8.0s  (Mortalis target)
+                //
+                // Formula (self):
+                //   seconds = 13.0 - ((Dex - 60) * 0.125)
+                //
+                // Resulting timings (self):
+                //   Dex 100 ->  8.00s
+                //   Dex  90 ->  9.25s
+                //   Dex  80 -> 10.50s
+                //   Dex  70 -> 11.75s
+                //   Dex  60 -> 13.00s
+                //
+                // Heal-others timing remains unchanged to preserve legacy balance (including resDelay).
+                if (Core.RuleSets.MortalisStyleRules())
                 {
-                    if (Core.RuleSets.AOSRules())
-                        seconds = 5.0 + (0.5 * ((double)(120 - dex) / 10)); // TODO: Verify algorithm
-                    else
-                        seconds = 9.4 + (0.6 * ((double)(120 - dex) / 10));
-                }
-                else
-                {
-                    if (Core.RuleSets.AOSRules() && GetPrimarySkill(patient) == SkillName.Veterinary)
+                    if (onSelf)
                     {
-                        if (dex >= 40)
-                            seconds = 2.0;
-                        else
-                            seconds = 3.0;
+                        seconds = 13.0 - ((dex - 60.0) * 0.125);
+
+                        // Clamp to the intended tuning window.
+                        if (seconds < 8.0) seconds = 8.0;
+                        else if (seconds > 13.0) seconds = 13.0;
+
+                        // NOTE: No resurrection delay applied to self heal.
                     }
                     else
                     {
+                        // Legacy Angel Island heal-others behavior (unchanged).
                         if (dex >= 100)
                             seconds = 3.0 + resDelay;
                         else if (dex >= 40)
                             seconds = 4.0 + resDelay;
                         else
                             seconds = 5.0 + resDelay;
+                    }
+                }
+                else
+                {
+                    // Legacy behavior (unchanged)
+                    if (onSelf)
+                    {
+                        if (Core.RuleSets.AOSRules())
+                            seconds = 5.0 + (0.5 * ((double)(120 - dex) / 10)); // TODO: Verify algorithm
+                        else
+                            seconds = 9.4 + (0.6 * ((double)(120 - dex) / 10));
+                    }
+                    else
+                    {
+                        if (Core.RuleSets.AOSRules() && GetPrimarySkill(patient) == SkillName.Veterinary)
+                        {
+                            if (dex >= 40)
+                                seconds = 2.0;
+                            else
+                                seconds = 3.0;
+                        }
+                        else
+                        {
+                            if (dex >= 100)
+                                seconds = 3.0 + resDelay;
+                            else if (dex >= 40)
+                                seconds = 4.0 + resDelay;
+                            else
+                                seconds = 5.0 + resDelay;
+                        }
                     }
                 }
 
@@ -629,7 +717,7 @@ namespace Server.Items
                 m_Table[healer] = context;
 
                 if (!onSelf)
-                    patient.SendLocalizedMessage(1008078, false, healer.Name); //  : Attempting to heal you.
+                    patient.SendLocalizedMessage(1008078, false, healer.Name); // : Attempting to heal you.
 
                 healer.SendLocalizedMessage(500956); // You begin applying the bandages.
                 return context;

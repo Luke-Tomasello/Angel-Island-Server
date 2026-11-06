@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,75 +76,37 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20011031224927/uo.stratics.com/hunters/gianticeserpent.shtml
+            // 50 Gold, Weapon or Armor, Body Parts, Jewelry, Glacial Staff
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(25, 50);
-                PackItem(Loot.RandomArmorOrShieldOrWeapon());
-                PackItem(new Bone());
-                // TODO: body parts, glacial staff
+                PackGold(50);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20011031224927/uo.stratics.com/hunters/gianticeserpent.shtml
-                    // 50 Gold, Weapon or Armor, Body Parts, Jewelry, Glacial Staff
-                    if (Spawning)
-                    {
-                        PackGold(50);
-                    }
-                    else
-                    {
-                        PackItem(Loot.RandomArmorOrWeapon());
+                PackItem(Loot.RandomArmorOrWeapon());
 
-                        switch (Utility.Random(10))
-                        {
-                            case 0: PackItem(new LeftArm()); break;
-                            case 1: PackItem(new RightArm()); break;
-                            case 2: PackItem(new Torso()); break;
-                            case 3: PackItem(new Bone()); break;
-                            case 4: PackItem(new RibCage()); break;
-                            case 5: PackItem(new RibCage()); break;
-                            case 6: PackItem(new BonePile()); break;
-                            case 7: PackItem(new BonePile()); break;
-                            case 8: PackItem(new BonePile()); break;
-                            case 9: PackItem(new BonePile()); break;
-                        }
-
-                        PackItem(Loot.RandomJewelry());
-
-                        // TODO: complete the instalation and see if it existed on Siege
-                        //if (0.025 > Utility.RandomDouble())
-                        //PackItem(new GlacialStaff());
-                    }
-                }
-                else
+                switch (Utility.Random(10))
                 {
-                    if (Spawning)
-                    {
-                        PackItem(Loot.RandomArmorOrShieldOrWeapon());
-
-                        switch (Utility.Random(10))
-                        {
-                            case 0: PackItem(new LeftArm()); break;
-                            case 1: PackItem(new RightArm()); break;
-                            case 2: PackItem(new Torso()); break;
-                            case 3: PackItem(new Bone()); break;
-                            case 4: PackItem(new RibCage()); break;
-                            case 5: PackItem(new RibCage()); break;
-                            case 6: PackItem(new BonePile()); break;
-                            case 7: PackItem(new BonePile()); break;
-                            case 8: PackItem(new BonePile()); break;
-                            case 9: PackItem(new BonePile()); break;
-                        }
-
-                        // TODO: complete the instalation
-                        if (0.025 > Utility.RandomDouble())
-                            PackItem(new GlacialStaff());
-                    }
-
-                    AddLoot(LootPack.Meager);
+                    case 0: PackItem(new LeftArm()); break;
+                    case 1: PackItem(new RightArm()); break;
+                    case 2: PackItem(new Torso()); break;
+                    case 3: PackItem(new Bone()); break;
+                    case 4: PackItem(new RibCage()); break;
+                    case 5: PackItem(new RibCage()); break;
+                    case 6: PackItem(new BonePile()); break;
+                    case 7: PackItem(new BonePile()); break;
+                    case 8: PackItem(new BonePile()); break;
+                    case 9: PackItem(new BonePile()); break;
                 }
+
+                PackItem(Loot.RandomJewelry());
+
+                // https://uo.stratics.com/news/arc1-2001.shtml?utm_source=chatgpt.com
+                // ~2000–2002 (Stratics era)	Exists, but not standard loot
+                // Later OSI(AoS / ML and beyond)	Added to creature loot(Ice Serpents)
+                if (Utility.RandomDouble() < 0.005) // 0.5% (1 in 200)
+                    PackItem(new GlacialStaff());
             }
         }
 

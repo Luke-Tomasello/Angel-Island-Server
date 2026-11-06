@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -49,7 +49,7 @@ namespace Server.Commands
                 if (e.Length == 1)
                 {
 
-                    Type t = ScriptCompiler.FindTypeByName(e.GetString(0));
+                    Type? t = ScriptCompiler.FindTypeByName(e.GetString(0));
                     if (t == null)
                     {
                         e.Mobile.SendMessage("No type with that name was found.");

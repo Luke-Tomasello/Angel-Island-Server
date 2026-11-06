@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -73,7 +73,6 @@ namespace Server.Mobiles
 
             VirtualArmor = 50;
 
-
             PackItem(new Arrow(Utility.RandomMinMax(20, 30)), lootType: LootType.UnStealable);
             PackItem(new Bandage(Utility.RandomMinMax(1, 15)), lootType: LootType.UnStealable);
         }
@@ -93,8 +92,7 @@ namespace Server.Mobiles
         public override void InitOutfit()
         {
             Utility.WipeLayers(this);
-            AddItem(new Bow());
-
+            AddItem(new Bow()); // functional, used for shooting
         }
         public EvilCentaur(Serial serial)
             : base(serial)
@@ -103,31 +101,24 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // this is an ai special, but we use the loot from the original centaur, and gain the ability to heal ourselves
+            // http://web.archive.org/web/20020806171152/uo.stratics.com/hunters/centaur.shtml
+            // 250-300 Gold, Scrolls, Bow, Magic Items
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGold(180, 250);
-                PackGem();
-                PackMagicEquipment(1, 2, 0.15, 0.15);
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
+                PackGold(250, 300);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
+                PackScroll(3, 7);
+                PackScroll(3, 7, .8);
+
+                // bow dropped as part of outfit
+
+                if (Utility.RandomBool())
+                    PackMagicEquipment(1, 2, 0.15, 0.15);
                 else
-                {   // Standard RunUO
-                    // ai special
-                }
+                    PackMagicItem(1, 1, 0.15);
             }
         }
 

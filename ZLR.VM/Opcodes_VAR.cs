@@ -4,7 +4,7 @@
  *   implementation          : (C) 2007-2023 Tara McGrew
  *   repository url          : https://foss.heptapod.net/zilf/zlr
  *   
- *   Angel Island UO Shard   : March 25, 2004
+ *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
@@ -19,9 +19,9 @@
  *
  ***************************************************************************/
 
+using JetBrains.Annotations;
 using System;
 using System.Reflection.Emit;
-using JetBrains.Annotations;
 
 namespace ZLR.VM
 {
@@ -58,7 +58,7 @@ namespace ZLR.VM
             var impl = setWordCheckedMI;
             if (operandTypes[0] != OperandType.Variable && operandTypes[1] != OperandType.Variable)
             {
-                var address = (ushort) operandValues[0] + 2 * operandValues[1];
+                var address = (ushort)operandValues[0] + 2 * operandValues[1];
                 if (address > 64 && address + 1 < zm.RomStart)
                     impl = setWordMI;
             }
@@ -89,7 +89,7 @@ namespace ZLR.VM
             var impl = setByteCheckedMI;
             if (operandTypes[0] != OperandType.Variable && operandTypes[1] != OperandType.Variable)
             {
-                var address = (ushort) operandValues[0] + operandValues[1];
+                var address = (ushort)operandValues[0] + operandValues[1];
                 if (address > 64 && address < zm.RomStart)
                     impl = setByteMI;
             }
@@ -155,7 +155,7 @@ namespace ZLR.VM
         [Opcode(OpCount.Var, 230)]
         private void op_print_num([NotNull] ILGenerator il)
         {
-            var toStringMI = typeof(Convert).GetMethod(nameof(Convert.ToString), new[] {typeof(short)});
+            var toStringMI = typeof(Convert).GetMethod(nameof(Convert.ToString), new[] { typeof(short) });
             System.Diagnostics.Debug.Assert(toStringMI != null);
             var printStringMI = ZMachine.GetMethodInfo(nameof(ZMachine.PrintString));
 
@@ -427,7 +427,7 @@ namespace ZLR.VM
             il.Emit(OpCodes.Ldc_I4, resultStorage);
             il.Emit(OpCodes.Call, impl);
             il.Emit(OpCodes.Ret);
-            
+
             compiling = false;
         }
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -180,7 +180,7 @@ namespace Server.Mobiles
             {   // if we're too far from home, don't interact, just wander
                 if (Home == Point3D.Zero || GetDistanceToSqrt(Home) < RangePerception)
                 {   // if the mobile we want to talk to is too far away, ignore him
-                    Mobile temp = NearbyPlayer();
+                    Mobile? temp = NearbyPlayer();
                     if (temp != null && (Home == Point3D.Zero || temp.GetDistanceToSqrt(Home) < RangePerception))
                     {
                         FocusMob = temp;
@@ -288,7 +288,7 @@ namespace Server.Mobiles
             }
         }
 
-        private Mobile NearbyPlayer()
+        private Mobile? NearbyPlayer()
         {
             IPooledEnumerable eable = this.Map.GetMobilesInRange(this.Location, 12);
             foreach (Mobile m in eable)
@@ -480,13 +480,16 @@ namespace Server.Mobiles
                 lines[0] = string.Format("Lord British declares the treasure hunt at {0} unlawful and calls for a citizen militia to dispatch this party of criminals.", location);
                 lines[1] = string.Format("Let it be known across the land; Lord British requires taxes paid on all treasure recovered within his kingdom.");
 
-                DateTime dt = DateTime.UtcNow + TimeSpan.FromMinutes(10);
+                DateTime dt = DateTime.UtcNow + TimeSpan.FromMinutes(CoreAI.CriminalGrayMinutes);
                 Engines.ListEntry le = new Engines.ListEntry(lines, null, dt, Engines.ListEntryType.TownCrier);
-                Engines.TCCS.AddEntry(le);
+                Engines.TownCrierBulletinSystem.AddEntry(le);
 
                 foreach (PlayerMobile m in m_players)
                 {
-                    m.MakeCriminal(dt - DateTime.UtcNow);
+                    m.CriminalAction(message: true,
+                        ctx: null,
+                        Mobile.CriminalitySource.Criminal,
+                        regionInform: true);
                 }
             }
         }
@@ -500,7 +503,7 @@ namespace Server.Mobiles
             }
         }
 
-        public override void AggressiveAction(Mobile aggressor, bool criminal, object source = null)
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
         {
             Dialog(State.Attacked);
             base.AggressiveAction(aggressor, criminal);

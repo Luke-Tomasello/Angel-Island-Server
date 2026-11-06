@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -28,6 +28,8 @@
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
+
+using Server.Items;
 
 namespace Server.Mobiles
 {
@@ -74,8 +76,23 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            PackGem();
-            PackGold(100, 250);
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=732
+            // 125 - 175 Gold
+            // Magic Items
+            // Special: Daemon Bones (only in Doom)
+            // Cut Up: None
+
+            if (Spawning)
+            {
+                PackGold(125, 175);
+            }
+            else
+            {
+                PackMagicEquipment(1, 2, 0.50, 0.50);
+
+                if (Map == Map.Malas && Region.Find(Location, Map)?.Name == "Doom")
+                    PackItem(new DaemonBone(Utility.RandomMinMax(1, 3)));
+            }
         }
 
         public override void Serialize(GenericWriter writer)

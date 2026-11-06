@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -76,7 +76,7 @@ namespace Server.Gumps
             // 12/2/2021, Adam: blows up under 64bit build
             // swapping in the RunUO code
             //return type.GetHashCode() ^ type.FullName.GetHashCode() ^ type.TypeHandle.Value.ToInt32();
-            return type.FullName.GetHashCode();
+            return type.FullName!.GetHashCode(); // gump types are concrete classes; FullName is null only for generic type parameters
         }
 
         public Gump(int x, int y)
@@ -256,11 +256,6 @@ namespace Server.Gumps
             Add(new GumpCheck(x, y, inactiveID, activeID, initialState, switchID));
         }
 
-        public void AddGroup(int group)
-        {
-            Add(new GumpGroup(group));
-        }
-
         public void AddHtml(int x, int y, int width, int height, string text, bool background, bool scrollbar)
         {
             Add(new GumpHtml(x, y, width, height, text, background, scrollbar));
@@ -345,12 +340,12 @@ namespace Server.Gumps
             m_Entries.Remove(g);
             g.Parent = null;
         }
-        public string Center(string text)
+        public string Center(string? text)
         {
             return string.Format("<CENTER>{0}</CENTER>", text);
         }
 
-        public string Color(string text, int color)
+        public string Color(string? text, int color)
         {
             return string.Format("<BASEFONT COLOR=#{0:X6}>{1}</BASEFONT>", color, text);
         }
@@ -379,7 +374,7 @@ namespace Server.Gumps
             state.Send(Compile());
         }
 
-        private DisplayGumpFast m_Packet;
+        private DisplayGumpFast? m_Packet;
 
         public static byte[] StringToBuffer(string str)
         {
@@ -417,7 +412,7 @@ namespace Server.Gumps
 
                 for (int i = 0; i < count; ++i)
                 {
-                    e = (GumpEntry)m_Entries[i];
+                    e = (GumpEntry)m_Entries[i]!; // only Gump.Add inserts, and it dereferences the entry first
 
                     disp.AppendLayout(m_BeginLayout);
                     e.AppendTo(disp);

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -130,7 +130,7 @@ namespace Server.Gumps
                 if (i.Map == Map.Internal && i.Account == null)
                     if (i is BaseMount)
                     {
-                        BaseMount m = i as BaseMount;
+                        BaseMount? m = i as BaseMount;
                         if (m.Rider == null)
                             list.Add(m);
                     }
@@ -197,7 +197,7 @@ namespace Server.Gumps
                 x = BorderSize + OffsetSize;
                 y += EntryHeight + OffsetSize;
 
-                Mobile item = (Mobile)m_Names[index];
+                Mobile? item = (Mobile?)m_Names[index];
 
                 AddImageTiled(x, y, EntryWidth, EntryHeight, EntryGumpID);
                 AddLabelCropped(x + TextOffsetX, y, EntryWidth - TextOffsetX, EntryHeight, item is BaseCreature && ((BaseCreature)item).IsAnyStabled ? 33 : 0x58 /*hue*/,
@@ -265,7 +265,7 @@ namespace Server.Gumps
 
                         if (index >= 0 && index < m_Names.Count)
                         {
-                            Mobile s = (Mobile)m_Names[index];
+                            Mobile? s = (Mobile?)m_Names[index];
 
                             if (s.Deleted)
                             {

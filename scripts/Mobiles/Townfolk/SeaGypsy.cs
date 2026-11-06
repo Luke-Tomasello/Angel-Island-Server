@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -171,7 +171,7 @@ namespace Server.Mobiles
         public override bool CheckAtDestination()
         {
 
-            Mobile escorter = GetEscorterWithSideEffects();
+            Mobile? escorter = GetEscorterWithSideEffects();
 
             if (escorter == null)
                 return false;
@@ -217,32 +217,19 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // ai special
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
+                PackGold(10, 30);
+            }
+            else
+            {
                 switch (Utility.Random(4))
                 {
                     case 0: PackItem(new Drums()); break;
                     case 1: PackItem(new Harp()); break;
                     case 2: PackItem(new Lute()); break;
                     case 3: PackItem(new Tambourine()); break;
-                }
-            }
-            else
-            {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {   // Standard RunUO
-                    // ai special
                 }
             }
         }

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,7 +77,7 @@ namespace Server.Commands
         /// <param name="e"></param>
         private static void EventSink_HousePlaced(HousePlacedEventArgs e)
         {
-            Item hs = World.FindItem(e.House);
+            Item? hs = World.FindItem(e.House);
             if (hs is BaseHouse bh)
             {
                 foreach (Item item in World.Items.Values)
@@ -100,7 +100,7 @@ namespace Server.Commands
                     {
                         for (int i = 0; i < book.Entries.Count; ++i)
                         {
-                            RunebookEntry entry = (RunebookEntry)book.Entries[i];
+                            RunebookEntry? entry = (RunebookEntry?)book.Entries[i];
 
                             if (entry.Map != null && BaseHouse.FindHouseAt(entry.Location, e.Map, 16) != null && BaseHouse.FindHouseAt(entry.Location, e.Map, 16) == bh)
                             {   // re target necessary
@@ -185,7 +185,7 @@ namespace Server.Commands
                             {
                                 for (int i = 0; i < book.Entries.Count; ++i)
                                 {
-                                    RunebookEntry entry = (RunebookEntry)book.Entries[i];
+                                    RunebookEntry? entry = (RunebookEntry?)book.Entries[i];
 
                                     if (entry.Map != null && (regionList[ix] as Region).Contains(entry.Location))
                                     {
@@ -304,7 +304,7 @@ namespace Server.Commands
                             {
                                 for (int i = 0; i < book.Entries.Count; ++i)
                                 {
-                                    RunebookEntry entry = (RunebookEntry)book.Entries[i];
+                                    RunebookEntry? entry = (RunebookEntry?)book.Entries[i];
 
                                     if (entry.Map != null && (regionList[ix] as Region).Contains(entry.Location))
                                     {
@@ -473,18 +473,7 @@ namespace Server.Commands
         }
 
         /*
-		public static bool IsInRegion( Point3D loc, string regionName )
-		{
-			Region reg = Region.GetByName( regionName, Map.Felucca );
-			if( reg != null )
-			{	
-				if( reg.Contains(loc) )
-				{
-					return true;
-				}
-			}
-			return false;
-		}
+		
 
 		public static bool IsBad( Point3D loc, Map map )
 		{

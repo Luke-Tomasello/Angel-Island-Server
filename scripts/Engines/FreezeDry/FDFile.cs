@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,9 @@
 
 /* Scripts/Commands/FDFile.cs
  * Changelog
+ *  11/4/2026, Adam (FDFormat -force)
+ *      [FDFormat <filename> [-force]: a handle mismatch (objects instantiated on a different server) now stops the format;
+ *          -force overrides it. Previously the mismatch printed "Fail" but the delete went ahead anyway.
  *  5/5/2024, Adam (FDToIntMap, FDToWorld)
  *      Add FDToIntMap, and FDToWorld to move established setups from the world to int map storage and back again.
  *      This differs from FDBackup and FDRestore as it simply moves items to int map storage. This cannot be used to move items across shards
@@ -473,7 +476,7 @@ namespace Server.Commands
                 this.SpawnerLinkMapper = SpawnerLinkMapper;
             }
         }
-        private static FDRegionControl CheckFDRegionControl(Map map, Point3D start, Point3D end)
+        private static FDRegionControl? CheckFDRegionControl(Map map, Point3D start, Point3D end)
         {
             if (start != end)
                 return null;
@@ -529,7 +532,7 @@ namespace Server.Commands
         #endregion FDDumpObjArray Support
         private static void DumpArray_Callback(Mobile from, Map map, Point3D start, Point3D end, object state)
         {
-            string filename = state as string;
+            string? filename = state as string;
             List<Rectangle2D> rects;
 
             #region Rects to process
@@ -548,7 +551,7 @@ namespace Server.Commands
             ItemDatabase ItemDatabase = new();                  // where we store all duped items and their reassignments
             List<Item> AllReserializedItems = new();            // condensed list to reassigned items
             Dictionary<Item, Item> LinkMapper = new();          // old item to new item
-            List<int> RollbackSerials = new();                  // probably a bad name now. Holds all reserved serials we will be using
+            List<int>? RollbackSerials = new();                  // probably a bad name now. Holds all reserved serials we will be using
             Dictionary<int, List<AddonFields>> AddonDatabase = new();
             Dictionary<Serial, int> SpawnerLinkMapper = new();  // old spawner to template restoration code
             List<ChampEngine> ChampEngineList = new();
@@ -557,15 +560,15 @@ namespace Server.Commands
                 FDBackupInProgress = true;                      // tell the world a backup is in progress
                 #region Cleanup any existing save
                 {
-                    string lookup = FDFileNames(FDNameType.Lookup, base_name: filename);
-                    string rollback = FDFileNames(FDNameType.Rollback, base_name: filename);
-                    string addons = FDFileNames(FDNameType.Addons, base_name: filename);
-                    string path = FDFileNames(FDNameType.BaseFolder, filename);
-                    string itemsPattern = FDFileNames(FDNameType.ItemsPattern, base_name: filename);
-                    string mobilesPattern = FDFileNames(FDNameType.MobileDefinitionPattern, base_name: filename);
-                    string trace = FDFileNames(FDNameType.BackupTrace, base_name: filename);
-                    string formatError = FDFileNames(FDNameType.FormatError, base_name: filename);
-                    string unavailableError = FDFileNames(FDNameType.RestoreObjectUnavailable, base_name: filename);
+                    string? lookup = FDFileNames(FDNameType.Lookup, base_name: filename);
+                    string? rollback = FDFileNames(FDNameType.Rollback, base_name: filename);
+                    string? addons = FDFileNames(FDNameType.Addons, base_name: filename);
+                    string? path = FDFileNames(FDNameType.BaseFolder, filename);
+                    string? itemsPattern = FDFileNames(FDNameType.ItemsPattern, base_name: filename);
+                    string? mobilesPattern = FDFileNames(FDNameType.MobileDefinitionPattern, base_name: filename);
+                    string? trace = FDFileNames(FDNameType.BackupTrace, base_name: filename);
+                    string? formatError = FDFileNames(FDNameType.FormatError, base_name: filename);
+                    string? unavailableError = FDFileNames(FDNameType.RestoreObjectUnavailable, base_name: filename);
                     List<string> filenames = new List<string>();
                     foreach (string fn in Directory.GetFiles(path, itemsPattern))
                     {
@@ -721,7 +724,7 @@ namespace Server.Commands
                         #region Compile our mobile and create set of keyword value pares to write
                         string compiled_mobile_props = Utility.CompileMobileProperties(template);
                         string compiled_mobile_skills = Utility.CompileMobileSkills(template);
-                        string type_name = template.GetType().FullName;
+                        string? type_name = template.GetType().FullName;
                         Dictionary<string, string> keyValuePairs = new Dictionary<string, string>()
                         {
 
@@ -771,7 +774,7 @@ namespace Server.Commands
                             bool found = false;
                             foreach (Item check_item in WhatWeGot)
                             {
-                                PropertyInfo prop = FindInternalItemProperty(check_item, item);
+                                PropertyInfo? prop = FindInternalItemProperty(check_item, item);
                                 if (prop != null)
                                 {
                                     prop.SetValue(check_item, deed);
@@ -866,7 +869,7 @@ namespace Server.Commands
                     foreach (Item dupe in dupedItems)
                     {
                         List<Item> new_serials = new();
-                        Item original = null;
+                        Item? original = null;
                         #region Get the original item based on the dupe
                         // There are three stages in backup:
                         //  1. The original item to back up
@@ -1011,7 +1014,7 @@ namespace Server.Commands
 
                 #region Dump all records to our database 
                 {
-                    string path = FDFileNames(FDNameType.BaseFolder, filename);
+                    string? path = FDFileNames(FDNameType.BaseFolder, filename);
                     // now dump
                     //Parallel.For(0, AllReserializedItems.Count,
                     //       index =>
@@ -1071,19 +1074,19 @@ namespace Server.Commands
             }
             from.SendMessage("{0} objects dumped.", AllReserializedItems.Count);
         }
-        public static string FormatItem(Item item, string fail_message)
+        public static string FormatItem(Item? item, string fail_message)
         {
             if (item == null)
                 return fail_message;
             return string.Format("0x{0:X} \"{1}\"", item.Serial.Value, item.GetType().Name);
         }
         public static bool FDBackupInProgress = false;
-        private static PropertyInfo FindInternalItemProperty(Item item, Item item_to_find, bool null_map = false)
+        private static PropertyInfo? FindInternalItemProperty(Item item, Item item_to_find, bool null_map = false)
         {
             List<Item> elements = new();
 
             // we will ignore Item properties and only focus in the derived class properties.
-            Item linked_item = null;
+            Item? linked_item = null;
             PropertyInfo[] props = Utility.ItemRWPropertyProperties(item, IsAssignableTo: typeof(Item));
             for (int i = 0; i < props.Length; i++)
                 if ((linked_item = (Item)props[i].GetValue(item, null)) != null)
@@ -1223,7 +1226,7 @@ namespace Server.Commands
                 return list;
             }
         }
-        private static bool ProcessItem(Item old_item, ParamPack @parms)
+        private static bool ProcessItem(Item? old_item, ParamPack @parms)
         {
             #region Addons
             // Addons, like Internal items, require special handling
@@ -1233,7 +1236,7 @@ namespace Server.Commands
                     return true;
 
                 RecordAddon(old_item: old_item, ref parms.AddonHandled);
-                BaseAddon ba = GetAddon(old_item);
+                BaseAddon? ba = GetAddon(old_item);
 
                 #region StaticAddon
                 //  We will simply unpack the addon's components, and treat it like any other normal item
@@ -1268,7 +1271,7 @@ namespace Server.Commands
             // when we deep dupe the item, we will get a list of items it contains
             List<KeyValuePair<Item, Item>> dupeMap = new();
 
-            Item new_item = null;
+            Item? new_item = null;
             // DeepDupe dupes and item, then recurses through the items it holds duping those as well.
             //  the resultant item/container is a mirror image of the original
             // Note: items on the internal map are already duped in their Dupe() override.
@@ -1296,7 +1299,7 @@ namespace Server.Commands
                     parms.LinkMapper.Add(old_item, new_item);                             // add top-level item to our link mapper
                     parms.AddonDatabase.Add(old_item.Serial, new List<AddonFields>());    // we will patch this to new serial later
 
-                    BaseAddon ba = old_item as BaseAddon;
+                    BaseAddon? ba = old_item as BaseAddon;
                     foreach (AddonComponent component in ba.Components)
                         parms.AddonDatabase[old_item.Serial].Add(
                             new AddonFields(component.BoolTable, component.Hue, component.Name, component.Light,
@@ -1387,7 +1390,7 @@ namespace Server.Commands
             return;
         }
         #region Addon Tools
-        private static bool IsAddon(Item item)
+        private static bool IsAddon(Item? item)
         {
             /* funky rules
                 ** Standard ArcheryButte **
@@ -1408,11 +1411,11 @@ namespace Server.Commands
 
             return (item is BaseAddon || item is AddonComponent);
         }
-        private static bool IsKnownAddon(Item old_item, ref List<Item> AddonHandled)
+        private static bool IsKnownAddon(Item? old_item, ref List<Item> AddonHandled)
         {
             if (old_item is BaseAddon || old_item is AddonComponent)
             {
-                BaseAddon ba = null;
+                BaseAddon? ba = null;
                 if (old_item is AddonComponent ac)
                     ba = ac.Addon;
                 else
@@ -1426,11 +1429,11 @@ namespace Server.Commands
 
             return false;
         }
-        private static BaseAddon GetAddon(Item old_item)
+        private static BaseAddon? GetAddon(Item? old_item)
         {
             if (IsAddon(old_item))
             {
-                BaseAddon ba = null;
+                BaseAddon? ba = null;
                 if (old_item is AddonComponent ac)
                     ba = ac.Addon;
                 else
@@ -1441,11 +1444,11 @@ namespace Server.Commands
 
             return null;
         }
-        private static void RecordAddon(Item old_item, ref List<Item> AddonHandled)
+        private static void RecordAddon(Item? old_item, ref List<Item> AddonHandled)
         {
             if (IsAddon(old_item))
             {
-                BaseAddon ba = null;
+                BaseAddon? ba = null;
                 if (old_item is AddonComponent ac)
                     ba = ac.Addon;
                 else
@@ -1601,7 +1604,7 @@ namespace Server.Commands
                     Item new_surface_item = record.Key;
                     foreach (var prop in record.Value)
                     {   // what we are currently pointing at
-                        Item old_pointer = prop.GetValue(new_surface_item, null) as Item;
+                        Item? old_pointer = prop.GetValue(new_surface_item, null) as Item;
                         // do we know about this old_pointer? (has it been mapped to a new item?)
                         // some items link to things that are not surface items. Instead they are items on the Internal
                         if (linkMapper.ContainsKey(old_pointer))
@@ -1655,7 +1658,7 @@ namespace Server.Commands
             > PropertyLookup
             )
         {
-            string lookup = FDFileNames(FDNameType.Lookup, base_name: filename);
+            string? lookup = FDFileNames(FDNameType.Lookup, base_name: filename);
             Console.WriteLine("Saving {0}...", lookup);
             try
             {
@@ -1700,7 +1703,7 @@ namespace Server.Commands
                 int             // map to item (serial)
                 >
             > PropertyLookup = new();
-            string lookup = FDFileNames(FDNameType.Lookup, base_name: filename);
+            string? lookup = FDFileNames(FDNameType.Lookup, base_name: filename);
             if (!File.Exists(lookup))
             {
                 reason = string.Format("{0} does not exist", lookup);
@@ -1724,7 +1727,7 @@ namespace Server.Commands
                                 int inner_count = reader.ReadInt();     // how many properties need patching
                                 for (int jx = 0; jx < inner_count; jx++)
                                 {
-                                    string name = reader.ReadString();  // property name
+                                    string? name = reader.ReadString();  // property name
                                     int serial = reader.ReadInt();      // serial of where it should point
                                     Dictionary<string, int> temp = new();
                                     temp.Add(name, serial);
@@ -1807,7 +1810,7 @@ namespace Server.Commands
                 from.SendMessage("Exception: {0}", e.Message);
             }
         }
-        private static List<int> FDCreateRollback(int amount, string filename, ref string reason)
+        private static List<int>? FDCreateRollback(int amount, string? filename, ref string reason)
         {
             List<int> serials = new();
             try
@@ -1848,9 +1851,9 @@ namespace Server.Commands
             return serials;
         }
         #region Mobile Definition I/O
-        public static void FDMobileDefinitionWriter(string base_name, string filename, Dictionary<string, string> keyValuePairs)
+        public static void FDMobileDefinitionWriter(string? base_name, string filename, Dictionary<string, string> keyValuePairs)
         {
-            string mobileDefinition = FDFileNames(FDNameType.MobileDefinition, base_name: base_name, filename: filename);
+            string? mobileDefinition = FDFileNames(FDNameType.MobileDefinition, base_name: base_name, filename: filename);
             Console.WriteLine("Saving {0}...", mobileDefinition);
             try
             {
@@ -1914,7 +1917,7 @@ namespace Server.Commands
                 Console.WriteLine(ex.ToString());
             }
         }
-        public static Dictionary<string, string> FDMobileDefinitionReader(string filename, ref string reason)
+        public static Dictionary<string, string>? FDMobileDefinitionReader(string filename, ref string reason)
         {
             string mobileDefinition = filename;// FDFileNames(FDNameType.MobileDefinition, base_name: filename);
             if (!File.Exists(mobileDefinition))
@@ -1955,9 +1958,9 @@ namespace Server.Commands
             return keyValuePairs;
         }
         #endregion Mobile Definition I/O
-        public static void FDRollbackWriter(string filename, List<int> serial_list)
+        public static void FDRollbackWriter(string? filename, List<int> serial_list)
         {
-            string rollback = FDFileNames(FDNameType.Rollback, base_name: filename);
+            string? rollback = FDFileNames(FDNameType.Rollback, base_name: filename);
             Console.WriteLine("Saving {0}...", rollback);
             try
             {
@@ -1987,26 +1990,7 @@ namespace Server.Commands
         }
         public static void FDBackupTraceWriter(string filename, string text, bool begin)
         {
-            string trace = FDFileNames(FDNameType.BackupTrace, base_name: filename);
-            if (begin)
-                Console.WriteLine("Saving {0}...", trace);
-            try
-            {
-                if (begin && File.Exists(trace))
-                    File.Delete(trace);
-
-                string[] lines = { text };
-                File.AppendAllLines(trace, lines);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error writing {0}", trace);
-                Console.WriteLine(ex.ToString());
-            }
-        }
-        public static void FDRestoreTraceWriter(string filename, string text, bool begin)
-        {
-            string trace = FDFileNames(FDNameType.RestoreTrace, base_name: filename);
+            string? trace = FDFileNames(FDNameType.BackupTrace, base_name: filename);
             if (begin)
                 Console.WriteLine("Saving {0}...", trace);
             try
@@ -2025,7 +2009,7 @@ namespace Server.Commands
         }
         public static void FDFormatErrorWriter(string filename, string text, bool begin)
         {
-            string trace = FDFileNames(FDNameType.FormatError, base_name: filename);
+            string? trace = FDFileNames(FDNameType.FormatError, base_name: filename);
             if (begin)
                 Console.WriteLine("Saving {0}...", trace);
             try
@@ -2045,7 +2029,7 @@ namespace Server.Commands
         // Unavailable
         public static void FDUnavailableErrorWriter(string filename, string text, bool begin)
         {
-            string trace = FDFileNames(FDNameType.RestoreObjectUnavailable, base_name: filename);
+            string? trace = FDFileNames(FDNameType.RestoreObjectUnavailable, base_name: filename);
             if (begin)
                 Console.WriteLine("Saving {0}...", trace);
             try
@@ -2062,9 +2046,9 @@ namespace Server.Commands
                 Console.WriteLine(ex.ToString());
             }
         }
-        public static List<int> FDRollbackReader(string filename, ref string reason)
+        public static List<int>? FDRollbackReader(string filename, ref string reason)
         {
-            string rollback = FDFileNames(FDNameType.Rollback, base_name: filename);
+            string? rollback = FDFileNames(FDNameType.Rollback, base_name: filename);
             if (!File.Exists(rollback))
             {
                 reason = string.Format("{0} does not exist", rollback);
@@ -2112,7 +2096,7 @@ namespace Server.Commands
         }
         public static void FDFormatWriter(string filename, List<int> serial_list)
         {
-            string format = FDFileNames(FDNameType.Format, base_name: filename);
+            string? format = FDFileNames(FDNameType.Format, base_name: filename);
             Console.WriteLine("Saving {0}...", format);
             try
             {
@@ -2140,9 +2124,9 @@ namespace Server.Commands
                 Console.WriteLine(ex.ToString());
             }
         }
-        public static List<int> FDFormatReader(string filename, ref int handle, ref string reason)
+        public static List<int>? FDFormatReader(string filename, ref int handle, ref string reason)
         {
-            string format = FDFileNames(FDNameType.Format, base_name: filename);
+            string? format = FDFileNames(FDNameType.Format, base_name: filename);
             if (!File.Exists(format))
             {
                 reason = string.Format("{0} does not exist", format);
@@ -2192,7 +2176,7 @@ namespace Server.Commands
         #region FDAddon
         public static void FDAddonWriter(string filename, Dictionary<int, List<AddonFields>> AddonDatabase)
         {
-            string addons = FDFileNames(FDNameType.Addons, base_name: filename);
+            string? addons = FDFileNames(FDNameType.Addons, base_name: filename);
             Console.WriteLine("Saving {0}...", addons);
             try
             {
@@ -2240,9 +2224,9 @@ namespace Server.Commands
             //else
             //    reason = string.Format("Database empty");
         }
-        public static Dictionary<int, List<AddonFields>> FDAddonReader(string filename, ref string reason)
+        public static Dictionary<int, List<AddonFields>>? FDAddonReader(string filename, ref string reason)
         {
-            string addons = FDFileNames(FDNameType.Addons, base_name: filename);
+            string? addons = FDFileNames(FDNameType.Addons, base_name: filename);
             if (!File.Exists(addons))
             {
                 reason = string.Format("{0} does not exist", addons);
@@ -2333,7 +2317,7 @@ namespace Server.Commands
         }
         protected static bool FDReassign(object targeted, ref string reason, List<Item> new_serials)
         {
-            Item reassign = targeted as Item;
+            Item? reassign = targeted as Item;
             if (reassign == null)
             {
                 reason = string.Format("You must target an item to reassign.");
@@ -2380,7 +2364,7 @@ namespace Server.Commands
                 return;
             }
             string filename = e.Arguments[0];
-            string database = FDFileNames(FDNameType.BaseFolder, filename);
+            string? database = FDFileNames(FDNameType.BaseFolder, filename);
             if (!Directory.Exists(database))
             {
                 e.Mobile.SendMessage($"No database named {filename}");
@@ -2393,7 +2377,7 @@ namespace Server.Commands
             // probably a bad name now. Holds all reserved serials we will be using
             Dictionary<int, int> LinkPatches = new();
 
-            List<int> RollbackSerials = FDRollbackReader(filename, ref reason);
+            List<int>? RollbackSerials = FDRollbackReader(filename, ref reason);
             if (RollbackSerials == null)
             {
                 System.Diagnostics.Debug.Assert(false);
@@ -2431,8 +2415,8 @@ namespace Server.Commands
             List<string> filenames = new List<string>();
             {
                 e.Mobile.SendMessage("Finding object files...");
-                string pattern = FDFileNames(FDNameType.ItemsPattern, filename);
-                string path = FDFileNames(FDNameType.BaseFolder, filename);
+                string? pattern = FDFileNames(FDNameType.ItemsPattern, filename);
+                string? path = FDFileNames(FDNameType.BaseFolder, filename);
                 foreach (string fn in Directory.GetFiles(path, pattern))
                 {
                     string temp = Path.GetFileNameWithoutExtension(fn);
@@ -2462,7 +2446,7 @@ namespace Server.Commands
                 foreach (string fn in filenames)
                     try
                     {
-                        string folder = FDFileNames(FDNameType.BaseFolder, filename);
+                        string? folder = FDFileNames(FDNameType.BaseFolder, filename);
                         int loaded = 0;
                         int count = 0;
                         int subItems = 0;
@@ -2489,7 +2473,7 @@ namespace Server.Commands
 
                                     for (int i = 0; i < count; i++)
                                     {
-                                        string type = idx.ReadString();
+                                        string? type = idx.ReadString();
 
                                         Serial serial = idx.ReadInt();
 
@@ -2523,7 +2507,7 @@ namespace Server.Commands
                                             goto cleanup;
                                         }
 
-                                        ConstructorInfo ctor = t.GetConstructor(ctortypes);
+                                        ConstructorInfo? ctor = t.GetConstructor(ctortypes);
                                         if (ctor == null)
                                         {
                                             Console.WriteLine("Warning: Tried to load type {0} which has no serialization constructor. Ignoring item.", type);
@@ -2533,7 +2517,7 @@ namespace Server.Commands
                                             goto cleanup;
                                         }
 
-                                        Item item = null;
+                                        Item? item = null;
                                         try
                                         {
                                             ctorargs[0] = serial;
@@ -2576,8 +2560,8 @@ namespace Server.Commands
                                     #region Parent Hierarchy
                                     for (int i = 0; i < items.Count; i++)
                                     {
-                                        object[] entry = (object[])items[i];
-                                        Item item = entry[0] as Item;
+                                        object[]? entry = (object[]?)items[i];
+                                        Item? item = entry[0] as Item;
                                         long position = (long)entry[1];
                                         int length = (int)entry[2];
 
@@ -2789,7 +2773,7 @@ namespace Server.Commands
 
             #region Read Addon database
 
-            Dictionary<int, List<AddonFields>> AddonDatabase = FDAddonReader(filename, ref reason);
+            Dictionary<int, List<AddonFields>>? AddonDatabase = FDAddonReader(filename, ref reason);
 
             #endregion Read Addon database
 
@@ -2798,12 +2782,12 @@ namespace Server.Commands
             {
                 #region Get file name array to process
                 e.Mobile.SendMessage("Finding mobile definition files...");
-                string pattern = FDFileNames(FDNameType.MobileDefinitionPattern, filename);
-                string path = FDFileNames(FDNameType.BaseFolder, filename);
+                string? pattern = FDFileNames(FDNameType.MobileDefinitionPattern, filename);
+                string? path = FDFileNames(FDNameType.BaseFolder, filename);
                 foreach (string fn in Directory.GetFiles(path, pattern))
                 {
                     string temp = Path.GetFileNameWithoutExtension(fn);
-                    Dictionary<string, string> keyValuePairs = FDMobileDefinitionReader(fn, ref reason);
+                    Dictionary<string, string>? keyValuePairs = FDMobileDefinitionReader(fn, ref reason);
                     ;
                     int code = int.Parse(keyValuePairs["code"]);
                     mobile_defintion_lookup.Add(code, keyValuePairs);
@@ -2832,7 +2816,7 @@ namespace Server.Commands
                             Type type = ScriptCompiler.FindTypeByFullName(type_name);
                             System.Diagnostics.Debug.Assert(type != null);
 
-                            object o = Activator.CreateInstance(type);
+                            object? o = Activator.CreateInstance(type);
                             System.Diagnostics.Debug.Assert(o != null);
 
                             Utility.CopyMobileProperties(o as Mobile, compiled_mobile_props);
@@ -2847,15 +2831,15 @@ namespace Server.Commands
                                     if (linkpack.Link == spawner.TemplateMobileDefinition)
                                     {
                                         #region unpack the linkpack to find the creatures backpack and any equipment (an EquipmentPack)
-                                        EquipmentPack equipmentPack = null;
-                                        Backpack backpack = null;
+                                        EquipmentPack? equipmentPack = null;
+                                        Backpack? backpack = null;
                                         foreach (Item lp_item in linkpack.Items)
                                             if (lp_item.GetType() == typeof(EquipmentPack))
                                                 equipmentPack = (EquipmentPack)lp_item;
                                             else if (lp_item.GetType() == typeof(Backpack))
                                                 backpack = (Backpack)lp_item;
 
-                                        Mobile m = o as Mobile;
+                                        Mobile? m = o as Mobile;
                                         if (backpack != null)
                                         {
                                             if (m.Backpack != null)
@@ -2925,13 +2909,13 @@ namespace Server.Commands
         {
             object[] aState = (object[])state;
             if (aState == null || aState.Length != 4) return;   // error
-            Item item = aState[0] as Item;
+            Item? item = aState[0] as Item;
             if (item == null || item.Deleted) return;           // error
             Map map = (aState[1] as Map) ?? item.Map;
             if (map == null) return;                            // error
-            Dictionary<int, int> AddonMapper = (aState[2] as Dictionary<int, int>);
+            Dictionary<int, int>? AddonMapper = (aState[2] as Dictionary<int, int>);
             if (AddonMapper == null) return;                    // error
-            Dictionary<int, List<AddonFields>> AddonDatabase = (aState[3] as Dictionary<int, List<AddonFields>>);
+            Dictionary<int, List<AddonFields>>? AddonDatabase = (aState[3] as Dictionary<int, List<AddonFields>>);
             if (AddonDatabase == null) return;                  // error
 
             // unset the 'backed up' bit
@@ -2968,7 +2952,7 @@ namespace Server.Commands
         {
             if (item is CustomRegionControl)
             {
-                CustomRegionControl crc = item as CustomRegionControl;
+                CustomRegionControl? crc = item as CustomRegionControl;
                 Server.Regions.CustomRegion cr = crc.CustomRegion;
                 if (cr != null)
                 {
@@ -2987,7 +2971,7 @@ namespace Server.Commands
                 System.Diagnostics.Debug.Assert(addonMapper.FirstOrDefault(e => e.Value == item.Serial).Key != 0);
 
                 int packaged_serial = (int)o;
-                BaseAddon baseAddon = item as BaseAddon;
+                BaseAddon? baseAddon = item as BaseAddon;
 
                 // We don't use the supplied addon components, but rather build the addon from our addonDatabase
                 System.Diagnostics.Debug.Assert(addonDatabase.ContainsKey(packaged_serial));
@@ -2997,7 +2981,7 @@ namespace Server.Commands
                     {
                         try
                         {
-                            AddonComponent ac = baseAddon.Components[i] as AddonComponent;
+                            AddonComponent? ac = baseAddon.Components[i] as AddonComponent;
                         }
                         catch (Exception ex)
                         {
@@ -3044,10 +3028,10 @@ namespace Server.Commands
             RestoreTrace,
             RestoreObjectUnavailable
         }
-        private static string FDFileNames(FDNameType mode, string base_name, string filename = null)
+        private static string? FDFileNames(FDNameType mode, string? base_name, string? filename = null)
         {
             string DBFolder = "./" + base_name + ".fddb";
-            string path_name = null;
+            string? path_name = null;
             try
             {
                 if (mode != FDNameType.BaseFolder)
@@ -3225,25 +3209,40 @@ namespace Server.Commands
             int handle = 0;
 
             #region Process Arguments
-            if (e.Arguments.Length != 1)
+            // -force: format even when the objects were instantiated on a different server (handle mismatch)
+            bool force = false;
+            List<string> args = new();
+            foreach (string arg in e.Arguments)
+                if (arg.Equals("-force", StringComparison.OrdinalIgnoreCase))
+                    force = true;
+                else
+                    args.Add(arg);
+            if (args.Count != 1)
             {
-                e.Mobile.SendMessage("Usage: [FDFormat <filename>");
+                e.Mobile.SendMessage("Usage: [FDFormat <filename> [-force]");
                 return;
             }
-            string filename = e.Arguments[0];
-            string database = FDFileNames(FDNameType.BaseFolder, filename);
+            string filename = args[0];
+            string? database = FDFileNames(FDNameType.BaseFolder, filename);
             if (!Directory.Exists(database))
             {
                 e.Mobile.SendMessage($"No database named {filename}");
-                e.Mobile.SendMessage("Usage: [FDFormat <filename>");
+                e.Mobile.SendMessage("Usage: [FDFormat <filename> [-force]");
                 return;
             }
             #endregion  Process Arguments
 
-            List<int> FormatSerials = FDFormatReader(filename, ref handle, ref reason);
+            List<int>? FormatSerials = FDFormatReader(filename, ref handle, ref reason);
             if (handle != FDHandle())
             {
-                reason = string.Format("FDFormat: Fail. These objects were instantiated on a different server.");
+                if (!force)
+                {
+                    reason = string.Format("FDFormat: Fail. These objects were instantiated on a different server. Use -force to override.");
+                    Console.WriteLine(reason);
+                    e.Mobile.SendMessage(reason);
+                    return;
+                }
+                reason = string.Format("FDFormat: Warning. These objects were instantiated on a different server; continuing (-force).");
                 Console.WriteLine(reason);
                 e.Mobile.SendMessage(reason);
             }
@@ -3270,7 +3269,7 @@ namespace Server.Commands
                 #region First see if they exist
                 foreach (int serial in FormatSerials)
                 {
-                    Item item = World.FindItem(serial);
+                    Item? item = World.FindItem(serial);
                     if (item != null)
                         count++;
                 }
@@ -3292,7 +3291,7 @@ namespace Server.Commands
                 count = 0;
                 foreach (int serial in FormatSerials)
                 {
-                    Item item = World.FindItem(serial);
+                    Item? item = World.FindItem(serial);
                     //System.Diagnostics.Debug.Assert(item != null);
                     if (item != null)
                     {
@@ -3324,7 +3323,7 @@ namespace Server.Commands
             bool result = false;
             string reason = string.Empty;
             int handle = 0;
-            string filename = null;
+            string? filename = null;
             List<string> Arguments = new(e.Arguments);
 
             #region Process Arguments
@@ -3360,7 +3359,7 @@ namespace Server.Commands
                 if (pairs.Count % 2 != 0)
                     goto usage;
 
-                string database = FDFileNames(FDNameType.BaseFolder, filename);
+                string? database = FDFileNames(FDNameType.BaseFolder, filename);
                 if (!Directory.Exists(database))
                 {
                     e.Mobile.SendMessage($"No database named {filename}");
@@ -3370,7 +3369,7 @@ namespace Server.Commands
             }
             #endregion  Process Arguments
 
-            List<int> TheSerials = FDFormatReader(filename, ref handle, ref reason);
+            List<int>? TheSerials = FDFormatReader(filename, ref handle, ref reason);
             if (handle != FDHandle())
             {
                 reason = string.Format("FDSpawner: Fail. These objects were instantiated on a different server.");
@@ -3396,7 +3395,7 @@ namespace Server.Commands
                 int spawners = 0;
                 foreach (Serial s in TheSerials)
                 {
-                    Item item = null;
+                    Item? item = null;
                     if ((item = World.FindItem(s)) != null)
                     {
                         if (item is Spawner spawner)
@@ -3530,7 +3529,7 @@ namespace Server.Commands
                         #region Compile our mobile and create set of keyword value pares to write
                         string compiled_mobile_props = Utility.CompileMobileProperties(source);
                         string compiled_mobile_skills = Utility.CompileMobileSkills(source);
-                        string type_name = source.GetType().FullName;
+                        string? type_name = source.GetType().FullName;
                         Dictionary<string, string> keyValuePairs = new Dictionary<string, string>()
                         {
 
@@ -3600,7 +3599,7 @@ namespace Server.Commands
                             if (!m_Filename.EndsWith(".mdf", StringComparison.OrdinalIgnoreCase))
                                 m_Filename = m_Filename + ".mdf";
 
-                            Dictionary<string, string> keyValuePairs = FDMobileDefinitionReader(m_Filename, ref reason);
+                            Dictionary<string, string>? keyValuePairs = FDMobileDefinitionReader(m_Filename, ref reason);
                             if (!string.IsNullOrEmpty(reason))
                             {
                                 LogFailure(reason);
@@ -3677,7 +3676,7 @@ namespace Server.Commands
                         tc.Start();
 
                         string reason = string.Empty;
-                        List<IEntity> entities = ReadArcFile(rc.CustomRegion.Name, ref reason);
+                        List<IEntity>? entities = ReadArcFile(rc.CustomRegion.Name, ref reason);
                         if (entities == null)
                         {
                             Console.WriteLine("Failed to read {0} with reason {1}", rc.CustomRegion.Name, reason);
@@ -3754,7 +3753,7 @@ namespace Server.Commands
                     from.SendMessage("That is not an FDRegionControl.");
             }
 
-            public static List<IEntity> ReadArcFile(string filename, ref string reason)
+            public static List<IEntity>? ReadArcFile(string filename, ref string reason)
             {
                 List<IEntity> list = new();
                 string folder = filename + "_IntMap";

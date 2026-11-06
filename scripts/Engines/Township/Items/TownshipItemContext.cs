@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -32,12 +32,12 @@ namespace Server.Township
     [PropertyObject]
     public class TownshipItemContext
     {
-        private Item m_Item;
+        private Item? m_Item;
         private Mobile m_Owner;
         private DateTime m_Placed;
 
         [CommandProperty(AccessLevel.GameMaster)]
-        public Item Item
+        public Item? Item
         {
             get { return m_Item; }
             set { }
@@ -68,7 +68,7 @@ namespace Server.Township
             writer.Write((DateTime)m_Placed);
         }
 
-        public TownshipItemContext(GenericReader reader, Item item, int systemVersion)
+        public TownshipItemContext(GenericReader reader, Item? item, int systemVersion)
         {
             m_Item = item;
 

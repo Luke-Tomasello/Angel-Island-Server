@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -25,12 +25,7 @@
  *   First time check in
  */
 
-using Server.Engines.Alignment;
-using Server.Factions;
-using Server.Mobiles;
 using Server.Network;
-using Server.Prompts;
-using Server.Targeting;
 using System;
 using System.Collections.Generic;
 
@@ -41,9 +36,9 @@ namespace Server.Mobiles
         public static List<PlayerClone> Instances = new();
         private DateTime m_DateCreated;     // (PlayerToCopy.Account as Accounting.Account).Created.ToString()
         private DateTime m_LastLogin;       // (PlayerToCopy.Account as Accounting.Account).LastLogin.ToString()
-        private string m_GuildAlignment;    // alignment
-        private string m_GuildName;         // guild 
-        private string m_GuildAbbr;
+        private string? m_GuildAlignment;    // alignment
+        private string? m_GuildName;         // guild 
+        private string? m_GuildAbbr;
         private bool m_Murderer;
 
         public override bool AlwaysMurderer { get { return m_Murderer; } }
@@ -78,7 +73,7 @@ namespace Server.Mobiles
         {
             base.OnDelete();
         }
-        public override void OnDamage(int amount, Mobile from, bool willKill, object source_weapon)
+        public override void OnDamage(int amount, Mobile from, bool willKill, DamageContext context)
         {
             if (from is Mobile m)
             {
@@ -86,11 +81,11 @@ namespace Server.Mobiles
                 m.FixedParticles(0x374A, 10, 15, 5021, EffectLayer.Waist);
                 m.PlaySound(0x474);
             }
-            base.OnDamage(amount, from, willKill, source_weapon);
+            base.OnDamage(amount, from, willKill, context);
         }
         public override void OnSingleClick(Mobile from)
         {
-            if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules()) && AccessLevel == AccessLevel.Player && DisableHiddenSelfClick && Hidden && from == this)
+            if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules()) && AccessLevel == AccessLevel.Player && DisableHiddenSelfClick && Hidden && from == this)
                 return;
 
             // incognito/disguise
@@ -126,8 +121,8 @@ namespace Server.Mobiles
                     string text = string.Format("[{0}]", m_GuildAlignment);
                     PrivateOverheadMessage(MessageType.Regular, SpeechHue, true, text, from.NetState);
                 }
-             
-                if(m_GuildName != null)
+
+                if (m_GuildName != null)
                 {
                     string text = string.Format("[{0}, {1}]", m_GuildName, m_GuildAbbr);
                     PrivateOverheadMessage(MessageType.Regular, SpeechHue, true, text, from.NetState);

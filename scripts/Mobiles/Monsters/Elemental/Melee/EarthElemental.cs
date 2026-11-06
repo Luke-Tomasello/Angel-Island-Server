@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -47,7 +47,7 @@ namespace Server.Mobiles
     [CorpseName("an earth elemental corpse")]
     public class EarthElemental : BaseCreature
     {
-        public override double DispelDifficulty { get { return 56; } }
+        public override double DispelDifficulty { get { return 95; } }
         public override double DispelFocus { get { return 45.0; } }
 
         [Constructable]
@@ -105,45 +105,17 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020202092911/uo.stratics.com/hunters/earthelemental.shtml
+            // 200 - 350 Gold, Gems, Ore, Fertile Dirt reagent
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackGem();
-                // Jade: Add FertileDirt
-                PackItem(new FertileDirt(Utility.RandomMinMax(15, 30)));
-                PackItem(new IronOre(5)); // TODO: Five small iron ore
-                PackGold(100, 150);
-                PackItem(new MandrakeRoot());
+                PackGold(200, 350);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020202092911/uo.stratics.com/hunters/earthelemental.shtml
-                    // 200 - 350 Gold, Gems, Ore, Fertile Dirt reagent
-
-                    if (Spawning)
-                    {
-                        PackGold(200, 350);
-                    }
-                    else
-                    {
-                        PackItem(new FertileDirt(Utility.RandomMinMax(1, 4)));
-                        PackItem(new IronOre(3));
-                    }
-                }
-                else
-                {   // standard runuo
-                    if (Spawning)
-                    {
-                        PackItem(new FertileDirt(Utility.RandomMinMax(1, 4)));
-                        PackItem(new IronOre(3)); // TODO: Five small iron ore
-                        PackItem(new MandrakeRoot());
-                    }
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Meager);
-                    AddLoot(LootPack.Gems);
-                }
+                PackItem(new FertileDirt(Utility.RandomMinMax(1, 4)));
+                PackItem(new IronOre(3));
             }
         }
 

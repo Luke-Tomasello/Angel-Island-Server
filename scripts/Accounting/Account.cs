@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -21,6 +21,18 @@
 
 /* Scripts/Accounting/Account.cs
  * CHANGELOG
+ *  12/18/25, Adam
+ *  Mortalis: reworked death item handling and identity persistence.
+ *   
+ *   - On death, all equipped items and backpack contents are processed uniformly.
+ *   - Only a narrow allowlist of identity items are preserved across reincarnation:
+ *     blessed clothing, rolled sheet music, and dry-docked boats.
+ *   - Preserved identity items are moved to an account-scoped bank container.
+ *   - All other non-regular items are converted to UnStealable and drop to the corpse.
+ *   - Starter equipment is explicitly removed on death and does not persist.
+ *   - Equipped items and nested backpack contents are handled safely and consistently.
+ *   
+ *   This removes implicit protections while preserving intentional identity continuity.
  *  7/1/2023, Adam (AccountFlags)
  *      Certain flags should transcend mobile creation. The following flags should follow any mobile created on the account
  *      FastWalk
@@ -159,37 +171,51 @@ using System.Xml;
 
 namespace Server.Accounting
 {
-    public class Account : IAccount
+    public partial class Account : IAccount
     {
-        #region MORTALIS
-        public static void Initialize()
+        #region FLAGS
+        [Flags]
+        public enum AccountFlags
         {
-            EventSink.BeforePlayerDeath += new BeforePlayerDeathEventHandler(OnBeforePlayerDeathEventHandler);
+            None = 0x0,
+            Banned = 0x01,
+            DoNotSendEmail = 0x02,
+            Watched = 0x04,
+            // because machine info comes after character creation, we need to set this to kick them later
+            //  Subsequent logins will be blocked, but initial creation will otherwise slip through.
+            //  See Cron jobs for the kicker.
+            ExceedsMachineInfoLimit = 0x08,
+            FastWalk = 0x10,
+            DenyAccessPublicContainer = 0x20,
+            InvalidClient = 0x40,
+            InvalidRazor = 0x80,
+            OrcEnemy = 0x100,
         }
-        private static void OnBeforePlayerDeathEventHandler(BeforePlayerDeathEventArgs e)
+        public void SetFlag(AccountFlags flag, bool value)
         {
-            if (e.Account != null)
-            {
-                e.Account.GUID = e.GUID;
-                e.Account.TimeOfDeath = e.TimeOfDeath;
-                e.Account.House = e.House;
-                e.Account.Followers = e.Followers;
-            }
+            if (value)
+                m_Flags |= flag;
+            else
+                m_Flags &= ~flag;
         }
-        #endregion MORTALIS
+        public bool GetFlag(AccountFlags flag)
+        {
+            return ((m_Flags & flag) != 0);
+        }
         #region Account Infractions
         public enum AccountInfraction
         {
-            none,
+            None,
             // login states
-            concurrentIPLimiter,
-            totalIPLimiter,
-            totalHardwareLimiter,
+            ConcurrentIpLimiter,
+            TotalIpLimiter,
+            TotalHardwareLimiter,
             IPStillHot,
-            hasAccess,
-            checkPassword,
-            banned,
+            HasAccess,
+            CheckPassword,
+            Banned,
             TorExitNode,
+            TooManyCharacters,
         }
         [Flags]
         public enum IPFlags
@@ -232,7 +258,8 @@ namespace Server.Accounting
                 // return flags from the permanent record
                 return ((m_IPFlagsPermanent & flag) != 0);
         }
-        private AccountInfraction m_AccountInfraction = Account.AccountInfraction.none;
+        #endregion FLAGS
+        private AccountInfraction m_AccountInfraction = Account.AccountInfraction.None;
         private IPFlags m_IPFlagsPermanent = IPFlags.None;
         private IPFlags m_IPFlagsSession = IPFlags.None;    // not serialized
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.GameMaster)]
@@ -255,9 +282,12 @@ namespace Server.Accounting
         }
         #endregion Account Infractions
 
+        private uint m_guid; // account GUID for property ownership and identity persistence
+        private static MD5CryptoServiceProvider? m_HashProvider;
+        private static byte[]? m_HashBuffer;
         private string m_Username, m_PlainPassword, m_CryptPassword;
         private AccessLevel m_AccessLevel;
-        private AccountFlag m_Flags = AccountFlag.None;
+        private AccountFlags m_Flags = AccountFlags.None;
         private DateTime m_Created, m_LastLogin;
         private ArrayList m_Comments;
         private ArrayList m_Tags;
@@ -276,33 +306,27 @@ namespace Server.Accounting
         private string m_EmailAddress;
         private bool m_bAccountActivated;
         private string m_ActivationKey;
-        private string m_ResetPassword = "";
+        private string? m_ResetPassword = "";
         private DateTime m_ResetPasswordRequestedTime;
         public DateTime LastActivationResendTime = DateTime.MinValue;
-        //Pix: variables for keeping track of steps taken
-        //  for use with refreshing houses.
-        public DateTime m_STIntervalStart;
+        public DateTime m_STIntervalStart; //Pix: variables for keeping track of steps taken for use with refreshing houses.
         public int m_STSteps;
-        #region MORTALIS
-        //Adam: Mortalis: your bankbox is saved and passed to the next character created on your account.
-        private Serial m_BankBox = Serial.Zero;                 // Available AFTER DEATH
-        private Serial m_House = Serial.Zero;                   // Available AFTER DEATH
-        private DateTime m_TimeOfDeath = DateTime.MinValue;     // Available AFTER DEATH
-        private int m_Followers;                                // Available AFTER DEATH
-        private uint m_guid;                                    // Available AFTER DEATH (see the player mobile for current GUID)
-        #endregion MORTALIS
-
 
         /// <summary>
         /// Deletes the account, all characters of the account, and all houses of those characters
+        /// For Mortalis, we also delete the house and bankbox associated with this account
         /// </summary>
         public void Delete()
         {
+            if (Core.RuleSets.MortalisRules())
+                DeleteMortalis();
+
+            // mobile owned houses
             for (int i = 0; i < m_Mobiles.Length; ++i)
             {
                 Mobile m = this[i];
 
-                if (m == null)
+                if (m == null || m.Deleted)
                     continue;
 
                 ArrayList list = Multis.BaseHouse.GetHouses(m);
@@ -318,63 +342,27 @@ namespace Server.Accounting
 
             Accounts.Table.Remove(m_Username);
         }
+
+        [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
+        public AccountFlags Flags
+        {
+            get { return m_Flags; }
+            set { m_Flags = value; }
+        }
+
+        /// <summary>
+        /// Account GUID uniquely identifies a player, even after death
+        /// </summary>
+        [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
+        public uint GUID { get => m_guid; set => m_guid = value; }
+
+        /// <summary>
+        /// Used for Account ownership checks in BaseHouse
+        /// </summary>
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public uint AccountCode
         { get { return (uint)Utility.GetStableHashCode(Username + Created.ToString(), version: 1); } }
-        #region MORTALIS
-        /// <summary>
-        /// Available AFTER DEATH:
-        /// Mortalis needs to know who previously owned this pet (after the current owner dies)
-        ///     the GUID uniquely identifies a player, even after death
-        /// </summary>
-        [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
-        public uint GUID
-        {
-            get { return m_guid; }
-            set { m_guid = value; }
-        }
-        /// <summary>
-        /// Available AFTER DEATH:
-        /// Mortalis: BankBox carryover for players killed on Mortalis
-        /// </summary>
-        [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
-        public Serial BankBox
-        {
-            get { return m_BankBox; }
-            set { m_BankBox = value; }
-        }
-        /// <summary>
-        /// Available AFTER DEATH:
-        /// Mortalis: Followers this player had at the time of death
-        /// </summary>
-        [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
-        public int Followers
-        {
-            get { return m_Followers; }
-            set { m_Followers = value; }
-        }
-        /// <summary>
-        /// Available AFTER DEATH:
-        /// Mortalis: remember the house oned OnBeforeDeath. We will need to search this for assets we may use to reequip the player
-        /// </summary>
-        [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
-        public Serial House
-        {
-            get { return m_House; }
-            set { m_House = value; }
-        }
-        /// <summary>
-        /// Available AFTER DEATH:
-        /// Date detailing when the (one-and-only) died.
-        /// Used AccountHandler to override IPLimiter default functionally.
-        /// </summary>
-        [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
-        public DateTime TimeOfDeath
-        {
-            get { return m_TimeOfDeath; }
-            set { m_TimeOfDeath = value; }
-        }
-        #endregion MORTALIS
+
         /// <summary>
         /// Date detailing when a hardware hash was FIRST acquired
         /// </summary>
@@ -385,6 +373,7 @@ namespace Server.Accounting
             // should never be set/reset. See HardwareHash for when it is set
             set { }
         }
+
         /// <summary>
         /// Object detailing information about the hardware of the last person to log into this account
         /// </summary>
@@ -394,24 +383,25 @@ namespace Server.Accounting
             get { return m_HardwareInfo; }
             set { m_HardwareInfo = value; }
         }
+
         /// <summary>
         /// Hash detailing information about the hardware of the last person to log into this account
         /// </summary>
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public int HardwareHash
         {
-            get 
+            get
             {
                 if (Core.UseLoginDB)
-                    SyncHardwareHash(); 
-                return m_HardwareHash; 
+                    SyncHardwareHash();
+                return m_HardwareHash;
             }
             set
             {
                 SetHardwareHashAcquired(value);
                 // initialize the last known good hardware hash
-                m_HardwareHash = value; 
-                if (Core.UseLoginDB) 
+                m_HardwareHash = value;
+                if (Core.UseLoginDB)
                     AccountsDatabase.SaveAccount(this);
                 // now add this hash to the list of 'machines' this user has access to.
                 if (!m_Machines.Contains(value))
@@ -452,28 +442,32 @@ namespace Server.Accounting
             get { return m_IPRestrictions; }
             set { m_IPRestrictions = value; }
         }
+
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public string[] EmailHistory
         {
             get { return m_EmailHistory; }
             set { m_EmailHistory = value; }
         }
+
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
-        public string ResetPassword
+        public string? ResetPassword
         {
-            get 
+            get
             {
                 if (Core.UseLoginDB)
-                    SyncCredentials(); 
-                
-                return m_ResetPassword; 
+                    SyncCredentials();
+
+                return m_ResetPassword;
             }
         }
+
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public DateTime ResetPasswordRequestedTime
         {
             get { return m_ResetPasswordRequestedTime; }
         }
+
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public bool AccountActivated
         {
@@ -497,6 +491,7 @@ namespace Server.Accounting
             get { return m_LoginIPs; }
             set { m_LoginIPs = value; }
         }
+
         public List<int> Machines
         {
             get
@@ -512,6 +507,7 @@ namespace Server.Accounting
                 return machines;
             }
         }
+
         public void ClearMachines()
         {
             HardwareHash = 0;
@@ -519,12 +515,14 @@ namespace Server.Accounting
             m_Machines = new();
             return;
         }
+
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public IPAddress LastGAMELogin
         {
             get { return m_LastGAMELogin; }
             set { m_LastGAMELogin = value; }
         }
+
         /// <summary>
         /// List of account comments. Type of contained objects is AccountComment.
         /// </summary>
@@ -533,6 +531,7 @@ namespace Server.Accounting
         {
             get { return m_Comments; }
         }
+
         /// <summary>
         /// List of account tags. Type of contained objects is AccountTag.
         /// </summary>
@@ -541,6 +540,7 @@ namespace Server.Accounting
         {
             get { return m_Tags; }
         }
+
         /// <summary>
         /// Account username. Case insensitive validation.
         /// </summary>
@@ -550,32 +550,35 @@ namespace Server.Accounting
             get { return m_Username; }
             set { m_Username = value; }
         }
+
         /// <summary>
         /// Account password. Plain text. Case sensitive validation. May be null.
         /// </summary>
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public string PlainPassword
         {
-            get 
+            get
             {
                 if (Core.UseLoginDB)
-                    SyncCredentials(); 
-                return m_PlainPassword; 
+                    SyncCredentials();
+                return m_PlainPassword;
             }
         }
+
         /// <summary>
         /// Account password. Hashed with MD5. May be null.
         /// </summary>
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public string CryptPassword
         {
-            get 
-            { 
+            get
+            {
                 if (Core.UseLoginDB)
-                    SyncCredentials(); 
-                return m_CryptPassword; 
+                    SyncCredentials();
+                return m_CryptPassword;
             }
         }
+
         /// <summary>
         /// Account Email.
         /// </summary>
@@ -585,18 +588,21 @@ namespace Server.Accounting
             get { return m_EmailAddress; }
             set { m_EmailAddress = value; }
         }
+
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public string WatchReason
         {
             get { return m_WatchReason; }
             set { m_WatchReason = value; }
         }
+
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public DateTime WatchExpire
         {
             get { return m_WatchExpire; }
             set { m_WatchExpire = value; }
         }
+
         /// <summary>
         /// Initial AccessLevel for new characters created on this account.
         /// </summary>
@@ -612,6 +618,7 @@ namespace Server.Accounting
                 AccessLevelInternal = value;
             }
         }
+
         // do not make a command, this is for programmatic use only.
         public AccessLevel AccessLevelInternal
         {
@@ -627,30 +634,33 @@ namespace Server.Accounting
                 }
             }
         }
+
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public bool DoNotSendEmail
         {
             get
             {
-                return GetFlag(AccountFlag.DoNotSendEmail);
+                return GetFlag(AccountFlags.DoNotSendEmail);
             }
             set
             {
-                SetFlag(AccountFlag.DoNotSendEmail, value);
+                SetFlag(AccountFlags.DoNotSendEmail, value);
             }
         }
+
         [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
         public bool Watched
         {
             get
             {
-                return GetFlag(AccountFlag.Watched);
+                return GetFlag(AccountFlags.Watched);
             }
             set
             {
-                SetFlag(AccountFlag.Watched, value);
+                SetFlag(AccountFlags.Watched, value);
             }
         }
+
         /// <summary>
         /// Gets or sets a flag indiciating if this account is banned.
         /// </summary>
@@ -659,7 +669,7 @@ namespace Server.Accounting
         {
             get
             {
-                bool isBanned = GetFlag(AccountFlag.Banned); //GetFlag( 0 );
+                bool isBanned = GetFlag(AccountFlags.Banned); //GetFlag( 0 );
 
                 if (!isBanned)
                     return false;
@@ -682,9 +692,10 @@ namespace Server.Accounting
             set
             {
                 //SetFlag( 0, value ); 
-                SetFlag(AccountFlag.Banned, value);
+                SetFlag(AccountFlags.Banned, value);
             }
         }
+
         /// <summary>
         /// The date and time of when this account was created.
         /// </summary>
@@ -693,6 +704,7 @@ namespace Server.Accounting
         {
             get { return m_Created; }
         }
+
         /// <summary>
         /// Gets or sets the date and time when this account was last accessed.
         /// </summary>
@@ -703,7 +715,6 @@ namespace Server.Accounting
             set { m_LastLogin = value; }
         }
 
-        #region MORTALIS
         /// <summary>
         /// Synchronizes the hardware hash acquired date.
         /// </summary>
@@ -717,187 +728,6 @@ namespace Server.Accounting
             //  or a possible administrative 'reset' of the account 'bound' to a particular machine
             if (hardwareHash == 0)
                 m_HardwareHashAcquired = DateTime.MinValue;
-        }
-        #endregion MORTALIS
-        #region FLAGS
-        [Flags]
-        public enum AccountFlag
-        {
-            None = 0x0,
-            Banned = 0x01,
-            DoNotSendEmail = 0x02,
-            Watched = 0x04,
-            // because machine info comes after character creation, we need to set this to kick them later
-            //  Subsequent logins will be blocked, but initial creation will otherwise slip through.
-            //  See Cron jobs for the kicker.
-            ExceedsMachineInfoLimit = 0x08,
-            FastWalk = 0x10,
-            DenyAccessPublicContainer = 0x20,
-            InvalidClient = 0x40,
-            InvalidRazor = 0x80,
-        }
-        [CommandProperty(AccessLevel.Administrator, AccessLevel.Owner)]
-        public AccountFlag Flags
-        {
-            get { return m_Flags; }
-            set { m_Flags = value; }
-        }
-        public void SetFlag(AccountFlag flag, bool value)
-        {
-            if (value)
-                m_Flags |= flag;
-            else
-                m_Flags &= ~flag;
-        }
-
-        public bool GetFlag(AccountFlag flag)
-        {
-            return ((m_Flags & flag) != 0);
-        }
-        #endregion FLAGS
-        /// <summary>
-        /// Adds a new tag to this account. This method does not check for duplicate names.
-        /// </summary>
-        /// <param name="name">New tag name.</param>
-        /// <param name="value">New tag value.</param>
-        public void AddTag(string name, string value)
-        {
-            m_Tags.Add(new AccountTag(name, value));
-        }
-
-        /// <summary>
-        /// Removes all tags with the specified name from this account.
-        /// </summary>
-        /// <param name="name">Tag name to remove.</param>
-        public void RemoveTag(string name)
-        {
-            for (int i = m_Tags.Count - 1; i >= 0; --i)
-            {
-                if (i >= m_Tags.Count)
-                    continue;
-
-                AccountTag tag = (AccountTag)m_Tags[i];
-
-                if (tag.Name == name)
-                    m_Tags.RemoveAt(i);
-            }
-        }
-
-        /// <summary>
-        /// Modifies an existing tag or adds a new tag if no tag exists.
-        /// </summary>
-        /// <param name="name">Tag name.</param>
-        /// <param name="value">Tag value.</param>
-        public void SetTag(string name, string value)
-        {
-            for (int i = 0; i < m_Tags.Count; ++i)
-            {
-                AccountTag tag = (AccountTag)m_Tags[i];
-
-                if (tag.Name == name)
-                {
-                    tag.Value = value;
-                    return;
-                }
-            }
-
-            AddTag(name, value);
-        }
-
-        /// <summary>
-        /// Gets the value of a tag -or- null if there are no tags with the specified name.
-        /// </summary>
-        /// <param name="name">Name of the desired tag value.</param>
-        public string GetTag(string name)
-        {
-            for (int i = 0; i < m_Tags.Count; ++i)
-            {
-                AccountTag tag = (AccountTag)m_Tags[i];
-
-                if (tag.Name == name)
-                    return tag.Value;
-            }
-
-            return null;
-        }
-
-        public void SetUnspecifiedBan(Mobile from)
-        {
-            SetBanTags(from, DateTime.MinValue, TimeSpan.Zero);
-        }
-
-        public void SetBanTags(Mobile from, DateTime banTime, TimeSpan banDuration)
-        {
-            if (from == null)
-                RemoveTag("BanDealer");
-            else
-                SetTag("BanDealer", from.ToString());
-
-            if (banTime == DateTime.MinValue)
-                RemoveTag("BanTime");
-            else
-                SetTag("BanTime", XmlConvert.ToString(banTime, XmlDateTimeSerializationMode.Utc));
-
-            if (banDuration == TimeSpan.Zero)
-                RemoveTag("BanDuration");
-            else
-                SetTag("BanDuration", banDuration.ToString());
-        }
-
-        public bool GetBanTags(out DateTime banTime, out TimeSpan banDuration)
-        {
-            string tagTime = GetTag("BanTime");
-            string tagDuration = GetTag("BanDuration");
-
-            if (tagTime != null)
-                banTime = Accounts.GetDateTime(tagTime, DateTime.MinValue);
-            else
-                banTime = DateTime.MinValue;
-
-            if (tagDuration == "Infinite")
-            {
-                banDuration = TimeSpan.MaxValue;
-            }
-            else if (tagDuration != null)
-            {
-                try { banDuration = TimeSpan.Parse(tagDuration); }
-                catch { banDuration = TimeSpan.Zero; }
-            }
-            else
-            {
-                banDuration = TimeSpan.Zero;
-            }
-
-            return (banTime != DateTime.MinValue && banDuration != TimeSpan.Zero);
-        }
-
-        public AccessLevel GetAccessLevel()
-        {
-            bool online;
-            AccessLevel accessLevel;
-            return GetAccountInfo(out accessLevel, out online);
-        }
-
-        public AccessLevel GetAccountInfo(out AccessLevel accessLevel, out bool online)
-        {
-            accessLevel = this.AccessLevel;
-            online = false;
-
-            for (int j = 0; j < 5; ++j)
-            {
-                Mobile check = this[j];
-
-                if (check == null)
-                    continue;
-
-                if (check.AccessLevel > accessLevel)
-                    accessLevel = check.AccessLevel;
-
-                if (check.NetState != null)
-                    online = true;
-            }
-
-            return accessLevel;
         }
 
         /// <summary>
@@ -934,9 +764,6 @@ namespace Server.Accounting
             m_PlainPassword = plainPassword;
             m_ResetPassword = resetPassword;
         }
-
-        private static MD5CryptoServiceProvider m_HashProvider;
-        private static byte[] m_HashBuffer;
 
         public static string HashPassword(string plainPassword)
         {
@@ -1106,18 +933,25 @@ namespace Server.Accounting
 
                 SetPassword(plainPassword);
             }
-            #region MORTALIS
-            m_BankBox = (Serial)Accounts.GetInt32(Accounts.GetText(node["bankBox"], "0"), 0);
-            m_House = (Serial)Accounts.GetInt32(Accounts.GetText(node["house"], "0"), 0);
-            m_TimeOfDeath = Accounts.GetDateTime(Accounts.GetText(node["timeOfDeath"], null), DateTime.MinValue);
-            m_Followers = Accounts.GetInt32(Accounts.GetText(node["followers"], "0"), 0);
+
+
+            // Load Mortalis-only data
+            if (Core.RuleSets.MortalisRules())
+                LoadMortalis(node);
+
+            // Load Seasons-only data
+            if (Core.RuleSets.SeasonsRules())
+                LoadSeasons(node);
+
+            // Load extended data 
+            LoadExtended(node);
+
             m_guid = (UInt32)Accounts.GetUInt32(Accounts.GetText(node["guid"], "0"), 0);
-            #endregion MORTALIS
             m_AccountInfraction = (AccountInfraction)Enum.Parse(typeof(AccountInfraction), Accounts.GetText(node["accountinfraction"], "none"), true);
             m_IPFlagsPermanent = (IPFlags)Accounts.GetUInt32(Accounts.GetText(node["IPFlags"], "0"), 0);
             m_HardwareHashAcquired = Accounts.GetDateTime(Accounts.GetText(node["hardwareHashAcquired"], null), DateTime.MinValue);
             m_AccessLevel = (AccessLevel)Enum.Parse(typeof(AccessLevel), Accounts.GetText(node["accessLevel"], "Player"), true);
-            m_Flags = (AccountFlag)Accounts.GetInt32(Accounts.GetText(node["flags"], "0"), 0);
+            m_Flags = (AccountFlags)Accounts.GetInt32(Accounts.GetText(node["flags"], "0"), 0);
             m_Created = Accounts.GetDateTime(Accounts.GetText(node["created"], null), DateTime.UtcNow);
             m_LastLogin = Accounts.GetDateTime(Accounts.GetText(node["lastLogin"], null), DateTime.UtcNow);
 
@@ -1162,223 +996,31 @@ namespace Server.Accounting
         }
 
         /// <summary>
-        /// Deserializes a list of string values from an xml element. Null values are not added to the list.
-        /// </summary>
-        /// <param name="node">The XmlElement from which to deserialize.</param>
-        /// <returns>String list. Value will never be null.</returns>
-        public static string[] LoadAccessCheck(XmlElement node)
-        {
-            string[] stringList;
-            XmlElement accessCheck = node["accessCheck"];
-
-            if (accessCheck != null)
-            {
-                ArrayList list = new ArrayList();
-
-                foreach (XmlElement ip in accessCheck.GetElementsByTagName("ip"))
-                {
-                    string text = Accounts.GetText(ip, null);
-
-                    if (text != null)
-                        list.Add(text);
-                }
-
-                stringList = (string[])list.ToArray(typeof(string));
-            }
-            else
-            {
-                stringList = new string[0];
-            }
-
-            return stringList;
-        }
-
-        public static string[] LoadEmailHistory(XmlElement node)
-        {
-            string[] stringList;
-            XmlElement emailHistory = node["emailHistory"];
-
-            if (emailHistory != null)
-            {
-                ArrayList list = new ArrayList();
-
-                foreach (XmlElement address in emailHistory.GetElementsByTagName("addr"))
-                {
-                    string text = Accounts.GetText(address, null);
-
-                    if (text != null)
-                        list.Add(text);
-                }
-
-                stringList = (string[])list.ToArray(typeof(string));
-            }
-            else
-            {
-                stringList = new string[0];
-            }
-
-            return stringList;
-        }
-
-
-        /// <summary>
-        /// Deserializes a list of IPAddress values from an xml element.
-        /// </summary>
-        /// <param name="node">The XmlElement from which to deserialize.</param>
-        /// <returns>Address list. Value will never be null.</returns>
-        public static IPAddress[] LoadAddressList(XmlElement node)
-        {
-            IPAddress[] list;
-            XmlElement addressList = node["addressList"];
-
-            if (addressList != null)
-            {
-                int count = Accounts.GetInt32(Accounts.GetAttribute(addressList, "count", "0"), 0);
-
-                list = new IPAddress[count];
-
-                count = 0;
-
-                foreach (XmlElement ip in addressList.GetElementsByTagName("ip"))
-                {
-                    try
-                    {
-                        if (count < list.Length)
-                        {
-                            list[count] = IPAddress.Parse(Accounts.GetText(ip, null));
-                            count++;
-                        }
-                    }
-                    catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                }
-
-                if (count != list.Length)
-                {
-                    IPAddress[] old = list;
-                    list = new IPAddress[count];
-
-                    for (int i = 0; i < count && i < old.Length; ++i)
-                        list[i] = old[i];
-                }
-            }
-            else
-            {
-                list = new IPAddress[0];
-            }
-
-            return list;
-        }
-
-        public static List<int> LoadMachineList(XmlElement node)
-        {
-            List<int> list = new();
-            XmlElement machineList = node["machineList"];
-
-            if (machineList != null)
-            {
-                foreach (XmlElement hash in machineList.GetElementsByTagName("hash"))
-                {
-                    try
-                    {
-                        list.Add(int.Parse(Accounts.GetText(hash, null)));
-                    }
-                    catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                }
-            }
-
-            return list;
-        }
-
-        /// <summary>
-        /// Deserializes a list of AccountTag instances from an xml element.
-        /// </summary>
-        /// <param name="node">The XmlElement from which to deserialize.</param>
-        /// <returns>Tag list. Value will never be null.</returns>
-        public static ArrayList LoadTags(XmlElement node)
-        {
-            ArrayList list = new ArrayList();
-            XmlElement tags = node["tags"];
-
-            if (tags != null)
-            {
-                foreach (XmlElement tag in tags.GetElementsByTagName("tag"))
-                {
-                    try { list.Add(new AccountTag(tag)); }
-                    catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                }
-            }
-
-            return list;
-        }
-
-        /// <summary>
-        /// Deserializes a list of AccountComment instances from an xml element.
-        /// </summary>
-        /// <param name="node">The XmlElement from which to deserialize.</param>
-        /// <returns>Comment list. Value will never be null.</returns>
-        public static ArrayList LoadComments(XmlElement node)
-        {
-            ArrayList list = new ArrayList();
-            XmlElement comments = node["comments"];
-
-            if (comments != null)
-            {
-                foreach (XmlElement comment in comments.GetElementsByTagName("comment"))
-                {
-                    try { list.Add(new AccountComment(comment)); }
-                    catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                }
-            }
-
-            return list;
-        }
-
-        /// <summary>
-        /// Deserializes a list of Mobile instances from an xml element.
-        /// </summary>
-        /// <param name="node">The XmlElement instance from which to deserialize.</param>
-        /// <returns>Mobile list. Value will never be null.</returns>
-        public static Mobile[] LoadMobiles(XmlElement node)
-        {
-            Mobile[] list;
-            XmlElement chars = node["chars"];
-
-            if (chars == null)
-            {
-                list = new Mobile[5];
-            }
-            else
-            {
-                int length = Accounts.GetInt32(Accounts.GetAttribute(chars, "length", "5"), 5);
-
-                list = new Mobile[length];
-
-                foreach (XmlElement ele in chars.GetElementsByTagName("char"))
-                {
-                    try
-                    {
-                        int index = Accounts.GetInt32(Accounts.GetAttribute(ele, "index", "0"), 0);
-                        int serial = Accounts.GetInt32(Accounts.GetText(ele, "0"), 0);
-
-                        if (index >= 0 && index < list.Length)
-                            list[index] = World.FindMobile(serial);
-                    }
-                    catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
-                }
-            }
-
-            return list;
-        }
-
-        /// <summary>
         /// Checks if a specific NetState is allowed access to this account.
         /// </summary>
         /// <param name="ns">NetState instance to check.</param>
+        /// <param name="reason">
+        /// If access is granted through another trusted account sharing the same IP,
+        /// contains a description of why access was allowed; otherwise null.
+        /// </param>
         /// <returns>True if allowed, false if not.</returns>
-        public bool HasAccess(NetState ns)
+        public bool HasAccess(NetState ns, out string? reason)
         {
+            reason = null;
+
             if (ns == null)
                 return false;
+
+            IPAddress? ipAddress;
+
+            try
+            {
+                ipAddress = ((IPEndPoint)ns.Socket.RemoteEndPoint).Address;
+            }
+            catch
+            {
+                return false;
+            }
 
             AccessLevel level = Misc.AccountHandler.LockdownLevel;
 
@@ -1386,6 +1028,9 @@ namespace Server.Accounting
             {
                 bool hasAccess = false;
 
+                // First, preserve the normal lockdown rules for this account:
+                // either the account itself or one of its characters may satisfy
+                // the required access level.
                 if (m_AccessLevel >= level)
                 {
                     hasAccess = true;
@@ -1402,13 +1047,37 @@ namespace Server.Accounting
                 }
 
                 if (!hasAccess)
+                {
+                    // Allow a lockdown exception when another account associated
+                    // with this IP has sufficient ACCOUNT-LEVEL access.
+                    //
+                    // Character-level access is intentionally NOT inherited across
+                    // accounts. Elevating an individual character (e.g. to GM)
+                    // should not implicitly grant lockdown access to other accounts
+                    // sharing the same IP.
+                    List<Accounting.Account> accounts = AccountTotalIPLimiter.GetAccountsByIP(this, ipAddress);
+
+                    foreach (Accounting.Account account in accounts)
+                    {
+                        if (account != null &&
+                            account != this &&
+                            account.AccessLevel >= level)
+                        {
+                            hasAccess = true;
+
+                            reason =
+                                $"Account '{Username}' was allowed through {level} lockdown because " +
+                                $"account '{account.Username}', sharing the same IP address, has " +
+                                $"{account.AccessLevel} account-level access.";
+
+                            break;
+                        }
+                    }
+                }
+
+                if (!hasAccess)
                     return false;
             }
-
-            IPAddress ipAddress;
-
-            try { ipAddress = ((IPEndPoint)ns.Socket.RemoteEndPoint).Address; }
-            catch { return false; }
 
             bool accessAllowed = (m_IPRestrictions.Length == 0);
 
@@ -1416,6 +1085,11 @@ namespace Server.Accounting
                 accessAllowed = Utility.IPMatch(m_IPRestrictions[i], ipAddress);
 
             return accessAllowed;
+        }
+
+        public bool HasAccess(NetState ns)
+        {
+            return HasAccess(ns, out _);
         }
 
         /// <summary>
@@ -1534,39 +1208,22 @@ namespace Server.Accounting
             xml.WriteStartElement("username");
             xml.WriteString(m_Username);
             xml.WriteEndElement();
-            #region MORTALIS
-            if (m_Followers != 0)
-            {
-                xml.WriteStartElement("followers");
-                xml.WriteString(XmlConvert.ToString(m_Followers));
-                xml.WriteEndElement();
-            }
-            if (m_guid != 0)
-            {
-                xml.WriteStartElement("guid");
-                xml.WriteString(XmlConvert.ToString(m_guid));
-                xml.WriteEndElement();
-            }
-            if (m_House != Serial.Zero)
-            {
-                xml.WriteStartElement("house");
-                xml.WriteString(XmlConvert.ToString(m_House));
-                xml.WriteEndElement();
-            }
 
-            if (m_BankBox != Serial.Zero)
-            {
-                xml.WriteStartElement("bankBox");
-                xml.WriteString(XmlConvert.ToString(m_BankBox));
-                xml.WriteEndElement();
-            }
-            if (m_TimeOfDeath != DateTime.MinValue)
-            {
-                xml.WriteStartElement("timeOfDeath");
-                xml.WriteString(XmlConvert.ToString(m_TimeOfDeath, XmlDateTimeSerializationMode.Utc));
-                xml.WriteEndElement();
-            }
-            #endregion MORTALIS
+            // save Mortalis-only data
+            if (Core.RuleSets.MortalisRules())
+                SaveMortalis(xml);
+
+            // save Seasons-only data
+            if (Core.RuleSets.SeasonsRules())
+                SaveSeasons(xml);
+
+            // Save extended data
+            SaveExtended(xml);
+
+            xml.WriteStartElement("guid");
+            xml.WriteString(XmlConvert.ToString(m_guid));
+            xml.WriteEndElement();
+
             if (m_HardwareHashAcquired != DateTime.MinValue)
             {
                 xml.WriteStartElement("hardwareHashAcquired");
@@ -1624,7 +1281,7 @@ namespace Server.Accounting
             xml.WriteString(XmlConvert.ToString(m_ResetPasswordRequestedTime, XmlDateTimeSerializationMode.Utc));
             xml.WriteEndElement();
 
-            if (m_AccountInfraction != AccountInfraction.none)
+            if (m_AccountInfraction != AccountInfraction.None)
             {
                 xml.WriteStartElement("accountinfraction");
                 xml.WriteString(m_AccountInfraction.ToString());
@@ -1782,7 +1439,7 @@ namespace Server.Accounting
 
                 for (int i = 0; i < this.Length; ++i)
                 {
-                    if (this[i] != null)
+                    if (this[i] != null && !this[i].Deleted)
                         ++count;
                 }
 
@@ -1799,10 +1456,12 @@ namespace Server.Accounting
             get
             {
                 // 1 character per account on Siege, Mortalis!
-                if (Core.RuleSets.SiegeRules() || Core.RuleSets.MortalisRules())
+                if (Core.RuleSets.SiegeRules() || Core.RuleSets.MortalisRules() || (Core.RuleSets.SeasonsRules(3) || Core.RuleSets.UpheavalRules()))
                 {
                     return 1;
                 }
+                else if (Core.RuleSets.SeasonsRules(2))
+                    return CoreAI.MaxCharactersPerAccount; // seasons 1 & 2, 5 chars, season 3 is 1 char
 
                 return 5;
             }
@@ -1852,11 +1511,6 @@ namespace Server.Accounting
                         m_Mobiles[index].Account = this;
                 }
             }
-        }
-
-        public override string ToString()
-        {
-            return m_Username;
         }
     }
 }

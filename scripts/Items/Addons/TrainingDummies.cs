@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,7 +41,7 @@ namespace Server.Items
         private double m_MinSkill;
         private double m_MaxSkill;
 
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         [CommandProperty(AccessLevel.GameMaster)]
         public double MinSkill
@@ -79,7 +79,7 @@ namespace Server.Items
             // Tip #4 Practice dummies work up to 25 again on Siege and you can avoid a lot of low end stuff to get your skills up.
             //  https://community.stratics.com/threads/mythbusting-siege-a-guide-for-new-players-also-shard-faq.92849/
             // Adam: We'll go with UOGuide and guess at the reduction.
-            m_MaxSkill = Core.RuleSets.SiegeStyleRules() ? +18.0 : +25.0;
+            m_MaxSkill = Core.RuleSets.SiegeRules() ? +18.0 : +25.0;
         }
 
         public void UpdateItemID()
@@ -126,7 +126,7 @@ namespace Server.Items
 
         public override void OnDoubleClick(Mobile from)
         {
-            BaseWeapon weapon = from.Weapon as BaseWeapon;
+            BaseWeapon? weapon = from.Weapon as BaseWeapon;
 
             if (weapon is BaseRanged)
                 SendLocalizedMessageTo(from, 501822); // You can't practice ranged weapons on this.

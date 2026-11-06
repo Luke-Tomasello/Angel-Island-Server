@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -69,7 +69,7 @@ namespace Server.Gumps
 
         private const int LabelHue = 0x480;
 
-        private ArrayList m_List;
+        private ArrayList? m_List;
 
         private string GetOwnerName()
         {
@@ -144,7 +144,7 @@ namespace Server.Gumps
                 }
 
 
-                Mobile m = (Mobile)list[i];
+                Mobile? m = (Mobile?)list[i];
 
                 string name;
 
@@ -221,13 +221,13 @@ namespace Server.Gumps
 
             if (m_House.Sign != null)
             {
-                ArrayList lines = Wrap(m_House.Sign.Name);
+                ArrayList? lines = Wrap(m_House.Sign.Name);
 
                 if (lines != null)
                 {
                     for (int i = 0, y = (114 - (lines.Count * 14)) / 2; i < lines.Count; ++i, y += 14)
                     {
-                        string s = (string)lines[i];
+                        string? s = (string?)lines[i];
 
                         AddLabel(10 + ((160 - (s.Length * 8)) / 2), y, 0, s);
                     }
@@ -548,7 +548,10 @@ namespace Server.Gumps
             if (okay && house.IsFriend(from))
             {
                 if (house.Bans != null)
+                {
+                    house.ClearAccountBansForHouse();
                     house.Bans.Clear();
+                }
 
                 from.SendLocalizedMessage(1060754); // All bans for this house have been lifted.
             }
@@ -569,7 +572,7 @@ namespace Server.Gumps
 
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    Mobile m = (Mobile)list[i];
+                    Mobile? m = (Mobile?)list[i];
 
                     if (!house.HasAccess(m) && house.IsInside(m))
                     {
@@ -616,7 +619,7 @@ namespace Server.Gumps
                             return;
                     }
 
-                    BaseHouse newHouse = e.ConstructHouse(from);
+                    BaseHouse? newHouse = e.ConstructHouse(from);
 
                     if (newHouse != null)
                     {
@@ -670,7 +673,7 @@ namespace Server.Gumps
             if (sign == null || from.Map != sign.Map || !from.InRange(sign.GetWorldLocation(), 18))
                 return;
 
-            HouseFoundation foundation = m_House as HouseFoundation;
+            HouseFoundation? foundation = m_House as HouseFoundation;
             bool isCustomizable = (foundation != null);
 
             int val = info.ButtonID - 1;
@@ -880,7 +883,7 @@ namespace Server.Gumps
 
                                         for (int i = 0; i < list.Count; ++i)
                                         {
-                                            Mobile m = (Mobile)list[i];
+                                            Mobile? m = (Mobile?)list[i];
 
                                             if (m_House.IsBanned(m) && m_House.IsInside(m))
                                                 m.Location = m_House.BanLocation;
@@ -1134,7 +1137,7 @@ namespace Server.Gumps
             }
         }
 
-        private ArrayList Wrap(string value)
+        private ArrayList? Wrap(string value)
         {
             if (value == null || (value = value.Trim()).Length <= 0)
                 return null;

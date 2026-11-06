@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -66,7 +66,7 @@ namespace Server.Items
 
         public ArrayList Entries { get { return m_Entries; } }
 
-        public LedgerEntry Default
+        public LedgerEntry? Default
         {
             get
             {
@@ -182,7 +182,7 @@ namespace Server.Items
         }
 
 
-        public void RemoveEntry(Mobile from, LedgerEntry e, int index)
+        public void RemoveEntry(Mobile from, LedgerEntry? e, int index)
         {
             if (m_DefaultIndex == index)
                 m_DefaultIndex = -1;
@@ -239,7 +239,7 @@ namespace Server.Items
                 for (int ix = 0; ix < m_Entries.Count; ix++)
                 {
                     // wea: 14/Mar/2007 Added additional safety
-                    LedgerEntry e = null;
+                    LedgerEntry? e = null;
 
                     if (m_Entries[ix] is LedgerEntry)
                         e = (LedgerEntry)m_Entries[ix];

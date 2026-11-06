@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -77,35 +77,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020414130245/uo.stratics.com/hunters/ettin.shtml
+            // 	50 to 150 Gold, Potions, Arrows, Gems, 5 Raw Ribs (carved)
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for Core.RuleSets.AngelIslandRules()
-                PackPotion();
-                PackGold(100, 150);
+                PackGold(50, 150);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020414130245/uo.stratics.com/hunters/ettin.shtml
-                    // 	50 to 150 Gold, Potions, Arrows, Gems, 5 Raw Ribs (carved)
-                    if (Spawning)
-                    {
-                        PackGold(50, 150);
-                    }
-                    else
-                    {
-                        PackPotion();
-                        PackItem(new Arrow(Utility.Random(1, 2)));
-                        PackGem(1, .9);
-                        PackGem(1, .05);
-                    }
-                }
-                else
-                {
-                    AddLoot(LootPack.Meager);
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Potions);
-                }
+                PackPotion();
+                PackItem(new Arrow(Utility.Random(1, 2)));
+                PackGem(1, .9);
+                PackGem(1, .05);
             }
         }
 

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -115,7 +115,7 @@ namespace Server.Items
                 m.SendLocalizedMessage(502391); // Thou can not be resurrected there!
         }
 
-        public static void Permadeath(PlayerMobile pm, Item item)
+        public static void Permadeath(PlayerMobile? pm, Item item)
         {
             if (pm == null)
                 return;
@@ -145,7 +145,7 @@ namespace Server.Items
             }
         }
 
-        public static void RejectLaw(PlayerMobile pm, Item item) //Added 11/17/05 - Pigpen, Function to check location for RejectLaw commands, and check for proper number of LongTerms before usage.
+        public static void RejectLaw(PlayerMobile? pm, Item item) //Added 11/17/05 - Pigpen, Function to check location for RejectLaw commands, and check for proper number of LongTerms before usage.
         {
             if (pm == null)
                 return;
@@ -228,7 +228,7 @@ namespace Server.Items
 
             public override void OnResponse(Server.Network.NetState sender, RelayInfo info)
             {
-                PlayerMobile pm = sender.Mobile as PlayerMobile;
+                PlayerMobile? pm = sender.Mobile as PlayerMobile;
                 if (pm == null)
                     return;
 
@@ -275,7 +275,7 @@ namespace Server.Items
 
             public override void OnResponse(Server.Network.NetState sender, RelayInfo info)
             {
-                PlayerMobile pm = sender.Mobile as PlayerMobile;
+                PlayerMobile? pm = sender.Mobile as PlayerMobile;
                 if (pm == null)
                     return;
 
@@ -305,7 +305,7 @@ namespace Server.Items
             if (PublishInfo.Publish >= 14.0 || e.Handled || !(e.Mobile is PlayerMobile))
                 return;
 
-            string mantra = GetMantra(ankh.Shrine);
+            string? mantra = GetMantra(ankh.Shrine);
 
             if (mantra != null && Insensitive.Equals(e.Speech, mantra))
             {
@@ -332,7 +332,7 @@ namespace Server.Items
             }
         }
 
-        public static string GetMantra(ShrineType shrine)
+        public static string? GetMantra(ShrineType shrine)
         {
             switch (shrine)
             {
@@ -368,7 +368,7 @@ namespace Server.Items
 
         public static bool PatchAnkh(Item item)
         {
-            IAnkh ankh = item as IAnkh;
+            IAnkh? ankh = item as IAnkh;
 
             if (ankh == null)
                 return false;
@@ -643,7 +643,13 @@ namespace Server.Items
             public override int Hue
             {
                 get { return base.Hue; }
-                set { base.Hue = value; if (m_Item.Hue != value) m_Item.Hue = value; }
+                set
+                {
+                    base.Hue = value;
+                    if (m_Item != null && m_Item.Hue != value)
+                        m_Item.Hue = value;
+
+                }
             }
 
             public override void OnDoubleClickDead(Mobile m)

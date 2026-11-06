@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -42,14 +42,14 @@ namespace Server.Mobiles
         public SavageRidgeback(string name)
             : base(name,
                   // on siege, we use the ostard graphic
-                  Core.RuleSets.SiegeStyleRules() ? 0xDA : 188,
-                  Core.RuleSets.SiegeStyleRules() ? 0x3EA4 : 0x3EB8,
+                  Core.RuleSets.SiegeRules() ? 0xDA : 188,
+                  Core.RuleSets.SiegeRules() ? 0x3EA4 : 0x3EB8,
                   AIType.AI_Melee, FightMode.Aggressor, 10, 1, 0.25, 0.5)
         {
             BaseSoundID = 0x3F3;
 
             // on siege, we use the ostard graphic and this yellow (0x88A5) hue.
-            if (Core.RuleSets.SiegeStyleRules())
+            if (Core.RuleSets.SiegeRules())
                 Hue = 0x88A5 | 0x8000;
 
             SetStr(58, 100);

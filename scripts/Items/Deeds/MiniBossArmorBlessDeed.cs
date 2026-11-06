@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -68,7 +68,7 @@ namespace Server.Items
                     }
                     else
                     {
-                        BaseArmor ba = target as BaseArmor;
+                        BaseArmor? ba = target as BaseArmor;
                         ba.LootType = LootType.Blessed;
                         ba.ProtectionLevel = ArmorProtectionLevel.Regular;
                         ba.DurabilityLevel = ArmorDurabilityLevel.Indestructible;
@@ -92,7 +92,7 @@ namespace Server.Items
             if (target is BaseArmor == false)
                 return false;
 
-            BaseArmor ba = target as BaseArmor;
+            BaseArmor? ba = target as BaseArmor;
 
             // must be one of the special hues
             List<int> hues = new List<int>

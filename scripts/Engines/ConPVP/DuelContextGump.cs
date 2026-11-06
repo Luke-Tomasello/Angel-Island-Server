@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -27,7 +27,6 @@
 
 using Server.Gumps;
 using Server.Network;
-using System;
 
 namespace Server.Engines.ConPVP
 {
@@ -85,7 +84,7 @@ namespace Server.Engines.ConPVP
 
             for (int i = 0; i < context.Participants.Count; ++i)
             {
-                Participant p = (Participant)context.Participants[i];
+                Participant? p = (Participant?)context.Participants[i];
 
                 AddGoldenButtonLabeled(x, y, 4 + i, string.Format(p.Count == 1 ? "Player {0}: {3}" : "Team {0}: {1}/{2}: {3}", 1 + i, p.FilledSlots, p.Count, p.NameList)); y += 22;
             }

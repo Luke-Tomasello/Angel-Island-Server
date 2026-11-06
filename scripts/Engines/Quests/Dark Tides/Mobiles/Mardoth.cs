@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -46,7 +46,7 @@ namespace Server.Engines.Quests.Necro
 
         public override bool OnDragDrop(Mobile from, Item dropped)
         {
-            PlayerMobile player = from as PlayerMobile;
+            PlayerMobile? player = from as PlayerMobile;
 
             if (player != null)
             {
@@ -102,7 +102,7 @@ namespace Server.Engines.Quests.Necro
 
         public override bool CanTalkTo(PlayerMobile to)
         {
-            DarkTidesQuest qs = to.Quest as DarkTidesQuest;
+            DarkTidesQuest? qs = to.Quest as DarkTidesQuest;
 
             if (qs == null)
                 return (to.Quest == null && QuestSystem.CanOfferQuest(to, typeof(DarkTidesQuest)));
@@ -122,7 +122,7 @@ namespace Server.Engines.Quests.Necro
                 }
                 else
                 {
-                    QuestObjective obj = qs.FindObjective(typeof(FindMardothAboutVaultObjective));
+                    QuestObjective? obj = qs.FindObjective(typeof(FindMardothAboutVaultObjective));
 
                     if (obj != null && !obj.Completed)
                     {

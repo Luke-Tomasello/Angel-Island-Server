@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -503,7 +503,7 @@ namespace Server.Mobiles
                 return false;
             }
         }
-        private bool CheckResist(Mobile m)
+        private bool CheckResist(Mobile? m)
         {
             if (m == null)
                 return false;
@@ -674,14 +674,7 @@ namespace Server.Mobiles
         {
             bool Female = target.Female;
             int fame = target.Fame;
-            string tosay = null;
-
-            //special check for orcs all other iob factions are humanish.. and worth eating :P
-            if (target is PlayerMobile && ((PlayerMobile)target).IOBAlignment == IOBAlignment.Orcish && ((PlayerMobile)target).IOBEquipped == true && (Utility.RandomBool()))
-            {
-                tosay = "Gah, Orcish blood! Better to end your pathetic existence than taint my blood with that of your race.";
-                return tosay;
-            }
+            string? tosay = null;
 
             if (Female)
             {

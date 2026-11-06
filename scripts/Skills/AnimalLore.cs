@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -116,7 +116,7 @@ namespace Server.SkillHandlers
                             {
                                 from.SendLocalizedMessage(1049675); // At your skill level, you can only lore tamed or tameable creatures.
                             }
-                            else if (!c.CanLore && !from.CheckTargetSkill(SkillName.AnimalLore, c, 0.0, 120.0, new object[2] { c, null } /*contextObj*/)) //unchanged by Old Salty to allow failure at GM skill
+                            else if (!c.CanLore && !from.CheckTargetSkill(SkillName.AnimalLore, c, 0.0, 120.0, new object?[2] { c, null } /*contextObj*/)) //unchanged by Old Salty to allow failure at GM skill
                             {
                                 from.SendLocalizedMessage(500334); // You can't think of anything you know offhand.
                             }
@@ -177,17 +177,10 @@ namespace Server.SkillHandlers
              * Furthermore, system messages are parsable by Razor. This helps players who
              * are training their pets.
              */
-#if false
-            if (def.Number > 0)
-                target.PrivateOverheadMessage(MessageType.Regular, 0x3B2, def.Number, m.NetState);
-            else if (!string.IsNullOrEmpty(def.String))
-                target.PrivateOverheadMessage(MessageType.Regular, 0x3B2, false, def.String, m.NetState);
-#else
             if (def.Number > 0)
                 m.SendLocalizedMessage(def.Number);
             else if (!string.IsNullOrEmpty(def.String))
                 m.SendMessage(def.String);
-#endif
         }
 
         private static readonly BaseTrait[] m_RandomTraits = new BaseTrait[] // this array is being shuffled
@@ -519,10 +512,10 @@ namespace Server.SkillHandlers
                 int genes = 0;
                 foreach (PropertyInfo pi in m_Target.GetType().GetProperties())
                 {
-                    GeneAttribute attr = (GeneAttribute)Attribute.GetCustomAttribute(pi, typeof(GeneAttribute), true);
+                    GeneAttribute? attr = (GeneAttribute?)Attribute.GetCustomAttribute(pi, typeof(GeneAttribute), true);
                     if (attr == null)
                         continue;
-                    if (m_User.AccessLevel < AccessLevel.Counselor && !Server.Misc.TestCenter.Enabled)
+                    if (m_User.AccessLevel < AccessLevel.Counselor && !Server.Engines.TestCenterServer.Enabled)
                     {
                         if (attr.Visibility == GeneVisibility.Invisible)
                             continue;
@@ -749,10 +742,10 @@ namespace Server.SkillHandlers
 
                             foreach (PropertyInfo pi in c.GetType().GetProperties())
                             {
-                                GeneAttribute attr = (GeneAttribute)Attribute.GetCustomAttribute(pi, typeof(GeneAttribute), true);
+                                GeneAttribute? attr = (GeneAttribute?)Attribute.GetCustomAttribute(pi, typeof(GeneAttribute), true);
                                 if (attr == null)
                                     continue;
-                                if (m_User.AccessLevel < AccessLevel.Counselor && !Server.Misc.TestCenter.Enabled)
+                                if (m_User.AccessLevel < AccessLevel.Counselor && !Server.Engines.TestCenterServer.Enabled)
                                 {
                                     if (attr.Visibility == GeneVisibility.Invisible)
                                         continue;
@@ -773,7 +766,7 @@ namespace Server.SkillHandlers
                                 if (pg * 9 + i >= genes.Count)
                                     break;
 
-                                GeneAttribute attr = (GeneAttribute)Attribute.GetCustomAttribute(genes[pg * 9 + i], typeof(GeneAttribute), true);
+                                GeneAttribute? attr = (GeneAttribute?)Attribute.GetCustomAttribute(genes[pg * 9 + i], typeof(GeneAttribute), true);
                                 AddHtml(153, 168 + 18 * i, 120, 18, string.Format("<basefont color=#4A3929>{0}</basefont>", attr.Name), false, false);
                                 AddHtml(240, 168 + 18 * i, 115, 18, string.Format("<div align=right>{0:G3}</div>", c.DescribeGene(genes[pg * 9 + i], attr)), false, false);
                             }
@@ -913,7 +906,7 @@ namespace Server.SkillHandlers
                         if (info.ButtonID >= (int)ButtonID.SkillLock)
                         {
                             int skill = info.ButtonID - (int)ButtonID.SkillLock;
-                            Skill sk = null;
+                            Skill? sk = null;
 
                             if (skill >= 0 && skill < m_Target.Skills.Length)
                                 sk = m_Target.Skills[skill];

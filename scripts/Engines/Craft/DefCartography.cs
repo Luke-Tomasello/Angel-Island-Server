@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -51,7 +51,7 @@ namespace Server.Engines.Craft
             return 0.0; // 0%
         }
 
-        private static CraftSystem m_CraftSystem;
+        private static CraftSystem? m_CraftSystem;
 
         public static CraftSystem CraftSystem
         {
@@ -79,7 +79,7 @@ namespace Server.Engines.Craft
             return 0;
         }
 
-        public override void PlayCraftEffect(Mobile from, object obj = null)
+        public override void PlayCraftEffect(Mobile from, object? obj = null)
         {
             from.PlaySound(0x249);
         }
@@ -111,7 +111,7 @@ namespace Server.Engines.Craft
 
         public override void InitCraftList()
         {   // on Siege there is no training, so we need to allow crafting from zero
-            AddCraft(typeof(LocalMap), 1044448, 1015230, Core.RuleSets.SiegeStyleRules() ? 0 : 10.0, 70.0, typeof(BlankMap), 1044449, 1, 1044450);
+            AddCraft(typeof(LocalMap), 1044448, 1015230, Core.RuleSets.SiegeRules() ? 0 : 10.0, 70.0, typeof(BlankMap), 1044449, 1, 1044450);
             AddCraft(typeof(CityMap), 1044448, 1015231, 25.0, 85.0, typeof(BlankMap), 1044449, 1, 1044450);
             AddCraft(typeof(SeaChart), 1044448, 1015232, 35.0, 95.0, typeof(BlankMap), 1044449, 1, 1044450);
             AddCraft(typeof(WorldMap), 1044448, 1015233, 39.5, 99.5, typeof(BlankMap), 1044449, 1, 1044450);

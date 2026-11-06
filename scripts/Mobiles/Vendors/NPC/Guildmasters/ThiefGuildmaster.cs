@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -39,7 +39,7 @@ namespace Server.Mobiles
             get
             {
                 //on siege, there is no age requirement to join the thieves guild
-                if (Core.RuleSets.SiegeStyleRules()) { return TimeSpan.FromDays(0.0); }
+                if (Core.RuleSets.SiegeRules()) { return TimeSpan.FromDays(0.0); }
 
                 return TimeSpan.FromHours(40.0);
             }
@@ -73,7 +73,7 @@ namespace Server.Mobiles
         public override bool CheckCustomReqs(PlayerMobile pm)
         {
             //no requirements on siege to join the theives guild
-            if (Core.RuleSets.SiegeStyleRules()) return true;
+            if (Core.RuleSets.SiegeRules()) return true;
 
             if (pm.LongTermMurders > 0)
             {
@@ -138,7 +138,10 @@ namespace Server.Mobiles
 
             return base.OnGoldGiven(from, dropped);
         }
-
+        public override bool OnVoucherGiven(Mobile from, Item dropped)
+        {
+            return base.OnVoucherGiven(from, dropped);
+        }
         public ThiefGuildmaster(Serial serial)
             : base(serial)
         {

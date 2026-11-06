@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -29,20 +29,20 @@ namespace Server.Engines.BulkOrders
     {
         private PlayerMobile m_From;
         private BulkOrderBook m_Book;
-        private object m_Object;
+        private object? m_Object;
         private int m_Price;
 
         public override void OnResponse(Server.Network.NetState sender, RelayInfo info)
         {
             if (info.ButtonID == 2)
             {
-                PlayerVendor pv = m_Book.RootParent as PlayerVendor;
+                PlayerVendor? pv = m_Book.RootParent as PlayerVendor;
 
                 if (m_Book.Entries.Contains(m_Object) && pv != null)
                 {
                     int price = 0;
 
-                    VendorItem vi = pv.SellItems[m_Book] as VendorItem;
+                    VendorItem? vi = pv.SellItems[m_Book] as VendorItem;
 
                     if (vi != null && !vi.IsForSale)
                     {
@@ -62,7 +62,7 @@ namespace Server.Engines.BulkOrders
                     }
                     else
                     {
-                        Item item = null;
+                        Item? item = null;
 
                         if (m_Object is BOBLargeEntry)
                             item = ((BOBLargeEntry)m_Object).Reconstruct();
@@ -118,7 +118,7 @@ namespace Server.Engines.BulkOrders
             }
         }
 
-        public BODBuyGump(PlayerMobile from, BulkOrderBook book, object obj, int price)
+        public BODBuyGump(PlayerMobile from, BulkOrderBook book, object? obj, int price)
             : base(100, 200)
         {
             m_From = from;

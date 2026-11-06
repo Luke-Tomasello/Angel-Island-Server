@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -162,7 +162,7 @@ namespace Server.Misc
                     if (CoreAI.FakeBadGMNRZR)
                         // pervert the seed to force a failure
                         seed = ~seed;
-                    Timer razorCodeTimer;
+                    Timer? razorCodeTimer;
                     m.Send(new ExchangeRazorCode(seed));
                     if (m_Table.ContainsKey(seed))
                     {
@@ -178,7 +178,7 @@ namespace Server.Misc
                     #region Razor Feature Negotiation
                     if (true)
                     {
-                        Timer handshakeTimer;
+                        Timer? handshakeTimer;
                         m.Send(new BeginRazorHandshake());
 
                         if (m_Table.ContainsKey(m))
@@ -203,7 +203,7 @@ namespace Server.Misc
                 return;
 
             Mobile m = state.Mobile;
-            Timer t = null;
+            Timer? t = null;
             if (m_Table.Contains(m))
             {
                 t = m_Table[m] as Timer;
@@ -239,51 +239,63 @@ namespace Server.Misc
         private static void HandleHandshakeCode(NetState state, uint code, PacketReader pvSrc)
         {
             uint data = pvSrc.ReadUInt32(); // chunk1
-
             uint seed = (uint)state.m_Seed;
             uint ResponseCode = code;
 
+            // Early out for unknown talker
             switch (GetTalker(data, ref seed))
             {
                 case Talker.Unknown:
                     return;
                 case Talker.Razor:
-                    break;
                 case Talker.CUO:
                     break;
             }
 
             uint NeededCode = ServerVerify(seed);
+
+            // Safely get account name (handles null Mobile or null Account)
+            string accountName = GetAccountName(state);
+
             if (NeededCode == ResponseCode)
             {
-                Timer t = null;
                 if (m_Table.Contains(seed))
                 {
-                    t = m_Table[seed] as Timer;
-
+                    Timer? t = m_Table[seed] as Timer;
                     if (t != null)
                         t.Stop();
 
                     m_Table.Remove(seed);
 
-                    Utility.Monitor.WriteLine(string.Format("Valid Razor detected for: {0}: Account '{1}'",
-                        state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Yellow);
+                    Utility.Monitor.WriteLine($"Valid Razor detected for: {state}: Account '{accountName}'",
+                        ConsoleColor.Yellow);
                 }
                 else
                 {
-                    Utility.Monitor.WriteLine(string.Format("Previous invalid Razor detected for: {0}: Account '{1}'",
-                        state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Red);
+                    Utility.Monitor.WriteLine($"Previous invalid Razor detected for: {state}: Account '{accountName}'",
+                        ConsoleColor.Red);
                 }
             }
             else
             {
-                Utility.Monitor.WriteLine(string.Format("Invalid Razor detected for: {0}: Account '{1}'",
-                        state, (state.Mobile.Account as Accounting.Account).Username), ConsoleColor.Red);
-                // if they failed the test, remove the seed from the table, but don't stop the timer
-                //  this prevents someone from just blasting all three valid responses and getting a win
+                Utility.Monitor.WriteLine($"Invalid Razor detected for: {state}: Account '{accountName}'",
+                    ConsoleColor.Red);
+
+                // Remove from table but don't stop timer (anti-spam protection)
                 if (m_Table.Contains(seed))
                     m_Table.Remove(seed);
             }
+        }
+
+        /// <summary>
+        /// Safely extracts account username or returns "no account"
+        /// </summary>
+        private static string GetAccountName(NetState state)
+        {
+            if (state?.Mobile?.Account is Accounting.Account acct)
+                return acct.Username;
+
+            return "no account";
         }
         private static void OnHandshakeCode1Response(NetState state, PacketReader pvSrc)
         {
@@ -323,8 +335,8 @@ namespace Server.Misc
         }
         private static void OnRazorNegotiateTimeout(object state)
         {
-            Timer t = null;
-            Mobile m = state as Mobile;
+            Timer? t = null;
+            Mobile? m = state as Mobile;
             if (m == null)
                 return;
 
@@ -350,11 +362,11 @@ namespace Server.Misc
         }
         private static void OnRazorCodeTimeout(object state)
         {
-            Timer t = null;
+            Timer? t = null;
             if (state == null || state is not Mobile || (state as Mobile).NetState == null)
                 return;
 
-            Mobile m = state as Mobile;
+            Mobile? m = state as Mobile;
             uint seed = (uint)Utility.GetStableHashCode(string.Format("{0}{1}", RazorCodeHandshake, (uint)(state as Mobile).NetState.m_Seed));
 
             m_Table.Remove(seed);
@@ -367,9 +379,9 @@ namespace Server.Misc
                 if (!logger.Contains(text))
                     logger.Log(text);
                 logger.Finish();
-                Accounting.Account acct = (state as Mobile).Account as Accounting.Account;
+                Accounting.Account? acct = (state as Mobile).Account as Accounting.Account;
                 if (acct != null)
-                    acct.SetFlag(Accounting.Account.AccountFlag.InvalidRazor, true);
+                    acct.SetFlag(Accounting.Account.AccountFlags.InvalidRazor, true);
                 //m.SendGump(new Gumps.WarningGump(1060635, 30720, RazorFeatureControl.RazorCodeWarning, 0xFFC000, 420, 250, null, null));
             }
             else if (m.NetState != null && m.NetState.Running)

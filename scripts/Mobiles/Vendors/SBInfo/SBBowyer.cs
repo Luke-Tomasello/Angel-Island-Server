@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -75,12 +75,6 @@ namespace Server.Mobiles
                     foreach (Type type in BBSTypes)
                         if (ResourcePool.IsPooledResource(type))
                             Add(new GenericBuyInfo(type));
-#if false
-                    Add(new GenericBuyInfo(typeof(Arrow)));
-                    Add(new GenericBuyInfo(typeof(Bolt)));
-                    Add(new GenericBuyInfo(typeof(Shaft)));
-                    Add(new GenericBuyInfo(typeof(Feather)));
-#endif
                 }
 
                 if (Core.RuleSets.ShopkeepersBuyItemsRules())
@@ -98,12 +92,6 @@ namespace Server.Mobiles
                 {   // balanced buyback system
                     foreach (Type type in BBSTypes)
                         AddToResourcePool(type);
-#if false
-                    AddToResourcePool(typeof(Arrow));
-                    AddToResourcePool(typeof(Bolt));
-                    AddToResourcePool(typeof(Shaft));
-                    AddToResourcePool(typeof(Feather));
-#endif
                 }
 
                 if (Core.RuleSets.ShopkeepersBuyItemsRules())

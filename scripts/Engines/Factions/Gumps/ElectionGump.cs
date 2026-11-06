@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -117,7 +117,7 @@ namespace Server.Factions
                         }
                         else
                         {
-                            PlayerState pl = PlayerState.Find(m_From);
+                            PlayerState? pl = PlayerState.Find(m_From);
 
                             if (pl == null || pl.Rank.Rank < FactionConfig.ElectionCandidateRank)
                                 AddHtmlLocalized(20, 100, 380, 20, 1010118, false, false); // You must have a higher rank to run for office

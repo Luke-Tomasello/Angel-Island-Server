@@ -4,7 +4,7 @@
  *   implementation          : (C) 2007-2023 Tara McGrew
  *   repository url          : https://foss.heptapod.net/zilf/zlr
  *   
- *   Angel Island UO Shard   : March 25, 2004
+ *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
@@ -19,6 +19,7 @@
  *
  ***************************************************************************/
 
+using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -26,8 +27,6 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
-using Nito.AsyncEx;
 
 namespace ZLR.VM
 {
@@ -243,7 +242,7 @@ namespace ZLR.VM
         /// <param name="command">The command read from the file. If the command was terminated
         /// by pressing the enter key, this string will end with a newline.</param>
         void PutCommand([NotNull] string command);
-        
+
         #endregion
 
         #region Output
@@ -690,7 +689,7 @@ namespace ZLR.VM
         Task<short> ReadKeyAsync([NotNull] CharTranslator translator, CancellationToken cancellationToken = default);
 
 
-          /// <summary>
+        /// <summary>
         /// Opens a stream to write the saved game file.
         /// </summary>
         /// <param name="size">The size of the game state that will be written, in bytes.</param>
@@ -895,7 +894,7 @@ namespace ZLR.VM
 
         public async Task<ReadLineResult> ReadLineAsync(string initial, byte[] terminatingKeys, bool allowDebuggerBreak, CancellationToken cancellationToken)
         {
-            /**
+            /*
              * This method needs to be cancelable via the token, even if
              * <see cref="IZMachineIO.ReadLine(string, int, TimedInputCallback, byte[], bool)"/> isn't cooperative.
              */
@@ -905,7 +904,7 @@ namespace ZLR.VM
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            /**
+            /*
              * If <see cref="next"/> doesn't implement timed input, we just stop waiting. The read will likely
              * continue in the background, but we can't help that; our top priority is canceling this task.
              */
@@ -925,7 +924,7 @@ namespace ZLR.VM
                 return await untimedReadTask.WaitAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            /**
+            /*
              * If <see cref="next"/> does implement timed input, we pass a timeout and callback to check
              * the token and cancel gracefully. We might still give up and let it continue in the background
              * if that doesn't work, but we give it some time first.

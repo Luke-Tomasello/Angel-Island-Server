@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -58,7 +58,7 @@ namespace Server.Engines.Chat
             SendCommandTo(to, type, param1, null);
         }
 
-        public static void SendCommandTo(Mobile to, ChatCommand type, string param1, string param2)
+        public static void SendCommandTo(Mobile to, ChatCommand type, string? param1, string? param2)
         {
             if (to != null)
                 to.Send(new ChatMessagePacket(null, (int)type + 20, param1, param2));
@@ -145,9 +145,9 @@ namespace Server.Engines.Chat
             ChatUser.AddChatUser(from);
         }
 
-        public static ChatUser SearchForUser(ChatUser from, string name)
+        public static ChatUser? SearchForUser(ChatUser from, string name)
         {
-            ChatUser user = ChatUser.GetChatUser(name);
+            ChatUser? user = ChatUser.GetChatUser(name);
 
             if (user == null)
                 from.SendMessage(32, name); // There is no player named '%1'.
@@ -176,7 +176,7 @@ namespace Server.Engines.Chat
                 int actionID = pvSrc.ReadInt16();
                 string param = pvSrc.ReadUnicodeString();
 
-                ChatActionHandler handler = ChatActionHandlers.GetHandler(actionID);
+                ChatActionHandler? handler = ChatActionHandlers.GetHandler(actionID);
 
                 if (handler != null)
                 {

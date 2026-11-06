@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -87,6 +87,7 @@ namespace Server.Township
                 NoRecallInFee = (int)(1000 * iPercentage);
                 LawlessFee = (int)(2000 * iPercentage);
                 LawAuthFee = (int)(5000 * iPercentage);
+                LawGuardedFee = (int)(7500 * iPercentage);
                 NPCType1Fee = (int)(1000 * iPercentage);
                 NPCType2Fee = (int)(2000 * iPercentage);
                 NPCType3Fee = (int)(5000 * iPercentage);
@@ -100,15 +101,22 @@ namespace Server.Township
             try
             {
                 Console.WriteLine("TownshipSettings Saving...");
-                if (!Directory.Exists("Saves/AngelIsland"))
-                    Directory.CreateDirectory("Saves/AngelIsland");
 
-                string filePath = Path.Combine("Saves/AngelIsland", "Township.bin");
+                string saveDirectory = Path.Combine(Core.SavesDirectory, Core.Server);
+
+                if (!Directory.Exists(saveDirectory))
+                    Directory.CreateDirectory(saveDirectory);
+
+                string filePath = Path.Combine(saveDirectory, "Township.bin");
 
                 GenericWriter bin;
                 bin = new BinaryFileWriter(filePath, true);
 
-                bin.Write(21); // version
+                bin.Write(22); // version
+
+                //v22 addition
+                bin.Write(LawGuardedFee);
+                bin.Write(LawGuardedCharge);
 
                 //v21 addition
                 bin.Write(FarmerCharge);
@@ -235,7 +243,11 @@ namespace Server.Township
             try
             {
                 Console.WriteLine("TownshipSettings Loading...");
-                string filePath = Path.Combine("Saves/AngelIsland", "Township.bin");
+
+                string filePath = Path.Combine(
+                    Core.SavesDirectory,
+                    Core.Server,
+                    "Township.bin");
 
                 if (!File.Exists(filePath))
                     return;
@@ -245,6 +257,10 @@ namespace Server.Township
 
                 switch (version)
                 {
+                    case 22:
+                        LawGuardedFee = datreader.ReadInt();
+                        LawGuardedCharge = datreader.ReadInt();
+                        goto case 21;
                     case 21:
                         FarmerCharge = datreader.ReadInt();
                         goto case 20;
@@ -414,14 +430,16 @@ namespace Server.Township
         public static int NoRecallInFee = 1000;
         public static int LawlessFee = 2000;
         public static int LawAuthFee = 5000;
+        public static int LawGuardedFee = 7500; // Season 2: Full guard protection within the township
         public static int NPCType1Fee = 1000;
         public static int NPCType2Fee = 2000;
         public static int NPCType3Fee = 5000;
 
         //charges
-        public static int LawNormCharge = 5000;
-        public static int LawlessCharge = 500000;
-        public static int LawAuthCharge = 1000000;
+        public static int LawNormCharge = 5000;         // Standard Lord British law enforcement
+        public static int LawlessCharge = 500000;      // No laws enforced within the township
+        public static int LawAuthCharge = 1000000;     // Township granted authority to enforce local law
+        public static int LawGuardedCharge = 1500000;  // Season 2: Full guard protection within the township
         public static int ChangeTravelCharge = 25000;
         public static int UpdateEnemyCharge = 1000;
         public static int ExtendedCharge = 0;
@@ -436,6 +454,9 @@ namespace Server.Township
         public static int InnkeeperCharge = 100000;
         public static int MageCharge = 100000;
         public static int ProvisionerCharge = 20000;
+        public static int BlacksmithCharge = 20000;
+        public static int TailorCharge = 20000;
+        public static int CarpenterCharge = 20000;
         public static int ArmsTrainerCharge = 20000;
         public static int MageTrainerCharge = 20000;
         public static int RogueTrainerCharge = 20000;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -26,7 +26,6 @@
  *	First time checkin
  */
 
-using Server.Items;
 using System;
 
 namespace Server.Mobiles
@@ -120,7 +119,8 @@ namespace Server.Mobiles
         }
 
         public override int Meat { get { return 1; } }
-        public override int Hides { get { return 1; } }
+        public override MeatType MeatType { get { return MeatType.Ribs; } }
+        public override int Hides { get { return 0; } }
 
         public FluffyBunny(Serial serial)
             : base(serial)
@@ -129,40 +129,18 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // https://uo.stratics.com/database/view.php?db_content=hunters&id=21
+            // 0 Gold
+            // Special: None
+            // Cut Up: 1 Raw Rib
+
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackGold(250, 350);
-                //PackItem( new Carrot() );
-                // TODO: statue, eggs
-                switch (Utility.Random(8))
-                {
-                    case 0: PackItem(new RabbitFur1()); break;
-                    case 1: PackItem(new RabbitFur2()); break;
-                    case 2: PackItem(new RabbitFur3()); break;
-                    case 3: PackItem(new RabbitFur4()); break;
-                    case 4: PackItem(new RabbitFur5()); break;
-                    case 5: PackItem(new RabbitFur6()); break;
-                    case 6: PackItem(new RabbitFur7()); break;
-                    case 7: PackItem(new RabbitFur8()); break;
-                }
+                // No gold
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // ai special
-                    if (Spawning)
-                    {
-                        PackGold(0);
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                    // ai special
-                }
+                // No loot
             }
         }
 

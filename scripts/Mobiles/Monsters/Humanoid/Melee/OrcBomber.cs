@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -50,7 +50,6 @@
  */
 
 using Server.Engines.Alignment;
-using Server.Engines.IOBSystem;
 using Server.Items;
 using Server.Misc;
 using System;
@@ -104,24 +103,32 @@ namespace Server.Mobiles
 
         public override bool IsEnemy(Mobile m, RelationshipFilter filter)
         {
-            if (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled)
-                if (m.Player && m.FindItemOnLayer(Layer.Helm) is OrcishKinMask)
+            bool useMask = (Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules());
+
+            if (useMask ||
+                (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled))
+            {
+                if (m.Player &&
+                    m.FindItemOnLayer(Layer.Helm) is OrcishKinMask)
+                {
                     return false;
+                }
+            }
 
             return base.IsEnemy(m, filter);
         }
 
-        public override void AggressiveAction(Mobile aggressor, bool criminal, object source = null)
+        public override void AggressiveAction(Mobile aggressor, bool criminal, object? source = null)
         {
             base.AggressiveAction(aggressor, criminal);
 
             if (!Core.RuleSets.KinSystemEnabled() && !AlignmentSystem.Enabled)
             {
-                Item item = aggressor.FindItemOnLayer(Layer.Helm);
+                Item? item = aggressor.FindItemOnLayer(Layer.Helm);
 
                 if (item is OrcishKinMask)
                 {
-                    AOS.Damage(aggressor, 50, 0, 100, 0, 0, 0, this);
+                    AOS.Damage(aggressor, 50, new DamageContext { Source = this });
                     item.Delete();
                     aggressor.FixedParticles(0x36BD, 20, 10, 5044, EffectLayer.Head);
                     aggressor.PlaySound(0x307);
@@ -176,7 +183,7 @@ namespace Server.Mobiles
             protected override void OnTick()
             {
                 m_Mobile.PlaySound(0x11D);
-                AOS.Damage(m_Mobile, m_From, Utility.RandomMinMax(10, 20), 0, 100, 0, 0, 0, this);
+                AOS.Damage(m_Mobile, m_From, Utility.RandomMinMax(10, 20), new DamageContext { Source = this });
             }
         }
 
@@ -187,82 +194,28 @@ namespace Server.Mobiles
 
         public override void GenerateLoot()
         {
-            if (Core.RuleSets.AngelIslandRules())
+            // http://web.archive.org/web/20020405080756/uo.stratics.com/hunters/orcbomber.shtml
+            // 	200 Gold, reagents, purple potions, ingots, bola ball
+            if (Spawning)
             {
-                // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                PackItem(new SulfurousAsh(Utility.RandomMinMax(6, 10)));
-                PackItem(new MandrakeRoot(Utility.RandomMinMax(6, 10)));
-                PackItem(new BlackPearl(Utility.RandomMinMax(6, 10)));
-                PackItem(new MortarPestle());
-                PackItem(new ExplosionPotion());
-
-                PackGold(90, 120);
-
-                if (0.2 > Utility.RandomDouble())
-                    PackItem(new BolaBall());
-
-                // Froste: 12% random IOB drop
-                if (0.12 > Utility.RandomDouble())
-                {
-                    Item iob = Loot.RandomIOB();
-                    PackItem(iob);
-                }
-
-                // Category 2 MID
-                PackMagicItem(1, 1, 0.05);
-
-                if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                {
-                    // 30% boost to gold
-                    PackGold(base.GetGold() / 3);
-                }
+                PackGold(200);
             }
             else
             {
-                if (Core.RuleSets.AllShards)
-                {   // http://web.archive.org/web/20020405080756/uo.stratics.com/hunters/orcbomber.shtml
-                    // 	200 Gold, reagents, purple potions, ingots, bola ball
-                    if (Spawning)
-                    {
-                        PackGold(200);
-                    }
-                    else
-                    {
-                        PackItem(new SulfurousAsh(Utility.RandomMinMax(6, 10)));
-                        PackItem(new MandrakeRoot(Utility.RandomMinMax(6, 10)));
-                        PackItem(new BlackPearl(Utility.RandomMinMax(6, 10)));
-                        PackItem(new LesserExplosionPotion());
-                        PackItem(new IronIngot(Utility.RandomMinMax(1, 3)));
+                PackItem(new SulfurousAsh(Utility.RandomMinMax(6, 10)));
+                PackItem(new MandrakeRoot(Utility.RandomMinMax(6, 10)));
+                PackItem(new BlackPearl(Utility.RandomMinMax(6, 10)));
+                int count = Utility.RandomMinMax(1, 3);
+                for (int ix = 0; ix < count; ix++)
+                    PackItem(new LesserExplosionPotion());
+                PackItem(new IronIngot(Utility.RandomMinMax(1, 3)));
 
-                        // http://www.uoguide.com/Savage_Empire
-                        // http://uo.stratics.com/secrets/archive/orcsavage.shtml
-                        // Bola balls have appeared as loot on Orc Bombers. Balls on Bombers are rather common, around a 50/50% chance of getting a ball or not. They are only appearing as loot on bombers.
-                        if (PublishInfo.PublishDate >= Core.EraSAVE)
-                            if (Utility.RandomBool())
-                                PackItem(new BolaBall());
-                    }
-                }
-                else
-                {
-                    if (Spawning)
-                    {
-                        PackItem(new SulfurousAsh(Utility.RandomMinMax(6, 10)));
-                        PackItem(new MandrakeRoot(Utility.RandomMinMax(6, 10)));
-                        PackItem(new BlackPearl(Utility.RandomMinMax(6, 10)));
-                        PackItem(new MortarPestle());
-                        PackItem(new LesserExplosionPotion());
-
-                        // http://www.uoguide.com/Savage_Empire
-                        // http://uo.stratics.com/secrets/archive/orcsavage.shtml
-                        // Bola balls have appeared as loot on Orc Bombers. Balls on Bombers are rather common, around a 50/50% chance of getting a ball or not. They are only appearing as loot on bombers.
-                        if (PublishInfo.PublishDate >= Core.EraSAVE)
-                            if (Utility.RandomBool())
-                                PackItem(new BolaBall());
-                    }
-
-                    AddLoot(LootPack.Average);
-                    AddLoot(LootPack.Meager);
-                }
+                // http://www.uoguide.com/Savage_Empire
+                // http://uo.stratics.com/secrets/archive/orcsavage.shtml
+                // Bola balls have appeared as loot on Orc Bombers. Balls on Bombers are rather common, around a 50/50% chance of getting a ball or not. They are only appearing as loot on bombers.
+                if (PublishInfo.PublishDate >= Core.EraSAVE)
+                    if (Utility.RandomBool())
+                        PackItem(new BolaBall());
             }
         }
 

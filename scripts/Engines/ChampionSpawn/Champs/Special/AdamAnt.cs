@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -192,41 +192,27 @@ namespace Server.Mobiles
         {
             if (IsChampion)
             {
-                if (Core.RuleSets.AngelIslandRules())
+                if (Spawning)
                 {
-                    // 'Spawning == true' blocked in BaseCreature for AngelIslandRules()
-                    PackGold(750, 800);
+                    int gold = Utility.RandomMinMax(750, 800);
 
+                    if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
+                    {
+                        // 30% boost to gold
+                        gold += gold / 3;
+                    }
+
+                    PackGold(gold);
+                }
+                else
+                {
                     PackItem(new TheGuardianBook());
 
                     // Froste: 12% random IOB drop
                     if (0.12 > Utility.RandomDouble())
                     {
-                        Item iob = Loot.RandomIOB();
+                        Item? iob = Loot.RandomIOB();
                         PackItem(iob);
-                    }
-
-                    if (IOBRegions.GetIOBStronghold(this) == IOBAlignment)
-                    {
-                        // 30% boost to gold
-                        PackGold(base.GetGold() / 3);
-                    }
-                }
-                else
-                {
-                    if (Core.RuleSets.AllShards)
-                    {   // ai special
-                        if (Spawning)
-                        {
-                            PackGold(0);
-                        }
-                        else
-                        {
-                        }
-                    }
-                    else
-                    {   // Standard RunUO
-                        // ai special
                     }
                 }
             }
@@ -240,7 +226,7 @@ namespace Server.Mobiles
             return base.OnBeforeDeath();
         }
         private bool m_SpawnedGuardians = false;
-        private LadyGuardian m_Jadey = null;
+        private LadyGuardian? m_Jadey = null;
         public void CheckGuardians()
         {
             Point3D point = this.Location;
@@ -262,10 +248,11 @@ namespace Server.Mobiles
                         combatant = (this.Combatant as BaseCreature).ControlMaster;
                     } // else we just target the Combatant
 
-                    Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(Tick), new object[] { "Come forth Lady Guardian!", null });
-                    Timer.DelayCall(TimeSpan.FromSeconds(2.0), new TimerStateCallback(Tick), new object[] { "You shall never defeat me as long as I have my Lady Guardian!", null });
+                    Timer.DelayCall(TimeSpan.FromSeconds(1.0), new TimerStateCallback(Tick), new object?[] { "Come forth Lady Guardian!", null });
+                    Timer.DelayCall(TimeSpan.FromSeconds(2.0), new TimerStateCallback(Tick), new object?[] { "You shall never defeat me as long as I have my Lady Guardian!", null });
 
                     m_Jadey.MoveToWorld(point, this.Map);
+                    m_Jadey.OnAfterSpawn();
 
                     m_Jadey.Combatant = combatant;
 
@@ -298,7 +285,7 @@ namespace Server.Mobiles
             this.FixedParticles(0x3709, 10, 30, 5052, 0, 0, EffectLayer.LeftFoot);
             this.PlaySound(0x208);
         }
-        public override void Damage(int amount, Mobile from, object source_weapon)
+        public override void Damage(int amount, Mobile from, DamageContext context)
         {
             Mobile combatant = this.Combatant;
 
@@ -327,7 +314,7 @@ namespace Server.Mobiles
                 }
             }
 
-            base.Damage(amount, from, source_weapon);
+            base.Damage(amount, from, context);
         }
 
         public override void OnMovement(Mobile m, Point3D oldLocation)
@@ -335,7 +322,7 @@ namespace Server.Mobiles
 
             if (m.Player && m.Alive && m.InRange(this, 10) && m.AccessLevel == AccessLevel.Player && DateTime.UtcNow >= m_NextSpeechTime && Combatant == null)
             {
-                Item item = m.FindItemOnLayer(Layer.Helm);
+                Item? item = m.FindItemOnLayer(Layer.Helm);
 
                 if (this.InLOS(m) && this.CanSee(m))
                 {

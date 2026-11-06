@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -30,6 +30,9 @@
 
 /* Scripts/Engines/AutomatedEventSystem/AutomatedEventSystem.cs
  * CHANGELOG:
+ *  10/27/26, Adam
+ *      SpawnTypes enum removed: TownInvasionAES keeps the invasion champ's definition name (null until one is picked).
+ *      Version 3 saves the name; version 2 saves (a SpawnTypes ordinal) are read through LegacyChampTypes.
  *  10/15/22, Adam
  *      Update the cron event to allow specification of which clock to use.
  *      By default, all cron tasks use a 'flattened' time (Pacific time without an adjustment for DST,) but some
@@ -116,7 +119,6 @@
 
 using Server.Diagnostics;
 using Server.Engines.ChampionSpawn;		// champ stuff
-using Server.Engines.IOBSystem;			// IOB stuffs
 using Server.Items;						// containers
 using Server.Mobiles;					// Town Crier
 using Server.Regions;					// duh
@@ -129,9 +131,9 @@ namespace Server
     #region AES CORE
     public class AutomatedEventSystem : Item
     {
-        private TownCrierEntry m_TownCrierMessage;  // town crier entry for telling the world about us
+        private TownCrierEntry? m_TownCrierMessage;  // town crier entry for telling the world about us
         private DateTime m_ActionTime = AdjustedDateTime.GameTime - TimeSpan.FromMinutes(1.0);
-        private Timer m_ActionTimer = null;
+        private Timer? m_ActionTimer = null;
         private bool m_reset = true;                // not serialized - server restarted(true)
         private bool m_valid = true;                // not serialized - server restarted leaving the object in a bad state
 
@@ -439,7 +441,7 @@ namespace Server
     public class CrazyMapDayAES : AutomatedEventSystem
     {
         double m_OldTreasureMapDropRate;            // restore this after the event
-        bool m_test = Core.UOTC_CFG;
+        bool m_test = Core.GMNTC_CFG;
 
         public CrazyMapDayAES(Serial serial)
             : base(serial)
@@ -622,13 +624,12 @@ namespace Server
     #region TownInvasionAES
     public class TownInvasionAES : AutomatedEventSystem
     {
-        ChampInvasion m_ChampionSpawn = null;           // the ChampionInvasion we will be using for the invasion.
-        bool m_test = Core.UOTC_CFG;                    // are we in test mode?
+        ChampInvasion? m_ChampionSpawn = null;           // the ChampionInvasion we will be using for the invasion.
+        bool m_test = Core.GMNTC_CFG;                    // are we in test mode?
         bool m_bChampDeadHandled = false;               // have we handled the case where the champ has died?
                                                         //		Mobile m_Champion = null;			// the champ
         bool m_bChampComplete = false;                  // Pla : Flag indicates when champ has been completed
-        ChampLevelData.SpawnTypes m_spawnType =         // that champ we will be using
-            ChampLevelData.SpawnTypes.None;
+        string? m_spawnType = null;                     // that champ we will be using (definition name)
         bool m_bOldGuardedState = false;
 
         public TownInvasionAES(Serial serial)
@@ -692,8 +693,8 @@ namespace Server
 
                 Console.WriteLine("TownInvasionAES: Turning on guards.");
                 // turn on guards
-                Region town = Region.FindByName("Britain", Map.Felucca);     // Britain specific
-                GuardedRegion reg = town as GuardedRegion;
+                Region? town = Region.FindByName("Britain", Map.Felucca);     // Britain specific
+                GuardedRegion? reg = town as GuardedRegion;
                 if (reg != null)
                     reg.IsGuarded = true;
 
@@ -717,7 +718,7 @@ namespace Server
             {
                 if (ix is ChampInvasion)
                 {
-                    ChampInvasion cs = ix as ChampInvasion;
+                    ChampInvasion? cs = ix as ChampInvasion;
                     if (cs != null)
                     {
                         m_ChampionSpawn = cs;
@@ -727,8 +728,8 @@ namespace Server
                         m_spawnType = m_ChampionSpawn.PickChamp();                  // pick a new random champ type
 
                         // turn off guards
-                        Region town = Region.FindByName("Britain", Map.Felucca);     // Britain specific
-                        GuardedRegion reg = town as GuardedRegion;
+                        Region? town = Region.FindByName("Britain", Map.Felucca);     // Britain specific
+                        GuardedRegion? reg = town as GuardedRegion;
                         if (reg != null)
                             reg.IsGuarded = false;
 
@@ -770,8 +771,8 @@ namespace Server
             if (m_ChampionSpawn != null && m_ChampionSpawn.Deleted == false)
             {
                 // turn on guards
-                Region town = Region.FindByName("Britain", Map.Felucca);     // Britain specific
-                GuardedRegion reg = town as GuardedRegion;
+                Region? town = Region.FindByName("Britain", Map.Felucca);     // Britain specific
+                GuardedRegion? reg = town as GuardedRegion;
                 if (reg != null)
                     reg.IsGuarded = true;
 
@@ -960,10 +961,10 @@ namespace Server
         {
             base.DumpState();
 
-            if (m_spawnType == ChampLevelData.SpawnTypes.None)
+            if (string.IsNullOrEmpty(m_spawnType))
                 Console.WriteLine("TownInvasionAES: Champ not yet selected.");
             else
-                Console.WriteLine("TownInvasionAES: Champ selected:{0}", m_spawnType.ToString());
+                Console.WriteLine("TownInvasionAES: Champ selected:{0}", m_spawnType);
         }
 
         private bool IsChampDead()
@@ -979,14 +980,14 @@ namespace Server
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            int version = 2;
+            int version = 3;
             writer.Write((int)version);
 
             switch (version)
             {
-                case 2:
+                case 3:
                     {
-                        writer.Write((int)m_spawnType);
+                        writer.Write(m_spawnType);                   // version 3: the definition name (was the SpawnTypes ordinal)
                         writer.Write(m_bOldGuardedState);
                         goto case 1;
                     }
@@ -1007,9 +1008,15 @@ namespace Server
 
             switch (version)
             {
+                case 3:
+                    {
+                        m_spawnType = reader.ReadString();
+                        m_bOldGuardedState = reader.ReadBool();
+                        goto case 1;
+                    }
                 case 2:
                     {
-                        m_spawnType = (ChampLevelData.SpawnTypes)reader.ReadInt();
+                        m_spawnType = LegacyChampTypes.ToName(reader.ReadInt());     // a SpawnTypes ordinal
                         m_bOldGuardedState = reader.ReadBool();
                         goto case 1;
                     }
@@ -1092,631 +1099,10 @@ namespace Server
     }
     #endregion TownInvasionAES
 
-    #region KinRansomAES
-    public class KinRansomAES : AutomatedEventSystem
-    {
-        KinRansomChest m_KinRansomChest = null;     // the chest we will be working with
-        CustomRegionControl m_RegStone = null;            // region controller of the chest
-        bool m_OldGuardMode;                        // save the old guard mode
-        bool m_OldCountMode;                        // save the old murder count  mode
-        string m_RegionName;                        // Region Name
-        IOBAlignment m_IOBAlignment;                // alignment of this chest
-        DateTime m_ChestOpenTime;                   // when we open the chest
-        bool m_bChestOpenInit = true;               // one time 'chest open' flag
-        DateTime m_PreEventTime;                    // pre event one time setup
-        bool m_bPreEventInit = true;                // one time 'pre event' flag
-        bool m_test = Core.UOTC_CFG;
-        private ArrayList m_spawners;               // list of kin spwners
-
-        public KinRansomAES(Serial serial)
-            : base(serial)
-        {
-        }
-
-        public KinRansomAES()
-        {
-            AnnounceTime = AdjustedDateTime.GameTime;                        // when we make TC announcements
-            EventStartTime = AdjustedDateTime.GameTime;                      // for debug start 'now'
-
-            if (m_test == false)
-            {
-                EventStartTime = AdjustedDateTime.GameTime.AddDays(1.0);     // 24 hours from now
-                EventEndTime = EventStartTime.AddHours(3.0);        // 3 hour event
-                AnnounceDelta = TimeSpan.FromHours(1.0);            //	each hour
-                BroadcastTime = EventStartTime.AddHours(-1.0);      // 1 hour before start - final Broadcast
-                FinalCleanup = EventEndTime.AddHours(1.0);          // cleanup this AES 1 hour after the event ends				
-                ChestOpenTime =                                     // at 1.5hrs + rand(60) open the chest
-                    EventStartTime.AddMinutes(90 + Utility.Random(60));
-                PreEventTime = AdjustedDateTime.GameTime;                    // pre event starts now						
-            }
-            else
-            {
-                EventStartTime = AdjustedDateTime.GameTime.AddMinutes(10);   // (TEST)
-                EventEndTime = EventStartTime.AddHours(1.0);        // (TEST)
-                AnnounceDelta = TimeSpan.FromMinutes(2.0);      // (TEST)
-                BroadcastTime = EventStartTime.AddMinutes(-2.0);    // (TEST)
-                FinalCleanup = EventEndTime.AddMinutes(1.0);        // (TEST)
-                ChestOpenTime = EventEndTime.AddMinutes(-2.0);      // (TEST)
-                PreEventTime = AdjustedDateTime.GameTime;                    // (TEST)
-            }
-
-            m_spawners = new ArrayList();
-        }
-
-        public DateTime ChestOpenTime
-        {
-            get { return m_ChestOpenTime; }
-            set { m_ChestOpenTime = value; }
-        }
-        public bool ChestOpened
-        {
-            get { return AdjustedDateTime.GameTime >= m_ChestOpenTime; }
-        }
-        public bool ChestOpenInit
-        {
-            get { return ChestOpened ? m_bChestOpenInit : false; }
-        }
-        public DateTime PreEventTime
-        {
-            get { return m_PreEventTime; }
-            set { m_PreEventTime = value; }
-        }
-        public bool PreEvent
-        {
-            get { return AdjustedDateTime.GameTime >= m_PreEventTime; }
-        }
-        public bool PreEventInit
-        {
-            get { return PreEvent ? m_bPreEventInit : false; }
-        }
-
-        public override void OnInvalidState()
-        {
-            Console.WriteLine("KinRansomAES: Invalid state detected.");
-            Console.WriteLine("KinRansomAES: Deleting object.");
-        }
-
-        public override void OnServerRestart()
-        {
-            Console.WriteLine("KinRansomAES: Restart detected.");
-        }
-
-        public override void OnEventStartInit()
-        {
-            // speed up announcements!
-            AnnounceDelta = TimeSpan.FromMinutes(5.0); //	every 5 minutes
-
-            try
-            {
-                if (m_RegStone != null)
-                {
-                    // save old modes
-                    m_OldCountMode = m_RegStone.CustomRegion.NoMurderCounts;
-                    m_OldGuardMode = m_RegStone.CustomRegion.EnableGuards;
-
-                    // create a new chest to avoid exoloits (maybe having it open when it is filled?
-                    KinRansomChest oldChest = m_KinRansomChest;
-                    m_KinRansomChest = new KinRansomChest();
-                    m_KinRansomChest.IOBAlignment = oldChest.IOBAlignment;
-                    m_KinRansomChest.Name = oldChest.Name;
-                    m_KinRansomChest.Location = oldChest.Location;
-                    m_KinRansomChest.ItemID = oldChest.ItemID;              // make sure to get the same rotation
-
-                    // set new modes
-                    m_RegStone.CustomRegion.NoMurderCounts = true;
-                    m_RegStone.CustomRegion.EnableGuards = false;
-                    m_RegStone.CustomRegion.EnableStuckMenu = false;
-
-                    // make sure it cannot be opened yet, and that the trap is enabled
-                    // Note: Power and Type are cleared with each successful RemoveTrap (how odd)
-                    m_KinRansomChest.RequiredSkill = 200;
-                    m_KinRansomChest.TrapEnabled = true;
-                    m_KinRansomChest.TrapPower = 5 * 25;    // level 5
-                    m_KinRansomChest.TrapLevel = 5;
-                    m_KinRansomChest.Locked = true;
-                    m_KinRansomChest.TrapType = Utility.RandomBool() ? TrapType.PoisonTrap : TrapType.ExplosionTrap;
-
-                    // fill chest
-                    KinRansomChest.Fill(m_KinRansomChest);
-
-                    // Morph IOB NPCs to FightMode Closest, and suspend respawn
-                    MorphSpawn(true);
-
-                    // finalize
-                    m_KinRansomChest.Map = oldChest.Map;    // move it to where the old chest was
-                    oldChest.Delete();                      // delete the old chest
-                }
-            }
-
-            catch (NullReferenceException e)
-            {
-                LogHelper.LogException(e);
-                Console.WriteLine("Caught exception: {0}", e.Message);
-            }
-            catch (Exception ex)
-            {
-                LogHelper.LogException(ex);
-                Console.WriteLine("Caught exception:", ex.Message);
-            }
-
-            if (m_KinRansomChest == null)
-            {
-                Console.WriteLine("KinRansomAES: No Ransom chests found, aborting event..");
-                // tell our base class to stop processing.
-                //	the base will also begin cleanup
-                ValidState = false;
-            }
-            else
-            {
-                string line = string.Format("{0} is a very dangerous place.", m_RegionName);
-                World.Broadcast(0x22, true, line);                      // tell the world
-            }
-
-            Console.WriteLine("KinRansomAES: Start event.");
-        }
-
-        public override void OnEventEndInit()
-        {
-            Console.WriteLine("KinRansomAES: Begin event cleanup.");
-
-            // restore old modes
-            if (m_RegStone != null && m_RegStone.Deleted == false)
-            {
-                m_RegStone.CustomRegion.NoMurderCounts = m_OldCountMode;
-                m_RegStone.CustomRegion.EnableGuards = m_OldGuardMode;
-                m_RegStone.CustomRegion.EnableStuckMenu = true;
-
-                // turn on kin alignmnet changing
-                CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.GuildKinChangeDisabled);
-
-                // make sure the modified spawn die off quickly after the event
-                MorphSpawn(false);
-            }
-
-            // 11/21/06 Pla:  Remove the chest region from the no camp zones!
-            Rectangle2D rect = GetChestArea();
-            if (rect.X != 0 && rect.Y != 0)
-                if (!CampHelper.RemoveRestrictedArea(rect))
-                    Console.WriteLine("Error removing non camp zone in KinRansomAES.OnEventEndInit()");
-
-        }
-
-        public override void OnAnnounce()
-        {
-            // pre event announcements
-            if (EventStarted == false)
-            {
-                TimeSpan HowLong = EventStartTime - AdjustedDateTime.GameTime;
-                bool bInHours = HowLong > TimeSpan.FromMinutes(120.0);
-
-                // what we want the Town Crier to say
-                string[] lines = new string[4];
-                if (Utility.RandomBool())
-                {
-                    lines[0] = string.Format(
-                        "{2} Ransom Quest in about {0} {1}.",
-                        bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
-                        bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes",
-                        IOBSystem.GetIOBName(m_IOBAlignment));
-
-                    lines[1] = string.Format("The {0} will be protecting their treasure.", IOBSystem.GetIOBName(m_IOBAlignment));
-                    lines[2] = string.Format("Enemies of the {0} will try to loot this treasure.", IOBSystem.GetIOBName(m_IOBAlignment));
-                    lines[3] = string.Format("You will need a treasure hunter to aid in your quest.");
-                }
-                else
-                {
-                    lines[0] = "100,000 pieces of gold can be yours!";
-                    lines[1] = "The finest magical weapons and armor...";
-                    lines[2] = "Rare dyes for your leather armor...";
-                    lines[3] = "All of these can be yours at the Ransom Quest";
-                }
-
-                // use the smaller of the time spans
-                TimeSpan s1 = EventStartTime - AdjustedDateTime.GameTime;
-                TimeSpan s2 = TimeSpan.FromMinutes(20.0);
-                TimeSpan span = (s1 > s2) ? s2 : s1;
-
-                // Setup the Town Crier with a new message
-                AddTCEntry(lines, span);
-                Console.WriteLine("KinRansomAES: Issue Town Crier pre event announcement.");
-            }
-            // during event announcements
-            else if (EventStarted == true && EventEnded == false)
-            {
-                // remainder of event
-                TimeSpan span = EventEndTime - AdjustedDateTime.GameTime;
-
-                // Setup the Town Crier with a new message
-                string[] lines = new string[2];
-                if (Utility.RandomBool())
-                {
-                    lines[0] = string.Format("Assult on the {0} has begun.", IOBSystem.GetIOBName(m_IOBAlignment));
-                    lines[1] = string.Format("Head to the stronghold of the {0} now!", IOBSystem.GetIOBName(m_IOBAlignment));
-                }
-                else
-                {
-                    TimeSpan HowLong = ChestOpenTime - AdjustedDateTime.GameTime;
-                    bool bInHours = HowLong > TimeSpan.FromMinutes(120.0);
-
-                    // what we want the Town Crier to say
-                    lines[0] = string.Format(
-                        "Take your treasure hunter to the stronghold of the {0}.",
-                        IOBSystem.GetIOBName(m_IOBAlignment));
-                    // gives too much away
-                    //lines[1] = string.Format(
-                    //"The chest can be opened in about {0} {1}.",
-                    //bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
-                    //bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes" );
-                    lines[1] = string.Format(
-                        "Protect your treasure hunter, for the stronghold of the {0} is a dangerous place.",
-                        IOBSystem.GetIOBName(m_IOBAlignment));
-                }
-                AddTCEntry(lines, span);
-                Console.WriteLine("KinRansomAES: Issue Town Crier during event announcement.");
-            }
-            // post event announcements
-            else if (EventStarted == true && EventEnded == true)
-            {
-                // 20 minutes should do it
-                TimeSpan span = TimeSpan.FromMinutes(20.0);
-
-                // Setup the Town Crier with a new message
-                string[] lines = new string[1];
-                lines[0] = "We hope you enjoyed the Kin's Ransom quest.";
-                AddTCEntry(lines, span);
-                Console.WriteLine("KinRansomAES: Issue Town Crier post event announcement.");
-            }
-        }
-
-        public override void OnBroadcast()
-        {
-            // issue a final event announcement
-            TimeSpan HowLong = EventStartTime - AdjustedDateTime.GameTime;
-            bool bInHours = HowLong > TimeSpan.FromMinutes(120.0);
-
-            string line = string.Format(
-                "{2} Ransom Quest in about {0} {1}.",
-                bInHours ? (int)HowLong.TotalHours : (int)HowLong.TotalMinutes,
-                bInHours ? (int)HowLong.TotalHours == 1 ? "hour" : "hours" : (int)HowLong.TotalMinutes == 1 ? "minute" : "minutes",
-                IOBSystem.GetIOBName(m_IOBAlignment));
-
-            World.Broadcast(0x22, true, line);
-            Console.WriteLine("KinRansomAES: Issue final Broadcast announcement.");
-        }
-
-        public override void OnFinalCleanup()
-        {
-            Console.WriteLine("KinRansomAES: In final cleanup.");
-        }
-
-        public void OnChestOpenInit()
-        {
-            // level 5 chest logic
-            m_KinRansomChest.RequiredSkill = 100;   // make the lock pickable!
-            m_KinRansomChest.LockLevel = m_KinRansomChest.RequiredSkill - 10;
-            m_KinRansomChest.MaxLockLevel = m_KinRansomChest.RequiredSkill + 40;
-
-            // reset the trap
-            m_KinRansomChest.TrapEnabled = true;
-            m_KinRansomChest.TrapPower = 5 * 25;    // level 5
-            m_KinRansomChest.TrapLevel = 5;
-            m_KinRansomChest.Locked = true;
-            m_KinRansomChest.TrapType = Utility.RandomBool() ? TrapType.PoisonTrap : TrapType.ExplosionTrap;
-
-
-            // We now keep it quiet as to when the chest can be opened
-            //string line = string.Format("Human skills may now open the chest!");
-            //World.Broadcast( 0x22, true, line );
-            Console.WriteLine("KinRansomAES: Unlock the chest and announce.");
-        }
-
-        /// <summary>
-        /// Get and save all the all the quest variables.
-        /// We will use this information for the pre event announcements, and the event setup
-        ///		when the event starts.
-        /// </summary>
-        public void OnPreEventInit()
-        {
-            // find the ransom chests
-            ArrayList list = new ArrayList();
-            foreach (Item ix in World.Items.Values)
-                if (ix is KinRansomChest)
-                    list.Add(ix);
-
-            // process the list of chests
-            if (list.Count > 0)
-            {
-                // select a chest at random
-                m_KinRansomChest = list[Utility.Random(list.Count)] as KinRansomChest;
-
-                if (m_KinRansomChest != null)
-                {
-                    // save the alignment
-                    m_IOBAlignment = m_KinRansomChest.IOBAlignment;
-
-                    // turn off alignment changing during event (and 24 hour warning)					
-                    CoreAI.SetDynamicFeature(CoreAI.FeatureBits.GuildKinChangeDisabled);
-
-                    // turn off guards from this custom regions
-                    StaticRegion sr = StaticRegion.FindStaticRegion(m_KinRansomChest.Location, m_KinRansomChest.Map);
-                    if (sr != null)
-                    {
-                        try
-                        {
-                            m_RegionName = sr.Name;
-                        }
-                        catch (NullReferenceException e)
-                        {
-                            LogHelper.LogException(e);
-                            Console.WriteLine("Caught exception: {0} ", e.Message);
-                        }
-                        catch (Exception ex)
-                        {
-                            LogHelper.LogException(ex);
-                            Console.WriteLine("Caught exception:", ex.Message);
-                        }
-                    }
-
-                    // 11/21/06 Pla:  Add the chest region to the no camp zones!
-                    Rectangle2D rect = GetChestArea();
-                    if (rect.X != 0 && rect.Y != 0)
-                        CampHelper.AddRestrictedArea(rect);
-
-                }
-            }
-            else
-            {
-                Console.WriteLine("KinRansomAES: No Ransom chests found, aborting event..");
-                // tell our base class to stop processing.
-                //	the base will also begin cleanup
-                ValidState = false;
-            }
-
-            Console.WriteLine("KinRansomAES: Pre Event setup.");
-        }
-
-        public override void OnEvent()
-        {
-            Console.WriteLine("KinRansomAES: OnEvent()");
-
-            // one time event for pre event setup
-            //	do this BEFORE the base call backs to guarntee we init the system before
-            //	we get an announcement callback
-            if (PreEventInit == true && ValidState)
-            {
-                OnPreEventInit();
-                m_bPreEventInit = false;
-            }
-
-            // need to process base class events
-            base.OnEvent();
-
-            // one time event to open the chest
-            if (ChestOpenInit == true && ValidState)
-            {
-                OnChestOpenInit();
-                m_bChestOpenInit = false;
-            }
-
-            // print diagnostics
-            DumpState();
-        }
-
-        protected override void DumpState()
-        {
-            base.DumpState();
-            Console.WriteLine("KinRansomAES: ChestOpenTime: {0}", ChestOpenTime);
-            Console.WriteLine("KinRansomAES: PreEventTime: {0}", PreEventTime);
-        }
-
-        /// <summary>
-        /// Returns the ransom chest's area
-        /// </summary>        
-        private Rectangle2D GetChestArea()
-        {
-            // 11/21/06 pla
-            Rectangle2D rect = new Rectangle2D();
-
-            switch (m_IOBAlignment)
-            {
-                case IOBAlignment.Brigand:
-                    {
-                        // serps stronghold		(brigand) - ransom chest building
-                        rect = new Rectangle2D(new Point2D(2873, 3405), new Point2D(2922, 3426));
-                        break;
-                    }
-                case IOBAlignment.Orcish:
-                    {
-                        // yew orc fort			(orc) - ALL
-                        rect = new Rectangle2D(new Point2D(621, 1473), new Point2D(679, 1510));
-                        break;
-                    }
-                case IOBAlignment.Savage:
-                    {
-                        // crypts stronghold	(savage) - ransom chest building
-                        rect = new Rectangle2D(new Point2D(937, 682), new Point2D(969, 720));
-                        break;
-                    }
-                case IOBAlignment.Pirate:
-                    {
-                        // bucs stronghold		(pirate) - ransom chest ship
-                        rect = new Rectangle2D(new Point2D(2565, 2198), new Point2D(2603, 2248));
-                        break;
-                    }
-                case IOBAlignment.Good:
-                    {
-                        // vesper stronghold	(good) - Entire island plus docks that ransom chests sits on
-                        rect = new Rectangle2D(new Point2D(2946, 800), new Point2D(3048, 859));
-                        break;
-                    }
-                default:
-                    {
-                        Console.WriteLine("Invalid IOB type passed for no-camp zone in KinRansomAES.OnPreEventInit");
-                        break;
-                    }
-            }
-
-            return rect;
-        }
-
-        private bool ProcessSpawner(bool bInit, ArrayList creatures)
-        {
-            bool IsKinSpawner = false;
-
-            foreach (object o in creatures)
-            {
-                // run exclusion tests
-                if (o is BaseCreature == false) continue;
-                BaseCreature bc = o as BaseCreature;
-                if (bc == null) continue;
-                if (bc.IOBAlignment != m_IOBAlignment) continue;
-                if (bc.Deleted == true) continue;
-
-                if (bInit == true)
-                {   // CALLED AT EVENT INIT
-                    // okay, reset all mobs to FightMode.Closest. 
-                    // this is the normal mode execpt for the 'Good' alignment
-                    // (we will give these mobs a short lifespan so that they die off after the event.)
-                    bc.FightMode = FightMode.All | FightMode.Closest;
-                    // we will update this spawner after updating the mobs
-                    IsKinSpawner = true;
-                }
-                else
-                {   // CALLED AT EVENT END
-                    // we'll also want to munge the creatures lifespan so that they die soon after the event
-                    bc.Lifespan = TimeSpan.Zero;
-                }
-            }
-
-            return IsKinSpawner;
-        }
-
-        private void MorphSpawn(bool bInit)
-        {
-            try
-            {
-                if (bInit)
-                {
-                    // locate all the spawners in the world		
-                    foreach (Item item in World.Items.Values)
-                    {
-                        if (item is Spawner == false) continue;
-                        Spawner spawner = item as Spawner;
-                        if (spawner == null) continue;
-                        if (spawner.Deleted == true) continue;
-                        if (spawner.Running == false) continue;
-
-                        // locate all the creatures on the spawner
-                        ArrayList creatures = spawner.Objects;
-
-                        // is this is kin spawner?
-                        // if so, set up all the creatures and turn the spawner off
-                        if (ProcessSpawner(bInit, creatures) == true)
-                        {
-                            spawner.Running = false;
-                            m_spawners.Add(spawner);
-                        }
-                    }
-                }
-                else
-                {   // turn on all the spawners we turned off
-                    foreach (Spawner spawner in m_spawners)
-                    {
-                        if (spawner == null) continue;
-                        if (spawner.Deleted == true) continue;
-                        ArrayList creatures = spawner.Objects;
-
-                        // turn these spawners on again
-                        ProcessSpawner(bInit, creatures);
-                        spawner.Running = true;
-                    }
-                }
-            }
-            catch (Exception exc)
-            {
-                LogHelper.LogException(exc);
-                System.Console.WriteLine("Exception in KinRansomAES.MorphSpawn: {0}", exc.Message);
-                System.Console.WriteLine(exc.StackTrace);
-                return;
-            }
-        }
-
-        public override void Serialize(GenericWriter writer)
-        {
-            base.Serialize(writer);
-            writer.Write((int)2); // version
-
-            // version 2
-            writer.Write(m_spawners.Count);
-
-            for (int i = 0; i < m_spawners.Count; ++i)
-                writer.Write((Item)m_spawners[i]);
-
-            // version 1
-            writer.Write(m_KinRansomChest);
-            writer.Write(m_RegStone);
-            writer.Write(m_OldGuardMode);
-            writer.Write(m_OldCountMode);
-            writer.Write(m_RegionName);
-            writer.Write((int)m_IOBAlignment);
-            writer.Write(m_ChestOpenTime);
-            writer.Write(m_bChestOpenInit);
-            writer.Write(m_PreEventTime);
-            writer.Write(m_bPreEventInit);
-        }
-
-        public override void Deserialize(GenericReader reader)
-        {
-            base.Deserialize(reader);
-            int version = reader.ReadInt();
-
-            switch (version)
-            {
-                case 2:
-                    {
-                        int itemCount = reader.ReadInt();
-
-                        m_spawners = new ArrayList(itemCount);
-
-                        for (int i = 0; i < itemCount; ++i)
-                        {
-                            Item item = reader.ReadItem();
-
-                            if (item != null)
-                                m_spawners.Add(item);
-                        }
-
-                        goto case 1;
-                    }
-
-                case 1:
-                    {
-                        m_KinRansomChest = reader.ReadItem() as KinRansomChest;
-                        m_RegStone = reader.ReadItem() as CustomRegionControl;
-                        m_OldGuardMode = reader.ReadBool();
-                        m_OldCountMode = reader.ReadBool();
-                        m_RegionName = reader.ReadString();
-                        m_IOBAlignment = (IOBAlignment)reader.ReadInt();
-                        m_ChestOpenTime = reader.ReadDateTime();
-                        m_bChestOpenInit = reader.ReadBool();
-                        m_PreEventTime = reader.ReadDateTime();
-                        m_bPreEventInit = reader.ReadBool();
-                        goto case 0;
-                    }
-
-                case 0:
-                    {   // all done
-                        break;
-                    }
-            }
-        }
-    }
-    #endregion KinRansomAES
-
     #region ServerWarsAES
     public class ServerWarsAES : AutomatedEventSystem
     {
-        bool m_test = Core.UOTC_CFG;        // for testing only
+        bool m_test = Core.GMNTC_CFG;        // for testing only
         bool m_construction = false;        // flag that we have built stuff .. not serialized
 
         public ServerWarsAES(Serial serial)
@@ -1916,9 +1302,9 @@ namespace Server
         private void OnInitializeTestCenter()
         {
             // if test center is off, turn it on
-            if (Server.Misc.TestCenter.Enabled == false)
+            if (Server.Engines.TestCenterServer.Enabled == false)
             {   // tell the test center to initialize
-                if (Server.Misc.TestCenter.ServerWars() == true)
+                if (Server.Engines.TestCenterServer.ServerWars() == true)
                     Console.WriteLine("ServerWarsAES: Initialize TestCenter");
                 else
                     Console.WriteLine("ServerWarsAES: FAILED to Initialize TestCenter");
@@ -1940,8 +1326,8 @@ namespace Server
                 ps.MoveToWorld(new Point3D(1421, 1697, 0), Map.Felucca);
                 rs.MoveToWorld(new Point3D(1421, 1698, 0), Map.Felucca);
                 // turn off guards
-                Region town = Region.FindByName("Britain", Map.Felucca);         // Britain specific
-                GuardedRegion reg = town as GuardedRegion;
+                Region? town = Region.FindByName("Britain", Map.Felucca);         // Britain specific
+                GuardedRegion? reg = town as GuardedRegion;
                 if (reg != null) reg.IsGuarded = false;
                 // report any errors
                 if (reg != null && ps != null && rs != null)

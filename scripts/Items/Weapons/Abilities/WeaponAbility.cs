@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -47,7 +47,7 @@ namespace Server.Items
 
         public virtual double GetRequiredSkill(Mobile from)
         {
-            BaseWeapon weapon = from.Weapon as BaseWeapon;
+            BaseWeapon? weapon = from.Weapon as BaseWeapon;
 
             if (weapon != null && weapon.PrimaryAbility == this)
                 return 70.0;
@@ -76,7 +76,7 @@ namespace Server.Items
 
         public virtual bool CheckWeaponSkill(Mobile from)
         {
-            BaseWeapon weapon = from.Weapon as BaseWeapon;
+            BaseWeapon? weapon = from.Weapon as BaseWeapon;
 
             if (weapon == null)
                 return false;
@@ -174,7 +174,7 @@ namespace Server.Items
         public static readonly WeaponAbility ShadowStrike = m_Abilities[12];
         public static readonly WeaponAbility WhirlwindAttack = m_Abilities[13];
 
-        public static bool IsWeaponAbility(Mobile m, WeaponAbility a)
+        public static bool IsWeaponAbility(Mobile m, WeaponAbility? a)
         {
             if (a == null)
                 return true;
@@ -182,12 +182,12 @@ namespace Server.Items
             if (!m.Player)
                 return true;
 
-            BaseWeapon weapon = m.Weapon as BaseWeapon;
+            BaseWeapon? weapon = m.Weapon as BaseWeapon;
 
             return (weapon != null && (weapon.PrimaryAbility == a || weapon.SecondaryAbility == a));
         }
 
-        public static WeaponAbility GetCurrentAbility(Mobile m)
+        public static WeaponAbility? GetCurrentAbility(Mobile m)
         {
             if (!Core.RuleSets.AOSRules())
             {
@@ -195,7 +195,7 @@ namespace Server.Items
                 return null;
             }
 
-            WeaponAbility a = (WeaponAbility)m_Table[m];
+            WeaponAbility? a = (WeaponAbility?)m_Table[m];
 
             if (!IsWeaponAbility(m, a))
             {

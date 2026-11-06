@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -227,7 +227,7 @@ namespace Server.Items.Triggers
                 case 1:
                     {
                         int count = reader.ReadInt();
-                        Mobile m = null;
+                        Mobile? m = null;
                         DateTime dt;
                         for (int ix = 0; ix < count; ix++)
                         {
@@ -331,16 +331,16 @@ namespace Server.Items.Triggers
         {
             base.OnSingleClick(from);
 
-            SendSystemMessage(string.Format("True Branch {0}", TrueBranch == null ? "(null)" : TrueBranch.ToString()));
-            SendSystemMessage(string.Format("False Branch {0}", FalseBranch == null ? "(null)" : FalseBranch.ToString()));
+            SendMessageNearby(string.Format("True Branch {0}", TrueBranch == null ? "(null)" : TrueBranch.ToString()));
+            SendMessageNearby(string.Format("False Branch {0}", FalseBranch == null ? "(null)" : FalseBranch.ToString()));
             if (StateController != null)
             {
                 bool hasState = (m_CheckMode == CheckMode.SinglePlayer) ? StateController.HasState(from) : StateController.HasStateAny();
-                SendSystemMessage(string.Format("{0} has state {1} for {2}",
+                SendMessageNearby(string.Format("{0} has state {1} for {2}",
                     StateController, hasState, (m_CheckMode == CheckMode.SinglePlayer) ? from : "Any"));
             }
             else
-                SendSystemMessage("No StateController link.");
+                SendMessageNearby("No StateController link.");
             if (TrueBranch != null)
             {
                 TrueBranch.Blink();
@@ -474,7 +474,7 @@ namespace Server.Items.Triggers
         public override Item Dupe(int amount)
         {
             ResetStateControllers new_relay = new ResetStateControllers();
-            Utility.CopyProperties(new_relay, this);
+            Utility.CopyProperties(this, new_relay);
             if (Links != null)
             {   // without this, 'duped' ResetStateControllerss will SHARE a Links list.
                 //  Add an item to one, it adds it to the other. Change a value in one, it changes it in the other.
@@ -484,7 +484,7 @@ namespace Server.Items.Triggers
             return base.Dupe(new_relay, amount);
         }
 
-        private Item GetLink(int index)
+        private Item? GetLink(int index)
         {
             if (index >= 0 && index < m_Links.Count)
                 return m_Links[index];
@@ -647,7 +647,7 @@ namespace Server.Items.Triggers
                 if (link.Links.Count >= Limit)
                     return;
 
-                Item item = targeted as Item;
+                Item? item = targeted as Item;
 
                 if (item == null)
                 {

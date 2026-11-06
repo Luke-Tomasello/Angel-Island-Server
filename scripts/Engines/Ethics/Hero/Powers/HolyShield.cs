@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -75,7 +75,7 @@ namespace Server.Ethics.Hero
                     for (int y = point.Y - 2; y <= point.Y + 2; y++)
                     {
                         Point3D loc = new Point3D(x, y, map.GetAverageZ(x, y));
-                        Item item = null;
+                        Item? item = null;
                         if (SpellHelper.AdjustField(ref loc, map, 12, false))
                         {   // can fit?
                             if (x == point.X - 2 || x == point.X + 2 || y == point.Y - 2 || y == point.Y + 2)

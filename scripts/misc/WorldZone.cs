@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -472,7 +472,7 @@ namespace Server
             get { return Path.Join(Core.DataDirectory, "WorldZone"); }
         }
 
-        public static void SaveZone(WorldZone zone, Mobile from = null)
+        public static void SaveZone(WorldZone zone, Mobile? from = null)
         {
             try
             {
@@ -542,9 +542,9 @@ namespace Server
             }
         }
 
-        public static WorldZone LoadZone(string zoneID, Mobile from = null)
+        public static WorldZone LoadZone(string zoneID, Mobile? from = null)
         {
-            WorldZone zone = null;
+            WorldZone? zone = null;
 
             try
             {
@@ -556,18 +556,18 @@ namespace Server
 
                     xmlDoc.Load(fileName);
 
-                    XmlElement root = xmlDoc["WorldZone"];
+                    XmlElement? root = xmlDoc["WorldZone"];
 
-                    string id = null;
-                    Map map = null;
+                    string? id = null;
+                    Map? map = null;
                     int markerOffset = 0, markerIDLand = 0, markerIDWater = 0;
                     Rectangle3D[] area = new Rectangle3D[0];
                     Rectangle2D[] wrapBounds = new Rectangle2D[0];
                     CityInfo[] startingCities = new CityInfo[0];
-                    PMList publicMoongateList = null;
+                    PMList? publicMoongateList = null;
                     Point3D[] unstuckLocations = new Point3D[0];
                     Point2D[] strandednessLocations = new Point2D[0];
-                    string decorationFolder = null;
+                    string? decorationFolder = null;
 
                     foreach (XmlElement xmlElem in root)
                     {
@@ -697,7 +697,7 @@ namespace Server
         {
             try
             {
-                string configDirectory = Path.GetDirectoryName(ConfigFileName);
+                string? configDirectory = Path.GetDirectoryName(ConfigFileName);
 
                 if (!Directory.Exists(configDirectory))
                     Directory.CreateDirectory(configDirectory);
@@ -720,7 +720,7 @@ namespace Server
 
         public static void LoadConfig()
         {
-            string activeZoneID = null;
+            string? activeZoneID = null;
 
             try
             {
@@ -732,7 +732,7 @@ namespace Server
 
                     xmlDoc.Load(fileName);
 
-                    XmlElement root = xmlDoc["WorldZoneConfig"];
+                    XmlElement? root = xmlDoc["WorldZoneConfig"];
 
                     foreach (XmlElement xmlElem in root)
                     {
@@ -866,7 +866,7 @@ namespace Server
             int x = int.Parse(xmlElem.GetAttribute("X"));
             int y = int.Parse(xmlElem.GetAttribute("Y"));
             int z = int.Parse(xmlElem.GetAttribute("Z"));
-            Map map = Map.Parse(xmlElem.GetAttribute("Map"));
+            Map? map = Map.Parse(xmlElem.GetAttribute("Map"));
             return new CityInfo(city, building, x, y, z, map);
         }
 
@@ -887,7 +887,7 @@ namespace Server
         {
             TextEntry number = TextEntry.Parse(xmlElem.GetAttribute("Number"));
             TextEntry selNumber = TextEntry.Parse(xmlElem.GetAttribute("SelNumber"));
-            Map map = Map.Parse(xmlElem.GetAttribute("Map"));
+            Map? map = Map.Parse(xmlElem.GetAttribute("Map"));
             List<PMEntry> entries = new List<PMEntry>();
             foreach (XmlElement xmlSubElem in xmlElem["Entries"])
                 entries.Add(XmlReadPMEntry(xmlSubElem));
@@ -1005,7 +1005,7 @@ namespace Server
         // we will rewrite as follows
         private static object GetTopSurface(Map map, int x, int y, out int surfaceZ)
         {
-            object surface = null;
+            object? surface = null;
             surfaceZ = 0;
 
             LandTile landTile = map.Tiles.GetLandTile(x, y);
@@ -1317,7 +1317,7 @@ namespace Server
                 Offset = offset;
             }
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 if (!(obj is Line2D))
                     return false;
@@ -1364,7 +1364,7 @@ namespace Server
                 return (Align == Align.X ? new Point2D(Value, 0) : new Point2D(0, Value));
             }
 
-            public override bool Equals(object obj)
+            public override bool Equals(object? obj)
             {
                 if (!(obj is Offset2D))
                     return false;

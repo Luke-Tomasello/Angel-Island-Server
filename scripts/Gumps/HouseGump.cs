@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -110,7 +110,7 @@ namespace Server.Gumps
                         }
                     }
 
-                    Mobile m = (Mobile)list[i];
+                    Mobile? m = (Mobile?)list[i];
 
                     string name;
 
@@ -185,7 +185,7 @@ namespace Server.Gumps
                         }
                     }
 
-                    Mobile m = (Mobile)list[i];
+                    Mobile? m = (Mobile?)list[i];
 
                     string name;
 
@@ -216,7 +216,18 @@ namespace Server.Gumps
                         int index = switches[i];
 
                         if (index >= 0 && index < m_Copy.Count)
-                            m_List.Remove(m_Copy[index]);
+                        {
+                            Mobile? targ = m_Copy[index] as Mobile;
+
+                            if (targ != null)
+                            {
+                                m_List.Remove(targ);
+
+                                // m_List is an alias (Bans/Friends/CoOwners). Only mirror account state for bans.
+                                if (m_List == m_House.Bans)
+                                    m_House.RecordAccountBan(targ, banned: false);
+                            }
+                        }
                     }
 
                     if (m_List.Count > 0)
@@ -238,7 +249,7 @@ namespace Server.Gumps
     {
         private BaseHouse m_House;
 
-        private ArrayList Wrap(string value)
+        private ArrayList? Wrap(string value)
         {
             if (value == null || (value = value.Trim()).Length <= 0)
                 return null;
@@ -325,13 +336,13 @@ namespace Server.Gumps
 
             if (m_House.Sign != null)
             {
-                ArrayList lines = Wrap(m_House.Sign.Name);
+                ArrayList? lines = Wrap(m_House.Sign.Name);
 
                 if (lines != null)
                 {
                     for (int i = 0, y = (101 - (lines.Count * 14)) / 2; i < lines.Count; ++i, y += 14)
                     {
-                        string s = (string)lines[i];
+                        string? s = (string?)lines[i];
 
                         AddLabel(130 + ((143 - (s.Length * 8)) / 2), y, 0, s);
                     }
@@ -393,7 +404,7 @@ namespace Server.Gumps
             //AddHtml(320, vstep, 50, 20, m_House.MaxLockDowns.ToString(), false, false);
 
             AddHtml(20, vstep += 20, 275, 20, "Number of secure containers:", false, false); // Number of secure containers:
-            AddHtml(fieldStartF, vstep, 64, 20, string.Format("{0}/{1}", m_House.SecureCount.ToString(), m_House.MaxSecures.ToString()), false, false);
+            AddHtml(fieldStartF, vstep, 64, 20, string.Format("{0}/{1}", m_House.SecureCount.ToString(), m_House.MaxSecureContainers.ToString()), false, false);
 
             //AddHtmlLocalized(20, vstep += 20, 275, 20, 1011240, false, false); // Maximum number of secure containers:
             //AddHtml(320, vstep, 50, 20, m_House.MaxSecures.ToString(), false, false);
@@ -429,7 +440,7 @@ namespace Server.Gumps
 
             if (m_House is Server.Multis.StaticHousing.StaticHouse)
             {
-                Server.Multis.StaticHousing.StaticHouse sh = m_House as Server.Multis.StaticHousing.StaticHouse;
+                Server.Multis.StaticHousing.StaticHouse? sh = m_House as Server.Multis.StaticHousing.StaticHouse;
                 //AddHtml(20, vstep += 20, 275, 20, "------------------", false, false);
                 AddHtml(20, vstep += 20, 275, 20, "House designed by:", false, false);
                 AddHtml(fieldStartF, vstep, 275, 20, sh.DesignerName, false, false);
@@ -496,14 +507,14 @@ namespace Server.Gumps
 
             if (m_House.GetBaseHouseBool(BaseHouse.BaseHouseBoolTable.ManagedDemolition) == true /*&& from!= null && from.AccessLevel == AccessLevel.Player*/)
             {
-                DateTime ok_demo = m_House.BuiltOn + (Core.UOBETA_CFG ? TimeSpan.FromHours(1.0) : TimeSpan.FromDays(7.0));
+                DateTime ok_demo = m_House.BuiltOn + (Core.GMNBETA_CFG ? TimeSpan.FromHours(1.0) : TimeSpan.FromDays(7.0));
                 string sx;
-                if (Core.UOBETA_CFG)
+                if (Core.GMNBETA_CFG)
                     sx = string.Format("You cannot transfer this house for {0:0} minutes.", Math.Max(0, new TimeSpan(ok_demo.Ticks - DateTime.UtcNow.Ticks).TotalMinutes));
                 else
                     sx = string.Format("You cannot transfer this house until: {0} ", ok_demo.ToShortDateString());
                 AddHtml(45, 150, 355, 30, sx, false, false); // Transfer ownership of the house
-                if (Core.UOBETA_CFG)
+                if (Core.GMNBETA_CFG)
                     sx = string.Format("You cannot demolish this house for {0:0} minutes.", Math.Max(0, new TimeSpan(ok_demo.Ticks - DateTime.UtcNow.Ticks).TotalMinutes));
                 else
                     sx = string.Format("You cannot demolish this house until: {0}", ok_demo.ToShortDateString());
@@ -797,12 +808,12 @@ namespace Server.Gumps
                         break;
                     }
                 case 16: // Change locks
-                    {
-                        //if ( m_House.Public )
-                        //{
-                        //from.SendLocalizedMessage( 501669 );// Public houses are always unlocked.
-                        //}
-                        //else
+                    {   // 2/3/2026, Adam: All our players like the lockable public houses, especially fitting for Mortalis
+                        if (m_House.Public && !Core.RuleSets.AnyAIShardRules())
+                        {
+                            from.SendLocalizedMessage(501669);// Public houses are always unlocked.
+                        }
+                        else
                         {
                             if (isOwner)
                             {

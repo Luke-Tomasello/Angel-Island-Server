@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -61,6 +61,7 @@
 		Merged in 1.0RC0 code.
 */
 
+using Server.Diagnostics;
 using Server.Items;
 using Server.Mobiles;
 using Server.Multis;
@@ -82,19 +83,33 @@ namespace Server.Spells.Fourth
                 Reagent.MandrakeRoot
             );
 
-        private RunebookEntry m_Entry;
-        private Runebook m_Book;
+        private enum RecallSourceType
+        {
+            Unknown,
+            Rune,
+            Runebook,
+            BoatKey
+        }
+
+        private RunebookEntry? m_Entry;
+        private Runebook? m_Book;
+
+        private RecallSourceType m_SourceType;
+        private Item m_SourceItem;
 
         public RecallSpell(Mobile caster, Item scroll)
             : this(caster, scroll, null, null)
         {
         }
 
-        public RecallSpell(Mobile caster, Item scroll, RunebookEntry entry, Runebook book)
+        public RecallSpell(Mobile caster, Item scroll, RunebookEntry? entry, Runebook? book)
             : base(caster, scroll, m_Info)
         {
             m_Entry = entry;
             m_Book = book;
+
+            if (m_Book != null)
+                SetSource(RecallSourceType.Runebook, m_Book);
         }
 
         public override void GetCastSkills(out double min, out double max)
@@ -115,7 +130,7 @@ namespace Server.Spells.Fourth
 
         public override bool CheckCast()
         {   // staff get a pass here
-            if ((Core.RuleSets.SiegeStyleRules()) && Caster.AccessLevel == AccessLevel.Player)
+            if ((Core.RuleSets.SiegeRules()) && Caster.AccessLevel == AccessLevel.Player)
             {
                 Caster.SendLocalizedMessage(501802); // Thy spell doth not appear to work...
                 return false;
@@ -131,7 +146,9 @@ namespace Server.Spells.Fourth
                 Caster.SendMessage("You can't do that while carrying the flag.");
                 return false;
             }
-            else if (Caster.Criminal)
+            // NOTE: OSI relied on short criminal timers for travel denial.
+            // Mortalis uses explicit travel restriction logic; Criminal is no longer sufficient.
+            else if (Caster is PlayerMobile pm && !pm.CanCriminalTravel)
             {
                 Caster.SendLocalizedMessage(1005561, "", 0x22); // Thou'rt a criminal and cannot escape so easily.
                 return false;
@@ -175,12 +192,14 @@ namespace Server.Spells.Fourth
             else if (!SpellHelper.CheckTravel(Caster, map, loc, TravelCheckType.RecallTo))
             {
             }
-            // 8/10/22, Adam: I don't think Core.RedsInTown matters here. 
+            // 8/10/22, Adam: I don't think Core.RedsInTown matters here.
             else if (Caster.Red && map != Map.Felucca)
             {
                 Caster.SendLocalizedMessage(1019004); // You are not allowed to travel there.
             }
-            else if (Caster.Criminal)
+            // NOTE: OSI relied on short criminal timers for travel denial.
+            // Mortalis uses explicit travel restriction logic; Criminal is no longer sufficient.
+            else if (Caster is PlayerMobile pm && !pm.CanCriminalTravel)
             {
                 Caster.SendLocalizedMessage(1005561, "", 0x22); // Thou'rt a criminal and cannot escape so easily.
             }
@@ -204,7 +223,7 @@ namespace Server.Spells.Fourth
             {
                 Caster.SendLocalizedMessage(502412); // There are no charges left on that item.
             }
-            else if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeStyleRules()) && BaseBoat.FindBoatAt(loc, map, 16) != null)
+            else if ((Core.RuleSets.AngelIslandRules() || Core.RuleSets.SiegeRules()) && BaseBoat.FindBoatAt(loc, map, 16) != null)
             {
                 // disallow recalling onto the boat (AI&SP) - they recalled off their key
                 Caster.SendLocalizedMessage(501942); // That location is blocked.
@@ -215,11 +234,58 @@ namespace Server.Spells.Fourth
             }
             else if (CheckSequence())
             {
-                InternalTimer t = new InternalTimer(this, Caster, loc, m_Book);
+                InternalTimer t = new InternalTimer(this, Caster, loc, m_Book, m_SourceType, m_SourceItem);
                 t.Start();
             }
 
             FinishSequence();
+        }
+
+        private void SetSource(RecallSourceType sourceType, Item sourceItem)
+        {
+            m_SourceType = sourceType;
+            m_SourceItem = sourceItem;
+        }
+
+        private static string GetSourceLabel(RecallSourceType sourceType)
+        {
+            switch (sourceType)
+            {
+                case RecallSourceType.Rune:
+                    return "rune";
+                case RecallSourceType.Runebook:
+                    return "runebook";
+                case RecallSourceType.BoatKey:
+                    return "boat key";
+                default:
+                    return "unknown";
+            }
+        }
+
+        private static string GetSerialText(Item item)
+        {
+            return (item != null ? string.Format("0x{0:X}", item.Serial.Value) : "0x0");
+        }
+
+        private static void LogRecall(Mobile caster, Point3D dest, RecallSourceType sourceType, Item sourceItem)
+        {
+            BaseHouse? house = BaseHouse.FindHouseAt(dest, caster.Map, 16, parcel: true);
+
+            bool inHouse = (house != null);
+            bool isFriend = (house != null && house.IsFriend(caster));
+
+            string sourceLabel = GetSourceLabel(sourceType);
+            string sourceSerial = GetSerialText(sourceItem);
+
+            LogHelper Logger = new LogHelper("recall.log", overwrite: false, sline: true);
+
+            Logger.Log(
+                LogType.Mobile,
+                caster,
+                $"{sourceLabel}:{sourceSerial}:{dest}:inHouse={inHouse}:isFriend={isFriend}"
+            );
+
+            Logger.Finish();
         }
 
         public class InternalTarget : Target
@@ -241,27 +307,44 @@ namespace Server.Spells.Fourth
                     RecallRune rune = (RecallRune)o;
 
                     if (rune.Marked)
+                    {
+                        m_Owner.SetSource(RecallSourceType.Rune, rune);
                         m_Owner.Effect(rune.Target, rune.TargetMap, true);
+                    }
                     else
+                    {
                         from.SendLocalizedMessage(501805); // That rune is not yet marked.
+                    }
                 }
                 else if (o is Runebook)
                 {
-                    RunebookEntry e = ((Runebook)o).Default;
+                    Runebook book = (Runebook)o;
+                    RunebookEntry? e = book.Default;
 
                     if (e != null)
+                    {
+                        m_Owner.SetSource(RecallSourceType.Runebook, book);
                         m_Owner.Effect(e.Location, e.Map, true);
+                    }
                     else
+                    {
                         from.SendLocalizedMessage(502354); // Target is not marked.
+                    }
                 }
                 else if (o is Key && ((Key)o).KeyValue != 0 && ((Key)o).Link is BaseBoat)
                 {
-                    BaseBoat boat = ((Key)o).Link as BaseBoat;
+                    Key key = (Key)o;
+                    BaseBoat? boat = key.Link as BaseBoat;
 
-                    if (!boat.Deleted && boat.CheckKey(((Key)o).KeyValue))
+                    if (!boat.Deleted && boat.CheckKey(key.KeyValue))
+                    {
+                        m_Owner.SetSource(RecallSourceType.BoatKey, key);
                         m_Owner.Effect(boat.GetMarkedLocation(), boat.Map, false);
+                    }
                     else
+                    {
                         from.Send(new MessageLocalized(from.Serial, from.Body, MessageType.Regular, 0x3B2, 3, 502357, from.Name, "")); // I can not recall from that object.
+                    }
                 }
                 else
                 {
@@ -280,15 +363,19 @@ namespace Server.Spells.Fourth
             private Spell m_Spell;
             private Mobile m_Caster;
             private Point3D m_Location;
-            private Runebook m_Book;
+            private Runebook? m_Book;
+            private RecallSourceType m_SourceType;
+            private Item m_SourceItem;
 
-            public InternalTimer(Spell spell, Mobile caster, Point3D location, Runebook book)
+            public InternalTimer(Spell spell, Mobile caster, Point3D location, Runebook? book, RecallSourceType sourceType, Item sourceItem)
                 : base(TimeSpan.FromSeconds(0.75))
             {
                 m_Spell = spell;
                 m_Caster = caster;
                 m_Location = location;
                 m_Book = book;
+                m_SourceType = sourceType;
+                m_SourceItem = sourceItem;
 
                 Priority = TimerPriority.FiftyMS;
             }
@@ -296,7 +383,7 @@ namespace Server.Spells.Fourth
             protected override void OnTick()
             {
                 // Adam: because we delay before the actual teleport, we should recheck
-                //	to make sure we havn't done anything funky like looted someone.
+                // to make sure we havn't done anything funky like looted someone.
                 if (m_Spell.CheckCast())
                 {
                     // Since we can't recall across maps, use the caster's map
@@ -307,13 +394,13 @@ namespace Server.Spells.Fourth
 
                     //Pix: Make sure the caster hasn't picked up anything since he or she
                     // targetted the recall object.
-                    m_Caster.DropHolding();
+                    m_Caster.DropDragging();
 
                     // is this exploit check enabled?
-                    if ((CoreAI.DynamicFeatures & (int)CoreAI.FeatureBits.InmateRecallExploitCheck) > 0)
+                    if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.InmateRecallExploitCheck))
                     {
                         // Adam: Look for the recall exploit and send them to jail
-                        PlayerMobile pm = m_Caster as PlayerMobile;
+                        PlayerMobile? pm = m_Caster as PlayerMobile;
                         if (pm != null && pm.PrisonInmate == true)
                         {
                             Server.Point3D jail = new Point3D(5295, 1174, 0);
@@ -321,6 +408,8 @@ namespace Server.Spells.Fourth
                             return;
                         }
                     }
+
+                    LogRecall(m_Caster, m_Location, m_SourceType, m_SourceItem);
 
                     m_Caster.PlaySound(0x1FC);
                     m_Caster.MoveToWorld(m_Location, Map.Felucca);

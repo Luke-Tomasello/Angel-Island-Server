@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -27,7 +27,6 @@
  */
 
 using Server.Network;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -46,59 +45,55 @@ namespace Server.Misc
                 {
                     NetState compState = NetState.Instances[i];
                     if (ourAddress.Equals(compState.Address) && compState.Mobile != null)
-#if false
-                        compState.Mobile.SendMessage(0x35, string.Format("Login: {0}: Account '{1}' not created, ip already has {2} account{3}.", ourAddress, acct.Username, count, count == 1 ? "" : "s"));
-#else
                         compState.Mobile.SendMessage(0x35, string.Format("Login: {0}: Account '{1}' blackholed, ip already has {2} account{3}.", ourAddress, acct.Username, count, count == 1 ? "" : "s"));
-#endif
                 }
         }
 
         public static bool IsOk(Accounting.Account acct, IPAddress ip, ref int count)
         {
-            if (Enabled)
-            {
-                // get a list of accounts associated with this machine ascending sorted by date created that match the acct in question
-                List<Accounting.Account> list = GetAccountsByIP(acct, ip);
+            count = 0;
 
-                count = list.Count;
-
-                // no problem, create the account
-                if (list.Count < CoreAI.MaxAccountsPerIP)
-                    return true;
-                else
-                {
-                    // grab a copy of the illegal accounts sharing machine info - for reporting purposes.
-                    List<Accounting.Account> illegal = new(list);
-
-                    // trim it to the first N accounts (N = MaxAccountsPerIP)
-                    list = list.Skip(0).Take(CoreAI.MaxAccountsPerIP).ToList();
-
-                    // remove legal accounts
-                    foreach (Accounting.Account a in list)
-                        illegal.Remove(a);
-
-                    // they are trying to login on a legit account
-                    if (ListContainsAccount(acct, list))
-                        return true;
-
-                    //Report what's going on
-                    //Report(acct, list, illegal);
-
-                    // the account they are trying to login with is not one of the N already created that have machine info
-                    // where N = MaxAccountsPerMachine
-                    return false;
-#if false
-                int limit = Math.Max(CoreAI.MaxAccountsPerIP, Accounting.IPException.GetLimit(ip.ToString()));
-                count = CountAccountsByIP(acct, ip); // check the number of accounts based on IP
-                if (count >= limit)
-                    return false;
-#endif
-                }
+            if (!Enabled)
                 return true;
+
+            // Staff accounts are always allowed.
+            if (acct.AccessLevel > AccessLevel.Player)
+                return true;
+
+            // Get all accounts associated with this IP.
+            List<Accounting.Account> list = GetAccountsByIP(acct, ip);
+
+            count = list.Count;
+
+            // If any account on this IP is staff, exempt the entire IP.
+            foreach (Accounting.Account a in list)
+            {
+                if (a != null && a.AccessLevel > AccessLevel.Player)
+                    return true;
             }
 
-            return true;
+            // No staff exemption, enforce normal limit.
+            if (list.Count < CoreAI.MaxAccountsPerIP)
+                return true;
+
+            // Grab a copy of the illegal accounts sharing this IP for reporting purposes.
+            List<Accounting.Account> illegal = new(list);
+
+            // Keep only the first N legal accounts (oldest first, per GetAccountsByIP contract).
+            list = list.Take(CoreAI.MaxAccountsPerIP).ToList();
+
+            // Remove legal accounts from the illegal set.
+            foreach (Accounting.Account a in list)
+                illegal.Remove(a);
+
+            // Allow login if this account is one of the legal accounts.
+            if (ListContainsAccount(acct, list))
+                return true;
+
+            // Report(acct, list, illegal);
+
+            // This account is not one of the allowed accounts for this IP.
+            return false;
         }
         private static bool ListContainsAccount(Accounting.Account acct, List<Accounting.Account> list)
         {
@@ -114,21 +109,20 @@ namespace Server.Misc
         {
             List<Accounting.Account> list = new(0);
 
-            // staff can always login
-            if (acct.AccessLevel > AccessLevel.Player)
-                return list;
-
-            int count = 0;
             foreach (Accounting.Account a in Accounting.Accounts.Table.Values)
             {
-                if (a.AccessLevel > AccessLevel.Player)
-                    continue; // ignore staff accounts
+                if (a == null)
+                    continue;
 
                 foreach (IPAddress loginIP in a.LoginIPs)
                 {
                     if (IPAddress.Equals(loginIP, ip))
+                    {
                         if (!list.Contains(a))
                             list.Add(a);
+
+                        break;
+                    }
                 }
             }
 
@@ -137,31 +131,5 @@ namespace Server.Misc
 
             return list;
         }
-#if false
-        public static int CountAccountsByIP(Accounting.Account acct, IPAddress ip)
-        {
-            // staff can always login
-            if (acct.AccessLevel > AccessLevel.Player)
-                return 0;
-
-            int count = 0;
-            foreach (Accounting.Account a in Accounting.Accounts.Table.Values)
-            {
-                if (a.AccessLevel > AccessLevel.Player)
-                    continue; // ignore staff accounts
-
-                if (a.Username.ToLower() == acct.Username.ToLower())
-                    continue; // ignore this account
-
-                foreach (IPAddress loginIP in a.LoginIPs)
-                {
-                    if (IPAddress.Equals(loginIP, ip))
-                        count++;
-                }
-            }
-
-            return count;
-        }
-#endif
     }
 }

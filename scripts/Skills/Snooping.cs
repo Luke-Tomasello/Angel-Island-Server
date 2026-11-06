@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -32,7 +32,6 @@ using Server.Misc;
 using Server.Mobiles;
 using Server.Network;
 using Server.Regions;
-using System;
 
 namespace Server.SkillHandlers
 {
@@ -53,12 +52,12 @@ namespace Server.SkillHandlers
             if (to.Player)
                 return false; // cannot snoop players
 
-            GuardedRegion reg = to.Region as GuardedRegion;
+            GuardedRegion? reg = to.Region as GuardedRegion;
 
             if (reg == null || reg.IsGuarded == false)
                 return true; // not in town? we can snoop any npc
 
-            BaseCreature cret = to as BaseCreature;
+            BaseCreature? cret = to as BaseCreature;
 
             if (to.Body.IsHuman && (cret == null || (!cret.AlwaysAttackable && !cret.AlwaysMurderer)))
                 return false; // in town we cannot snoop blue human npcs
@@ -70,7 +69,7 @@ namespace Server.SkillHandlers
         {
             if (from.AccessLevel > AccessLevel.Player || from.InRange(cont.GetWorldLocation(), 1))
             {
-                Mobile root = cont.RootParent as Mobile;
+                Mobile? root = cont.RootParent as Mobile;
 
                 if (root != null && !root.Alive)
                     return;
@@ -131,7 +130,7 @@ namespace Server.SkillHandlers
                 if (from.AccessLevel == AccessLevel.Player)
                     Titles.AwardKarma(from, -4, true);
 
-                if (from.AccessLevel > AccessLevel.Player || from.CheckTargetSkill(SkillName.Snooping, cont, 0.0, 100.0, new object[2] { cont.RootParent, null } /*contextObj*/))
+                if (from.AccessLevel > AccessLevel.Player || from.CheckTargetSkill(SkillName.Snooping, cont, 0.0, 100.0, new object?[2] { cont.RootParent, null } /*contextObj*/))
                 {
                     if (cont is TrapableContainer && ((TrapableContainer)cont).ExecuteTrap(from))
                         return;

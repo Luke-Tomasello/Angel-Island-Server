@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,7 +41,11 @@ namespace Server.Engines.Craft
             get
             {
                 // 4/16/23, Yoar: Use carpentry so that there's no need to invest in fletching
-                if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisRules() || Core.RuleSets.SiegeRules())
+                if (Core.RuleSets.AngelIslandRules() ||
+                    Core.RuleSets.SiegeRules() ||
+                    Core.RuleSets.MortalisRules() ||
+                    Core.RuleSets.SeasonsRules() ||
+                    Core.RuleSets.UpheavalRules())
                     return SkillName.Carpentry;
                 else
                     return SkillName.Fletching;
@@ -53,7 +57,7 @@ namespace Server.Engines.Craft
             get { return 1044006; } // <CENTER>BOWCRAFT AND FLETCHING MENU</CENTER>
         }
 
-        private static CraftSystem m_CraftSystem;
+        private static CraftSystem? m_CraftSystem;
 
         public static CraftSystem CraftSystem
         {
@@ -86,7 +90,7 @@ namespace Server.Engines.Craft
             return 0;
         }
 
-        public override void PlayCraftEffect(Mobile from, object obj = null)
+        public override void PlayCraftEffect(Mobile from, object? obj = null)
         {
             // no animation
             //if ( from.Body.Type == BodyType.Human && !from.Mounted )

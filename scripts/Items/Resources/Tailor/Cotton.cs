@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -89,8 +89,15 @@ namespace Server.Items
 
         public static void OnSpun(ISpinningWheel wheel, Mobile from, int hue)
         {
+            OnSpun(wheel, from, hue, false);
+        }
+
+        // storeBought: the cotton was bought from an NPC (the thread keeps the mark, see ArbitrageTable)
+        public static void OnSpun(ISpinningWheel wheel, Mobile from, int hue, bool storeBought)
+        {
             Item item = new SpoolOfThread(6);
             item.Hue = hue;
+            Server.Engines.Economy.Provenance.Inherit(storeBought, item);
 
             from.AddToBackpack(item);
             from.SendLocalizedMessage(1010577); // You put the spools of thread in your backpack.
@@ -111,7 +118,7 @@ namespace Server.Items
                 if (m_Cotton.Deleted)
                     return;
 
-                ISpinningWheel wheel = targeted as ISpinningWheel;
+                ISpinningWheel? wheel = targeted as ISpinningWheel;
 
                 if (wheel == null && targeted is AddonComponent)
                     wheel = ((AddonComponent)targeted).Addon as ISpinningWheel;
@@ -130,8 +137,9 @@ namespace Server.Items
                     }
                     else
                     {
+                        bool storeBought = m_Cotton.StoreBought;
                         m_Cotton.Consume();
-                        wheel.BeginSpin(new SpinCallback(Cotton.OnSpun), from, m_Cotton.Hue);
+                        wheel.BeginSpin((w, m, h) => Cotton.OnSpun(w, m, h, storeBought), from, m_Cotton.Hue);
                     }
                 }
                 else

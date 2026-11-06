@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -73,7 +73,7 @@ namespace Server.Engines.Quests
             set { m_Conversations = value; }
         }
 
-        private Timer m_Timer;
+        private Timer? m_Timer;
 
         public virtual void StartTimer()
         {
@@ -95,7 +95,7 @@ namespace Server.Engines.Quests
         {
             for (int i = m_Objectives.Count - 1; i >= 0; --i)
             {
-                QuestObjective obj = (QuestObjective)m_Objectives[i];
+                QuestObjective? obj = (QuestObjective?)m_Objectives[i];
 
                 if (!obj.Completed)
                     obj.CheckProgress();
@@ -106,7 +106,7 @@ namespace Server.Engines.Quests
         {
             for (int i = m_Objectives.Count - 1; i >= 0; --i)
             {
-                QuestObjective obj = (QuestObjective)m_Objectives[i];
+                QuestObjective? obj = (QuestObjective?)m_Objectives[i];
 
                 if (obj.GetKillEvent(creature, corpse))
                     obj.OnKill(creature, corpse);
@@ -140,7 +140,7 @@ namespace Server.Engines.Quests
 
                         for (int i = 0; i < count; ++i)
                         {
-                            QuestObjective obj = QuestSerializer.DeserializeObjective(referenceTable, reader);
+                            QuestObjective? obj = QuestSerializer.DeserializeObjective(referenceTable, reader);
 
                             if (obj != null)
                             {
@@ -155,7 +155,7 @@ namespace Server.Engines.Quests
 
                         for (int i = 0; i < count; ++i)
                         {
-                            QuestConversation conv = QuestSerializer.DeserializeConversation(referenceTable, reader);
+                            QuestConversation? conv = QuestSerializer.DeserializeConversation(referenceTable, reader);
 
                             if (conv != null)
                             {
@@ -202,16 +202,16 @@ namespace Server.Engines.Quests
 
         public bool IsObjectiveInProgress(Type type)
         {
-            QuestObjective obj = FindObjective(type);
+            QuestObjective? obj = FindObjective(type);
 
             return (obj != null && !obj.Completed);
         }
 
-        public QuestObjective FindObjective(Type type)
+        public QuestObjective? FindObjective(Type type)
         {
             for (int i = m_Objectives.Count - 1; i >= 0; --i)
             {
-                QuestObjective obj = (QuestObjective)m_Objectives[i];
+                QuestObjective? obj = (QuestObjective?)m_Objectives[i];
 
                 if (obj.GetType() == type)
                     return obj;
@@ -253,7 +253,7 @@ namespace Server.Engines.Quests
 
                 m_From.SendGump(new QuestObjectivesGump(m_Objectives));
 
-                QuestObjective last = (QuestObjective)m_Objectives[m_Objectives.Count - 1];
+                QuestObjective? last = (QuestObjective?)m_Objectives[m_Objectives.Count - 1];
 
                 if (last.Info != null)
                     m_From.SendGump(new QuestItemInfoGump(last.Info));
@@ -270,7 +270,7 @@ namespace Server.Engines.Quests
 
                 m_From.SendGump(new QuestConversationsGump(m_Conversations));
 
-                QuestConversation last = (QuestConversation)m_Conversations[m_Conversations.Count - 1];
+                QuestConversation? last = (QuestConversation?)m_Conversations[m_Conversations.Count - 1];
 
                 if (last.Info != null)
                     m_From.SendGump(new QuestItemInfoGump(last.Info));
@@ -331,7 +331,7 @@ namespace Server.Engines.Quests
 
                     for (int i = 0; i < doneQuests.Count; ++i)
                     {
-                        QuestRestartInfo restartInfo = (QuestRestartInfo)doneQuests[i];
+                        QuestRestartInfo? restartInfo = (QuestRestartInfo?)doneQuests[i];
 
                         if (restartInfo.QuestType == ourQuestType)
                         {
@@ -402,7 +402,7 @@ namespace Server.Engines.Quests
         {
             inRestartPeriod = false;
 
-            PlayerMobile pm = check as PlayerMobile;
+            PlayerMobile? pm = check as PlayerMobile;
 
             if (pm == null)
                 return false;
@@ -422,7 +422,7 @@ namespace Server.Engines.Quests
             {
                 for (int i = 0; i < doneQuests.Count; ++i)
                 {
-                    QuestRestartInfo restartInfo = (QuestRestartInfo)doneQuests[i];
+                    QuestRestartInfo? restartInfo = (QuestRestartInfo?)doneQuests[i];
 
                     if (restartInfo.QuestType == questType)
                     {
@@ -631,17 +631,6 @@ namespace Server.Engines.Quests
         public static int C16216(int c16)
         {
             return c16 & 0x7FFF;
-        }
-
-        public static int C32216(int c32)
-        {
-            c32 &= 0xFFFFFF;
-
-            int r = (((c32 >> 16) & 0xFF) >> 3);
-            int g = (((c32 >> 08) & 0xFF) >> 3);
-            int b = (((c32 >> 00) & 0xFF) >> 3);
-
-            return (r << 10) | (g << 5) | (b << 0);
         }
 
         public static ArrayList BuildList(object obj)

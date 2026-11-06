@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -24,8 +24,6 @@
  *  12/10/21, Yoar
  *      Initial version.
  */
-
-using System;
 
 namespace Server.Items
 {
@@ -417,44 +415,6 @@ namespace Server.Items
                 this.LabelTo(from, "The jar is nearly empty.");
         }
 
-#if false
-        public override void OnDoubleClick(Mobile from)
-        {
-            if (!IsChildOf(from.Backpack))
-                from.SendLocalizedMessage(1042001); // That must be in your pack for you to use it.
-            else if (m_UsesRemaining <= 0)
-                from.SendMessage("You have used up your crystalline powder.");
-            else
-                from.Target = new InternalTarget(this);
-        }
-
-        private class InternalTarget : Target
-        {
-            private CrystallinePowder m_Powder;
-
-            public InternalTarget(CrystallinePowder powder)
-                : base(2, false, TargetFlags.None)
-            {
-                m_Powder = powder;
-            }
-
-            protected override void OnTarget(Mobile from, object targeted)
-            {
-                if (!m_Powder.IsChildOf(from.Backpack))
-                {
-                    from.SendLocalizedMessage(1042001); // That must be in your pack for you to use it.
-                    return;
-                }
-                else if (m_Powder.UsesRemaining <= 0)
-                {
-                    from.SendMessage("You have used up your crystalline powder.");
-                    return;
-                }
-
-                // TODO
-            }
-        }
-#endif
 
         public CrystallinePowder(Serial serial)
         : base(serial)

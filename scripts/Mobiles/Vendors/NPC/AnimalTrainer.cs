@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -117,7 +117,7 @@ namespace Server.Mobiles
 
                 for (int i = 0; i < count; i++)
                 {
-                    Mobile m = reader.ReadMobile();
+                    Mobile? m = reader.ReadMobile();
                     List<BaseCreature> pets = reader.ReadStrongMobileList<BaseCreature>();
 
                     if (m != null)
@@ -231,7 +231,7 @@ namespace Server.Mobiles
 
                 for (int i = 0; i < list.Count; ++i)
                 {
-                    BaseCreature pet = list[i] as BaseCreature;
+                    BaseCreature? pet = list[i] as BaseCreature;
 
                     if (pet == null || pet.Deleted)
                         continue;
@@ -347,7 +347,7 @@ namespace Server.Mobiles
                 NoAnimals(from);        // But I have no animals stabled with me at the moment!
         }
 
-        public void EndClaimList(Mobile from, BaseCreature pet)
+        public void EndClaimList(Mobile from, BaseCreature? pet)
         {
             if (pet == null || pet.Deleted || pet.GetCreatureBool(CreatureBoolTable.StableHold) || from.Map != this.Map || !from.InRange(this, 14) || !GetStabledPets(from).Contains(pet) || !from.CheckAlive())
                 return;
@@ -428,11 +428,11 @@ namespace Server.Mobiles
                 from.Target = new StableTarget(this);
             }
         }
-        public virtual bool CheckPetCondidtion(Mobile from, BaseCreature pet, bool message = true)
+        public virtual bool CheckPetCondition(Mobile from, BaseCreature pet, bool message = true)
         {
             return true;
         }
-        public void EndStable(Mobile from, BaseCreature pet)
+        public virtual void EndStable(Mobile from, BaseCreature pet)
         {
             if (Deleted || !from.CheckAlive())
                 return;
@@ -462,7 +462,7 @@ namespace Server.Mobiles
             //{
             //    SayTo(from, "You can't stable your brethren!");
             //}
-            else if (!CheckPetCondidtion(from, pet, message: true))
+            else if (!CheckPetCondition(from, pet, message: true))
             {
                 // message already shown
             }
@@ -668,7 +668,7 @@ namespace Server.Mobiles
             else
             {
                 string petName = match_condition.Groups[1].ToString().Trim();
-                BaseCreature bc = Utility.FindPet(e.Mobile, petName);
+                BaseCreature? bc = Utility.FindPet(e.Mobile, petName);
                 if (bc == null)
                     me.Say("I am sorry, but I could not find {0}.", petName);
                 else
@@ -691,11 +691,11 @@ namespace Server.Mobiles
             }
         }
 
-        public virtual IList<BaseCreature> GetStabledPets(Mobile m, BaseCreature bc = null)
+        public virtual IList<BaseCreature> GetStabledPets(Mobile m, BaseCreature? bc = null)
         {
             return GetStabledPets(m, AnimalTrainer.Table, bc);
         }
-        public virtual IList<BaseCreature> GetStabledPets(Mobile m, Dictionary<Mobile, List<BaseCreature>> Table, BaseCreature bc = null)
+        public virtual IList<BaseCreature> GetStabledPets(Mobile m, Dictionary<Mobile, List<BaseCreature>> Table, BaseCreature? bc = null)
         {
             List<BaseCreature> list = new List<BaseCreature>();
             bool hasPets = Table.ContainsKey(m);
@@ -754,7 +754,7 @@ namespace Server.Mobiles
                     AnimalTrainer.Table[m].Remove(pet);
         }
 
-        public virtual int GetStableSlots(Mobile m, BaseCreature bc = null)
+        public virtual int GetStableSlots(Mobile m, BaseCreature? bc = null)
         {
             // TODO: Move the following method back into AnimalTrainer.cs?
             return BaseCreature.GetMaxStabled(m, bc);
@@ -764,9 +764,15 @@ namespace Server.Mobiles
         {
             return UODayChargePerPet(m);
         }
-
+        public virtual bool IsValidMountForStabling(BaseCreature pet)
+        {
+            return true; // Default: allow everything (current behavior)
+        }
         public virtual bool CanStable(Mobile m, BaseCreature pet)
         {
+            if (!IsValidMountForStabling(pet))
+                return false;
+
             return true;
         }
 

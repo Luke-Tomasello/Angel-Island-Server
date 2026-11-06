@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -42,8 +42,8 @@ namespace Server.Factions
         private BaseMonolith m_LastMonolith;
 
         private Town m_Town;
-        private Faction m_Corrupted;
-        private Faction m_Corrupting;
+        private Faction? m_Corrupted;
+        private Faction? m_Corrupting;
 
         private DateTime m_LastStolen;
         private DateTime m_GraceStart;
@@ -86,14 +86,14 @@ namespace Server.Factions
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public Faction Corrupted
+        public Faction? Corrupted
         {
             get { return m_Corrupted; }
             set { m_Corrupted = value; Update(); }
         }
 
         [CommandProperty(AccessLevel.Counselor, AccessLevel.Administrator)]
-        public Faction Corrupting
+        public Faction? Corrupting
         {
             get { return m_Corrupting; }
             set { m_Corrupting = value; Update(); }
@@ -191,7 +191,7 @@ namespace Server.Factions
             return false;
         }
 
-        private Mobile FindOwner(object parent)
+        private Mobile? FindOwner(object parent)
         {
             if (parent is Item)
                 return ((Item)parent).RootParent as Mobile;
@@ -206,7 +206,7 @@ namespace Server.Factions
         {
             base.OnAdded(parent);
 
-            Mobile mob = FindOwner(parent);
+            Mobile? mob = FindOwner(parent);
 
             if (mob != null)
                 mob.SolidHueOverride = OwnershipHue;
@@ -216,7 +216,7 @@ namespace Server.Factions
         {
             base.OnRemoved(parent);
 
-            Mobile mob = FindOwner(parent);
+            Mobile? mob = FindOwner(parent);
 
             if (mob != null)
                 mob.SolidHueOverride = -1;
@@ -386,7 +386,7 @@ namespace Server.Factions
                         m.Sigil = this;
 
                         Faction newController = m.Faction;
-                        Faction oldController = m_Corrupting;
+                        Faction? oldController = m_Corrupting;
 
                         if (oldController == null)
                         {
@@ -493,7 +493,7 @@ namespace Server.Factions
 
                         Update();
 
-                        Mobile mob = RootParent as Mobile;
+                        Mobile? mob = RootParent as Mobile;
 
                         if (mob != null)
                             mob.SolidHueOverride = OwnershipHue;
@@ -505,7 +505,7 @@ namespace Server.Factions
 
         public bool ReturnHome()
         {
-            BaseMonolith monolith = m_LastMonolith;
+            BaseMonolith? monolith = m_LastMonolith;
 
             if (monolith == null && m_Town != null)
                 monolith = m_Town.Monolith;

@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -43,7 +43,7 @@ namespace Server.Items
 
         private static int[] ItemIDs = Enumerable.Range(0x2260, 0x2279 - 0x2260 + 1).ToArray();
 
-        private Item m_Item;
+        private Item? m_Item;
 
         public override Item Dupe(int amount)
         {
@@ -55,13 +55,13 @@ namespace Server.Items
                 new_scroll.Item = null;
             }
             // won't copy the item as it is marked CopyableAttribute(CopyType.DoNotCopy)
-            Utility.CopyProperties(new_scroll, this);
+            Utility.CopyProperties(this, new_scroll);
             if (Item != null)
             {   // create a new item to attach to this new EnchantedScroll
                 Type type = Item.GetType();
-                object o = null;
+                object? o = null;
                 o = Activator.CreateInstance(type);
-                Utility.CopyProperties((Item)o, Item);
+                Utility.CopyProperties(Item, (Item)o);
                 new_scroll.Item = o as Item;
             }
             return base.Dupe(new_scroll, amount);
@@ -100,7 +100,7 @@ namespace Server.Items
 
         public static Item CreateRandom()
         {
-            Item item = null;
+            Item? item = null;
             int min = 1;
             int max = 3;
             switch (Utility.Random(5))
@@ -125,7 +125,7 @@ namespace Server.Items
             return item;
         }
 
-        private void UpdateGrphic(Item hint)
+        private void UpdateGrphic(Item? hint)
         {   // each item type will have a pseudo unique scroll appearance
             if (hint != null)
                 this.ItemID = ItemIDs[Utility.GetStableHashCode(hint.ItemID) % ItemIDs.Length];
@@ -136,7 +136,7 @@ namespace Server.Items
             : this(CreateRandom())
         {   /* useful for development */ }
 
-        public EnchantedScroll(Item item)
+        public EnchantedScroll(Item? item)
             : base()
         {
             if (item != null && !IsValidType(item))
@@ -250,7 +250,7 @@ namespace Server.Items
 
             protected override void OnTarget(Mobile from, object targeted)
             {
-                Item item = (targeted as Item);
+                Item? item = (targeted as Item);
                 if (item != null)
                 {
                     if (IsValidType(item))
@@ -258,7 +258,7 @@ namespace Server.Items
                         EnchantedScroll scroll = new EnchantedScroll(null);
                         if (scroll != null)
                         {
-                            Utility.ReplaceItem(scroll, item, copy_properties: false);
+                            Utility.ReplaceItem(scroll, item, copyProperties: false);
                             scroll.Item = item;
                         }
                     }
@@ -270,7 +270,7 @@ namespace Server.Items
             }
         }
 
-        public static EnchantedScroll Find(Mobile from, Type type)
+        public static EnchantedScroll? Find(Mobile from, Type type)
         {
             Container pack = from.Backpack;
 
@@ -345,7 +345,7 @@ namespace Server.Items
 
         public Item Extract()
         {
-            Item item = m_Item;
+            Item? item = m_Item;
 
             if (item != null)
             {

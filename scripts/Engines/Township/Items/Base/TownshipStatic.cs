@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -207,16 +207,6 @@ namespace Server.Township
         public override void OnDoubleClick(Mobile from)
         {
             // 9/8/23, Yoar: Disabled double-click attack
-#if false
-            if (HitsMax > 0 && from.Warmode && TownshipItemHelper.LikelyDamager(from, this))
-            {
-                if (!from.InRange(this.GetWorldLocation(), 2))
-                    from.LocalOverheadMessage(MessageType.Regular, 0x3B2, 1019045); // I can't reach that.
-                else
-                    TownshipItemHelper.BeginDamageDelayed(from, this);
-            }
-            else
-#endif
             {
                 base.OnDoubleClick(from);
             }
@@ -252,7 +242,7 @@ namespace Server.Township
 
         bool IStoneEngravable.OnEngrave(Mobile from, string text)
         {
-            Regions.TownshipRegion tsr = Regions.TownshipRegion.GetTownshipAt(this);
+            Regions.TownshipRegion? tsr = Regions.TownshipRegion.GetTownshipAt(this);
 
             if (tsr == null || tsr.TStone == null || !tsr.TStone.ItemRegistry.Table.ContainsKey(this) || !tsr.TStone.HasAccess(from, TownshipAccess.Ally))
             {
@@ -308,7 +298,7 @@ namespace Server.Township
                         {
                             if (version < 0x81)
                             {
-                                Mobile owner = reader.ReadMobile();
+                                Mobile? owner = reader.ReadMobile();
                                 DateTime placed = reader.ReadDateTime();
 
                                 ValidationQueue<TownshipStatic>.Enqueue(this, new object[] { owner, placed });

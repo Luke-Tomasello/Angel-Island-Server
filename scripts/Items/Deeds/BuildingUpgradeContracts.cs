@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -19,8 +19,28 @@
  *
  ***************************************************************************/
 
+/*
+ * Storage Upgrade Contracts
+ * -------------------------
+ * These contracts upgrade a house *up to* the storage values specified by the deed.
+ *
+ * They are not additive bonuses.
+ *
+ * Example:
+ *   If a house currently has 300 lockdowns and a 500-lockdown contract is applied,
+ *   the house gains only the additional 200 lockdowns needed to reach 500 total.
+ *
+ * Applying a contract equal to or below the house's current storage values has no effect.
+ *
+ * This design prevents stacking multiple smaller contracts to exceed intended storage tiers.
+ */
+
 /* Items/Deeds/BuildingUpgradeContracts.cs
  * ChangeLog:
+ *  10/15/26, Adam
+ *      The lockbox gap is now measured against the storage tier only (MaxLockboxes - PermitLockboxes).
+ *      Building permits stack on top of the storage tier and are no longer swallowed by a later upgrade.
+ *      Lockdowns and secures are unchanged. Reapplying the same or a lower tier still adds nothing.
  *  1/21/23, Yoar
  *      Added deluxe upgrade contracts. For towers/keeps/castles only.
  *	11/5/21, Yoar
@@ -138,18 +158,20 @@ namespace Server.Items
 
         protected override void OnTarget(Mobile from, object target) // Override the protected OnTarget() for our feature
         {
-            HouseSign sign = target as HouseSign;
+            HouseSign? sign = target as HouseSign;
 
             if (sign != null && sign.Structure != null && !sign.Structure.Deleted)
             {
                 BaseHouse house = sign.Structure;
-                LogHelper Logger = null;
+                LogHelper? Logger = null;
 
                 try
                 {
                     int addLockDowns = (int)m_Deed.Lockdowns - house.MaxLockDowns;
-                    int addSecures = (int)m_Deed.Secures - house.MaxSecures;
-                    int addLockboxes = (int)m_Deed.LockBoxes - house.MaxLockboxes;
+                    int addSecures = (int)m_Deed.Secures - house.MaxSecureContainers;
+                    // building permit lockboxes stack on top of the storage tier, so the tier gap excludes them
+                    int permitLockboxes = Math.Max(0, Math.Min(house.PermitLockboxes, house.BonusLockboxes));
+                    int addLockboxes = (int)m_Deed.LockBoxes - (house.MaxLockboxes - permitLockboxes);
 
                     if (house.IsFriend(from) == false)
                     {
@@ -188,8 +210,12 @@ namespace Server.Items
                         if (addLockboxes > 0)
                             house.BonusLockboxes += addLockboxes;
 
-                        house.UpgradeCosts += m_Deed.Price;
-                        from.SendMessage(string.Format("Upgrade complete with: {0} lockdowns, {1} secures, and {2} lockboxes.", house.MaxLockDowns, house.MaxSecures, house.MaxLockboxes));
+                        // Old code: house.UpgradeCosts += m_Deed.Price;
+                        // We need to calulate what the player actually pays, not the embedded deed price, since siege has 3x pricing.
+                        // the deed's cost is added to the houses upgrades, which is later refunded.
+                        // for siege style shard (3x pricing), we need to adjust the deed cost here
+                        house.UpgradeCosts += (uint)Mobiles.BaseVendor.PlayerPays(m_Deed.GetType());
+                        from.SendMessage(string.Format("Upgrade complete with: {0} lockdowns, {1} secures, and {2} lockboxes.", house.MaxLockDowns, house.MaxSecureContainers, house.MaxLockboxes));
                         m_Deed.Delete();
                     }
                 }
@@ -210,11 +236,11 @@ namespace Server.Items
         }
     }
 
-    /*
-	 * Class 1     500     3     3     82,562   - modest 
-	 * Class 2     900     6     4     195,750  - moderate 
-	 * Class 3     1300    9     5     498,900  - premium 
-	 * Class 4     1950    14    7     767,100  - extravagant 
+    /*             lckdns  scurs lboxes price
+	 * Class 1     500     3     3      82,562   - modest 
+	 * Class 2     900     6     4      195,750  - moderate 
+	 * Class 3     1300    9     5      498,900  - premium 
+	 * Class 4     1950    14    7      767,100  - extravagant 
 	 */
     public class ModestUpgradeContract : BaseUpgradeContract
     {

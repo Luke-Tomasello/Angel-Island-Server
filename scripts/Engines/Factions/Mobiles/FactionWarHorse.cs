@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -91,7 +91,7 @@ namespace Server.Factions
 
         public override void OnDoubleClick(Mobile from)
         {
-            PlayerState pl = PlayerState.Find(from);
+            PlayerState? pl = PlayerState.Find(from);
 
             if (pl == null)
                 from.SendLocalizedMessage(1010366); // You cannot mount a faction war horse!

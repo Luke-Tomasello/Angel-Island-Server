@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -31,7 +31,7 @@ using System;
 
 namespace Server
 {
-#if true
+
     public enum Expansion
     {
         None,
@@ -46,9 +46,11 @@ namespace Server
         SA,     // Stygian Abyss was released in September 2009 and features a new playable Gargoyle Race as well as the Stygian Abyss itself
         HS,      // Released in October 2010, Sosaria was beset with pirates, cannon, new ships and even a floating village. 
         // custom
-        AI,
-        SP,
-        REN
+        AngelIsland,    // Angel Island
+        SiegePerilous,  // Siege Perilous
+        Mortalis,       // Mortalis
+        Seasons,        // Seasons shard
+        Upheaval,       // Upheaval shard
     }
 
     [Flags]
@@ -101,9 +103,7 @@ namespace Server
         ExpansionML = ExpansionSE | ML | NinthAge,
         ExpansionSA = ExpansionML | SA | Gothic | Rustic,
         ExpansionHS = ExpansionSA | HS,
-        // custom
-        ExpansionAI = ExpansionLBR,
-        ExpansionSP = ExpansionT2A,
+
         //ExpansionT2A | HS,        // old ancient wyrm
         //ExpansionT2A | SE,        // old ancient wyrm
         //ExpansionT2A | AOS,       // old ancient wyrm
@@ -116,7 +116,12 @@ namespace Server
         //ExpansionT2A | UOR,       // new ancient wyrm
         //UOTD,//UOR,//ExpansionT2A,// old ancient wyrm
         //ExpansionAI,              // new ancient wyrm
-        ExpansionREN = ExpansionAI,
+        // custom
+        AngelIsland = ExpansionLBR,     // Angel Island
+        SiegePerilous = ExpansionT2A,   // Siege Perilous
+        Mortalis = ExpansionT2A,        // Mortalis
+        Seasons = ExpansionT2A,         // Seasons
+        Upheaval = ExpansionT2A,        // Upheaval
     }
 
     [Flags]
@@ -124,7 +129,15 @@ namespace Server
     {
         None = 0x00000000,
         Unk1 = 0x00000001,
+
+        // WHY: ClassicUO gates its graceful logout flow (sending the 0xD1 LogoutNotification packet)
+        // behind this character-list flag. If we do not advertise this bit, the client may simply
+        // close the socket on "Log Out", and the server cannot distinguish an intentional logout
+        // from an unexpected disconnect (critical on a mortal shard with Disconnect Protection).
+        // This flag is used here as a client-behavior/capability toggle, not as server permission
+        // to overwrite any client configuration.
         OverwriteConfigButton = 0x00000002,
+
         OneCharacterSlot = 0x00000004,
         ContextMenus = 0x00000008,
         SlotLimit = 0x00000010,
@@ -140,21 +153,27 @@ namespace Server
         NewMovementSystem = 0x00004000,
         NewFeluccaAreas = 0x00008000,
 
-        ExpansionNone = ContextMenus, //
-        ExpansionT2A = ContextMenus, //
-        ExpansionUOR = ContextMenus, // None (unused by AI Renaissance, we have our own version)
-        ExpansionUOTD = ContextMenus, //
-        ExpansionLBR = ContextMenus, //
-        ExpansionAOS = ContextMenus | AOS,
-        ExpansionSE = ExpansionAOS | SE,
-        ExpansionML = ExpansionSE | ML,
-        ExpansionSA = ExpansionML,
-        ExpansionHS = ExpansionSA,
+        // NOTE: We include OverwriteConfigButton in every expansion preset so all shards consistently
+        // advertise the graceful logout capability to clients (ClassicUO: enables sending 0xD1 before
+        // disconnect). This improves reliability of Disconnect Protection discrimination.
+        ExpansionNone = ContextMenus | OverwriteConfigButton, //
+        ExpansionT2A = ContextMenus | OverwriteConfigButton, //
+        ExpansionUOR = ContextMenus | OverwriteConfigButton, // 
+        ExpansionUOTD = ContextMenus | OverwriteConfigButton, //
+        ExpansionLBR = ContextMenus | OverwriteConfigButton, //
+        ExpansionAOS = ContextMenus | AOS | OverwriteConfigButton,
+        ExpansionSE = ExpansionAOS | SE | OverwriteConfigButton,    // 
+        ExpansionML = ExpansionSE | ML | OverwriteConfigButton,
+        ExpansionSA = ExpansionML | OverwriteConfigButton,
+        ExpansionHS = ExpansionSA | OverwriteConfigButton,
+
         // custom
         // we may want to revisit these definitions.
-        ExpansionAI = ExpansionLBR,
-        ExpansionSP = (ExpansionT2A & ~ContextMenus) | OneCharacterSlot,
-        ExpansionREN = ExpansionAI & ~ContextMenus,
+        AngelIsland = ExpansionLBR,
+        SiegePerilous = (ExpansionT2A & ~ContextMenus) | OneCharacterSlot,
+        Mortalis = ExpansionLBR | OneCharacterSlot,
+        Seasons = ExpansionLBR,
+        Upheaval = ExpansionLBR | OneCharacterSlot,
     }
 
     public class ExpansionInfo
@@ -169,7 +188,7 @@ namespace Server
             new ExpansionInfo( 1, "The Second Age",new DateTime(1998, 10, 1),           ClientFlags.Felucca,
                 FeatureFlags.ExpansionT2A,  CharacterListFlags.ExpansionT2A,        0x0000 ),
             // note, we don't use this Renaissance, but instead the AI version below, #12
-            new ExpansionInfo( 2, "Renaissance_unused",new DateTime(2000, 5, 4),        ClientFlags.Trammel,
+            new ExpansionInfo( 2, "Renaissance",new DateTime(2000, 5, 4),        ClientFlags.Trammel,
                 FeatureFlags.ExpansionUOR,  CharacterListFlags.ExpansionUOR,        0x0000 ),
             new ExpansionInfo( 3, "Third Dawn",new DateTime(2001, 3, 7),                ClientFlags.Ilshenar,
                 FeatureFlags.ExpansionUOTD, CharacterListFlags.ExpansionUOTD,       0x0000 ),
@@ -185,14 +204,23 @@ namespace Server
                 FeatureFlags.ExpansionSA,   CharacterListFlags.ExpansionSA,         0xD02C0 ), // 0x20 | 0x80 | 0x200 | 0x10000 | 0x40000 | 0x80000
             new ExpansionInfo( 9, "High Seas",new DateTime(2010, 10, 12),              new ClientVersion( "7.0.9.0" ),
                 FeatureFlags.ExpansionHS,   CharacterListFlags.ExpansionHS,         0xD02C0 ), // 0x20 | 0x80 | 0x200 | 0x10000 | 0x40000 | 0x80000
+            
             // custom expansions below this line: RunUO uses the order of these to determine Expansion Features, i.e., does Expansion Support X
             //  We added Publish Date to act as a better measure of comparison. Comparisons contained in Core. I.e., Core.ML)
             new ExpansionInfo( 10, "Angel Island", new DateTime(2002, 1, 9),             ClientFlags.Felucca,
-                FeatureFlags.ExpansionAI,   CharacterListFlags.ExpansionAI,         0x2E0 ),
+                FeatureFlags.AngelIsland,   CharacterListFlags.AngelIsland,         0x2E0 ),
+
             new ExpansionInfo( 11, "Siege Perilous",new DateTime(2000, 5, 4),            ClientFlags.Felucca,
-                FeatureFlags.ExpansionSP,   CharacterListFlags.ExpansionSP,         0x2E0 ),
-            new ExpansionInfo( 12, "Renaissance",new DateTime(2000, 5, 4),               ClientFlags.Felucca,
-                FeatureFlags.ExpansionREN,  CharacterListFlags.ExpansionREN,        0x2E0 ),
+                FeatureFlags.SiegePerilous,   CharacterListFlags.SiegePerilous,         0x2E0 ),
+
+            new ExpansionInfo( 12, "Mortalis",new DateTime(2000, 5, 4),               ClientFlags.Felucca,
+                FeatureFlags.Mortalis,  CharacterListFlags.Mortalis,        0x2E0 ),
+
+            new ExpansionInfo( 13, "Seasons",new DateTime(2000, 5, 4),               ClientFlags.Felucca,
+                FeatureFlags.Seasons,  CharacterListFlags.Seasons,        0x2E0 ),
+
+            new ExpansionInfo( 14, "Upheaval",new DateTime(2000, 5, 4),               ClientFlags.Felucca,
+                FeatureFlags.Upheaval,  CharacterListFlags.Upheaval,        0x2E0 ),
         };
 
         private string m_Name;
@@ -202,16 +230,21 @@ namespace Server
         private FeatureFlags m_SupportedFeatures;
         private CharacterListFlags m_CharListFlags;
 
-        private ClientVersion m_RequiredClient; // Used as an alternative to the flags
+        private ClientVersion? m_RequiredClient; // Used as an alternative to the flags
 
         public string Name { get { return m_Name; } }
         public int ID { get { return m_ID; } }
         public DateTime Publish { get { return m_Publish; } }
         public ClientFlags ClientFlags { get { return m_ClientFlags; } }
         public FeatureFlags SupportedFeatures { get { return m_SupportedFeatures; } }
-        public CharacterListFlags CharacterListFlags { get { return m_CharListFlags; } }
+        public CharacterListFlags CharacterListFlags
+        {
+            get { return m_CharListFlags; }
+            set => m_CharListFlags = value;
+        }
+
         public int CustomHousingFlag { get { return m_CustomHousingFlag; } }
-        public ClientVersion RequiredClient { get { return m_RequiredClient; } }
+        public ClientVersion? RequiredClient { get { return m_RequiredClient; } }
 
         public ExpansionInfo(int id, string name, DateTime publishDate, ClientFlags clientFlags, FeatureFlags supportedFeatures, CharacterListFlags charListFlags, int customHousingFlag)
         {
@@ -250,103 +283,20 @@ namespace Server
             return m_Table[v];
         }
 
-        public static ExpansionInfo CurrentExpansion { get { return GetInfo(Core.Expansion); } }
-
-        public override string ToString()
+        public static ExpansionInfo CurrentExpansion
         {
-            return m_Name;
-        }
-    }
-#else
-public enum Expansion
-{
-None,
-/*
-T2A,
-UOR,
-LBR,
-UOTD,
-*/
-        AOS,
-        SE,
-        ML,
-        reserved1,
-        reserved2,
-        AngelIsland,
-        UOSiegePerilous
-    }
-    public class ExpansionInfo
-    {
-        private string m_Name;
-        private int m_ID, m_NetStateFlag, m_SupportedFeatures, m_CharListFlags, m_CustomHousingFlag;
-
-        private ClientVersion m_RequiredClient; //Used as an alternative to the flags
-
-        public string Name { get { return m_Name; } }
-        public int ID { get { return m_ID; } }
-        public int NetStateFlag { get { return m_NetStateFlag; } }
-        public int SupportedFeatures { get { return m_SupportedFeatures; } }
-        public int CharacterListFlags { get { return m_CharListFlags; } }
-        public int CustomHousingFlag { get { return m_CustomHousingFlag; } }
-        public ClientVersion RequiredClient { get { return m_RequiredClient; } }
-
-        public ExpansionInfo(int id, string name, int netStateFlag, int supportedFeatures, int charListFlags, int customHousingFlag)
-        {
-            m_Name = name;
-            m_ID = id;
-            m_NetStateFlag = netStateFlag;
-            m_SupportedFeatures = supportedFeatures;
-            m_CharListFlags = charListFlags;
-            m_CustomHousingFlag = customHousingFlag;
-        }
-
-        public ExpansionInfo(int id, string name, ClientVersion requiredClient, int supportedFeatures, int charListFlags, int customHousingFlag)
-        {
-            m_Name = name;
-            m_ID = id;
-            m_SupportedFeatures = supportedFeatures;
-            m_CharListFlags = charListFlags;
-            m_CustomHousingFlag = customHousingFlag;
-            m_RequiredClient = requiredClient;
-        }
-
-        public static ExpansionInfo[] Table { get { return m_Table; } }
-        private static ExpansionInfo[] m_Table = new ExpansionInfo[]
+            get
             {
-                //PIX: we need to specify our stuff, not what OSI defines
-				new ExpansionInfo( 0, "None"           , 0x00,                             0x0003, 0x008, 0x00 ),
-                new ExpansionInfo( 1, "Age of Shadows"  , 0x08,                             0x801F, 0x028, 0x20 ),
-                new ExpansionInfo( 2, "Samurai Empire"  , 0x10,                             0x805F, 0x0A8, 0x60 ),	//0x40 | 0x20 = 0x60
-				new ExpansionInfo( 3, "Mondain's Legacy", new ClientVersion( "5.0.0a" ),    0x82DF, 0x1A8, 0x2E0 ),	//0x280 | 0x60 = 0x2E0
-                new ExpansionInfo( 4, "Reserved1"       , 0x00,                             0x82DF, 0x1A8, 0x2E0 ),
-                new ExpansionInfo( 5, "Reserved2"       , 0x00,                             0x82DF, 0x1A8, 0x2E0 ),
-                new ExpansionInfo( 6, "Angel Island"    , 0x00,                             0x81DF, 0x008, 0x2E0 ),
-                new ExpansionInfo( 7, "Siege Perilous"  , 0x00,                             0x81DF, 0x008, 0x2E0 )
+                return GetInfo(Core.Expansion);
 
-				//0x200 + 0x400 for KR?
-			};
+            }
 
-        public static ExpansionInfo GetInfo(Expansion ex)
-        {
-            return GetInfo((int)ex);
         }
-
-        public static ExpansionInfo GetInfo(int ex)
-        {
-            int v = (int)ex;
-
-            if (v < 0 || v >= m_Table.Length)
-                v = 0;
-
-            return m_Table[v];
-        }
-
-        public static ExpansionInfo CurrentExpansion { get { return GetInfo(Core.Expansion); } }
 
         public override string ToString()
         {
             return m_Name;
         }
     }
-#endif
+
 }

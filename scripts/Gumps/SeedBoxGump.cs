@@ -4,8 +4,8 @@
  *   portions copyright      : (C) The RunUO Software Team
  *   email                   : info@runuo.com
  *   
- *   Angel Island UO Shard   : March 25, 2004
- *   portions copyright      : (C) 2004-2024 Tomasello Software LLC.
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
  *
  ***************************************************************************/
@@ -41,7 +41,6 @@ using Server.Engines.Plants;
 using Server.Gumps;
 using Server.Items;
 using Server.Network;
-using System;
 
 namespace Custom.Gumps
 {
@@ -134,7 +133,7 @@ namespace Custom.Gumps
 
             AddLabel(480, 420, 2100, string.Format("Total Seeds: {0}", m_SeedBox.SeedCount()));
 
-            SeedBox.TypeInfo typeInfo = m_SeedBox.GetTypeInfo(m_TypeIndex);
+            SeedBox.TypeInfo? typeInfo = m_SeedBox.GetTypeInfo(m_TypeIndex);
 
             if (typeInfo != null)
             {
@@ -145,7 +144,7 @@ namespace Custom.Gumps
 
         private void AddColorButton(int gridIndex, int hueIndex)
         {
-            SeedBox.HueInfo hueInfo = SeedBox.GetHueInfo(hueIndex);
+            SeedBox.HueInfo? hueInfo = SeedBox.GetHueInfo(hueIndex);
 
             if (hueInfo == null)
                 return;
