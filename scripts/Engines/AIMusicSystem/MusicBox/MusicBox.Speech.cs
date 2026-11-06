@@ -22,10 +22,13 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Speech.cs
  * Changelog
- *  10/30/26, Adam (2026 modernization, 10/29/26 to 10/30/26)
+ *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
  *      The speech interface: OnSpeech dispatches through the command table (MusicBox.Commands.cs; staff commands in
  *      MusicBox.StaffCommands.cs).
  *      Split from MusicBox.cs; its history before 10/29/26 is in MusicBox.cs.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: staff messages.
  */
 
 using Server.Accounting;
@@ -33,7 +36,6 @@ using Server.Commands;
 using Server.ContextMenus;
 using Server.Diagnostics;
 using Server.Engines;
-using Server.Engines.DataRecorder;
 using Server.Gumps;
 using Server.Misc;
 using Server.Mobiles;
@@ -145,7 +147,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return Array.Empty<string>(); // Fail closed.
             }
         }
@@ -202,7 +204,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 wasNamed = false;
                 return false;
             }
@@ -285,7 +287,7 @@ namespace Server.Items
                         "You have initiated music in another context. You will need to cancel that or wait for it to finish.");
 
                     if (Core.Debug)
-                        Utility.SendSystemMessage(e.Mobile, 5,
+                        AimsHost.Current.SendSystemMessage(e.Mobile, 5,
                             "Debug message: music not started because this player has initiated music elsewhere.");
 
                     return;
@@ -303,7 +305,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         #endregion Text Interface

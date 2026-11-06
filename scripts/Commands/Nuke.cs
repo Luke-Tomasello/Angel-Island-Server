@@ -21,6 +21,9 @@
 
 /* Scripts/Commands/Nuke.cs
  * CHANGELOG:
+ *  11/6/2026, Adam (ReplaceAwardInstruments)
+ *      Reads the old award instrument's place and year from RazorInstrument.LegacyAwardPlace / LegacyAwardYear
+ *      (Place_obsolete / Year_obsolete are gone; the values come from the save the world was loaded from).
  *  11/5/2026, Adam (DressAdam)
  *      Add [Nuke DressAdam: dresses the caller (Owner only) in Adam's outfit (captured by the AdamOutfit harness). Gear worn
  *      or held goes to the backpack, else the bank box, else it is deleted; nothing is dropped.
@@ -11841,8 +11844,8 @@ namespace Server.Commands
                                 continue;
                         }
                         // okay, copy over the other important info
-                        ai.Place = ax.Place_obsolete;
-                        ai.Year = ax.Year_obsolete;
+                        ai.Place = ax.LegacyAwardPlace;
+                        ai.Year = ax.LegacyAwardYear;
                         ai.Author = ax.Author;
                         ai.SongFile = ax.SongFile;
                         ai.SongName = ax.SongName;

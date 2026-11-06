@@ -22,10 +22,16 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.PlayContext.cs
  * Changelog
- *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
+ *  11/6/26, Adam (2026 modernization, 10/29/26 to 11/6/26)
  *      PlayContext: the play list of a music box and its position. NowPlaying selects the track before it syncs the
  *      position, so Next and Previous continue from it. A pending track is in the play list of the one who submitted it.
+ *      The box deletes its own temporary copies once they can't play again (a song ended, a copy replaced, the context
+ *      dropped); before, only Angel Island's cron removed them, and a stock server kept every one. Replay: a song again
+ *      from a fresh copy (Repeat played the old copy again).
  *      Split from MusicBox.cs; its history before 10/29/26 is in MusicBox.cs.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsUtil: MakeTempSheet (the box's temporary playback copy).
  */
 
 using Server.Accounting;
@@ -33,7 +39,6 @@ using Server.Commands;
 using Server.ContextMenus;
 using Server.Diagnostics;
 using Server.Engines;
-using Server.Engines.DataRecorder;
 using Server.Gumps;
 using Server.Misc;
 using Server.Mobiles;
@@ -146,12 +151,15 @@ namespace Server.Items
 
             private RolledUpSheetMusic? SetNowPlaying(RolledUpSheetMusic? rsm)
             {
+                RolledUpSheetMusic? previous = m_nowPlaying;
                 try
                 {
                     if (rsm != null)
                     {
                         // Make a temporary instance for playback (do not play directly off the repository item).
-                        m_nowPlaying = (RolledUpSheetMusic)Utility.MakeTempItem(rsm);
+                        m_nowPlaying = AimsUtil.MakeTempSheet(rsm);
+                        if (m_nowPlaying != null)
+                            m_copies.Add(m_nowPlaying);
                     }
                     else
                     {
@@ -162,10 +170,61 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                     m_nowPlaying = null;
                     return null;
                 }
+                finally
+                {
+                    if (!ReferenceEquals(previous, m_nowPlaying))
+                        Release(previous);              // replaced: it never plays again
+                }
+            }
+
+            // The temporary copies this context made (by reference: copies of one song are Equal). Each plays at most one
+            //  song and is deleted once it can't play again: when its song has ended (MusicBox.PlayMusic), or when it is
+            //  replaced or its context dropped while it isn't playing. So no copy outlives its use on any shard
+            //  (AimsHost.MarkTemporary is only the shard's safety net).
+            private readonly List<RolledUpSheetMusic> m_copies = new List<RolledUpSheetMusic>();
+
+            public bool Owns(RolledUpSheetMusic? rsm) => rsm != null && m_copies.Exists(c => ReferenceEquals(c, rsm));
+
+            // deletes a copy of ours unless it is still playing (or draining): then its song's end releases it
+            public void Release(RolledUpSheetMusic? copy)
+            {
+                if (copy == null || !Owns(copy))
+                    return;
+                if (!copy.Deleted && copy.CurrentPerformance.State != RazorInstrument.PerformanceState.Completed)
+                    return;
+
+                m_copies.RemoveAll(c => ReferenceEquals(c, copy));
+                // deferred: a song's end is raised from inside the copy's own performance
+                Timer.DelayCall(TimeSpan.Zero, () =>
+                {
+                    if (!copy.Deleted && copy.CurrentPerformance.State == RazorInstrument.PerformanceState.Completed)
+                        copy.Delete();
+                });
+            }
+
+            // the context is dropped (another listener, the box deleted): its copy goes too, now or when its song ends
+            public void ReleaseNowPlaying()
+            {
+                Release(m_nowPlaying);
+            }
+
+            // the song now playing (or last played) again, from a fresh copy (a copy plays one song); the copy itself if
+            //  its track has left the play list
+            public RolledUpSheetMusic? Replay()
+            {
+                RolledUpSheetMusic? now = m_nowPlaying;
+                if (now == null)
+                    return null;
+
+                RolledUpSheetMusic? track = m_playList.Find(t => t.Equals(now));
+                if (track != null)
+                    return NowPlaying(track);
+
+                return now.Deleted ? null : now;
             }
 
             public RolledUpSheetMusic Next()
@@ -184,7 +243,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                     return SetNowPlaying(null);
                 }
             }
@@ -213,7 +272,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                     return SetNowPlaying(null);
                 }
             }
@@ -229,14 +288,14 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                     return null;
                 }
             }
 
             public void Shuffle()
             {
-                Utility.Shuffle(m_playList);
+                AimsUtil.Shuffle(m_playList);
 
                 int temp = Sync();
                 if (temp > -1)
@@ -382,7 +441,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
             }
         }

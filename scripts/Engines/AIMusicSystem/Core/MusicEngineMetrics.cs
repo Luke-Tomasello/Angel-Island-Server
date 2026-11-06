@@ -21,12 +21,16 @@
 
 /* Scripts/Engines/AIMusicSystem/Core/MusicEngineMetrics.cs
  * ChangeLog
- *  10/27/26, Adam (2026 modernization, 10/26/26 to 10/27/26)
+ *  11/6/26, Adam (2026 modernization, 10/26/26 to 11/6/26)
  *      Created. Measures the music engine without changing playback: note and tick lateness, timer and script
  *      activity, main-thread time, sessions, drift per engine run (actual against scored time) beside a plain 100 ms
  *      reference probe, and sound packets; for MusicLoadTest, the AI's scheduling, main-thread CPU and a stall log.
  *      Anchored runs keep their own drift and re-anchor counts. A summary per 5-minute window goes to
  *      Logs/MusicEngine.log ([MusicMetrics report closes a window now).
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: the Logs folder, and whether MusicEngine.log is written (MusicEngineLog; measuring goes on either
+ *      way). Angel Island only (#if ANGEL_ISLAND): the timer queue depth, cron's recent tasks and the AI mux observer.
  */
 
 using Server.Diagnostics;
@@ -318,7 +322,11 @@ namespace Server.Commands
                 }
             }
             int depth;
+#if ANGEL_ISLAND
             lock (Timer.Queue) { depth = Timer.Queue.Count; }
+#else
+            depth = 0;  // the timer queue's depth: Angel Island's core only
+#endif
             s_window.QueueSum += depth;
             s_window.QueueSamples++;
             if (depth > s_window.QueueMax) s_window.QueueMax = depth;
@@ -328,8 +336,12 @@ namespace Server.Commands
         }
         private static string CronRecentTasks()
         {
+#if ANGEL_ISLAND
             try { return Server.Engines.CronScheduler.Cron.GetRecentTasks(); }
             catch (Exception ex) { return "unavailable: " + ex.Message; }
+#else
+            return "unavailable";
+#endif
         }
         #endregion Reference probe
 
@@ -345,12 +357,16 @@ namespace Server.Commands
             Held = true;
             try { s_mainThreadId = (int)GetCurrentThreadId(); }     // called on the main thread (a command or a timer)
             catch { s_mainThreadId = 0; }
+#if ANGEL_ISLAND
             Server.Mobiles.BaseAI.MuxObserver = MuxSample;
+#endif
             Activity();
         }
         public static void EndHold()
         {
+#if ANGEL_ISLAND
             Server.Mobiles.BaseAI.MuxObserver = null;
+#endif
             Held = false;
         }
         // the main thread's processor time (null when it cannot be read)
@@ -367,7 +383,7 @@ namespace Server.Commands
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
             return null;
         }
@@ -378,7 +394,7 @@ namespace Server.Commands
         public static void Initialize()
         {
             EventSink.WorldSave += new WorldSaveEventHandler(OnWorldSave);
-            Server.CommandSystem.Register("MusicMetrics", AccessLevel.Administrator, new CommandEventHandler(MusicMetrics_OnCommand));
+            CommandSystem.Register("MusicMetrics", AccessLevel.Administrator, new CommandEventHandler(MusicMetrics_OnCommand));
         }
         private static void OnWorldSave(WorldSaveEventArgs e)
         {
@@ -397,9 +413,10 @@ namespace Server.Commands
             Activity();                                             // measure from this mark on
             Window w = s_window;
             Report(label);
-            e.Mobile.SendMessage("Music engine window closed ({0}, {1:0} s): notes {2}, probe {3}, drift {4}. Details in Logs/MusicEngine.log.",
+            e.Mobile.SendMessage("Music engine window closed ({0}, {1:0} s): notes {2}, probe {3}, drift {4}. {5}",
                 label, (DateTime.UtcNow - w.Start).TotalSeconds, w.Notes,
-                w.Probe.Count == 0 ? "none" : string.Format("avg {0:0.0} ms, max {1:0} ms", w.Probe.Average, w.Probe.Max), w.Drift);
+                w.Probe.Count == 0 ? "none" : string.Format("avg {0:0.0} ms, max {1:0} ms", w.Probe.Average, w.Probe.Max), w.Drift,
+                AimsHost.Current.MusicEngineLog ? "Details in Logs/MusicEngine.log." : "(MusicEngine.log is off on this shard.)");
         }
         #endregion Command
 
@@ -409,7 +426,7 @@ namespace Server.Commands
             if (s_reportTimer == null || !s_reportTimer.Running)
             {
                 s_reportTimer = Timer.DelayCall(ReportInterval, ReportInterval, OnReport);
-                Utility.Monitor.DebugOut("Music engine: measuring (Phase 4 Step 4a); a summary every " + ReportInterval.TotalMinutes + " minutes while music plays", ConsoleColor.Cyan);
+                AimsLog.DebugOut("Music engine: measuring (Phase 4 Step 4a); a summary every " + ReportInterval.TotalMinutes + " minutes while music plays", ConsoleColor.Cyan);
             }
             StartProbe();
         }
@@ -423,7 +440,7 @@ namespace Server.Commands
                 s_reportTimer = null;
                 StopProbe();
                 s_window = new Window();
-                Utility.Monitor.DebugOut("Music engine: idle; measurements paused", ConsoleColor.Cyan);
+                AimsLog.DebugOut("Music engine: idle; measurements paused", ConsoleColor.Cyan);
                 return;
             }
             Report("window");
@@ -461,22 +478,25 @@ namespace Server.Commands
                     w.MuxTicks, w.Mux, w.DMuxMs, w.DMuxMs / (seconds * 10.0), w.Thoughts, w.Thoughts / seconds, w.ActiveAverage, w.ActiveMax, w.DMuxMaxMs);
             if (w.CpuPercent is double percent)
                 text += string.Format("; main-thread CPU {0:0.00}%", percent);
-            Utility.Monitor.DebugOut(text, ConsoleColor.Cyan);
+            AimsLog.DebugOut(text, ConsoleColor.Cyan);
             AppendLog(text);
             return text;
         }
-        // one line in Logs/MusicEngine.log
+        // one line in Logs/MusicEngine.log (unless the shard turns it off: AimsHost.MusicEngineLog)
         public static void AppendLog(string text)
         {
+            if (!AimsHost.Current.MusicEngineLog)
+                return;
+
             try
             {
-                string path = Path.Combine(Core.LogsDirectory, "MusicEngine.log");
-                Utility.EnsurePath(path);
+                string path = Path.Combine(AimsHost.Current.LogsDirectory, "MusicEngine.log");
+                AimsUtil.EnsurePath(path);
                 File.AppendAllText(path, string.Format("{0:u} {1}{2}", DateTime.UtcNow, text, Environment.NewLine));
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         #endregion Reporting

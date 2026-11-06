@@ -22,11 +22,15 @@
 
 /* Scripts\Engines\AIMusicSystem\Library\MusicLibrary.cs
  * Changelog
- *  10/30/26, Adam (2026 modernization, 10/29/26 to 10/30/26)
+ *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
  *      The global music library, moved out of MusicBox unchanged but for the names (GlobalMusicRepository is
  *      Repository): every approved player-composed track and the review queue, the database records, Saves/Music.bin
  *      (its format unchanged), the 5-minute maintenance, FindSong and [DupeMusic. Anything can use it without a music
  *      box. Moved from MusicBox (MusicBox.Library.cs); its history before 10/29/26 is in MusicBox.cs.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: account GUIDs and staff copies ([DupeMusic). Title matching uses AimsUtil.LongestCommonSubstring (it
+ *      used the Intelligent Dialogue System's rolling hash; the same scores).
  */
 
 using Server.Commands;
@@ -161,10 +165,7 @@ namespace Server.Items
 
                     // Identity is account-rooted; PlayerMobile.GUID is the portable identity handle.
                     // Keep MusicInfo.OwnerGUID synchronized with assigned owner.
-                    if (value is PlayerMobile pm && !pm.Deleted && pm.AcctGUID != 0)
-                        m_OwnerGUID = pm.AcctGUID;
-                    else
-                        m_OwnerGUID = 0;
+                    m_OwnerGUID = value is PlayerMobile && !value.Deleted ? AimsHost.Current.AccountGuid(value) : 0;
                 }
             }
             private uint m_OwnerGUID;
@@ -335,7 +336,7 @@ namespace Server.Items
             }
             catch
             {
-                Utility.Monitor.WriteLine("Error reading Saves/Music.bin, using default values...", ConsoleColor.Red);
+                AimsLog.WriteLine("Error reading Saves/Music.bin, using default values...", ConsoleColor.Red);
             }
             finally
             {
@@ -374,7 +375,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                Utility.Monitor.WriteLine("Error writing Saves/Music.bin", ConsoleColor.Red);
+                AimsLog.WriteLine("Error writing Saves/Music.bin", ConsoleColor.Red);
                 Console.WriteLine(ex.ToString());
             }
             finally
@@ -453,7 +454,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         private static void ReviewNotify()
@@ -491,8 +492,6 @@ namespace Server.Items
                 string text = string.Join(' ', title.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
                 text = text.ToLowerInvariant().Trim();
 
-                IntelligentDialogue.RollingHash rh = new IntelligentDialogue.RollingHash();
-
                 KeyValuePair<RolledUpSheetMusic, MusicInfo> globalBest = default;
                 int globalScore = 0;
 
@@ -510,7 +509,7 @@ namespace Server.Items
 
                     haystack = haystack.ToLowerInvariant();
 
-                    int score = rh.FindCommonSubstring(haystack, text).Length;
+                    int score = AimsUtil.LongestCommonSubstring(haystack, text);
 
                     if (score > globalScore)
                     {
@@ -529,7 +528,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 entry = default;
                 return false;
             }
@@ -540,7 +539,7 @@ namespace Server.Items
         public static void Initialize()
         {
             // get staff 'get a copy' of rolled up sheet music
-            Server.CommandSystem.Register("DupeMusic", AccessLevel.Seer, new CommandEventHandler(DupeMusic_OnCommand));
+            CommandSystem.Register("DupeMusic", AccessLevel.Seer, new CommandEventHandler(DupeMusic_OnCommand));
         }
 
         [Usage("[DupeMusic <(partial) song text>")]
@@ -572,23 +571,21 @@ namespace Server.Items
                     return;
                 }
 
-                Item? dupe = Utility.Dupe(rsm);
+                Item? dupe = AimsHost.Current.Dupe(rsm);
                 if (dupe == null || dupe.Deleted)
                 {
                     from.SendMessage("Dupe failed.");
                     return;
                 }
 
-                // Mark staff owned and place in backpack.
-                dupe.SetItemBool(Item.ItemBoolTable.StaffOwned, true);
-
+                // Mark staff owned (AimsHost: the shard may track staff copies) and place in backpack.
                 from.AddToBackpack(dupe);
                 from.SendMessage(string.Format("A copy of {0} has been placed in your backpack. Do not redistribute.", dupe));
-                Utility.TrackStaffOwned(from, dupe);
+                AimsHost.Current.MarkStaffOwned(from, dupe);
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         #endregion Staff

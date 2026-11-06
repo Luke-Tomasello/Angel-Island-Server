@@ -22,13 +22,14 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Notifications.cs
  * Changelog
- *  10/30/26, Adam (2026 modernization, 10/29/26 to 10/30/26)
+ *  11/6/26, Adam (2026 modernization, 10/29/26 to 11/6/26)
  *      Was MusicBox.Library.cs (svn move); the library itself moved to Library\MusicLibrary.cs. What stays is the
  *      music box's own: the "you sold music" notices, the music box registry and its 5-minute timer, and FindSong's
  *      speech form. Split from MusicBox.cs; its history before 10/29/26 is in MusicBox.cs.
+ *      Portable AIMS: a sale goes to the shard through AimsHost.OnMusicSold; "Check the leaderboard!" is said only
+ *      when the shard has one (AimsHost.HasLeaderboard).
  */
 
-using Server.Engines.DataRecorder;
 using Server.Misc;
 using System;
 using System.Collections.Generic;
@@ -111,15 +112,15 @@ namespace Server.Items
                 int credit = 0;
                 MusicLibrary.CalculateSellerData(usm.You, out yourTotalSales, out youSold, out credit);
                 playerNotificationList.Remove(usm);
-                // add gold/points to data recorder / leaderboards
-                DataRecorder.Add(usm.You, RecorderDomain.MusicGold, usm.Gml.Price);
-                DataRecorder.Add(usm.You, RecorderDomain.MusicPoints, 1);
+                // the shard's leaderboards (AimsHost: Angel Island's data recorder: gold and one sale)
+                AimsHost.Current.OnMusicSold(usm.You, usm.Gml.Price);
                 usm.You.SendMessage(54, "You sold music to{0}!", (usm != null && usm.To != null) ? " " + usm.To.Name : "");
                 if (yourTotalSales > competitorTotalSales)
                     usm.You.SendMessage(54, "You have made more profit than anyone else.");
                 else if (youSold > competitorSold)
                     usm.You.SendMessage(54, "You are the best selling composer on the shard.");
-                switch (Utility.Random(5))
+                // the last message only on a shard with a leaderboard
+                switch (Utility.Random(AimsHost.Current.HasLeaderboard ? 5 : 4))
                 {
                     case 0:
                         {

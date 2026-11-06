@@ -105,20 +105,51 @@ Once imported, the composition follows the same process as any other: preview it
 '''[[MidiToAIMS|Download MidiToAIMS and learn how to use it]].'''
 
 === Music Recorder ===
-The Music Recorder captures a Razor performance into a composition book, making it easier to edit than pasting scripts manually.
+The Music Recorder writes a song into a composition book while you perform it. Play your song once, the way you already play it (a Razor script, or typing [play lines and lyrics yourself), and the recorder writes every line into the book, with the pauses between them. You get a composition you can edit, preview, and transcribe into [[Sheet Music]], without copying your script into the book by hand.
 
-# Enter [MusicRecorder start.
-# Play your Razor script.
-# Enter [MusicRecorder stop.
-# Target a blank composition book.
+'''You need:''' a music composition book in your backpack (bards sell them). The recording replaces everything in the book, so use a new one or one you don't need.
 
-A script might contain:
+# Enter '''[MusicRecorder start'''. You are now recording.
+# Perform your song: run your Razor script, or type your [play lines and say your lyrics.
+# Enter '''[MusicRecorder stop'''. You are asked to target a composition book.
+# Target the book. Open it to see your song.
+
+'''What is recorded'''
+* Every [play line you play, as <code>say '[play ...'</code>.
+* Everything you say, as lyrics: <code>say '...'</code>.
+* The time between two lines, as <code>wait</code> (in milliseconds, rounded down to the nearest 100; pauses under 100 milliseconds are left out).
+* Your settings at the top of the book: instrument, Prefetch, NewTimer, Timer, Tempo and ConcertMode. If you change one while recording (for example [play instrument lapharp), the book gets the new setting.
+Only your own lines are recorded, not other players' music or speech.
+
+'''An example.''' Recording this Razor script:
 
  say '[play -e 0.21 -fs b +eh 0.22 -e +eh 0.21 -g b +eh 0.21'
  say '♪ Take my money,'
  wait 1400
+ say '[play -e 0.21 -fs b +eh 0.22'
 
-The recorder captures [play and spoken lyrics, and estimates waits rounded down to the nearest 100 milliseconds. Recording keeps the book's full size, leaving the remaining pages blank for edits; a recording longer than the book is cut off, with a message. Review recorded waits before publishing. If waits are consistently excessive, try another client or assistant; Razor bundled with the Angel Island Launcher has generally been responsive.
+writes this into the book (with the default settings):
+
+ # Instrument: Harp
+ # Prefetch: False
+ # NewTimer: False
+ # Timer: Classic
+ # Tempo: 100
+ # ConcertMode: False
+ say '[play -e 0.21 -fs b +eh 0.22 -e +eh 0.21 -g b +eh 0.21'
+ say '! Take my money,'
+ wait 1400
+ say '[play -e 0.21 -fs b +eh 0.22'
+
+Then add <code># Song:</code> and <code># Author:</code> lines at the top, [[#Preview Without Using Paper|preview]] the book, fix anything you want, and transcribe it.
+
+'''Good to know'''
+* Recorded waits are as your client and assistant sent the lines, so check them before publishing. If they are consistently too long, try another client or assistant; the Razor bundled with the Angel Island Launcher has generally been responsive.
+* A ♪ in a lyric is written as ! (some clients crash on ♪ in a book).
+* A book holds 96 pages (768 lines). A longer recording fills the book, the rest is left out, and you are told. Songs that long are better written with [[#Advanced Composition: Sections and Repeats|sections and repeats]], or across [[#Songs in Several Books|several books]].
+* A recording over 1,024 lines is stopped.
+* [MusicRecorder start again starts a new recording; the one in progress is discarded.
+* After [MusicRecorder stop you are asked for a book until you target one; press Escape (cancel the target) to discard the recording instead.
 
 === Sheet Music ===
 [[Sheet Music]] lets composers transcribe compositions into sheet music that anyone can play, give, or sell. Creating sheet music is also the first step toward adding a song to the Music Box.

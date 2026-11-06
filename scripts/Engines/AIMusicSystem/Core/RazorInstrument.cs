@@ -21,7 +21,7 @@
 
 /* Scripts/Skill Items/Musical Instruments/RazorInstrument.cs
  * ChangeLog
- *  10/30/26, Adam (2026 modernization, 10/23/26 to 10/30/26)
+ *  11/6/26, Adam (2026 modernization, 10/23/26 to 11/6/26)
  *      A song's performance is an object (Performance, returned by StartMusic and StartDeviceMusic) with a State,
  *      Cancel() and Completed, raised exactly once with why it ended; a timer callback of an earlier performance stops
  *      quietly, and a performance whose session is replaced or released ends instead of playing into the new one.
@@ -30,7 +30,14 @@
  *      timer; in an Anchored song the waits keep exact time too. A song's '# Instrument:' takes effect on its first
  *      play. Duplicates no longer keep their source's playback links, and a songless sheet plays nothing (not 'Ride of
  *      the Valkyries'). Five unused settings are gone (MusicChatter, CheckMusicianship, IgnoreDirectives, MinMusicSkill,
- *      PreferredInstrument): Serialize version 8 (a world saved as version 8 needs this build or later to load).
+ *      PreferredInstrument): Serialize version 8. Place_obsolete and Year_obsolete are gone too (the first award
+ *      instruments' place and year; AwardInstrument keeps its own): Serialize version 9, and an older save's values are
+ *      kept, unsaved, for [Nuke ReplaceAwardInstruments (LegacyAwardPlace, LegacyAwardYear). A world saved as version 8
+ *      or 9 needs this build or later to load.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: staff messages. Angel Island only (#if ANGEL_ISLAND): the unstealable, unlootable loot type (else
+ *      blessed) and MusicMotionController.
  *  12/28/23, Adam (PlayerProgressCallback() => MusicConfig[player].Tick)
  *      Pass  a callback to the system player to notify us if the system is still processing notes. 
  *      Since this is called on every tick of the system player, it is our responsibility to limit processing so as to not impact playback.
@@ -81,8 +88,6 @@ namespace Server.Items
         private string m_author = null;
         private string m_songName = null;
         private string? m_songBytes = null;                         // simple song notes
-        private int m_place_obsolete = 0;
-        private int m_year_obsolete = 0;
         private string m_songFile = null;                           // read song from file
         private string m_songMemory = null;                         // read song from temporal memory buffer
         private bool m_newTimer;                                    // timer model specified in the comments of the song file
@@ -128,7 +133,7 @@ namespace Server.Items
             internal bool Unowned = false;                                       // plays on a music device's own session (no mobile; see StartDeviceMusic)
             internal Server.Commands.MusicContext? Session = null;               // the MusicContext it was configured with (session identity)
             internal bool SessionLost = false;                                   // that context was replaced or released mid-performance; the performance has been ended
-            internal readonly Utility.LocalTimer UserCheck = new Utility.LocalTimer();   // the two second user check (PlayerProgressCallback)
+            internal readonly AimsUtil.LocalTimer UserCheck = new AimsUtil.LocalTimer();   // the two second user check (PlayerProgressCallback)
             internal Mobile? Performer = null;                                   // the mobile whose context it plays on (null: a device session)
             internal FinishCallback? AllDone = null;                             // the instrument's AllDone when it started
             internal CheckSourceStatusCallback? CheckSourceStatus = null;        // the instrument's CheckSourceStatus when it started
@@ -182,14 +187,14 @@ namespace Server.Items
                 SongBuffer.Clear();
 
                 try { AllDone?.Invoke(); }
-                catch (Exception ex) { LogHelper.LogException(ex); }
+                catch (Exception ex) { AimsLog.LogException(ex); }
 
                 PerformanceCompleted? completed = Completed;
                 Completed = null;
                 if (completed != null)
                     foreach (PerformanceCompleted handler in completed.GetInvocationList())
                         try { handler(this, m_endReason); }
-                        catch (Exception ex) { LogHelper.LogException(ex); }
+                        catch (Exception ex) { AimsLog.LogException(ex); }
             }
         }
         private Performance m_current;                                      // the current (or last) performance: an idle one until the first start (not serialized)
@@ -266,9 +271,11 @@ namespace Server.Items
         public string SongName { get { return m_songName; } set { m_songName = value; } }
         [CommandProperty(AccessLevel.GameMaster)]
         public string? SongBytes { get { return m_songBytes; } set { m_songBytes = value; } }
-        //[CommandProperty(AccessLevel.GameMaster)]
-        public int Place_obsolete { get { return m_place_obsolete; } set { m_place_obsolete = value; /*ModelInitialize(); InvalidateProperties();*/ } }
-        public int Year_obsolete { get { return m_year_obsolete; } set { m_year_obsolete = value; } }
+        // The place and year of the first award instruments (AwardHarp, AwardLapHarp, AwardLute, 2021-22: AwardInstrument
+        //  replaced them and keeps its own), as read from a save before version 9, so [Nuke ReplaceAwardInstruments can
+        //  still carry them over from an old world. Not saved any more (nothing else used them).
+        public int LegacyAwardPlace { get; private set; }
+        public int LegacyAwardYear { get; private set; }
         [CommandProperty(AccessLevel.GameMaster)]
         public string SongFile
         {
@@ -277,9 +284,9 @@ namespace Server.Items
             {
                 if (value != null)
                 {
-                    if (value.ToLower().Contains(".rzr") && File.Exists(Path.Combine(Core.DataDirectory, "song files", value)))
+                    if (value.ToLower().Contains(".rzr") && File.Exists(Path.Combine(AimsUtil.DataDirectory, "song files", value)))
                         m_songFile = value;
-                    else if (!value.ToLower().Contains(".rzr") || !File.Exists(Path.Combine(Core.DataDirectory, "song files", value)))
+                    else if (!value.ToLower().Contains(".rzr") || !File.Exists(Path.Combine(AimsUtil.DataDirectory, "song files", value)))
                         m_songFile = "Please enter: <name>.rzr";
                 }
                 else
@@ -331,7 +338,7 @@ namespace Server.Items
                 }
             else
             {
-                Utility.Monitor.WriteLine("GetInstrumentType() returning default Harp", ConsoleColor.Cyan);
+                AimsLog.WriteLine("GetInstrumentType() returning default Harp", ConsoleColor.Cyan);
                 return Server.Misc.InstrumentType.Harp;
             }
         }
@@ -350,12 +357,15 @@ namespace Server.Items
         public RazorInstrument(int itemID, int wellSound, int badlySound, Item? playItem)
             : base(itemID, wellSound, badlySound)
         {
-            m_year_obsolete = DateTime.UtcNow.Year;
             //Name = GetName();
             //  ride of the Valkyries will be our default
             SongBytes = "b 0.1 fs b dh 0.3 b 0.3 dh 0.1 b dh fsh 0.3 dh 0.3 fsh 0.1 dh fsh ah 0.3 a 0.3 dh 0.1 a dh fsh";
             SongName = "Ride of the Valkyries";
+#if ANGEL_ISLAND
             LootType = LootType.UnStealable | LootType.UnLootable; // a style of blessed, includes reds
+#else
+            LootType = LootType.Blessed;
+#endif
             m_playItem = playItem;
             m_instrument = this;
             m_current = new Performance(this, idle: true);
@@ -443,14 +453,14 @@ namespace Server.Items
                 else if (Core.Debug)
                 {
                     // Debug-only explanation when we are intentionally not warning the player.
-                    Utility.SendSystemMessage(actor, 5, "Debug message: music not started because this player has initiated music elsewhere.");
+                    AimsHost.Current.SendSystemMessage(actor, 5, "Debug message: music not started because this player has initiated music elsewhere.");
                 }
 
                 DebugOut("OnDoubleClick in RZR: returning");
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         public void CancelPlayback(Mobile? from, bool say = true)
@@ -522,7 +532,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         public bool IsThisDevicePlaying(Mobile? from)
@@ -555,7 +565,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return false;
             }
         }
@@ -614,7 +624,7 @@ namespace Server.Items
                 if (PerformerGone(m))
                 {
                     try { Cancel(performance, PerformanceEnd.SessionLost, m, false); }
-                    catch (Exception ex) { LogHelper.LogException(ex); }
+                    catch (Exception ex) { AimsLog.LogException(ex); }
                     return;
                 }
 
@@ -642,7 +652,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                     ok = false; // fail closed
                 }
 
@@ -655,7 +665,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                     }
 
                     return;
@@ -663,7 +673,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         #region Performance state
@@ -703,7 +713,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                     rootParent = this.RootParent;
                 }
 
@@ -728,7 +738,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return null;
             }
         }
@@ -807,7 +817,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                     }
 
                     callback = EstablishCallback(callback);  // use our default handler if none is specified
@@ -828,7 +838,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                     }
 
                     // a '# Timer:' directive belongs to the song that carries it (read again when this song loads)
@@ -841,7 +851,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                         Abandon(performance);
                         return null;
                     }
@@ -867,7 +877,7 @@ namespace Server.Items
                         }
                         catch (Exception ex)
                         {
-                            LogHelper.LogException(ex);
+                            AimsLog.LogException(ex);
                         }
                     }
                     else
@@ -880,7 +890,7 @@ namespace Server.Items
                         }
                         catch (Exception ex)
                         {
-                            LogHelper.LogException(ex);
+                            AimsLog.LogException(ex);
                             loaded = false;
                         }
 
@@ -897,7 +907,7 @@ namespace Server.Items
                             }
                             catch (Exception ex)
                             {
-                                LogHelper.LogException(ex);
+                                AimsLog.LogException(ex);
                             }
 
                             try
@@ -907,7 +917,7 @@ namespace Server.Items
                             }
                             catch (Exception ex)
                             {
-                                LogHelper.LogException(ex);
+                                AimsLog.LogException(ex);
                                 Abandon(performance);
                                 return null;
                             }
@@ -920,7 +930,7 @@ namespace Server.Items
                             }
                             catch (Exception ex)
                             {
-                                LogHelper.LogException(ex);
+                                AimsLog.LogException(ex);
                             }
                         }
                         else
@@ -931,19 +941,19 @@ namespace Server.Items
                             }
                             catch (Exception ex)
                             {
-                                LogHelper.LogException(ex);
+                                AimsLog.LogException(ex);
                             }
 
                             // nothing was started: log once per device, and release whoever is waiting on completion
                             try
                             {
                                 if (s_reportedNothing.Add(Serial))
-                                    Utility.Monitor.WriteLine("RazorInstrument: {0} (0x{1:X8}) has no playable song", ConsoleColor.Yellow,
+                                    AimsLog.WriteLine("RazorInstrument: {0} (0x{1:X8}) has no playable song", ConsoleColor.Yellow,
                                         GetType().Name, (int)Serial);
                             }
                             catch (Exception ex)
                             {
-                                LogHelper.LogException(ex);
+                                AimsLog.LogException(ex);
                             }
 
                             // deferred: callers finish their own bookkeeping (and subscribe) after StartMusic returns
@@ -959,12 +969,12 @@ namespace Server.Items
                 }
                 else if (Core.Debug)
                 {
-                    Utility.SendSystemMessage(from!, 5, "Debug message: music not started because this player has initiated music elsewhere.");
+                    AimsHost.Current.SendSystemMessage(from!, 5, "Debug message: music not started because this player has initiated music elsewhere.");
                 }
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
 
             return null;
@@ -978,7 +988,11 @@ namespace Server.Items
         }
         private bool WarnPlaybackConflicts()
         {
+#if ANGEL_ISLAND
             if (PlayItem is BaseAddon || PlayItem is TrophyAddon || PlayItem is MusicMotionController /*|| PlayItem is MusicBox || PlayItem is RolledUpSheetMusic*/)
+#else
+            if (PlayItem is BaseAddon || PlayItem is TrophyAddon)
+#endif
                 return false;
             return true;
         }
@@ -1042,7 +1056,7 @@ namespace Server.Items
                         }
                         catch (Exception ex)
                         {
-                            LogHelper.LogException(ex);
+                            AimsLog.LogException(ex);
                         }
                     }
                     else
@@ -1063,7 +1077,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                         line = null;
                     }
 
@@ -1101,7 +1115,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         private void WaitDone(object state)
@@ -1158,7 +1172,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
 
@@ -1197,7 +1211,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                     }
                 }
                 else if (lower.Contains("instrument:"))
@@ -1210,7 +1224,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                     }
                 }
                 else if (lower.Contains("prefetch:"))
@@ -1229,7 +1243,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                         Prefetch = false;
                     }
                 }
@@ -1249,7 +1263,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                         NewTimer = false;
                     }
                 }
@@ -1269,7 +1283,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                         Tempo = Commands.SystemMusicPlayer.DefaultTempo;
                     }
                 }
@@ -1289,7 +1303,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                         ConcertMode = false;
                     }
                 }
@@ -1302,13 +1316,13 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                     }
                 }
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         public void ConfigureInstrument(string instrument)
@@ -1327,27 +1341,27 @@ namespace Server.Items
                 if (i == "harp")
                 {
                     Instrument.SuccessSound = (int)RazorInstrument.InstrumentSoundType.Harp;
-                    Utility.Monitor.WriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.Harp.ToString());
+                    AimsLog.WriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.Harp.ToString());
                 }
                 else if (i == "lapharp")
                 {
                     Instrument.SuccessSound = (int)RazorInstrument.InstrumentSoundType.LapHarp;
-                    Utility.Monitor.WriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.LapHarp.ToString());
+                    AimsLog.WriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.LapHarp.ToString());
                 }
                 else if (i == "lute")
                 {
                     Instrument.SuccessSound = (int)RazorInstrument.InstrumentSoundType.Lute;
-                    Utility.Monitor.WriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.Lute.ToString());
+                    AimsLog.WriteLine("configure as instrument {0}", ConsoleColor.Yellow, RazorInstrument.InstrumentSoundType.Lute.ToString());
                 }
                 else
                 {
                     Instrument.SuccessSound = (int)RazorInstrument.InstrumentSoundType.Harp;
-                    Utility.Monitor.WriteLine("instrument {0} unknown", ConsoleColor.Yellow, instrument);
+                    AimsLog.WriteLine("instrument {0} unknown", ConsoleColor.Yellow, instrument);
                 }
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         private void DoProcessComment(Mobile? m, string line)
@@ -1399,7 +1413,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         private void DoProcessSay(Mobile? m, string line)
@@ -1439,11 +1453,11 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
 
                 // This is the case when text is spoken via RSM or other RazorInstrument
-                // (the other case is when text is spoken via Razor in PlayerMobile).
+                // (the other case is when text is spoken via Razor: MusicRecorder hears that speech itself).
                 try
                 {
                     if (m != null && !m.Deleted)
@@ -1451,7 +1465,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
 
                 // call our baby Razor to continue processing this script
@@ -1460,7 +1474,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         private void DoProcessWait(Mobile? m, string line)
@@ -1490,7 +1504,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                     resultString = string.Empty;
                 }
 
@@ -1517,7 +1531,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         // Anchored: an Anchored song's wait has ended. More than ReanchorMs late is an interruption: the script's schedule
@@ -1599,7 +1613,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                         break;
                     }
 
@@ -1643,7 +1657,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                     return;
                 }
 
@@ -1655,7 +1669,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         private bool LoadSongFile(Mobile? from)
@@ -1691,7 +1705,7 @@ namespace Server.Items
                                     }
                                     catch (Exception ex)
                                     {
-                                        LogHelper.LogException(ex);
+                                        AimsLog.LogException(ex);
                                     }
                                 }
                             }
@@ -1705,14 +1719,14 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                         return false;
                     }
                 }
 
                 if (!string.IsNullOrEmpty(m_songFile))
                 {
-                    string filePath = Path.Combine(Core.DataDirectory, "song files", m_songFile);
+                    string filePath = Path.Combine(AimsUtil.DataDirectory, "song files", m_songFile);
 
                     if (!File.Exists(filePath))
                         return false;
@@ -1736,7 +1750,7 @@ namespace Server.Items
                                 }
                                 catch (Exception ex)
                                 {
-                                    LogHelper.LogException(ex);
+                                    AimsLog.LogException(ex);
                                 }
                             }
                         }
@@ -1749,7 +1763,7 @@ namespace Server.Items
                     }
                     catch (Exception ex)
                     {
-                        LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
 
                         if (from != null && !from.Deleted)
                             from.SendMessage("Cannot load {0}", filePath);
@@ -1762,14 +1776,14 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return false;
             }
         }
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(8); // version
+            writer.Write(9); // version
 
             writer.Write(m_concertMode);
             writer.Write(m_prefetch);
@@ -1781,8 +1795,6 @@ namespace Server.Items
             writer.Write(m_author);
             writer.Write(m_songName);
             writer.Write(m_songBytes);
-            writer.Write(m_place_obsolete);
-            writer.Write(m_year_obsolete);
             writer.Write(m_songFile);
         }
         public override void Deserialize(GenericReader reader)
@@ -1792,6 +1804,7 @@ namespace Server.Items
 
             switch (version)
             {
+                case 9:
                 case 8:
                     {
                         m_concertMode = reader.ReadBool();
@@ -1804,8 +1817,11 @@ namespace Server.Items
                         m_author = reader.ReadString();
                         m_songName = reader.ReadString();
                         m_songBytes = reader.ReadString();
-                        m_place_obsolete = reader.ReadInt();
-                        m_year_obsolete = reader.ReadInt();
+                        if (version < 9)
+                        {   // the award place and year (versions 1-8: not saved since)
+                            LegacyAwardPlace = reader.ReadInt();
+                            LegacyAwardYear = reader.ReadInt();
+                        }
                         m_songFile = reader.ReadString();
                         break;
                     }
@@ -1851,8 +1867,8 @@ namespace Server.Items
                         m_author = reader.ReadString();
                         m_songName = reader.ReadString();
                         m_songBytes = reader.ReadString();
-                        m_place_obsolete = reader.ReadInt();
-                        m_year_obsolete = reader.ReadInt();
+                        LegacyAwardPlace = reader.ReadInt();    // the award place and year (not saved since version 9)
+                        LegacyAwardYear = reader.ReadInt();
                         m_songFile = reader.ReadString();
                         goto case 0;
                     }
@@ -1865,7 +1881,7 @@ namespace Server.Items
         public void DebugOut(string text)
         {
             if (InstanceDebugging)
-                this.SendMessageNearby(text);
+                AimsHost.Current.SendMessageNearby(this, text);
         }
     }
 }

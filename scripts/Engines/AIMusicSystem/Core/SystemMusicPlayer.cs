@@ -21,7 +21,7 @@
 
 /* Scripts\Engines\Music\SystemMusicPlayer.cs
  * Changelog
- *  11/3/26, Adam (2026 modernization, 10/24/26 to 11/3/26)
+ *  11/6/26, Adam (2026 modernization, 10/24/26 to 11/6/26)
  *      Sessions: ReleaseContext is the one way a context leaves MusicConfig, and the timers stop when their context is
  *      released or replaced (a [play reset left a second timer running); a music device plays on its own session
  *      (ConfigureDeviceSession), not a temporary mobile; a context holds an InstrumentType instead of three virtual
@@ -31,6 +31,10 @@
  *      it. Percussion sounds free of music karma (PercussionSounds; MidiToAims's drums use them). The timers report to
  *      MusicEngineMetrics. MusicContexts.bin context versions 4 (no items) and 5 (the timer): an older build cannot
  *      read them.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: Music Karma, the music filter and [play's access level. Angel Island only (#if ANGEL_ISLAND): the
+ *      rule-set check before the commands register.
  *  12/28/23, Adam (MusicConfig[player].Tick)
  *      Add a callback to notify the caller we are still processing notes. 
  *      Since this is called on every tick, it is the callers responsibility to limit processing so as to not impact playback.
@@ -267,7 +271,7 @@ namespace Server.Commands
                         item.Delete();
                         deleted++;
                     }
-                Utility.Monitor.WriteLine("Music contexts: {0} legacy virtual instruments deleted ({1} referenced)", ConsoleColor.Yellow, deleted, items.Count);
+                AimsLog.WriteLine("Music contexts: {0} legacy virtual instruments deleted ({1} referenced)", ConsoleColor.Yellow, deleted, items.Count);
             });
         }
         #endregion Legacy virtual instruments (context versions 0-3)
@@ -475,7 +479,7 @@ namespace Server.Commands
             {   // This should never execute
                 //  it's a patch for a bug in an early version of [play that didn't move
                 //  instruments to IntMapstorage and instruments were getting deleted
-                Utility.Monitor.WriteLine("Resetting player context object.", ConsoleColor.Red);
+                AimsLog.WriteLine("Resetting player context object.", ConsoleColor.Red);
                 ReleaseContext(m);
                 MusicConfig.Add(m, new MusicContext(true));
             }
@@ -639,13 +643,13 @@ namespace Server.Commands
                 {
                     if ((m?.AccessLevel ?? AccessLevel.Player) > AccessLevel.GameMaster)
                     {
-                        (m as PlayerMobile).NpcGuildPoints = 0;
+                        AimsHost.Current.SetMusicKarma(m!, 0);
                         ctx.SameLine.Clear();
                         ctx.SkillTesting = true;
                         if (!bSilent)
-                            m?.SendMessage("Guild points are now {0}.", (m as PlayerMobile).NpcGuildPoints);
+                            m?.SendMessage("Guild points are now {0}.", AimsHost.Current.GetMusicKarma(m!));
                         Console.Clear();
-                        Utility.Monitor.WriteLine(string.Format("Start test at {0}", DateTime.UtcNow), ConsoleColor.Red);
+                        AimsLog.WriteLine(string.Format("Start test at {0}", DateTime.UtcNow), ConsoleColor.Red);
                     }
                     else
                         return true;
@@ -929,11 +933,13 @@ namespace Server.Commands
         }
         public static void Initialize()
         {   // too good to limit to any specific shard.
+#if ANGEL_ISLAND
             if (Core.RuleSets.AllServerRules())
+#endif
             {
-                Server.CommandSystem.Register("Play", CoreAI.PlayAccessLevel, new CommandEventHandler(Play_OnCommand));
-                Server.CommandSystem.Register("StopMusic", AccessLevel.Player, new CommandEventHandler(StopMusic_OnCommand));
-                Server.CommandSystem.Register("FilterMusic", AccessLevel.Player, new CommandEventHandler(FilterMusic_OnCommand));
+                CommandSystem.Register("Play", AimsHost.Current.PlayAccessLevel, new CommandEventHandler(Play_OnCommand));
+                CommandSystem.Register("StopMusic", AccessLevel.Player, new CommandEventHandler(StopMusic_OnCommand));
+                CommandSystem.Register("FilterMusic", AccessLevel.Player, new CommandEventHandler(FilterMusic_OnCommand));
             }
         }
         private const int MaxLines = 128;
@@ -1203,7 +1209,7 @@ namespace Server.Commands
                 musicString = musicString.Replace("%" + macros[ix] + "%", modified_macro);
             }
             m?.SendMessage(musicString);
-            Utility.Monitor.WriteLine("macro: {0}", ConsoleColor.Cyan, musicString);
+            AimsLog.WriteLine("macro: {0}", ConsoleColor.Cyan, musicString);
             return musicString;
         }
         private static string[] NoteLookup = new string[]
@@ -1317,12 +1323,12 @@ namespace Server.Commands
             // lets see who's using the music system
             if (Utility.Random(10) == 0)
                 if (IsCommandLine)
-                    Utility.Monitor.DebugOut(string.Format("{0} composing music.", m?.ToString() ?? "a music device"), ConsoleColor.Cyan);
+                    AimsLog.DebugOut(string.Format("{0} composing music.", m?.ToString() ?? "a music device"), ConsoleColor.Cyan);
                 else
-                    Utility.Monitor.DebugOut(string.Format("{0} is listening to music.", m?.ToString() ?? "a music device"), ConsoleColor.Cyan);
+                    AimsLog.DebugOut(string.Format("{0} is listening to music.", m?.ToString() ?? "a music device"), ConsoleColor.Cyan);
 
             // Allows dynamic control through the CoreManagementConsole.
-            if ((m?.AccessLevel ?? AccessLevel.Player) < CoreAI.PlayAccessLevel)
+            if ((m?.AccessLevel ?? AccessLevel.Player) < AimsHost.Current.PlayAccessLevel)
             {
                 m?.SendMessage("Playing music is currently disabled.");
                 return;
@@ -1456,8 +1462,8 @@ namespace Server.Commands
                     point_gain += (ctx.ComplexityPoints * .5);
                     // max out at 10 points
                     // point_gain = Math.Min(point_gain, 10.0);
-                    double adjusted_gain = AdjustedGain(pm.NpcGuildPoints, point_gain);
-                    pm.NpcGuildPoints += adjusted_gain;
+                    double adjusted_gain = AdjustedGain(AimsHost.Current.GetMusicKarma(pm), point_gain);
+                    AimsHost.Current.SetMusicKarma(pm, AimsHost.Current.GetMusicKarma(pm) + adjusted_gain);
                     OnSkillChange(m, adjusted_gain);
                 }
                 //Console.WriteLine("Chance to gain is 1/{0}", 10 + gain_offset);
@@ -1556,7 +1562,7 @@ namespace Server.Commands
             //Stopwatch Timer = new Stopwatch();
             //Timer.Start();
 
-            int hash = Utility.GetStableHashCode(line, version: 1);
+            int hash = AimsUtil.GetStableHashCode(line, version: 1);
             if (ctx.SameLine.ContainsKey(hash))
                 ctx.SameLine[hash]++;
             else
@@ -1573,7 +1579,7 @@ namespace Server.Commands
         }
         public static void OnSkillChange(Mobile m, double points_gained)
         {
-            double real = (m as PlayerMobile).NpcGuildPoints;                                                   // actual real skill points
+            double real = AimsHost.Current.GetMusicKarma(m);                                                   // actual real skill points
             double before_change = real - points_gained;                                                        // points before the gain
             MusicConfig[m].LastGain = MusicConfig[m].LastGain == 0 ? before_change : MusicConfig[m].LastGain;   // on server restart, seed last gain with a reasonable value
             double delta = real - MusicConfig[m].LastGain;                                                      // how many points gained since last gain
@@ -1582,13 +1588,13 @@ namespace Server.Commands
                 if (delta >= .1 || display == 120)
                     m.SendMessage("Your skill in CoreMusicPlayer Composition increased. It is now {0:N1}", display);
             // else, don't show sub .1 gains
-            Utility.Monitor.DebugOut(string.Format("{1}: skill is now {0}", display, m), ConsoleColor.Cyan);
+            AimsLog.DebugOut(string.Format("{1}: skill is now {0}", display, m), ConsoleColor.Cyan);
             if (real >= 1200)
             {
-                Utility.Monitor.DebugOut(string.Format("{1}: skill is now {0}", display, m), ConsoleColor.Red);
+                AimsLog.DebugOut(string.Format("{1}: skill is now {0}", display, m), ConsoleColor.Red);
                 if (MusicConfig[m].SkillTesting)
                 {
-                    Utility.Monitor.DebugOut(string.Format("End test at {0}", DateTime.UtcNow), ConsoleColor.Red);
+                    AimsLog.DebugOut(string.Format("End test at {0}", DateTime.UtcNow), ConsoleColor.Red);
                     MusicConfig[m].SkillTesting = false;
                 }
             }
@@ -1809,11 +1815,11 @@ namespace Server.Commands
                             return;
                         }
                         else
-                            Utility.Monitor.WriteLine("Error: Unknown object type {0}", ConsoleColor.Red, (string)obj);
+                            AimsLog.WriteLine("Error: Unknown object type {0}", ConsoleColor.Red, (string)obj);
                     }
                     catch (Exception ex)
                     {
-                        Server.Diagnostics.LogHelper.LogException(ex);
+                        AimsLog.LogException(ex);
                     }
                 }
             }
@@ -1968,11 +1974,11 @@ namespace Server.Commands
                         delay = TimeSpan.FromMilliseconds(pause);
                     }
                     else
-                        Utility.Monitor.WriteLine("Error: Unknown object type {0}", ConsoleColor.Red, (string)obj);
+                        AimsLog.WriteLine("Error: Unknown object type {0}", ConsoleColor.Red, (string)obj);
                 }
                 catch (Exception ex)
                 {
-                    Server.Diagnostics.LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
             }
 
@@ -2018,10 +2024,10 @@ namespace Server.Commands
         {
             if (e.Mobile is PlayerMobile pm)
             {
-                bool filter = (pm as PlayerMobile).FilterMusic;
+                bool filter = AimsHost.Current.GetFilterMusic(pm);
                 if (!filter) pm.SendMessage("You are now filtering music.");
                 else pm.SendMessage("You are no longer filtering music.");
-                (pm as PlayerMobile).FilterMusic = !filter;
+                AimsHost.Current.SetFilterMusic(pm, !filter);
             }
         }
 
@@ -2072,7 +2078,7 @@ namespace Server.Commands
             }
             catch
             {
-                Utility.Monitor.WriteLine("Error reading Saves/MusicContexts.bin, using default values...", ConsoleColor.Red);
+                AimsLog.WriteLine("Error reading Saves/MusicContexts.bin, using default values...", ConsoleColor.Red);
             }
             finally
             {
@@ -2110,7 +2116,7 @@ namespace Server.Commands
             }
             catch (Exception ex)
             {
-                Utility.Monitor.WriteLine("Error writing Saves/MusicContexts.bin", ConsoleColor.Red);
+                AimsLog.WriteLine("Error writing Saves/MusicContexts.bin", ConsoleColor.Red);
                 Console.WriteLine(ex.ToString());
             }
             finally

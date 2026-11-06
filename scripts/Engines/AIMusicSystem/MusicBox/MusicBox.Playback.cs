@@ -22,10 +22,15 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Playback.cs
  * Changelog
- *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
+ *  11/6/26, Adam (2026 modernization, 10/29/26 to 11/6/26)
  *      Playing: rights, double-click, PlayMusic, play counts, the end of a song, continuing play and status checks.
- *      An unapproved track is announced as pending (or rejected) when it starts, and earns no play credit.
+ *      An unapproved track is announced as pending (or rejected) when it starts, and earns no play credit. A song's end
+ *      deletes the box's temporary copy it played on; so do a new listener's context and the box's deletion.
  *      Split from MusicBox.cs; its history before 10/29/26 is in MusicBox.cs.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: staff messages, households (Angel Island: accounts shared by IP) and the old settings' placeholder
+ *      owner.
  */
 
 using Server.Accounting;
@@ -33,7 +38,6 @@ using Server.Commands;
 using Server.ContextMenus;
 using Server.Diagnostics;
 using Server.Engines;
-using Server.Engines.DataRecorder;
 using Server.Gumps;
 using Server.Misc;
 using Server.Mobiles;
@@ -71,6 +75,9 @@ namespace Server.Items
                 // If there is no context yet, or the context is for a different mobile, rebuild it.
                 if (m_playContext == null || m_playContext.Mobile != actor)
                 {
+                    // the old context's copy goes with it (now, or when its song ends)
+                    m_playContext?.ReleaseNowPlaying();
+
                     // ** 1.0 musicboxes patch **
                     //
                     // Older 1.0 musicboxes had a shared notion of IgnoreList and PlayerNotificationList.
@@ -81,7 +88,7 @@ namespace Server.Items
                     // - On first real use, we move that config from the system account to the first accessing player.
                     //
                     // This is a one-time opportunistic migration (best-effort).
-                    Mobile system = World.GetSystemAcct();
+                    Mobile? system = AimsHost.Current.SystemMobile;
 
                     if (system != null && Profiles.ContainsKey(system))
                     {
@@ -128,8 +135,15 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
+        }
+        public override void OnAfterDelete()
+        {
+            base.OnAfterDelete();
+
+            // the box is gone: so is its temporary copy (now, or when its song ends)
+            m_playContext?.ReleaseNowPlaying();
         }
         public override void OnDoubleClick(Mobile from)
         {
@@ -185,7 +199,7 @@ namespace Server.Items
                     SendMessage(from, "You have initiated music in another context. You will need to cancel that or wait for it to finish.");
 
                     if (Core.Debug)
-                        Utility.SendSystemMessage(from, 5, "Debug message: music not started because this player has initiated music elsewhere.");
+                        AimsHost.Current.SendSystemMessage(from, 5, "Debug message: music not started because this player has initiated music elsewhere.");
 
                     return;
                 }
@@ -211,7 +225,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         // detects changes to the global repository
@@ -238,7 +252,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
 
                 // Wire the status check (the performance keeps it). The end of the song is the performance's
@@ -261,7 +275,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
 
                 // Execute playback (each song on its own temporary copy: a new performance).
@@ -272,11 +286,16 @@ namespace Server.Items
                 {
                     m_performance = performance;
                     performance.Completed += SongCompleted;
+
+                    // our temporary copy plays this one song: its end releases it (deleted)
+                    PlayContext? ctx = m_playContext;
+                    if (ctx != null && ctx.Owns(rsm))
+                        performance.Completed += (p, reason) => ctx.Release(rsm);
                 }
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         private void IncPlayCount(Mobile m, RolledUpSheetMusic rsm)
@@ -308,7 +327,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                     // Swallow; play count is non-critical.
                 }
 
@@ -330,7 +349,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                     // If FamilyIP fails, do not award (fail closed).
                     return;
                 }
@@ -340,7 +359,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 // swallow to prevent shard crash
             }
         }
@@ -354,27 +373,11 @@ namespace Server.Items
                 if (owner.Deleted || other.Deleted)
                     return false;
 
-                if (owner.Account is not Accounting.Account acct)
-                    return false;
-
-                System.Net.IPAddress ip = acct.LastGAMELogin;
-
-                if (ip == null)
-                    return false;
-
-                ArrayList list = Utility.GetSharedAccounts(ip);
-
-                if (list == null || list.Count == 0)
-                    return false;
-
-                if (other.Account == null)
-                    return false;
-
-                return list.Contains(other.Account);
+                return AimsHost.Current.IsHousehold(owner, other);    // the shard's rule (Angel Island: shared accounts by IP)
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return false; // fail closed: no family relationship assumed
             }
         }
@@ -400,7 +403,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
 
                 var ctx = m_playContext;
@@ -425,7 +428,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         public void EndMusic(Mobile m)
@@ -452,7 +455,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
             finally
             {
@@ -463,7 +466,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
             }
         }
@@ -499,7 +502,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
     }

@@ -28,6 +28,9 @@
  *      a Napster track's composer has access to it. Playable: a pending track is playable by the one who submitted it.
  *      The library hash includes each sheet's serial: a new sheet of the same song (flushall, then added again) is a change.
  *      Split from MusicBox.cs; its history before 10/29/26 is in MusicBox.cs.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: Music Karma.
  */
 
 using Server.Accounting;
@@ -35,7 +38,6 @@ using Server.Commands;
 using Server.ContextMenus;
 using Server.Diagnostics;
 using Server.Engines;
-using Server.Engines.DataRecorder;
 using Server.Gumps;
 using Server.Misc;
 using Server.Mobiles;
@@ -157,7 +159,7 @@ namespace Server.Items
             }
             else
             {
-                Utility.Monitor.WriteLine("Error: invalid skill points in CoreMusicPlayer Box.", ConsoleColor.Red);
+                AimsLog.WriteLine("Error: invalid skill points in CoreMusicPlayer Box.", ConsoleColor.Red);
                 return;
             }
 
@@ -169,7 +171,7 @@ namespace Server.Items
             Titles.AwardFame(pm, totalFame, true);
             Titles.AwardKarma(pm, totalKarma, true);
             // skill gain
-            pm.NpcGuildPoints += skill_points;              // skill points
+            AimsHost.Current.SetMusicKarma(pm, AimsHost.Current.GetMusicKarma(pm) + skill_points);              // skill points
             pm.OnFameChange(fameOld);                       // old fame
             Commands.SystemMusicPlayer.OnSkillChange(pm, skill_points);
         }
@@ -371,7 +373,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return false; // Fail closed.
             }
         }
@@ -419,7 +421,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         /// <summary>
@@ -460,7 +462,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         // A track is free when its library price is 0 (maintenance sets it to 0 when the composer is gone); the sheet's
@@ -512,7 +514,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return false; // Fail closed.
             }
         }
@@ -552,7 +554,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return string.Empty; // Fail closed.
             }
         }

@@ -22,12 +22,14 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Commands.cs
  * Changelog
- *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
+ *  11/6/26, Adam (2026 modernization, 10/29/26 to 11/6/26)
  *      The speech commands as one table: each command's words, help line, gates and handler, so the help list and
  *      TextCommand() can't disagree with the commands. Command words match in any case. Play by title: staff (GM and
  *      up, was Administrator) hear any track, and the one who submitted a pending track hears it; What says "pending".
- *      Add alone is Submit (the target cursor); Add with a song name still puts a removed song back.
+ *      Add alone is Submit (the target cursor); Add with a song name still puts a removed song back. Repeat plays the
+ *      song from a fresh copy (PlayContext.Replay; the copy it played is deleted once its song has ended).
  *      Split from MusicBox.Speech.cs; its history before 10/29/26 is in MusicBox.cs.
+ *      Portable AIMS: Test Center (staff may buy music there) goes through AimsHost.
  */
 
 using Server.Commands;
@@ -353,7 +355,7 @@ namespace Server.Items
             {
                 Say("I'll repeat the song.", hue: 54);
                 StopForNewSong();
-                PlayMusic(e.Mobile, m_playContext.NowPlaying());
+                PlayMusic(e.Mobile, m_playContext.Replay());     // a fresh copy: the old one is deleted when its song ends
             }
             else if (prev != null)
             {
@@ -525,7 +527,7 @@ namespace Server.Items
         private void HandleBuy(SpeechEventArgs e, string[] tokens)
         {
             // Staff restriction on production shard.
-            if (e.Mobile.AccessLevel > AccessLevel.Player && !Core.GMNTC_CFG)
+            if (e.Mobile.AccessLevel > AccessLevel.Player && !AimsHost.Current.IsTestCenter)
             {
                 SendMessage(e.Mobile, "Staff cannot buy music on the production shard.");
                 return;

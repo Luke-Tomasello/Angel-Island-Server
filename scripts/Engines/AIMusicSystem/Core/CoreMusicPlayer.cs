@@ -21,10 +21,13 @@
 
 /* Scripts\Engines\Music\CoreMusicPlayer.cs
  * Changelog
- *  10/26/26, Adam (2026 modernization, 10/24/26 to 10/26/26)
+ *  11/5/26, Adam (2026 modernization, 10/24/26 to 11/5/26)
  *      PlayNote and PlaySound play on a session (a player's MusicContext, or a music device's own) and take the
  *      instrument type; PlaySound no longer creates a context (and its items) for a missing mobile. Sound and packet
  *      costs are reported to MusicEngineMetrics. Same sounds, same recipients.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: the music filter. Angel Island only (#if ANGEL_ISLAND): the award instruments.
  *  2/26/22, Adam
  *      Add support for volume
  *      Move PlaySound here from Mobile
@@ -119,7 +122,7 @@ namespace Server.Misc
             }
             catch (Exception ex)
             {
-                Server.Diagnostics.LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         // session: the context to play on (from's, or a music device's own session, which has no mobile: from == null)
@@ -164,7 +167,7 @@ namespace Server.Misc
             }
             catch (Exception ex)
             {
-                Server.Diagnostics.LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
 
@@ -201,9 +204,15 @@ namespace Server.Misc
         public static InstrumentType GetInstrumentType(BaseInstrument instrument)
         {
             // Can't play notes on drums or tamborines
+#if ANGEL_ISLAND
             if (instrument is Harp || instrument is AwardHarp) return InstrumentType.Harp;
             if (instrument is LapHarp || instrument is AwardLapHarp) return InstrumentType.LapHarp;
             if (instrument is Lute || instrument is AwardLute) return InstrumentType.Lute;
+#else
+            if (instrument is Harp) return InstrumentType.Harp;
+            if (instrument is LapHarp) return InstrumentType.LapHarp;
+            if (instrument is Lute) return InstrumentType.Lute;
+#endif
             if (instrument is RazorInstrument) return (instrument as RazorInstrument).GetInstrumentType();
             else return 0;
         }
@@ -288,7 +297,7 @@ namespace Server.Misc
                     if (!Visible(source) || state.Mobile.CanSee(source))
                     {
                         // If the mobile is a player who has toggled FilterMusic on, don't play.
-                        if (state.Mobile is PlayerMobile pm && pm.FilterMusic)
+                        if (state.Mobile is PlayerMobile pm && AimsHost.Current.GetFilterMusic(pm))
                             continue;
 
                         long send = System.Diagnostics.Stopwatch.GetTimestamp();

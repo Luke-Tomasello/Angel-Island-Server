@@ -27,6 +27,7 @@
  *      case of the OnSpeech switch; the command table checks the staff level first. Review announces a pending track
  *      once (PlayMusic says "pending approval"). Flushall empties the review queue too.
  *      Split from MusicBox.Speech.cs; its history before 10/29/26 is in MusicBox.cs.
+ *      Portable AIMS: Test Center and staff copies go through AimsHost.
  */
 
 using Server.Misc;
@@ -41,7 +42,7 @@ namespace Server.Items
         #region Staff commands
         private void HandleFlushAll(SpeechEventArgs e)
         {
-            if (e.Mobile.AccessLevel == AccessLevel.Owner && Core.GMNTC_CFG)
+            if (e.Mobile.AccessLevel == AccessLevel.Owner && AimsHost.Current.IsTestCenter)
             {
                 // Capture keys first to avoid modifying repository while iterating.
                 List<RolledUpSheetMusic> list = new List<RolledUpSheetMusic>();
@@ -313,16 +314,15 @@ namespace Server.Items
                         track.Serial,                                // 2
                         track.HashCode));                            // 3
 
-                    Item? dupe = Utility.Dupe(track);
+                    Item? dupe = AimsHost.Current.Dupe(track);
                     if (dupe != null)
                     {
-                        dupe.SetItemBool(ItemBoolTable.StaffOwned, true);
                         e.Mobile.AddToBackpack(dupe);
 
                         SendMessage(e.Mobile,
                             string.Format("a copy of {0} has been placed in your backpack. Do not redistribute.", dupe));
 
-                        Utility.TrackStaffOwned(e.Mobile, dupe);
+                        AimsHost.Current.MarkStaffOwned(e.Mobile, dupe);  // staff owned (the shard may track staff copies)
                     }
 
                     count++;

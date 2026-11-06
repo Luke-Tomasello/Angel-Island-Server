@@ -21,12 +21,15 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.cs
  * Changelog
- *  10/30/26, Adam (2026 modernization: the music box cleanup, 10/29/26 to 10/30/26)
+ *  11/5/26, Adam (2026 modernization: the music box cleanup, 10/29/26 to 11/5/26)
  *      MusicBox is a partial class in several files (ContextMenus, PlayContext, Playback, Speech, Commands,
  *      StaffCommands, CommandHelpers, Prompts, Notifications, Placement); the library moved to Library\MusicLibrary.cs.
  *      The history below stays here for all of them. The speech commands are a table; where a box is decides whom it
  *      serves (Placement). Names no longer shared with the engine (MusicBoxProfile, Profiles, PlayingElsewhere).
  *      Behavior unchanged (MusicSpeechTests).
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: the placeholder owner of old saves' shared settings (Angel Island: World.GetSystemAcct).
  *  10/29/26, Adam (2026 modernization: fixes, 10/25/26 to 10/29/26)
  *      Submitting a sheet you don't own is refused before the sheet is touched (the player lost it), and a songless
  *      sheet is refused. The review prompt's delete deletes the track; typed approvals are dated and handle remasters;
@@ -102,7 +105,6 @@ using Server.Commands;
 using Server.ContextMenus;
 using Server.Diagnostics;
 using Server.Engines;
-using Server.Engines.DataRecorder;
 using Server.Gumps;
 using Server.Misc;
 using Server.Mobiles;
@@ -204,7 +206,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return false; // Fail closed on error.
             }
         }
@@ -257,7 +259,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return false; // Fail closed on error.
             }
         }
@@ -277,7 +279,7 @@ namespace Server.Items
 
                 // Emit diagnostic only when a change is detected.
                 if (changed)
-                    Utility.Monitor.WriteLine(
+                    AimsLog.WriteLine(
                         "Global CoreMusicPlayer Repository changed.",
                         ConsoleColor.Cyan);
 
@@ -285,7 +287,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return false; // Fail closed: assume no change on error.
             }
         }
@@ -380,7 +382,9 @@ namespace Server.Items
                             if (item != null)
                                 ignoreList.Add(item as RolledUpSheetMusic);
                         }
-                        Profiles.Add(World.GetSystemAcct(), new MusicBoxProfile(ignoreList, playerNotificationList));
+                        Mobile? system = AimsHost.Current.SystemMobile;     // the old shared settings' placeholder owner
+                        if (system != null)
+                            Profiles.Add(system, new MusicBoxProfile(ignoreList, playerNotificationList));
                         m_Level = (SecureLevel)reader.ReadEncodedInt();
                         break;
                     }

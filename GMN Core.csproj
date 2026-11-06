@@ -8,6 +8,8 @@
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<Nullable>annotations</Nullable>
 		<Configurations>Debug;Release;Nullable</Configurations>
+		<!-- ANGEL_ISLAND: Angel Island's core (the music system's #if ANGEL_ISLAND code; without it AIMS builds for stock RunUO) -->
+		<DefineConstants>$(DefineConstants);ANGEL_ISLAND</DefineConstants>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -219,8 +221,12 @@
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 
+	<!-- BuildInfo.exe (the BuildInfo project, built into this folder) writes "Core 6.info", the build number. Called by its
+	     full path: cmd won't run a bare name from the current folder when NoDefaultCurrentDirectoryInExePath is set (exit
+	     9009, MSB3073), and that failure marked GMN Core failed, so a fresh clone never built the Patches DLLs. Skipped
+	     until BuildInfo.exe exists (the server starts without "Core 6.info": version 0.0.0). 11/6/26, Adam -->
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-	  <Exec Command="BuildInfo.exe" />
+	  <Exec Command="&quot;$(MSBuildProjectDirectory)\BuildInfo.exe&quot;" Condition="Exists('$(MSBuildProjectDirectory)\BuildInfo.exe')" />
 	</Target>
 
 </Project>

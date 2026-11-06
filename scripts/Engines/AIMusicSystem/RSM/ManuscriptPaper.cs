@@ -21,7 +21,7 @@
 
 /* Scripts/Engines/Music/ManuscriptPaper.cs
  * Changelog
- *  11/3/26, Adam (2026 modernization, 10/29/26 to 11/3/26)
+ *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
  *      The book is compiled (MusicCompiler) before it becomes sheet music: sections, plays and repeats are expanded,
  *      and a book without them compiles to itself (same script, same hash); a book with mistakes is refused, page by
  *      page. A song too long for one book is written in several (# Song: <title>, # Book: 2/3) and made into one sheet
@@ -29,6 +29,9 @@
  *      book without # Song: / # Author: keeps its own title and author. Percussion needs no music karma, and a sound
  *      effect ending a line is checked too. Transcribing says what it made ("Sheet music created: ..."). MaxBooks is a
  *      documented dependency of MidiToAims.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: the preview's temporary sheet. Angel Island only (#if ANGEL_ISLAND): Dupe.
  *  3/3/22, Adam (Music Karma / IsSound)
  *      Don't allow the creation of Rolled Up Sheet music if the author is using sound effects and doesn't have sufficient Music Karma.
  *  2/26/22, Adam (ConcertMode)
@@ -149,8 +152,7 @@ namespace Server.Items
 
             // a temporary sheet: it plays wherever it is, is never saved, and ends if the composer leaves
             rsm.RequiresBackpack = false;
-            rsm.SetItemBool(ItemBoolTable.TempObject, true);
-            rsm.IsStaffOwned = true;
+            AimsHost.Current.MarkTemporary(rsm);       // never saved, and left alone by the shard's cleanup rules
             rsm.CheckSourceStatus = (m, source) => m != null && !m.Deleted && m.NetState != null;
             // the song's spoken lines (say 'la la') come from the sheet's source: its holder, or its PlayItem. The temporary
             //  sheet has no holder, so the book speaks for it: through the composer carrying it, or from the ground
@@ -520,7 +522,7 @@ namespace Server.Items
                 representation = representation.Replace(" ", "").ToLower().Trim();
 
                 // okay, this is our hash
-                return Utility.GetStableHashCode(representation, version: 1);
+                return AimsUtil.GetStableHashCode(representation, version: 1);
             }
             private string CompileLine(string text)
             {   // munge string: The user will have had to change the mod 5th character(s) in order for the system
@@ -543,7 +545,7 @@ namespace Server.Items
                         continue;
                     }
 
-                return Utility.GetStableHashCode(output, version: 1).ToString();
+                return AimsUtil.GetStableHashCode(output, version: 1).ToString();
             }
             private RazorInstrument.InstrumentSoundType TonalQuality(string instrument)
             {
@@ -684,10 +686,12 @@ namespace Server.Items
             }
         }
 
+#if ANGEL_ISLAND
         public override Item Dupe(int amount)
         {
             return base.Dupe(new ManuscriptPaper(amount), amount);
         }
+#endif
 
         public override void Serialize(GenericWriter writer)
         {

@@ -21,12 +21,17 @@
 
 /* Scripts\Engines\AIMusicSystem\RSM\CalypsoMusicPlayer.cs
  * Changelog
- *  10/30/26, Adam (2026 modernization, 10/25/26 to 10/30/26)
+ *  11/6/26, Adam (2026 modernization, 10/25/26 to 11/6/26)
  *      The playback the Calypso devices (MusicController, MusicMotionController, BaseAddon, TrophyAddon) each
  *      duplicated lives here: the play lock, the "playing elsewhere" check, starting and cancelling a performance. A
  *      device plays on its own session (no temporary mobile), released when it ends, and follows its performance's
  *      Completed, raised once: a double-click during a pause cancels instead of starting a second performance, and an
- *      earlier performance's end never touches a newer one. GetMetaData no longer leaves orphaned instruments.
+ *      earlier performance's end never touches a newer one. GetMetaData no longer leaves orphaned instruments. A new
+ *      device is ready to play at once (it was ready only from the next clock tick). The temporary playback mobile's
+ *      release is gone: no device has made one since devices got their own sessions.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: staff messages. AimsUtil: GetDistanceToSqrt and IsUOMusic.
  *  12/26/2023, Adam
  *		Initial creation.
  */
@@ -65,7 +70,7 @@ namespace Server.Engines
         {
             if (playItem == null) { return null; }
             foreach (var player in PlayersNearby)
-                if (playItem.Map != Map.Internal && playItem.Map == player.Key.Map && playItem.GetDistanceToSqrt(player.Key) < range)
+                if (playItem.Map != Map.Internal && playItem.Map == player.Key.Map && AimsUtil.GetDistanceToSqrt(playItem, player.Key) < range)
                     if (playItem != player.Key)
                         return player.Key;
 
@@ -77,7 +82,7 @@ namespace Server.Engines
             Item? playerNearby = PlayersInRange(playItem, range: 25);    // 25 is approximately the distance between the two furthest music devices at WBB
             bool isPlayerNearby = playerNearby != null;
             if (Core.Debug && isPlayerNearby && playItem != null)
-                Utility.SendSystemMessage(playItem, second_timeout: 5.0,
+                AimsHost.Current.SendSystemMessage(playItem, second_timeout: 5.0,
                     string.Format("Playback for {0} blocked because {1} is playing at {2}", playItem, playerNearby, playerNearby.Location));
             return !playing && !isPlayerNearby;
         }
@@ -87,16 +92,16 @@ namespace Server.Engines
 
         public CalypsoMusicPlayer()
         {
-            m_NextMusicTime.Start(0);               // we can play now
+            m_NextMusicTime.Start(-1);              // we can play now (Triggered is strictly after the timeout: Start(0) is ready only from the next tick)
         }
 
         #region Device playback
         // Shared by the Calypso music devices. The play lock is stopped while a performance runs and restarted with the
         //  device's delay when the most recent performance completes (see OnCompleted; after a cancel, once its last
         //  notes have drained).
-        private readonly Utility.LocalTimer m_NextMusicTime = new Utility.LocalTimer();
+        private readonly AimsUtil.LocalTimer m_NextMusicTime = new AimsUtil.LocalTimer();
         private Func<double>? m_DelayBetween;   // milliseconds, read when the performance ends
-        public Utility.LocalTimer NextMusicTime { get { return m_NextMusicTime; } }
+        public AimsUtil.LocalTimer NextMusicTime { get { return m_NextMusicTime; } }
         public bool IsPlayLocked { get { return !m_NextMusicTime.Running; } }
         public bool ReadyToPlay { get { return m_NextMusicTime.Triggered && !IsPlayLocked; } }
         // is the user playing music elsewhere?
@@ -158,7 +163,6 @@ namespace Server.Engines
             if (performance == null)
             {   // nothing started
                 EndInstrument(instrument);
-                ReleaseTemporarySession(from);
                 return true;
             }
 
@@ -220,7 +224,7 @@ namespace Server.Engines
                 // -1 means no checking, i.e., player keeps playing
                 if (m_range_exit > 0 /*&& source is not BaseAddon && source is not MusicMotionController*/)
                     // are we sufficiently close to our PlayItem?
-                    result &= playItem.Map == m.Map && playItem.GetDistanceToSqrt(m) < m_range_exit;
+                    result &= playItem.Map == m.Map && AimsUtil.GetDistanceToSqrt(playItem, m) < m_range_exit;
 
             return result;
         }
@@ -260,7 +264,6 @@ namespace Server.Engines
             if (m_AllDone != null)
                 m_AllDone(performer);
 
-            ReleaseTemporarySession(performer);
             ReleaseDeviceSession(session);
         }
         // we only have a temp RZR instrument when we are playing .rzr files
@@ -271,37 +274,14 @@ namespace Server.Engines
                 instrument.Delete();
         }
         // The device's own session exists only for its performance: release it, so the engine's timers and the
-        //  instrument's callbacks for it stop (SystemMusicPlayer.IsCurrent). Deferred, like the temporary session release:
-        //  the completion can be raised from inside the session's own timer tick.
+        //  instrument's callbacks for it stop (SystemMusicPlayer.IsCurrent). Deferred: the completion can be raised from
+        //  inside the session's own timer tick.
         private static void ReleaseDeviceSession(Commands.MusicContext? session)
         {
             if (session == null)
                 return;
 
             Timer.DelayCall(TimeSpan.Zero, () => session.Released = true);
-        }
-        // A temporary playback mobile (Utility.MakeTempMobile) passed to Play exists only for its performance: release its
-        //  context and delete it now. (Devices no longer create one.) Deferred: the completion can be raised from inside the
-        //  session's own timer tick. Idempotent (it finds the mobile deleted); players are never touched.
-        private static void ReleaseTemporarySession(Mobile? m)
-        {
-            if (m == null || m.Deleted || m.Player || m is Mobiles.PlayerMobile || !m.GetMobileBool(Mobile.MobileBoolTable.TempObject))
-                return;
-
-            Timer.DelayCall(TimeSpan.Zero, () =>
-            {
-                try
-                {
-                    if (m.Deleted)
-                        return;
-                    Commands.SystemMusicPlayer.ReleaseContext(m);
-                    m.Delete();
-                }
-                catch (Exception ex)
-                {
-                    Diagnostics.LogHelper.LogException(ex);
-                }
-            });
         }
         public class Metadata
         {
@@ -354,15 +334,15 @@ namespace Server.Engines
             {
                 try
                 {
-                    if (song is string && Utility.IsUOMusic(song as string))
+                    if (song is string && AimsUtil.IsUOMusic(song as string))
                     {
                         data = new Metadata(song as string, newTimer, tempo, prefetch, instrument, chatter, volume, concertmode);
                     }
                     else if (song is string razorFile)
                     {
-                        if (razorFile.EndsWith(".rzr") && File.Exists(Path.Combine(Core.DataDirectory, "song files", razorFile)))
+                        if (razorFile.EndsWith(".rzr") && File.Exists(Path.Combine(AimsUtil.DataDirectory, "song files", razorFile)))
                         {
-                            razorFile = Path.Combine(Core.DataDirectory, "song files", razorFile);
+                            razorFile = Path.Combine(AimsUtil.DataDirectory, "song files", razorFile);
                             foreach (var line in File.ReadLines(razorFile))
                             {
                                 string pattern = @"(\w+)\s*\:\s*(.*)";

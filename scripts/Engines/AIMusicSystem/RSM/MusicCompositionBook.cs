@@ -21,10 +21,12 @@
 
 /* Scripts/Engines/Music/MusicCompositionBook.cs
  * Changelog
- *  11/3/26, Adam (2026 modernization, 10/30/26 to 11/3/26)
+ *  11/5/26, Adam (2026 modernization, 10/30/26 to 11/5/26)
  *      Paste (context menu): a whole composition in one bulletin board post, wrapped as the client wraps it. Start /
  *      Stop to preview the book. At most 96 pages (MaxPages; a 300-page book crashed ClassicUO), a documented
  *      dependency of MidiToAims.
+ *      Portable AIMS: Paste opens the board with its own PasteBoard packet (the same bytes as BBDisplayBoard). Angel
+ *      Island only (#if ANGEL_ISLAND): the ArrayList context menu (else List<ContextMenuEntry>).
 *  1/31/22, Adam
 *		Display the Name property instead of the page count.
  *  1/12/22, Adam
@@ -73,7 +75,11 @@ namespace Server.Misc
         }
 
         // preview the book (in your backpack): Start, or Stop while its preview plays
+#if ANGEL_ISLAND
         public override void GetContextMenuEntries(Mobile from, ArrayList list)
+#else
+        public override void GetContextMenuEntries(Mobile from, List<ContextMenuEntry> list)
+#endif
         {
             base.GetContextMenuEntries(from, list);
 
@@ -103,8 +109,39 @@ namespace Server.Misc
                 if (!m_From.CheckAlive() || m_Book.Deleted || m_From.Backpack == null || !m_Book.IsChildOf(m_From.Backpack))
                     return;
 
-                m_From.Send(new BBDisplayBoard(m_Book.Serial, "paste a composition"));
+                m_From.Send(new PasteBoard(m_Book.Serial, "paste a composition"));
                 m_From.SendMessage("Click Post Message, paste your composition (Ctrl+V), and click Post.");
+            }
+        }
+
+        // the client's bulletin board gump, for this book (ClassicUO uses only the serial): the same packet as a board's
+        //  (BBDisplayBoard), so the music system needs nothing from the shard's bulletin boards to open it
+        private sealed class PasteBoard : Packet
+        {
+            public PasteBoard(Serial serial, string name)
+                : base(0x71)
+            {
+                if (name == null)
+                    name = "";
+
+                EnsureCapacity(38);
+
+                byte[] buffer = Utility.UTF8.GetBytes(name);
+
+                m_Stream.Write((byte)0x00); // PacketID
+                m_Stream.Write((int)serial); // Bulletin board serial
+
+                // Bulletin board name
+                if (buffer.Length >= 29)
+                {
+                    m_Stream.Write(buffer, 0, 29);
+                    m_Stream.Write((byte)0);
+                }
+                else
+                {
+                    m_Stream.Write(buffer, 0, buffer.Length);
+                    m_Stream.Fill(30 - buffer.Length);
+                }
             }
         }
 

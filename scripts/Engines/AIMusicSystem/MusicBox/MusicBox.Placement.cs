@@ -22,12 +22,15 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Placement.cs
  * Changelog
- *  10/30/26, Adam (2026 modernization)
+ *  11/5/26, Adam (2026 modernization, 10/30/26 to 11/5/26)
  *      Where a music box is (in the world, carried by a hired minstrel, elsewhere) decides whom it serves and how it
  *      answers; every rule that depends on it is here (speech, rights, access, replies, range, the listener check). A
  *      box in a container says "This must be in a house and be locked down to work." (it said "fail").
  *      Split from MusicBox.Speech.cs, MusicBox.Playback.cs, MusicBox.CommandHelpers.cs and MusicBox.cs; their history
  *      before 10/30/26 is in MusicBox.cs.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsUtil: GetDistanceToSqrt. Angel Island only (#if ANGEL_ISLAND): the hired minstrel's box.
  */
 
 using Server.Diagnostics;
@@ -66,7 +69,7 @@ namespace Server.Items
         // a world box answers speakers within 5 tiles; a carried box, whoever its carrier relays
         private bool InSpeechRange(Mobile m)
         {
-            return Placement == BoxPlacement.Carried || GetDistanceToSqrt(m) <= 5;
+            return Placement == BoxPlacement.Carried || AimsUtil.GetDistanceToSqrt(this, m) <= 5;
         }
         #endregion Placement
 
@@ -126,7 +129,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
 
                 // Fail closed; only attempt messaging if we actually have a mobile.
                 if (message && from != null)
@@ -159,7 +162,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return false; // Fail closed on error.
             }
         }
@@ -210,7 +213,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         #endregion Words and replies
@@ -229,6 +232,7 @@ namespace Server.Items
                 // RootParent may be null or deleted
                 if (RootParent is Mobile parent_mob)
                 {
+#if ANGEL_ISLAND
                     // Embedded music box (e.g., on a minstrel)
                     if (parent_mob is HireMinstrel hm && hm.ControlMaster != null)
                     {
@@ -240,6 +244,7 @@ namespace Server.Items
                         return parent_mob.Map == master.Map &&
                                master.GetDistanceToSqrt(parent_mob) < 15;
                     }
+#endif
 
                     return false; // no control master or unexpected parent
                 }
@@ -256,7 +261,7 @@ namespace Server.Items
                             ns.Mobile != null &&
                             ns.Running &&
                             this.Map == pm.Map &&
-                            this.GetDistanceToSqrt(pm) < 15);
+                            AimsUtil.GetDistanceToSqrt(this, pm) < 15);
                 }
 
                 // If it's some other Mobile type
@@ -267,7 +272,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return false;
             }
         }

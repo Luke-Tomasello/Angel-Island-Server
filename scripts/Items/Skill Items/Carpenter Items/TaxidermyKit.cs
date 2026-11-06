@@ -21,6 +21,9 @@
 
 /* Scripts/Items/SkillItems/CarpenterItems/TaxidermyKit.cs
  * CHANGELOG
+ *  11/5/26, Adam (portable AIMS)
+ *      TrophyAddon: the music play lock is an AimsUtil.LocalTimer (the music system's copy of Utility.LocalTimer).
+ *      No behavior change.
  *  10/25/26, Adam (AIMusicSystem Phase 4 Step 1: shared device playback)
  *      TrophyAddon: the music play lock, start and "playing elsewhere" check now come from CalypsoMusicPlayer
  *      (NextMusicTime, ReadyToPlay, StartPerformance, UserBlocked); EndMusic is gone (the player restarts the lock
@@ -419,7 +422,7 @@ namespace Server.Items
             return music;
         }
         private CalypsoMusicPlayer m_MusicPlayer = new CalypsoMusicPlayer();
-        private Utility.LocalTimer NextMusicTime { get { return m_MusicPlayer.NextMusicTime; } }   // the play lock
+        private AimsUtil.LocalTimer NextMusicTime { get { return m_MusicPlayer.NextMusicTime; } }   // the play lock
         public override bool HandlesOnMovement { get { return GetMusic() != null; } }
         public override void OnMovement(Mobile m, Point3D oldLocation)
         {   // CanPlay blocks if: the player is already playing, OR another player nearby (15 tiles) is playing

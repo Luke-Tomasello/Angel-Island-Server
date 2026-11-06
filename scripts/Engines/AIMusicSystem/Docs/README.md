@@ -1,8 +1,11 @@
 # AIMusicSystem
 
+*[Why I Built AIMS](WHY.md): why this exists, and whose work it is.*
+
 Angel Island's music system: playback engine, sheet music, authoring, the music box library and music devices.
 Consolidated here in Phase 2 of the modernization (physical relocation only: namespaces, type names,
-serialization, save-file locations, commands and behavior are unchanged).
+serialization, save-file locations, commands and behavior are unchanged). Since November 2026 the same folder also
+runs on a stock RunUO server: see [Running on another RunUO server](#running-on-another-runuo-server).
 
 ## History
 
@@ -25,12 +28,14 @@ the known exceptions are listed below.)
 | Folder | Layer | Contents |
 |---|---|---|
 | `Core/` | Engine | `SystemMusicPlayer` (sessions `MusicContext`, parser, scheduler, `[play`/`[StopMusic`/`[FilterMusic`, `MusicContexts.bin`), `CoreMusicPlayer` (note table, sound packets), `RazorInstrument` (playback device and script runner), `MusicEngineMetrics` (timing and load measurements: note lateness, a main-loop reference probe, drift per run, packets; `Logs/MusicEngine.log`, `[MusicMetrics report [label]`) |
+| `Compiler/` | Engine | `MusicCompiler` (a book's sections, plays and repeats expanded when it becomes sheet music; `[play preview`) |
+| `Host/` | Host | `AimsHost` (what AIMS needs from the shard it runs on, each with a stock default), `AimsLog`, `AimsUtil` (the stable hash and other helpers), `AimsPlayerData` (Music Karma and the music filter, when the shard doesn't keep them) |
 | `RSM/` | Integration | `RolledUpSheetMusic` (RSM), `ManuscriptPaper` + `MusicCompositionBook` (authoring into RSM), `CalypsoMusicPlayer` (device orchestrator used by items) |
 | `Library/` | Integration | `MusicLibrary` (the global music library: every published track and its record, `Music.bin`, the review queue, `FindSong(title)`, `[DupeMusic`, composers: ownership, music karma, publishing points, sales) |
 | `MusicBox/` | Client | `MusicBox` (the music box item: speech commands (a command table), playlists, publishing and review, royalties, sale notices) |
 | `Items/` | Clients | `MusicController` (trigger device; also plays the client's UO soundtrack), `MusicMotionController` |
 | `Instruments/` | Extensions | `AwardInstrument`, legacy `AwardHarp`/`AwardLapHarp`/`AwardLute` (load-only) |
-| `Tools/` | Tools | `MusicRecorder`, `BeatMonkey` (experimental harness), `MusicLoadTest` (`[MusicLoadTest`: music versus AI load test, alternating music-off and music-on phases, measured in `Logs/MusicEngine.log`) |
+| `Tools/` | Tools | `MusicRecorder` (`[MusicRecorder start|stop`: a performance, its lines and their timing, written into a composition book), `MidiToAimsCommand` (`[m2a`: a MIDI to composition books, with MidiToAims.Core), `BeatMonkey` (experimental harness), `MusicLoadTest` (`[MusicLoadTest`: music versus AI load test, alternating music-off and music-on phases, measured in `Logs/MusicEngine.log`) |
 | `Docs/` | | This file |
 
 Notation, timing and verified engine behavior: `AI Music Composer/Data/Notes/ENGINE.md`.
@@ -40,8 +45,9 @@ Notation, timing and verified engine behavior: `AI Music Composer/Data/Notes/ENG
 - Standard instruments (`Harp`, `LapHarp`, `Lute`, `BaseInstrument`) remain stock.
 - Consumers with their own gameplay: `RedBeard` (champion spawn), `HireMinstrel` (hirelings), trophy addons
   (`BaseAddon`, `BaseAddonDeed`, `TaxidermyKit`), `PlaySoundEffect` (shared sound-effect utility).
-- Hooks: `PlayerMobile` (`FilterMusic`, speech recording, guild points), `CharacterCreation` (`MusicLibrary.ReconnectPlayer`),
-  `Main.cs` ruleset gating, `CronTasks.CMusicConfigCleanup`, `Utility.MakeTempItem` / `MakeTempMobile`, Nuke, patches.
+- Hooks: `AngelIslandAimsHost` (`Scripts/Engines/AIMusicHost`: Angel Island's `AimsHost`), `PlayerMobile` (`FilterMusic`,
+  guild points), `CharacterCreation` (`MusicLibrary.ReconnectPlayer`), `Main.cs` ruleset gating,
+  `CronTasks.CMusicConfigCleanup`, `Utility.MakeTempMobile`, Nuke, patches.
 - One-time music migrations live with their patches in `Patches201_300/`: `MusicOwnershipReconciler` (PatchV252),
   `LegacyRsmRepair` (PatchV255), `MusicOrphanCleanup` (PatchV256), `RemasterOrphanCleanup` (PatchV262).
 
@@ -52,7 +58,28 @@ Notation, timing and verified engine behavior: `AI Music Composer/Data/Notes/ENG
   `Server.Items.Triggers.MusicController`, `Server.Items.MusicMotionController`, `Server.Items.AwardInstrument`,
   `Server.Items.AwardHarp` / `AwardLapHarp` / `AwardLute`. Changing a namespace needs `[TypeAlias]`, and
   `ManuscriptPaper` / `MusicBox` are also named in `data/vendor pricing.txt` and `data/objects.xml`.
-- Side files: `Saves/Music.bin` (library), `Saves/MusicContexts.bin` (sessions).
+- Side files: `Saves/Music.bin` (library), `Saves/MusicContexts.bin` (sessions), `Saves/AIMS/Players.bin` (Music Karma
+  and the music filter, only on a shard whose host doesn't keep them; never written on Angel Island).
+
+## Running on another RunUO server
+
+AIMS provides the vehicle; the shard provides the destination. Everything AIMS needs from a shard goes through
+`AimsHost` (`Host/AimsHost.cs`): logging and log files, the Data and Logs folders, account identity, households, Music
+Karma and the music filter, paying for a song, copies of sheets, internal storage, the sale event (and whether a
+leaderboard shows it), and the shard's settings (Test Center, `[play` access). Each member has a default that works on
+stock RunUO 2.6. A shard wires its own systems by deriving a class from `AimsHost` anywhere in its scripts; AIMS finds
+it. Angel Island's is `AngelIslandAimsHost` (`Scripts/Engines/AIMusicHost`), outside this folder, and reproduces what
+AIMS did here before it was portable.
+
+- Where Angel Island's core differs from stock RunUO (a signature, a type, a system stock doesn't have), the code is
+  under `#if ANGEL_ISLAND`, defined in `GMN Core.csproj`. Without the symbol, AIMS builds for stock RunUO.
+- The drop-in: `Compiler/`, `Core/`, `Host/`, `Library/`, `MusicBox/`, `RSM/`, `Tools/MusicRecorder.cs` and `Docs/`.
+  Angel Island extras, not part of it: `Items/`, `Instruments/` and the other `Tools/`.
+- Outside the folder, a stock server needs: `BaseInstrument` (`ConsumeUse` virtual; a `RazorInstrument` is not picked
+  as an instrument), a vendor for manuscript paper, composition books and music boxes (`SBBard`), and, for a book's
+  Paste, `BulletinBoards` routing a post to the book. .NET 8.
+- The test bed is RunUO.Model: stock RunUO 2.6 on .NET 8, with AIMS dropped in. Its client files are from before High
+  Seas (7.0.9.0), so `MapDefinitions` sets `MultiComponentList.PostHSFormat = false`; a mismatch misreads every house.
 
 ## Known engine-to-client dependencies (Phase 3)
 

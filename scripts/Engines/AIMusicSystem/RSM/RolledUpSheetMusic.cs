@@ -21,10 +21,14 @@
 
 /* Scripts/Engines/AIMusicSystem/RSM/RolledUpSheetMusic.cs
  * Changelog
- *  10/30/26, Adam (2026 modernization, 10/25/26 to 10/30/26)
+ *  11/5/26, Adam (2026 modernization, 10/25/26 to 11/5/26)
  *      Laid out for reading. [Dupe copies the whole sheet (it made a blank one) and the copy plays itself; a sheet
  *      without a composition plays nothing (HasComposition). GenHashCode no longer leaves a stray ManuscriptPaper in
  *      the world; CompareTo compares hashes (it could overflow). Serialize writes version 4 plainly (the same bytes).
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: account GUIDs and copies (CopySheet makes the copy). Angel Island only (#if ANGEL_ISLAND): Dupe and
+ *      CanDelete; elsewhere the sheet keeps its own OwnerGUID (saved after the composition).
  *  4/24/2024, Adam (TrackID)
  *      Add a trackID for identifying a RSM by title, and author/owner (differs from HashCode which is a hash of the music.)
  *  2/26/22, Adam (ConcertMode)
@@ -84,6 +88,12 @@ namespace Server.Misc
         private bool m_napster;             // shared player to player, not sold
         private string m_composition;       // the song: the music script
         private int m_hashCode;             // the hash of the music: this track's identity
+#if !ANGEL_ISLAND
+        private uint m_ownerGUID;           // the composer's account (Angel Island's core keeps OwnerGUID on every item)
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public uint OwnerGUID { get { return m_ownerGUID; } set { m_ownerGUID = value; } }
+#endif
 
         #region Properties
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
@@ -96,10 +106,7 @@ namespace Server.Misc
 
                 // Identity is account-rooted; PlayerMobile.GUID is the portable handle.
                 // Keep OwnerGUID synchronized with the assigned owner.
-                if (value is PlayerMobile pm && !pm.Deleted && pm.AcctGUID != 0)
-                    OwnerGUID = pm.AcctGUID;
-                else
-                    OwnerGUID = 0;
+                OwnerGUID = value is PlayerMobile && !value.Deleted ? AimsHost.Current.AccountGuid(value) : 0;
             }
         }
 
@@ -131,8 +138,8 @@ namespace Server.Misc
         {
             get
             {
-                string text = (m_title ?? "") + (Author ?? "") + (Owner != null ? Owner.AcctGUID.ToString() : "");
-                return Utility.GetStableHashCode(text.Replace(" ", "").ToLower());
+                string text = (m_title ?? "") + (Author ?? "") + (Owner != null ? AimsHost.Current.AccountGuid(Owner).ToString() : "");
+                return AimsUtil.GetStableHashCode(text.Replace(" ", "").ToLower());
             }
         }
 
@@ -210,11 +217,13 @@ namespace Server.Misc
         #region Item behavior
         protected override bool PlaysDefaultSong => false;  // a sheet plays its composition or nothing
 
+#if ANGEL_ISLAND
         // a temporary copy (a music box's) may be cleaned up once it has stopped playing
         public override bool CanDelete()
         {
             return base.CanDelete() && !IsInstancePlaying;
         }
+#endif
 
         public override void OnSingleClick(Mobile from)
         {
@@ -237,7 +246,7 @@ namespace Server.Misc
         #endregion Item behavior
 
         #region Dupe
-        public override Item Dupe(int amount)
+        public RolledUpSheetMusic CopySheet(int amount)
         {   // a complete, independent sheet: same music, attribution, hash and ownership; it plays itself.
             //  Runtime playback links (PlayItem, PlayMobile, AllDone, CheckSourceStatus) are left unset.
             RolledUpSheetMusic copy = new RolledUpSheetMusic(amount);
@@ -260,8 +269,14 @@ namespace Server.Misc
             copy.SuccessSound = SuccessSound;
             copy.FailureSound = FailureSound;
             copy.Instrument = copy;
-            return base.Dupe(copy, amount);
+            return copy;
         }
+#if ANGEL_ISLAND
+        public override Item Dupe(int amount)
+        {
+            return base.Dupe(CopySheet(amount), amount);
+        }
+#endif
         #endregion Dupe
 
         #region Serialization
@@ -276,6 +291,9 @@ namespace Server.Misc
             writer.WriteEncodedInt(m_price);
             writer.Write(m_title);
             writer.Write(m_composition);
+#if !ANGEL_ISLAND
+            writer.Write(m_ownerGUID);
+#endif
         }
 
         public override void Deserialize(GenericReader reader)
@@ -311,6 +329,10 @@ namespace Server.Misc
                             reader.ReadString();    // the old author (versions 0-3)
                         m_title = reader.ReadString();
                         m_composition = reader.ReadString();
+#if !ANGEL_ISLAND
+                        if (version >= 4)
+                            m_ownerGUID = reader.ReadUInt();
+#endif
                         break;
                     }
             }

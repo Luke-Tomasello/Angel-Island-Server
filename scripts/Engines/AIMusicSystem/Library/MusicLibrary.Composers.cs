@@ -22,10 +22,13 @@
 
 /* Scripts\Engines\AIMusicSystem\Library\MusicLibrary.Composers.cs
  * Changelog
- *  10/30/26, Adam (2026 modernization, 10/29/26 to 10/30/26)
+ *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
  *      The library's composers, moved out of MusicBox unchanged but for the names: the scoring factors, reconnecting a
  *      player's music ownership (ReconnectPlayer), music karma (GetMusicKarma), publishing points and sales figures.
  *      Moved from MusicBox (MusicBox.Library.cs); its history before 10/29/26 is in MusicBox.cs.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: account GUIDs.
  */
 
 using Server.Accounting;
@@ -66,16 +69,16 @@ namespace Server.Items
                 if (acct == null)
                     return;
 
-                uint guid = acct.GUID;
+                uint guid = AimsHost.Current.AccountGuid(acct);
                 if (guid == 0)
                     return;
 
                 // The owner setters (MusicInfo.Owner, RolledUpSheetMusic.Owner) stamp OwnerGUID from pm.AcctGUID: a character
                 //  whose AcctGUID is not its account's GUID (0, or another identity) would overwrite valid ownership GUIDs.
-                if (pm.AcctGUID != guid)
+                if (AimsHost.Current.AccountGuid(pm) != guid)
                 {
                     Console.WriteLine(
-                        $"[MUSIC RECONNECT ERROR] GUID mismatch: AccountGUID={guid}, PlayerMobileGUID={pm.AcctGUID}, Player={pm.Name}: nothing reconnected");
+                        $"[MUSIC RECONNECT ERROR] GUID mismatch: AccountGUID={guid}, PlayerMobileGUID={AimsHost.Current.AccountGuid(pm)}, Player={pm.Name}: nothing reconnected");
                     return;
                 }
 
@@ -203,7 +206,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
             }
         }
         #endregion Ownership
@@ -258,7 +261,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return 0;
             }
         }
@@ -284,7 +287,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 return 0;
             }
         }
@@ -316,7 +319,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 sales = plays = publications = 0;
                 return 0;
             }
@@ -369,7 +372,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
                 sales = plays = publications = 0;
                 return 0;
             }
@@ -422,7 +425,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
 
                 // Fail closed: leave outputs as zeroed.
                 totalSales = 0;
@@ -515,7 +518,7 @@ namespace Server.Items
             }
             catch (Exception ex)
             {
-                LogHelper.LogException(ex);
+                AimsLog.LogException(ex);
 
                 // Fail closed.
                 totalSales = 0;

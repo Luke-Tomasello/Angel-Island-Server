@@ -21,6 +21,9 @@
 
 /* Scripts/Mobiles/PlayerMobile.cs
  * ChangeLog:
+ *  11/6/2026, Adam (MusicRecorder)
+ *      OnSaid no longer records speech for the music recorder: MusicRecorder hears speech itself (EventSink.Speech), so
+ *      it works on any RunUO server. Recordings are unchanged.
  *  10/29/2026, Adam (MusicLibrary)
  *      Publishing points come from MusicLibrary.GetPublishingPoints (the music library moved out of MusicBox).
  *  10/18/2026, Adam (CanBeHarmful message)
@@ -6101,10 +6104,6 @@ namespace Server.Mobiles
         public override void OnSaid(SpeechEventArgs e)
         {
             base.OnSaid(e);
-
-            // this is the case when text is spoken via Razor
-            //  the other case is in RazorInstrument when text is spoken via RSM or other RazorInstrument
-            Engines.MusicRecorder.Record(e.Mobile, e.Speech);
 
             RecordSpeech(e.Mobile, e.Speech, (e.Blocked ? "blocked" : null));
         }

@@ -21,9 +21,14 @@
 
 /* Scripts\Engines\Music\MusicRecorder.cs
  * Changelog
- *  10/30/26, Adam (2026 modernization, 10/27/26 to 10/30/26)
+ *  11/6/26, Adam (2026 modernization, 10/27/26 to 11/6/26)
  *      Recordings carry '# Timer: <mode>' beside '# NewTimer:' (kept for older builds). Recording into a book keeps its
  *      size (at least MaxPages); a recording longer than the book is cut off with a message.
+ *      Portable AIMS: the recorder hears speech itself (EventSink.Speech; it was a line in PlayerMobile.OnSaid), keeps
+ *      its own copy of the book font widths (Angel Island's FontHelper, which began here), and logs a runaway recording
+ *      through AimsHost.WriteLog. On stock RunUO it fills the book's own pages (a stock book can't grow); Angel Island's
+ *      books still grow to MaxPages (#if ANGEL_ISLAND). Recordings are unchanged. Targeting anything but a book in reach
+ *      asks again (it lost the recording); cancel discards it.
  *  2/25/22, Adam
  *      Add support for ConcertMode
  *  2/20/22, Adam
@@ -31,13 +36,13 @@
  */
 
 using Server.Commands;
-using Server.Diagnostics;
 using Server.Items;
 using Server.Misc;
 using Server.Targeting;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Server.Engines
 {
@@ -112,12 +117,9 @@ namespace Server.Engines
                 // exploit check
                 if (MusicRecorderBuffer[m].Music.Count > 1024)
                 //if (MusicRecorderBuffer[m].Music.Count > 100)
-                {   // log it
-                    LogHelper logger = new LogHelper("MusicRecorder.log", false, false);
-                    logger.Log(LogType.Mobile, m);
-                    for (int ix = MusicRecorderBuffer[m].Music.Count - 10; ix < MusicRecorderBuffer[m].Music.Count; ix++)
-                        logger.Log(MusicRecorderBuffer[m].Music[ix]);
-                    logger.Finish();
+                {   // log it: who, and the last ten entries
+                    List<KeyValuePair<string, double>> music = MusicRecorderBuffer[m].Music;
+                    AimsHost.Current.WriteLog("MusicRecorder.log", m, music.Skip(music.Count - 10).Cast<object>());
 
                     // kill it
                     MusicRecorderBuffer[m].Music.Clear();
@@ -186,30 +188,51 @@ namespace Server.Engines
         public class LocationTarget : Target
         {
             private List<KeyValuePair<string, double>> m_music;
+            private bool m_done;                    // the recording was written into a book, or discarded (cancel)
             public LocationTarget(List<KeyValuePair<string, double>> music)
                 : base(2, false, TargetFlags.None)
             {
                 m_music = music;
             }
+            // anything but a book in reach (another item, out of range, ...) asks again: the recording is kept until it is
+            //  written or the player cancels
+            protected override void OnTargetFinish(Mobile from)
+            {
+                if (m_done || from.Deleted)
+                    return;
+
+                from.SendMessage("Target a music composition book to copy the recording to, or cancel to discard it.");
+                from.Target = new LocationTarget(m_music);
+            }
+            protected override void OnTargetCancel(Mobile from, TargetCancelType cancelType)
+            {
+                m_done = true;
+                from.SendMessage("The recording was discarded.");
+            }
             protected override void OnTarget(Mobile from, object target)
             {
+                if (target is not MusicCompositionBook)
+                    from.SendMessage("That is not a music composition book.");
+
                 if (target is MusicCompositionBook mcb)
                 {
-                    if (mcb != null)
+                    m_done = true;
                     {
                         // the book keeps its size (at least a full MaxPages book), and the recording fills it no further:
                         //  a bigger book would crash the client (MusicCompositionBook.MaxPages)
+#if ANGEL_ISLAND
                         int pages = Math.Max(mcb.PagesCount, MusicCompositionBook.MaxPages);
+#else
+                        int pages = mcb.PagesCount;                     // a stock book can't grow (no AddPage)
+#endif
                         int room = pages * 8;
-                        int written = 0;
+                        List<string> book = new List<string>();
                         bool cut = false;
                         void Add(string line)
                         {
-                            if (written < room) { mcb.AddLine(line); written++; }
+                            if (book.Count < room) book.Add(line);
                             else cut = true;
                         }
-
-                        mcb.ClearPages();
 
                         #region fixup pauses
                         // in the following example:
@@ -246,14 +269,20 @@ namespace Server.Engines
                         }
 
                         // the rest of the book stays blank, for edits (it used to shrink to the recording and two pages)
+#if ANGEL_ISLAND
+                        mcb.ClearPages();
+                        foreach (string line in book)
+                            mcb.AddLine(line);
                         while (mcb.PagesCount < pages)
                             mcb.AddPage(new BookPageInfo());
+#else
+                        for (int p = 0; p < pages; p++)
+                            mcb.Pages[p].Lines = book.Skip(p * 8).Take(8).ToArray();
+#endif
 
                         if (cut)
                             from.SendMessage(33, "The recording is longer than the book ({0} pages): the rest was not written.", pages);
                     }
-                    else
-                        from.SendMessage("That is not a music composition book.");
                 }
             }
             private List<string> BookLines(string[] chunks)
@@ -270,7 +299,7 @@ namespace Server.Engines
                         temp += line + " ";
 
                     // start trimming comment until it fits
-                    while (FontHelper.Width(temp) > BookLinePixels)
+                    while (RecorderFont.Width(temp) > BookLinePixels)
                         temp = temp.TrimEnd(temp[temp.Length - 1]);
 
                     bookLines.Add(temp.Trim()); // <== trim here ok (truncated)
@@ -283,7 +312,7 @@ namespace Server.Engines
                     foreach (string chunk in chunks)
                     {
                         // see if the next chunk will fit on the line
-                        if (FontHelper.Width(temp) + FontHelper.Width(chunk) + FontHelper.Width(' ') >= BookLinePixels)
+                        if (RecorderFont.Width(temp) + RecorderFont.Width(chunk) + RecorderFont.Width(' ') >= BookLinePixels)
                         {
                             bookLines.Add(temp);
                             temp = chunk + " ";
@@ -348,7 +377,56 @@ namespace Server.Engines
         }
         public static void Initialize()
         {
-            Server.CommandSystem.Register("MusicRecorder", AccessLevel.Player, new CommandEventHandler(MusicRecorder_OnCommand));
+            CommandSystem.Register("MusicRecorder", AccessLevel.Player, new CommandEventHandler(MusicRecorder_OnCommand));
+            EventSink.Speech += new SpeechEventHandler(EventSink_Speech);
+        }
+
+        // what a recording player says (a Razor script's lyrics, or typed): commands never get here (Mobile.DoSpeech
+        //  handles them first), and [play is recorded where it plays (SystemMusicPlayer). Lyrics a sheet or instrument
+        //  speaks are recorded in RazorInstrument.
+        private static void EventSink_Speech(SpeechEventArgs e)
+        {
+            if (e.Mobile != null)
+                Record(e.Mobile, e.Speech);
+        }
+
+        // the book font's character widths, in pixels, for wrapping a recording's lines. Began in this file; Yoar moved it to
+        //  its own (Scripts\Misc\FontHelper.cs, 8/5/23), which other Angel Island code uses. This copy keeps the recorder
+        //  portable and its books unchanged.
+        private static class RecorderFont
+        {
+            private static readonly Dictionary<char, int> m_Widths = new Dictionary<char, int>
+            {
+                ['i'] = 3, ['l'] = 3, ['m'] = 9, ['w'] = 9, ['E'] = 7, ['F'] = 7, ['I'] = 3, ['L'] = 7, ['M'] = 10, ['Q'] = 9,
+                ['T'] = 7, ['W'] = 12, ['Y'] = 9, [' '] = 8, ['.'] = 3, [','] = 3, ['\''] = 3, ['!'] = 3, ['?'] = 7, [':'] = 3,
+                [';'] = 3, ['/'] = 9, ['1'] = 4,
+            };
+
+            public static int Width(char c)
+            {
+                if (m_Widths.TryGetValue(c, out int width))
+                    return width;
+                else if (c >= 'A' && c <= 'Z')
+                    return 8;
+                else if (c >= '0' && c <= '9')
+                    return 8;
+                else if ((int)c > 127)
+                    return 16; // example '♪' is 15 pixels. We'll play it safe with 16.
+                else
+                    return 6;
+            }
+
+            public static int Width(string str)
+            {
+                if (str == null)
+                    return 0;
+
+                int width = 0;
+                for (int i = 0; i < str.Length; i++)
+                    width += Width(str[i]);
+
+                return width;
+            }
         }
         public static void MusicRecorder_OnCommand(CommandEventArgs e)
         {

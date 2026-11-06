@@ -22,9 +22,12 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Prompts.cs
  * Changelog
- *  10/30/26, Adam (2026 modernization, 10/29/26 to 10/30/26)
+ *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
  *      The review, rejection reason and buy prompts.
  *      Split from MusicBox.cs; its history before 10/29/26 is in MusicBox.cs.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: paying for a track (Angel Island: all enrolled bank accounts).
  */
 
 using Server.Accounting;
@@ -32,7 +35,6 @@ using Server.Commands;
 using Server.ContextMenus;
 using Server.Diagnostics;
 using Server.Engines;
-using Server.Engines.DataRecorder;
 using Server.Gumps;
 using Server.Misc;
 using Server.Mobiles;
@@ -143,7 +145,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
             }
 
@@ -195,7 +197,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
             }
 
@@ -253,7 +255,7 @@ namespace Server.Items
                     }
 
                     // Withdraw funds.
-                    if (!Mobiles.Banker.CombinedWithdrawFromAllEnrolled(m_mobile, m_price))
+                    if (!AimsHost.Current.Withdraw(m_mobile, m_price))
                     {
                         from.SendMessage("You do not have sufficient funds to purchase that track.");
                         return;
@@ -313,7 +315,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
             }
 

@@ -26,6 +26,10 @@
  *      The context menu: Add Sheet Music (submit or remaster) and Name Music Box, shown only where the box works
  *      (CheckRights, as double-click and speech). A sheet that is playing stops when the box takes it (stored or deleted).
  *      Split from MusicBox.cs; its history before 10/29/26 is in MusicBox.cs.
+ *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
+ *      (Host\), so this folder drops into other RunUO servers.
+ *      AimsHost: internal storage. Angel Island only (#if ANGEL_ISLAND): the ArrayList context menu (else
+ *      List<ContextMenuEntry>).
  */
 
 using Server.Accounting;
@@ -33,7 +37,6 @@ using Server.Commands;
 using Server.ContextMenus;
 using Server.Diagnostics;
 using Server.Engines;
-using Server.Engines.DataRecorder;
 using Server.Gumps;
 using Server.Misc;
 using Server.Mobiles;
@@ -52,7 +55,11 @@ namespace Server.Items
     public partial class MusicBox
     {
         #region Context Menus
+#if ANGEL_ISLAND
         public override void GetContextMenuEntries(Mobile from, ArrayList list)
+#else
+        public override void GetContextMenuEntries(Mobile from, List<ContextMenuEntry> list)
+#endif
         {
             base.GetContextMenuEntries(from, list);
 
@@ -275,7 +282,7 @@ namespace Server.Items
                                 parentContainer.RemoveItem(rsm);
 
                             // Move into internal map/storage for persistent repository ownership.
-                            rsm.MoveToIntStorage();
+                            AimsHost.Current.MoveToInternal(rsm);
 
                             // Create repository info and mark Napster submission.
                             MusicInfo info = new MusicInfo(rsm.Owner, rsm.Price);
@@ -332,7 +339,7 @@ namespace Server.Items
                         c.RemoveItem(rsm);
 
                     // Move into internal storage.
-                    rsm.MoveToIntStorage();
+                    AimsHost.Current.MoveToInternal(rsm);
 
                     MusicLibrary.Repository.Add(rsm, new MusicInfo(rsm.Owner, rsm.Price));
 
@@ -342,7 +349,7 @@ namespace Server.Items
                 }
                 catch (Exception ex)
                 {
-                    LogHelper.LogException(ex);
+                    AimsLog.LogException(ex);
                 }
             }
             // The sheet is about to go into the library (internal storage) or be deleted: a performance in progress would
