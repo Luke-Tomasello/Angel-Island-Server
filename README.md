@@ -110,6 +110,15 @@ them. The system is in `scripts/Engines/AIMusicSystem`, with the story behind it
 songs, is in `AI Music Composer/`, along with songs by Galois, Angel Island's Grandmaster Composer, shared with his
 permission.
 
+How players use it is on the Angel Island wiki:
+[Music Composition](https://game-master.net/aiwiki/index.php/Music_Composition),
+[Sheet Music](https://game-master.net/aiwiki/index.php/Sheet_Music),
+[Music Box](https://game-master.net/aiwiki/index.php/Music_Box),
+[Musicianship](https://game-master.net/aiwiki/index.php/Musicianship),
+[Sound List](https://game-master.net/aiwiki/index.php/Sound_List) and
+[MidiToAIMS](https://game-master.net/aiwiki/index.php/MidiToAIMS). The wiki pages' sources are in
+`AI Music Composer/Docs`.
+
 ## See it
 
 - YouTube: [Ultima Online Free Shard](https://www.youtube.com/@UltimaOnlineFreeShard)
