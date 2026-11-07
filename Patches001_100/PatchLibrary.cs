@@ -44,6 +44,10 @@
 
 /* Patches001_100/PatchLibrary.cs
  * ChangeLog
+ *  11/6/26, Adam (PatchV22)
+ *      A world without data\Patches\Angel Island teleporters.cfg (a new world: the file was never in SVN) has nothing to
+ *      remove: say so and finish, instead of throwing on the missing file. The list names teleporters by serial in
+ *      Angel Island's world, so on a new world it could only ever have matched unrelated items.
  *  10/29/26, Adam (MusicLibrary)
  *      Type names only: the music library moved out of MusicBox (MusicBox.GlobalMusicRepository is MusicLibrary.Repository,
  *      MusicBox.MusicInfo is MusicLibrary.MusicInfo). No patch changes what it does.
@@ -1290,6 +1294,11 @@ namespace Patches001_100
             if (StandardShards())
             {
                 EchoOut("One-time patch to remove some Felucca teleporters and surrounding deco.", ConsoleColor.Magenta);
+                if (!File.Exists(Path.Combine(Core.DataDirectory, "Patches", "Angel Island teleporters.cfg")))
+                {   // the list names teleporters by serial in the world it was made from: without it (a new world) there's nothing to remove
+                    EchoOut("Nothing to do: no teleporter list (Patches\\Angel Island teleporters.cfg) for this world.", ConsoleColor.Magenta);
+                    return 0;
+                }
                 EchoOut("This patch will run about 5 minutes...", ConsoleColor.Yellow);
                 Mute();
                 try
