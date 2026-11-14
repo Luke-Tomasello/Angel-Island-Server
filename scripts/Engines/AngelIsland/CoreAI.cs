@@ -22,6 +22,10 @@
 /* Scripts/Engines/AngelIsland/CoreAI.cs
  * ChangeLog
  *
+ * 11/7/26, Adam (MusicSharing retired)
+ * Retired the MusicSharing dynamic feature (Obsolete; its ordinal is kept): music sharing is the -sharemusic startup switch.
+ * 11/7/26, Adam (MusicSharing)
+ * Added the MusicSharing dynamic feature: songs shared between the shards on this machine (Engines\AIMusicShare), per shard
  * 5/15/23, Yoar (BolaThrowLock, BolaMountLock)
  * Added configurable bola lock delays
  * 5/10/23, Yoar (PJUMBountyCap)
@@ -823,7 +827,9 @@ namespace Server
             MortalisVisible,
             SeasonsVisible,
             TestCenterVisible,
-            UpheavalVisible
+            UpheavalVisible,
+            [Obsolete("Retired: music sharing is the -sharemusic startup switch (Core.ShareMusic). Retained for FeatureBits ordinal compatibility; do not reuse.")]
+            MusicSharing            // songs shared between the shards on this machine (Engines\AIMusicShare)
         }
 
         internal static bool[] DynamicFeatures = new bool[Enum.GetValues(typeof(FeatureBits)).Length];

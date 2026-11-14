@@ -1,8 +1,6 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
+ *                   The Angel Island Music System (AIMS)
  *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.

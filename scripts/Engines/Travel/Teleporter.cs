@@ -21,6 +21,8 @@
 
 /* scripts\Engines\Travel\Teleporter.cs
  * CHANGELOG:
+ *  11/8/26, Adam (shard time)
+ *      EventTeleporter.OffsetFromUTC marked obsolete; EventTimeZone added (an event's own time zone for typing and showing its times: see Event.cs).
  *  10/18/26, Adam (confinement Stage 5)
  *      TestCenterTeleporter: a misplaced entry portal (not outside Test Center, or not leading into it) or exit portal (not
  *      in Test Center, or one that would put the original back in Test Center) is refused and reported
@@ -1696,11 +1698,18 @@ namespace Server.Items
             get { return m_event.EventEnd; }
             set { m_event.EventEnd = value; }
         }
+        [Obsolete("Use EventTimeZone (a zone name, with daylight saving): see Event.OffsetFromUTC.")]
         [CommandProperty(AccessLevel.Seer)]
         public int OffsetFromUTC
         {
             get { return m_event.OffsetFromUTC; }
             set { m_event.OffsetFromUTC = value; InvalidateProperties(); }
+        }
+        [CommandProperty(AccessLevel.Seer)]
+        public string EventTimeZone
+        {
+            get { return m_event.EventTimeZone; }
+            set { m_event.EventTimeZone = value; InvalidateProperties(); }
         }
         [CommandProperty(AccessLevel.Seer)]
         public TimeSpan Countdown

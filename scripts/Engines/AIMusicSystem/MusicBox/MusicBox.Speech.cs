@@ -1,9 +1,7 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
- *   
+ *                   The Angel Island Music System (AIMS)
+ *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
@@ -22,13 +20,16 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Speech.cs
  * Changelog
- *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
+ *  11/8/26, Adam (2026 modernization, 10/29/26 to 11/8/26)
  *      The speech interface: OnSpeech dispatches through the command table (MusicBox.Commands.cs; staff commands in
  *      MusicBox.StaffCommands.cs).
  *      Split from MusicBox.cs; its history before 10/29/26 is in MusicBox.cs.
  *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
  *      (Host\), so this folder drops into other RunUO servers.
  *      AimsHost: staff messages.
+ *      A composer speaking to a music box collects music box credit owed to them (MusicLibrary.CollectCredits).
+ *      ComposerVisit (was CollectCredits): the composer is also told review decisions on their songs (TellComposer).
+ *      TextCommands.Status ('status').
  */
 
 using Server.Accounting;
@@ -79,6 +80,7 @@ namespace Server.Items
             // composer/purchaser
             Sales,          // total composers sales
             Purchases,      // player purchases
+            Status,         // a composer's songs (review results) and sales
             #endregion  player issued commands
 
             Unknown = 100,  // unknown command
@@ -264,6 +266,9 @@ namespace Server.Items
                 // Within speaking range (a carried box hears through its carrier: MusicBox.Placement.cs).
                 if (!InSpeechRange(e.Mobile))
                     return;
+
+                // A composer using a music box collects credit owed from earlier sales (before "sales" reports it).
+                MusicLibrary.ComposerVisit(e.Mobile);
 
                 // Ensure we have a valid PlayContext for this user before processing commands.
                 RefreshPlayContext(e.Mobile);

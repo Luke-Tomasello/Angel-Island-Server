@@ -21,6 +21,9 @@
 
 /* Scripts/Accounting/AccountIPManager.cs
  * CHANGELOG
+ *	11/8/26, Adam (shard time)
+ *		Removed the TEST CODE block in AcquireIpInfo that printed each player's time zone (from the GeoIP lookup) to the
+ *		console. The lookup's Location.TimeZone is still in the stored CityResponse if a feature ever needs it.
  *	8/27/2023, Adam,
  *		Initial Creation
  */
@@ -117,23 +120,6 @@ namespace Server.Accounting
                             response = client.City(userIPInfo.Ip);
                         else
                             continue; // error, should never happen
-
-                        #region TEST CODE
-                        string? playerTimeZoneId = response.Location.TimeZone;
-                        if (!string.IsNullOrEmpty(playerTimeZoneId))
-                        {
-                            try
-                            {
-                                TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(playerTimeZoneId);
-                                // Now you can use tz for offsets, DST rules, conversions, etc.
-                                Console.WriteLine($"Player TZ: {tz.DisplayName} (ID: {tz.Id})");
-                            }
-                            catch (TimeZoneNotFoundException)
-                            {
-                                // Rare fallback: invalid or unsupported TZ string
-                            }
-                        }
-                        #endregion TEST CODE
                     }
                     catch (Exception ex)
                     {   // Sample Error: "The IP address '127.0.0.1' is a reserved IP address (private, multicast, etc.)."

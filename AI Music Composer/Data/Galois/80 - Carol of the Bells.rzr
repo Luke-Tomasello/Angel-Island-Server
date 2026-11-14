@@ -1,0 +1,36 @@
+# Author: Galois
+# Song: Carol of the Bells
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: False
+say '[play as 0.26 a 0.11 as 0.11 g 0.26 as 0.26 a 0.11 as 0.11 g 0.26' 
+say '[play as 0.26 a 0.11 as 0.11 g 0.26 as 0.26 a 0.11 as 0.11 g 0.24' 
+say '[play -gh as 0.24 a 0.11 as 0.11 g 0.24 -fh as 0.26 a 0.11 as 0.11 g 0.24' 
+say '[play -dsh as 0.24 a 0.11 as 0.11 g 0.24 -dh as 0.26 a 0.11 as 0.11 g 0.22' 
+say '[play -g -dsh as 0.24 a 0.11 as 0.11 g 0.22 -f -dh as 0.26 a 0.11 as 0.11 g 0.22' 
+say '[play -ds -c as 0.24 a 0.11 as 0.11 g 0.22 -d -g as 0.26 a 0.11 as 0.11 g 0.22' 
+say '[play -ds -g as 0.24 a 0.11 as 0.11 g 0.22 -g -dh as 0.26 a 0.11 as 0.11 g 0.22' 
+say '[play -c -dsh as 0.24 a 0.11 as 0.11 g 0.22 -g -dh as 0.26 a 0.11 as 0.11 g 0.22' 
+say '[play -g -ash dh 0.24 -ah c 0.09 -ash dh 0.09 -gh as 0.22' 
+say '[play -g -ash dh 0.24 -ah c 0.09 -ash dh 0.09 -gh as 0.22' 
+say '[play -f -ash dh 0.24 -ah c 0.09 -ash dh 0.09 -gh as 0.22' 
+say '[play -g -ash dh 0.24 -ah c 0.09 -ash dh 0.09 -gh as 0.22' 
+say '[play -g -dh gh 0.24 -dsh gh 0.11 +gh 0.11 fh 0.11 dsh 0.07' 
+say '[play -g -gh dh 0.24 -gh dh 0.11 +dh 0.11 c 0.11 as 0.07' 
+say '[play -ds -gh c 0.24 -dsh c 0.11 -ch 0.11 dh 0.11 c 0.07' 
+say '[play -g -dh g 0.24 -dh g 0.11 -gh 0.11 g 0.22' 
+say '[play -d -as d 0.11 e 0.11 fs 0.11 g 0.11 a 0.11 as 0.09' 
+say '[play -e c 0.11 dh 0.09 -fs c 0.24 -g as 0.24' 
+say '[play -d -as d 0.11 e 0.11 fs 0.11 g 0.11 a 0.11 as 0.11' 
+say '[play -e c 0.11 dh 0.09 -fs c 0.24 -g as 0.22' 
+say '[play -f -dh as 0.26 a 0.11 as 0.11 g 0.22' 
+say '[play -ds -c as 0.26 a 0.11 as 0.11 g 0.22' 
+say '[play -d -fh as 0.26 a 0.11 as 0.11 g 0.22' 
+say '[play -cl -dsh as 0.26 a 0.11 as 0.11 g 0.22' 
+say '[play -g -dh as 0.26 a 0.11 as 0.11 g 0.26' 
+say '[play as 0.26 a 0.11 as 0.11 g 0.26' 
+say '[play as 0.26 a 0.11 as 0.11 g 0.26' 
+say '[play as 0.26 a 0.11 as 0.11 g 0.26' 
+say '[play -g 0.11 -as 0.11 -dh 0.13 g 0.15 as 0.17 dh 0.19 gh' 

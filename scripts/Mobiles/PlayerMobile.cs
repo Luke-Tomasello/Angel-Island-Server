@@ -21,6 +21,22 @@
 
 /* Scripts/Mobiles/PlayerMobile.cs
  * ChangeLog:
+ *  11/11/2026, Adam (death killer)
+ *      DeathKiller (not saved): OnDeath keeps the last mobile to damage the player, before the damage entries are
+ *      cleared, so the death announcement names the real killer (it used to name the last aggressor, which can be
+ *      a creature the player was attacking: "slain by a sheep").
+ *  11/11/2026, Adam (server alerts)
+ *      ServerAlerts (GameMaster; PlayerBoolTable bit 33, saved with the table): staff who set it hear the Herald's
+ *      staff alerts (exceptions) as System Messages (Scripts/Misc/StaffAlerts.cs). UOAdmin sets it at login.
+ *  11/11/2026, Adam (PlayerDisconnectedWithPets)
+ *      PlayerDisconnectedWithPets was 1u << 32, which is bit 0 (a 32-bit shift wraps), the same bit as Glassblowing:
+ *      disconnecting with pets granted Glassblowing and the next login took it away, even from a buyer. Now
+ *      1ul << 32, its own bit. Saved characters are left as they are: whoever has bit 0 keeps Glassblowing (Adam:
+ *      "the secret bonus"). A character saved with its pets stashed under the old bit still gets them back: at
+ *      login, bit 0 without the new flag also looks for stashed pets, only ones marked IsIntMapStorage (never a
+ *      glassblower's ridden mount, which is on the internal map too).
+ *  11/8/2026, Adam (shard time)
+ *      The report log's time is the shard's time with its zone's name (ShardClock) instead of "(Game Time)".
  *  11/6/2026, Adam (MusicRecorder)
  *      OnSaid no longer records speech for the music recorder: MusicRecorder hears speech itself (EventSink.Speech), so
  *      it works on any RunUO server. Recordings are unchanged.
@@ -672,7 +688,8 @@ namespace Server.Mobiles
         InMemoriam = 1u << 29,                  // Adam - Player passed away :(
         OneYearVeteranReward = 1u << 30,        // player has already received the One Year Veteran Reward
         SuppressNextWelcomeMessage = 1u << 31,  // A player clone returning from test center doesn't get the welcome message
-        PlayerDisconnectedWithPets = 1u << 32   // a player disconnected and his pets were stashed on the internal map
+        PlayerDisconnectedWithPets = 1ul << 32, // a player disconnected and his pets were stashed on the internal map (was 1u << 32 = bit 0, Glassblowing)
+        ServerAlerts = 1ul << 33,               // Adam - staff who hear the Herald's alerts (exceptions); UOAdmin sets it at login
     }
 
     public enum NpcGuild
@@ -807,6 +824,21 @@ namespace Server.Mobiles
         }
 
         #endregion
+        #region Death Killer
+        // the last mobile to damage this player before the latest death (null: nothing did), set in OnDeath, read by
+        //  the death announcement. Not saved: it's only for the moment of death.
+        public Mobile? DeathKiller { get; private set; }
+        #endregion Death Killer
+        #region Server Alerts
+        // staff who asked to hear server alerts (exceptions...) as System Messages: UOAdmin sets it at login
+        // ([self set serveralerts true). Kept in the player bool table, so it's saved with the character.
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool ServerAlerts
+        {
+            get { return GetPlayerBool(PlayerBoolTable.ServerAlerts); }
+            set { SetPlayerBool(PlayerBoolTable.ServerAlerts, value); }
+        }
+        #endregion Server Alerts
         #region Ghost Blindness
         private DateTime m_SightExpire = DateTime.MaxValue;
         private bool m_Blind = false;
@@ -2704,7 +2736,12 @@ namespace Server.Mobiles
 
             #region Recover stashed pets
 
-            if (pm.GetPlayerBool(PlayerBoolTable.PlayerDisconnectedWithPets))
+            // Until 11/11/26 PlayerDisconnectedWithPets was bit 0, the Glassblowing bit, so a character saved with its
+            // pets stashed may have only bit 0. Look for stashed pets then too, but only ones really stashed
+            // (IsIntMapStorage): a glassblower's ridden mount is on the internal map as well, and stays under them.
+            bool stashed = pm.GetPlayerBool(PlayerBoolTable.PlayerDisconnectedWithPets);
+            bool legacyStash = !stashed && pm.GetPlayerBool(PlayerBoolTable.Glassblowing);
+            if (stashed || legacyStash)
             {
                 pm.SetPlayerBool(PlayerBoolTable.PlayerDisconnectedWithPets, false);
 
@@ -2717,6 +2754,9 @@ namespace Server.Mobiles
 
                         // Pets should still be stashed on Internal. If not, leave them alone.
                         if (m.Map != Map.Internal)
+                            continue;
+
+                        if (legacyStash && !m.IsIntMapStorage)
                             continue;
 
                         Point3D restoreLocation = m.Location;
@@ -5490,6 +5530,10 @@ namespace Server.Mobiles
 
             Mobile killer = this.FindMostRecentDamager(true);
 
+            // who struck last, for the death announcement (OnDeathDoppelganger): read here, because the damage
+            //  entries are cleared below, before the PlayerDeath event that announces it
+            DeathKiller = this.FindMostRecentDamager(false);
+
             if (Core.OldEthics)
                 Ethics.Ethic.HandleDeath(this, killer);
 
@@ -6047,7 +6091,7 @@ namespace Server.Mobiles
             m_ReportLogger.Log(LogType.Text,
                 string.Format("{0} (acct {1}, SN {2}, IP {3}) reported by {4} (acct {5}, SN {6}) at {7}, at {8}.\r\n\r\n",
                     this.Name, ((Account)this.Account).Username, this.Serial, ((this.NetState != null) ? this.NetState.ToString() : ""),
-                    from.Name, ((Account)from.Account).Username, from.Serial, string.Format("{0} (Game Time)", AdjustedDateTime.GameTime.ToString()),
+                    from.Name, ((Account)from.Account).Username, from.Serial, string.Format("{0} ({1})", ShardClock.Now.ToString(), ShardClock.NameAt(DateTime.UtcNow)),
                         from.Location));
             //Console.WriteLine("{0} (acct {1}, SN {2}, IP {3}) reported by {4} (acct {5}, SN {6}) at {7}, at {8}.\r\n\r\n",
             //    this.Name, ((Account)this.Account).Username, this.Serial, this.NetState.ToString(), from.Name, ((Account)from.Account).Username, from.Serial, DateTime.UtcNow, from.Location);

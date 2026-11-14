@@ -21,6 +21,11 @@
 
 /* Scripts\misc\RazorNegotiator.cs
  * ChangeLog:
+ *  11/10/2026, Adam (staff skip the Razor checks' penalties)
+ *      Staff were never disconnected for failing Razor negotiation or the Razor 'Code' test, but they
+ *      still got the warning gump, the red console line, the Failed Code Tests.log entry and the
+ *      InvalidRazor account flag. Staff tools that log in without Razor (UOAdmin) made that noise on
+ *      every login. Both timeouts now return early for staff. Players are unchanged.
  *  6/12/2023, Adam (GMN Razor Enforcement)
  *      We now define new packets to support a mild cryptographic handshake with Razor.
  *      If Razor fails the handshake, and ForceGMNRZR is set, the user will get a dialog
@@ -342,6 +347,10 @@ namespace Server.Misc
 
             m_Table.Remove(m);
 
+            // staff are never disconnected here; skip the warning too (staff tools like UOAdmin don't run Razor)
+            if (m.AccessLevel > AccessLevel.Player)
+                return;
+
             if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.RazorNegotiateWarnAndKick))
             {
                 if (!RazorFeatureControl.KickOnFailure)
@@ -370,6 +379,11 @@ namespace Server.Misc
             uint seed = (uint)Utility.GetStableHashCode(string.Format("{0}{1}", RazorCodeHandshake, (uint)(state as Mobile).NetState.m_Seed));
 
             m_Table.Remove(seed);
+
+            // staff are never disconnected here; skip the console line, log and account flag (staff tools like UOAdmin)
+            if (m.AccessLevel > AccessLevel.Player)
+                return;
+
             bool hasException = ClientException.IsException((state as Mobile).NetState.Address);
             if (!CoreAI.ForceGMNCUO || hasException)
             {

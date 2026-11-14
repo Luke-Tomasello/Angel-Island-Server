@@ -1,5 +1,24 @@
 /***************************************************************************
  *
+ *                   The Angel Island Music System (AIMS)
+ *
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
+ *   email                   : luke@tomasello.com
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
  *  MidiToAims - a MIDI file to an AIMS composition (.rzr): the command line (the work is MidiToAims.Core).
  *
  *      MidiToAims init <song.mid>                     write <song>.m2a beside the MIDI: the arrangement settings
@@ -44,6 +63,14 @@
  *
  ***************************************************************************/
 
+/* AI Music Composer\MidiToAims\Program.cs
+ * ChangeLog
+ *  11/8/26, Adam
+ *      Changelog added. The m2a> prompt opens with a banner, at most 79 characters a line: the build date (stamped by
+ *      MidiToAims.csproj), the copyright (Tomasello Software LLC, GNU GPL), the Angel Island Music System's GitHub
+ *      repository, and what to try first ([play c e g, [play preview, help, exit).
+ */
+
 using System.Text.RegularExpressions;
 
 namespace MidiToAims
@@ -53,6 +80,11 @@ namespace MidiToAims
         // --debug (MidiToAims --debug, the m2a> prompt's debug on, or one command's --debug): the details too (the files
         //  found and played, each line's skipped notes, notes cut short); else a line for what matters
         public static bool Debug;
+
+        // the date this exe was built (MidiToAims.csproj stamps it: AssemblyMetadata "BuildDate"), for the m2a> banner
+        private static string BuildDate =>
+            typeof(Program).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+                .OfType<System.Reflection.AssemblyMetadataAttribute>().FirstOrDefault(a => a.Key == "BuildDate")?.Value ?? "unknown";
 
         public static int Main(string[] args)
         {
@@ -75,7 +107,20 @@ namespace MidiToAims
         //  (Ctrl+C stops it) before the prompt returns.
         private static int Prompt()
         {
-            Console.WriteLine("MidiToAims: type [play c e g to hear a phrase, [play preview \"song.rzr\" to hear a song, help, or exit.");
+            // the banner: at most 79 characters a line, so it fits an 80-column console
+            string border = new string('*', 79);
+            Console.WriteLine(border);
+            Console.WriteLine("* MidiToAims (build {0})", BuildDate);
+            Console.WriteLine("* A composer's workbench for the Angel Island Music System (AIMS)");
+            Console.WriteLine("* Copyright (C) 2026 Tomasello Software LLC.");
+            Console.WriteLine("* Free software under the GNU GPL; no warranty.");
+            Console.WriteLine("* github.com/Luke-Tomasello/Angel-Island-Music-System");
+            Console.WriteLine("*");
+            Console.WriteLine("* Try:  [play c e g                hear a phrase");
+            Console.WriteLine("*       [play preview \"song.rzr\"   hear a song");
+            Console.WriteLine("*       help                       every command");
+            Console.WriteLine("*       exit                       quit");
+            Console.WriteLine(border);
             while (true)
             {
                 Console.Write("m2a> ");

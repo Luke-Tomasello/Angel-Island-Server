@@ -59,8 +59,9 @@ Making it yours: the arrangement settings
 
 This writes "Minuet in A minor.m2a", the arrangement settings. Open it in
 Notepad and set "Arranged by" to your character's name - that is the name
-the Music Box shows. Change anything else you like (which track is the
-melody, instruments, octaves), then convert again:
+the Music Box shows (left blank, whoever transcribes the books is credited).
+Change anything else you like (which track is the melody, instruments,
+octaves), then convert again:
 
     m2a> minuet
 

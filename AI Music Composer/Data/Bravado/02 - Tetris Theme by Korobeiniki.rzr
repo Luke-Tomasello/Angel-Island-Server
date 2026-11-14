@@ -1,0 +1,31 @@
+# Instrument: Harp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# Author: Bravado
+# Song: Tetris Theme by Korobeiniki
+# Napster: false
+# Price: 200
+say '[play +eh 0.36 bh 0.18 ch 0.18 +dh 0.18 +eh 0.09 +dh 0.09 ch 0.18 bh 0.18 ah 0.36 ah 0.18 ch 0.18' 
+wait 2100
+say '[play +eh 0.36 +dh 0.18 ch 0.18 bh 0.36 bh 0.09 bh 0.09 ch 0.18 +dh 0.36 +eh 0.36 ch 0.36' 
+wait 2500
+say '[play ah 0.36 ah 0.72 +dh 0.36 +dh 0.18 +fh 0.18 +ah 0.36 +gh 0.18 +fh 0.18 +eh 0.36 +eh 0.18' 
+wait 3100
+say '[play ch 0.18 +eh 0.36 +dh 0.18 ch 0.18 bh 0.36 bh 0.09 bh 0.09 ch 0.18' 
+wait 1600
+say '[play +dh 0.36 +eh 0.36 ch 0.36 ah 0.36 ah 0.72 +eh 0.36 bh 0.18 ch 0.18 +dh 0.18' 
+wait 3100
+say '[play +eh 0.09 +dh 0.09 ch 0.18 bh 0.18 ah 0.36 ah 0.18 ch 0.18 +eh 0.36 +dh 0.18 ch 0.18 bh 0.36' 
+wait 2300
+say '[play bh 0.18 ch 0.18 +dh 0.36 +eh 0.36 ch 0.36 ah 0.36 ah 0.72 +dh 0.36 +dh 0.18 +fh 0.18' 
+wait 3200
+say '[play +ah 0.36 +gh 0.18 +fh 0.18 +eh 0.36 +eh 0.18 ch 0.18 +eh 0.36 +dh 0.18 ch 0.18 bh 0.36' 
+wait 2500
+say '[play bh 0.18 ch 0.18 +dh 0.36 +eh 0.36 ch 0.36 ah 0.36 ah 0.72 ++eh 0.01 ch 0.72' 
+wait 3300
+say '[play ch 0.01 a 0.72 +dh 0.01 b 0.72 bh 0.01 gs 0.72 ch 0.01 a 0.72 ah 0.01 e 0.72 gsh 0.01 e 0.72' 
+wait 4400
+say '[play bh 0.01 gsh 0.72 ++eh 0.01 ch 0.72 ch 0.01 a 0.72 +dh 0.01 b 0.72 bh 0.01 gsh 0.72' 
+wait 3600
+say '[play ch 0.01 a 0.36 ++eh 0.01 ch 0.36 +ah 0.01 +eh 0.36 +ah 0.01 +eh 0.36 +gsh 0.01 +eh 1.44' 

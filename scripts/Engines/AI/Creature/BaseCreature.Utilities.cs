@@ -21,10 +21,17 @@
 
 /* Scripts\Engines\AI\Creature\BaseCreature.Utilities.cs
  * ChangeLog
+ *  11/7/2026, Adam
+ *      OnDeathLeaderBoards: the champion spawn policy is back for every creature a champion engine spawns, not only its
+ *      boss. r992 (7/1/26) moved it into BaseChampion, so since then the waves gave PvM points only: no township credit
+ *      (LB subsidies and fame), and the Angel Island prison spawn (Spirit, VengefulSpirit, Soul, AngelofJustice,
+ *      AIPostGuard, AIGuardCaptain: none is a BaseChampion) no Prison Spawn points, which left that leaderboard tab blank.
+ *      Engine with KillDatabase: township credit; AI_Escape / AI_Guard engines also PQChamps. Event bosses still override.
  *  3/29/2026, Adam
  *      Created.
  */
 
+using Server.Engines.ChampionSpawn;
 using Server.Engines.DataRecorder;
 using Server.Engines.PartySystem;
 using Server.Items;
@@ -87,44 +94,28 @@ namespace Server.Mobiles
         ///         this.AwardDeathRewards(list, SpawnerHandle);
         ///
         /// </summary>
+        /// <summary>
+        /// The leaderboard awards for this creature's death. Default: PvM points; a creature spawned by a champion engine
+        /// whose KillDatabase is on (every engine since PatchV202) also gives township credit, and one from an Angel Island
+        /// prison engine (AI_Escape, AI_Guard) also gives Prison Spawn points (PQChamps). That holds for the whole spawn,
+        /// the waves as well as the boss. Event bosses override it (Khartag, TownGuardian: LaunchEventPoints).
+        /// </summary>
         public virtual void OnDeathLeaderBoards(List<DamageStore> list)
         {
-            if (list.Count > 0)
+            if (list.Count == 0)
+                return;
+
+            if (SpawnerHandle is ChampEngine ce && ce.KillDatabase)
             {
-                AwardDeathRewards(
-                    list,
-                    awardTownship: false,
-                    RecorderDomain.PvMPoints);
+                if (ce.DefinitionName == ChampNames.AI_Escape || ce.DefinitionName == ChampNames.AI_Guard)
+                    AwardDeathRewards(list, awardTownship: true, RecorderDomain.PvMPoints, RecorderDomain.PQChamps);
+                else
+                    AwardDeathRewards(list, awardTownship: true, RecorderDomain.PvMPoints);
+                return;
             }
+
+            AwardDeathRewards(list, awardTownship: false, RecorderDomain.PvMPoints);
         }
-        //public void AwardDeathRewards(List<DamageStore> players, object hSpawner = null)
-        //{
-        //    ChampEngine ce = hSpawner as ChampEngine;
-
-        //    bool awardTownship = false;
-
-        //    RecorderDomain[] domains = new RecorderDomain[]
-        //    {
-        //        RecorderDomain.PvMPoints
-        //    };
-
-        //    if (ce != null && ce.KillDatabase)
-        //    {
-        //        awardTownship = true;
-
-        //        if (ce.SpawnType == ChampLevelData.SpawnTypes.AI_Escape ||
-        //            ce.SpawnType == ChampLevelData.SpawnTypes.AI_Guard)
-        //        {
-        //            domains = new RecorderDomain[]
-        //            {
-        //                RecorderDomain.PvMPoints,
-        //                RecorderDomain.PQChamps
-        //            };
-        //        }
-        //    }
-
-        //    AwardDeathRewards(players, awardTownship, domains);
-        //}
 
         public void AwardDeathRewards(List<DamageStore> players, bool awardTownship, params RecorderDomain[] domains)
         {

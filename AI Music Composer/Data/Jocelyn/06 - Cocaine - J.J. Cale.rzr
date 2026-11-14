@@ -1,0 +1,115 @@
+# Cocaine - J.J. Cale by Jocelyn
+# Author: Jocelyn
+# Song: Cocaine - J.J. Cale
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: True
+# Price: 2000
+# Napster: False
+say '[play v20' 
+wait 1000
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 2.32' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 2.32' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 2.32' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 1.16 0.58 c .28 c .28' 
+wait 18600
+say '! If you wanna hang out, you've got to take her out' 
+say '[play -c c .28 c .28 -as as .28 -c c .28 0.29 g 0.28 f .29 -as ds .29' 
+say '[play 0.29 f .28 ds .28 cl .28 0.29 cl .28 cl .28' 
+wait 4600
+say '! Cocaine' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 1.16 0.58 c .28 c .28' 
+wait 4800
+say '! If you wanna get down, down on the ground' 
+say '[play -c c .28 c .28 -as as .28 -c c .28 0.58 g 0.28 -as ds .29' 
+say '[play f .28 f .28 ds .28 f .28 e .57 cl .28 cl .28' 
+wait 4800
+say '! Cocaine' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 1.16 0.29 cl .28 cl .28 -c ds .28' 
+wait 4600
+say '! She don't lie, she don't lie, she don't lie' 
+say '[play 0.29 cl .28 cl .28 -as ds .28 0.29 cl .28 cl .28 -gs ds .28' 
+say '[play 1.16 -gh 0.58 cl .28 cl .28' 
+wait 5100
+say '! Cocaine' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 2.32' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 1.16 0.58 c .28 c .28' 
+wait 9800
+say '! If you've got bad news, you wanna kick them blues' 
+say '[play -c c .28 c .28 -as as .28 -c c .28 0.29 g 0.28 f .29 -as ds .29' 
+say '[play 0.29 f .28 ds .28 cl .28 0.29 cl .28 cl .28' 
+wait 4600
+say '! Cocaine' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 1.16 0.58 c .28 c .28' 
+wait 4800
+say '! When your day is done, and you wanna run' 
+say '[play -c c .28 c .28 -as as .28 -c c .28 0.58 g 0.28 -as ds .29' 
+say '[play f .28 f .28 ds .28 f .28 e .57 cl .28 cl .28' 
+wait 4800
+say '! Cocaine' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 1.16 0.29 cl .28 cl .28 -c ds .28' 
+wait 4600
+say '! She don't lie, she don't lie, she don't lie' 
+say '[play 0.29 cl .28 cl .28 -as ds .28 0.29 cl .28 cl .28 -gs ds .28' 
+say '[play 1.16 -gh 0.58 cl .28 cl .28' 
+wait 5100
+say '! Cocaine' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 2.32' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 1.16 0.58 c .28 c .28' 
+wait 9700
+say '! If your thing is gone, and you wanna ride on' 
+say '[play -c c .28 c .28 -as as .28 -c c .28 0.29 g 0.28 f .29 -as ds .29' 
+say '[play 0.29 f .28 ds .28 cl .28 0.29 cl .28 cl .28' 
+wait 5200
+say '! Cocaine' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 1.16 0.58 c .28 c .28' 
+wait 4300
+say '! Don't forget this fact, you can't get it back' 
+say '[play -c c .28 c .28 -as as .28 -c c .28 0.58 g 0.28 -as ds .29' 
+say '[play f .28 f .28 ds .28 f .28 e .57 cl .28 cl .28' 
+wait 4800
+say '! Cocaine' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 1.16 0.29 cl .28 cl .28 -c ds .28' 
+wait 4500
+say '! She don't lie, she don't lie, she don't lie' 
+say '[play 0.29 cl .28 cl .28 -as ds .28 0.29 cl .28 cl .28 -gs ds .28' 
+say '[play 1.16 -gh 0.58 cl .28 cl .28' 
+wait 5200
+say '! Cocaine' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 2.32' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 1.16 0.29 cl .28 cl .28 -c ds .28' 
+wait 9400
+say '! She don't lie, she don't lie, she don't lie' 
+say '[play 0.29 cl .28 cl .28 -as ds .28 0.29 cl .28 cl .28 -gs ds .28' 
+say '[play 1.16 -gh 0.58 cl .28 cl .28' 
+wait 5100
+say '! Cocaine' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 2.32' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 2.32' 
+say '[play v10' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 2.32' 
+say '[play v05' 
+say '[play -c e .28 e .28 -as d .28 -c e .28 0.58 0.29 -as d .29' 
+say '[play 2.32' 
+say '[play v20' 

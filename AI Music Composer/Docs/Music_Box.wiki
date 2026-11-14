@@ -74,9 +74,9 @@ Say the music box's name, then the command. Several commands have a second word 
 |-
 | shuffle || Shuffles your playlist.
 |-
-| list || Lists the songs.
+| list || Lists the songs. ''list'' with words lists the songs whose titles have all of them (''list christmas''); ''list by'' with a name lists that composer's songs.
 |-
-| new || Lists recently approved songs.
+| new (or what's new) || Lists the latest releases, newest first, with when each was approved or remastered: everything from the last week, and always at least the five most recent.
 |-
 | buy ''song'' || Buys a premium song.
 |-
@@ -90,6 +90,8 @@ Say the music box's name, then the command. Several commands have a second word 
 |-
 | sales || Your sales as a composer (see [[#Getting Paid|Getting Paid]]).
 |-
+| status || Your songs: waiting for review, approved, or why not; then your sales (see [[#After Review|After Review]]). ''status pending'', ''status approved'' or ''status rejected'' lists only those songs.
+|-
 | submit (or add) || Publishes a song (see [[#Instructions for Composers|Instructions for Composers]]).
 |-
 | remaster || Asks to replace one of your approved songs with a new version.
@@ -98,6 +100,11 @@ Say the music box's name, then the command. Several commands have a second word 
 |-
 | help || Lists the commands.
 |}
+
+===Naming a Song===
+Say all of a song's title, or enough of it: ''play gilded'' finds a song with ''gilded'' in its title, and ''play kpdh golden'' finds ''Golden (KPDH)'' (the words in any order; capitals and punctuation don't matter). An exact title always wins. Words a title doesn't hold all of don't match it: if no title holds them, the box says it doesn't know that song, and may suggest one that's close (''Did you mean Golden (KPDH)?'').
+
+When several songs match, '''play''', '''add''' and '''remove''' take the closest (the shortest title) and say so; say more of the title for another. '''buy''' never guesses: it lists the songs that match, and you say more of the title, or the song's number (''buy 0x4003F1D0''), shown in the list.
 
 ==Instructions for Composers==
 The Music Box is how composers share and sell their work across the shard.
@@ -113,6 +120,13 @@ Your song is now in the shard-wide library, not just your own music box, and goe
 
 Each approved song earns you [[Music Composition#Music Karma|Music Karma]], and so does every sale and every play.
 
+===After Review===
+You're told what staff decided the next time you use a music box, any music box (walk up to it, double-click it, open its menu or speak to it): ''Your song Bombshell was approved!'', or that it wasn't approved and why. Say ''status'' to see all your songs at once:
+
+ Alexa, status
+
+Each song is listed as waiting for review, approved (with the date), or not approved with the reason staff gave. Your sales follow. A long list scrolls by quickly: ''status rejected'' shows only the songs that weren't approved, with their reasons (''status pending'' and ''status approved'' work the same way).
+
 To publish a new version of an approved song, say ''remaster''.
 
 The library is permanent and not tied to your account: once a song is in, it stays available to other players. If the character who composed a song is deleted, the song becomes free.
@@ -127,7 +141,9 @@ When a player buys your song, the price goes straight into your bank. Say ''sale
 
 https://game-master.net/images/wiki/musicbox/musicbox10.png
 
-If your bank box can't take the gold, the sale is recorded as a credit to you instead, shown in your sales. Credits record unpaid song sales but cannot currently be collected. They are not available as withdrawable gold. Each new sale is paid in gold whenever your bank box has room for it.
+If your bank box can't take the gold, the sale is recorded as a credit to you instead, shown in your sales. Credits are paid the next time you use a music box, any music box: walk up to it, double-click it, open its menu or speak to it. The gold goes into your bank, and you're told how much. If your bank box is still full, you're told the gold is waiting: make room, then visit a music box again.
+
+Credits are paid only to the character who earned them, on the shard where they were earned. If that character is deleted, or the music library moves to another shard, the credit is not paid.
 
 Say ''purchases'' to see the songs you have bought:
 
@@ -146,19 +162,79 @@ Staff use these commands to run the library. Players can't use them.
 {| class="wikitable"
 ! Say !! What it does !! Access
 |-
-| review || Lists the songs waiting for review. || Owner
+| review || Plays the next song waiting for review, then asks: Approve, Deny or Delete. Deny asks for a reason (TooLong, TooShort, Inappropriate, Duplicate or Other); Other asks for a one-line note to the composer (up to 100 characters). The composer is told at their next music box visit. || Owner
 |-
-| approve ''song'' || Approves a song: it becomes available to every player. || Owner
+| approve ''song'' || Approves a song waiting for review: it becomes available to every player. ''approve *'' approves every song waiting for review, after you confirm (type Approve). || Owner
 |-
-| deny ''song'' || Rejects a song. || Owner
+| deny ''song'' || Rejects a song waiting for review. ''deny *'' rejects every song waiting for review, after you confirm (type Deny). || Owner
 |-
-| delete ''song'' || Removes a song from the library. || Owner
+| delete ''song'' || Removes a song from the library, after you confirm (type Delete): the box names the song first. ''delete *'' removes every song, on Test Center only, after you confirm (type Delete). || Owner
 |-
 | find ''song'' || Shows a song's serial number, owner, and name. || Owner
 |-
 | dupe ''song'' || Puts a copy of a song's sheet music in your backpack. || Seer
 |-
 | flushall || Removes every song, everywhere. || Owner, Test Center only
+|}
+Approve, deny and delete never guess: when several songs match the name (see [[#Naming a Song|Naming a Song]]), the box lists them with their serial numbers and does nothing; say more of the title, or the serial (''delete 0x4003F1D0''). Approve and deny consider only songs waiting for review.
+
+Players trusted with music review use their own command, which needs no music box: see [[#Reviewing Music|Reviewing Music]].
+
+===Importing Songs===
+'''[MusicImport''' (Administrators, anywhere) adds the song files (.rzr) in the server's ''Data\Music Import'' folder to the library, approved: a new song at the price in its file (''[MusicImport free'': free), a song the library already has (the same notes) left as it is, and a new version of a song imported before replacing it. A file that can't be a song is refused with the reason. Imported songs pay no one (no one here composed them): their price leaves the economy, and their sales and plays earn no one gold or points. It's how another shard brings in the [https://game-master.net/AimsMusic.html Angel Island Music Library] (''Download all''), and works with any song file.
+
+==Reviewing Music==
+Some players are asked to help staff review new songs. A reviewer is still an ordinary player: the '''[MusicReview''' command is the only thing that changes, and it works on every shard, wherever you are.
+
+Review keeps offensive content out of the library. It doesn't judge quality: a song that is rough but harmless should be approved.
+
+===Reviewing songs===
+List the songs awaiting review, on every shard:
+
+ [MusicReview list
+
+Each song has a number, with its title, composer, home shard and the date it was submitted. Take them in any order.
+
+To hear song 2:
+
+ [MusicReview listen 2
+
+A review copy goes into your backpack and starts playing; double-click it to hear it again. It disappears after 10 minutes, and it can't be added to a music box.
+
+Then decide:
+
+ [MusicReview approve 2
+ [MusicReview deny 3
+
+Deny asks why, as a music box does: '''TooLong''', '''TooShort''', '''Inappropriate''', '''Duplicate''' or '''Other'''. Other asks for a note to the composer (one line, up to 100 characters), and it needs one: a reason the composer can't act on is no use to them. Every denial has a reason; press Esc at either question and nothing is denied.
+
+If you know the reason already, type it: ''[MusicReview deny 3 Duplicate'', or ''[MusicReview deny 4 Other Please put your own name in Arranged by.'' (words that aren't a reason are the note, with the reason Other).
+
+===What happens next===
+Your decision is recorded at once and applied by the song's home shard within 5 minutes. The composer is told the next time they use a music box, with your reason and note. Composers aren't told who reviewed their song.
+
+Numbers come from your own last ''list'', so another reviewer's list never changes yours. Until a decision is applied, the song stays on the list marked with who decided it (''approved by Galois, applies within 5 minutes''), and nobody can decide it a second time.
+
+''[MusicReview help'' lists the commands. On Test Center you can list and listen, but decisions are made on the live shards.
+
+===Review notices===
+While songs await review, reviewers and staff who are online are told every 5 minutes, for every shard:
+
+ [Music System] 4 songs awaiting review: Angel Island 1, Mortalis 1, Siege Perilous 2 ([MusicReview list; [MusicReview pause quiets these).
+
+Songs already decided aren't counted. To quiet the notices for an hour, say ''[MusicReview pause'' (or ''[MusicReview pause 30'' for 30 minutes, up to 24 hours); ''[MusicReview resume'' turns them back on.
+
+===For Owners===
+Owners can always review. To make a player a reviewer, use their account name: the list is shared by every shard and covers all of the account's characters.
+
+{| class="wikitable"
+! Command !! What it does
+|-
+| [MusicReview add ''account'' || Makes the account a reviewer.
+|-
+| [MusicReview remove ''account'' || Takes the account off the list.
+|-
+| [MusicReview reviewers || Lists the reviewers.
 |}
 ==History==
 The Music Box was designed and built by Adam Ant in 2022, inspired by his Amazon Echo: hence "Alexa". See [[Music Composition#History and Credits|History and Credits]].

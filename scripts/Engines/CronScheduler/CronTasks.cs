@@ -21,6 +21,23 @@
 
 /* Scripts\Engines\CronScheduler\CronTasks.cs
  * CHANGELOG:
+ *  11/13/2026, Adam (music catalog)
+ *      CMusicCatalog (login server, when it starts with -publishmusic=<folder>): at startup, then every 15 minutes, the
+ *      shared music database's approved songs are published for the website (Engines\AIMusicShare\MusicCatalog).
+ *  11/8/2026, Adam (login server owner)
+ *      CWipeShard keeps staff characters (access above Player) and everything they carry, so the LoginServer's owner
+ *      logs in with a lasting character instead of one made Owner by IP at character creation (removed). Its nightly
+ *      cron spec "* 3 * * *" ran every minute from 3:00 to 3:59 (60 wipes and saves): now "0 3 * * *".
+ *  11/7/2026, Adam (shard time)
+ *      Jobs players or staff plan around run in the shard's time zone (Cron.RegisterShard: -timezone, else the server
+ *      machine's zone): Town Invasion and Crazy Map Day (Saturday noon), the season champs and seasonal wipes
+ *      (midnight), Kin logging (1 AM; not compiled: KIN_FACTIONS), The Pumpkin King (its shells read ShardClock.Now) and
+ *      the Server Wars Friday jobs (were RegisterPacific). Every other job stays UTC. The Netherlands Server Wars jobs
+ *      stay RegisterNetherlands (that audience's own zone). On Adam's shards (-timezone=America/Los_Angeles) the
+ *      Pacific jobs fire as before; the Saturday noon and midnight jobs, UTC until now, fire at those Pacific times.
+ *  11/7/2026, Adam
+ *      CMusicShare (every 5 minutes, when the shard runs with -sharemusic): music shared between shards syncs with the
+ *      shared music database (Engines\AIMusicShare; it had its own timer).
  *  10/31/2026, Adam
  *      The end of the Pumpkin King event: ThePumpkinKingShutdownShell (Nov 1 3:00 AM Pacific, gated to 2026; 6 hours after
  *      the last start, clear of the end of daylight saving time at 2:00 AM) calls ThePumpkinKingShutdown (on demand, [Run):
@@ -299,7 +316,7 @@ namespace Server.Engines.CronScheduler
             {
                 // make sure all our champ engines are present and accounted for
                 Cron.QueuePriorityTask(new CCheckChamps().CheckChamps); // once on startup, and...
-                Cron.Register(new CCheckChamps().CheckChamps, "? 6 * * *"); // random minute of 6 o'clock hour
+                Cron.Register(new CCheckChamps().CheckChamps, "? 6 * * *"); // random minute of 6 o'clock hour (UTC)
 
                 // command for resetting all champs ([run resetchamps)
                 Cron.Register(new CResetChamps().ResetChamps,
@@ -314,7 +331,7 @@ namespace Server.Engines.CronScheduler
                 // We do it here since we have no ability to log in, and the 'shard' is likely a clone of some game-server
                 Utility.Monitor.WriteLine("Shard wipe in progress. This may take several minutes...", ConsoleColor.Red);
                 new CWipeShard().WipeShard(); // ASAP
-                Cron.Register(new CWipeShard().WipeShard, "* 3 * * *"); // 3 AM
+                Cron.Register(new CWipeShard().WipeShard, "0 3 * * *"); // 3 AM UTC (was "* 3 * * *": every minute 3:00-3:59)
                 /*
                  * 9/4/22, Adam
                  *   resuming normal saves for login in server.
@@ -328,6 +345,13 @@ namespace Server.Engines.CronScheduler
 
                 // Backup database cleanup - on demand
                 Cron.Register(new CBackupDatabaseCleanup().BackupDatabaseCleanup, null);
+
+                // the music catalog for the website (-publishmusic=<folder>) - at startup, then every 15 minutes
+                if (Server.Engines.MusicShare.MusicCatalog.Enabled)
+                {
+                    Cron.QueuePriorityTask(new CMusicCatalog().MusicCatalog);
+                    Cron.Register(new CMusicCatalog().MusicCatalog, "*/15 * * * *");
+                }
             }
             else
             {
@@ -369,7 +393,7 @@ namespace Server.Engines.CronScheduler
                 // Stable Charges - every 10 minutes
                 if (Core.RuleSets.AngelIslandRules())
                 {
-                    Cron.Register(new CStableCharge().StableCharge, "? 3 * * *"); // random minute of 3 o'clock hour
+                    Cron.Register(new CStableCharge().StableCharge, "? 3 * * *"); // random minute of 3 o'clock hour (UTC)
                 }
                 // Auto add players to Fight Broker - every 10 minutes
                 // remove auto fightbroker feature as it's just too damn harsh
@@ -399,7 +423,7 @@ namespace Server.Engines.CronScheduler
                 #region Cleanup functions
 
                 // Account cleanup - daily (7:? AM)
-                Cron.Register(new CAccountCleanup().AccountCleanup, "? 7 * * *"); // random minute the 7th hour
+                Cron.Register(new CAccountCleanup().AccountCleanup, "? 7 * * *"); // random minute the 7th hour (UTC)
 
                 // internal map mobile/item cleanup - every 60 minutes
                 Cron.Register(new CIntMapMobileCleanup().IntMapMobileCleanup,
@@ -413,21 +437,25 @@ namespace Server.Engines.CronScheduler
                 // remove deleted mobiles from music config database - every 60 minutes
                 Cron.Register(new CMusicConfigCleanup().MusicConfigCleanup, "? * * * *"); // random minute of every hour
 
+                // music shared between shards (-sharemusic) - every 5 minutes
+                if (Server.Engines.MusicShare.MusicShare.Enabled)
+                    Cron.Register(new CMusicShare().MusicShare, "*/5 * * * *");
+
                 // every 24 hours cleanup orphaned guildstones (6:00 AM)
                 Cron.Register(new CGuildstoneCleanup().GuildstoneCleanup,
-                    "0 6 * * *"); // at exactly 6 (because players depend on this to loot the township.)
+                    "0 6 * * *"); // at exactly 6 UTC (because players depend on this to loot the township.)
 
                 // every 24 hours cleanup orphaned Player NPCs (6:? AM)
                 Cron.Register(new CPlayerNPCCleanup().PlayerNPCCleanup,
-                    "? 6 * * *"); // random minute of the 6 o'clock hour
+                    "? 6 * * *"); // random minute of the 6 o'clock hour (UTC)
 
                 // every 24 hours 'standard' cleanup (6:? AM)
                 Cron.Register(new CStandardCleanup().StandardCleanup,
-                    "? 6 * * *"); // random minute of the 6 o'clock hour
+                    "? 6 * * *"); // random minute of the 6 o'clock hour (UTC)
 
                 // every 24 hours Strongbox cleanup (6:? AM)
                 Cron.Register(new CStrongboxCleanup().StrongboxCleanup,
-                    "? 6 * * *"); // random minute of the 6 o'clock hour
+                    "? 6 * * *"); // random minute of the 6 o'clock hour (UTC)
 
                 #endregion Cleanup functions
 
@@ -449,12 +477,12 @@ namespace Server.Engines.CronScheduler
                     if (Plants.PlantSystem.Enabled)
                     {
                         Utility.Monitor.WriteLine("Plant System Enabled.", ConsoleColor.Green);
-                        Cron.Register(new CPlantGrowth().PlantGrowth, "0 0 * * *"); // every night at exactly midnight
+                        Cron.Register(new CPlantGrowth().PlantGrowth, "0 0 * * *"); // every night at exactly midnight (UTC)
                     }
                 }
 
                 if (Apiculture.ApicultureSystem.Enabled)
-                    Cron.Register(new CHiveGrowth().HiveGrowth, "0 0 * * *"); // every night at exactly midnight
+                    Cron.Register(new CHiveGrowth().HiveGrowth, "0 0 * * *"); // every night at exactly midnight (UTC)
 
                 // Overland Merchant CHANCE - every hour
                 //  10/15/22 Adam: Allowing this for all shards. I don't think it hurts the Siege experience.
@@ -487,7 +515,7 @@ namespace Server.Engines.CronScheduler
 
                 // email a report of weapon distribution among players
                 Cron.Register(new CWeaponDistribution().WeaponDistribution,
-                    "? 3 * * *"); // now random minute of 3 o'clock hour
+                    "? 3 * * *"); // now random minute of 3 o'clock hour (UTC)
 
                 #region Automated Event System (Not on Siege, yet)
 
@@ -502,19 +530,19 @@ namespace Server.Engines.CronScheduler
                     //  true, new Cron.CronLimit(5, DayOfWeek.Saturday, Cron.CronLimit.IsLastDayOfMonth.must_not_be_ldom)/*, useGameTime: true*/);
                     Cron.Register(new CServerWarsAES().ServerWarsAES, null); // on demand
 
-                    // Town Invasion - Automated Event System (12:00 noon on 3rd Sunday)
+                    // Town Invasion - Automated Event System (12:00 noon on 3rd Sunday, shard time)
                     // Note: set 24 hour advance notice
-                    Cron.Register(new CTownInvasionAES().TownInvasionAES, "0 12 * * 6",
+                    Cron.RegisterShard(new CTownInvasionAES().TownInvasionAES, "0 12 * * 6",
                         true,
                         new Cron.CronLimit(3, DayOfWeek.Saturday,
-                            Cron.CronLimit.IsLastDayOfMonth.must_not_be_ldom) /*, useGameTime: true*/);
+                            Cron.CronLimit.IsLastDayOfMonth.must_not_be_ldom));
 
-                    // Crazy Map Day - Automated Event System (12:00 noon on 5th Sunday)
+                    // Crazy Map Day - Automated Event System (12:00 noon on 5th Sunday, shard time)
                     // Note: set 24 hour advance notice
-                    Cron.Register(new CCrazyMapDayAES().CrazyMapDayAES, "0 12 * * 6",
+                    Cron.RegisterShard(new CCrazyMapDayAES().CrazyMapDayAES, "0 12 * * 6",
                         true,
                         new Cron.CronLimit(5, DayOfWeek.Saturday,
-                            Cron.CronLimit.IsLastDayOfMonth.must_not_be_ldom) /*, useGameTime: true*/);
+                            Cron.CronLimit.IsLastDayOfMonth.must_not_be_ldom));
                 }
 
                 #endregion Automated Event System
@@ -541,10 +569,10 @@ namespace Server.Engines.CronScheduler
                 }
 
                 // every 24 hours rotate player command logs (12 AM - midnight)
-                Cron.Register(new CLogRotation().LogRotation, "0 0 * * *"); // every night at exactly midnight
+                Cron.Register(new CLogRotation().LogRotation, "0 0 * * *"); // every night at exactly midnight (UTC)
 
                 // every month archive logs (12 AM - midnight)
-                Cron.Register(new CLogArchive().LogArchive, "0 0 1 * *"); // every month at exactly midnight
+                Cron.Register(new CLogArchive().LogArchive, "0 0 1 * *"); // every month at exactly midnight (UTC)
 
                 // 8/21/21, Adam: not using any more. All backups are done server-side now.
                 // at 2AM backup the complete RunUO directory (~8min)
@@ -559,17 +587,17 @@ namespace Server.Engines.CronScheduler
                 //Townships
                 {
                     Cron.Register(new CTownshipCharges().TownshipCharges,
-                        "0 0 * * *"); // 12:00 AM - midnight (visits rollover weekly, so we want to be as close as possible to the change in weeks)
-                    Cron.Register(new CTownshipWallDecay().TownshipWallDecay, "5 9 * * *"); // 9:05 AM every day
-                    Cron.Register(new CTownshipItemDefrag().TownshipItemDefrag, "10 9 * * *"); // 9:10 AM every day
+                        "0 0 * * *"); // 12:00 AM UTC - midnight (visits rollover weekly, so we want to be as close as possible to the change in weeks)
+                    Cron.Register(new CTownshipWallDecay().TownshipWallDecay, "5 9 * * *"); // 9:05 AM UTC every day
+                    Cron.Register(new CTownshipItemDefrag().TownshipItemDefrag, "10 9 * * *"); // 9:10 AM UTC every day
                 }
 
                 // WealthTracker - 3 AM daily
-                Cron.Register(new CWealthTracker().WealthTracker, "? 3 * * *"); // random minute of the 3AM hour
+                Cron.Register(new CWealthTracker().WealthTracker, "? 3 * * *"); // random minute of the 3AM hour (UTC)
 
                 // ConsumerPriceIndex - 3 AM daily
                 Cron.Register(new CConsumerPriceIndex().ConsumerPriceIndex,
-                    "? 3 * * *"); // random minute of the 3AM hour
+                    "? 3 * * *"); // random minute of the 3AM hour (UTC)
 
                 // need to ask Yoar about this. Didn't know we had Kin Factions!
                 //  if so, we'll probably want this for Siege as well
@@ -581,8 +609,8 @@ namespace Server.Engines.CronScheduler
 			// Kin Sigils - bi-hourly 
 			Cron.Register(new CKinFactions().KinFactions, "0 */2 * * *");			// every 2 hours
 
-			// Kin Logging - 1AM daily
-			Cron.Register(new CKinFactionsLogging().KinFactionsLogging, "0 1 * * *");		// 1 AM Every day
+			// Kin Logging - 1AM daily (shard time)
+			Cron.RegisterShard(new CKinFactionsLogging().KinFactionsLogging, "0 1 * * *");		// 1 AM Every day
 #endif
 
                     #endregion KIN_FACTIONS
@@ -591,20 +619,21 @@ namespace Server.Engines.CronScheduler
                 if (Core.RuleSets.AllShards)
                 {
                     // http://www.infoplease.com/ce6/weather/A0844225.html
-                    Cron.Register(new CSpringChamp().SpringChamp,
+                    //  season changes at midnight, shard time
+                    Cron.RegisterShard(new CSpringChamp().SpringChamp,
                         "0 0 21 3 *"); // spring (vamp), about Mar. 21, (12:00 AM)
-                    Cron.Register(new CSummerChamp().SummerChamp,
+                    Cron.RegisterShard(new CSummerChamp().SummerChamp,
                         "0 0 22 6 *"); // summer (pirate), about June 22, (12:00 AM)
-                    Cron.Register(new CAutumnChamp().AutumnChamp,
+                    Cron.RegisterShard(new CAutumnChamp().AutumnChamp,
                         "0 0 23 9 *"); // autumn (bob), about Sept. 23, (12:00 AM)
-                    Cron.Register(new CWinterChamp().WinterChamp,
+                    Cron.RegisterShard(new CWinterChamp().WinterChamp,
                         "0 0 22 12 *"); // winter (Azothu), about Dec. 22, (12:00 AM)
 
-                    // Halloween 2026: The Pumpkin King, every 5 hours from Oct 28 8:00 AM through Oct 31 (Pacific)
-                    Cron.RegisterPacific(new CThePumpkinKing().ThePumpkinKingShell, "0 * * 10 *"); // hourly in October; the shell gates the window
+                    // Halloween 2026: The Pumpkin King, every 5 hours from Oct 28 8:00 AM through Oct 31 (shard time)
+                    Cron.RegisterShard(new CThePumpkinKing().ThePumpkinKingShell, "0 * * 10 *"); // hourly in October; the shell gates the window
                     Cron.Register(new CThePumpkinKing().ThePumpkinKing, null); // on demand only ([Run ThePumpkinKing), no gating
-                    Cron.RegisterPacific(new CThePumpkinKing().ThePumpkinKingCrier, "55 * * 10 *"); // 5 minutes before each start: town criers, 25 minutes
-            Cron.RegisterPacific(new CThePumpkinKing().ThePumpkinKingShutdownShell, "0 3 1 11 *"); // Nov 1, 3:00 AM Pacific: the event ends (gated to 2026)
+                    Cron.RegisterShard(new CThePumpkinKing().ThePumpkinKingCrier, "55 * * 10 *"); // 5 minutes before each start: town criers, 25 minutes
+            Cron.RegisterShard(new CThePumpkinKing().ThePumpkinKingShutdownShell, "0 3 1 11 *"); // Nov 1, 3:00 AM shard time: the event ends (gated to 2026)
             Cron.Register(new CThePumpkinKing().ThePumpkinKingShutdown, null); // on demand only ([Run ThePumpkinKingShutdown), no gating
                 }
 
@@ -618,13 +647,14 @@ namespace Server.Engines.CronScheduler
                 // seasonal wipe
                 if (Core.RuleSets.SeasonsRules())
                 {
-                    Cron.Register(new CSeasonalWipe().SeasonalWipe,
+                    //  at midnight, shard time
+                    Cron.RegisterShard(new CSeasonalWipe().SeasonalWipe,
                         "0 0 21 3 *"); // spring, Mar. 21, (12:00 AM)
-                    Cron.Register(new CSeasonalWipe().SeasonalWipe,
+                    Cron.RegisterShard(new CSeasonalWipe().SeasonalWipe,
                         "0 0 22 6 *"); // summer, June 22, (12:00 AM)
-                    Cron.Register(new CSeasonalWipe().SeasonalWipe,
+                    Cron.RegisterShard(new CSeasonalWipe().SeasonalWipe,
                         "0 0 23 9 *"); // autumn, Sept. 23, (12:00 AM)
-                    Cron.Register(new CSeasonalWipe().SeasonalWipe,
+                    Cron.RegisterShard(new CSeasonalWipe().SeasonalWipe,
                         "0 0 22 12 *"); // winter,Dec. 22, (12:00 AM)
 
 
@@ -640,18 +670,18 @@ namespace Server.Engines.CronScheduler
                     //// Fires at 11:15 AM Pacific time (via Netherlands helper – offset spec)
                     //Cron.RegisterNetherlands(new CTestJob().TestJob, "15 19 * * *"); // 19:15 NL = 11:15 Pacific
 
-                    /* Server Wars - Pacific Time (your local time) */
+                    /* Server Wars - shard time (the operator's time zone: -timezone) */
 
-                    // Pre-announcement / reminder at 6:30 PM Pacific every Friday
-                    Cron.RegisterPacific(
+                    // Pre-announcement / reminder at 6:30 PM shard time every Friday
+                    Cron.RegisterShard(
                         new CServerWars().Notification,
-                        "30 18 * * 5" // 18:30 = 6:30 PM Pacific
+                        "30 18 * * 5" // 18:30 = 6:30 PM
                     );
 
-                    // Main Server Wars start at 7:00 PM Pacific every Friday
-                    Cron.RegisterPacific(
+                    // Main Server Wars start at 7:00 PM shard time every Friday
+                    Cron.RegisterShard(
                         new CServerWars().ServerWars,
-                        "0 19 * * 5" // 19:00 = 7:00 PM Pacific
+                        "0 19 * * 5" // 19:00 = 7:00 PM
                     );
 
 
@@ -1895,8 +1925,10 @@ namespace Server.Engines.CronScheduler
 
     #region WipeShard (LoginServer)
     // Warning: WIPE'S SHARD
-    //  This job is run at 12am each night on the LoginServer.
+    //  This job is run at startup and at 3 AM UTC each night on the LoginServer.
     //  The loginserver has no need for items or mobiles, and doesn't need cron jobs to manage them.
+    //  Staff characters (and what they carry) are kept, so the LoginServer's owner has a lasting character; accounts
+    //  are never deleted.
     //  We do this here to save the developer from having to hand wipe a shard before use.
     class CWipeShard
     {
@@ -1961,9 +1993,16 @@ namespace Server.Engines.CronScheduler
 
             return total_count;
         }
+        // staff characters stay (11/8/26): the Login Server's owner logs in with a lasting character (its access level
+        //  from the account; no owner-IP rule). Includes the admin, SYSTEM and Lord British mobiles.
+        private static bool Spared(Mobile? m)
+        {
+            return m != null && !m.Deleted && m.AccessLevel > AccessLevel.Player;
+        }
+
         private static int DeleteItems()
         {
-            Mobile Owner = World.GetAdminAcct();
+            World.GetAdminAcct();               // make sure it exists (it is spared: Administrator)
             int total_items = 0;
             List<Item> items = new List<Item>();
             foreach (Item item in World.Items.Values)
@@ -1971,8 +2010,8 @@ namespace Server.Engines.CronScheduler
                 if (item == null || item.Deleted == true)
                     continue;
 
-                if (Owner != null && item.RootParent == Owner)
-                    continue;
+                if (Spared(item.RootParent as Mobile))
+                    continue;   // a staff character's pack, bank box, worn things
 
                 total_items++;
                 items.Add(item);
@@ -1989,7 +2028,7 @@ namespace Server.Engines.CronScheduler
 
         private static int DeleteMobiles()
         {
-            Mobile Owner = World.GetAdminAcct();
+            World.GetAdminAcct();               // make sure it exists (it is spared: Administrator)
             int total_mobiles = 0;
             List<Mobile> mobiles = new List<Mobile>();
             foreach (Mobile mobile in World.Mobiles.Values)
@@ -1997,7 +2036,7 @@ namespace Server.Engines.CronScheduler
                 if (mobile == null || mobile.Deleted == true)
                     continue;
 
-                if (Owner != null && mobile == Owner)
+                if (Spared(mobile))
                     continue;
 
                 total_mobiles++;
@@ -2807,6 +2846,48 @@ namespace Server.Engines.CronScheduler
         }
     }
     #endregion MusicConfigCleanup
+
+    #region MusicShare
+    // music shared between shards (Engines\AIMusicShare): a sync with the shared music database. The database work runs
+    //  off the game thread; its results come back to the game thread, and to MusicShare.log
+    class CMusicShare
+    {
+        public void MusicShare()
+        {
+            try
+            {
+                MusicShareWorker();
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex);
+            }
+        }
+
+        private void MusicShareWorker()
+        {
+            Server.Engines.MusicShare.MusicShare.Sync(null);
+        }
+    }
+    #endregion MusicShare
+
+    #region MusicCatalog
+    // the music catalog for the website (login server, -publishmusic=<folder>)
+    class CMusicCatalog
+    {
+        public void MusicCatalog()
+        {
+            try
+            {
+                Server.Engines.MusicShare.MusicCatalog.Publish(null);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex);
+            }
+        }
+    }
+    #endregion MusicCatalog
 
     #region IntMapMobileCleanup (updated)
     // internal map mobile cleanup
@@ -5478,7 +5559,7 @@ namespace Server.Engines.CronScheduler
     class CThePumpkinKing
     {
         private static readonly Point3D ChampLocation = new Point3D(1434, 1389, 0);
-        private static readonly DateTime WindowStart = new DateTime(2026, 10, 28, 8, 0, 0);   // Pacific wall clock
+        private static readonly DateTime WindowStart = new DateTime(2026, 10, 28, 8, 0, 0);   // shard wall clock
         private static readonly DateTime WindowEnd = new DateTime(2026, 11, 1, 0, 0, 0);      // exclusive
         private const int IntervalHours = 5;
 
@@ -5486,7 +5567,7 @@ namespace Server.Engines.CronScheduler
         {
             try
             {
-                DateTime now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time"));
+                DateTime now = ShardClock.Now;      // shard time, as the job is registered
                 if (now < WindowStart || now >= WindowEnd)
                     return;
 
@@ -5559,7 +5640,7 @@ namespace Server.Engines.CronScheduler
         {
             try
             {
-                DateTime now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time"));
+                DateTime now = ShardClock.Now;      // shard time, as the job is registered
                 DateTime start = new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0).AddHours(1);   // the coming hour
                 if (start < WindowStart || start >= WindowEnd)
                     return;
@@ -5597,7 +5678,7 @@ namespace Server.Engines.CronScheduler
         {
             try
             {
-                DateTime now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time"));
+                DateTime now = ShardClock.Now;      // shard time, as the job is registered
                 if (now.Date != ShutdownDay)
                     return;
             }

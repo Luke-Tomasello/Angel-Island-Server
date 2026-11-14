@@ -20,16 +20,19 @@
  ***************************************************************************/
 
 /* ***********************************
- * ** CAUTIONARY NOTE ON TIME USAGE **
- * This module uses AdjustedDateTime.GameTime which returns a DST adjusted version of time independent
- * of the underlying system. For instance our production server DOES NOT change time for DST, but this module
- * along with a select few others surfaces functionality to the players which require a standard (DST adjusted) notion of time.
- * The DST adjusted modules include: AutomatedEventSystem.cs, AutoRestart.cs, CronScheduler.cs.
+ * ** NOTE ON TIME USAGE **
+ * RestartTime is UTC and compared with DateTime.UtcNow (the AES sets it from its own UTC EventStartTime).
+ * A time of day ([restart 2:00, the 2 AM default) is the shard's wall clock (ShardClock, -timezone), and restart times
+ * are shown in shard time.
  * ***********************************
  */
 
 /* Scripts/Misc/AutoRestart.cs
  * CHANGELOG
+ *	11/8/26, Adam (shard time)
+ *		RestartTime is UTC (was AdjustedDateTime.GameTime: a fixed UTC-8 clock with the machine's daylight saving).
+ *		[restart hh:mm:ss and the 2 AM default are shard time, converted with ShardClock (daylight-saving days
+ *		included); [restart, [RestartTime show shard time with the zone's name.
  *	12/23/08, Adam
  *		Update to use RunUO 2.0 restart model
  *	4/14/08, Adam
@@ -168,11 +171,27 @@ namespace Server.Misc
                 AutoSave.SavesEnabled ? "enabled" : "disabled"
             );
         }
+        // the next UTC moment the shard's wall clock reads timeOfDay (today's, else tomorrow's)
+        private static DateTime NextShardTime(TimeSpan timeOfDay)
+        {
+            DateTime shardToday = ShardClock.Now.Date;
+            DateTime next = ShardClock.ToUtc(shardToday + timeOfDay);
+            if (next < DateTime.UtcNow)
+                next = ShardClock.ToUtc(shardToday.AddDays(1.0) + timeOfDay);
+            return next;
+        }
+
+        // a UTC time in shard time, with the zone's name
+        private static string Shown(DateTime utc)
+        {
+            return string.Format("{0} {1}", ShardClock.ToShard(utc), ShardClock.NameAt(utc));
+        }
+
         public static void RestartTime_OnCommand(CommandEventArgs e)
         {
             if (m_enabled)
             {
-                e.Mobile.SendMessage("The server is set to restart at " + m_RestartTime);
+                e.Mobile.SendMessage("The server is set to restart at " + Shown(m_RestartTime));
             }
             else
             {
@@ -189,7 +208,7 @@ namespace Server.Misc
                     e.Mobile.SendMessage("Format: Restart <off|now|24hrtime(xx:xx:xx)>");
                     if (m_enabled)
                     {
-                        e.Mobile.SendMessage("The server is set to restart at " + m_RestartTime);
+                        e.Mobile.SendMessage("The server is set to restart at " + Shown(m_RestartTime));
                     }
                     else
                     {
@@ -215,7 +234,7 @@ namespace Server.Misc
                         {
                             e.Mobile.SendMessage("You have initiated server shutdown.");
                             m_enabled = true;
-                            m_RestartTime = AdjustedDateTime.GameTime;
+                            m_RestartTime = DateTime.UtcNow;
                             RestartDelay = TimeSpan.Zero;
                         }
                     }
@@ -237,14 +256,9 @@ namespace Server.Misc
                         }
 
                         m_RestartOffset = TimeSpan.FromHours(iHour) + TimeSpan.FromMinutes(iMinute) + TimeSpan.FromSeconds(iSecond);
-                        m_RestartTime = AdjustedDateTime.GameTime.Date + m_RestartOffset;
+                        m_RestartTime = NextShardTime(m_RestartOffset);
 
-                        if (m_RestartTime < AdjustedDateTime.GameTime)
-                        {
-                            m_RestartTime += TimeSpan.FromDays(1.0);
-                        }
-
-                        e.Mobile.SendMessage("Restarting server at " + m_RestartTime);
+                        e.Mobile.SendMessage("Restarting server at " + Shown(m_RestartTime));
                         m_enabled = true;
                     }
                 }
@@ -265,10 +279,7 @@ namespace Server.Misc
         {
             Priority = TimerPriority.FiveSeconds;
 
-            m_RestartTime = AdjustedDateTime.GameTime.Date + m_RestartOffset;
-
-            if (m_RestartTime < AdjustedDateTime.GameTime)
-                m_RestartTime += TimeSpan.FromDays(1.0);
+            m_RestartTime = NextShardTime(m_RestartOffset);
         }
 
         private void ShutdownWarning_Callback()
@@ -291,13 +302,13 @@ namespace Server.Misc
             if (m_Restarting || !m_enabled)
                 return;
 
-            if (AdjustedDateTime.GameTime < m_RestartTime)
+            if (DateTime.UtcNow < m_RestartTime)
                 return;
 
             // warn the user 5 minutes before the server goes down
             if (ShutdownWarningInterval > TimeSpan.Zero)
             {
-                TimeSpan dx = (m_RestartTime + RestartDelay) - AdjustedDateTime.GameTime;
+                TimeSpan dx = (m_RestartTime + RestartDelay) - DateTime.UtcNow;
                 dx = TimeSpan.FromMinutes(dx.TotalMinutes - 5);
                 Timer.DelayCall(dx, ShutdownWarningInterval, new TimerCallback(ShutdownWarning_Callback));
             }

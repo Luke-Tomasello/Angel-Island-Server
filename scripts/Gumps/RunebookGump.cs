@@ -21,6 +21,8 @@
 
 /* Scripts/Gumps/RunebookGump.cs
  * ChangeLog
+ *  11/11/2026, Adam (degree sign)
+ *      The coordinates' degree sign was the Unicode replacement character; now "°", as in Sextant.Format.
  *  1/19/22, Yoar
  *      Added buttons to rearrange runes without having to drop them (MOVE_RUNES)
  *	02/11/06, Adam
@@ -201,8 +203,8 @@ namespace Server.Gumps
 
                 if (Sextant.Format(e.Location, e.Map, ref xLong, ref yLat, ref xMins, ref yMins, ref xEast, ref ySouth))
                 {
-                    AddLabel(135 + (half * 160), 80, 0, string.Format("{0}� {1}'{2}", yLat, yMins, ySouth ? "S" : "N"));
-                    AddLabel(135 + (half * 160), 95, 0, string.Format("{0}� {1}'{2}", xLong, xMins, xEast ? "E" : "W"));
+                    AddLabel(135 + (half * 160), 80, 0, string.Format("{0}\u00B0 {1}'{2}", yLat, yMins, ySouth ? "S" : "N"));
+                    AddLabel(135 + (half * 160), 95, 0, string.Format("{0}\u00B0 {1}'{2}", xLong, xMins, xEast ? "E" : "W"));
                 }
 
 #if MOVE_RUNES
@@ -500,7 +502,7 @@ namespace Server.Gumps
 
 										if ( Sextant.Format( e.Location, e.Map, ref xLong, ref yLat, ref xMins, ref yMins, ref xEast, ref ySouth ) )
 										{
-											string location = string.Format( "{0}� {1}'{2}, {3}� {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W" );
+											string location = string.Format( "{0}\u00B0 {1}'{2}, {3}\u00B0 {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W" );
 											from.SendMessage( location );
 										}
 

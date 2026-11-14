@@ -1,0 +1,187 @@
+# You're So Vain - Carly Simon
+# Author: Jocelyn
+# Song: You're So Vain - Carly Simon
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: True
+# Price: 2000
+# Napster: False
+say '[play v20' 
+wait 1000
+say '[play dh .24' 
+say '[play -ah eh .49 -gh dh .49 -a 0.24 a .24 a .24 eh .24' 
+say '[play -ah 0.25 eh .24 -gh dh .24 a .24 -a .24 a .24 a .24 a .24' 
+say '[play -fh ah .24 ah .24 ah .24 -c gh .49 -fh ah .74' 
+say '[play -ah eh .99 0.25 a .24 a .24 a .24' 
+say '[play eh .24 eh .24 -gh dh .49 -a c .24 c .24 c .24 eh .24' 
+say '[play -a 0.24 dh .24 -gh dh .24 -a a .99 a .24' 
+say '[play -fh ah .24 ah .24 ah .24 -c gh .24 -fh .24 ah .74' 
+say '[play -a eh .99 0.25 a .24 a .49' 
+say '[play -fh ah .49 ah .49 -gh gh .49 fh .49' 
+say '[play -eh gh .24 g .49 a .24 -ah .49 a .24' 
+say '[play -fh ah .49 c .24 c .49 dh .24 c .24 eh .24' 
+say '[play -c 0.75 eh .49 fh .24 eh .24 dh .24' 
+say '[play -gh 0.25 eh .24 dh .24 c .24' 
+say '[play -fh 0.50 c .24 a .24 c .24 dh .49 c .24' 
+say '[play 0.25 c .24 a .24 c .49 dh .24 c .24' 
+say '[play -c 0.25 g .74 g .24 a .24 g .24' 
+say '[play 1.50 0.25 g .24' 
+say '[play -dh a .24 a .24 a .24 a .24 a .24 a .24 g .24 a .24' 
+say '[play -c 0.25 g .49 c .49 dh .24 c .24 eh .24' 
+say '[play -ah 1.50 0.25 c .24' 
+say '[play -fh eh .24 gh .24 gh .24 eh .24 gh .24 eh .24 gh .24 ah .24' 
+say '[play -gh 0.25 gh .49 ah .49 gh .49 ah .24' 
+say '[play 0.25 gh 1.24 0.25 dh .24' 
+say '♪ You walked in to the party' 
+wait 3800
+say '♪ like you were walking onto a yacht' 
+wait 4200
+say '♪ your hat strategically dipped below one eye' 
+wait 4700
+say '♪ Your scraf it was apricot' 
+wait 3200
+say '♪ You had one eye in the mirror' 
+wait 4100
+say '♪ as you watched yourself gavotte' 
+wait 4000
+say '♪ and all the girls dreamed that they'd' 
+wait 2900
+say '♪ be your parner' 
+wait 1300
+say '♪ they'd be your parner and' 
+wait 2400
+say '♪ YOU'RE SO VAIN' 
+wait 3300
+say '♪ you probably think this song is about you' 
+wait 3300
+say '♪ YOU'RE SO VAIN' 
+wait 3000
+say '♪ I'll bet you think this song is about you' 
+wait 3300
+say '♪ don't you' 
+wait 1000
+say '♪ don't you?' 
+say '[play -ah eh .49 -gh dh .49 -a 0.24 a .24 a .24 eh .24' 
+say '[play -ah 0.25 eh .24 -gh dh .24 a .24 -a .24 a .24 a .24 a .24' 
+say '[play -fh ah .24 ah .24 ah .24 -c gh .49 -fh ah .74' 
+say '[play -ah eh .99 0.25 a .24 a .24 a .24' 
+say '[play eh .24 eh .24 -gh dh .49 -a c .24 c .24 c .24 eh .24' 
+say '[play -a 0.24 dh .24 -gh dh .24 -a a .99 a .24' 
+say '[play -fh ah .24 ah .24 ah .24 -c gh .24 -fh .24 ah .74' 
+say '[play -a eh .99 0.25 a .24 a .49' 
+say '[play -fh ah .49 ah .49 -gh gh .49 fh .49' 
+say '[play -eh gh .24 g .49 a .24 -ah .49 a .24' 
+say '[play -fh ah .49 c .24 c .49 dh .24 c .24 eh .24' 
+say '[play -c 0.75 eh .49 fh .24 eh .24 dh .24' 
+say '[play -gh 0.25 eh .24 dh .24 c .24' 
+say '[play -fh 0.50 c .24 a .24 c .24 dh .49 c .24' 
+say '[play 0.25 c .24 a .24 c .49 dh .24 c .24' 
+say '[play -c 0.25 g .74 g .24 a .24 g .24' 
+say '[play 1.50 0.25 g .24' 
+say '[play -dh a .24 a .24 a .24 a .24 a .24 a .24 g .24 a .24' 
+say '[play -c 0.25 g .49 c .49 dh .24 c .24 eh .24' 
+say '[play -ah 1.50 0.25 c .24' 
+say '[play -fh eh .24 gh .24 gh .24 eh .24 gh .24 eh .24 gh .24 ah .24' 
+say '[play -gh 0.25 gh .49 ah .49 gh .49 ah .24' 
+say '[play 0.25 gh 1.24 0.25 dh .24' 
+wait 2100
+say '♪ You had me several years ago' 
+wait 4200
+say '♪ when I was still quite naive' 
+wait 4000
+say '♪ Well you said that we make such a pretty pair' 
+wait 4500
+say '♪ and that you would never leave' 
+wait 3700
+say '♪ But you gave away the things you loved' 
+wait 4500
+say '♪ and one of them was me' 
+wait 3100
+say '♪ I had some dreams they were clouds in my coffee' 
+wait 4200
+say '♪ clouds in my coffee and' 
+wait 2400
+say '♪ YOU'RE SO VAIN' 
+wait 3400
+say '♪ you probably think this song is about you' 
+wait 3200
+say '♪ YOU'RE SO VAIN' 
+wait 3100
+say '♪ I'll bet you think this song is about you' 
+wait 3200
+say '♪ don't you' 
+wait 1000
+say '♪ don't you?' 
+say '[play -ah eh .49 -gh dh .49 -a 0.24 a .24 a .24 eh .24' 
+say '[play -ah 0.25 eh .24 -gh dh .24 a .24 -a .24 a .24 a .24 a .24' 
+say '[play -fh ah .24 ah .24 ah .24 -c gh .49 -fh ah .74' 
+say '[play -ah eh .99 0.25 a .24 a .24 a .24' 
+say '[play eh .24 eh .24 -gh dh .49 -a c .24 c .24 c .24 eh .24' 
+say '[play -a 0.24 dh .24 -gh dh .24 -a a .99 a .24' 
+say '[play -fh ah .24 ah .24 ah .24 -c gh .24 -fh .24 ah .74' 
+say '[play -a eh .99 0.25 a .24 a .49' 
+say '[play -fh ah .49 ah .49 -gh gh .49 fh .49' 
+say '[play -eh gh .24 g .49 a .24 -ah .49 a .24' 
+say '[play -fh ah .49 c .24 c .49 dh .24 c .24 eh .24' 
+say '[play -c 0.75 eh .49 fh .24 eh .24 dh .24' 
+say '[play -gh 0.25 eh .24 dh .24 c .24' 
+say '[play -fh 0.50 c .24 a .24 c .24 dh .49 c .24' 
+say '[play 0.25 c .24 a .24 c .49 dh .24 c .24' 
+say '[play -c 0.25 g .74 g .24 a .24 g .24' 
+say '[play 1.50 0.25 g .24' 
+say '[play -dh a .24 a .24 a .24 a .24 a .24 a .24 g .24 a .24' 
+say '[play -c 0.25 g .49 c .49 dh .24 c .24 eh .24' 
+say '[play -ah 1.50 0.25 c .24' 
+say '[play -fh eh .24 gh .24 gh .24 eh .24 gh .24 eh .24 gh .24 ah .24' 
+say '[play -gh 0.25 gh .49 ah .49 gh .49 ah .24' 
+wait 1900
+say '♪ I hear you went up to Saratoga' 
+wait 4500
+say '♪ and your horse naturally won' 
+wait 3600
+say '♪ Then you flew your Lear jet up to Nova Scotia' 
+wait 4800
+say '♪ the total eclipse of the sun' 
+wait 3700
+say '♪ Well, you're where you should be all the time' 
+wait 4300
+say '♪ and when you're not you're with' 
+wait 3200
+say '♪ some underworld spy' 
+wait 2400
+say '♪ or the wife of a close friend' 
+wait 1800
+say '♪ wife of a close friend and' 
+wait 2500
+say '♪ YOU'RE SO VAIN' 
+wait 3300
+say '♪ you probably think this song is about you' 
+wait 3200
+say '♪ YOU'RE SO VAIN' 
+wait 3000
+say '♪ I'll bet you think this song is about you' 
+say '[play ah .24 gh .49 ah .49 gh .74' 
+say '[play -c g 1.24 g .24 a .24 g .24' 
+say '[play 1.49 0.25 g .24' 
+say '[play -dh a .24 c .24 c .24 a .24 c .24 a .24 c .24 g .24' 
+say '[play -c 0.24 g 1.74' 
+say '[play -c g 1.24 g .24 a .24 g .24' 
+say '[play 1.49 0.25 g .24' 
+say '[play -dh a .24 c .24 c .24 a .24 c .24 a .24 c .24 g .24' 
+say '[play -c 0.24 g 1.74' 
+wait 3200
+say '♪ don't you' 
+wait 1000
+say '♪ don't you?' 
+wait 1100
+say '♪ Don't you?' 
+wait 1200
+say '♪ YOU'RE SO VAIN' 
+wait 1900
+say '♪ you probably think this song is about you' 
+wait 6500
+say '♪ YOU'RE SO VAIN' 
+wait 3900
+say '♪ you probably think this song is about you' 

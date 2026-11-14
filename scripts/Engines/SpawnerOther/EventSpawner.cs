@@ -1,4 +1,10 @@
-﻿using Server.Engines;
+﻿/* scripts\Engines\SpawnerOther\EventSpawner.cs
+ * ChangeLog
+ *  11/8/26, Adam (shard time)
+ *      Changelog added. OffsetFromUTC marked obsolete; EventTimeZone added (an event's own time zone for typing and showing its times: see Event.cs).
+ */
+
+using Server.Engines;
 using System;
 
 namespace Server.Mobiles
@@ -35,6 +41,7 @@ namespace Server.Mobiles
                 m_event.EventEnd = value;
             }
         }
+        [Obsolete("Use EventTimeZone (a zone name, with daylight saving): see Event.OffsetFromUTC.")]
         [CommandProperty(AccessLevel.Seer)]
         public int OffsetFromUTC
         {
@@ -44,6 +51,12 @@ namespace Server.Mobiles
                 m_event.OffsetFromUTC = value;
                 InvalidateProperties();
             }
+        }
+        [CommandProperty(AccessLevel.Seer)]
+        public string EventTimeZone
+        {
+            get { return m_event.EventTimeZone; }
+            set { m_event.EventTimeZone = value; InvalidateProperties(); }
         }
         [CommandProperty(AccessLevel.Seer)]
         public TimeSpan Countdown

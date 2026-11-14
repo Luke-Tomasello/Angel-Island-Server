@@ -1,0 +1,47 @@
+# Song: YMCA
+# Author: Xavier
+# Price: 2000
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: False
+say '[play d c eh bh .4 d .2 ah .2 d c eh .4 d .2 dh .2' 
+say '[play d dh .2 b .2 a .2 dh .1 b .2 b .1 a .2 e .2 a .2' 
+say '[play d c eh bh .4 d .2 ah .2 d c eh .4 d .2 dh .2' 
+say '[play d dh .2 b .2 a .2 dh .1 b .2 b .1 a .2 e .2 a .2' 
+say '[play d c dh gh .4 d .2 gh .1 gh .1 d c dh gh .4 d .2 gh .1 gh .1' 
+say '[play d c dh gh .4 d .4 d .2 dh .2 d .2 dh .2' 
+say '[play g dh .2 g b .2 g .4 g .4 g b .2 a .2' 
+say '[play g .2 a .2 b .2 g b dh .2 g .2 b .2 g dh .4' 
+say '[play e eh .2 g b .2 e .4 e .4 e b .2 a .2' 
+say '[play e g .2 a .2 e b .2 b bh dh .2 b .2 b .2 b dh .4' 
+say '[play c eh .2 g ch .2 c .4 c .4 c ch .2 bh .2' 
+say '[play c a .2 b .2 c ch .2 a c eh .2 c .2 gh .2 b cl c eh .4' 
+say '[play fs a d fsh .6 e g c eh .6 d fs a dh .6 cl e g c .6 d g b .4 d fs a .4' 
+say '[play g dh .2 g b .2 g .4 g .4 g b .2 a .2' 
+say '[play g .2 a .2 b .2 g b dh .2 g .2 b .2 g dh .4' 
+say '[play e eh .2 g b .2 e .4 e .4 e b .2 a .2' 
+say '[play e g .2 a .2 e b .2 b bh dh .2 b .2 b .2 b dh .4' 
+say '[play c eh .2 g ch .2 c .4 c .4 c ch .2 bh .2' 
+say '[play c a .2 b .2 c ch .2 a c eh .2 c .2 gh .2 b cl c eh .4' 
+say '[play fs a d fsh .6 e g c eh .6 d fs a dh .6 cl e g c .6 d g b .4 d fs a .4' 
+say '[play d fs a c dh .4 d fs a c dh .4 d fs a c dh .4 d fs a c dh .4' 
+say '[play d fs a c dh .2 b .2 dh .2 b .2 dh .2 b .2 dh .4' 
+say '[play g b eh .4 g .2 g .2 g dh .4 g eh .2 g b dh .2' 
+say '[play g .2 g b .2 g dh .2 g b .2 d dh .2 b .2 ds a .2 g .2' 
+say '[play e d a .4 e .2 e .2 e g b .4 e a .2 g .2' 
+say '[play e .2 b gh .2 e .4 g .4 gs gh .2 e .2' 
+say '[play a c gh .2 g .2 a gh .2 gs eh .2 a .4 a gh .2 eh .2' 
+say '[play a c gh .2 g .2 a gh .2 g eh .2 a .4 a gh .2 eh .2' 
+say '[play d gh .2 eh .2 d dh .2 c eh gh .2 d .2 g .2 d .2 c eh .2' 
+say '[play d .2 g .2 d g .2 e .2 d g .2 e .2 fs g .4' 
+say '[play g b eh .4 g .2 g .2 g dh .4 g eh .2 b dh .2' 
+say '[play g .2 gh .2 g gh .2 eh .2 g b dh gh .2 gh .2 g gh .4' 
+say '[play e eh gh .4 e .2 e .2 e gh .4 e eh .2 gh .2' 
+say '[play e .2 eh .2 e .4 g .4 gs gh .2 eh .2' 
+say '[play a c gh .2 gh .2 a gh .2 gs eh .2 a .4 a gh .2 eh .2' 
+say '[play a c gh .2 gh .2 a gh .2 g eh .2 a .4 a gh .2 eh .2' 
+say '[play d c gh .2 eh .2 d dh .2 c eh gh .2 d .2 gh .2 d .2 eh .2' 
+say '[play d c eh .2 gh .2 d gh .2 eh .2 d gh .2 eh .2 d gh .4' 
+say '[play g b dh gh' 

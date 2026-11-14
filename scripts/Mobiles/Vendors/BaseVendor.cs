@@ -21,6 +21,11 @@
 
 /* Scripts/Mobiles/Vendors/BaseVendor.cs 
  * Changelog
+ *  11/10/2026, Adam (vendors who fight)
+ *      FightsBack: whether an attacked vendor fights (VendorAI goes to combat) or flees; the default is the rule as it
+ *      was (not under Angel Island or Mortalis-style rules). OnFightBegins / OnFightEnds: called as the vendor switches
+ *      to Melee AI for a fight (OnActionCombat) and back to Vendor AI after it (OnActionWander), for a vendor to arm
+ *      and disarm (Upheaval's bankers). Nothing by default.
  *  10/21/2026, Adam (StoreBought provenance, generic)
  *      VendorSell: refused shop goods are those ArbitrageTable prices at 0 (GenericSellInfo.IsRefusedShopGoods); goods it
  *          buys for less get one extra reply. Load: PricingVersion counts reloads of the pricing database.
@@ -2701,9 +2706,29 @@ namespace Server.Mobiles
                     this.FightMode = FightMode.All | FightMode.Closest;
                 }
                 DebugSay(DebugFlags.AI, "Changing from AI_Vendor to AI_Melee");
+                OnFightBegins(combatant);
             }
 
             base.OnActionCombat(info: info);
+        }
+
+        /// <summary>
+        /// Whether this vendor, attacked, fights back (VendorAI goes to combat, and the vendor to Melee AI) or flees.
+        /// Default: the rule as it was, not under Angel Island or Mortalis-style rules.
+        /// </summary>
+        public virtual bool FightsBack
+        {
+            get { return !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules(); }
+        }
+
+        /// <summary>The vendor has just switched to Melee AI to fight 'combatant' (once a fight). Nothing by default.</summary>
+        public virtual void OnFightBegins(Mobile? combatant)
+        {
+        }
+
+        /// <summary>The fight is over: the vendor has just switched back to Vendor AI. Nothing by default.</summary>
+        public virtual void OnFightEnds()
+        {
         }
 
 
@@ -2732,6 +2757,7 @@ namespace Server.Mobiles
                 this.Aggressors.Clear();            //	in mobile.AggressiveAction(). Rather that handle this special case, we can force the issue
                                                     //	by simply clearing the vendor's agressors list
                 DebugSay(DebugFlags.AI, "Changing from AI_Melee to AI_Vendor");
+                OnFightEnds();
             }
 
             base.OnActionWander();

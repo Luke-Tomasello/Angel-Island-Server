@@ -51,7 +51,7 @@ Settings go at the top of the composition, one per line, each starting with #. A
 {| class="wikitable"
 ! Setting !! Default !! Meaning
 |-
-| # Song: ''title'' || the book's title || The song's name, as the [[Music Box]] lists it.
+| # Song: ''title'' || the book's title || The song's name, as the [[Music Box]] lists it. Underscores read as spaces (''Alice_In_Chains_-_Rooster'' becomes ''Alice In Chains - Rooster''); a # in a title is kept (''Prelude in C# minor'').
 |-
 | # Author: ''name'' || the book's author || Who to credit. This is informational: payment goes to the character who made the sheet music, not to this name.
 |-

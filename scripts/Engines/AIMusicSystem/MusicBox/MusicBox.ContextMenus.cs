@@ -1,9 +1,7 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
- *   
+ *                   The Angel Island Music System (AIMS)
+ *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
@@ -22,7 +20,7 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.ContextMenus.cs
  * Changelog
- *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
+ *  11/8/26, Adam (2026 modernization, 10/29/26 to 11/8/26)
  *      The context menu: Add Sheet Music (submit or remaster) and Name Music Box, shown only where the box works
  *      (CheckRights, as double-click and speech). A sheet that is playing stops when the box takes it (stored or deleted).
  *      Split from MusicBox.cs; its history before 10/29/26 is in MusicBox.cs.
@@ -30,6 +28,9 @@
  *      (Host\), so this folder drops into other RunUO servers.
  *      AimsHost: internal storage. Angel Island only (#if ANGEL_ISLAND): the ArrayList context menu (else
  *      List<ContextMenuEntry>).
+ *      Adding or remastering sheet music asks the shard first (AimsHost.RefuseSubmission): a reason refuses it.
+ *      A composer opening a music box's menu collects music box credit owed to them (MusicLibrary.CollectCredits).
+ *      ComposerVisit (was CollectCredits): the composer is also told review decisions on their songs (TellComposer).
  */
 
 using Server.Accounting;
@@ -62,6 +63,9 @@ namespace Server.Items
 #endif
         {
             base.GetContextMenuEntries(from, list);
+
+            // A composer using a music box collects credit owed from earlier sales.
+            MusicLibrary.ComposerVisit(from);
 
             // only where the box works (placed and locked down, for someone with access): see MusicBox.Placement.cs
             if (from.CheckAlive() && CheckRights(from, message: false) == Rights.okay)
@@ -188,6 +192,15 @@ namespace Server.Items
                     if (!rsm.Movable)
                     {
                         buyer.SendMessage("That is locked down.");
+                        return;
+                    }
+
+                    // The shard may refuse it, with its reason (AimsHost.RefuseSubmission: e.g. a song whose home is another
+                    //  shard is remastered there).
+                    string? refusal = AimsHost.Current.RefuseSubmission(buyer, rsm, m_remaster);
+                    if (refusal != null)
+                    {
+                        buyer.SendMessage(refusal);
                         return;
                     }
 

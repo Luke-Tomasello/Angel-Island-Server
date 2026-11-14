@@ -1,9 +1,7 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
- *   
+ *                   The Angel Island Music System (AIMS)
+ *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
@@ -22,7 +20,9 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Playback.cs
  * Changelog
- *  11/6/26, Adam (2026 modernization, 10/29/26 to 11/6/26)
+ *  11/14/26, Adam
+ *      An imported song's plays ([MusicImport) are counted but earn its owner no points: no one here composed it.
+ *  11/8/26, Adam (2026 modernization, 10/29/26 to 11/8/26)
  *      Playing: rights, double-click, PlayMusic, play counts, the end of a song, continuing play and status checks.
  *      An unapproved track is announced as pending (or rejected) when it starts, and earns no play credit. A song's end
  *      deletes the box's temporary copy it played on; so do a new listener's context and the box's deletion.
@@ -31,6 +31,8 @@
  *      (Host\), so this folder drops into other RunUO servers.
  *      AimsHost: staff messages, households (Angel Island: accounts shared by IP) and the old settings' placeholder
  *      owner.
+ *      A composer double-clicking a music box collects music box credit owed to them (MusicLibrary.CollectCredits).
+ *      ComposerVisit (was CollectCredits): the composer is also told review decisions on their songs (TellComposer).
  */
 
 using Server.Accounting;
@@ -152,6 +154,9 @@ namespace Server.Items
                 // Robustness: no mobile, no action.
                 if (from == null)
                     return;
+
+                // A composer using a music box collects credit owed from earlier sales.
+                MusicLibrary.ComposerVisit(from);
 
                 // Establish a valid PlayContext for the resolved actor (PlayMobile or from).
                 // NOTE: RefreshPlayContext() resolves actor internally and can update m_playContext.
@@ -333,6 +338,10 @@ namespace Server.Items
 
                 // Award points for having your track played (only for Bard guild players).
                 if (m == null)
+                    return;
+
+                // Not for an imported song ([MusicImport): no one here composed it
+                if (MusicLibrary.Repository.TryGetValue(rsm, out var record) && record != null && record.Imported)
                     return;
 
                 if (owner is not PlayerMobile pm)

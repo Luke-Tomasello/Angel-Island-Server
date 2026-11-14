@@ -21,6 +21,9 @@
 
 /* Scripts/Engines/AI/AI/VendorAI.cs
  * CHANGELOG
+ *	11/10/26, Adam
+ *		Whether an attacked vendor fights back or flees is the vendor's to say (BaseVendor.FightsBack); the default is the
+ *		rule as it was (not under Angel Island or Mortalis-style rules). Upheaval's bankers and minters fight back.
  *	1/1/09, Adam
  *		Add new Serialization model for creature AI.
  *		BaseCreature will already be serializing this data when I finish the upgrade, so all you need to do is add your data to serialize. 
@@ -64,7 +67,9 @@ namespace Server.Mobiles
                 // In the vendor class we will trap OnActionCombat and switch to Melee AI
                 //	we do this switch so as not to rewrite additional complexities into either melee or vendor AIs
                 //	We will also trap OnActionWander in the vendor class to return the AI to standard vendor AI
-                if (!Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules())
+                //	Whether a vendor fights back is the vendor's: BaseVendor.FightsBack (default: not under Angel Island or
+                //	Mortalis-style rules, as before; Upheaval's bankers do)
+                if (m_Mobile is BaseVendor vendor ? vendor.FightsBack : !Core.RuleSets.AngelIslandRules() && !Core.RuleSets.MortalisStyleRules())
                 {
                     m_Mobile.FocusMob = m_Mobile.Combatant;
                     Action = ActionType.Combat;

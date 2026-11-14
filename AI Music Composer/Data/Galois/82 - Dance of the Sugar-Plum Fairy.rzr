@@ -1,0 +1,25 @@
+# Author: Galois
+# Song: Dance of the Sugar-Plum Fairy
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: False
+say '[play -e 0.53 -g -eh 0.53 -e 0.53 -a -fsh 0.53 -e 0.53 -a -gh 0.53 -e 0.53 -a -dsh 0.53' 
+say '[play -e 0.53 -g -eh 0.53 -e 0.53 -a -fsh 0.53 -e 0.53 -a -gh 0.53 -e 0.53 -a -dsh 0.53' 
+say '[play -e 0.51 -g b gh 0.23 g eh 0.23 -e b gh 0.51 -a a fsh 0.51' 
+say '[play -e fs dsh 0.51 -cs g eh 0.51 -e gs dh 0.23 gs dh 0.23 -b gs dh 0.51' 
+say '[play -e g cs 0.23 g cs 0.23 -cs g cs 0.51 -e fs c 0.23 fs c 0.23 -dsh fs c 0.51' 
+say '[play -e g b 0.23 eh 0.23 -fs a c 0.23 eh 0.23 -e g b 0.51 -eh 0.10 -dh 0.10 -c 0.10 -b 0.10' 
+say '[play -as 0.51 -e -c g 0.23 -g e 0.23 -a -c g 0.51 -ds -c fs 0.51' 
+say '[play -g fs c 0.51 -e g b 0.51 -fs cs gh 0.23 cs gh 0.23 -as cs gh 0.51' 
+say '[play -fs dh fsh 0.23 dh fsh 0.23 -gs dh fsh 0.51 -fs as eh 0.23 as eh 0.23 -as as eh 0.51' 
+say '[play -b b dsh 0.23 fsh 0.23 -c as eh 0.23 fsh 0.23 -b b dsh 0.51 -b 0.10 -a 0.10 -g 0.10 -fs 0.10' 
+say '[play -e 0.51 -g b gh 0.23 g eh 0.23 -e b gh 0.51 -a a fsh 0.51' 
+say '[play -e fs dsh 0.51 -cs g eh 0.51 -e gs dh 0.23 gs dh 0.23 -b gs dh 0.51' 
+say '[play -e g cs 0.23 g cs 0.23 -cs g cs 0.51 -e fs c 0.23 fs c 0.23 -dsh fs c 0.51' 
+say '[play -e g b 0.23 eh 0.23 -fs a c 0.23 eh 0.23 -e g b 0.51 -gh 0.10 -fsh 0.10 -eh 0.10 -dh 0.10' 
+say '[play -cs 0.51 -cs as eh 0.23 fs cs 0.23 as eh 0.51 -fsh a dsh 0.10 -eh 0.10 -dsh 0.10 -cs 0.10' 
+say '[play -b 0.51 -eh gs dh 0.23 e b 0.23 gs dh 0.51 -eh g cs 0.10 -dh 0.10 -cs 0.10 -b 0.10' 
+say '[play -a 0.51 -dh fs c 0.23 d a 0.23 fs c 0.51 -dh g b 0.10 -c 0.10 -b 0.10 -a 0.10' 
+say '[play -g 0.51 -fs -a b 0.10 dsh 0.10 fsh 0.10 bh 0.10 -e -g eh' 

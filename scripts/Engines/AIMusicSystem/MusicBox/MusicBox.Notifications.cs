@@ -1,8 +1,6 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
+ *                   The Angel Island Music System (AIMS)
  *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
@@ -22,6 +20,11 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Notifications.cs
  * Changelog
+ *  11/14/26, Adam
+ *      PickSong: the song a command names, or the box says why not: a name that matches nothing is "I don't know a song
+ *      called '...'" (with a suggestion if one is close); several matches, for a command that acts on a song or costs
+ *      gold (delete, approve, deny, buy), are listed with author and serial and nothing is done; the others take the
+ *      closest and say so. Names match as MusicLibrary.FindMatches says (no more matching on a few shared letters).
  *  11/6/26, Adam (2026 modernization, 10/29/26 to 11/6/26)
  *      Was MusicBox.Library.cs (svn move); the library itself moved to Library\MusicLibrary.cs. What stays is the
  *      music box's own: the "you sold music" notices, the music box registry and its 5-minute timer, and FindSong's
@@ -33,6 +36,7 @@
 using Server.Misc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using static Server.Items.MusicLibrary;
 
 namespace Server.Items
@@ -176,7 +180,7 @@ namespace Server.Items
         /// KeyValuePair&lt;RolledUpSheetMusic, MusicLibrary.MusicInfo&gt;.
         /// </summary>
         public static bool FindSong(string[]? tokens, out object info)
-        {   // the untyped form older patches call (Patches101_200); the music box uses TryFindSong
+        {   // the untyped form older patches call (Patches101_200): the closest match; the music box's commands use PickSong
             info = null;
             if (!TryFindSong(tokens, out RolledUpSheetMusic track, out MusicInfo record))
                 return false;
@@ -198,6 +202,52 @@ namespace Server.Items
             track = null!;
             info = null!;
             return false;
+        }
+
+        /// <summary>
+        /// The song a command names (MusicLibrary.FindMatches), among the songs 'which' allows (null: every song), or the
+        /// box says why not. Nothing: "I don't know a song called '...'" (or 'none', a command's own wording), with a
+        /// suggestion if one is close. Several: a command that acts on a song or costs gold ('mustBeOne': delete, approve,
+        /// deny, buy) never guesses: the speaker hears the matches (at most five, with author and serial) and how to name
+        /// one; the others (play, add, remove) take the closest and say so.
+        /// </summary>
+        private bool PickSong(Mobile from, string[]? tokens, string verb, bool mustBeOne, Func<RolledUpSheetMusic, MusicInfo, bool>? which,
+            out RolledUpSheetMusic track, out MusicInfo info, string? none = null)
+        {
+            track = null!;
+            info = null!;
+            MusicLibrary.SongMatches matches = MusicLibrary.FindMatches(SongName(tokens), which);
+            string said = matches.Text;
+
+            if (matches.Songs.Count == 0)
+            {
+                string text = none != null ? string.Format(none, said) : string.Format("I don't know a song called '{0}'.", said);
+                if (matches.Suggestion != null)
+                    text += string.Format(" Did you mean {0}?", matches.Suggestion);
+                Say(text, hue: 54);
+                return false;
+            }
+
+            if (matches.Songs.Count > 1)
+            {
+                if (mustBeOne)
+                {
+                    SendMessage(from, string.Format("{0} songs match '{1}':", matches.Songs.Count, said));
+                    foreach (KeyValuePair<RolledUpSheetMusic, MusicInfo> s in matches.Songs.Take(5))
+                        SendMessage(from, string.Format("  {0} by {1} (0x{2:X})", s.Key, s.Key.Author, s.Key.Serial.Value));
+                    if (matches.Songs.Count > 5)
+                        SendMessage(from, string.Format("  ... and {0} more", matches.Songs.Count - 5));
+                    SendMessage(from, string.Format("Say more of the title, or the song's serial: \"{0} 0x{1:X}\".", verb,
+                        matches.Songs[0].Key.Serial.Value));
+                    return false;
+                }
+                SendMessage(from, string.Format("{0} songs match '{1}': this is the closest. Say more of the title for another.",
+                    matches.Songs.Count, said));
+            }
+
+            track = matches.Songs[0].Key;
+            info = matches.Songs[0].Value;
+            return true;
         }
         #endregion Finding a song (speech)
     }

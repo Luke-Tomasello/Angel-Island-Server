@@ -21,6 +21,11 @@
 
 /* Scripts/Commands/Handlers.cs
  * CHANGELOG
+ *  11/11/2026, Adam ([go sextant)
+ *      [go takes sextant coordinates exactly as [where prints them again ("5° 26'S, 8° 9'E", as the 5/26/2021
+ *      patch did; lost in the 10/22/2026 rewrite of ExecuteGo): text of exactly that shape (degree sign, the old
+ *      replacement character, or none) goes through Sextant.Normalize before the sextant step. Names, serials
+ *      and x y coordinates are untouched.
  *  10/22/2026, Adam ([go)
  *      Player-level Go (Test Center "go" speech command and the Go gump): players see and resolve only the player
  *      location tree, and every Go move is checked by PlayerMayGo: no change of facet, and on Trammel (Map.TestCenter)
@@ -1035,6 +1040,13 @@ namespace Server.Commands
             // [go 4406,1032
             // [go 4406, 1032, 1
             string normalized = raw.Replace(",", " ");
+
+            // Sextant coordinates as [where prints them: [go 5° 26'S, 8° 9'E (also with the old replacement
+            //  character, or no degree sign): split into the old form, 5 26 S 8 9 E, for the sextant step below.
+            //  Only text that is exactly that shape: names ("lord british's castle") are never touched.
+            if (GluedSextant.IsMatch(normalized))
+                normalized = Sextant.Normalize(normalized);
+
             string[] args = normalized.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
             // 1. One numeric argument: treat as serial.
@@ -1401,6 +1413,11 @@ namespace Server.Commands
 
             return true;
         }
+        // degrees [°] minutes ['] N|S  degrees [°] minutes ['] E|W  (after commas became spaces)
+        private static readonly System.Text.RegularExpressions.Regex GluedSextant = new(
+            @"^\s*\d+\s*[\u00B0\uFFFD]?\s*\d+\s*'?\s*[NS]\s+\d+\s*[\u00B0\uFFFD]?\s*\d+\s*'?\s*[EW]\s*$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
         private static bool LooksLikeSextant(string text)
         {
             if (string.IsNullOrEmpty(text))

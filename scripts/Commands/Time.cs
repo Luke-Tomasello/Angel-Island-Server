@@ -21,6 +21,9 @@
 
 /* Scripts/Commands/Time.cs
  * ChangeLog
+ *	11/8/26, Adam (shard time)
+ *		"Server time" is the shard's time with its zone's name (ShardClock, -timezone); it was UTC, unlabeled.
+ *		Removed the commented-out older Time_OnCommand (it used an AdjustedDateTime instance API that no longer existed).
  *	3/25/08 - Pix
  *		Changed to use new AdjustedDateTime utility class.
  *	12/06/05 - Pigpen
@@ -32,6 +35,7 @@
 
 
 using Server.Mobiles;
+using System;
 
 namespace Server.Commands
 {
@@ -42,25 +46,13 @@ namespace Server.Commands
             Server.CommandSystem.Register("Time", AccessLevel.Player, new CommandEventHandler(Time_OnCommand));
         }
 
-        /*public static void Time_OnCommand(CommandEventArgs e)
-		{
-			Mobile m = e.Mobile;
-			// Console.WriteLine("Scheduler: ({0} Server)/({1} Game), Priority Queue: {2}, Task Queue: {3}, Idle Queue: {4}", serverTime, gameTime, GetPriorityQueueDepth(), GetTaskQueueDepth(), GetIdleQueueDepth());
-			if (m is PlayerMobile)
-			{
-				//m.SendMessage("Server time is: {0} PST.", DateTime.UtcNow);
-
-				AdjustedDateTime ddt = new AdjustedDateTime(DateTime.UtcNow);
-				m.SendMessage("Server time is: {0} {1}.", ddt.Value.ToShortTimeString(), ddt.TZName);
-			}
-		}*/
-
         public static void Time_OnCommand(CommandEventArgs e)
         {
             Mobile m = e.Mobile;
             if (m is PlayerMobile)
             {
-                m.SendMessage($"(Server time is: {AdjustedDateTime.ServerTime.ToShortTimeString()})");
+                DateTime utc = DateTime.UtcNow;
+                m.SendMessage($"(Server time is: {ShardClock.ToShard(utc).ToShortTimeString()} {ShardClock.NameAt(utc)})");
                 UOTime(m);
             }
         }

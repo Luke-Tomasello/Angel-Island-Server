@@ -1,0 +1,39 @@
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# Author: Bravado
+# Song: The Rains of Castamere
+# Napster: false
+# Price: 1000
+say '[play a 0.36 fh 0.01 d 1.08 a 0.36 eh 1.08 a 0.36 fh 0.72 gh 0.72 eh 1.08 a 0.36 gh 0.01 d 0.72' 
+wait 6900
+say '[play fh 0.72 eh 0.72 dh 0.72 eh 0.01 c 1.44 g 1.44 ah 0.01 f 0.36 ah 0.72 ash 0.36 gh 0.01 c 0.72' 
+wait 7200
+say '[play ch 0.36 ch 0.36 ah 0.01 f 0.72 ash 0.72 gh 0.01 c 1.08 ah 0.36 ash 0.01 g 0.72 ah 0.72 gh 0.72' 
+wait 5800
+say '[play fh 0.72 eh 0.01 a 2.52 a 0.36 fh 0.01 d 0.36 -a 0.36 d 0.36 a 0.36 eh 1.08 a 0.36 fh 0.01 d' 
+wait 6500
+say '[play 0.36 -a 0.36 gh 0.01 d 0.72 eh 1.08 a 0.36 gh 0.01 d 0.36 -a 0.36 fh 0.01 d 0.72 eh 0.72' 
+wait 5100
+say '[play dh 0.72 eh 0.01 -c 0.72 g 0.72 ch 1.08 ch 0.36 ah 0.01 -f 0.36 c 0.36 f 0.36 ash 0.36' 
+wait 5100
+say '[play gh 0.01 c 1.08 ch 0.36 ah 0.01 -f 0.36 c 0.36 ash 0.01 f 0.72 gh 0.01 c 1.08 ah 0.36' 
+wait 4400
+say '[play ash 0.01 -g 0.36 d 0.36 ah 0.01 g 0.72 gh 0.01 -a 0.36 e 0.36 fh 0.01 a 0.72 dh 0.01 -d 1.08' 
+wait 4000
+say '[play -a 0.36 d 0.36 a 0.36 d 0.36 -a 0.36 -d 0.72 -a 0.36 d 0.72 a 0.72 eh 0.01 -d 0.36 fh 0.36' 
+wait 5000
+say '[play dh 0.36 -a 0.36 d 0.72 fh 0.72 fh 0.01 -a 0.36 eh 0.36 a 0.36 e 0.36 c 1.08 a 0.36' 
+wait 5000
+say '[play fh 0.01 -d 0.36 fh 0.36 dh 0.36 -a 0.36 d 0.72 fh 0.72 fh 0.01 -a 0.36 eh 0.72 e 0.36 c 1.08' 
+wait 5400
+say '[play a 0.36 eh 0.01 -as 0.36 fh 0.36 dh 0.36 -as 0.36 as 0.72 ah 0.01 -a ah 0.01 -g 0.36 d 0.36' 
+wait 3300
+say '[play gh 0.36 g 0.36 dh 0.72 fh 0.36 fh 0.01 -as 0.36 f 0.36 as 0.36 dh 0.36 eh 0.01 -a 0.72' 
+wait 4000
+say '[play e 0.36 ch 0.36 dh 0.01 -d 1.08 -a 0.36 d 0.72 a 0.72 eh 0.01 -as 0.36 fh 0.36 dh 0.36 -as 0.36' 
+wait 5000
+say '[play as 0.72 ah 0.01 -a 0.72 ah 0.01 -g 0.36 d 0.36 gh 0.36 g 0.36 dh 1.08 fh 0.36 fh 0.01 -as 1.08' 
+wait 5400
+say '[play dh 0.36 ah 0.01 -a 0.36 gh 0.36 eh 0.36 fh 0.36 dh 0.01 -d' 

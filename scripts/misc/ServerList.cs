@@ -21,6 +21,10 @@
 
 /* Scripts/Misc/ServerList.cs
  * Changelog:
+ *  11/8/26, Adam (login server owner)
+ *      Hidden shards and the "Administrative" entry are for Owner accounts (the account is known: the list is sent after
+ *      login), not owner IPs (127.0.0.1 or CoreAI.OwnerIP): an address can be anyone's, and a proxy in front of the
+ *      server makes everyone local.
  *  9/23/26, Adam
 *      Refactor server list into a table-driven shard configuration.
 *      Add dynamic per-shard visibility with persistent FeatureBits.
@@ -197,14 +201,16 @@ namespace Server.Misc
                         localAddress = m_PublicAddress;
                 }
 
-                bool ownerIP =
+                // the server list is sent after login, so the account is known: Owner accounts get the owner's list
+                //  (11/8/26; it was decided by IP)
+                bool owner =
                     !m_PlayerView &&
                     ns != null &&
-                    ns.Address != null &&
-                    Server.Commands.OwnerTools.IsOwnerIP(ns.Address);
+                    ns.Account is Server.Accounting.Account acct &&
+                    acct.AccessLevel >= AccessLevel.Owner;
 
                 /*
-                 * Owner IPs always see every game server.
+                 * Owner accounts always see every game server.
                  *
                  * Everyone else sees only shards currently marked visible.
                  * Visibility affects advertisement only; individual game-server
@@ -212,7 +218,7 @@ namespace Server.Misc
                  */
                 foreach (ShardEntry shard in m_Shards)
                 {
-                    if (ownerIP || shard.Visible)
+                    if (owner || shard.Visible)
                     {
                         e.AddServer(
                             shard.Name,
@@ -222,9 +228,9 @@ namespace Server.Misc
 
                 /*
                  * Administrative is deliberately outside normal shard visibility.
-                 * It is always restricted to Owner IPs.
+                 * It is always restricted to Owner accounts.
                  */
-                if (ownerIP)
+                if (owner)
                 {
                     e.AddServer(
                         "Administrative",
@@ -388,18 +394,18 @@ namespace Server.Misc
                 if (m_PlayerView)
                 {
                     e.Mobile.SendMessage(
-                        "WARNING: ServerList PlayerView enabled. Owner IPs will receive the public player server list.");
+                        "WARNING: ServerList PlayerView enabled. Owner accounts will receive the public player server list.");
 
                     Console.WriteLine(
-                        "WARNING: ServerList PlayerView enabled. Owner IP server-list exceptions are temporarily disabled.");
+                        "WARNING: ServerList PlayerView enabled. Owner account server-list exceptions are temporarily disabled.");
                 }
                 else
                 {
                     e.Mobile.SendMessage(
-                        "ServerList PlayerView disabled. Owner IPs will receive the normal Owner server list.");
+                        "ServerList PlayerView disabled. Owner accounts will receive the normal Owner server list.");
 
                     Console.WriteLine(
-                        "ServerList PlayerView disabled. Normal Owner IP server-list behavior restored.");
+                        "ServerList PlayerView disabled. Normal Owner account server-list behavior restored.");
                 }
 
                 return;

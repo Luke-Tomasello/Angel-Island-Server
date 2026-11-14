@@ -21,6 +21,10 @@
 
 /* Items/Body Parts/Head.cs
  * CHANGELOG:
+ *  11/9/26, Adam
+ *      A creature's head (carved from its corpse: FromCreature) remembers what it was (VictimType) and the spawner that
+ *      spawned it (SpawnerSerial; its location tells the town). The Gypsy Seer takes a town's bankers' heads (Upheaval:
+ *      too few players for player heads alone). Player stays null, so no bounty is ever paid for one. Version 6.
  *  5/29/23, Yoar
  *      Added GuildName, GuildAbbreviation props
  *  5/22/23, Yoar
@@ -59,6 +63,26 @@ namespace Server.Items
         private bool m_FriendlyFire;
         private HeadType m_HeadType;
         private AlignmentType m_GuildAlignment;
+        private Type? m_VictimType;                     // a creature's head: what it was (a player's head: null)
+        private Serial m_SpawnerSerial = Serial.MinusOne;   // and the spawner that spawned it (MinusOne: none)
+
+        /// <summary>A creature's head: what the creature was (null: a player's head, or a head from before 11/9/26).</summary>
+        public Type? VictimType { get { return m_VictimType; } }
+
+        /// <summary>A creature's head: the spawner that spawned the creature (Serial.MinusOne: none, or unknown).</summary>
+        public Serial SpawnerSerial { get { return m_SpawnerSerial; } }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public string? Victim
+        {
+            get { return m_VictimType?.Name; }
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Item? VictimSpawner
+        {
+            get { return m_SpawnerSerial == Serial.MinusOne ? null : World.FindItem(m_SpawnerSerial); }
+        }
 
         [CommandProperty(AccessLevel.GameMaster)]
         public PlayerMobile Player
@@ -134,6 +158,18 @@ namespace Server.Items
             RecalculateName(playerName);
         }
 
+        /// <summary>
+        /// The head carved from a creature's corpse: named as the creature was, remembering what it was and its spawner.
+        /// Not a player's head (Player is null), so no bounty is paid for it.
+        /// </summary>
+        public static Head FromCreature(Mobile creature)
+        {
+            Head head = new Head(creature.Name);
+            head.m_VictimType = creature.GetType();
+            head.m_SpawnerSerial = creature.Spawner is Item spawner ? spawner.Serial : Serial.MinusOne;
+            return head;
+        }
+
         public Head(Serial serial)
             : base(serial)
         {
@@ -170,7 +206,11 @@ namespace Server.Items
         {
             base.Serialize(writer);
 
-            writer.Write((int)5); // version
+            writer.Write((int)6); // version
+
+            // version 6
+            writer.Write(m_VictimType?.FullName ?? "");
+            writer.Write((int)m_SpawnerSerial);
 
             // version 5
             writer.Write((byte)m_GuildAlignment);
@@ -193,6 +233,13 @@ namespace Server.Items
 
             switch (version)
             {
+                case 6:
+                    {
+                        string victim = reader.ReadString() ?? "";
+                        m_VictimType = victim.Length == 0 ? null : ScriptCompiler.FindTypeByFullName(victim);
+                        m_SpawnerSerial = (Serial)reader.ReadInt();
+                        goto case 5;
+                    }
                 case 5:
                     {
                         m_GuildAlignment = (AlignmentType)reader.ReadByte();

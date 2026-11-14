@@ -1,0 +1,58 @@
+# Never Gonna Give You Up
+# Author: Rick Astley
+# Song: Never Gonna Give You Up
+# NewTimer: false
+# Prefetch: false
+# Tempo: 100
+say '[play f 0.5 g 0.5 cl 0.3 g 0.5 a 0.5 c as a 0.1 f 0.5 g 0.5 cl 1.0 0.3'
+wait 6000
+say '[play cl 0.0 cl d f 0.1 f 0.0 f 0.5 g 0.5 cl 0.3 g 0.5 a 0.4 c as a 0.1 f 0.5 g 0.5'
+wait 6000
+say '[play cl 1.0 0.3 cl 0.0 cl d f 0.1 f 0.4 d 0.1 e 0.1 f 0.1 f 0.1 g 0.1 e 0.2 d cl 1.0 0.5'
+wait 6000
+say '[play d 0.1 d 0.1 e 0.1 f 0.1 d 0.3 c 0.1 ch 0.3 c 0.1 g 0.9 d 0.1 d 0.1 e 0.1 f 0.1 d 0.1 f 0.1 g 0.5'
+wait 6000
+say '[play e 0.1 d 0.1 cl 1.0 0.1 d 0.1 d 0.1 e 0.1 f 0.1 d 0.1 c 0.3 g 0.1 g 0.1 g 0.1 a 0.1 g 0.7 f 0.9'
+wait 6000
+say '[play g 0.1 a 0.1 f 0.1 g 0.1 g 0.1 g 0.1 a 0.1 g 0.3 cl 1.0 0.1 d 0.1 e 0.1 f 0.1 d 0.3 g 0.1 a 0.1 g 0.5'
+wait 7000
+# Never gonna give you up
+say '[play c dh fh dh ah 0.2 ah 0.2 gh 0.5 c dh fh dh gh 0.2'
+wait 2300
+say '[play gh 0.2 fh 0.2 eh dh 0.1 c dh fh dh fh 0.3 gh 0.1 eh 0.2 dh c 0.1 '
+wait 3000
+say '[play c 0.1 c 0.1 gh 0.3 fh 0.7 c dh fh dh ah 0.2 ah 0.2'
+wait 3000
+say '[play gh 0.5 c dh fh dh ch 0.3 eh 0.1 fh 0.2 eh dh 0.1 c dh fh dh'
+wait 3000
+say '[play fh 0.1 gh 0.1 eh 0.2 dh c 0.3 c 0.1 gh 0.3 fh 0.5 0.8'
+wait 4000
+# end chorus
+say '[play d 0.1 f 0.1 d 0.1 f 0.1 g 0.6 e 0.1 d 0.1 cl 1.0 0.1 d 0.1 d 0.1 e 0.1 f 0.1 d 0.1 c 0.5'
+wait 5000
+say '[play c 0.1 c 0.1 g 0.3 a 0.1 g 0.1 f 0.3 d 0.1 f 0.1 d 0.1 f 0.1 d 0.1 f 0.1 g 0.3 e 0.1 d 0.1 cl 0.9 d 0.1'
+wait 6000
+say '[play d 0.1 e 0.1 f 0.1 d 0.1 cl 0.7 g 0.1 g 0.1 a 0.3 g 0.5 f 0.9 g 0.1 a 0.1 g 0.3 g 0.1 g 0.1'
+wait 6000
+say '[play a 0.1 g 0.1 cl 0.1 cl 0.9 cl 0.1 d 0.1 e 0.1 f 0.1 d 0.3 g 0.1 a 0.1 g'
+wait 6000
+# Never gonna give you up 2
+say '[play c dh fh dh ah 0.2 ah 0.2 gh 0.5'
+wait 1500
+say '[play c dh fh dh gh 0.2 gh 0.2 fh 0.2 eh dh 0.1 c dh fh dh fh 0.3'
+wait 3000
+say '[play gh 0.1 eh 0.2 dh c 0.3 c 0.1 gh 0.3 fh 0.7 c dh fh dh ah 0.2'
+wait 3000
+say '[play ah 0.2 gh 0.5 c dh fh dh ch 0.3 eh 0.1 fh 0.2'
+wait 3000
+say '[play eh dh 0.1 c dh fh dh fh 0.3 gh 0.1 eh 0.2 dh c 0.3 c 0.1 gh 0.3'
+wait 3000
+say '[play fh 0.7 c dh fh dh ah 0.2 ah 0.2 gh 0.5'
+wait 3000
+say '[play c dh fh dh gh 0.2 gh 0.2 fh 0.2 eh dh 0.1 c dh fh dh fh 0.3 gh 0.1'
+wait 3000
+say '[play eh 0.2 dh c 0.1 c 0.1 c gh 0.3 fh 0.7 cl d f d a 0.2'
+wait 3000
+say '[play a 0.2 g 0.5 cl d f d g 0.2 g 0.2 f 0.2 e d 0.1'
+wait 3000
+say '[play cl d f d f 0.3 g 0.1 e 0.2 d cl 0.3 cl 0.1 g 0.3 f'

@@ -15,67 +15,7 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_ACB0580B9A6C4C95911C09D5B3A230E4"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_763EA8535C084C91AF133581BF9738E3"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_2BBE8035287B40F889C94B7A46350729"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_9E12367599074F51917B2CC1D2658D95"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3E02A40C76494391902F49708958BE08"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_63A9C28DEE134C1BA0048739A861FF86"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_4466FDA8C6804A0EA1161ACE51329C1C"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_0027DE5FFC6544EDA140AF5D10EE4254"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_556DC68ACAB7470FB3DFD5AB3B04AD36"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_1664FE939B1448F3ADD19D01244BBD3B"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_264BF97DF8644450A82F57D36401B645"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -88,18 +28,6 @@
         "Entry"
         {
         "MsmKey" = "8:_00A79351215C4E16B51449AB43E6C997"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_88A5C440019F436C8B6C2338D92710D6"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_B222D4857B0B466B81105D6D8C09E6E0"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -165,12 +93,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_CEDB7AB3AC7A472AB5EC55E3970EB50B"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_043FA6BB1DF848618014E791298EB33E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -202,6 +124,12 @@
         "Entry"
         {
         "MsmKey" = "8:_05A38622F77541F2BF856B147DECB0EA"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_05EEAC6D57844D2290F45F9A66E0DF0D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -436,6 +364,12 @@
         "Entry"
         {
         "MsmKey" = "8:_15EADBB625ED4D90BEBF7EF2B9542B2B"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_1664FE939B1448F3ADD19D01244BBD3B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -687,6 +621,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_264BF97DF8644450A82F57D36401B645"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_272F89C999D048A78AA223626ED1E61D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -766,6 +706,12 @@
         "Entry"
         {
         "MsmKey" = "8:_2BA53E00030D4DF1BB7F3565584EA062"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_2BBE8035287B40F889C94B7A46350729"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -993,6 +939,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_3E02A40C76494391902F49708958BE08"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_3EC2E6E7EEDB4E9EB20CFF269A734AFD"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1090,6 +1042,12 @@
         "Entry"
         {
         "MsmKey" = "8:_445545B9B22D48A6BB5703A6FFB86B5A"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_4466FDA8C6804A0EA1161ACE51329C1C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1294,6 +1252,12 @@
         "Entry"
         {
         "MsmKey" = "8:_555A885EA3B24DA5A0057704E76AF84F"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_556DC68ACAB7470FB3DFD5AB3B04AD36"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1539,6 +1503,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_63A9C28DEE134C1BA0048739A861FF86"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_641CCE6749E545C09F914E792A1CE0E6"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -1774,6 +1744,12 @@
         "Entry"
         {
         "MsmKey" = "8:_76316FC6931F4F20BA4D7970852C05FA"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_763EA8535C084C91AF133581BF9738E3"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2085,6 +2061,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_88A5C440019F436C8B6C2338D92710D6"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_88DE96F15F6C490FBDCE6AFE2B7218CC"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -2355,6 +2337,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_9E12367599074F51917B2CC1D2658D95"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_9E28C5E2D5734B0C9C2979BFB844F2C8"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -2601,6 +2589,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_ACB0580B9A6C4C95911C09D5B3A230E4"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_AD5D1FE5C0DC4B4FA9DCB21438078E55"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -2679,6 +2673,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_B222D4857B0B466B81105D6D8C09E6E0"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_B24B8BD43D984C20B7C64FFC1C6608E7"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -2752,12 +2752,6 @@
         "Entry"
         {
         "MsmKey" = "8:_B63123E369594E9CB871B39A3CA7C926"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_05EEAC6D57844D2290F45F9A66E0DF0D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -3142,6 +3136,12 @@
         "Entry"
         {
         "MsmKey" = "8:_CE9DA3204C094BA5B04C6780EC9A33C2"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_CEDB7AB3AC7A472AB5EC55E3970EB50B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -3537,6 +3537,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_EBC32ADB1B5043E397B738982A2B0658"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_EBDD79A86E2B493183333A81C9A50A43"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -3832,43 +3838,7 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_C85F049CFFD6F061A05008C207ED59D6"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_A6A4C867641353ABA5A4A53C913EE108"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_CDF314D753B1FFC93944FF27EDBBFC8A"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_8064BA35F4C200881F0F96B3DDBCBE7A"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_58890635BE8224FF0ACAAE67A3AE350B"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_AFE6098004CDDD019263E9BFF169D668"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_C8FBFE3C08654D1A46A514805CD173D1"
+        "OwnerKey" = "8:_EC50E3EA96109C2E6E39BA76833BB96B"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -3880,49 +3850,31 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_457303762D153ADFA32CAB31CFB54D08"
+        "OwnerKey" = "8:_CDF314D753B1FFC93944FF27EDBBFC8A"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_EC50E3EA96109C2E6E39BA76833BB96B"
+        "OwnerKey" = "8:_C8FBFE3C08654D1A46A514805CD173D1"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_2541530DC13856651CE1452BB6633C3B"
+        "OwnerKey" = "8:_C85F049CFFD6F061A05008C207ED59D6"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_422189E39483239917B4C17BA3C047A2"
+        "OwnerKey" = "8:_AFE6098004CDDD019263E9BFF169D668"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_033CA46F872E3E1460DDF9CC2268B24E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_7713B96C981FE2E12BB6C7EF6DBA4215"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_285F457CA5294B14E6AE23DAEF3C90E2"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_34FD950C217FB1AD7EB3E8A30A1AB7C2"
+        "OwnerKey" = "8:_A6A4C867641353ABA5A4A53C913EE108"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -3934,7 +3886,61 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_8064BA35F4C200881F0F96B3DDBCBE7A"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_7713B96C981FE2E12BB6C7EF6DBA4215"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_58890635BE8224FF0ACAAE67A3AE350B"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_457303762D153ADFA32CAB31CFB54D08"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_422189E39483239917B4C17BA3C047A2"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_34FD950C217FB1AD7EB3E8A30A1AB7C2"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_32524B54D81EF1EF0EF528247AFA2D71"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_285F457CA5294B14E6AE23DAEF3C90E2"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_2541530DC13856651CE1452BB6633C3B"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_033CA46F872E3E1460DDF9CC2268B24E"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -4057,66 +4063,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_556DC68ACAB7470FB3DFD5AB3B04AD36"
-            {
-            "SourcePath" = "8:data\\XmlAddon\\The Great Northern Bridge_shrunk.xml"
-            "TargetName" = "8:The Great Northern Bridge_shrunk.xml"
-            "Tag" = "8:"
-            "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1664FE939B1448F3ADD19D01244BBD3B"
-            {
-            "SourcePath" = "8:data\\XmlAddon\\The Great Northern Bridge.xml"
-            "TargetName" = "8:The Great Northern Bridge.xml"
-            "Tag" = "8:"
-            "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_264BF97DF8644450A82F57D36401B645"
-            {
-            "SourcePath" = "8:data\\XmlAddon\\Bridge E-W.xml"
-            "TargetName" = "8:Bridge E-W.xml"
-            "Tag" = "8:"
-            "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_007CB445B4FA492BA396A7A198E38BED"
             {
             "SourcePath" = "8:data\\XmlAddon\\Cannon_East.xml"
@@ -4137,190 +4083,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ACB0580B9A6C4C95911C09D5B3A230E4"
-            {
-            "SourcePath" = "8:data\\AIPlayerHistory\\ReadMe.txt"
-            "TargetName" = "8:ReadMe.txt"
-            "Tag" = "8:"
-            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_763EA8535C084C91AF133581BF9738E3"
-            {
-            "SourcePath" = "8:data\\AIPlayerHistory\\SP 7.0.bin"
-            "TargetName" = "8:SP 7.0.bin"
-            "Tag" = "8:"
-            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2BBE8035287B40F889C94B7A46350729"
-            {
-            "SourcePath" = "8:data\\AIPlayerHistory\\Mortalis.bin"
-            "TargetName" = "8:Mortalis.bin"
-            "Tag" = "8:"
-            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_9E12367599074F51917B2CC1D2658D95"
-            {
-            "SourcePath" = "8:data\\AIPlayerHistory\\Seasons.bin"
-            "TargetName" = "8:Seasons.bin"
-            "Tag" = "8:"
-            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3E02A40C76494391902F49708958BE08"
-            {
-            "SourcePath" = "8:data\\AIPlayerHistory\\Upheaval.bin"
-            "TargetName" = "8:Upheaval.bin"
-            "Tag" = "8:"
-            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_63A9C28DEE134C1BA0048739A861FF86"
-            {
-            "SourcePath" = "8:data\\AIPlayerHistory\\AI 7.0.bin"
-            "TargetName" = "8:AI 7.0.bin"
-            "Tag" = "8:"
-            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4466FDA8C6804A0EA1161ACE51329C1C"
-            {
-            "SourcePath" = "8:data\\AIPlayerHistory\\AI 3.0.bin"
-            "TargetName" = "8:AI 3.0.bin"
-            "Tag" = "8:"
-            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_00A79351215C4E16B51449AB43E6C997"
             {
             "SourcePath" = "8:data\\HolidayDeedSettings.xml"
             "TargetName" = "8:HolidayDeedSettings.xml"
-            "Tag" = "8:"
-            "Folder" = "8:_599BDAD5D3624958949E4B6C9969519C"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_88A5C440019F436C8B6C2338D92710D6"
-            {
-            "SourcePath" = "8:data\\ports.json"
-            "TargetName" = "8:ports.json"
-            "Tag" = "8:"
-            "Folder" = "8:_599BDAD5D3624958949E4B6C9969519C"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B222D4857B0B466B81105D6D8C09E6E0"
-            {
-            "SourcePath" = "8:data\\ChampSpawns.xml"
-            "TargetName" = "8:ChampSpawns.xml"
             "Tag" = "8:"
             "Folder" = "8:_599BDAD5D3624958949E4B6C9969519C"
             "Condition" = "8:"
@@ -4548,26 +4314,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CEDB7AB3AC7A472AB5EC55E3970EB50B"
-            {
-            "SourcePath" = "8:data\\Song Files\\Toto - Africa (Anchored).rzr"
-            "TargetName" = "8:Toto - Africa (Anchored).rzr"
-            "Tag" = "8:"
-            "Folder" = "8:_E7AB4ECAFBC94D2690034D52FDF067BD"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_043FA6BB1DF848618014E791298EB33E"
             {
             "SourcePath" = "8:data\\Bulk Orders\\Tailoring\\fishergirl.cfg"
@@ -4674,6 +4420,26 @@
             "TargetName" = "8:BOTB2Stage.xml"
             "Tag" = "8:"
             "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_05EEAC6D57844D2290F45F9A66E0DF0D"
+            {
+            "SourcePath" = "8:MidiToAims.Core.dll"
+            "TargetName" = "8:MidiToAims.Core.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_4A50A18D637C4BD3912730FAD24F66D5"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -5454,6 +5220,26 @@
             "TargetName" = "8:youngoaktree.xml"
             "Tag" = "8:"
             "Folder" = "8:_C71E8EA026144119B43EA988FDB4AA8F"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1664FE939B1448F3ADD19D01244BBD3B"
+            {
+            "SourcePath" = "8:data\\XmlAddon\\The Great Northern Bridge.xml"
+            "TargetName" = "8:The Great Northern Bridge.xml"
+            "Tag" = "8:"
+            "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -6310,6 +6096,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_264BF97DF8644450A82F57D36401B645"
+            {
+            "SourcePath" = "8:data\\XmlAddon\\Bridge E-W.xml"
+            "TargetName" = "8:Bridge E-W.xml"
+            "Tag" = "8:"
+            "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_272F89C999D048A78AA223626ED1E61D"
             {
             "SourcePath" = "8:data\\XmlTrees\\baretree3.xml"
@@ -6567,6 +6373,26 @@
             "TargetName" = "8:The Decisive Battle FFVI.rzr"
             "Tag" = "8:"
             "Folder" = "8:_E7AB4ECAFBC94D2690034D52FDF067BD"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2BBE8035287B40F889C94B7A46350729"
+            {
+            "SourcePath" = "8:data\\AIPlayerHistory\\Mortalis.bin"
+            "TargetName" = "8:Mortalis.bin"
+            "Tag" = "8:"
+            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -7343,6 +7169,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3E02A40C76494391902F49708958BE08"
+            {
+            "SourcePath" = "8:data\\AIPlayerHistory\\Upheaval.bin"
+            "TargetName" = "8:Upheaval.bin"
+            "Tag" = "8:"
+            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3EC2E6E7EEDB4E9EB20CFF269A734AFD"
             {
             "SourcePath" = "8:data\\XmlAddon\\ChickenFightTrophy.xml"
@@ -7680,6 +7526,26 @@
             "TargetName" = "8:GolumCamp.xml"
             "Tag" = "8:"
             "Folder" = "8:_83128B2EC0014DA3A8EFE9E81C13FFDF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4466FDA8C6804A0EA1161ACE51329C1C"
+            {
+            "SourcePath" = "8:data\\AIPlayerHistory\\AI 3.0.bin"
+            "TargetName" = "8:AI 3.0.bin"
+            "Tag" = "8:"
+            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -8393,6 +8259,26 @@
             "TargetName" = "8:names.xml"
             "Tag" = "8:"
             "Folder" = "8:_599BDAD5D3624958949E4B6C9969519C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_556DC68ACAB7470FB3DFD5AB3B04AD36"
+            {
+            "SourcePath" = "8:data\\XmlAddon\\The Great Northern Bridge_shrunk.xml"
+            "TargetName" = "8:The Great Northern Bridge_shrunk.xml"
+            "Tag" = "8:"
+            "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -9195,6 +9081,26 @@
             "TargetName" = "8:ratfortress.cfg"
             "Tag" = "8:"
             "Folder" = "8:_1B2E4833655142A2969BBE81AE65CFB5"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_63A9C28DEE134C1BA0048739A861FF86"
+            {
+            "SourcePath" = "8:data\\AIPlayerHistory\\AI 7.0.bin"
+            "TargetName" = "8:AI 7.0.bin"
+            "Tag" = "8:"
+            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -10017,6 +9923,26 @@
             "TargetName" = "8:YEWFort.xml"
             "Tag" = "8:"
             "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_763EA8535C084C91AF133581BF9738E3"
+            {
+            "SourcePath" = "8:data\\AIPlayerHistory\\SP 7.0.bin"
+            "TargetName" = "8:SP 7.0.bin"
+            "Tag" = "8:"
+            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -11097,6 +11023,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_88A5C440019F436C8B6C2338D92710D6"
+            {
+            "SourcePath" = "8:data\\ports.json"
+            "TargetName" = "8:ports.json"
+            "Tag" = "8:"
+            "Folder" = "8:_599BDAD5D3624958949E4B6C9969519C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_88DE96F15F6C490FBDCE6AFE2B7218CC"
             {
             "SourcePath" = "8:data\\XmlTrees\\applenofruittree.xml"
@@ -12019,6 +11965,26 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_9E12367599074F51917B2CC1D2658D95"
+            {
+            "SourcePath" = "8:data\\AIPlayerHistory\\Seasons.bin"
+            "TargetName" = "8:Seasons.bin"
+            "Tag" = "8:"
+            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_9E28C5E2D5734B0C9C2979BFB844F2C8"
             {
             "SourcePath" = "8:data\\XmlAddon\\christmastown.xml"
@@ -12861,6 +12827,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ACB0580B9A6C4C95911C09D5B3A230E4"
+            {
+            "SourcePath" = "8:data\\AIPlayerHistory\\ReadMe.txt"
+            "TargetName" = "8:ReadMe.txt"
+            "Tag" = "8:"
+            "Folder" = "8:_DDF2C14B3BB8452F9B2F443E7802DB52"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_AD5D1FE5C0DC4B4FA9DCB21438078E55"
             {
             "SourcePath" = "8:data\\Bulk Orders\\Tailoring\\farmer.cfg"
@@ -13132,6 +13118,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B222D4857B0B466B81105D6D8C09E6E0"
+            {
+            "SourcePath" = "8:data\\ChampSpawns.xml"
+            "TargetName" = "8:ChampSpawns.xml"
+            "Tag" = "8:"
+            "Folder" = "8:_599BDAD5D3624958949E4B6C9969519C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B24B8BD43D984C20B7C64FFC1C6608E7"
             {
             "SourcePath" = "8:data\\Seasons\\Awards.xml"
@@ -13389,26 +13395,6 @@
             "TargetName" = "8:Regions.xml"
             "Tag" = "8:"
             "Folder" = "8:_599BDAD5D3624958949E4B6C9969519C"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_05EEAC6D57844D2290F45F9A66E0DF0D"
-            {
-            "SourcePath" = "8:MidiToAims.Core.dll"
-            "TargetName" = "8:MidiToAims.Core.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_4A50A18D637C4BD3912730FAD24F66D5"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -14613,6 +14599,26 @@
             "TargetName" = "8:christmasvillage.xml"
             "Tag" = "8:"
             "Folder" = "8:_5C1C8EA95EC54BA39E2275BCAA97C325"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CEDB7AB3AC7A472AB5EC55E3970EB50B"
+            {
+            "SourcePath" = "8:data\\Song Files\\Toto - Africa (Anchored).rzr"
+            "TargetName" = "8:Toto - Africa (Anchored).rzr"
+            "Tag" = "8:"
+            "Folder" = "8:_E7AB4ECAFBC94D2690034D52FDF067BD"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -15940,6 +15946,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_EBC32ADB1B5043E397B738982A2B0658"
+            {
+            "SourcePath" = "8:data\\discord.json"
+            "TargetName" = "8:discord.json"
+            "Tag" = "8:"
+            "Folder" = "8:_599BDAD5D3624958949E4B6C9969519C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_EBDD79A86E2B493183333A81C9A50A43"
             {
             "SourcePath" = "8:data\\XmlAddon\\gate_one.xml"
@@ -16958,17 +16984,6 @@
                     "Property" = "8:_F05E81B4337D491C8AA4D63908E4BF12"
                         "Folders"
                         {
-                            "{9EF0B969-E518-4E46-987F-47570745A589}:_DDF2C14B3BB8452F9B2F443E7802DB52"
-                            {
-                            "Name" = "8:AIPlayerHistory"
-                            "AlwaysCreate" = "11:FALSE"
-                            "Condition" = "8:"
-                            "Transitive" = "11:FALSE"
-                            "Property" = "8:_83A8BA263384476E80C5B1C3C52637DF"
-                                "Folders"
-                                {
-                                }
-                            }
                             "{9EF0B969-E518-4E46-987F-47570745A589}:_1A018FD6D4DD4128BFF7F3364EC72DE7"
                             {
                             "Name" = "8:Binary"
@@ -17427,6 +17442,17 @@
                             "Condition" = "8:"
                             "Transitive" = "11:FALSE"
                             "Property" = "8:_39226CED79B947779126D5068D7083EE"
+                                "Folders"
+                                {
+                                }
+                            }
+                            "{9EF0B969-E518-4E46-987F-47570745A589}:_DDF2C14B3BB8452F9B2F443E7802DB52"
+                            {
+                            "Name" = "8:AIPlayerHistory"
+                            "AlwaysCreate" = "11:FALSE"
+                            "Condition" = "8:"
+                            "Transitive" = "11:FALSE"
+                            "Property" = "8:_83A8BA263384476E80C5B1C3C52637DF"
                                 "Folders"
                                 {
                                 }

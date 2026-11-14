@@ -44,7 +44,14 @@ The ports are in `Ports.json`. Other flags you may want:
 | Flag | What it does |
 |---|---|
 | `-usedb` | Share accounts and passwords between servers (a common SQLite database) |
+| `-sharemusic` | Share player-composed music between the shards on one machine (a common SQLite database, `C:\AIDB\music.db` unless `AI.MUSICDB` says otherwise). A Test Center or event shard only reads it |
+| `-timezone=<zone>` | The shard's time zone, for events and scheduled jobs: an IANA name (`-timezone=America/Los_Angeles`) or `UTC`, `UTC-5`, `UTC+5:30`. Not given: the server machine's zone. An unknown zone stops startup |
 | `-nopatch` | Skip the startup patcher (one-time patches for existing worlds) |
+| `-nosaves` | No automatic saves, for a development or test world you don't want to keep. A manual `[save` still saves |
+| `-saves` | Automatic saves in a Debug build, which otherwise never saves automatically. Given with `-nosaves`, the server won't start |
+
+The startup banner shows what's in effect: `[Saves are Enabled.]` or `[Saves are Disabled.]`, the time zone, and
+where accounts and music are shared from.
 
 ```
 "GMN Core.exe" -uols -usedb          the login server
@@ -71,6 +78,7 @@ The server runs without any of these; each turns on a feature. They are Windows 
 | `AI.NOREPLY.ADDRESS`, `AI.NOREPLY.PASSWORD`, `AI.EMAIL.HOST`, `AI.EMAIL.HOST.PORT`, `AI.EMAIL.USER`, `AI.EMAIL.ACCOUNTING`, `AI.EMAIL.ANNOUNCEMENTS`, `AI.EMAIL.DEVNOTIFY`, `AI.EMAIL.DISTLIST.PASSWORD`, `AI.EMAIL.SHARDOWNER` | Email: account notices, announcements, crash reports (see `scripts/Engines/email/smtp.cs`) |
 | `AI.MMAccountId`, `AI.MMlicenseKey` | GeoIP lookups with your own MaxMind account (see `scripts/Accounting/AccountHandler.cs`) |
 | `AI.LOGINDB`, `AI.IPEXCEPTIONDB`, `AI.FIREWALLDB` | Where the shared databases live (`-usedb`) |
+| `AI.MUSICDB` | Where the shared music database lives (`-sharemusic`; default `C:\AIDB\music.db`) |
 | `AI.BuildInfoDir` | Where the build number file, `Core 6.info`, is kept |
 
 ## World files
@@ -107,8 +115,9 @@ Angel Island players compose and perform real music on the game's own instrument
 books, turn them into sheet music anyone can play, and publish them to music boxes, where other players listen and buy
 them. The system is in `scripts/Engines/AIMusicSystem`, with the story behind it in its
 [Why I Built AIMS](scripts/Engines/AIMusicSystem/Docs/WHY.md). **MidiToAims**, a composer's tool that turns MIDI files into
-songs, is in `AI Music Composer/`, along with songs by Galois, Angel Island's Grandmaster Composer, shared with his
-permission.
+songs, is in `AI Music Composer/`, along with the shards' music library, shared with its composers' permission
+(`AI Music Composer/Data`, one folder per composer): songs by Galois, Angel Island's Grandmaster Composer, Jocelyn,
+Bushwick Bill, Pastor Wydstrin, Bravado, Loser Girl, Willibald, Xavier, Lady Runa and a sheep.
 
 How players use it is on the Angel Island wiki:
 [Music Composition](https://game-master.net/aiwiki/index.php/Music_Composition),

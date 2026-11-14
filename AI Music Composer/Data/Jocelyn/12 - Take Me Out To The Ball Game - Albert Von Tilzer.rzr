@@ -1,0 +1,44 @@
+# Take Me Out To The Ball Game - Albert Von Tilzer
+# Author: Jocelyn
+# Song: Take Me Out To The Ball Game - Albert Von Tilzer
+# Instrument: Lute
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: True
+# Price: 0
+# Napster: False
+say '[play v20' 
+wait 1000
+say '[play --cl cl 0.69 c 0.34' 
+say '[play --a a 0.34 g 0.34 e 0.34' 
+say '[play --gh g 1.04' 
+say '[play d 1.04' 
+say '[play --cl cl 0.69 c 0.34' 
+say '[play --a a 0.34 g 0.34 e 0.34' 
+say '[play --gh g 1.04' 
+say '[play 1.05' 
+say '[play --a a 0.34 gs 0.34 a 0.34' 
+say '[play e 0.34 f 0.34 g 0.34' 
+say '[play --d a 0.69 f 0.34' 
+say '[play d 1.04' 
+say '[play --d a 0.69 a 0.34' 
+say '[play a 0.34 b 0.34 c 0.34' 
+say '[play --gh dh 0.34 b 0.34 a 0.34' 
+say '[play g 0.34 e 0.34 --gh d 0.34' 
+say '[play --cl cl 0.69 c 0.34' 
+say '[play --a a 0.34 g 0.34 e 0.34' 
+say '[play --gh g 1.04' 
+say '[play d 0.69 d 0.34' 
+say '[play --c cl 0.69 d 0.34' 
+say '[play e 0.34 f 0.34 g 0.34' 
+say '[play --f a 1.04' 
+say '[play 0.35 a 0.34 b 0.34' 
+say '[play --d c 1.04' 
+say '[play --gsh c 1.04' 
+say '[play --cl c 0.34 b 0.34 a 0.34' 
+say '[play --cl g 0.34 --ds fs 0.34 --cl g 0.34' 
+say '[play --dh a 1.04' 
+say '[play --gh b 1.04' 
+say '[play --cl c 1.04' 
+say '[play --d c 0.69 --g 0.34' 

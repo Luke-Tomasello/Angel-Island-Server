@@ -12,6 +12,10 @@
   <ItemGroup>
     <ProjectReference Include="..\MidiToAims.Core\MidiToAims.Core.csproj" />
   </ItemGroup>
+  <!-- the date this exe was built, for the m2a> banner (Program.BuildDate) -->
+  <ItemGroup>
+    <AssemblyMetadata Include="BuildDate" Value="$([System.DateTime]::Now.ToString('M/d/yyyy'))" />
+  </ItemGroup>
   <!-- MidiToAims preview compiles a song exactly as the shard does: the shard's own music compiler (plain C#, no shard
        dependencies), linked, so there is one source. -->
   <ItemGroup>

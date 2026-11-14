@@ -1,8 +1,6 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
+ *                   The Angel Island Music System (AIMS)
  *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
@@ -22,6 +20,24 @@
 
 /* Scripts\Engines\AIMusicSystem\Host\AimsHost.cs
  * Changelog
+ *  11/14/26, Adam (11/11/26 to 11/14/26)
+ *      OnTrackApproved: a submitted track was approved (first approval or remaster), for a shard's own news.
+ *      MusicImportDirectory: where [MusicImport reads song files (default: Data\Music Import). ImportOwner: who owns the
+ *      songs an admin imports, for the library's records only (default: that admin). An imported song pays no one: its
+ *      sales and plays earn its owner nothing (no gold, credit, points or sale notice); OnImportedSale hears each sale,
+ *      for a shard that sends the gold somewhere (default: nothing: it leaves the economy).
+ *  11/9/26, Adam (review notice)
+ *      ReviewNeeded: songs submitted here await review (every 5 minutes while they do). Default: Administrators are told
+ *      "[Music System] New music, review required.", as the library's maintenance always did itself.
+ *  11/7/26, Adam (track note, submission refusal)
+ *      TrackNote: a note about a track in the line staff get ('find'; 'who' for those who may use 'find'). RefuseSubmission: the shard may
+ *      refuse a submission or remaster, with its reason. Both do nothing by default.
+ *  11/7/26, Adam (purchase event)
+ *      OnMusicPurchased: every purchase, as it happens (buyer, song, record, price paid). A song owned by SystemMobile is
+ *      one the shard holds for someone else: its sale queues no notice to a seller.
+ *  11/7/26, Adam
+ *      Deposit: paying a composer (a sale, or music box credit owed from sales their bank couldn't take). Default: the
+ *      bank box (Banker.Deposit), as before.
  *  11/6/26, Adam (2026 modernization, 11/5/26 to 11/6/26)
  *      AimsHost: what the music system needs from the shard it runs on. AIMS provides the vehicle, the shard provides
  *      the destination: each member has a default that works on a stock RunUO server, and a shard overrides the ones
@@ -186,6 +202,12 @@ namespace Server
             get { return Path.Combine(AppContext.BaseDirectory, "Data"); }
         }
 
+        /// <summary>Where [MusicImport reads song files (.rzr). Default: the "Music Import" folder in the Data folder.</summary>
+        public virtual string MusicImportDirectory
+        {
+            get { return Path.Combine(DataDirectory, "Music Import"); }
+        }
+
         /// <summary>The shard's Logs folder (MusicEngine.log). Default: Logs beside the server.</summary>
         public virtual string LogsDirectory
         {
@@ -262,6 +284,15 @@ namespace Server
             return Banker.Withdraw(buyer, amount);
 #endif
         }
+
+        /// <summary>
+        /// Pays a composer: a sale's price, or credit owed from sales their bank couldn't take before (false: it can't take
+        /// it now, and AIMS keeps it owed). Default: the composer's bank box (gold, or a check from 1,000).
+        /// </summary>
+        public virtual bool Deposit(Mobile composer, int amount)
+        {
+            return Banker.Deposit(composer, amount);
+        }
         #endregion Gold
 
         #region Items
@@ -303,6 +334,16 @@ namespace Server
         {
             get { return null; }
         }
+
+        /// <summary>
+        /// Who owns the songs an admin imports ([MusicImport), for the library's records only: an imported song pays no
+        /// one (OnImportedSale). Its composer has no character here; the song keeps its author line. Default: the admin
+        /// who imports them.
+        /// </summary>
+        public virtual Mobile? ImportOwner(Mobile importer)
+        {
+            return importer;
+        }
         #endregion Items
 
         #region Settings
@@ -335,6 +376,62 @@ namespace Server
         /// </summary>
         public virtual void OnMusicSold(Mobile composer, int price)
         {
+        }
+
+        /// <summary>
+        /// A player has just bought a song from a music box: the buyer, the library's sheet and record, and the price paid
+        /// (already taken from the buyer and paid through Deposit). Called for every purchase, at once, whoever the composer
+        /// is (OnMusicSold waits for the composer to be told). Default: nothing.
+        /// </summary>
+        public virtual void OnMusicPurchased(Mobile buyer, Misc.RolledUpSheetMusic song, Items.MusicLibrary.MusicInfo info, int price)
+        {
+        }
+
+        /// <summary>
+        /// A purchase of an imported song ([MusicImport): it pays no one, since no one here composed it, so the gold leaves
+        /// the economy. A shard that wants it to go somewhere (a town fund, say) sends it there. Called before
+        /// OnMusicPurchased. Default: nothing.
+        /// </summary>
+        public virtual void OnImportedSale(Mobile buyer, Misc.RolledUpSheetMusic song, Items.MusicLibrary.MusicInfo info, int price)
+        {
+        }
+
+        /// <summary>
+        /// A submitted track has just been approved, on the shard that approved it: a first approval, or a remaster that
+        /// replaced the approved track (remaster true; 'info' is the record it took over). For a shard's own news (an
+        /// announcement, a feed). Default: nothing.
+        /// </summary>
+        public virtual void OnTrackApproved(Mobile approver, Misc.RolledUpSheetMusic song, Items.MusicLibrary.MusicInfo info, bool remaster)
+        {
+        }
+
+        /// <summary>
+        /// A note about a library track for this viewer, added to the line staff get about it (a music box's 'find', and
+        /// 'who' for those who may use 'find'), such as where a shared song comes from. Default: none.
+        /// </summary>
+        public virtual string? TrackNote(Mobile viewer, Misc.RolledUpSheetMusic song, Items.MusicLibrary.MusicInfo? info)
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// May this sheet music be submitted to the library (or, remaster, replace its earlier version)? A reason refuses it,
+        /// and the composer is told it. Called once the sheet itself is valid, before the library's own rules (a remaster
+        /// needs an earlier version). Default: no refusal.
+        /// </summary>
+        public virtual string? RefuseSubmission(Mobile composer, Misc.RolledUpSheetMusic sheet, bool remaster)
+        {
+            return null;
+        }
+
+        /// <summary>
+        /// Songs submitted on this shard are waiting for review ('count' of them). Called every 5 minutes while any are,
+        /// from the library's maintenance. Default: Administrators and above who are online are told "[Music System] New
+        /// music, review required." Override to tell whom you choose, or no one (a shard that reports review its own way).
+        /// </summary>
+        public virtual void ReviewNeeded(int count)
+        {
+            Commands.CommandHandlers.BroadcastMessage(AccessLevel.Administrator, 54, "[Music System] New music, review required.");
         }
 
         /// <summary>

@@ -21,6 +21,13 @@
 
 /* Scripts/Misc/CharacterCreation.cs
  * ChangeLog
+ *  11/8/2026, Adam (login server owner)
+ *      A character always has its account's access level. Removed the Login Server administrator rule (8/5/22): a
+ *      character created on the Login Server from an owner IP (127.0.0.1 or CoreAI.OwnerIP) was made Owner, whatever
+ *      the account, and its account's infraction status was cleared. Trusting an address let any account at it (or
+ *      anything that looks local, such as a proxy in front of the server) become Owner, and an Owner on the Login
+ *      Server can change passwords in the shared login database. The Login Server's owner is now a real Owner account
+ *      (AccountPrompt), and its wipe spares staff characters.
  *  10/29/2026, Adam (MusicLibrary)
  *      MusicLibrary.ReconnectPlayer (the music library moved out of MusicBox).
  *  7/29/2024, Adam
@@ -218,22 +225,10 @@ namespace Server.Misc
                 return;
             }
 
-            // create a special role for Login Server administrator
-            bool LoginAdmin = Core.RuleSets.LoginServerRules() && args.State?.Address != null &&
-                              Server.Commands.OwnerTools.IsOwnerIP(args.State.Address);
-
-            if (LoginAdmin)
-            {
-                Utility.Monitor.WriteLine("Administrative account ({0}) logging into Login Server", ConsoleColor.Red,
-                    args.State.Address);
-                // exempt this account from infractions like total IP limiter
-                acct.InfractionStatus = Account.AccountInfraction.None;
-            }
-
             player.Player = true;
 
-            // Setup owner / access level. First admin account created.
-            player.AccessLevelInternal = LoginAdmin ? AccessLevel.Owner : acct.AccessLevel;
+            // the character has its account's access level (the login server too: its owner is an Owner account)
+            player.AccessLevelInternal = acct.AccessLevel;
 
             player.Female = args.Female;
             player.Body = player.Female ? 0x191 : 0x190;

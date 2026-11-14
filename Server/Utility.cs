@@ -21,6 +21,11 @@
 
 /* Server/Utility.cs
  * ChangeLog:
+ *  11/8/2026, Adam
+ *      GameTimeFileStamp uses the shard's time (ShardClock.Now) instead of AdjustedDateTime.GameTime.
+ *  11/7/2026, Adam
+ *      GetShortPath: a path that isn't under the shard's root folder comes back unchanged (it showed as
+ *      "...\C:\AIDB\music.db" and "...\C:\Program Files (x86)\...").
  *  10/21/2026, Adam
  *      StackItems: the merged stack keeps the StoreBought mark if either part had it.
  *  10/6/2026
@@ -1182,12 +1187,19 @@ namespace Server
                     split = path.Split(new char[] { '\\', '/' });           // now split up what was passed in
                     Stack<string> stack = new Stack<string>(split);         // store these components in a stack (reverse order)
                     Stack<string> out_stack = new Stack<string>();          // correctly ordered output stack
+                    bool found = false;
                     while (stack.Count > 0)                                 // collect the components for our short path
                     {
                         out_stack.Push(stack.Pop());
                         if (out_stack.Peek() == root)
+                        {
+                            found = true;
                             break;
+                        }
                     }
+
+                    if (!found)                                             // not under our root (e.g. C:\AIDB\music.db): nothing to shorten
+                        return path;
 
                     // now reassemble the short path
                     while (out_stack.Count > 0)
@@ -1895,7 +1907,7 @@ namespace Server
         private static Serial m_FileSerial = Serial.Zero;
         public static string GameTimeFileStamp(bool id = false)
         {
-            DateTime dt = AdjustedDateTime.GameTime;
+            DateTime dt = ShardClock.Now;
             string temp = dt.ToString("MMMM dd yyyy" + ", " + "hh:mm:ss tt");
             if (id)
                 // ids are used to distinguish file names that may resolve to the same name otherwise

@@ -64,6 +64,10 @@
 
 /* Scripts\misc\Mortalis\OnDeathDoppelganger.cs
  * CHANGELOG:
+ *  11/11/2026, Adam
+ *      The death announcement names whoever struck last (PlayerMobile.DeathKiller), and only falls back to the last
+ *      aggressor when nothing did: the last aggressor can be a creature the player was attacking ("slain by a
+ *      sheep" while a bandit killed him). The announcement also goes to the Herald (Interest.Death), for Discord.
  *  12/12/2025, Adam
  *      Checked in
  */
@@ -190,29 +194,27 @@ namespace Server.Misc
 
         public static void BroadcastDeath(PlayerMobile pm)
         {
-            // Get last aggressor if available
-            Mobile? killer = GetLastAggressor(pm);
+            // The killer: whoever struck last (PlayerMobile.DeathKiller, kept at death); only if nothing did, the last
+            //  aggressor (which can be a creature the player was attacking, so it's the fallback, not the first choice)
+            Mobile? killer = pm.DeathKiller is Mobile struck && !struck.Deleted ? struck : GetLastAggressor(pm);
 
-            string msgTemplate;
-            string message = String.Empty;
-
+            string message;
             if (killer == null)
             {
                 // Use your existing random “fate” messages
-                msgTemplate = DeathMessages[Utility.Random(DeathMessages.Length)];
-                string msgBody = string.Format(msgTemplate, pm.Name);
-                message = $"{DeathPrefix} {msgBody}";
-                Commands.CommandHandlers.BroadcastMessage(AccessLevel.Player, 0x482, message);
-                return;
+                string msgTemplate = DeathMessages[Utility.Random(DeathMessages.Length)];
+                message = $"{DeathPrefix} {string.Format(msgTemplate, pm.Name)}";
+            }
+            else
+            {
+                // Killer exists — construct attribution message
+                message = $"{DeathPrefix} {pm.Name} has fallen, slain by {FormatKillerName(killer)}.";
             }
 
-            // Killer exists — construct attribution message
-            string? killerName = FormatKillerName(killer);
-
-            message =
-                $"{DeathPrefix} {pm.Name} has fallen, slain by {killerName}.";
-
             Commands.CommandHandlers.BroadcastMessage(AccessLevel.Player, 0x482, message);
+
+            // the same news for Discord (the shard's General and the main General: Data\discord.json, "Death")
+            Server.Diagnostics.Herald.Publish(Server.Diagnostics.Interest.Death, Server.Diagnostics.Audience.World, message);
         }
 
         private static string? FormatKillerName(Mobile m)

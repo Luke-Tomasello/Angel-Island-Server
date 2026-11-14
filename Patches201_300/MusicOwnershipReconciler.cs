@@ -21,6 +21,10 @@
 
 /* Patches201_300/MusicOwnershipReconciler.cs
  * ChangeLog
+ *  11/7/26, Adam (music box credit)
+ *      A library entry relinked to a local character forfeits its credit (MusicLibrary.ForfeitCredit, MusicCredits.log):
+ *      credit is paid only on the shard that earned it, and a library relinked here came from another shard. The dry
+ *      run lists it ("CREDIT library ...").
  *  10/29/26, Adam (MusicLibrary)
  *      Type names only: the music library moved out of MusicBox (MusicLibrary.Repository, MusicLibrary.MusicInfo).
  *  10/26/26, Adam (moved into the patch assembly)
@@ -98,6 +102,7 @@ namespace Patches201_300
             public uint Guid;                         // the identity the change asserts
             public PlayerMobile? Owner;               // the resolved local character
             public MusicLibrary.MusicInfo? InfoOwner;     // library entry whose Owner is set to Owner
+            public RolledUpSheetMusic? InfoSheet;     // its master sheet (for the credit log)
             public RolledUpSheetMusic? RsmOwner;      // master or copy whose Owner is set to Owner
             public RolledUpSheetMusic? RsmGuid;       // legacy copy that only receives OwnerGUID = Guid
             public MusicLibrary.MusicInfo? InfoPrice;     // library entry whose Price is restored
@@ -198,6 +203,8 @@ namespace Patches201_300
                 {
                     result.LibraryRelinked++;
                     result.Lines.Add(string.Format("RELINK library {0}: {1} -> {2}", what, OwnerText(info.Owner, rsm.Owner), CharText(pm)));
+                    if (!infoOk && info.Credit > 0)
+                        result.Lines.Add(string.Format("CREDIT library {0}: {1} forfeited (earned on another shard; MusicCredits.log)", what, info.Credit));
                 }
 
                 if (info.Price > 0)
@@ -216,6 +223,7 @@ namespace Patches201_300
                         Guid = guid,
                         Owner = pm,
                         InfoOwner = infoOk ? null : info,
+                        InfoSheet = rsm,
                         RsmOwner = rsmOk ? null : rsm,
                         InfoPrice = price > 0 ? info : null,
                         Price = price,
@@ -327,7 +335,11 @@ namespace Patches201_300
                 {
                     // The Owner setters stamp OwnerGUID = Owner.AcctGUID, which validation has shown equals c.Guid.
                     if (c.InfoOwner != null)
+                    {
+                        // credit stays on the shard that earned it: a library moved here never pays it
+                        MusicLibrary.ForfeitCredit(c.InfoSheet, c.InfoOwner, string.Format("relinked by {0} (a library moved from another shard)", caller));
                         c.InfoOwner.Owner = c.Owner;
+                    }
                     if (c.RsmOwner != null)
                         c.RsmOwner.Owner = c.Owner;
                     if (c.RsmGuid != null)

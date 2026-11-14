@@ -1,8 +1,6 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
+ *                   The Angel Island Music System (AIMS)
  *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
@@ -21,7 +19,7 @@
 
 /* Scripts/Engines/AIMusicSystem/RSM/RolledUpSheetMusic.cs
  * Changelog
- *  11/5/26, Adam (2026 modernization, 10/25/26 to 11/5/26)
+ *  11/8/26, Adam (2026 modernization, 10/25/26 to 11/8/26)
  *      Laid out for reading. [Dupe copies the whole sheet (it made a blank one) and the copy plays itself; a sheet
  *      without a composition plays nothing (HasComposition). GenHashCode no longer leaves a stray ManuscriptPaper in
  *      the world; CompareTo compares hashes (it could overflow). Serialize writes version 4 plainly (the same bytes).
@@ -29,6 +27,7 @@
  *      (Host\), so this folder drops into other RunUO servers.
  *      AimsHost: account GUIDs and copies (CopySheet makes the copy). Angel Island only (#if ANGEL_ISLAND): Dupe and
  *      CanDelete; elsewhere the sheet keeps its own OwnerGUID (saved after the composition).
+ *      Keeps its author (KeepsItsAuthor): a '# Author:' line in its notes no longer replaces it as it plays.
  *  4/24/2024, Adam (TrackID)
  *      Add a trackID for identifying a RSM by title, and author/owner (differs from HashCode which is a hash of the music.)
  *  2/26/22, Adam (ConcertMode)
@@ -118,6 +117,8 @@ namespace Server.Misc
         public bool Napster { get { return m_napster; } set { m_napster = value; } }
         public string Composition { get { return m_composition; } set { m_composition = value; } }
         public bool HasComposition => !string.IsNullOrWhiteSpace(m_composition);
+        // the author it was transcribed with (or given) stays: the notes' '# Author:' line doesn't replace it as it plays
+        protected override bool KeepsItsAuthor => !string.IsNullOrEmpty(Author);
         #endregion Properties
 
         #region Identity

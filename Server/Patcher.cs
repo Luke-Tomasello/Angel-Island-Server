@@ -114,6 +114,12 @@
  *
  ***************************************************************************/
 
+/* Server/Patcher.cs
+ * ChangeLog:
+ *  11/8/2026, Adam
+ *      Changelog added. PatchComplete stamps the shard's time (ShardClock.Now) instead of AdjustedDateTime.GameTime.
+ */
+
 using Server.Diagnostics;
 using Server.Engines.Craft;
 using Server.Engines.CronScheduler;
@@ -990,7 +996,7 @@ namespace Server
             if (bits != PatchIndex.None)
                 SetDynamicPatch(bits);
             string l1 = string.Format(string.Format("Patch {0} complete. {1}", patchid,
-                timeUnknown ? DateTime.MinValue : AdjustedDateTime.GameTime));
+                timeUnknown ? DateTime.MinValue : ShardClock.Now));
             string l2 = string.Format("===========================");
             EchoOut(l1, ConsoleColor.Green, echo: false);
             EchoOut(l2, ConsoleColor.Green, echo: false);
@@ -998,7 +1004,7 @@ namespace Server
             {
                 sw.WriteLine(string.Format("{0}: Complete on {1}",
                     GetPatchName(bits),
-                    timeUnknown ? DateTime.MinValue : AdjustedDateTime.GameTime));
+                    timeUnknown ? DateTime.MinValue : ShardClock.Now));
                 sw.WriteLine(l2);
             }
         }

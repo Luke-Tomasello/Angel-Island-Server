@@ -21,6 +21,11 @@
 
 /* Scripts/Commands/OwnerTools.cs
  * CHANGELOG:
+ *  11/8/26, Adam (login server owner)
+ *      IsOwnerIP removed (see 8/5/22): owner access comes from the account, not the address. Character creation gives a
+ *      character its account's access level, and the server list shows hidden shards and "Administrative" to Owner
+ *      accounts. It was: CoreAI.OwnerIP ("me logging into production from home") or 127.0.0.1 ("me logging into
+ *      localhost from home"); an earlier, commented-out entry was Yoar's address.
  *  10/21/26, Adam ([LoadJump treasure)
  *      [LoadJump treasure loads the jump list with every treasure map location (TreasureMap.Locations, the
  *      Angel Island Treasure.json database loaded at world load) in a new random order, each location once. Entries
@@ -3240,14 +3245,6 @@ namespace Server.Commands
             {
                 Utility.Monitor.WriteLine("Not using the Login Database.", ConsoleColor.Red);
             }
-        }
-        public static bool IsOwnerIP(System.Net.IPAddress ip)
-        {
-            return (
-                /*Yoar ip.Equals(System.Net.IPAddress.Parse("83.87.255.92"))*/
-                /*Adam*/   ip.Equals(System.Net.IPAddress.Parse(CoreAI.OwnerIP))    // me logging into production from home
-                /*Adam*/|| ip.Equals(System.Net.IPAddress.Parse("127.0.0.1"))       // me logging into localhost from home
-                );
         }
         [Usage("TileOverload")]
         [Description("Looks for, and deletes excessive items on a single tile.")]

@@ -21,6 +21,11 @@
 
 /* Scripts\Misc\HardwareInfo.cs
  * CHANGELOG
+ *  11/10/2026, Adam (staff skip the CUO 'Code' test's penalties)
+ *      Staff were never disconnected for failing the CUO 'Code' test, but they still got the red console
+ *      line, the Failed Code Tests.log entry and the InvalidClient account flag. Staff tools that log in
+ *      without our ClassicUO (UOAdmin) made that noise on every login. The timeout now returns early for
+ *      staff. Players are unchanged.
  *  6/29/2023, Adam (GetHashCode)
  *      Replace GetStableHashCode() with a better version, GetStableHashCode2()
  *      We were getting a complaint from three guys that swear they are not sharing the same machine.
@@ -253,6 +258,11 @@ namespace Server
             uint seed = (uint)Utility.GetStableHashCode(string.Format("{0}{1}", CUOCodeHandshake, (uint)(state as Mobile).NetState.m_Seed));
 
             m_Table.Remove(seed);
+
+            // staff are never disconnected here; skip the console line, log and account flag (staff tools like UOAdmin)
+            if (m.AccessLevel > AccessLevel.Player)
+                return;
+
             bool hasException = ClientException.IsException((state as Mobile).NetState.Address);
             if (!CoreAI.ForceGMNCUO || hasException)
             {

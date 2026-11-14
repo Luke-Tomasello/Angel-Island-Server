@@ -1,9 +1,7 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
- *   
+ *                   The Angel Island Music System (AIMS)
+ *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
@@ -21,7 +19,7 @@
 
 /* Scripts/Skill Items/Musical Instruments/RazorInstrument.cs
  * ChangeLog
- *  11/6/26, Adam (2026 modernization, 10/23/26 to 11/6/26)
+ *  11/8/26, Adam (2026 modernization, 10/23/26 to 11/8/26)
  *      A song's performance is an object (Performance, returned by StartMusic and StartDeviceMusic) with a State,
  *      Cancel() and Completed, raised exactly once with why it ended; a timer callback of an earlier performance stops
  *      quietly, and a performance whose session is replaced or released ends instead of playing into the new one.
@@ -38,6 +36,8 @@
  *      (Host\), so this folder drops into other RunUO servers.
  *      AimsHost: staff messages. Angel Island only (#if ANGEL_ISLAND): the unstealable, unlootable loot type (else
  *      blessed) and MusicMotionController.
+ *      A '# Author:' line in the notes sets Author as the song plays unless the instrument keeps its own
+ *      (KeepsItsAuthor: sheet music does, so a sheet keeps the author it was transcribed with).
  *  12/28/23, Adam (PlayerProgressCallback() => MusicConfig[player].Tick)
  *      Pass  a callback to the system player to notify us if the system is still processing notes. 
  *      Since this is called on every tick of the system player, it is our responsibility to limit processing so as to not impact playback.
@@ -267,6 +267,8 @@ namespace Server.Items
 
         [CommandProperty(AccessLevel.GameMaster)]
         public string Author { get { return m_author; } set { m_author = value; } }
+        // a '# Author:' line in the notes sets Author as the song plays, unless the instrument keeps its own (sheet music)
+        protected virtual bool KeepsItsAuthor => false;
         [CommandProperty(AccessLevel.GameMaster)]
         public string SongName { get { return m_songName; } set { m_songName = value; } }
         [CommandProperty(AccessLevel.GameMaster)]
@@ -1206,8 +1208,11 @@ namespace Server.Items
                 {   // razor instruments only care about the music, not author, how the player placed, etc.
                     try
                     {
-                        m_author = line.Replace("#", "");
-                        m_author = m_author.Replace("author:", "", StringComparison.CurrentCultureIgnoreCase).Trim();
+                        if (!KeepsItsAuthor)    // sheet music keeps the author it was transcribed with
+                        {
+                            m_author = line.Replace("#", "");
+                            m_author = m_author.Replace("author:", "", StringComparison.CurrentCultureIgnoreCase).Trim();
+                        }
                     }
                     catch (Exception ex)
                     {

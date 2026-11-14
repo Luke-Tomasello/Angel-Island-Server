@@ -21,6 +21,9 @@
 
 /* Scripts/Items/Misc/Corpses/Corpse.cs
  * ChangeLog
+ *  11/9/26, Adam
+ *      Carving a creature makes its head with Head.FromCreature: the head remembers what the creature was and its
+ *      spawner (the Gypsy Seer takes a town's bankers' heads). A player's head is as before.
  *  5/30/2024, Replace various elemental corpse graphics with that of a slime.
  *      elemental graphics seem to be bugged (verified in RunUO) such that the click range for the corpse is much larger than the actual corpse.
  *  6/7/2020, Yoar & Adam
@@ -1267,7 +1270,7 @@ namespace Server.Items
                 }
                 else
                 {
-                    new Head(dead.Name).MoveToWorld(Location, Map);
+                    Head.FromCreature(dead).MoveToWorld(Location, Map);     // remembers what it was, and its spawner (GypsySeer: bankers' heads)
                     new Torso().MoveToWorld(Location, Map);
                     new LeftLeg().MoveToWorld(Location, Map);
                     new LeftArm().MoveToWorld(Location, Map);

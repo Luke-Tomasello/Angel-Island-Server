@@ -1,8 +1,6 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
+ *                   The Angel Island Music System (AIMS)
  *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
@@ -22,7 +20,7 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Placement.cs
  * Changelog
- *  11/5/26, Adam (2026 modernization, 10/30/26 to 11/5/26)
+ *  11/8/26, Adam (2026 modernization, 10/30/26 to 11/8/26)
  *      Where a music box is (in the world, carried by a hired minstrel, elsewhere) decides whom it serves and how it
  *      answers; every rule that depends on it is here (speech, rights, access, replies, range, the listener check). A
  *      box in a container says "This must be in a house and be locked down to work." (it said "fail").
@@ -31,6 +29,9 @@
  *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
  *      (Host\), so this folder drops into other RunUO servers.
  *      AimsUtil: GetDistanceToSqrt. Angel Island only (#if ANGEL_ISLAND): the hired minstrel's box.
+ *      A world box notices a player walking up to it (within 3 tiles): a composer collects music box credit owed to them
+ *      (MusicLibrary.CollectCredits).
+ *      ComposerVisit (was CollectCredits): the composer is also told review decisions on their songs (TellComposer).
  */
 
 using Server.Diagnostics;
@@ -70,6 +71,19 @@ namespace Server.Items
         private bool InSpeechRange(Mobile m)
         {
             return Placement == BoxPlacement.Carried || AimsUtil.GetDistanceToSqrt(this, m) <= 5;
+        }
+
+        // a world box notices a player walking up to it (within 3 tiles): a composer collects credit owed from earlier
+        //  sales (MusicLibrary.CollectCredits returns at once for anyone owed nothing, and tries a composer at most every
+        //  two minutes)
+        public override bool HandlesOnMovement => Placement == BoxPlacement.World;
+
+        public override void OnMovement(Mobile m, Point3D oldLocation)
+        {
+            base.OnMovement(m, oldLocation);
+
+            if (m != null && m.Player && AimsUtil.GetDistanceToSqrt(this, m) <= 3)
+                MusicLibrary.ComposerVisit(m);
         }
         #endregion Placement
 

@@ -1,5 +1,24 @@
 /***************************************************************************
  *
+ *                   The Angel Island Music System (AIMS)
+ *
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
+ *   email                   : luke@tomasello.com
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
  *  MidiToAims.Core - Books: a composition laid out in music composition books, as the shard and the client hold them.
  *  Shared by the command line (a .rzr per post, for a book's Paste in the game) and the shard's [m2a (books in a bag).
  *

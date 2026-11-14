@@ -1,5 +1,24 @@
 /***************************************************************************
  *
+ *                   The Angel Island Music System (AIMS)
+ *
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
+ *   email                   : luke@tomasello.com
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
  *  MidiToAims.Core - Converter: a MIDI file and its arrangement (.m2a) to an AIMS composition (.rzr).
  *
  *  A composer's workbench: the defaults make a good first draft (stage 1), and every choice they make can be changed
@@ -24,6 +43,14 @@
  *  files; Convert's result is the same, and only the report's post count follows it.
  *
  ***************************************************************************/
+
+/* AI Music Composer\MidiToAims.Core\Converter.cs
+ * ChangeLog
+ *  11/8/26, Adam (the arranger is the author)
+ *      Changelog added. A blank 'Arranged by' writes no '# Author:' line (it wrote 'MidiToAims', so songs were credited
+ *      to the tool; the .m2a promised your character's name): the game credits whoever transcribes the books. A song
+ *      without a 'Song:' is named from the MIDI file with its underscores as spaces (DefaultSong).
+ */
 
 using System.Globalization;
 using System.Text;
@@ -208,7 +235,7 @@ namespace MidiToAims
             // the settings a conversion used, for the report: what the composer set, and what was left at its default
             public string Summary(string song) =>
                 string.Format("Song: {0}; Composer: {1}; Arranged by: {2}; Timer: {3}; Notes at once: {4}; Bars per block: {5}; Book pages: {6}; Format: {7}; Repeated notes: {8}; Inner notes: {9}; Drums: {10}",
-                    song, Composer ?? "(none)", ArrangedBy ?? "MidiToAims (the default: set 'Arranged by' in the .m2a)", Timer, NotesAtOnce, BarsPerBlock, BookPages, Format,
+                    song, Composer ?? "(none)", ArrangedBy ?? "(blank: whoever transcribes the books is credited)", Timer, NotesAtOnce, BarsPerBlock, BookPages, Format,
                     Alternate ? "alternate" : "off", Loudest ? "loudest" : "highest", Drums ? "on" : "off");
         }
         #endregion Arrangement (.m2a)
@@ -227,10 +254,10 @@ namespace MidiToAims
             s.AppendLine("# Write a value right after its colon. A # starts a comment (a # in a value, like C#, is kept).");
             s.AppendLine();
             s.AppendLine("MIDI: " + Path.GetFileName(midiPath));
-            s.AppendLine("Song: " + Path.GetFileNameWithoutExtension(midiPath));
+            s.AppendLine("Song: " + DefaultSong(midiPath));
             s.AppendLine("# Composer: who wrote the music (blank: not shown)");
             s.AppendLine("Composer:");
-            s.AppendLine("# Arranged by: you, the book's author - your character's name (blank: MidiToAims, or whoever runs [m2a)");
+            s.AppendLine("# Arranged by: you, the song's author - your character's name (blank: whoever transcribes the books)");
             s.AppendLine("Arranged by:");
             s.AppendLine("Timer: Anchored");
             s.AppendLine("Notes at once: 3         # melody, bass, then inner notes from the top");
@@ -267,6 +294,11 @@ namespace MidiToAims
             s.AppendLine("Toms: off               # none yet: still looking for toms (suggestions to Adam); off leaves them out");
             return s.ToString();
         }
+
+        // a song's name when the .m2a gives none: the MIDI file's name, its underscores as spaces ('Operation_Ivy_-_Bombshell'
+        //  is 'Operation Ivy - Bombshell')
+        public static string DefaultSong(string midiPath) =>
+            string.Join(' ', Path.GetFileNameWithoutExtension(midiPath).Replace('_', ' ').Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
         public static string[] Convert(string midiPath, string? m2aText)
         {
@@ -458,10 +490,11 @@ namespace MidiToAims
             }
 
             // the composition
-            string song = arr.Song ?? Path.GetFileNameWithoutExtension(midiPath);
+            string song = arr.Song ?? DefaultSong(midiPath);
             StringBuilder rzr = new();
             rzr.AppendLine("# Song: " + song);
-            rzr.AppendLine("# Author: " + (arr.ArrangedBy ?? "MidiToAims"));
+            if (!string.IsNullOrWhiteSpace(arr.ArrangedBy))   // blank: no author line; transcribing credits the transcriber
+                rzr.AppendLine("# Author: " + arr.ArrangedBy);
             if (!string.IsNullOrWhiteSpace(arr.Composer))
                 rzr.AppendLine("# Composer: " + arr.Composer);
             rzr.AppendLine("# Instrument: LapHarp");

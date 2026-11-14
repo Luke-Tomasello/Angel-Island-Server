@@ -1,0 +1,41 @@
+# Author: Galois
+# Song: Bookworm Theme
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: False
+# Price: 1000
+say '[play -cl 0.19 -d 0.19 -e 0.19 -f 0.40 -c 0.40 -ds 0.40 -c 0.40 -csl 0.40 -c 0.19 -cl 0.40' 
+say '[play -cl 0.19 -d 0.19 -e 0.19 -f 0.40 -c 0.40 -ds 0.40 -c 0.40 -csl 0.40 -c 0.19 -cl 0.40' 
+say '[play -cl 0.19 -d 0.19 -e 0.19 -f 0.38 -c fh 0.19 eh 0.17' 
+say '[play -ds fh 0.38 -c c 0.38 -csl cs 0.40 -c 0.17 -cl dsh 0.085 cs 0.085' 
+say '[play c 0.17 -cl as 0.17 -d gs 0.17 -e g 0.17' 
+say '[play -f gs 0.19 c 0.17 -c g 0.19 c 0.17 -ds f 0.19 c 0.17 -c e 0.19 f 0.17' 
+say '[play -csl gs 0.085 g 0.085 f 0.17 -c e 0.17 -cl csl 0.19 cl 0.19' 
+say '[play -cl 0.19 -d 0.19 -e 0.19 -f 0.38 -c +fh 0.05 gh 0.05 fh 0.05 eh 0.17' 
+say '[play -ds fh 0.38 -c c 0.38 -csl cs 0.40 -c 0.17 -cl dsh 0.085 cs 0.085' 
+say '[play c 0.17 -cl as 0.17 -d gs 0.17 -e g 0.17' 
+say '[play -f gs 0.19 c 0.17 -c g 0.19 c 0.17 -f f 0.38 -cl e 0.38 -f f 0.61 ch 0.085 bh 0.085 ch 0.19' 
+say '[play -cl 0.19 -d 0.19 -e 0.19 -f 0.40 -c 0.40 -ds 0.40 -c 0.40 -csl 0.40 -c 0.19 -cl 0.40' 
+say '[play -cl 0.19 -d 0.19 -e 0.19 -f 0.40 -c 0.40 -ds 0.40 -c 0.40 -csl 0.40 -c 0.19 -cl 0.40' 
+say '[play -cl 0.19 -d 0.19 -e 0.19 -f 0.36 -c fh +f 0.19 eh 0.15' 
+say '[play -ds fh +gs 0.36 -c c +c 0.36 -csl cs +b 0.40 -c 0.15 -cl dsh +as 0.065 cs +b 0.065' 
+say '[play c +c 0.17 -cl as 0.17 -d gs 0.17 -e g 0.15' 
+say '[play -f gs +c 0.19 c 0.15 -c g +fh 0.19 c 0.15 -ds f +eh 0.19 c 0.15 -c e +cs 0.19 f 0.15' 
+say '[play -csl gs +c 0.085 g 0.085 f 0.17 -c e 0.15 -cl csl +as 0.085 +b 0.065 cl +c 0.19' 
+say '[play -cl 0.19 -d 0.19 -e 0.19 -f 0.36 -c +fh +f 0.05 gh 0.05 fh 0.05 eh 0.15' 
+say '[play -ds fh +gs 0.36 -c c +c 0.36 -csl cs +b 0.40 -c 0.15 -cl dsh +as 0.065 cs +b 0.065' 
+say '[play c +c 0.17 -cl as 0.17 -d gs 0.17 -e g 0.15' 
+say '[play -f gs +c 0.19 c 0.15 -c g +as 0.19 c 0.15 -f f +gs 0.36 -cl e +g 0.36 -f f +f 0.61 ch 0.085 bh 0.085 ch 0.19' 
+say '[play -csl 0.19 -ds 0.19 -f 0.19 -fs 0.40 -cs 0.40 -e 0.40 -cs 0.40 -d 0.40 -cs 0.19 -csl 0.40' 
+say '[play -csl 0.19 -ds 0.19 -f 0.19 -fs 0.40 -cs 0.40 -e 0.40 -cs 0.40 -d 0.40 -cs 0.19 -csl 0.40' 
+say '[play -csl 0.19 -ds 0.19 -f 0.19 -fs 0.36 -cs fsh +fs 0.19 fh 0.15' 
+say '[play -e fsh +a 0.36 -cs cs +cs 0.36 -d dh +c 0.40 -cs 0.15 -csl eh +b 0.065 dh +c 0.065' 
+say '[play cs +cs 0.17 -csl b 0.17 -ds a 0.17 -f gs 0.15' 
+say '[play -fs a +cs 0.19 cs 0.15 -cs gs +fsh 0.19 cs 0.15 -e fs +fh 0.19 cs 0.15 -cs f +dh 0.19 fs 0.15' 
+say '[play -d a +cs 0.085 gs 0.085 fs 0.17 -cs f 0.15 -csl d +b 0.085 +c 0.065 csl +cs 0.19' 
+say '[play -csl 0.19 -ds 0.19 -f 0.19 -fs 0.36 -cs +fsh +fs 0.05 gsh 0.05 fsh 0.05 fh 0.15' 
+say '[play -e fsh +a 0.36 -cs cs +cs 0.36 -d dh +c 0.40 -cs 0.15 -csl eh +b 0.065 dh +c 0.065' 
+say '[play cs +cs 0.17 -csl b 0.17 -ds a 0.17 -f gs 0.15' 
+say '[play -fs a +cs 0.19 cs 0.15 -cs gs +b 0.19 cs 0.15 -fs fs +a 0.36 -csl f +gs 0.36 -fs fs +fs 0.76 -fs -a -cs -fsh' 

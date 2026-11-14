@@ -213,11 +213,11 @@ Each conversion's report lists the settings it used, so you can see at a glance 
 {| class="wikitable"
 ! Setting !! Default !! Meaning
 |-
-| Song || the MIDI's file name || The song's title.
+| Song || the MIDI's file name (underscores as spaces) || The song's title.
 |-
 | Composer || (blank) || Who wrote the music. It's recorded in the composition.
 |-
-| Arranged by || MidiToAims || '''You.''' This becomes the book's author, the name the Music Box shows. Set it to your character's name.
+| Arranged by || (blank) || '''You.''' This becomes the book's author, the name the Music Box shows. Set it to your character's name. Left blank, whoever transcribes the books is credited.
 |-
 | Timer || Anchored || The AIMS timer. Anchored keeps every pause exactly on time.
 |-

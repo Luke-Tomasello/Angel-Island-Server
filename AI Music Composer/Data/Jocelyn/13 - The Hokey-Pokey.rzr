@@ -1,0 +1,53 @@
+# The Hokey-Pokey
+# Author: Jocelyn
+# Song: The Hokey-Pokey
+# Instrument: Lute
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: True
+# Price: 0
+# Napster: False
+say '[play v20' 
+wait 1000
+say '[play e .11 f .35 e .11' 
+say '[play --f a .49 a .49 a .24 0.13 e .11 f .35 e .11' 
+say '[play a .49 a .49 a .24 0.13 e .11 f .35 e .11' 
+say '[play --c a .49 a .49 a .24 0.25 f .35 e .11' 
+say '[play g .36 fs .12 g .36 fs .11 g .49 0.38 e .11' 
+say '[play g .36 fs .12 g .36 fs .12 g .36 b .12 f .36 e .12' 
+say '[play g .36 fs .12 g .36 fs .12 g .49 0.50' 
+say '[play e .24 e .49 e .24 --g f .49 --c g .49' 
+say '[play --f a .49 0.50 e .36 e .12 f .36 e .12' 
+say '[play --f a .49 a .49 a .24 0.13 e .11 f .35 e .11' 
+say '[play a .49 a .49 a .24 0.13 e .11 f .35 e .11' 
+say '[play --c a .49 a .49 a .24 0.25 f .35 e .11' 
+say '[play g .36 fs .12 g .36 fs .11 g .49 0.38 e .11' 
+say '[play g .36 fs .12 g .36 fs .12 g .36 b .12 f .36 e .12' 
+say '[play g .36 fs .12 g .36 fs .12 g .49 0.50' 
+say '[play e .24 e .49 e .24 --g f .49 --c g .49' 
+say '[play --f a .49 0.50 e .36 e .12 f .36 e .12' 
+say '[play --f a .49 a .49 a .24 0.13 e .11 f .35 e .11' 
+say '[play a .49 a .49 a .24 0.13 e .11 f .35 e .11' 
+say '[play --c a .49 a .49 a .24 0.25 f .35 e .11' 
+say '[play g .36 fs .12 g .36 fs .11 g .49 0.38 e .11' 
+say '[play g .36 fs .12 g .36 fs .12 g .36 b .12 f .36 e .12' 
+say '[play g .36 fs .12 g .36 fs .12 g .49 0.50' 
+say '[play e .24 e .49 e .24 --g f .49 --c g .49' 
+say '[play --f a .49 0.50 e .36 e .12 f .36 e .12' 
+say '[play --f a .49 a .49 a .24 0.13 e .11 f .35 e .11' 
+say '[play a .49 a .49 a .24 0.13 e .11 f .35 e .11' 
+say '[play --c a .49 a .49 a .24 0.25 f .35 e .11' 
+say '[play g .36 fs .12 g .36 fs .11 g .49 0.38 e .11' 
+say '[play g .36 fs .12 g .36 fs .12 g .36 b .12 f .36 e .12' 
+say '[play g .36 fs .12 g .36 fs .12 g .49 0.50' 
+say '[play e .24 e .49 e .24 --g f .49 --c g .49' 
+say '[play --f a .49 0.50 e .36 e .12 f .36 e .12' 
+say '[play --f a .49 a .49 a .24 0.13 e .11 f .35 e .11' 
+say '[play a .49 a .49 a .24 0.13 e .11 f .35 e .11' 
+say '[play --c a .49 a .49 a .24 0.25 f .35 e .11' 
+say '[play g .36 fs .12 g .36 fs .11 g .49 0.38 e .11' 
+say '[play g .36 fs .12 g .36 fs .12 g .36 b .12 f .36 e .12' 
+say '[play g .36 fs .12 g .36 fs .12 g .49 0.50' 
+say '[play e .24 e .49 e .24 --g f .49 --c g .49' 
+say '[play --f a .49 0.50 a .24 0.25 0.50' 

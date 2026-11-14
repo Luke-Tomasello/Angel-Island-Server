@@ -1,9 +1,7 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
- *   
+ *                   The Angel Island Music System (AIMS)
+ *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
  *   email                   : luke@tomasello.com
@@ -22,7 +20,9 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.CommandHelpers.cs
  * Changelog
- *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
+ *  11/11/26, Adam
+ *      ApproveTrack tells the host once the track is approved (AimsHost.OnTrackApproved, first approval or remaster).
+ *  11/8/26, Adam (2026 modernization, 10/29/26 to 11/8/26)
  *      Helpers for the speech commands: filters, CompositeList, rights and approval, stopping and samples, submission
  *      status, SongName. Approving a remaster deletes the track it replaces (PatchV262 deletes the ones left before);
  *      a Napster track's composer has access to it. Playable: a pending track is playable by the one who submitted it.
@@ -31,6 +31,11 @@
  *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
  *      (Host\), so this folder drops into other RunUO servers.
  *      AimsHost: Music Karma.
+ *      ApproveTrack is internal (was private): a shard's own code may approve a track through it (Angel Island's shared
+ *      music applies review decisions made on other shards). No change to what it does.
+ *      CompositeList: 'list <words>' lists the tracks whose titles have every word (any order, any case); 'list by
+ *      <composer>' as before. Words after 'list' were ignored (it listed everything).
+ *      Approving a remaster is news for its composer (ComposerTold cleared: TellComposer tells them at their next visit).
  */
 
 using Server.Accounting;
@@ -48,6 +53,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using static Server.Items.MusicBox;
 using static Server.Items.MusicLibrary;
 
@@ -80,18 +86,15 @@ namespace Server.Items
         }
         private List<KeyValuePair<int, string>> CompositeList(Mobile from, string[] tokens, Filter filter = Filter.None)
         {
+            // "list by <composer>": that composer's tracks; "list <words>": the tracks whose titles have every word
             string author = string.Empty;
-            if (tokens.Length >= 4)
+            string[] words = Array.Empty<string>();
+            if (tokens.Length >= 3)
             {
                 if (tokens[2].ToLower() == "by")
-                {
-                    string temp = string.Empty;
-                    for (int ix = 3; ix < tokens.Length; ix++)
-                    {
-                        temp += tokens[ix] + " ";
-                    }
-                    author = temp.Trim();
-                }
+                    author = string.Join(" ", tokens.Skip(3)).Trim().ToLowerInvariant();
+                else
+                    words = tokens.Skip(2).Where(w => !string.IsNullOrWhiteSpace(w)).Select(w => w.ToLowerInvariant()).ToArray();
             }
             bool admin = from.AccessLevel > AccessLevel.Player;
             List<KeyValuePair<int, string>> list = new List<KeyValuePair<int, string>>();
@@ -120,12 +123,12 @@ namespace Server.Items
                 if (!ok) ok = !GetFilter(Filter.Remastered) || kvp.Value.Remastered && (DateTime.UtcNow - kvp.Value.DateRemastered).TotalDays < 8;
                 if (ok)
                 {
+                    string title = (kvp.Key.ToString() ?? string.Empty).ToLowerInvariant();
                     // only list 'rejected' tracks for staff
-                    if (admin && Rejected(kvp.Key) || !Rejected(kvp.Key))
-                        if (author == string.Empty)
-                            list.Add(new KeyValuePair<int, string>(color, text));
-                        else if (kvp.Key.Author.ToLower().Contains(author))
-                            list.Add(new KeyValuePair<int, string>(color, text));
+                    if ((admin && Rejected(kvp.Key) || !Rejected(kvp.Key))
+                        && (author == string.Empty || (kvp.Key.Author ?? string.Empty).ToLower().Contains(author))
+                        && words.All(w => title.Contains(w)))
+                        list.Add(new KeyValuePair<int, string>(color, text));
                 }
             }
 
@@ -268,7 +271,7 @@ namespace Server.Items
         // Approves a submitted track (the review prompt, 'approve <song>' and 'approve *'): either a remaster of an
         //  approved track with the same TrackID, which takes over that track's MusicInfo (sales, purchasers, approval
         //  date), or a first approval (dated for "new releases", publishing points for the Bards Guild).
-        private static void ApproveTrack(Mobile from, RolledUpSheetMusic rsm)
+        internal static void ApproveTrack(Mobile from, RolledUpSheetMusic rsm)
         {
             int trackID = rsm.TrackID;
 
@@ -309,11 +312,13 @@ namespace Server.Items
                 // Mark remaster metadata.
                 MusicLibrary.Repository[rsm].DateRemastered = DateTime.UtcNow;
                 MusicLibrary.Repository[rsm].Remastered = true;
+                MusicLibrary.Repository[rsm].ComposerTold = false;     // news for the composer (TellComposer)
 
                 MusicLibrary.Unqueue(rsm);
 
                 // No points and do not alter original publish date for remasters (per original intent).
                 from.SendMessage("You approve the remastered track {0}.", rsm);
+                AimsHost.Current.OnTrackApproved(from, rsm, MusicLibrary.Repository[rsm], remaster: true);
             }
             else
             {
@@ -334,6 +339,7 @@ namespace Server.Items
                 MusicLibrary.Repository[rsm].DateApproved = DateTime.UtcNow;
 
                 from.SendMessage("You approve the track {0}.", rsm);
+                AimsHost.Current.OnTrackApproved(from, rsm, MusicLibrary.Repository[rsm], remaster: false);
             }
         }
         /// <summary>

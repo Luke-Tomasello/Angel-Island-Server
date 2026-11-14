@@ -21,6 +21,12 @@
 
 /* Scripts\Engines\Seasons\Mobiles\GypsySeer.cs
  * ChangeLog
+ *	11/9/2026, Adam
+ *		She also takes the heads of this town's bankers and minters (Upheaval has too few players for player heads alone):
+ *		a creature's head that remembers a Banker (Minter is one) whose spawner stands in her district (Head.FromCreature),
+ *		from an Orc-aligned collector. The player-only checks (bounty rules, the same player within 30 minutes) don't
+ *		apply; the pace is the bankers' respawn (PatchV269: running banker spawners x 1 hour). Another town's banker is
+ *		refused (-7). DistrictAt: the district at a place (her own, a spawner's).
  *	7/11/2026, adam
  *		created
  */
@@ -202,6 +208,10 @@ namespace Server.Mobiles
                         // Qualified head.
                         break;
 
+                    case 2:
+                        // Qualified head: one of this town's bankers.
+                        break;
+
                     case -1:
                         // Internal error: invalid caller or missing head.
                         Say("Something is amiss...");
@@ -237,6 +247,11 @@ namespace Server.Mobiles
                         Say("Only the blood of our enemies may feed the ritual.");
                         return false;
 
+                    case -7:
+                        // A banker's head, but not one of this town's.
+                        Say("This gold-keeper served another town. Bring me one of this town's own.");
+                        return false;
+
                     default:
                         // Unexpected qualification result.
                         Say("Begone.");
@@ -248,7 +263,7 @@ namespace Server.Mobiles
 
                 if (GetQualifiedHeadCount() < 10)
                 {
-                    Say("I shall take this offering.");
+                    Say(result == 2 ? "The town's gold-keepers bleed as any man does. I shall take this offering." : "I shall take this offering.");
                 }
                 else if (!TrySummonGuardian())
                 {
@@ -332,25 +347,40 @@ namespace Server.Mobiles
         }
         /*
          *  1  Acceptable head
+         *  2  Acceptable head: one of this town's bankers (or minters)
          * -1  Invalid caller or missing head
-         * -2  Not a regular player head
+         * -2  Not a regular player head (nor a banker's)
          * -3  Treachery: self, shared account, guildmate, ally, friendly fire, etc.
          * -4  Collector is not Orc-aligned
          * -5  A head from this player was already accepted within the repeat delay
          * -6  Head belongs to an Orc-aligned player
+         * -7  A banker's head, but its spawner isn't in this district
          */
-        private int IsQualifiedHead(Mobile from, Head? head)
+        public int IsQualifiedHead(Mobile from, Head? head)
         {
             PlayerMobile? collector = from as PlayerMobile;
 
             if (collector == null || head == null)
                 return -1;
 
-            if (!head.IsPlayerHead || head.HeadType != HeadType.Regular)
-                return -2;
-
             Guild? guild = collector.Guild as Guild;
             AlignmentType alignment = (guild == null ? AlignmentType.None : guild.Alignment);
+
+            // a banker's head: this town's own (its spawner stands in this district), from an Orc-aligned collector. No
+            //  player was killed, so the player checks don't apply; the bankers' respawn is the pace (PatchV269).
+            if (IsBankerHead(head))
+            {
+                if (alignment != AlignmentType.Orc)
+                    return -4;
+                TerritoryDistrict? here = GetCurrentDistrict();
+                Spawner? spawner = head.VictimSpawner as Spawner;
+                if (here == null || spawner == null || spawner.Deleted || spawner.Map != Map || DistrictAt(spawner.Location, spawner.Map) != here)
+                    return -7;
+                return 2;
+            }
+
+            if (!head.IsPlayerHead || head.HeadType != HeadType.Regular)
+                return -2;
 
             if (alignment != AlignmentType.Orc)
                 return -4;
@@ -451,12 +481,27 @@ namespace Server.Mobiles
         }
         private TerritoryDistrict? GetCurrentDistrict()
         {
-            Region region = Region.Find(Location, Map);
+            return DistrictAt(Location, Map);
+        }
+
+        /// <summary>The territory district at a place: its region's (null: none).</summary>
+        public static TerritoryDistrict? DistrictAt(Point3D location, Map map)
+        {
+            if (map == null || map == Map.Internal)
+                return null;
+
+            Region region = Region.Find(location, map);
 
             if (region == null || string.IsNullOrEmpty(region.Name))
                 return null;
 
             return TerritorySystem.FindDistrict(region.Name);
+        }
+
+        /// <summary>A banker's (or minter's: Minter is a Banker) head, carved from its corpse; never a player's.</summary>
+        public static bool IsBankerHead(Head? head)
+        {
+            return head != null && !head.IsPlayerHead && head.VictimType != null && typeof(Banker).IsAssignableFrom(head.VictimType);
         }
         private void DoGuardianAddress(object state)
         {

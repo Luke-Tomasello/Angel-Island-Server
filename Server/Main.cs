@@ -106,6 +106,27 @@
 
 /* Server\Main.cs
  * ChangeLog:
+ *  11/13/26, Adam (-publishmusic)
+ *      -publishmusic=<folder>: this server publishes the music catalog (the shared music database's approved songs,
+ *      as .rzr files and catalog.json) into that folder for the website (Engines\AIMusicShare\MusicCatalog.cs; the
+ *      login server's cron). Only the production login server's shortcut has it. The banner says where.
+ *  11/11/26, Adam (NoSaves)
+ *      Core.NoSaves: -nosaves was given, which only development machines do (production never has it). Scripts
+ *      use it to keep a development machine out of the public Discord channels (DiscordHerald).
+ *  11/9/26, Adam (-nosaves)
+ *      -nosaves: no automatic saves (the hourly AutoSave and cron's), in any build, as a Debug build has always done; a
+ *      manual [save still saves. For development machines, which build Release. -saves with -nosaves halts startup
+ *      (a misconfigured launch).
+ *  11/7/26, Adam (-timezone)
+ *      -timezone=<zone>: the shard's time zone (ShardClock), the zone its operator schedules in: an IANA name
+ *      (America/Los_Angeles) or UTC, UTC-5, UTC+5:30. Not set: the server machine's zone. A zone this computer doesn't
+ *      know stops startup. The banner shows it ("[Shard time zone: ...]", "[Cron time: UTC; shard-time jobs: ...]"),
+ *      replacing the Game and Server Time Zone lines, which guessed a zone name from its offset ("British Columbia
+ *      Standard Time") and always showed UTC for the server.
+ *  11/7/26, Adam
+ *      -sharemusic: share music with the other shards through the shared music database (Engines\AIMusicShare;
+ *      replaces the retired MusicSharing feature bit and PatchV266, so Main knows the state at startup). The banner says
+ *      where music is shared from, and where the login database is.
  *  8/15/2024, Adam
  *      When using the remote database, verify connectivity during server up.
  *      Issue errors, and inform the user what has happened.
@@ -190,6 +211,7 @@ namespace Server
         // Disabling developer mode for now (for custom house building)
         //private static bool m_Developer;              // developers machine, allows derect login to any server
         private static bool m_EnableDbgSaves = false;   // normally debug turns off saves. this enables saves for debug
+        private static bool m_NoSaves = false;          // -nosaves: no automatic saves in any build (a Debug build's default, for Release)
 
         private static bool m_Profiling;
         private static DateTime m_ProfileStart;
@@ -207,6 +229,21 @@ namespace Server
         {
             get { return m_useLoginDB; }
             set { m_useLoginDB = value; }
+        }
+
+        // -sharemusic: this shard shares its music with the other shards (Engines\AIMusicShare)
+        private static bool m_ShareMusic = false;
+        public static bool ShareMusic
+        {
+            get { return m_ShareMusic; }
+            set { m_ShareMusic = value; }
+        }
+
+        // -publishmusic=<folder>: this server publishes the music catalog there, for the website (Engines\AIMusicShare\MusicCatalog)
+        private static string? m_PublishMusic = null;
+        public static string? PublishMusic
+        {
+            get { return m_PublishMusic; }
         }
 
         private static MessagePump m_MessagePump;
@@ -253,6 +290,9 @@ namespace Server
 #endif
 
         public static bool Service { get { return m_Service; } }
+
+        // -nosaves: a development machine (production never has it)
+        public static bool NoSaves { get { return m_NoSaves; } }
         // Disabling developer mode for now (for custom house building)
         //public static bool Developer { get { return m_Developer; } }                                    //Disallow direct logins to other servers if we are not a developer
         internal static bool HaltOnWarning { get { return m_HaltOnWarning; } }
@@ -1835,8 +1875,8 @@ namespace Server
             Utility.Monitor.WriteLine("[Base Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(ExeDirectory));
             Utility.Monitor.WriteLine("[Data Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(DataDirectory));
             //Utility.Monitor.WriteLine("[Shared Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(SharedDirectory));
-            Utility.Monitor.WriteLine("[Game Time Zone: {0}]", ConsoleColorInformational(), AdjustedDateTime.GameTimezone);
-            Utility.Monitor.WriteLine("[Server Time Zone: {0}]", ConsoleColorInformational(), AdjustedDateTime.ServerTimezone);
+            Utility.Monitor.WriteLine("[Shard time zone: {0}]", ConsoleColorInformational(), ShardClock.ZoneName);
+            Utility.Monitor.WriteLine("[Cron time: UTC; shard-time jobs: {0}]", ConsoleColorInformational(), ShardClock.Zone.Id);
 
             #region ZLib
             bool zlib_loaded = false;
@@ -1951,6 +1991,21 @@ namespace Server
             }
             #endregion Check Login DB
 
+            #region Check time zone
+            // -timezone=<zone> names a zone this computer doesn't know: stop, rather than run events and wall-clock jobs
+            //  in a zone the operator didn't choose
+            if (ShardClock.SwitchError != null)
+            {
+                Core.LoggerShortcuts.BootError(string.Format("Configuration error: -timezone: {0}.", ShardClock.SwitchError));
+                if (!m_Service)
+                {
+                    Utility.Monitor.WriteLine("Press Enter to exit.", ConsoleColor.Yellow);
+                    Console.ReadLine();
+                }
+                return;
+            }
+            #endregion Check time zone
+
             #endregion Boot Errors
 #if DEBUG
             Utility.Monitor.WriteLine("[Debug Build Enabled]", ConsoleColorInformational());
@@ -1962,10 +2017,32 @@ namespace Server
             //  Turn off saves for DEBUG builds
             AutoSave.SavesEnabled = m_EnableDbgSaves;
 #endif
+            //  -nosaves: the same in any build (a development machine running Release). A manual [save still saves.
+            if (m_NoSaves)
+                AutoSave.SavesEnabled = false;
             state = AutoSave.SavesEnabled;
             Utility.Monitor.WriteLine("[Saves are {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = m_useLoginDB;
-            Utility.Monitor.WriteLine("[Using login database {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            if (state)
+            {
+                bool ignored = false;
+                Utility.Monitor.WriteLine("[Using login database {0} is {1}.]", ConsoleColorEnabled(state),
+                    Utility.GetShortPath(AccountsDatabase.GetDatabasePath(ref ignored)), TextEnabled(state));
+            }
+            else
+                Utility.Monitor.WriteLine("[Using login database {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            state = m_ShareMusic;
+            if (state)
+                Utility.Monitor.WriteLine("[Sharing music from {0} is {1}.]", ConsoleColorEnabled(state),
+                    Utility.GetShortPath(Engines.MusicShare.MusicShareDatabase.DatabasePath), TextEnabled(state));
+            else
+                Utility.Monitor.WriteLine("[Sharing music is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            state = !string.IsNullOrWhiteSpace(m_PublishMusic);
+            if (state)
+                Utility.Monitor.WriteLine("[Publishing the music catalog to {0} is {1}.]", ConsoleColorEnabled(state),
+                    m_PublishMusic, TextEnabled(state));
+            else
+                Utility.Monitor.WriteLine("[Publishing the music catalog is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             Utility.Monitor.WriteLine("[Shard configuration is {0}.]", ConsoleColorInformational(), m_Server);
             state = RuleSets.ResourcePoolRules();
             Utility.Monitor.WriteLine("[Resource Pool is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
@@ -2363,6 +2440,9 @@ namespace Server
                 else if (lower == "-vb") m_VBdotNET = true;
                 else if (lower == "-migratepatchhistory") MigratePatchHistory = true;
                 else if (lower == "-usedb") m_useLoginDB = true;
+                else if (lower == "-sharemusic") m_ShareMusic = true;
+                else if (lower.StartsWith("-publishmusic=")) m_PublishMusic = token.Substring("-publishmusic=".Length).Trim('"');
+                else if (lower.StartsWith("-timezone=")) ShardClock.SetFromSwitch(token.Substring("-timezone=".Length));
                 else if (lower == "-uotc") m_GMNTC_CFG = true;
                 else if (lower == "-uopt") m_Tribute_CFG = true;
                 else if (lower == "-norp") m_USERP_CFG = false;
@@ -2370,6 +2450,7 @@ namespace Server
                 else if (lower == "-build") m_Building = true;
                 else if (lower == "-nopatch") m_Patching = false;
                 else if (lower == "-saves") m_EnableDbgSaves = true;
+                else if (lower == "-nosaves") m_NoSaves = true;
                 else if (lower == "-uobeta") m_GMNBETA_CFG = true;
                 else if (lower == "-restarted") m_Restarted = true;
                 else if (lower == "-crashed")
@@ -2410,6 +2491,11 @@ namespace Server
                     RuleSets.GMNUP_SVR = true;
                 }
             }
+
+            // -saves (save in a Debug build) and -nosaves (no saves in any build) contradict each other: a misconfigured
+            //  launch stops here rather than guessing which was meant
+            if (m_EnableDbgSaves && m_NoSaves)
+                Core.Halt("-saves and -nosaves contradict each other: give one or the other.");
         }
         private static int CountServers(string[] tokens)
         {

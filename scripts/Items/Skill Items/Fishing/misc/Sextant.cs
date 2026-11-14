@@ -21,9 +21,14 @@
 
 /* Scripts/Items/Skill Items/Fishing/Misc/Sextant.cs
  * CHANGELOG:
+ *  11/11/2026, Adam (degree sign)
+ *      The degree sign in Format was the Unicode replacement character (lost to an encoding mix-up before the
+ *      file was first committed), so coordinates went out as "5? 26'S"; the client's font hid it, UOAdmin showed
+ *      it. Now "°" (an escape, so the source stays ASCII). Normalize splits on both the degree sign and the
+ *      replacement character, so coordinates copied from older messages still parse.
  *  7/6/2023, Adam (Parse)
  *      Add a Parse command for Sextant.
- *      Parses a sextant string like 93� 20'S, 135� 21'E (and other formats), and returns a Point3D
+ *      Parses a sextant string like 93° 20'S, 135° 21'E (and other formats), and returns a Point3D
  *  12/22/21, Yoar
  *      Added CalculateMapBounds method to calculate centered map bounds without a MapItem ref.
  *  11/10/21, Yoar
@@ -207,7 +212,7 @@ namespace Server.Items
 
         public static string Format(int xLong, int yLat, int xMins, int yMins, bool xEast, bool ySouth)
         {
-            return string.Format("{0}� {1}'{2}, {3}� {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W");
+            return string.Format("{0}\u00B0 {1}'{2}, {3}\u00B0 {4}'{5}", yLat, yMins, ySouth ? "S" : "N", xLong, xMins, xEast ? "E" : "W");
         }
         public static string Where(IEntity ent)
         {
@@ -226,9 +231,9 @@ namespace Server.Items
         public static string Normalize(string desc)
         {
             // length == 4 is old - style sextant: [go 55 54 N 72 54 W
-            // length == 6 is new-style sextant: [go 55� 54'N 72� 54'W
+            // length == 6 is new-style sextant: [go 55° 54'N 72° 54'W
             // if (e.Length == 6) patch coords to old-style
-            String[] args = desc.Split(new char[] { ' ', '\'', '�' }, StringSplitOptions.RemoveEmptyEntries);
+            String[] args = desc.Split(new char[] { ' ', '\'', '\u00B0', '\uFFFD' }, StringSplitOptions.RemoveEmptyEntries);
             try
             {
                 int.Parse(args[0]);

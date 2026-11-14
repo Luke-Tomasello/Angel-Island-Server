@@ -21,6 +21,10 @@
 
 /* Scripts/Commands/LogHelper.cs
  * ChangeLog
+ *  11/11/2026, Adam
+ *      LogException (both overloads) also tells the Herald (Interest.Exception, Audience.Staff), so staff who asked
+ *      for server alerts see a one-line summary in game or in UOAdmin. Told before the 100-exception cap, so the
+ *      alerts keep coming after the log goes quiet (the Herald merges repeats).
  *  7/2/2024, Adam
  *      Switch back to using UtcNow logs need to match actual events (House decay for instance.)
  *  11/24/22, Adam
@@ -247,6 +251,9 @@ namespace Server.Diagnostics
         private static int m_LogExceptionCount = 0;
         public static void LogException(Exception ex)
         {
+            // staff hear of it even after the log's cap below (the Herald merges repeats; it never throws)
+            Herald.Publish(Interest.Exception, Audience.Staff, Herald.Describe(ex), ex);
+
             if (m_LogExceptionCount++ > 100)
                 return;
 
@@ -269,6 +276,8 @@ namespace Server.Diagnostics
 
         public static void LogException(Exception ex, string additionalMessage)
         {
+            Herald.Publish(Interest.Exception, Audience.Staff, Herald.Describe(ex, additionalMessage), ex);
+
             try
             {
                 LogHelper Logger = new LogHelper("Exception.log", false);

@@ -21,6 +21,11 @@
 
 /* Scripts/Engines/AI/Creature/BaseCreature.cs
  * ChangeLog
+ *  11/10/2026, Adam (PatchLootTick, KeepsWeaponPacked)
+ *      PatchLootTick, Publish 4 and later: a vendor's newbied items aren't loot (they never go to the corpse), so a pack
+ *      holding one keeps it and the pack; only the rest goes. A pack with none is deleted as before. (Upheaval's
+ *      Felucca bankers lost the newbied weapon they're born with: their towns are StaticRegions, so GuardedRegions.)
+ *      KeepsWeaponPacked: a creature that keeps its weapon packed (the AI's disarm recovery leaves it); default false.
  *  11/4/2026, Adam (Upheaval pet bonding)
  *      IsBondable: Upheaval (Publish 15) bonds pets too, as Angel Island does; Publish 16 brought bonding to OSI.
  *  10/19/2026, Adam (pets eat human meat)
@@ -4047,8 +4052,27 @@ namespace Server.Mobiles
                     }
                 }
                 else if (this.Backpack != null)
-                    this.Backpack.Delete();
+                {   // Publish 4 and later: killable shopkeepers carry no loot. A newbied item never goes to the corpse, so it
+                    //  isn't loot: a pack holding one keeps it (and the pack); the rest goes. A pack with none goes, as always.
+                    //  (11/10/26: Upheaval's bankers are born with a newbied weapon in a backpack.)
+                    List<Item> loot = this.Backpack.Items.Where(i => i.LootType != LootType.Newbied).ToList();
+                    if (loot.Count == this.Backpack.Items.Count)
+                        this.Backpack.Delete();
+                    else
+                        foreach (Item item in loot)
+                            item.Delete();
+                }
             }
+        }
+
+        /// <summary>
+        /// True while this creature keeps its weapon in its pack rather than in hand: the AI's disarm recovery
+        /// (BaseAI.CanReequip, TryReequip) leaves it there. Default false (a humanoid re-arms from its pack while it wanders).
+        /// Upheaval's bankers: true while they're bankers (Vendor AI), false in a fight.
+        /// </summary>
+        public virtual bool KeepsWeaponPacked
+        {
+            get { return false; }
         }
         private bool VendorBackpackSanityCheck()
         {

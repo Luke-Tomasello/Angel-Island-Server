@@ -1,0 +1,267 @@
+# Author: Jocelyn
+# Song: Hard Hearted Hannah
+# Instrument: Lute
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: True
+# Price: 2000
+# Napster: False
+say '[play v20' 
+wait 1000
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play dsh .59 c .29 as .89' 
+say '[play --g .44 ds .14 f .44 ds .14 --g f .59 ds .59' 
+say '[play --ds g .29 as .59 as .59 --dsh .29' 
+say '[play --gs .44 ds .14 f .44 ds .14 --gs f .59 ds .59' 
+say '[play --gs g .29 as .59 --ash as .89' 
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play --dsh dsh .59 c .29 as .89 --c c .44 cs .14' 
+say '[play --ds dh .59 dh .59 --gsh dh .29 c .59 as .29' 
+say '[play --fh 1.89 dh .29 as .29' 
+say '[play --ch c .59 as .59 --fh g .29 f .29 g .29 as .29' 
+say '[play --ash 1.59 0.15 a .14 as .44 a .29' 
+say '[play --ds c .59 c .44 b .14 --dh c .29 --as b .59 b .29' 
+say '[play --ch c .59 c .44 as .14 dh .29 c .44' 
+say '[play --fh .44 f .14 g .29 f .29 g .29 c .59 f .29' 
+say '[play 2.4' 
+say '[play --ash g .59 g .44 f .14 g .59 --gsh .29 f .29' 
+say '[play --ash g .44 as .14 g .44 f .14 g .29 as .89' 
+say '[play --ds dsh .29 dsh .59 ds .59 ds .29 f .29 ds .29' 
+say '[play --bh fs .59 fs .59 --ash fs .29 f .29 as .29' 
+say '[play --ds c .59 c .29 as .14 --dh c .29 --as as .59 as .29' 
+say '[play --c c .59 c .29 as .14 dh .29 c .44' 
+say '[play --f .44 g .14 gs .44 f .14 --gh g .29 f .89' 
+say '[play --cl ds 1.19 --dsh 0.59 ds 0.59' 
+say '[play --gsh f .44 ds .14 f .44 ds .14 f .44 ds .14 f .44 ds .14' 
+say '[play --bh g .29 g .59 ds .89 f .44 f .14' 
+say '[play --gs g .44 f .14 g .44 f .14 g .44 --as f .14 g .44 gs .14' 
+say '[play --ch as .29 as .59 g .89 c .59' 
+say '[play --fh dsh .59 dsh .44 c .14 dsh .29 c .59 c .29' 
+say '[play --fh dsh .59 dsh .44 c .14 --ash as .44 fs .14 f .59' 
+say '[play --ds ds .59 .60 --as .59' 
+say '[play --ash .59 0.30 a .29 as .29 b .29' 
+say '[play --ds c .59 c .44 b .14 --dh c .29 --as b .59 b .29' 
+say '[play --ch c .59 c .44 as .14 dh .29 c .44' 
+say '[play --fh .44 f .14 g .29 f .29 g .29 c .59 f .29' 
+say '[play 2.4' 
+say '[play --ash g .59 g .44 f .14 g .59 --gsh .29 f .29' 
+say '[play --ash g .44 as .14 g .44 f .14 g .29 as .89' 
+say '[play --ds dsh .29 dsh .59 ds .59 ds .29 f .29 ds .29' 
+say '[play --bh fs .59 fs .59 --ash fs .29 f .29 as .29' 
+say '[play --ds c .59 c .29 as .14 --dh c .29 --as as .59 as .29' 
+say '[play --c c .59 c .29 as .14 dh .29 c .44' 
+say '[play --f .44 g .14 gs .44 f .14 --gh g .29 f .89' 
+say '[play --cl ds 1.19 --dsh 0.59 ds 0.59' 
+say '[play --gsh f .44 ds .14 f .44 ds .14 f .44 ds .14 f .44 ds .14' 
+say '[play --bh g .29 g .59 ds .89 f .44 f .14' 
+say '[play --gs g .44 f .14 g .44 f .14 g .44 --as f .14 g .44 gs .14' 
+say '[play --ch as .29 as .59 g .89 c .59' 
+say '[play --fh dsh .59 dsh .44 c .14 dsh .29 c .59 c .29' 
+say '[play --fh dsh .59 dsh .44 c .14 --ash as .44 fs .14 f .59' 
+say '[play --ds ds 2.39' 
+say '[play 2.4' 
+wait 200
+say '! In old Sanannah' 
+wait 2500
+say '! I said Savannah' 
+wait 2400
+say '! the weather there is nice and warm' 
+wait 4400
+say '! the climate's of the southern brand' 
+wait 4300
+say '! But here's what I don't understand' 
+wait 4400
+say '! They've got a gal there' 
+wait 2400
+say '! a pretty gal there' 
+wait 2500
+say '! who's colder than an arctic storm' 
+wait 3900
+say '! got a heart just like a stone' 
+wait 5000
+say '! Even ice men leave her alone' 
+wait 4900
+say '! They call her hard hearted Hannah,' 
+wait 3200
+say '! the vamp of Savannah' 
+wait 2800
+say '! The meanest gal in town' 
+wait 4400
+say '! Leather is tough' 
+wait 1900
+say '! but Hannah's heart is tougher' 
+wait 3100
+say '! she's a gal who loves to see men suffer!' 
+wait 4400
+say '! To tease 'em and thrill 'em' 
+wait 2200
+say '! to torture and kill 'em' 
+wait 2700
+say '! is her delight they say' 
+wait 3800
+say '! I saw her at the sea shore with a great big pan' 
+wait 4900
+say '! there was Hannah pouring water on a drowning man' 
+wait 5000
+say '! She's hard hearted Hannah' 
+wait 2700
+say '! the vamp of Savannah, G.A.' 
+wait 5600
+say '! They call her hard hearted Hannah' 
+wait 3100
+say '! the vamp of Savannah' 
+wait 2800
+say '! the meanest gal in town' 
+wait 4400
+say '! I talk of your cold' 
+wait 2100
+say '! refrigerating mammas' 
+wait 2800
+say '! brother, she's the Polar bear's pajamas!' 
+wait 4400
+say '! To tease 'em and thrill 'em' 
+wait 2400
+say '! to torture and kill 'em' 
+wait 2600
+say '! is her delight they say' 
+wait 3800
+say '! an evening spent with Hannah sitting on your knees' 
+wait 5000
+say '! is like traveling thru Alaska in your B.V.D.s' 
+wait 4900
+say '! She's hard hearted Hannah' 
+wait 2800
+say '! the vamp of Savannah, G.A.' 
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play dsh .59 c .29 as .89' 
+say '[play --g .44 ds .14 f .44 ds .14 --g f .59 ds .59' 
+say '[play --ds g .29 as .59 as .59 --dsh .29' 
+say '[play --gs .44 ds .14 f .44 ds .14 --gs f .59 ds .59' 
+say '[play --gs g .29 as .59 --ash as .89' 
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play --ds 0.44 g .14 as .44 g .14 --ash as .29 c .89' 
+say '[play --dsh dsh .59 c .29 as .89 --c c .44 cs .14' 
+say '[play --ds dh .59 dh .59 --gsh dh .29 c .59 as .29' 
+say '[play --fh 1.89 dh .29 as .29' 
+say '[play --ch c .59 as .59 --fh g .29 f .29 g .29 as .29' 
+say '[play --ash 1.59 0.15 a .14 as .44 a .29' 
+say '[play --ds c .59 c .44 b .14 --dh c .29 --as b .59 b .29' 
+say '[play --ch c .59 c .44 as .14 dh .29 c .44' 
+say '[play --fh .44 f .14 g .29 f .29 g .29 c .59 f .29' 
+say '[play 2.4' 
+say '[play --ash g .59 g .44 f .14 g .59 --gsh .29 f .29' 
+say '[play --ash g .44 as .14 g .44 f .14 g .29 as .89' 
+say '[play --ds dsh .29 dsh .59 ds .59 ds .29 f .29 ds .29' 
+say '[play --bh fs .59 fs .59 --ash fs .29 f .29 as .29' 
+say '[play --ds c .59 c .29 as .14 --dh c .29 --as as .59 as .29' 
+say '[play --c c .59 c .29 as .14 dh .29 c .44' 
+say '[play --f .44 g .14 gs .44 f .14 --gh g .29 f .89' 
+say '[play --cl ds 1.19 --dsh 0.59 ds 0.59' 
+say '[play --gsh f .44 ds .14 f .44 ds .14 f .44 ds .14 f .44 ds .14' 
+say '[play --bh g .29 g .59 ds .89 f .44 f .14' 
+say '[play --gs g .44 f .14 g .44 f .14 g .44 --as f .14 g .44 gs .14' 
+say '[play --ch as .29 as .59 g .89 c .59' 
+say '[play --fh dsh .59 dsh .44 c .14 dsh .29 c .59 c .29' 
+say '[play --fh dsh .59 dsh .44 c .14 --ash as .44 fs .14 f .59' 
+say '[play --ds ds .59 .60 --as .59' 
+say '[play --ash .59 0.30 a .29 as .29 b .29' 
+say '[play --ds c .59 c .44 b .14 --dh c .29 --as b .59 b .29' 
+say '[play --ch c .59 c .44 as .14 dh .29 c .44' 
+say '[play --fh .44 f .14 g .29 f .29 g .29 c .59 f .29' 
+say '[play 2.4' 
+say '[play --ash g .59 g .44 f .14 g .59 --gsh .29 f .29' 
+say '[play --ash g .44 as .14 g .44 f .14 g .29 as .89' 
+say '[play --ds dsh .29 dsh .59 ds .59 ds .29 f .29 ds .29' 
+say '[play --bh fs .59 fs .59 --ash fs .29 f .29 as .29' 
+say '[play --ds c .59 c .29 as .14 --dh c .29 --as as .59 as .29' 
+say '[play --c c .59 c .29 as .14 dh .29 c .44' 
+say '[play --f .44 g .14 gs .44 f .14 --gh g .29 f .89' 
+say '[play --cl ds 1.19 --dsh 0.59 ds 0.59' 
+say '[play --gsh f .44 ds .14 f .44 ds .14 f .44 ds .14 f .44 ds .14' 
+say '[play --bh g .29 g .59 ds .89 f .44 f .14' 
+say '[play --gs g .44 f .14 g .44 f .14 g .44 --as f .14 g .44 gs .14' 
+say '[play --ch as .29 as .59 g .89 c .59' 
+say '[play --fh dsh .59 dsh .44 c .14 dsh .29 c .59 c .29' 
+say '[play --fh dsh .59 dsh .44 c .14 --ash as .44 fs .14 f .59' 
+say '[play --ds ds 2.39' 
+say '[play 2.4' 
+wait 7700
+say '! You ought to see her' 
+wait 2500
+say '! you ought to see her' 
+wait 2400
+say '! outside she's just as soft as silk' 
+wait 4400
+say '! but socially she's hard as nails' 
+wait 4300
+say '! she's just a gal who hates the males!' 
+wait 4400
+say '! And when she's nasty' 
+wait 2400
+say '! oh, when she's nasty' 
+wait 2500
+say '! she's about as sweet as sour milk' 
+wait 3900
+say '! nothing she likes better than' 
+wait 5000
+say '! feedin' poisoned food to a man' 
+wait 4900
+say '! They call her hard hearted Hannah,' 
+wait 3200
+say '! the vamp of Savannah' 
+wait 2700
+say '! The meanest gal in town' 
+wait 4400
+say '! Leather is tough' 
+wait 1900
+say '! but Hannah's heart is tougher' 
+wait 3100
+say '! she's a gal who loves to see men suffer!' 
+wait 4400
+say '! To tease 'em and thrill 'em' 
+wait 2300
+say '! to torture and kill 'em' 
+wait 2700
+say '! is her delight they say' 
+wait 3800
+say '! I saw her at the sea shore with a great big pan' 
+wait 5000
+say '! there was Hannah pouring water on a drowning man' 
+wait 5000
+say '! She's hard hearted Hannah' 
+wait 2700
+say '! the vamp of Savannah, G.A.' 
+wait 5600
+say '! They call her hard hearted Hannah' 
+wait 3100
+say '! the vamp of Savannah' 
+wait 2800
+say '! the meanest gal in town' 
+wait 4500
+say '! I talk of your cold' 
+wait 2100
+say '! refrigerating mammas' 
+wait 2800
+say '! brother, she's the Polar bear's pajamas!' 
+wait 4400
+say '! To tease 'em and thrill 'em' 
+wait 2400
+say '! to torture and kill 'em' 
+wait 2600
+say '! is her delight they say' 
+wait 3900
+say '! an evening spent with Hannah sitting on your knees' 
+wait 5000
+say '! is like traveling thru Alaska in your B.V.D.s' 
+wait 4900
+say '! She's hard hearted Hannah' 
+wait 2800
+say '! the vamp of Savannah, G.A.' 

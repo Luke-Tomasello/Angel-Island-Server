@@ -1,0 +1,23 @@
+# Author: Galois
+# Song: Auld Lang Syne
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: False
+say '[play cl 0.53 -f -a f 0.79 -a f 0.26 -f -a f 0.53 -f -c a 0.53' 
+say '[play -cl -as g 0.79 -a f 0.26 -cl -as g 0.53 -cl -eh a 0.53' 
+say '[play -f -a f 0.79 -a f 0.26 -f -c a 0.53 -a ds c 0.53' 
+say '[play -as f dh 1.59 -d as dh 0.53' 
+say '[play -f a c 0.79 -c a 0.26 -f -c a 0.53 -f -a f 0.53' 
+say '[play -c -as g 0.79 -a f 0.26 -c -as g 0.53 -a -cs a 0.53' 
+say '[play -as d f 0.79 -as d 0.26 -as d 0.53 -c -as cl 0.53' 
+say '[play -f -a f 1.59 -f as dh 0.26 e 0.26' 
+say '[play -f a c 0.79 f a 0.26 -f cl a 0.53 -f -a f 0.53' 
+say '[play -cl -as g 0.79 -a f 0.26 -cl -as g 0.53 -f as dh 0.26 e 0.26' 
+say '[play -f a c 0.79 f a 0.26 -f -c a 0.53 -a ds c 0.53' 
+say '[play -as f dh 1.59 -d as fh 0.53' 
+say '[play -f a c 0.79 f a 0.26 -f -c a 0.53 -f -a f 0.53' 
+say '[play -cl -as g 0.79 -a f 0.26 -cl -as g 0.53 -a -cs a 0.26 g 0.26' 
+say '[play -as d f 0.79 -as d 0.26 -cl -as d 0.53 -cl -as cl 0.53' 
+say '[play -f -a f' 

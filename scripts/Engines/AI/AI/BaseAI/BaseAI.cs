@@ -21,6 +21,9 @@
 
 /* Scripts\Engines\AI\AI\BaseAI\BaseAI.cs
  * CHANGELOG
+ *  11/10/2026, Adam (CanReequip)
+ *      A creature that keeps its weapon packed (BaseCreature.KeepsWeaponPacked: Upheaval's bankers while they're
+ *      bankers) isn't re-armed from its pack while it wanders.
  *  6/20/2024, Adam (DidBustStuff())
  *      BlockDamage creatures will proactively bust stuff (energy fields, paralyze fields,) before failing the move
  * 3/26/2024, Adam,
@@ -2732,6 +2735,10 @@ namespace Server.Mobiles
             {
                 // Only humanoids should attempt to wield weapons
                 if (!m_Mobile.Body.IsHuman)
+                    return false;
+
+                // nor one that keeps its weapon packed for now (Upheaval's bankers, at their counters)
+                if (m_Mobile.KeepsWeaponPacked)
                     return false;
 
                 if (m_Mobile.FindItemOnLayer(Layer.OneHanded) != null)

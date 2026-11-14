@@ -21,6 +21,9 @@
 
 /* Scripts\Engines\TerritoryControl\TerritoryMessenger.cs
  * CHANGELOG:
+ *   11/11/2026, Adam:
+ *      - District challenged, lost and reclaimed also tell the Herald (Interest.Conquest), so the news reaches
+ *        Discord (Scripts/Misc/DiscordHerald.cs). Told once, whoever is in the district to hear it in game.
  *   9/22/2026, Adam:
  *      - Added district challenged and district lost messaging.
  *      - Refactored district recipient selection so territorial messages
@@ -30,6 +33,7 @@
  *      - See TerritorySystem for an architectural overview
  */
 
+using Server.Diagnostics;
 using Server.Engines.PartySystem;
 using Server.Mobiles;
 using System.Collections.Generic;
@@ -101,6 +105,7 @@ namespace Server.Engines.TerritoryControl
 
         public static void ReportDistrictConquered(string districtName, Map map)
         {
+            Herald.Publish(Interest.Conquest, Audience.World, $"{districtName} has been reclaimed!");
             foreach (PlayerMobile pm in GetDistrictRecipients(districtName, map))
             {
                 pm.SendMessage(0x21, $"{districtName} has been reclaimed!");
@@ -110,6 +115,7 @@ namespace Server.Engines.TerritoryControl
 
         public static void ReportDistrictChallenged(string districtName, Map map)
         {
+            Herald.Publish(Interest.Conquest, Audience.World, $"{districtName} is being challenged!");
             foreach (PlayerMobile pm in GetDistrictRecipients(districtName, map))
             {
                 pm.SendMessage(0x21, $"{districtName} is being challenged!");
@@ -119,6 +125,7 @@ namespace Server.Engines.TerritoryControl
 
         public static void ReportDistrictLost(string districtName, Map map)
         {
+            Herald.Publish(Interest.Conquest, Audience.World, $"{districtName} has fallen to the Orcs!");
             foreach (PlayerMobile pm in GetDistrictRecipients(districtName, map))
             {
                 pm.SendMessage(0x21, $"{districtName} has fallen to the Orcs!");

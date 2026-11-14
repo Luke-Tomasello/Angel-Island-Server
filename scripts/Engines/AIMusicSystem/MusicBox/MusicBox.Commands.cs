@@ -1,8 +1,6 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
+ *                   The Angel Island Music System (AIMS)
  *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
@@ -22,7 +20,11 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Commands.cs
  * Changelog
- *  11/6/26, Adam (2026 modernization, 10/29/26 to 11/6/26)
+ *  11/14/26, Adam
+ *      Play, add, remove and buy name their song through PickSong: a name that matches nothing is "I don't know a song
+ *      called '...'"; play, add and remove take the closest of several and say so; buy, which costs gold, considers only
+ *      songs on sale and never guesses (several matches are listed, with serials).
+ *  11/8/26, Adam (2026 modernization, 10/29/26 to 11/8/26)
  *      The speech commands as one table: each command's words, help line, gates and handler, so the help list and
  *      TextCommand() can't disagree with the commands. Command words match in any case. Play by title: staff (GM and
  *      up, was Administrator) hear any track, and the one who submitted a pending track hears it; What says "pending".
@@ -30,6 +32,17 @@
  *      song from a fresh copy (PlayContext.Replay; the copy it played is deleted once its song has ended).
  *      Split from MusicBox.Speech.cs; its history before 10/29/26 is in MusicBox.cs.
  *      Portable AIMS: Test Center (staff may buy music there) goes through AimsHost.
+ *      'who': the box speaks as always; whoever may use 'find' also gets find's line for the track as a system message
+ *      (owner, serial, hash code, and the shard's note: AimsHost.TrackNote).
+ *      'list <words>' lists the tracks whose titles have every word ("I couldn't find any tracks for ..." when none
+ *      do); Help shows it with 'list by <composer>'.
+ *      'status': the composer's songs (waiting for review, approved, remastered, or not approved with the reason and
+ *      staff's note: MusicLibrary.ComposerSongs), then what 'sales' says. 'status pending|approved|rejected' (also
+ *      waiting, published, denied) lists only those songs, without the sales lines.
+ *      'new' (also "what's new", "whats new", "what is new", "anything new", "new releases", "new music", in any case):
+ *      the latest releases, newest first, each with when it was approved or remastered: the last 7 days, at least the 5
+ *      most recent, at most 10 lines ("...and N more"). "what's new" was the What command (the song playing); 'new' was
+ *      every song of the last 8 days, unsorted, undated, and "There are no new releases" in a quiet week.
  */
 
 using Server.Commands;
@@ -93,23 +106,24 @@ namespace Server.Items
             Cmd(TextCommands.Cancel, "cancel stop", "Cancel, stops playback", (b, e, t) => b.HandleCancel(e)),
             Cmd(TextCommands.Pause, "pause", "Pause, pauses playback", (b, e, t) => b.HandlePause()),
             Cmd(TextCommands.Continue, "continue resume", "Continue, resume playback", (b, e, t) => b.HandleContinue(), Gate.StartsPlayback),
-            Cmd(TextCommands.What, "who what who's what's", "What, composer and song name", (b, e, t) => b.HandleWhat()),
+            Cmd(TextCommands.What, "who what who's what's", "What, composer and song name", (b, e, t) => b.HandleWhat(e.Mobile)),
             Cmd(TextCommands.Previous, "prev previous", "Previous, previous song", (b, e, t) => b.HandlePrevious(e), Gate.StartsPlayback),
             Cmd(TextCommands.Next, "next", "Next, next song", (b, e, t) => b.HandleNext(e), Gate.StartsPlayback),
             Cmd(TextCommands.Repeat, "repeat", "Repeat, repeat last song", (b, e, t) => b.HandleRepeat(e), Gate.StartsPlayback),
             Cmd(TextCommands.Loop, "loop", "Loop, loop playlist", (b, e, t) => b.HandleLoop()),
-            Cmd(TextCommands.List, "list", "List, list all tracks", (b, e, t) => b.HandleList(e, t)),
+            Cmd(TextCommands.List, "list", "List [words | by <composer>], list all tracks, the tracks whose titles have those words, or a composer's tracks", (b, e, t) => b.HandleList(e, t)),
             Cmd(TextCommands.Add, "add", "Add [song], add track (previously removed); Add alone, add music to the music box", (b, e, t) => b.HandleAdd(e, t)),
-            Cmd(TextCommands.Remove, "remove ignore", "Remove, add a global track to the ignore list", (b, e, t) => b.HandleRemove(t)),
+            Cmd(TextCommands.Remove, "remove ignore", "Remove, add a global track to the ignore list", (b, e, t) => b.HandleRemove(e, t)),
             Cmd(TextCommands.Refresh, "refresh", "Refresh, adds any new global (free) tracks to your library", (b, e, t) => b.HandleRefresh()),
             Cmd(TextCommands.Buy, "buy", "Buy, user wishes to buy a track", (b, e, t) => b.HandleBuy(e, t)),
             Cmd(TextCommands.Shuffle, "shuffle", "Shuffle, shuffle users playlist", (b, e, t) => b.HandleShuffle()),
-            Cmd(TextCommands.New, "new newreleases", "New, list new releases", (b, e, t) => b.HandleNew(e, t)),
+            Cmd(TextCommands.New, "new newreleases", "New (or what's new), the latest releases", (b, e, t) => b.HandleNew(e, t)),
             Cmd(TextCommands.Remaster, "remaster", "Remaster, request to remaster a previously approved song", (b, e, t) => b.HandleRemaster(e), Gate.Submission),
 
             // composer/purchaser
             Cmd(TextCommands.Sales, "sales", "Sales, your sales as a composer", (b, e, t) => b.HandleSales(e), Gate.NotEmbedded),
             Cmd(TextCommands.Purchases, "purchases", "Purchases, the music you have bought", (b, e, t) => b.HandlePurchases(e), Gate.NotEmbedded),
+            Cmd(TextCommands.Status, "status", "Status [pending | approved | rejected], your songs (waiting, approved, or why not) and your sales", (b, e, t) => b.HandleStatus(e, t), Gate.NotEmbedded),
 
             // siege has no context menus, so the next two commands are verbal replacements
             Cmd(TextCommands.Submit, "submit", "Submit, add music to the music box", (b, e, t) => b.HandleSubmit(e), Gate.Submission),
@@ -136,6 +150,8 @@ namespace Server.Items
         // the command named by the second token ("name command ..."); null: unknown
         private SpeechCommand? FindCommand(string[] tokens)
         {
+            if (AsksWhatsNew(tokens))
+                return SpeechWords["new"];
             if (tokens.Length > 1)
             {
                 tokens = PreprocessTokens(tokens);
@@ -143,6 +159,18 @@ namespace Server.Items
                     return command;
             }
             return null;
+        }
+
+        // "what's new", "whats new", "what is new", "anything new", "new releases", "new music": the New command (any case,
+        //  either apostrophe, a trailing "?"); "what's" alone, or followed by anything else, stays the What command
+        private static bool AsksWhatsNew(string[] tokens)
+        {
+            string Word(int i) => i < tokens.Length ? tokens[i].Replace("'", "").Replace("’", "").Replace("?", "").Trim().ToLowerInvariant() : "";
+            if (tokens.Length == 3 && (Word(1) == "whats" || Word(1) == "anything") && Word(2) == "new")
+                return true;
+            if (tokens.Length == 4 && Word(1) == "what" && Word(2) == "is" && Word(3) == "new")
+                return true;
+            return tokens.Length == 3 && Word(1) == "new" && (Word(2) == "releases" || Word(2) == "music");
         }
 
         private TextCommands TextCommand(string[] tokens)
@@ -201,7 +229,7 @@ namespace Server.Items
                 // Play/restart the user's playlist and free global tracks.
                 OnDoubleClick(e.Mobile);
             }
-            else if (TryFindSong(tokens, out RolledUpSheetMusic track, out _))
+            else if (PickSong(e.Mobile, tokens, "play", mustBeOne: false, null, out RolledUpSheetMusic track, out _))
             {
                 // Re-check play context (some flows can change who "owns" the context).
                 RefreshPlayContext(e.Mobile);
@@ -265,10 +293,7 @@ namespace Server.Items
                     Say(string.Format("'{0}' is still pending approval", track), hue: 54);
                 }
             }
-            else
-            {
-                Say(string.Format("I couldn't find '{0}' in your music library", SongName(tokens)), hue: 54);
-            }
+            // else PickSong said why
         }
 
         private void HandleCancel(SpeechEventArgs e)
@@ -297,13 +322,16 @@ namespace Server.Items
             }
         }
 
-        private void HandleWhat()
+        private void HandleWhat(Mobile asker)
         {
             if (IsThisDevicePlaying())
             {
                 RolledUpSheetMusic now = m_playContext.NowPlaying();
                 if (now != null)
+                {
                     Say(string.Format("This is {0} by {1}{2}.", now, now.Author, Approved(now) ? "" : " (pending approval)"), hue: 54);
+                    TellFinder(asker, now);
+                }
                 else
                     Say("Hmm, I don't know that.", hue: 54);
             }
@@ -311,10 +339,28 @@ namespace Server.Items
             {
                 RolledUpSheetMusic? prev = m_playContext.PeekPrev();
                 if (prev != null)
+                {
                     Say(string.Format("That was {0} by {1}.", prev, prev.Author), hue: 54);
+                    TellFinder(asker, prev);
+                }
                 else
                     Say("Hmm, I don't know that.", hue: 54);
             }
+        }
+
+        // whoever may use 'find' also gets its line for the track (a system message): the box speaks as always. A box plays a
+        //  copy of the library's sheet: the line is about the library's own sheet and record of the same song.
+        private void TellFinder(Mobile asker, RolledUpSheetMusic track)
+        {
+            SpeechCommand? find = SpeechCommands.FirstOrDefault(c => c.Command == TextCommands.Find);
+            if (asker == null || find == null || asker.AccessLevel < find.Access)
+                return;
+            foreach (KeyValuePair<RolledUpSheetMusic, MusicInfo> kvp in MusicLibrary.Repository)
+                if (kvp.Key != null && kvp.Key.Equals(track))
+                {
+                    SendMessage(asker, TrackLine(asker, kvp.Key, kvp.Value));
+                    return;
+                }
         }
 
         private void HandlePrevious(SpeechEventArgs e)
@@ -392,6 +438,8 @@ namespace Server.Items
 
             if (MusicLibrary.Repository.Count == 0)
                 SendMessage(e.Mobile, 54, "There are no music tracks available.");
+            else if (list.Count == 0 && tokens.Length >= 3)
+                Say(string.Format("I couldn't find any tracks for '{0}'.", string.Join(" ", tokens.Skip(2))), hue: 54);
         }
 
         private void HandleAdd(SpeechEventArgs e, string[] tokens)
@@ -407,7 +455,7 @@ namespace Server.Items
                 return;
             }
 
-            if (TryFindSong(tokens, out RolledUpSheetMusic track, out _))
+            if (PickSong(e.Mobile, tokens, "add", mustBeOne: false, null, out RolledUpSheetMusic track, out _))
             {
                 if (track == null || !Approved(track))
                 {
@@ -448,14 +496,11 @@ namespace Server.Items
                     }
                 }
             }
-            else
-            {
-                Say(string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
-            }
+            // else PickSong said why
         }
 
         // Remove = "hide from my library" via IgnoreList + rebuild queue.
-        private void HandleRemove(string[] tokens)
+        private void HandleRemove(SpeechEventArgs e, string[] tokens)
         {
             string title = SongName(tokens);
             if (string.IsNullOrEmpty(title))
@@ -471,11 +516,8 @@ namespace Server.Items
                 return;
             }
 
-            if (!TryFindSong(tokens, out RolledUpSheetMusic rsm, out _))
-            {
-                Say(string.Format("I could not find {0} in your library.", SongName(tokens)), hue: 54);
-                return;
-            }
+            if (!PickSong(e.Mobile, tokens, "remove", mustBeOne: false, null, out RolledUpSheetMusic rsm, out _))
+                return;     // PickSong said why
 
             if (rsm == null || rsm.Deleted)
             {
@@ -550,11 +592,9 @@ namespace Server.Items
                 return;
             }
 
-            if (!TryFindSong(tokens, out RolledUpSheetMusic rsm, out MusicInfo mi))
-            {
-                Say(string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
-                return;
-            }
+            // only songs on sale (approved), and never a guess: buying costs gold
+            if (!PickSong(e.Mobile, tokens, "buy", mustBeOne: true, (s, i) => i.Status == SubmissionStatus.Approved, out RolledUpSheetMusic rsm, out MusicInfo mi))
+                return;     // PickSong said why
 
             // Robustness: validate repository entry.
             if (rsm == null || rsm.Deleted || mi == null)
@@ -620,20 +660,58 @@ namespace Server.Items
                 m_playContext.Shuffle();
         }
 
+        // the latest releases: approved songs by when they were approved or remastered, newest first; the last
+        //  NewReleaseDays days, at least NewReleaseMin songs, at most NewReleaseMax lines
+        private const int NewReleaseDays = 7, NewReleaseMin = 5, NewReleaseMax = 10;
+
         private void HandleNew(SpeechEventArgs e, string[] tokens)
         {
-            List<KeyValuePair<int, string>> list = CompositeList(e.Mobile, tokens, SetFilter(Filter.New | Filter.Remastered));
-
-            if (list == null || list.Count == 0)
-                SendMessage(e.Mobile, 54, "There are no new releases.");
-            else
+            Mobile m = e.Mobile;
+            if (MusicLibrary.Repository.Count == 0)
             {
-                foreach (KeyValuePair<int, string> kvp in list)
-                    SendMessage(e.Mobile, kvp.Key, kvp.Value);
+                SendMessage(m, 54, "There are no music tracks available.");
+                return;
             }
 
-            if (MusicLibrary.Repository.Count == 0)
-                SendMessage(e.Mobile, 54, "There are no music tracks available.");
+            DateTime now = DateTime.UtcNow;
+            var releases = MusicLibrary.Repository
+                .Where(kvp => Approved(kvp.Key))
+                .Select(kvp => (Track: kvp.Key, Info: kvp.Value,
+                    Remastered: kvp.Value.Remastered && kvp.Value.DateRemastered > kvp.Value.DateApproved,
+                    When: kvp.Value.Remastered && kvp.Value.DateRemastered > kvp.Value.DateApproved ? kvp.Value.DateRemastered : kvp.Value.DateApproved))
+                .Where(r => r.When > DateTime.MinValue)
+                .OrderByDescending(r => r.When)
+                .ToList();
+
+            if (releases.Count == 0)
+            {
+                SendMessage(m, 54, "There are no new releases.");
+                return;
+            }
+
+            int recent = releases.Count(r => (now - r.When).TotalDays < NewReleaseDays);
+            int show = Math.Min(Math.Max(recent, NewReleaseMin), releases.Count);
+            if (recent == 0)
+                SendMessage(m, 54, "Nothing new this week. The latest releases:");
+
+            foreach (var r in releases.Take(Math.Min(show, NewReleaseMax)))
+            {
+                bool locked = (!PurchasedOrOwned(m, r.Track) && r.Info.Price > 0) || (r.Track.Napster && !HasNapsterAccess(m, r.Track));
+                string tags = (m_playContext.IgnoreList.Contains(r.Track) ? " (ignored)" : "")
+                    + (r.Track.Napster ? " (Napster)" : "") + (r.Info.Price > 0 ? " (Premium)" : "");
+                SendMessage(m, locked ? 33 : 54, string.Format("{0} by {1}{2}, {3} {4}",
+                    r.Track, r.Track.Author, tags, r.Remastered ? "remastered" : "approved", WhenSaid(now, r.When)));
+            }
+
+            if (show > NewReleaseMax)
+                SendMessage(m, 54, string.Format("...and {0} more: say 'list' for everything.", show - NewReleaseMax));
+        }
+
+        // "today", "yesterday", "3 days ago", then the date
+        private static string WhenSaid(DateTime now, DateTime when)
+        {
+            int days = (int)(now.Date - when.Date).TotalDays;
+            return days <= 0 ? "today" : days == 1 ? "yesterday" : days < 60 ? days + " days ago" : "on " + when.ToString("M/d/yy");
         }
 
         private void HandleHelp(SpeechEventArgs e)
@@ -651,6 +729,51 @@ namespace Server.Items
             SendMessage(e.Mobile, string.Format("You have sold {0} tracks.", sold));
             SendMessage(e.Mobile, string.Format("For a total of {0} gold", totalSales));
             SendMessage(e.Mobile, string.Format("You have {0} credit due you.", credit));
+        }
+
+        // a composer's songs, with what review decided, then the 'sales' figures; 'status pending|approved|rejected' lists
+        //  only those songs (no sales lines): a long list scrolls off the screen
+        private void HandleStatus(SpeechEventArgs e, string[] tokens)
+        {
+            string word = tokens != null && tokens.Length > 2 ? tokens[2].ToLowerInvariant() : "";
+            SubmissionStatus? only = null;
+            switch (word)
+            {
+                case "":
+                    break;
+                case "pending": case "waiting":
+                    only = SubmissionStatus.Pending;
+                    break;
+                case "approved": case "published":
+                    only = SubmissionStatus.Approved;
+                    break;
+                case "rejected": case "denied":
+                    only = SubmissionStatus.Rejected;
+                    break;
+                default:
+                    SendMessage(e.Mobile, "Say status, or status pending, status approved or status rejected.");
+                    return;
+            }
+
+            List<string> songs = MusicLibrary.ComposerSongs(e.Mobile, only);
+            string which = only switch
+            {
+                SubmissionStatus.Pending => " waiting for review",
+                SubmissionStatus.Approved => " approved",
+                SubmissionStatus.Rejected => " not approved",
+                _ => "",
+            };
+            if (songs.Count == 0)
+                SendMessage(e.Mobile, only == null ? "You haven't submitted any songs to the music library." :
+                    string.Format("You have no songs{0}.", which));
+            else
+            {
+                SendMessage(e.Mobile, string.Format("Your songs{0} ({1}):", which, songs.Count));
+                foreach (string line in songs)
+                    SendMessage(e.Mobile, line);
+            }
+            if (only == null)
+                HandleSales(e);
         }
 
         private void HandlePurchases(SpeechEventArgs e)

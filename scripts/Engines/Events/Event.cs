@@ -21,6 +21,18 @@
 
 /* scripts\Engines\Events\Event.cs
  * Changelog:
+ *  11/8/26, Adam (shard time)
+ *      Event times are UTC, compared with DateTime.UtcNow (was AdjustedDateTime.GetTime(OffsetFromUTC): a fixed offset
+ *      with the machine's daylight saving). Those values weren't marked UTC, so a save converted them as the machine's
+ *      local time and they came back shifted (+8 h on a Pacific machine): EventStart/EventEnd moved after a restart.
+ *      Saved values are read as UTC.
+ *      EventTimeZone (Seer): the zone this event's times are typed and shown in, so staff anywhere can schedule in
+ *      their own time (a Seer in France: Europe/Paris). The same values as -timezone: an IANA name (with daylight
+ *      saving) or UTC, UTC+1, UTC-5:30. Empty: the shard's zone (ShardClock, -timezone). It changes only how the times
+ *      are typed and shown: they are kept in UTC, so changing it never moves the event. Timezone shows the zone in use.
+ *      OffsetFromUTC is obsolete (its purpose, a staff member's own zone, is EventTimeZone's): a whole-hour offset
+ *      can't follow daylight saving. Setting it does nothing. Version 2 saves EventTimeZone; a version 1 event whose
+ *      offset isn't the default -8 loads with EventTimeZone "UTC+N" (the zone it was set up in).
  *  12/28/23, Yoar
  *      Added PropertyObjectAttribute
  *  5/25/2023, Adam (TimerMode)
@@ -43,8 +55,10 @@ namespace Server.Engines
         private TimeSpan m_Offset = TimeSpan.Zero;              // internal duration marker
         private TimeSpan m_Duration = TimeSpan.Zero;            // For example: event runs 24 hours
         private TimeSpan m_Countdown = TimeSpan.Zero;           // For example: event will start in 24 hours
-        private int m_OffsetFromUTC = -8;                       // default to pacific time
-        DateTime m_EventStart, m_EventEnd;                      // start/end of event (calculated, not serialized.)
+        private int m_OffsetFromUTC = -8;                       // obsolete (11/8/26): saved and loaded only; see OffsetFromUTC
+        private string? m_TimeZone;                             // EventTimeZone as set (null: the shard's zone)
+        private TimeZoneInfo? m_Zone;                           // that zone (not serialized; null: the shard's zone)
+        DateTime m_EventStart, m_EventEnd;                      // start/end of event, UTC (calculated, but saved)
         private Server.Timer? m_Timer;                           // not serialized
         private bool m_Running = false;                         // true if the event is running (all event objects need to start in the disabled state)
         private Item m_item;                                    // the caller (spawner, sungate, teleporter, etc.)
@@ -105,7 +119,7 @@ namespace Server.Engines
         {
             get
             {
-                DateTime yourTime = AdjustedDateTime.GetTime(m_OffsetFromUTC);
+                DateTime yourTime = DateTime.UtcNow;
                 if (yourTime >= EventStartInternal && yourTime < EventEndInternal)
                     return true;
                 else
@@ -122,17 +136,21 @@ namespace Server.Engines
             get { return m_EventEnd; }
             set { m_EventEnd = value; }
         }
+        // the zone this event's times are typed and shown in: EventTimeZone, else the shard's
+        private TimeZoneInfo Zone { get { return m_Zone ?? ShardClock.Zone; } }
+
+        // EventStart / EventEnd: shown and typed in this event's zone (EventTimeZone), kept in UTC
         [CommandProperty(AccessLevel.GameMaster)]
         public string EventStart
         {
-            get { return EventStartInternal.ToString(); }
+            get { return ShardClock.ToShard(EventStartInternal, Zone).ToString(); }
             set
             {
                 if (string.IsNullOrEmpty(value))
                     value = DateTime.MinValue.ToString();
-                EventStartInternal = DateTime.Parse(value);
+                EventStartInternal = ShardClock.ToUtc(DateTime.Parse(value), Zone);
                 TimeSpan duration = EventEndInternal - EventStartInternal;
-                TimeSpan countdown = EventStartInternal - AdjustedDateTime.GetTime(m_OffsetFromUTC);
+                TimeSpan countdown = EventStartInternal - DateTime.UtcNow;
                 Duration = duration;
                 Countdown = countdown;
             }
@@ -140,30 +158,60 @@ namespace Server.Engines
         [CommandProperty(AccessLevel.GameMaster)]
         public string EventEnd
         {
-            get { return EventEndInternal.ToString(); }
+            get { return ShardClock.ToShard(EventEndInternal, Zone).ToString(); }
             set
             {
                 if (string.IsNullOrEmpty(value))
                     value = DateTime.MinValue.ToString();
-                EventEndInternal = DateTime.Parse(value);
+                EventEndInternal = ShardClock.ToUtc(DateTime.Parse(value), Zone);
                 TimeSpan duration = EventEndInternal - EventStartInternal;
-                TimeSpan countdown = EventStartInternal - AdjustedDateTime.GetTime(m_OffsetFromUTC);
+                TimeSpan countdown = EventStartInternal - DateTime.UtcNow;
                 Duration = duration;
                 Countdown = countdown;
             }
         }
+        /// <summary>
+        /// The zone this event's times (EventStart, EventEnd) are typed and shown in, so staff anywhere can schedule in
+        /// their own time. Values as -timezone: "Europe/Paris" (daylight saving followed), "UTC+1", "UTC-5:30". Empty,
+        /// "shard" or "none": the shard's zone. Changing it never moves the event (its times are kept in UTC).
+        /// </summary>
+        [CommandProperty(AccessLevel.Seer)]
+        public string EventTimeZone
+        {
+            get { return m_TimeZone ?? "(shard)"; }
+            set
+            {
+                string v = (value ?? "").Trim();
+                if (v.Length == 0 || v.Equals("(shard)", StringComparison.OrdinalIgnoreCase)
+                    || v.Equals("shard", StringComparison.OrdinalIgnoreCase) || v.Equals("none", StringComparison.OrdinalIgnoreCase))
+                {
+                    m_TimeZone = null;
+                    m_Zone = null;
+                    return;
+                }
+                TimeZoneInfo? zone = ShardClock.Parse(v, out string? error);
+                if (zone == null)
+                {   // keep the zone it had
+                    m_item?.SendMessageNearby(string.Format("EventTimeZone: {0}", error), AccessLevel.GameMaster, m_sayHue);
+                    return;
+                }
+                m_TimeZone = v;
+                m_Zone = zone;
+            }
+        }
+
+        /// <summary>
+        /// Obsolete (11/8/26): this event's own whole-hour offset from UTC (default -8), so staff in another zone could
+        /// type and read its times in their own time. That is EventTimeZone's job now: a zone name follows daylight
+        /// saving, an offset can't. The value is still saved and loaded so old worlds load; setting it does nothing.
+        /// A version 1 event with an offset other than -8 loads with EventTimeZone "UTC+N".
+        /// </summary>
+        [Obsolete("Use EventTimeZone (a zone name, with daylight saving); this value is only saved and loaded.")]
         [CommandProperty(AccessLevel.Seer)]
         public int OffsetFromUTC
         {
             get { return m_OffsetFromUTC; }
-            set
-            {
-                bool change = m_OffsetFromUTC != value;
-                m_OffsetFromUTC = value;
-                CheckReset(change);
-                CalculatedMetrics(change);
-                CheckTimer();
-            }
+            set { m_OffsetFromUTC = value; }
         }
         [CommandProperty(AccessLevel.Seer)]
         public TimeSpan Countdown
@@ -185,7 +233,7 @@ namespace Server.Engines
             {
                 if (EventRunning)
                 {
-                    DateTime yourTime = AdjustedDateTime.GetTime(m_OffsetFromUTC);
+                    DateTime yourTime = DateTime.UtcNow;
                     return (m_EventEnd - yourTime).ToString(@"dd\.hh\:mm\:ss");
                 }
                 else
@@ -218,13 +266,7 @@ namespace Server.Engines
         [CommandProperty(AccessLevel.GameMaster)]
         public string Timezone
         {
-            get
-            {
-                var allTimeZones = TimeZoneInfo.GetSystemTimeZones();
-                var newTimeZone = allTimeZones.FirstOrDefault(x => x.BaseUtcOffset == new TimeSpan(m_OffsetFromUTC, 0, 0));
-                var actual = newTimeZone.StandardName;
-                return actual;
-            }
+            get { return m_Zone != null ? ShardClock.Describe(m_Zone) : ShardClock.ZoneName + " (the shard's)"; }
         }
         private void Tick(object state)
         {
@@ -273,7 +315,7 @@ namespace Server.Engines
         }
         private void CheckBeginEnd()
         {
-            DateTime yourTime = AdjustedDateTime.GetTime(m_OffsetFromUTC);
+            DateTime yourTime = DateTime.UtcNow;
             if (yourTime >= EventStartInternal && yourTime < EventEndInternal)
             {
                 if (m_Running == false)
@@ -295,7 +337,7 @@ namespace Server.Engines
         private void RepairCountdown()
         {   // under normal circumstances (no server restart) countdown won't ever be fractional, or less than zero
             //  with a server restart, this uglies up the countdown timer, so we pretty it up here
-            DateTime yourTime = AdjustedDateTime.GetTime(m_OffsetFromUTC);
+            DateTime yourTime = DateTime.UtcNow;
             if (yourTime >= EventStartInternal && yourTime < EventEndInternal)
             {   // we're already running
                 m_Countdown = TimeSpan.Zero;
@@ -353,7 +395,7 @@ namespace Server.Engines
                 KillTimer();
                 return;
             }
-            DateTime yourTime = AdjustedDateTime.GetTime(m_OffsetFromUTC);
+            DateTime yourTime = DateTime.UtcNow;
             if (yourTime >= EventStartInternal && yourTime < EventEndInternal)
             {
                 ResetTimer(start: true);
@@ -378,11 +420,11 @@ namespace Server.Engines
             if (change)
             {
                 // handle the overflow
-                m_EventStart = Utility.DTOverflowHandler(AdjustedDateTime.GetTime(m_OffsetFromUTC), m_Offset);
+                m_EventStart = Utility.DTOverflowHandler(DateTime.UtcNow, m_Offset);
                 DateTime temp;
                 try
                 {   // handle the overflow
-                    temp = Utility.DTOverflowHandler(AdjustedDateTime.GetTime(m_OffsetFromUTC), m_Offset + m_Duration);
+                    temp = Utility.DTOverflowHandler(DateTime.UtcNow, m_Offset + m_Duration);
                 }
                 catch
                 {
@@ -394,7 +436,10 @@ namespace Server.Engines
         }
         public void Serialize(GenericWriter writer)
         {
-            writer.Write((int)1);   // version
+            writer.Write((int)2);   // version
+
+            // version 2
+            writer.Write(m_TimeZone);
 
             // version 1
             // note: don't use delta time here as it negates the passage of time. For events, we want the passage of time to stand.
@@ -415,6 +460,11 @@ namespace Server.Engines
 
             switch (version)
             {
+                case 2:
+                    {
+                        m_TimeZone = reader.ReadString();
+                        goto case 1;
+                    }
                 case 1:
                     {
                         DateTime temp = reader.ReadDateTime();
@@ -430,6 +480,16 @@ namespace Server.Engines
                         m_EventEnd = reader.ReadDateTime();
                         break;
                     }
+            }
+
+            // version 1: an offset other than the default (-8, the shard's Pacific) was a staff member's own zone
+            if (version < 2 && m_OffsetFromUTC != -8)
+                m_TimeZone = m_OffsetFromUTC == 0 ? "UTC" : string.Format("UTC{0:+0;-0}", m_OffsetFromUTC);
+            if (m_TimeZone != null)
+            {   // a zone this computer doesn't know (a world moved to another machine): the shard's zone, name kept
+                m_Zone = ShardClock.Parse(m_TimeZone, out string? error);
+                if (m_Zone == null)
+                    Console.WriteLine("Event (0x{0:X}): EventTimeZone {1}; using the shard's zone", m_item?.Serial.Value ?? 0, error);
             }
             RepairCountdown();              // fixup the countdown to account for elapsed downtime
 

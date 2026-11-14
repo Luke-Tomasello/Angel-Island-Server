@@ -1,8 +1,6 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
+ *                   The Angel Island Music System (AIMS)
  *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
@@ -22,13 +20,22 @@
 
 /* Scripts\Engines\AIMusicSystem\Library\MusicLibrary.Composers.cs
  * Changelog
- *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
+ *  11/8/26, Adam (2026 modernization, 10/29/26 to 11/8/26)
  *      The library's composers, moved out of MusicBox unchanged but for the names: the scoring factors, reconnecting a
  *      player's music ownership (ReconnectPlayer), music karma (GetMusicKarma), publishing points and sales figures.
  *      Moved from MusicBox (MusicBox.Library.cs); its history before 10/29/26 is in MusicBox.cs.
  *      Portable AIMS: logging, the stable hash, Shuffle, LocalTimer and the Data folder go through AimsLog and AimsUtil
  *      (Host\), so this folder drops into other RunUO servers.
  *      AimsHost: account GUIDs.
+ *      Music box credit (a sale's price the composer's bank box couldn't take) is paid at last: CollectCredits pays it,
+ *      each song's whole, when the composer next uses a music box (speech, double-click, its menu, walking up to it), at
+ *      most one try every two minutes. It's paid only to the character and on the shard that earned it: ReconnectPlayer
+ *      (a library moved from another shard, a recreated character) and the maintenance pass (composer gone) forfeit it
+ *      (ForfeitCredit). Payments and forfeits are written to MusicCredits.log (account, slot, character, song, amount).
+ *      Composers hear review decisions: at their next music box visit (ComposerVisit: CollectCredits, then
+ *      TellComposer) each decision on their songs they haven't heard is told once (approved, remastered, or not
+ *      approved with the reason and staff's note); ComposerSongs lists their songs for the 'status' command, all of
+ *      them or those with one status ('status pending|approved|rejected').
  */
 
 using Server.Accounting;
@@ -128,6 +135,10 @@ namespace Server.Items
 
                     if (existingOwner == null || existingOwner.Deleted)
                     {
+                        // credit stays with the character and shard that earned it: a relink (a library moved from another
+                        //  shard, or a recreated character) never pays it
+                        ForfeitCredit(rsm, mi, string.Format("relinked to a new character, 0x{0:X} {1}", pm.Serial.Value, pm.Name));
+
                         mi.Owner = pm; // setter should reassert mi.OwnerGUID as pm.GUID (should already match)
                         dbRebound++;
                     }
@@ -526,5 +537,259 @@ namespace Server.Items
             }
         }
         #endregion Sales
+
+        #region Credit
+        // Credit is a sale's price the composer's bank box couldn't take (MusicBox.Prompts.cs). It's paid to the composer
+        //  who earned it, on the shard it was earned on, the next time they use a music box (CollectCredits), and nowhere
+        //  else: when a record's composer is gone, or the record is relinked to a new character (a library moved to another
+        //  shard, a character recreated), its credit is forfeited (ForfeitCredit). Payments and forfeits go to
+        //  MusicCredits.log.
+        public const string CreditLog = "MusicCredits.log";
+
+        // one attempt per composer per two minutes: a failed deposit makes, then deletes, a check or a pile of gold
+        private const double CreditRetrySeconds = 120;
+
+        /// <summary>
+        /// Pays the music box credit owed to this composer, if any: each song's credit whole, into their bank (AimsHost.Deposit),
+        /// and tells them. Called whenever they use a music box (speech, double-click, its menu, walking up to it).
+        /// </summary>
+        public static void CollectCredits(Mobile m)
+        {
+            try
+            {
+                if (m == null || m.Deleted || !m.Player)
+                    return;
+
+                List<KeyValuePair<RolledUpSheetMusic, MusicInfo>>? owed = null;
+                foreach (KeyValuePair<RolledUpSheetMusic, MusicInfo> kvp in Repository)
+                {
+                    if (kvp.Key != null && !kvp.Key.Deleted && kvp.Value != null && kvp.Value.Credit > 0 && kvp.Value.Owner == m)
+                        (owed ??= new List<KeyValuePair<RolledUpSheetMusic, MusicInfo>>()).Add(kvp);
+                }
+
+                // nothing owed: no deposit, and no throttle entry either
+                if (owed == null || !AimsUtil.AntiSpam("music credit " + m.Serial.Value, CreditRetrySeconds))
+                    return;
+
+                uint guid = AimsHost.Current.AccountGuid(m);
+                int paid = 0, waiting = 0;
+                List<object> lines = new List<object>();
+
+                foreach (KeyValuePair<RolledUpSheetMusic, MusicInfo> kvp in owed)
+                {
+                    MusicInfo info = kvp.Value;
+                    int amount = info.Credit;
+
+                    // the record says another account composed it: not this character's to collect
+                    if (info.OwnerGUID != 0 && info.OwnerGUID != guid)
+                    {
+                        lines.Add(string.Format("not paid: {0:N0} for {1}, the record's account GUID {2} isn't this character's ({3})",
+                            amount, DescribeSong(kvp.Key), info.OwnerGUID, guid));
+                        continue;
+                    }
+
+                    if (AimsHost.Current.Deposit(m, amount))
+                    {
+                        info.Credit = 0;
+                        paid += amount;
+                        lines.Add(string.Format("paid: {0:N0} for {1}", amount, DescribeSong(kvp.Key)));
+                    }
+                    else
+                        waiting += amount;          // the bank box is still full: it stays owed (not logged: it would repeat)
+                }
+
+                if (lines.Count > 0)
+                    AimsHost.Current.WriteLog(CreditLog, m, Prepend(DescribeComposer(m), lines));
+
+                if (paid > 0)
+                    m.SendMessage(54, string.Format("{0:N0} gold from sales of your music has been deposited in your bank box.", paid));
+
+                if (waiting > 0)
+                    m.SendMessage(54, string.Format("{0:N0} gold from sales of your music is waiting for you, but your bank box is full. " +
+                        "Make room, then visit a music box again.", waiting));
+            }
+            catch (Exception ex)
+            {
+                AimsLog.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// Writes off a song's credit (nothing if none is owed), with the reason, in MusicCredits.log: its composer is gone,
+        /// or it was relinked to a new character. The amount is never paid anywhere.
+        /// </summary>
+        public static void ForfeitCredit(RolledUpSheetMusic? rsm, MusicInfo? info, string reason)
+        {
+            try
+            {
+                if (info == null || info.Credit == 0)
+                    return;
+
+                int amount = info.Credit;
+                info.Credit = 0;
+
+                AimsHost.Current.WriteLog(CreditLog, info.Owner, new object[]
+                {
+                    DescribeComposer(info.Owner),
+                    string.Format("forfeited: {0:N0} for {1}, composer's account GUID {2}: {3}", amount, DescribeSong(rsm), info.OwnerGUID, reason)
+                });
+            }
+            catch (Exception ex)
+            {
+                AimsLog.LogException(ex);
+            }
+        }
+
+        // "'Title' (0x40089B9C)"
+        private static string DescribeSong(RolledUpSheetMusic? rsm)
+        {
+            return rsm == null ? "(no sheet)" : string.Format("'{0}' (0x{1:X})", rsm, rsm.Serial.Value);
+        }
+
+        // "account adam, slot 2, 0x119 Galois" (what a log reader needs to find the player)
+        private static string DescribeComposer(Mobile? m)
+        {
+            if (m == null)
+                return "composer: none (no character)";
+
+            string account = "none";
+            int slot = -1;
+            if (m.Account is Account acct)
+            {
+                account = acct.Username;
+                for (int i = 0; i < acct.Length; i++)
+                    if (acct[i] == m)
+                        slot = i + 1;
+            }
+
+            return string.Format("composer: account {0}, slot {1}, 0x{2:X} {3}{4}",
+                account, slot > 0 ? slot.ToString() : "?", m.Serial.Value, m.Name, m.Deleted ? " (deleted)" : "");
+        }
+
+        private static IEnumerable<object> Prepend(object first, IEnumerable<object> rest)
+        {
+            yield return first;
+            foreach (object o in rest)
+                yield return o;
+        }
+        #endregion Credit
+
+        #region Review news
+        /// <summary>
+        /// A composer uses a music box (speech, double-click, its menu, walking up to it): the credit owed them is paid
+        /// (CollectCredits) and they hear the review decisions on their songs they haven't heard yet (TellComposer).
+        /// </summary>
+        public static void ComposerVisit(Mobile m)
+        {
+            CollectCredits(m);
+            TellComposer(m);
+        }
+
+        /// <summary>
+        /// Tells the composer, once each, the review decisions on their songs they haven't heard: "Your song X was
+        /// approved!", "Your remaster of X was approved!", "Your song X wasn't approved: reason." (with staff's note).
+        /// </summary>
+        public static void TellComposer(Mobile m)
+        {
+            try
+            {
+                if (m == null || m.Deleted || !m.Player || m.NetState == null)
+                    return;
+
+                bool rejected = false;
+                foreach (KeyValuePair<RolledUpSheetMusic, MusicInfo> kvp in Repository)
+                {
+                    MusicInfo info = kvp.Value;
+                    if (kvp.Key == null || kvp.Key.Deleted || info == null || info.Owner != m || info.ComposerTold
+                        || info.Status == SubmissionStatus.Pending)
+                        continue;
+
+                    if (info.Status == SubmissionStatus.Approved)
+                        m.SendMessage(54, info.Remastered ? "Your remaster of '{0}' was approved!" :
+                            "Your song '{0}' was approved! It's in the music library now.", kvp.Key);
+                    else
+                    {
+                        m.SendMessage(54, "Your song '{0}' wasn't approved: {1}", kvp.Key, Sentence(ReviewReason(info)));
+                        rejected = true;
+                    }
+                    info.ComposerTold = true;
+                }
+
+                if (rejected)
+                    m.SendMessage(54, "Say 'status' to a music box to see all your songs.");
+            }
+            catch (Exception ex)
+            {
+                AimsLog.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// The composer's songs for the 'status' command, one line each (by title): waiting for review, approved,
+        /// remastered, or not approved with the reason and staff's note; only those with the given status when one is
+        /// given ('status rejected'). The decisions shown count as told.
+        /// </summary>
+        public static List<string> ComposerSongs(Mobile m, SubmissionStatus? only = null)
+        {
+            List<KeyValuePair<RolledUpSheetMusic, MusicInfo>> mine = new List<KeyValuePair<RolledUpSheetMusic, MusicInfo>>();
+            foreach (KeyValuePair<RolledUpSheetMusic, MusicInfo> kvp in Repository)
+                if (kvp.Key != null && !kvp.Key.Deleted && kvp.Value != null && m != null && kvp.Value.Owner == m
+                    && (only == null || kvp.Value.Status == only))
+                    mine.Add(kvp);
+            mine.Sort((a, b) => string.Compare(a.Key.ToString(), b.Key.ToString(), StringComparison.OrdinalIgnoreCase));
+
+            List<string> lines = new List<string>();
+            foreach (KeyValuePair<RolledUpSheetMusic, MusicInfo> kvp in mine)
+            {
+                MusicInfo info = kvp.Value;
+                switch (info.Status)
+                {
+                    case SubmissionStatus.Pending:
+                        lines.Add(string.Format("'{0}': waiting for review (submitted {1})", kvp.Key, Day(info.DateSubmitted)));
+                        break;
+                    case SubmissionStatus.Approved:
+                        lines.Add(info.Remastered
+                            ? string.Format("'{0}': approved; remastered {1}", kvp.Key, Day(info.DateRemastered))
+                            : string.Format("'{0}': approved {1}", kvp.Key, Day(info.DateApproved)));
+                        info.ComposerTold = true;
+                        break;
+                    default:
+                        lines.Add(string.Format("'{0}': not approved: {1}", kvp.Key, Sentence(ReviewReason(info))));
+                        info.ComposerTold = true;
+                        break;
+                }
+            }
+            return lines;
+        }
+
+        /// <summary>Why a song wasn't approved, for its composer: the reason, then staff's note if there is one.</summary>
+        public static string ReviewReason(MusicInfo info)
+        {
+            string reason = info.Reason switch
+            {
+                RejectionReason.TooLong => "it's too long",
+                RejectionReason.TooShort => "it's too short",
+                RejectionReason.Inappropriate => "it isn't appropriate",
+                RejectionReason.Duplicate => "it's already in the library",
+                _ => "",
+            };
+            if (info.Note != null)
+                return reason.Length == 0 ? info.Note : reason + ". " + info.Note;
+            return reason.Length == 0 ? "no reason was given" : reason;
+        }
+
+        // text that ends a sentence ends with a period (a note may have its own)
+        private static string Sentence(string text)
+        {
+            text = text.TrimEnd();
+            return text.Length > 0 && ".!?".IndexOf(text[text.Length - 1]) >= 0 ? text : text + ".";
+        }
+
+        // a date for a composer ("11/8/2026"); "(date unknown)" for a record saved before it was kept
+        private static string Day(DateTime utc)
+        {
+            return utc == DateTime.MinValue || utc.Year < 2000 ? "(date unknown)" : utc.ToString("M/d/yyyy");
+        }
+        #endregion Review news
     }
 }

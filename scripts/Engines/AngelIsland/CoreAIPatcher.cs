@@ -326,6 +326,12 @@ namespace Server
             PatchV262,   // music library: delete the tracks remasters replaced, left in internal storage (not Login Server)
             PatchV263,   // Upheaval: enable breeding (the BreedingEnabled dynamic feature; not Login Server)
             PatchV264,   // territory: set Warlord counts carried over from an earlier campaign to the earned count (not Login Server)
+            PatchV265,   // music box credit: Siege Perilous keeps (and pays) credit earned before 11/7/26; every other shard forfeits it (not Login Server)
+            PatchV266,   // retired: music sharing on by default (now the -sharemusic startup switch)
+            PatchV267,   // Event and Automated Event System times to true UTC (corrected for this machine's zone; every shard)
+            PatchV268,   // music library: songs credited "by MidiToAims" get their owner's name, titles lose underscores (not Login Server)
+            PatchV269,   // Upheaval: bankers' respawn paces the Gypsy Seer's banker heads (running banker spawners x 1 hour, per district); bankers respawned, born armed
+            PatchV270,   // Login Server: where each song in the shared music database was composed (Songs.origin, by the shards' lineage)
             __last
         }
         // patch table

@@ -1,0 +1,44 @@
+# Author: Jocelyn
+# Song: Somebody's Watching Me
+# Instrument: LapHarp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: True
+# Price: 2000
+# Napster: False
+say '[play v20' 
+say '[play -c 0.23 csl 0.23 gs 0.23 a 0.23 gs 0.23 csl 0.23 gs 0.23 a 0.23' 
+say '[play gs 0.23 cs 0.23 gs 0.23 a 0.23 -b gs 0.22 cs 0.23 -a gs 0.22 -gs a 0.22' 
+say '[play gs 0.23 cs 0.23 gs 0.23 a 0.23 gs 0.23 cs 0.23 gs 0.23 a 0.23' 
+say '[play gs 0.23 cs 0.23 -gs gs 0.22 -a a 0.22 -b gs 0.22 cs 0.23 -a gs 0.22 -gs a 0.22' 
+say '[play gs 0.23 cs 0.23 gs 0.23 a 0.23 gs 0.23 -cs cs 0.22 -b gs 0.22 -a a 0.22' 
+say '[play -eh gs 0.22 -cs cs 0.22 gs 0.23 a 0.23 gs 0.23 cs 0.23 gs 0.23 a 0.23' 
+say '[play gs 0.10 a 0.10 -cs gs 0.10 cs 0.10 gs 0.10 a 0.10 -gs gs 0.10 cs 0.10' 
+say '[play -cs gs 0.10 a 0.10 gs 0.10 cs 0.10 -b gs 0.10 a 0.10 gs 0.10 cs 0.10' 
+say '[play gs 0.10 a 0.10 -a gs 0.10 cs 0.10 -a gs 0.10 a 0.10 -a gs 0.10 cs 0.10' 
+say '[play -b gs 0.10 a 0.10 -g gs 0.10 cs 0.10 -gs gs 0.10 a 0.10 -b gs 0.10 cs 0.10' 
+say '[play -gs 0.23 -cs 0.23 0.24 -gs 0.23 -cs 0.47 -b 0.23 -a 0.23' 
+say '[play -g 0.23 -a 0.23 0.24 -gs 0.23 -b 0.47 -a 0.23 -gs 0.23' 
+say '[play -gs 0.23 -cs 0.23 0.24 -gs 0.23 -cs 0.47 -b 0.23 -a 0.23' 
+say '[play -g 0.23 -a 0.23 0.24 -gs 0.23 -b 0.47 -a 0.23 -gs 0.23' 
+say '[play -gs 0.23 -cs 0.23 0.24 -gs 0.23 -cs 0.47 -b 0.23 -a 0.23' 
+say '[play -g 0.23 -a 0.23 0.24 -gs 0.23 -b 0.23 cs 0.11 eh 0.11 -a fsh 0.22 -gs eh 0.22' 
+say '[play -gs cs 0.22 -cs 0.23 0.24 -gs 0.23 -cs 0.47 -b 0.23 -a 0.23' 
+say '[play -fs 0.23 -a 0.23 -a 0.23 -a 0.23 -b 0.47 -a 0.23 -gs 0.23' 
+say '[play -gs 0.23 -cs 0.23 0.24 -gs 0.23 -cs 0.47 -b 0.47' 
+say '[play -fs 0.23 -a 0.23 0.24 -fs 0.23 -a 0.47 -gs 0.47' 
+say '[play -gs 0.23 -cs 0.23 0.24 -gs 0.23 -cs 0.47 -eh 0.47' 
+say '[play -gs 0.23 -a 0.23 0.24 -a 0.23 -b 0.47 -a 0.23 -gs 0.23' 
+say '[play -gs 0.23 -cs 0.23 0.24 -gs 0.23 -cs 0.47 -b 0.47' 
+say '[play -gs 0.23 -a 0.23 0.24 -gs 0.23 -a 0.23 cs 0.11 eh 0.11 -gs fsh 0.22 eh 0.23' 
+say '[play -gs cs 0.23 -cs 0.23 0.24 -gs 0.23 -cs 0.47 -eh 0.47' 
+say '[play -fs 0.23 -a 0.23 -a 0.23 -a 0.23 -b 0.47 -a 0.23 -gs 0.23' 
+say '[play -gs 0.23 -cs +cs 0.22 +eh 0.23 -gs +cs 0.22 -cs +fsh 0.46 -b +cs 0.22 -a 0.23' 
+say '[play -fs 0.23 -a +cs 0.22 +eh 0.23 -gs +cs 0.23 -b +bh 0.46 -a +ah 0.22 -gs +ah 0.22' 
+say '[play -gs +gsh 0.22 -cs 0.23 0.24 -gs 0.23 -cs 0.23 +fsh 0.11 +fh 0.11 -b +fsh 0.22 -a +fsh 0.22' 
+say '[play -fs +fsh 0.22 -a +cs 0.22 +cs 0.23 -gs 0.23 -b 0.23 +cs 0.23 -a +eh 0.22 -gs +cs 0.22' 
+say '[play -gs 0.23 -cs +cs 0.22 +eh 0.23 -gs +cs 0.22 -cs +fsh 0.46 -b +cs 0.22 -a 0.23' 
+say '[play -fs 0.23 -a +cs 0.22 +eh 0.23 -gs +cs 0.23 -b +bh 0.46 -a +ah 0.22 -gs +ah 0.22' 
+say '[play -gs +gsh 0.22 -cs 0.23 0.24 -gs 0.23 -cs 0.23 +fsh 0.11 +fh 0.11 -b +fsh 0.22 -a +fsh 0.22' 
+say '[play -fs +fsh 0.22 -a +cs 0.22 +cs 0.23 -gs 0.23 -b 0.23 +cs 0.23 -a +eh 0.22 -gs +cs 0.22' 

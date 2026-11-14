@@ -19,7 +19,16 @@
  *
  ***************************************************************************/
 
-/* ChangeLog 
+/* ChangeLog
+ *  11/10/26, Adam (Upheaval: a banker who fights back)
+ *      On Upheaval, where Orcs take bankers' heads to the Gypsy Seer, bankers and minters (Minter is a Banker) are
+ *      Brigand-class fighters: the Brigand's stats, damage and skills (its tougher Angel Island set: Str 96-115, so as
+ *      many hit points; damage 23-27), born with a backpack and a Brigand's weapon in it
+ *      (newbied: it never goes to the corpse; imbued, Level 4 or 5). Attacked, he fights back (FightsBack): as he goes to
+ *      Melee AI he draws the weapon and has a word for his attacker (OnFightBegins), and when the fight is over and he is
+ *      a banker again he puts it away (OnFightEnds). Elsewhere a banker is as he was. At his counter he keeps it packed
+ *      (KeepsWeaponPacked: the AI's disarm recovery armed him as he stood there); a Felucca banker keeps his pack
+ *      (BaseCreature.PatchLootTick no longer deletes a pack holding a newbied item).
  *  8/14/2023, Adam (MatchingRegions)
  *      MatchingRegions verifies all regions match between the player and the banker.
  *      A good example is standing in Wind Park, and yelling over the cave wall there to town to bank.
@@ -69,7 +78,102 @@ namespace Server.Mobiles
         public Banker()
             : base("the banker")
         {
+            if (Core.RuleSets.UpheavalRules())
+                ArmForUpheaval();
         }
+
+        #region Upheaval: a banker who fights back
+        // what a banker says to whoever starts a fight with him (once a fight)
+        private static readonly string[] m_SmackTalk =
+        {
+            "Oh, I've seen your type before.",
+            "You picked the wrong banker, friend.",
+            "This vault has a guard after all: me.",
+            "I count coins all day. I can count your teeth too.",
+            "Overdrawn, are we? Let me settle your account.",
+            "Robbing a bank? How original.",
+            "Your withdrawal has been declined.",
+        };
+
+        /// <summary>A banker's weapon: the newbied one he was born with (null: none).</summary>
+        public static bool IsBankersWeapon(Item? item)
+        {
+            return item is BaseWeapon && item.LootType == LootType.Newbied;
+        }
+
+        // the Brigand's stats, damage and skills (its tougher Angel Island set), and a backpack holding a Brigand's weapon:
+        //  newbied (never on the corpse), imbued (Level 4 or 5)
+        private void ArmForUpheaval()
+        {
+            SetStr(96, 115);
+            SetDex(86, 105);
+            SetInt(51, 65);
+
+            SetDamage(23, 27);
+
+            SetSkill(SkillName.Fencing, 60.0, 82.5);
+            SetSkill(SkillName.Macing, 60.0, 82.5);
+            SetSkill(SkillName.Poisoning, 60.0, 82.5);
+            SetSkill(SkillName.MagicResist, 57.5, 80.0);
+            SetSkill(SkillName.Swords, 60.0, 82.5);
+            SetSkill(SkillName.Tactics, 60.0, 82.5);
+
+            BaseWeapon weapon;
+            switch (Utility.Random(7))
+            {
+                default:
+                case 0: weapon = new Longsword(); break;
+                case 1: weapon = new Cutlass(); break;
+                case 2: weapon = new Broadsword(); break;
+                case 3: weapon = new Axe(); break;
+                case 4: weapon = new Club(); break;
+                case 5: weapon = new Dagger(); break;
+                case 6: weapon = new Spear(); break;
+            }
+            Item armed = Loot.ImbueWeaponOrArmor(noThrottle: true, weapon, Utility.RandomBool() ? Loot.ImbueLevel.Level4 : Loot.ImbueLevel.Level5, 0, false);
+            armed.LootType = LootType.Newbied;
+            PackItem(armed);                    // makes his backpack (a vendor has only its hidden shop packs)
+        }
+
+        // at his counter (Vendor AI) his weapon stays in his pack: the AI's disarm recovery would otherwise arm him as he
+        //  stands there (BaseAI.CanReequip). In a fight (Melee AI) it may: disarmed, he picks it back up.
+        public override bool KeepsWeaponPacked
+        {
+            get { return Core.RuleSets.UpheavalRules() && AI == AIType.AI_Vendor; }
+        }
+
+        // attacked on Upheaval, he fights rather than flees (VendorAI)
+        public override bool FightsBack
+        {
+            get { return Core.RuleSets.UpheavalRules() || base.FightsBack; }
+        }
+
+        // Clark Kent to Superman: off to Melee AI, he draws his weapon and has a word for his attacker
+        public override void OnFightBegins(Mobile? combatant)
+        {
+            base.OnFightBegins(combatant);
+            if (!Core.RuleSets.UpheavalRules())
+                return;
+
+            Item? weapon = Backpack?.Items.FirstOrDefault(IsBankersWeapon);
+            if (weapon != null && !(Weapon is BaseWeapon held && IsBankersWeapon(held)))
+                EquipItem(weapon);
+
+            Say(m_SmackTalk[Utility.Random(m_SmackTalk.Length)]);
+        }
+
+        // and back again: the fight over, he puts his weapon away and is a mild-mannered banker
+        public override void OnFightEnds()
+        {
+            base.OnFightEnds();
+            if (!Core.RuleSets.UpheavalRules())
+                return;
+
+            foreach (Layer layer in new[] { Layer.OneHanded, Layer.TwoHanded })
+                if (FindItemOnLayer(layer) is Item held && IsBankersWeapon(held))
+                    PackItem(held);
+        }
+        #endregion Upheaval: a banker who fights back
         #region New Banking System
         public static bool CombinedWithdrawFromAllEnrolled(Mobile from, int amount)
         {

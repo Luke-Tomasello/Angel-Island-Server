@@ -10,11 +10,13 @@ runs on a stock RunUO server: see [Running on another RunUO server](#running-on-
 ## History
 
 The Angel Island shards began in 2004 on RunUO, with the game's instruments and bard skills. Rhiannon wrote the first
-music player in July 2006, for simple tunes played note by note, with fixes by Pix and Adam. On January 4, 2022, Adam
-rewrote it into a real music player: no instrument to pick, the player configured with [play (instrument, tempo,
-prefetch), instrument changes within a song, sound effects (+NNN), and the Dynamic timer. Through 2022 he built most of
-what players use today on that foundation: Razor scripts, composition books, manuscript paper and sheet music, Music
-Boxes, the recorder, macros, volume and concert mode; more followed in 2023-2024.
+music player in July 2006, for simple tunes played note by note, with fixes by Pix and Adam. In December 2021 Adam began
+rebuilding it: instruments that play song files written in Razor's script syntax (say '[play ...', wait), which is what
+an .rzr song still is, and music for NPCs as well as players. On January 4, 2022, he rewrote it into a real music
+player: no instrument to pick, the player configured with [play (instrument, tempo, prefetch), instrument changes within
+a song, sound effects (+NNN), and the Dynamic timer. In the first months of 2022 he built most of what players use today
+on that foundation: composition books, manuscript paper and sheet music, Music Boxes, the recorder, macros, volume and
+concert mode; more followed in 2023-2024.
 
 The 2026 modernization was designed and directed by Adam, who guided and reviewed every step. AI assistants did much of
 the hands-on work: writing code to his specifications, researching the game client and engine, and testing each
@@ -31,7 +33,7 @@ the known exceptions are listed below.)
 | `Compiler/` | Engine | `MusicCompiler` (a book's sections, plays and repeats expanded when it becomes sheet music; `[play preview`) |
 | `Host/` | Host | `AimsHost` (what AIMS needs from the shard it runs on, each with a stock default), `AimsLog`, `AimsUtil` (the stable hash and other helpers), `AimsPlayerData` (Music Karma and the music filter, when the shard doesn't keep them) |
 | `RSM/` | Integration | `RolledUpSheetMusic` (RSM), `ManuscriptPaper` + `MusicCompositionBook` (authoring into RSM), `CalypsoMusicPlayer` (device orchestrator used by items) |
-| `Library/` | Integration | `MusicLibrary` (the global music library: every published track and its record, `Music.bin`, the review queue, `FindSong(title)`, `[DupeMusic`, composers: ownership, music karma, publishing points, sales) |
+| `Library/` | Integration | `MusicLibrary` (the global music library: every published track and its record, `Music.bin`, the review queue, `FindSong(title)` and `FindMatches` (a song's name: its serial, exact title, or every title holding all the words said; never a few shared letters), `[DupeMusic`, composers: ownership, music karma, publishing points, sales, and credit: a sale the composer's bank couldn't take, paid at their next music box visit or forfeited, `Logs/MusicCredits.log`; review news: each composer is told the decisions on their songs at their next music box visit, with staff's note on a rejection, and the box's `status` lists their songs), `MusicImport` (`[MusicImport [free]`: song files from `Data/Music Import` into the library, approved, as a book would make them; the same notes are left as they are, a new version of an earlier import replaces it; imported songs pay no one, `AimsHost.OnImportedSale`; `Logs/MusicImport.log`) |
 | `MusicBox/` | Client | `MusicBox` (the music box item: speech commands (a command table), playlists, publishing and review, royalties, sale notices) |
 | `Items/` | Clients | `MusicController` (trigger device; also plays the client's UO soundtrack), `MusicMotionController` |
 | `Instruments/` | Extensions | `AwardInstrument`, legacy `AwardHarp`/`AwardLapHarp`/`AwardLute` (load-only) |
@@ -49,7 +51,8 @@ Notation, timing and verified engine behavior: `AI Music Composer/Data/Notes/ENG
   guild points), `CharacterCreation` (`MusicLibrary.ReconnectPlayer`), `Main.cs` ruleset gating,
   `CronTasks.CMusicConfigCleanup`, `Utility.MakeTempMobile`, Nuke, patches.
 - One-time music migrations live with their patches in `Patches201_300/`: `MusicOwnershipReconciler` (PatchV252),
-  `LegacyRsmRepair` (PatchV255), `MusicOrphanCleanup` (PatchV256), `RemasterOrphanCleanup` (PatchV262).
+  `LegacyRsmRepair` (PatchV255), `MusicOrphanCleanup` (PatchV256), `RemasterOrphanCleanup` (PatchV262), and the credit
+  carried between shards with the library (PatchV265: Siege Perilous, which earned it, keeps it; the others forfeit it).
 
 ## Compatibility notes
 
@@ -59,13 +62,15 @@ Notation, timing and verified engine behavior: `AI Music Composer/Data/Notes/ENG
   `Server.Items.AwardHarp` / `AwardLapHarp` / `AwardLute`. Changing a namespace needs `[TypeAlias]`, and
   `ManuscriptPaper` / `MusicBox` are also named in `data/vendor pricing.txt` and `data/objects.xml`.
 - Side files: `Saves/Music.bin` (library), `Saves/MusicContexts.bin` (sessions), `Saves/AIMS/Players.bin` (Music Karma
-  and the music filter, only on a shard whose host doesn't keep them; never written on Angel Island).
+  and the music filter, only on a shard whose host doesn't keep them; never written on Angel Island). Log files:
+  `Logs/MusicEngine.log` (playback measurements), `Logs/MusicCredits.log` (credit paid and forfeited, by account, slot,
+  character, song and amount), `Logs/MusicRecorder.log` (a runaway recording).
 
 ## Running on another RunUO server
 
 AIMS provides the vehicle; the shard provides the destination. Everything AIMS needs from a shard goes through
 `AimsHost` (`Host/AimsHost.cs`): logging and log files, the Data and Logs folders, account identity, households, Music
-Karma and the music filter, paying for a song, copies of sheets, internal storage, the sale event (and whether a
+Karma and the music filter, paying for a song and paying its composer, copies of sheets, internal storage, a note about a track for whoever asks, refusing a submission, the sale and purchase events (and whether a
 leaderboard shows it), and the shard's settings (Test Center, `[play` access). Each member has a default that works on
 stock RunUO 2.6. A shard wires its own systems by deriving a class from `AimsHost` anywhere in its scripts; AIMS finds
 it. Angel Island's is `AngelIslandAimsHost` (`Scripts/Engines/AIMusicHost`), outside this folder, and reproduces what

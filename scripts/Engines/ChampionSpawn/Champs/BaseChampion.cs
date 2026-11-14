@@ -21,6 +21,10 @@
 
 /* Scripts\Engines\ChampionSpawn\Champs\BaseChampion.cs
  * ChangeLog:
+ *  11/7/2026, Adam
+ *      OnDeathLeaderBoards override removed: the champion spawn policy (township credit, Prison Spawn points) is back in
+ *      BaseCreature.OnDeathLeaderBoards for every creature a champion engine spawns, the boss included (r992 had moved it
+ *      here, which left the waves without it).
  *  10/27/2026, Adam
  *      SpawnTypes enum removed: the Angel Island reward check compares DefinitionName with ChampNames.AI_Escape / AI_Guard.
  *  4/4/2024, Adam (m_TreatAsChamp)
@@ -121,33 +125,6 @@ namespace Server.Mobiles
         public override bool IgnoreCombatantAccessibility { get { return true; } }
         // Adam; and why the f' can't champs break crates laid on the ground?
         public override bool CanDestroyObstacles { get { return true; } }
-        public override void OnDeathLeaderBoards(List<DamageStore> list)
-        {
-            ChampEngine? ce = SpawnerHandle as ChampEngine;
-
-            if (ce == null || !ce.KillDatabase)
-            {
-                base.OnDeathLeaderBoards(list);
-                return;
-            }
-
-            if (ce.DefinitionName == ChampNames.AI_Escape ||
-                ce.DefinitionName == ChampNames.AI_Guard)
-            {
-                AwardDeathRewards(
-                    list,
-                    awardTownship: true,
-                    RecorderDomain.PvMPoints,
-                    RecorderDomain.PQChamps);
-            }
-            else
-            {
-                AwardDeathRewards(
-                    list,
-                    awardTownship: true,
-                    RecorderDomain.PvMPoints);
-            }
-        }
         public override bool IAIOkToInvestigate(Mobile playerToInvestigate)
         {   // This limits how often we will investigate a player
             // But since we are a champion, we won't be dissuaded

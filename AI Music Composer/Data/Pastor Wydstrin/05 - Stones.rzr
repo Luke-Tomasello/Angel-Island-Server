@@ -1,0 +1,14 @@
+# Stones
+# Author: Lord British
+# Song: Stones
+# NewTimer: true
+# Prefetch: false
+# Tempo: 70
+# price: 500
+say '[play e 0.2 a 0.2 b 0.2 c 0.2 e 0.2 c 0.2 e 0.2 c 0.2 e 0.2 dh 0.2 c 0.2 b 0.2'
+wait 2500
+say '[play e 0.2 b 0.2 e 0.2 b 0.2 e 0.2 c 0.2 b 0.2 a 0.2 e 0.2 a 0.2 e 0.2 a 0.2'
+wait 2500
+say '[play b 0.2 a 0.2 g 0.2 e 1.0 a 0.2 b 0.2 c 0.2 e 0.2 c 0.2 e 0.2 c 0.2 e 0.2'
+wait 2500
+say '[play dh 0.2 c 0.2 b 0.2 e 0.2 b 0.2 e 0.2 b 0.2 e 0.2 a 0.2 g 0.2 b 0.2 a 0.2'

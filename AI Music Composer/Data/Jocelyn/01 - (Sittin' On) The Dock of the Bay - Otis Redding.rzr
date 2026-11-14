@@ -1,0 +1,139 @@
+# (Sittin' On) The Dock of the Bay - Otis Redding
+# Author: Jocelyn
+# Song: (Sittin' On) The Dock of the Bay - Otis Redding
+# Instrument: Harp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: True
+# Price: 2000
+# Napster: False
+wait 1000
+say '[play gh .57 g .28 g .28 .29 g .28 .29 g .28' 
+say '[play .58 g .28 g .28 .29 g .28 .29 g .28' 
+say '[play gh .57 g .28 g .28 .29 g .28 .29 g .28' 
+say '[play .58 g .28 g .28 .29 g .28 .29 g .28' 
+wait 9600
+say '[play g +g .27 g .28 g .28 g .28 a .57 g .28 b +b .27' 
+say '! Sittin' in the mornin sun' 
+say '[play 1.16 .58 b .28 b .28' 
+wait 4200
+say '! I'll be sittin' when the evenin' comes' 
+say '[play c +c .27 c .28 c .28 c .28 c .28 b +b .27 as +as .27 a +a .27' 
+say '[play 1.16 1.16' 
+wait 5400
+say '! watchin' the ships roll in' 
+say '[play g +g .28 g .57 g .28 a .57 g .28 b +b .28' 
+say '[play 1.16 .58 b .28 b .28' 
+wait 4200
+say '! then I watch 'em roll away again' 
+say '[play c +c .28 c .28 c .28 c .28 c .28 b +b .28 as +as .28 a +a .28' 
+say '[play .29 .58 b .28 a .28 .58 e .28' 
+wait 4100
+say '! Yeah, I'm sitin' on the dock of the bay' 
+say '[play g +g .27 g .28 g .28 g .28 g .28 g .28 g .28 a +e .27' 
+say '[play 1.16 b +e .27 b .28 b .28 eh .28' 
+wait 5000
+say '! watchin' the tide' 
+say '[play dh +g .27 b .14 a .15 g .57 b .28 a .28 g .28 a .28' 
+wait 2400
+say '! roll away' 
+say '[play .58 .29 eh +e .57 b .28 b .57' 
+wait 2100
+say '! Ooh, I'm just sittin' on the dock of the bay' 
+say '[play e +g .27 g .28 g .28 g .28 g .28 g .28 g .28 e .28' 
+say '[play +a 1.15 a .28 g .28 e .28 g .28' 
+wait 5100
+say '! wastin' time' 
+say '[play +g .28 .58 b .14 a .15 g .28 .58 e .28' 
+say '[play 1.16 .58 .29 e .28' 
+say '[play g +g .27 g .28 g .28 g .28 a .57 g .28 b +b .27' 
+wait 5700
+say '! I left my home in Georgia' 
+say '[play 1.16 .58 b .28 b .28' 
+wait 4800
+say '! And I headed for the Frisco Bay' 
+say '[play c +c .27 c .28 c .28 c .28 c .28 b +b .27 as +as .27 a +a .27' 
+say '[play 1.16 1.16' 
+say '[play g +g .28 g .57 g .28 a .57 g .28 b +b .28' 
+wait 5200
+say '! I have nothin' to live for' 
+say '[play 1.16 .58 b .28 b .28' 
+say '[play c +c .28 c .28 c .28 c .28 c .28 b +b .28 as +as .28 a +a .28' 
+say '[play .29 .58 b .28 a .28 .58 e .28' 
+wait 4100
+say '! look like nothin's gonna come my way' 
+say '[play g +g .27 g .28 g .28 g .28 g .28 g .28 g .28 a +e .27' 
+wait 4000
+say '! So I'm just come' sittin' on the dock of the bay' 
+say '[play 1.16 b +e .27 b .28 b .28 eh .28' 
+wait 5000
+say '! watchin' the tide' 
+say '[play dh +g .27 b .14 a .15 g .57 b .28 a .28 g .28 a .28' 
+wait 2500
+say '! roll away' 
+say '[play .58 .29 eh +e .57 b .28 b .57' 
+wait 2100
+say '! Ooh, I'm just sittin' on the dock of the bay' 
+say '[play e +g .27 g .28 g .28 g .28 g .28 g .28 g .28 e .28' 
+say '[play +a 1.15 a .28 g .28 e .28 g .28' 
+wait 4900
+say '! wastin' time' 
+say '[play +g .28 .58 b .14 a .15 g .28 .58 e .28' 
+say '[play +e 1.15 1.16' 
+say '[play +g .57 .29 gh .28 eh +d .56 .29 +c .28' 
+wait 6800
+say '! Looks like nothin's gonna change' 
+say '[play gh .28 eh .28 eh .28 dh .28 b .13 a .14 g .57 .29' 
+say '[play +g .58 .29 eh .28 eh +d .28 dh .28 dh +c .28' 
+wait 4700
+say '! ev'rything still remains the same' 
+say '[play b .13 a .14 g .28 b .28 a .28 a .28 g .28 .58' 
+say '[play +g .57 .58 gh +d .27 eh .28 eh .28 dh +c .28' 
+wait 4900
+say '! I can't do what ten people tell me to do' 
+say '[play gh .28 eh .13 dh .14 eh .28 dh .57 b .28 a .28 g .28' 
+say '[play +f .57 fh .28 fh .28 fh .28 fh .13 dh .28 fh .28' 
+wait 4200
+say '! so I guess I'll remain the same' 
+say '[play +d .27 dh .28 fsh .28 eh .28 +ds dh 1.16' 
+say '[play g +g .27 g .28 g .28 g .28 a .57 g .28 b +b .27' 
+wait 4000
+say '! Sittin' here restin' my bones' 
+say '[play 1.16 .58 b .28 b .28' 
+wait 4200
+say '! and this loneliness won't leave me alone' 
+say '[play c +c .27 c .28 c .28 c .28 c .28 b +b .27 as +as .27 a +a .27' 
+say '[play 1.16 1.16' 
+say '[play g +g .28 g .57 g .28 a .57 g .28 b +b .28' 
+wait 5500
+say '! Two thousand miles I roamed' 
+say '[play 1.16 .58 b .28 b .28' 
+wait 4200
+say '! just to make this dock my home' 
+say '[play c +c .28 c .28 c .28 c .28 c .28 b +b .28 as +as .28 a +a .28' 
+say '[play .29 .58 b .28 a .28 .58 e .28' 
+wait 3900
+say '! Now I'm just sittin' on the dock of the bay' 
+say '[play g +g .27 g .28 g .28 g .28 g .28 g .28 g .28 a +e .27' 
+say '[play 1.16 b +e .27 b .28 b .28 eh .28' 
+wait 5200
+say '! watchin' the tide roll away' 
+say '[play dh +g .27 b .14 a .15 g .57 b .28 a .28 g .28 a .28' 
+say '[play .58 .29 eh +e .57 b .28 b .57' 
+wait 5100
+say '! Ooh, I'm just sittin' on the dock of the bay' 
+say '[play e +g .27 g .28 g .28 g .28 g .28 g .28 g .28 e .28' 
+say '[play +a 1.15 a .28 g .28 e .28 g .28' 
+wait 4300
+say '! wastin' time' 
+say '[play +g .28 .58 b .14 a .15 g .28 .58 e .28' 
+say '[play e .57 .29 .29' 
+say '[play gh +g .56 eh .57 dh .28 b .28 .29 .14 as .14' 
+say '[play b .28 as .28 b .57 a .28 g .28 .14 a .14' 
+say '[play b .28 a .28 g .57 a .28 g .28 a .28 b +e .28' 
+say '[play .29 dh .28 dh 1.16 .14 eh .14' 
+say '[play gh .57 eh .57 dh .28 b .28 .29 .14 as .14' 
+say '[play b .28 as .28 b .57 a .28 g .28 .14 a .14' 
+say '[play b .28 a .28 g .57 a .28 g .28 a .28 b .28' 
+say '[play b 1.15 1.16' 

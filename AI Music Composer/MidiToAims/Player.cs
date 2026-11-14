@@ -1,5 +1,24 @@
 /***************************************************************************
  *
+ *                   The Angel Island Music System (AIMS)
+ *
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
+ *   email                   : luke@tomasello.com
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
  *  MidiToAims preview - hear a composition on this computer as the game plays it, with the player's own client sounds
  *  (ClientSounds), before pasting it into a book ([play preview in the game). MidiToAims play (Line) - a [play line
  *  typed on the command line, as in the game: notes, or a setting (instrument, tempo, timer, newtimer, prefetch) that

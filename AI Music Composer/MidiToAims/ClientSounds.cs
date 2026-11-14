@@ -1,5 +1,24 @@
 /***************************************************************************
  *
+ *                   The Angel Island Music System (AIMS)
+ *
+ *   Angel Island UO Shards  : March 25, 2004
+ *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
+ *   email                   : luke@tomasello.com
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 2 of the License, or
+ *   (at your option) any later version.
+ *
+ ***************************************************************************/
+
+/***************************************************************************
+ *
  *  MidiToAims - the sounds of the player's own Ultima Online client (sound.mul), for MidiToAims play, preview and
  *  sound. Nothing of the
  *  game ships with MidiToAims: it reads the client files already on this computer.

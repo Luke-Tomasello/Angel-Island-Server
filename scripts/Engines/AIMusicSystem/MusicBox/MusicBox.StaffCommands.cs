@@ -1,8 +1,6 @@
 /***************************************************************************
  *
- *   RunUO                   : May 1, 2002
- *   portions copyright      : (C) The RunUO Software Team
- *   email                   : info@runuo.com
+ *                   The Angel Island Music System (AIMS)
  *
  *   Angel Island UO Shards  : March 25, 2004
  *   portions copyright      : (C) 2004-2026 Tomasello Software LLC.
@@ -22,17 +20,33 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.StaffCommands.cs
  * Changelog
- *  11/5/26, Adam (2026 modernization, 10/29/26 to 11/5/26)
+ *  11/14/26, Adam
+ *      Approve, deny and delete name their song through PickSong and never guess: several matches are listed, with
+ *      serials, and nothing is done; a name that matches nothing is said so (it matched any title sharing a letter or two:
+ *      "delete clip", with the clip already gone, deleted Axel F). Approve and deny consider only songs waiting for
+ *      review (deny rejected approved songs too). Deleting one song, by name or serial, asks first, naming it ("Type
+ *      Delete"), as 'delete *' does (ConfirmAll's single).
+ *  11/8/26, Adam (2026 modernization, 10/29/26 to 11/8/26)
  *      The staff and Test Center speech commands (flushall, review, approve, deny, delete, find, dupe), each its old
  *      case of the OnSpeech switch; the command table checks the staff level first. Review announces a pending track
  *      once (PlayMusic says "pending approval"). Flushall empties the review queue too.
  *      Split from MusicBox.Speech.cs; its history before 10/29/26 is in MusicBox.cs.
  *      Portable AIMS: Test Center and staff copies go through AimsHost.
+ *      'find' adds the shard's note about each track (AimsHost.TrackNote; none by default). Its line is TrackLine, which
+ *      'who' also sends to those who may use 'find'. The line names the song by its title (was "rolled up sheet music").
+ *      'find' and 'dupe' search a track's title (the name list, play, who and announcements show), not SongName (the
+ *      instrument's song name, from the manuscript book's title or a "song:" line in the notes), which can differ: then
+ *      'find <the title you see>' missed the track. Dupe's line names the track by its title too.
+ *      'approve *' and 'deny *' act only on the songs waiting for review ('deny *' rejected every song in the library,
+ *      approved ones too; 'approve *' approved rejected songs too); 'delete *' is for Test Center only (as flushall).
+ *      Each says how many songs and acts only when staff type Approve, Deny or Delete (Esc cancels): ConfirmAll.
  */
 
 using Server.Misc;
+using Server.Prompts;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using static Server.Items.MusicLibrary;
 
 namespace Server.Items
@@ -119,37 +133,25 @@ namespace Server.Items
         {
             if (tokens != null && tokens.Length == 3 && tokens[2] == "*")
             {
-                // name approve *
+                // name approve *: every song waiting for review, once staff type Approve
                 //  (over a copy: approving a remaster removes the track it remasters from the library)
-                foreach (RolledUpSheetMusic track in new List<RolledUpSheetMusic>(MusicLibrary.Repository.Keys))
+                ConfirmAll(e.Mobile, "Approve", "approved", PendingTracks(), (from, tracks) =>
                 {
-                    if (track == null || track.Deleted || !MusicLibrary.Repository.ContainsKey(track))
-                        continue;
-
-                    if (!Approved(track))
-                        ApproveTrack(e.Mobile, track);
-                }
+                    foreach (RolledUpSheetMusic track in tracks)
+                        if (IsPending(track))
+                            ApproveTrack(from, track);
+                });
             }
             else
             {
-                if (!TryFindSong(tokens, out RolledUpSheetMusic rsm, out _))
-                {
-                    Say(string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
-                }
-                else
-                {
-                    if (rsm == null || rsm.Deleted)
-                        return;
+                // only songs waiting for review, and never a guess
+                if (!PickSong(e.Mobile, tokens, "approve", mustBeOne: true, (s, i) => i.Status == SubmissionStatus.Pending,
+                    out RolledUpSheetMusic rsm, out _, none: "No song waiting for review is called '{0}'."))
+                    return;     // PickSong said why
 
-                    if (!Approved(rsm))
-                    {
-                        ApproveTrack(e.Mobile, rsm);
-                    }
-                    else
-                    {
-                        SendMessage(e.Mobile, "That track has already been approved.");
-                    }
-                }
+                if (rsm == null || rsm.Deleted)
+                    return;
+                ApproveTrack(e.Mobile, rsm);
             }
         }
 
@@ -157,24 +159,24 @@ namespace Server.Items
         {
             if (tokens != null && tokens.Length == 3 && tokens[2] == "*")
             {
-                // name deny *
-                foreach (KeyValuePair<RolledUpSheetMusic, MusicInfo> kvp in MusicLibrary.Repository)
+                // name deny *: every song waiting for review, once staff type Deny (it rejected every song in the
+                //  library, approved ones too)
+                ConfirmAll(e.Mobile, "Deny", "denied", PendingTracks(), (from, tracks) =>
                 {
-                    if (kvp.Key == null)
-                        continue;
-
-                    SetFileStatus(e.Mobile, kvp.Key, SubmissionStatus.Rejected);
-
-                    MusicLibrary.Unqueue(kvp.Key);
-                }
+                    foreach (RolledUpSheetMusic track in tracks)
+                        if (IsPending(track))
+                        {
+                            SetFileStatus(from, track, SubmissionStatus.Rejected);
+                            MusicLibrary.Unqueue(track);
+                        }
+                });
             }
             else
             {
-                if (!TryFindSong(tokens, out RolledUpSheetMusic rsm, out _))
-                {
-                    Say(string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
-                    return;
-                }
+                // only songs waiting for review (it rejected approved songs too), and never a guess
+                if (!PickSong(e.Mobile, tokens, "deny", mustBeOne: true, (s, i) => i.Status == SubmissionStatus.Pending,
+                    out RolledUpSheetMusic rsm, out _, none: "No song waiting for review is called '{0}'."))
+                    return;     // PickSong said why
 
                 if (rsm == null)
                     return;
@@ -191,12 +193,23 @@ namespace Server.Items
 
             if (tokens != null && tokens.Length == 3 && tokens[2] == "*")
             {
-                // name delete *
+                // name delete *: the whole library, on Test Center only (as flushall), once staff type Delete
+                if (!AimsHost.Current.IsTestCenter)
+                {
+                    SendMessage(e.Mobile, "'delete *' is for Test Center only. Here, delete songs one at a time.");
+                    return;
+                }
                 foreach (KeyValuePair<RolledUpSheetMusic, MusicInfo> kvp in MusicLibrary.Repository)
                 {
                     if (kvp.Key != null)
                         list.Add(kvp.Key);
                 }
+                ConfirmAll(e.Mobile, "Delete", "deleted", list, (from, tracks) =>
+                {
+                    if (AimsHost.Current.IsTestCenter)
+                        DeleteTracks(from, tracks);
+                });
+                return;
             }
             else if (tokens != null &&
                      tokens.Length == 3 &&
@@ -219,17 +232,24 @@ namespace Server.Items
             }
             else
             {
-                if (!TryFindSong(tokens, out RolledUpSheetMusic rsm, out _))
-                {
-                    Say(string.Format("I couldn't find '{0}' in the global music repository.", SongName(tokens)), hue: 54);
-                    return;
-                }
+                // never a guess
+                if (!PickSong(e.Mobile, tokens, "delete", mustBeOne: true, null, out RolledUpSheetMusic rsm, out _))
+                    return;     // PickSong said why
 
                 if (rsm != null)
                     list.Add(rsm);
             }
 
-            // Perform deletions.
+            // and only once staff confirm, naming the song (Esc, or anything but Delete, cancels)
+            if (list.Count == 0)
+                return;
+            RolledUpSheetMusic one = list[0];
+            ConfirmAll(e.Mobile, "Delete", "deleted", list, (from, tracks) => DeleteTracks(from, tracks.Where(t => t != null && !t.Deleted).ToList()),
+                single: string.Format("'{0}' by {1} (0x{2:X})", one, one.Author, one.Serial.Value));
+        }
+
+        private void DeleteTracks(Mobile from, List<RolledUpSheetMusic> list)
+        {
             foreach (RolledUpSheetMusic rsm in list)
             {
                 if (rsm == null)
@@ -246,7 +266,87 @@ namespace Server.Items
                 if (!rsm.Deleted)
                     rsm.Delete();
 
-                SendMessage(e.Mobile, string.Format("{0} deleted.", rsm));
+                SendMessage(from, string.Format("{0} deleted.", rsm));
+            }
+        }
+
+        // the songs waiting for review (approve *, deny *)
+        private static List<RolledUpSheetMusic> PendingTracks()
+        {
+            List<RolledUpSheetMusic> list = new List<RolledUpSheetMusic>();
+            foreach (KeyValuePair<RolledUpSheetMusic, MusicInfo> kvp in MusicLibrary.Repository)
+                if (IsPending(kvp.Key))
+                    list.Add(kvp.Key);
+            return list;
+        }
+
+        private static bool IsPending(RolledUpSheetMusic? track)
+        {
+            return track != null && !track.Deleted && MusicLibrary.Repository.TryGetValue(track, out MusicInfo? info)
+                && info != null && info.Status == SubmissionStatus.Pending;
+        }
+
+        // 'approve *', 'deny *', 'delete *' (and deleting one song: 'single' names it): says how many songs, and acts only
+        //  when staff type the command's word (Esc, or anything else, cancels). The act checks each song again: things
+        //  may change while staff type.
+        private void ConfirmAll(Mobile from, string verb, string done, List<RolledUpSheetMusic> tracks,
+            Action<Mobile, List<RolledUpSheetMusic>> act, string? single = null)
+        {
+            bool all = verb == "Delete";
+            if (tracks.Count == 0)
+            {
+                SendMessage(from, all ? "There are no songs in the music library." : "There are no songs waiting for review.");
+                return;
+            }
+            if (single != null)
+                SendMessage(from, string.Format("You are about to {0} {1}. Type {2} to continue, or Esc to cancel.",
+                    verb.ToLowerInvariant(), single, verb));
+            else
+                SendMessage(from, string.Format("You are about to {0} {1} song{2}{3}. Type {4} to continue, or Esc to cancel.",
+                    verb.ToLowerInvariant(), tracks.Count, tracks.Count == 1 ? "" : "s",
+                    all ? " (every song in the music library)" : " waiting for review", verb));
+            from.Prompt = new ConfirmAllPrompt(this, verb, done, tracks, act);
+        }
+
+        private class ConfirmAllPrompt : Prompt
+        {
+            private readonly MusicBox m_box;
+            private readonly string m_verb, m_done;
+            private readonly List<RolledUpSheetMusic> m_tracks;
+            private readonly Action<Mobile, List<RolledUpSheetMusic>> m_act;
+
+            public ConfirmAllPrompt(MusicBox box, string verb, string done, List<RolledUpSheetMusic> tracks,
+                Action<Mobile, List<RolledUpSheetMusic>> act)
+            {
+                m_box = box;
+                m_verb = verb;
+                m_done = done;
+                m_tracks = tracks;
+                m_act = act;
+            }
+
+            public override void OnResponse(Mobile from, string text)
+            {
+                try
+                {
+                    if (from == null || m_box == null || m_box.Deleted)
+                        return;
+                    if (!string.Equals((text ?? "").Trim(), m_verb, StringComparison.OrdinalIgnoreCase))
+                    {
+                        from.SendMessage("Cancelled: nothing was {0}.", m_done);
+                        return;
+                    }
+                    m_act(from, m_tracks);
+                }
+                catch (Exception ex)
+                {
+                    AimsLog.LogException(ex);
+                }
+            }
+
+            public override void OnCancel(Mobile from)
+            {
+                from?.SendMessage("Cancelled: nothing was {0}.", m_done);
             }
         }
 
@@ -268,22 +368,35 @@ namespace Server.Items
                 if (track == null)
                     continue;
 
-                string song = track.SongName ?? string.Empty;
-                if (song.ToLowerInvariant().Contains(qLower))
+                if (ShownTitle(track).ToLowerInvariant().Contains(qLower))
                 {
-                    SendMessage(e.Mobile, string.Format(
-                        "{0}, Owner: {1}, Serial: {2:X}, Hash Code: {3:X}",
-                        track.Name,                                  // 0
-                        track.Owner != null ? track.Owner : "(null)",// 1
-                        track.Serial,                                // 2
-                        track.HashCode));                            // 3
-
+                    SendMessage(e.Mobile, TrackLine(e.Mobile, track, kvp.Value));
                     count++;
                 }
             }
 
             if (count == 0)
                 Say(string.Format("I couldn't find '{0}' in the music library", query), hue: 54);
+        }
+
+        // a library track as 'find' shows it (also 'who', to those who may use 'find'): title, owner, serial, hash code,
+        //  and the shard's note (AimsHost.TrackNote)
+        private static string TrackLine(Mobile viewer, RolledUpSheetMusic track, MusicInfo? info)
+        {
+            string? note = AimsHost.Current.TrackNote(viewer, track, info);
+            return string.Format("{0}, Owner: {1}, Serial: {2:X}, Hash Code: {3:X}{4}",
+                ShownTitle(track),                                  // 0
+                track.Owner != null ? track.Owner : "(null)",       // 1
+                track.Serial,                                       // 2
+                track.HashCode,                                     // 3
+                string.IsNullOrEmpty(note) ? "" : ", " + note);     // 4
+        }
+
+        // the name a track goes by everywhere (list, play, who, announcements): its title, else the item's name. find and
+        //  dupe search it, so staff find a track by the name they see (they searched SongName, which can differ).
+        private static string ShownTitle(RolledUpSheetMusic track)
+        {
+            return !string.IsNullOrEmpty(track.Title) ? track.Title : track.Name ?? string.Empty;
         }
 
         private void HandleDupe(SpeechEventArgs e, string[] tokens)
@@ -304,12 +417,11 @@ namespace Server.Items
                 if (track == null)
                     continue;
 
-                string song = track.SongName ?? string.Empty;
-                if (song.ToLowerInvariant().Contains(qLower))
+                if (ShownTitle(track).ToLowerInvariant().Contains(qLower))
                 {
                     SendMessage(e.Mobile, string.Format(
                         "Duping {0}, Owner: {1}, Serial: {2:X}, Hash Code: {3:X}",
-                        track.Name,                                  // 0
+                        ShownTitle(track),                           // 0
                         track.Owner != null ? track.Owner : "(null)",// 1
                         track.Serial,                                // 2
                         track.HashCode));                            // 3

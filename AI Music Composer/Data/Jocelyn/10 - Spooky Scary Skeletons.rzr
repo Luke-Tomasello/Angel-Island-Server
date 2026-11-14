@@ -1,0 +1,181 @@
+# Author: Jocelyn
+# Song: Spooky Scary Skeletons
+# Instrument: Harp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: True
+# Price: 2000
+# Napster: False
+say '[play v20' 
+wait 1000
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 +d 0.25 b 0.12' 
+say '! Spooky, scary skeletons' 
+wait 2400
+say '[play 0.39 b 0.38' 
+say '[play +g 0.25 +g 0.51' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 0.39' 
+say '[play 0.39 0.39' 
+say '! Send shivers down your spine' 
+wait 4000
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 +d 0.38' 
+say '[play b 0.75' 
+say '! Shrieking skulls will shock your soul' 
+wait 3200
+say '[play +d 0.38 +e 0.38' 
+say '[play +cl 0.38 +d 0.38' 
+say '[play b 0.38 0.39' 
+say '[play 0.78' 
+say '! Seal your doom tonight' 
+wait 3200
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 +d 0.25 b 0.12' 
+say '[play 0.78' 
+say '! Spooky, scary skeletons' 
+wait 3200
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 0.39' 
+say '! Speak with such a screech' 
+wait 2400
+say '[play 0.39 +fs 0.38' 
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.25 +fs 0.51' 
+say '[play b 0.38 +d 0.25 b 0.12' 
+say '! You'll shake and shutter in suprise' 
+wait 3200
+say '[play 0.39 b 0.25 b 0.12' 
+say '[play +d 0.38 +e 0.38' 
+say '[play +cl 0.38 +d 0.38' 
+say '[play b 0.38 0.39' 
+say '[play 0.78' 
+say '! When you hear these zombies shriek' 
+wait 4000
+say '[play +fs 0.38 +g 0.38' 
+say '[play +fs 0.38 +g 0.38' 
+say '[play +a 0.38 +b 0.25 +a 0.12' 
+say '! We're so sorry, skeletons' 
+wait 2300
+say '[play 0.39 +g 0.38' 
+say '[play +fs 0.38 +g 0.38' 
+say '[play +fs 0.38 +e 0.25 +d 0.12' 
+say '[play 0.78' 
+say '! You're so misunderstood' 
+wait 3200
+say '[play 0.65 +d 0.12' 
+say '[play +e 0.38 +fs 0.38' 
+say '[play +e 0.38 +fs 0.38' 
+say '[play +g 0.38 +a 0.25 +g 0.12' 
+say '! You only want to socialize' 
+wait 3200
+say '[play 0.65 +d 0.12' 
+say '[play +e 0.38 +fs 0.38' 
+say '[play +g 0.38 +b 0.38' 
+say '[play +as 0.38 0.39' 
+say '! but I don't think we should' 
+wait 3200
+say '[play 0.39 +fs 0.38' 
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 +d 0.25 b 0.12' 
+say '! Cause spooky, scary skeletons' 
+wait 3200
+say '[play 0.39 b 0.38' 
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.25 +fs 0.51' 
+say '[play b 0.38 0.39' 
+say '! Shout startling shrilly screams' 
+wait 3200
+say '[play 0.39 +f 0.38' 
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 +ds 0.25 b 0.12' 
+say '! They'll sneak from their sarcophagus' 
+wait 3200
+say '[play 0.39 b 0.38' 
+say '[play +d 0.38 +e 0.38' 
+say '[play +cl 0.38 +d 0.38' 
+say '[play b 0.38 0.39' 
+say '[play 0.78' 
+say '! And just won't leave you be' 
+wait 4000
+say '[play +fs 0.38 +g 0.38' 
+say '[play +fs 0.38 +g 0.38' 
+say '[play +a 0.38 +b 0.25 +a 0.12' 
+say '! Spirits super natural' 
+wait 2400
+say '[play 0.39 +g 0.38' 
+say '[play +fs 0.38 +g 0.38' 
+say '[play +fs 0.38 +e 0.25 +d 0.12' 
+say '[play 0.78' 
+say '! are shy, what's all the fuss?' 
+wait 3200
+say '[play 0.65 +d 0.12' 
+say '[play +e 0.38 +fs 0.38' 
+say '[play +e 0.38 +fs 0.38' 
+say '[play +g 0.25 +a 0.38 +g 0.12' 
+say '! The bags of bones seem so unsafe' 
+wait 3200
+say '[play 0.39 +fs 0.38' 
+say '[play +e 0.25 +fs 0.51' 
+say '[play +g 0.38 +b 0.25 +as 0.12' 
+say '[play 0.78' 
+say '[play 0.78' 
+say '! it's semi serious' 
+wait 4000
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 +d 0.25 b 0.12' 
+say '! Spooky, scary skeletons' 
+wait 2400
+say '[play 0.39 b 0.38' 
+say '[play +g 0.25 +g 0.51' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 0.39' 
+say '! Are silly all the same' 
+wait 3200
+say '[play 0.39 +fs 0.38' 
+say '[play +g 0.38 +a 0.38' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 +d 0.38' 
+say '[play b 0.38 b 0.38' 
+say '! They'll smile and scrabble slowly by' 
+wait 4000
+say '[play +d 0.38 +e 0.38' 
+say '[play +cl 0.38 +d 0.38' 
+say '[play b 0.38 0.39' 
+say '[play 0.78' 
+say '! And drive you so insane' 
+wait 3200
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 +d 0.38' 
+say '[play b 0.38 b 0.38' 
+say '! Sticks and stones will break your bones' 
+wait 3200
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 0.39' 
+say '[play 0.78' 
+say '! They seldom let you snooze' 
+wait 3200
+say '[play +g 0.38 +g 0.38' 
+say '[play +fs 0.38 +fs 0.38' 
+say '[play b 0.38 +d 0.25 b 0.12' 
+say '! Spooky, scary skeletons' 
+wait 2400
+say '[play 0.39 b 0.38' 
+say '[play +d 0.38 0.39' 
+say '[play +e 0.38 0.39' 
+say '! will wake you' 
+wait 2400
+say '[play +cl 0.38 0.39' 
+say '[play +d 0.38 0.39' 
+say '[play b 0.38 0.39' 
+say '! with a boo!' 

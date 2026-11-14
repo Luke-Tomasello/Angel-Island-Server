@@ -21,6 +21,11 @@
 
 /* Scripts\Engines\CronScheduler\CronScheduler.cs
  * CHANGELOG:
+ *  11/7/26, Adam (shard time)
+ *      Cron.RegisterShard: a job read in the shard's time zone (ShardClock: -timezone, else the server machine's zone),
+ *      for jobs players or staff plan around; Register stays UTC for the rest. RegisterLocal takes Unique and a
+ *      CronLimit too. A CronLimit ("3rd Saturday", last day of the month) checks the day as the job's zone sees it, not
+ *      the UTC day. Cron.Update keeps a job's time zone (SetCronSpec made every updated job UTC). CronJob.TimeZone.
  *  10/25/26, Adam ([cron resume)
  *      "[cron resume" works without a timespan (it printed the usage: every form required two arguments and a
  *      timespan). "[cron resume <hh:mm:ss>" is still accepted (the timespan is ignored); pause is unchanged.
@@ -435,11 +440,24 @@ namespace Server.Engines.CronScheduler
 
         public static void RegisterLocal(CronEventHandler handler, string CronSpec, TimeZoneInfo tz)
         {
+            RegisterLocal(handler, CronSpec, tz, true, null);
+        }
+
+        public static void RegisterLocal(CronEventHandler handler, string? CronSpec, TimeZoneInfo tz, bool Unique, CronLimit? limit)
+        {
             lock (m_Handlers.SyncRoot)
             {
-                m_Handlers.Add(new CronEventEntry(null, handler, new CronJob(CronSpec, tz), true, null));
+                m_Handlers.Add(new CronEventEntry(null, handler, new CronJob(CronSpec, tz), Unique, limit));
             }
         }
+
+        // The shard's time zone (ShardClock: -timezone, else the server machine's zone): for jobs players or staff plan
+        //  around (events, season changes). Machinery nobody plans around stays on Register (UTC).
+        public static void RegisterShard(CronEventHandler handler, string? CronSpec)
+            => RegisterLocal(handler, CronSpec, ShardClock.Zone, true, null);
+
+        public static void RegisterShard(CronEventHandler handler, string? CronSpec, bool Unique, CronLimit? limit)
+            => RegisterLocal(handler, CronSpec, ShardClock.Zone, Unique, limit);
 
         // Quick helpers if you schedule a lot for one country
         public static void RegisterNetherlands(CronEventHandler h, string spec)
@@ -940,7 +958,7 @@ namespace Server.Engines.CronScheduler
                             {   // we have a match
 
                                 // process special CronLimit specifications, like 3rd Sunday
-                                if (cee.Limit != null && cee.Limit.Execute() == false)
+                                if (cee.Limit != null && cee.Limit.Execute(cee.Cronjob.TimeZone) == false)
                                 {
                                     Console.WriteLine("Note: Scheduled Job '{0}' does not meet nth day limitation.", cee.Name);
                                     continue;
@@ -1004,8 +1022,8 @@ namespace Server.Engines.CronScheduler
             public CronEventHandler Handler { get { return m_Handler; } }
             public CronJob Cronjob { get { return m_Cronjob; } }
             public void SetCronSpec(string cronSpec)
-            {
-                m_Cronjob = new CronJob(cronSpec);
+            {   // a new schedule in the job's own time zone (a shard-time job stays one)
+                m_Cronjob = new CronJob(cronSpec, m_Cronjob?.TimeZone);
             }
             public string Name { get { return m_Name; } }
             public bool Unique { get { return m_Unique; } }
@@ -1070,8 +1088,13 @@ namespace Server.Engines.CronScheduler
                 m_isldom = status;
             }
             public bool Execute()
+            {
+                return Execute(TimeZoneInfo.Utc);
+            }
+            // the day as the job's time zone sees it (a shard-time job's "3rd Saturday" is the shard's Saturday)
+            public bool Execute(TimeZoneInfo zone)
             {   // is it the 3rd Sunday of the month?
-                bool IsNthDayOfMonth = Cron.CronJob.IsNthDayOfMonth(m_Nth, m_dayName);
+                bool IsNthDayOfMonth = Cron.CronJob.IsNthDayOfMonth(m_Nth, m_dayName, zone);
 
                 if (IsNthDayOfMonth == false)   // not the right day
                     return false;
@@ -1081,7 +1104,7 @@ namespace Server.Engines.CronScheduler
 
                 // sometimes the user wants to know if this is the last day of the month
                 //	if IsTomorrowThisMonth then it can't be the last day of the month (tomorrow = +24 hours)
-                bool last_dom = Cron.CronJob.IsTomorrowThisMonth() == false;
+                bool last_dom = Cron.CronJob.IsTomorrowThisMonth(zone) == false;
 
                 // if last_dom == true and the user wanted the last day of the month, yay
                 if (last_dom == true && m_isldom == IsLastDayOfMonth.must_be_ldom)
@@ -1176,6 +1199,11 @@ namespace Server.Engines.CronScheduler
             {
                 get { return m_originalSpec; }
                 //set { m_originalSpec = value; }
+            }
+            /// <summary>The time zone the specification is read in (UTC unless registered otherwise).</summary>
+            public TimeZoneInfo TimeZone
+            {
+                get { return m_TimeZone; }
             }
             /// <summary>
             /// Main matching function — called every minute with current UTC time.
@@ -1330,7 +1358,12 @@ namespace Server.Engines.CronScheduler
             /// <returns>true if tomorrow has the same month number as today</returns>
             public static bool IsTomorrowThisMonth()
             {
-                DateTime now = DateTime.UtcNow;
+                return IsTomorrowThisMonth(TimeZoneInfo.Utc);
+            }
+            // today as this time zone sees it
+            public static bool IsTomorrowThisMonth(TimeZoneInfo zone)
+            {
+                DateTime now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone ?? TimeZoneInfo.Utc);
                 DateTime tomorrow = now.AddDays(1);
 
                 return tomorrow.Month == now.Month;
@@ -1345,12 +1378,17 @@ namespace Server.Engines.CronScheduler
             /// <exception cref="ArgumentOutOfRangeException">If Nth is less than 1</exception>
             public static bool IsNthDayOfMonth(int Nth, DayOfWeek dayName)
             {
+                return IsNthDayOfMonth(Nth, dayName, TimeZoneInfo.Utc);
+            }
+            // today as this time zone sees it
+            public static bool IsNthDayOfMonth(int Nth, DayOfWeek dayName, TimeZoneInfo zone)
+            {
                 if (Nth < 1)
                 {
                     throw new ArgumentOutOfRangeException(nameof(Nth), "Nth must be 1 or greater.");
                 }
 
-                DateTime now = DateTime.UtcNow;
+                DateTime now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone ?? TimeZoneInfo.Utc);
 
                 // Quick exit if today isn't even the right weekday
                 if (now.DayOfWeek != dayName)

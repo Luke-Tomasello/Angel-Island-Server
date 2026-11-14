@@ -44,6 +44,51 @@
 
 /* Patches201_300/PatchLibrary.cs
  * ChangeLog
+ *  11/14/26, Adam (PatchV270)
+ *      Add PatchV270: where each song in the shared music database was composed (Songs.origin, for the website's music
+ *      catalog), by [MusicShare origins' rule (the oldest shard in the lineage whose collected library held it). Login
+ *      Server only: the database is every shard's, so it's set once, independent of any shard's world. Only differing
+ *      origins are written; without a seeded database or collected libraries it waits for the next start.
+ *  11/10/26, Adam (PatchV269)
+ *      PatchV269 also replaces the bankers standing in the world: every running banker spawner respawns within seconds
+ *      (BankerPace.Rearm), and Upheaval's new bankers are born Brigand-class fighters with a weapon (Banker). Not yet
+ *      released, so added here; Test Center reruns it after PatchResetAll TC 269 (Src\Angel Island).
+ *  11/9/26, Adam (PatchV269)
+ *      Add PatchV269: the Gypsy Seer takes a town's bankers' heads (Upheaval has too few players for player heads alone),
+ *      and the bankers' respawn is the pace. In each territory district, every running spawner of bankers (Minter is
+ *      one) respawns after (the district's running banker spawners) x 1 hour, so every town yields at most one banker
+ *      head an hour whatever its size (a spawner brings back one creature per delay). Spawners that are switched off
+ *      are left alone. Upheaval only, Publish 4 and later (before it shopkeepers can't be killed). Not Login Server.
+ *  11/8/26, Adam (PatchV268)
+ *      Add PatchV268: songs credited "by MidiToAims" (MidiToAims wrote that author when "Arranged by" was blank, and
+ *      named songs after their MIDI file, underscores included). Each library song so credited, any status, whose owner
+ *      is a player, gets the owner's name as author and spaces for underscores in its title; copies in the world
+ *      (matched by the notes' hash) too. The notes are untouched. Not Login Server.
+ *  11/8/26, Adam (PatchV267)
+ *      Add PatchV267: Event and Automated Event System times to true UTC. They were kept on the old game clock
+ *      (AdjustedDateTime: UTC + the event's offset, -8 by default) and saved unmarked, so what a saved value means
+ *      depends on the machine that saved it: on a machine set to UTC an event's times are its offset's wall clock.
+ *      Each is moved by (this machine's base UTC offset - the event's offset): +8 h for a default event on a UTC
+ *      machine, nothing on a Pacific one. Every change is reported. Every shard.
+ *  11/7/26, Adam (PatchV245)
+ *      PatchV245 runs on the login server too. InvasionPersistence is a persistence item, so it is in every world,
+ *      the login server's included; skipped there, the login server stopped at world load ("Type
+ *      'Server.Engines.Invasion.InvasionPersistence' was not found. Delete all of those types? (y/n)") until someone
+ *      answered at its console. The patch never completed on a login server, so each one scrubs at its next start.
+ *  11/7/26, Adam (PatchV266 retired)
+ *      PatchV266 retired (its slot is null): music sharing is on when a shard starts with -sharemusic (Core.ShareMusic),
+ *      so Main knows the state at startup; the MusicSharing feature bit it set is retired too (a shard
+ *      that ran it keeps the bit set; nothing reads it).
+ *  11/7/26, Adam (PatchV266)
+ *      Add PatchV266: music sharing (Engines\AIMusicShare) is on by default. At a shard's first start with a seeded shared
+ *      music database the MusicSharing feature turns on; without one the patch returns null (not complete) and runs
+ *      again at the next start. Test Center and event shards only read. Not Login Server.
+ *  11/7/26, Adam (PatchV265)
+ *      Add PatchV265: music box credit (a sale's price the composer's bank box couldn't take) is now paid, on the shard
+ *      that earned it only. The library was copied between shards, so the same credit records were on Upheaval, Mortalis,
+ *      Seasons and Siege Perilous (2026-11-04: 20 records, 80,000 gold, two composers), earned once, on Siege Perilous.
+ *      Siege Perilous keeps them (paid at the composers' next music box visit); every other shard forfeits them
+ *      (MusicLibrary.ForfeitCredit). Every record goes to MusicCredits.log. Not Login Server.
  *  11/5/26, Adam (PatchV264)
  *      PatchV264 also moves three hemmed-in spawners, Felucca and Trammel (a Warlord placed on the tile could not move,
  *      or barely): Britain scribe (1493, 1713, 6) -> (1493, 1715, 6), Ocllo scribe (3614, 2467, 0) -> (3611, 2466, 0) and
@@ -102,6 +147,7 @@ using Server.Commands;
 using Server.Engines;
 using Server.Engines.Alignment;
 using Server.Engines.ChampionSpawn;
+using Server.Engines.MusicShare;
 using Server.Engines.TerritoryControl;
 using Server.Items;
 using Server.Misc;
@@ -191,6 +237,12 @@ namespace Patches201_300
             PatchV262,   // music library: delete the tracks remasters replaced, left in internal storage (not Login Server)
             PatchV263,   // Upheaval: enable breeding (the BreedingEnabled dynamic feature; not Login Server)
             PatchV264,   // territory: set Warlord counts carried over from an earlier campaign to the earned count (not Login Server)
+            PatchV265,   // music box credit: Siege Perilous keeps (and pays) credit earned before 11/7/26; every other shard forfeits it (not Login Server)
+            null,        // PatchV266 - retired: music sharing is the -sharemusic startup switch
+            PatchV267,   // Event and Automated Event System times to true UTC (corrected for this machine's zone; every shard)
+            PatchV268,   // music library: songs credited "by MidiToAims" get their owner's name, titles lose underscores (not Login Server)
+            PatchV269,   // Upheaval: bankers' respawn paces the Gypsy Seer's banker heads (running banker spawners x 1 hour, per district); bankers respawned, born armed
+            PatchV270,   // Login Server: where each song in the shared music database was composed (Songs.origin, by the shards' lineage)
         };
 
         public static int GetLastPatch()
@@ -2585,8 +2637,7 @@ namespace Patches201_300
         #region PatchV245
         private static int? PatchV245(int patchid)
         {
-
-            if (!LoginServer(quiet: true))
+            // every shard, the login server too: InvasionPersistence is a persistence item, in every world (11/7/26)
             {
                 int patched = 0;
                 #region Begin Implementation
@@ -2611,8 +2662,6 @@ namespace Patches201_300
                 #endregion End Implementation
                 return patched;
             }
-
-            return null;
         }
         #endregion PatchV245
 
@@ -3474,6 +3523,322 @@ namespace Patches201_300
             return null;
         }
         #endregion PatchV264
+        #region PatchV265
+        private static int? PatchV265(int patchid)
+        {
+            if (!LoginServer(quiet: true))
+            {
+                int patched = 0;
+                #region Begin Implementation
+
+                // Music box credit (a sale's price the composer's bank box couldn't take) was never paid before 11/7/26; it
+                //  is now (MusicLibrary.CollectCredits), on the shard that earned it only. The library was copied between
+                //  shards, so the same records were on Upheaval, Mortalis, Seasons and Siege Perilous (2026-11-04: 20 records,
+                //  80,000 gold, two composers), earned once, on Siege Perilous. Siege Perilous keeps them, paid at the
+                //  composers' next music box visit; every other shard forfeits them. Every record goes to MusicCredits.log.
+                bool origin = Siege(quiet: true);
+                List<object> kept = new List<object>
+                {
+                    "PatchV265: Siege Perilous keeps the music box credit earned before 11/7/26 (it earned it); it is paid at each composer's next music box visit",
+                };
+
+                foreach (KeyValuePair<RolledUpSheetMusic, MusicLibrary.MusicInfo> kvp in MusicLibrary.Repository.ToList())
+                {
+                    MusicLibrary.MusicInfo info = kvp.Value;
+                    if (kvp.Key == null || info == null || info.Credit == 0)
+                        continue;
+
+                    patched++;
+                    if (origin)
+                        kept.Add(string.Format("kept: {0:N0} for '{1}' (0x{2:X}), composer's account GUID {3}, owner {4}",
+                            info.Credit, kvp.Key, kvp.Key.Serial.Value, info.OwnerGUID, info.Owner?.ToString() ?? "none"));
+                    else
+                        MusicLibrary.ForfeitCredit(kvp.Key, info,
+                            "PatchV265: credit earned before 11/7/26 is paid only on Siege Perilous, which earned it");
+                }
+
+                if (origin && patched > 0)
+                    AimsHost.Current.WriteLog(MusicLibrary.CreditLog, null, kept);
+
+                EchoOut(string.Format("PatchV265: {0} music box credit record(s) {1} (MusicCredits.log).", patched,
+                    origin ? "kept, to be paid on this shard" : "forfeited: credit is paid only on Siege Perilous"), ConsoleColor.Magenta);
+
+                #endregion End Implementation
+                return patched;
+            }
+
+            return null;
+        }
+        #endregion PatchV265
+        #region PatchV266
+
+        // null (retired 11/7/26: music sharing is the -sharemusic startup switch)
+
+        #endregion PatchV266
+        #region PatchV267
+        private static int? PatchV267(int patchid)
+        {
+            int patched = 0;
+            #region Begin Implementation
+
+            // Event and Automated Event System times to true UTC (11/8/26). They were kept on the old game clock
+            //  (AdjustedDateTime.GetTime(offset): UTC + the event's offset, -8 by default, plus an hour when this machine
+            //  was in daylight saving) and saved unmarked, so the writer converted them as this machine's local time.
+            //  Now they are UTC and compared with DateTime.UtcNow. What a saved value s means, as a UTC moment t:
+            //      t = s + (this machine's base UTC offset) - (the event's offset)     (the daylight-saving hour cancels)
+            //  A machine set to UTC: an event at the default -8 moves +8 h; on a Pacific machine (production, 11/8/26) it doesn't
+            //  move. Assumes the world was saved on this machine (or one in the same zone): a world copied from a machine
+            //  in another zone before this patch runs is corrected for this one. Every change is reported.
+            //  Patches run after the world loads and before any timer ticks: nothing fired on the old values.
+            TimeSpan machine = TimeZoneInfo.Local.BaseUtcOffset;
+            System.Reflection.BindingFlags inst = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic
+                | System.Reflection.BindingFlags.Public;
+            System.Reflection.FieldInfo fStart = typeof(Event).GetField("m_EventStart", inst)!;
+            System.Reflection.FieldInfo fEnd = typeof(Event).GetField("m_EventEnd", inst)!;
+            System.Reflection.FieldInfo fOffset = typeof(Event).GetField("m_OffsetFromUTC", inst)!;
+            System.Reflection.FieldInfo fAction = typeof(AutomatedEventSystem).GetField("m_ActionTime", inst)!;
+            Dictionary<Type, List<System.Reflection.FieldInfo>> eventFields = new Dictionary<Type, List<System.Reflection.FieldInfo>>();
+
+            EchoOut(string.Format("PatchV267: this machine's zone is {0} (base offset {1}); event times are corrected for it.",
+                TimeZoneInfo.Local.Id, machine), ConsoleColor.Magenta);
+
+            foreach (Item item in World.Items.Values.ToList())
+            {
+                if (item == null || item.Deleted)
+                    continue;
+
+                if (item is AutomatedEventSystem aes)
+                {   // the AES kept the default offset, -8
+                    TimeSpan by = machine + TimeSpan.FromHours(8);
+                    if (by == TimeSpan.Zero)
+                        continue;
+                    aes.EventStartTime = V267Shift(aes.EventStartTime, by);
+                    aes.EventEndTime = V267Shift(aes.EventEndTime, by);
+                    aes.AnnounceTime = V267Shift(aes.AnnounceTime, by);
+                    aes.BroadcastTime = V267Shift(aes.BroadcastTime, by);
+                    aes.FinalCleanup = V267Shift(aes.FinalCleanup, by);
+                    fAction.SetValue(aes, V267Shift((DateTime)fAction.GetValue(aes)!, by));
+                    aes.BeginAction(TimeSpan.FromMinutes(1.0));         // its timer was set from the old action time
+                    patched++;
+                    EchoOut(string.Format("PatchV267: {0} 0x{1:X8}: times moved {2} h; starts {3}, ends {4}", aes.GetType().Name,
+                        aes.Serial.Value, by.TotalHours, V267Shown(aes.EventStartTime), V267Shown(aes.EventEndTime)), ConsoleColor.Magenta);
+                    continue;
+                }
+
+                // an Event held by this item (EventSpawner, EventTeleporter, Sungate, Moongate, FishController, ...)
+                if (!eventFields.TryGetValue(item.GetType(), out List<System.Reflection.FieldInfo>? fields))
+                {
+                    fields = new List<System.Reflection.FieldInfo>();
+                    for (Type? t = item.GetType(); t != null && t != typeof(object); t = t.BaseType)
+                        foreach (System.Reflection.FieldInfo f in t.GetFields(inst | System.Reflection.BindingFlags.DeclaredOnly))
+                            if (f.FieldType == typeof(Event))
+                                fields.Add(f);
+                    eventFields[item.GetType()] = fields;
+                }
+
+                foreach (System.Reflection.FieldInfo f in fields)
+                {
+                    if (f.GetValue(item) is not Event ev)
+                        continue;
+                    int offset = (int)fOffset.GetValue(ev)!;
+                    TimeSpan by = machine - TimeSpan.FromHours(offset);
+                    if (by == TimeSpan.Zero)
+                        continue;
+                    fStart.SetValue(ev, V267Shift((DateTime)fStart.GetValue(ev)!, by));
+                    fEnd.SetValue(ev, V267Shift((DateTime)fEnd.GetValue(ev)!, by));
+                    patched++;
+                    EchoOut(string.Format("PatchV267: {0} 0x{1:X8} at {2} ({3}): event times moved {4} h (its offset {5}); start {6}, end {7} ({8})",
+                        item.GetType().Name, item.Serial.Value, item.Location, item.Map, by.TotalHours, offset,
+                        ev.EventStart, ev.EventEnd, ev.Timezone), ConsoleColor.Magenta);
+                }
+            }
+
+            EchoOut(string.Format("PatchV267: {0} event(s) corrected.", patched), ConsoleColor.Magenta);
+
+            #endregion End Implementation
+            return patched;
+        }
+        // a saved event time moved by 'by' (MinValue / MaxValue and times within a day of them stay: they mean
+        //  "not set" / "never")
+        private static DateTime V267Shift(DateTime t, TimeSpan by)
+        {
+            if (t <= DateTime.MinValue.AddDays(1) || t >= DateTime.MaxValue.AddDays(-1))
+                return t;
+            return DateTime.SpecifyKind(t + by, DateTimeKind.Utc);
+        }
+        private static string V267Shown(DateTime utc)
+        {
+            return string.Format("{0} {1}", ShardClock.ToShard(utc), ShardClock.NameAt(utc));
+        }
+        #endregion PatchV267
+        #region PatchV268
+        private static int? PatchV268(int patchid)
+        {
+            if (!LoginServer(quiet: true))
+            {
+                int patched = 0, copies = 0;
+                #region Begin Implementation
+
+                // Songs credited "by MidiToAims" (11/8/26). MidiToAims wrote "# Author: MidiToAims" when the player left
+                //  "Arranged by" blank (fixed: no author line, and transcribing credits the transcriber), and named a song
+                //  after its MIDI file, underscores and all ("Stone_Temple_Pilots_-_Interstate_Love_Song"). Each library
+                //  song (any status) credited to MidiToAims, whose owner is a player, gets the owner's name as its author and
+                //  its underscores as spaces. The notes are untouched (a song's identity, here and in the shared music
+                //  database, is their hash); sheet music keeps its author as it plays (RolledUpSheetMusic.KeepsItsAuthor).
+                //  Copies of those songs in the world (bought, or the composer's own) are corrected the same way, matched
+                //  by the notes' hash. A song whose owner isn't a player here is left alone and reported.
+                Mobile? system = AimsHost.Current.SystemMobile;
+                Dictionary<int, (string Title, string Author)> corrected = new Dictionary<int, (string Title, string Author)>();
+
+                foreach (KeyValuePair<RolledUpSheetMusic, MusicLibrary.MusicInfo> kvp in MusicLibrary.Repository.ToList())
+                {
+                    RolledUpSheetMusic rsm = kvp.Key;
+                    MusicLibrary.MusicInfo info = kvp.Value;
+                    if (rsm == null || rsm.Deleted || info == null || !V268ByTool(rsm.Author))
+                        continue;
+
+                    Mobile? owner = info.Owner ?? rsm.Owner;
+                    if (owner == null || owner.Deleted || !owner.Player || owner == system || string.IsNullOrWhiteSpace(owner.Name))
+                    {
+                        EchoOut(string.Format("PatchV268: '{0}' (0x{1:X}, {2}) is credited to MidiToAims but its owner isn't a player here; left as is.",
+                            rsm.Title, rsm.Serial.Value, info.Status), ConsoleColor.Yellow);
+                        continue;
+                    }
+
+                    string oldTitle = rsm.Title;
+                    V268Correct(rsm, owner.Name);
+                    corrected[rsm.HashCode] = (rsm.Title, rsm.Author);
+                    patched++;
+                    EchoOut(string.Format("PatchV268: '{0}' by MidiToAims ({1}) is now '{2}' by {3}.", oldTitle, info.Status, rsm.Title, rsm.Author),
+                        ConsoleColor.Magenta);
+                }
+
+                // the library's own sheets, by reference (sheet music is equal by the notes' hash: a copy "is" the master)
+                HashSet<RolledUpSheetMusic> masters = new HashSet<RolledUpSheetMusic>(MusicLibrary.Repository.Keys, ReferenceEqualityComparer.Instance);
+                if (corrected.Count > 0)
+                    foreach (Item item in World.Items.Values.ToList())
+                        if (item is RolledUpSheetMusic copy && !copy.Deleted && V268ByTool(copy.Author)
+                            && !masters.Contains(copy) && corrected.TryGetValue(copy.HashCode, out var song))
+                        {
+                            copy.Author = song.Author;
+                            copy.Title = song.Title;
+                            if (!string.IsNullOrEmpty(copy.SongName))
+                                copy.SongName = V268Spaces(copy.SongName);
+                            copies++;
+                        }
+
+                EchoOut(string.Format("PatchV268: {0} song(s) credited to MidiToAims corrected, and {1} cop{2} of them.", patched, copies,
+                    copies == 1 ? "y" : "ies"), ConsoleColor.Magenta);
+
+                #endregion End Implementation
+                return patched + copies;
+            }
+
+            return null;
+        }
+        private static bool V268ByTool(string? author)
+        {
+            return author != null && author.Trim().Equals("MidiToAims", StringComparison.OrdinalIgnoreCase);
+        }
+        private static void V268Correct(RolledUpSheetMusic rsm, string author)
+        {
+            rsm.Author = author;
+            rsm.Title = V268Spaces(rsm.Title);
+            if (!string.IsNullOrEmpty(rsm.SongName))
+                rsm.SongName = V268Spaces(rsm.SongName);
+        }
+        // a MIDI file's name as a title: underscores as spaces, one space between words (as MidiToAims's DefaultSong)
+        private static string V268Spaces(string? title)
+        {
+            return string.Join(" ", (title ?? "").Replace('_', ' ').Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        }
+        #endregion PatchV268
+        #region PatchV269
+        private static int? PatchV269(int patchid)
+        {
+            // Upheaval only, and only where shopkeepers can be killed: before Publish 4 they're invulnerable
+            //  (Core.RuleSets.BaseVendorInvulnerability), so a banker's head can't be had.
+            //
+            // NOTE for the reviewer: Publish 4 also says "if a shopkeeper is killed, a new shopkeeper will appear as soon as
+            //  another player approaches", which would undo a long respawn. It doesn't apply here: BaseVendor.OnDeath skips it
+            //  under MortalisStyleRules (Upheaval among them), and the spawner's memory for it (Spawner.BadGuys) exists only on
+            //  Siege (PUBLISH_4_SIEGE). If either changes, bankers come back early and banker heads lose their pace.
+            if (LoginServer(quiet: true) || !Core.RuleSets.UpheavalRules() || PublishInfo.Publish < 4)
+                return null;
+
+            // the districts are known once the territory system has loaded; until then, try again at the next start
+            if (!TerritoryConfig.Enabled || !TerritorySystem.Initialized)
+                return null;
+
+            int patched = 0;
+            #region Begin Implementation
+
+            // the bankers' pace, district by district (Patches201_300\BankerPace.cs: running banker spawners x 1 hour)
+            foreach (string line in BankerPace.Apply(apply: true, out patched))
+                EchoOut("PatchV269: " + line, ConsoleColor.Magenta);
+
+            // and the bankers standing in the world replaced by bankers born armed (11/10/26: Upheaval's bankers fight)
+            List<string> rearmed = new List<string>();
+            patched += BankerPace.Rearm(rearmed);
+            foreach (string line in rearmed)
+                EchoOut("PatchV269: " + line, ConsoleColor.Magenta);
+
+            #endregion End Implementation
+            return patched;
+        }
+        #endregion PatchV269
+        #region PatchV270
+        private static int? PatchV270(int patchid)
+        {
+            // Where each song was composed (11/14/26): Songs.origin in the shared music database, for the website's music
+            //  catalog ("composed on"; a song's home is untouched). Once, from the login server: the database is every
+            //  shard's, so no shard's world is involved, and the login server is the one that publishes the catalog.
+            //  The rule is [MusicShare origins' (MusicShare.ChooseOrigins): the oldest shard in the lineage (Angel Island ->
+            //  Siege Perilous -> Mortalis -> Seasons -> Upheaval: each shard's world began as a copy of the one before) whose
+            //  library collected at seeding (Candidates) held the song; a song collected nowhere was composed at its home.
+            //  Reviewed against a copy of the database 11/14/26 (Angel Island 27, Siege Perilous 88, Mortalis 8, Upheaval
+            //  9). Only origins that differ from the rule are written, so a second run changes nothing.
+            //  Without a seeded database, or with no collected libraries (the rule would give every song its home), it
+            //  does nothing and tries again at the next start.
+            if (!LoginServer(quiet: true))
+                return null;
+
+            bool? seeded = MusicShareDatabase.IsSeeded();
+            List<SongRow>? songs = seeded == true ? MusicShareDatabase.GetSongs() : null;
+            List<(string Shard, SongRow Row, long LastLogin)>? candidates = seeded == true ? MusicShareDatabase.GetCandidates() : null;
+            if (songs == null || candidates == null || candidates.Count == 0)
+            {
+                EchoOut(string.Format("PatchV270: {0}; songs' origins not set (next start).",
+                    seeded == null ? "no shared music database at " + MusicShareDatabase.DatabasePath
+                    : seeded == false ? "the shared music database isn't seeded"
+                    : songs == null || candidates == null ? "the shared music database couldn't be read"
+                    : "the shared music database has no collected libraries (Candidates)"), ConsoleColor.Yellow);
+                return null;
+            }
+
+            int patched = 0;
+            #region Begin Implementation
+
+            List<(SongRow Row, string Origin, string Why)> choices = MusicShare.ChooseOrigins(songs, candidates);
+            List<(int, string)> changed = choices.Where(c => c.Row.Origin != c.Origin).Select(c => (c.Row.Hash, c.Origin)).ToList();
+            if (changed.Count > 0)
+            {
+                patched = MusicShareDatabase.SetOrigins(changed);
+                if (patched < 0)
+                {
+                    EchoOut("PatchV270: the shared music database couldn't be written; songs' origins not set (next start).", ConsoleColor.Red);
+                    return null;
+                }
+            }
+            string summary = string.Format("PatchV270: where each song was composed: {0} songs ({1}); {2} set.", choices.Count,
+                string.Join(", ", choices.GroupBy(c => c.Origin).Select(g => MusicShare.ShardName(g.Key) + " " + g.Count())), patched);
+            EchoOut(summary, ConsoleColor.Magenta);
+            AimsHost.Current.WriteLog(MusicShare.LogFile, null, new object[] { summary });
+
+            #endregion End Implementation
+            return patched;
+        }
+        #endregion PatchV270
         #region Helpers
         #region PatchV212
         private static bool HasLeadingOrTrailingWhitespace(string s)

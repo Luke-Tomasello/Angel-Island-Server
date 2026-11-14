@@ -1,0 +1,57 @@
+# Author: Jocelyn
+# Song: Groundhog Day - Phil's Piano Solo
+# Instrument: Harp
+# Prefetch: True
+# NewTimer: True
+# Tempo: 0
+# ConcertMode: True
+# Price: 2000
+# Napster: False
+say '[play v20' 
+wait 1000
+say '[play +fh g .19 +fh g .19 +eh b .19 +as b .19 +dh dh .19 +dh dh .19 eh .19 +a dh .19' 
+say '[play +fh g .19 +fh g .19 +eh b .19 +as b .19 +dh dh .19 dh .19 eh .19 +a dh .19' 
+say '[play +fh g .19 +fh g .19 +eh b .19 +as b .19 +dh dh .19 +dh dh .19 eh .19 +a dh .19' 
+say '[play +fh g .19 +fh g .19 +eh b .19 +as b .19 +dh dh .19 dh .19 eh .19 +a dh .19' 
+say '[play +fh c .19 +dh c .19 +eh eh .19 +f eh .19 +dh gh .19 +dh gh .19 ah .19 gh .19' 
+say '[play +fh c .19 +fh c .19 +eh eh .19 +f eh .19 +d gh .19 gh .19 ah .12 gh .13 c .13' 
+say '[play +fh g .19 +fh g .19 +eh b .19 +as b .19 +dh dh .19 +dh dh .19 eh .19 +a dh .19' 
+say '[play +ash g .19 +ash g .19 +ah b .19 +gh b .19 dh .19 +dh dh .19 eh .19 +c dh .19' 
+say '[play +ah dh .19 +ah dh .19 fsh .19 +ah fsh .19 ah .19 +ah ah .19 bh .19 +a ah .19' 
+say '[play +ash c .19 c .19 +ah eh .19 +c eh .19 +gh gh .19 +gh gh .19 +eh ah .19 gh .19' 
+say '[play +fh g .19 +fh g .19 +eh b .19 +eh b .19 +dh dh .19 +dh dh .19 +g eh .19 +g dh .19' 
+say '[play d .19 +dh d .19 d .19 +dh d .19 d .19 +dh d .19 +dh d .19 0.20' 
+say '[play g .10 +gh .06 g .05 +g .11 +a b .10 +as .06 b .05 +b .11 +fh dh .19 dh .19 +eh eh .19 +dh dh .19' 
+say '[play +dh g .19 +gh g .19 b .19 +gh b .19 dh .19 +gh dh .19 eh .19 dh .19' 
+say '[play g .10 +gh .07 g .04 +g .11 +a b .10 +as .07 b .04 +a .11 +fh dh .10 +fh .07 dh .04 +fh .11 +eh eh .19 +dh dh .19' 
+say '[play +dh g .19 +gh gh .19 a .19 +gh ah .19 as .19 +gh ash .19 b .19 bh .19' 
+say '[play c .10 +gh .07 c .04 +g .11 +a eh .10 +as .07 eh .04 +a .11 +fh gh .10 +fh .07 gh .04 +fh .11 +eh ah .19 +dh gh .19' 
+say '[play +dh c .19 +gh c .19 +gh eh .19 +gh eh .19 +gh gh .19 gh .19 ah .19 gh .19' 
+say '[play g .10 +gh .07 g .04 +g .11 +a b .10 +as .07 b .04 +a .11 +fh dh .10 +fh .07 dh .04 +fh .11 +eh eh .19 +dh dh .19' 
+say '[play +dh g .19 +gh g .19 b .19 +gh b .19 dh .19 +gh dh .19 eh .19 dsh .19' 
+say '[play +ash dh .09 +fh .09 +dh dh .09 +b .09 +ash fsh .09 +fh .09 +dh fsh .09 +b .09' 
+say '[play +ash ah .09 +fh .09 +dh ah .09 +b .09 +ash bh .09 +fh .09 +dh ah .09 +b .09' 
+say '[play +gh c .10 +c .07 c .04 +cs .11 +dh eh .10 +gh .07 eh .04 +g .11' 
+say '[play +as gh .10 +b .07 gh .04 +dh .11 +c ah .10 +cs .07 gh .04 +dh .11' 
+say '[play g .10 +gh .07 g .04 +a .11 +as b .10 +a .07 b .04 +dh .11 +eh dh .19 +dh dh .19 +gh eh .19 +cs dh .19' 
+say '[play +dh dh .10 +ash .07 dh .04 +dh .11 +bh dh .19 +ah dh .19' 
+say '+gh dh .19 +gh dh .19 +fh dh .19 +gh csh .19' 
+say '[play +cs g .10 +d .07 g .04 +ash .11 +ah b .10 +c .07 b .04 +gh .11' 
+say '[play +gh dh .19 +gh dh .19 eh .19 +g dh .19' 
+say '[play +cs g .10 +d .07 g .04 +ash .11 +ah b .10 +c .07 b .04 +gh .11' 
+say '[play +gh dh .19 +gh dh .19 eh .19 +g dh .19' 
+say '[play +gh g .10 +a .07 g .04 +as .11 +gh b .10 +g .07 b .04 +gh .11' 
+say '[play +g dh .10 +gh .07 dh .04 +c .11 +gh eh .10 +g .07 dh .04 +gh .11' 
+say '[play +cs c .10 +c .07 c .04 +ash .11 +ah eh .10 +c .07 eh .04 +gh .11' 
+say '[play +as gh .10 +fh .07 gh .04 +a .11 +e ah .10 +g .07 gh .04 +dh .11' 
+say '[play +f c .10 +c .07 c .04 +e .11 +as eh .10 +d .07 eh .04 +a .11' 
+say '[play +cl gh .10 +g .07 gh .04 +cl .11 +cl ah .10 +cl .07 gh .04 +g .11' 
+say '[play +ds g .10 +d .07 g .04 +g .11 +a b .10 +as .07 b .04 +b .11' 
+say '[play +d dh .10 +ds .07 dh .04 +e .11 +gh eh .10 +ah .07 dh .04 +ash .11' 
+say '[play g .10 +fh .07 g .04 +fsh .11 +gh b .10 +ah .07 b .04 +ash .11' 
+say '[play +bh dh .19 +bh dh .19 +ah eh .10 +gh .07 dsh .04 +ch .11' 
+say '[play +ch dh .10 +dh .07 dh .04 +ch .11 +dh dh .10 +ch .07 dh .04 +dh .11' 
+say '[play +ch dh .10 +dh .07 dh .04 +ch .11 +dh dh .10 +ch .07 cs .04 +dh .11' 
+say '[play +ch c .10 +dh .07 c .04 +ch .11 +dh c .10 +ch .07 c .04 +dh .11' 
+say '[play +gh c .10 +gh .07 as .04 +gh .11 +eh a .19 +gh gs .19' 
+say '[play +gh g .38' 
