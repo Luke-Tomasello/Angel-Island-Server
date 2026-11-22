@@ -22,8 +22,7 @@
 /* Scripts\Engines\Spawner\Spawner.Commands.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
  */
 
 using Server.Targeting;

@@ -22,6 +22,17 @@
 /* Misc/GoldTracker.cs
  * Created by Pixie.
  * ChangeLog:
+ *  11/19/26, Adam (bans asked only by the report)
+ *      GoldTotaller.Banned is bool? (null: not checked): the constructor no longer asks every account's ban (the
+ *      Wealthiest pass never uses it); the staff gold report asks when it marks banned accounts.
+ *  11/15/26, Adam (wealth, a little at a time)
+ *      The Wealthiest leaderboard counted every account's backpacks, banks and houses at once, every 5 minutes (190 ms
+ *      on Siege, growing with the world). WealthPass counts a few accounts per slice (Budget 20 ms each Interval 100 ms)
+ *      and keeps the last completed count (Last) for the board, so the board never empties mid-count. The counting is
+ *      shared with the [GoldTracker command (CountAccount, AddVendors, Sorted), which still counts at once.
+ *      House worth: GetDeed makes a real deed item to read its price; the price is remembered per house for an hour
+ *      (HouseWorth; staff may reprice static houses) instead of a deed per house per count. DeedsMade counts them.
+ *      A vendor whose owner's account isn't counted no longer stops the whole count (it threw).
  *  12/3/2025, Adam
  *      When dealing with BaseUpgradeContract, we no longer look directly at the Price field to calculate value, but instead
  *          use BaseVendor.PlayerPays() to calculate any markup (like for instance Siege 3x pricing)
@@ -78,7 +89,9 @@ using Server.Multis;
 using Server.Multis.Deeds;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Server.Misc
@@ -259,7 +272,9 @@ namespace Server.Misc
                             string bannedstr = "";
                             if (bIndicateBanned)
                             {
-                                if (gt.Banned)
+                                // asked only here, for this report (the leaderboard's pass never needs it)
+                                gt.Banned ??= Server.Engines.Restrictions.IsBanned(gt.AccountName);
+                                if (gt.Banned == true)
                                 {
                                     bannedstr = " **banned** ";
                                 }
@@ -310,8 +325,12 @@ namespace Server.Misc
 
         public static GoldTotaller[] GetSortedWealthArray(bool bSuppressStaff)
         {
-            Hashtable table = GetWealthTable(bSuppressStaff);
+            return Sorted(GetWealthTable(bSuppressStaff));
+        }
 
+        // the table's totals, the wealthiest first (GTComparer)
+        private static GoldTotaller[] Sorted(Hashtable table)
+        {
             ArrayList keys = new ArrayList(table.Keys);
             keys.Sort(new GTComparer(table));
 
@@ -326,7 +345,23 @@ namespace Server.Misc
             return goldTotallerArray;
         }
 
+        // everything at once (the [GoldTracker command); the leaderboard counts a little at a time (WealthPass)
         public static Hashtable GetWealthTable(bool bSupressStaff)
+        {
+            Hashtable table = NewTable(bSupressStaff);
+
+            foreach (Account acct in Accounts.Table.Values)
+            {
+                if (acct != null && table.ContainsKey(acct))
+                    CountAccount(acct, table);
+            }
+
+            AddVendors(table, bSupressStaff);
+            return table;
+        }
+
+        // a totaller for every account counted (staff suppressed when asked)
+        private static Hashtable NewTable(bool bSupressStaff)
         {
             Hashtable table = new Hashtable(Accounts.Table.Values.Count);
 
@@ -338,113 +373,236 @@ namespace Server.Misc
                 if ((bSupressStaff && acct.GetAccessLevel() > AccessLevel.Player) == false)
                     table.Add(acct, new GoldTotaller(acct));
             }
-
-            foreach (Account acct in Accounts.Table.Values)
-            {
-                if (acct == null)
-                    continue;
-
-                if ((bSupressStaff && acct.GetAccessLevel() > AccessLevel.Player) == false)
-                {
-                    TimeSpan timeSpan = TimeSpan.Zero;
-
-                    //iterate through characters:
-                    for (int i = 0; i < 5; ++i)
-                    {
-                        if (acct[i] != null)
-                        {
-                            PlayerMobile player = (PlayerMobile)acct[i];
-                            Container backpack = player.Backpack;
-                            BankBox bank = player.BankBox;
-                            int backpackgold = 0;
-                            int bankgold = 0;
-
-                            int housedeedcount = 0;
-                            int housedeedworth = 0;
-
-                            int housesworth = 0;
-
-                            // ignore Shard Owner (I own all the static houses in the custom housing area)
-                            if (player == World.GetAdminAcct())
-                                continue;
-
-                            //BACKPACK
-                            backpackgold = GetGoldInContainer(backpack);
-                            housedeedworth = GetHouseDeedsInContainer(backpack, ref housedeedcount);
-
-                            //BANK
-                            bankgold = GetGoldInContainer(bank);
-                            housedeedworth += GetHouseDeedsInContainer(bank, ref housedeedcount);
-
-                            //house?
-                            int housetotal = 0;
-                            ArrayList list = Multis.BaseHouse.GetHouses(player);
-                            for (int j = 0; j < list.Count; ++j)
-                            {
-                                if (list[j] is BaseHouse)
-                                {
-                                    BaseHouse? house = (BaseHouse?)list[j];
-                                    housesworth += (int)house.UpgradeCosts;
-                                    HouseDeed? hd = house.GetDeed();
-                                    if (hd != null && hd is SiegeTentBag == false && hd is TentBag == false)
-                                    {
-                                        housesworth += RealEstateBroker.ComputePriceFor(hd);
-                                        hd.Delete();
-                                    }
-                                    else if (hd != null)
-                                        hd.Delete();
-                                    housetotal += GetGoldInHouse(house);
-                                    housedeedworth += GetHouseDeedWorthInHouse(house, ref housedeedcount);
-                                }
-                            }
-
-                            GoldTotaller? acctGoldTotaller = table[acct] as GoldTotaller;
-
-                            //if the name in acctGoldTotaller is empty or this char's time is larger than the one stored.
-                            if (string.IsNullOrWhiteSpace(acctGoldTotaller.CharacterName) || player.GameTime > timeSpan)
-                            {
-                                acctGoldTotaller.CharacterName = player.Name;
-                                timeSpan = player.GameTime;
-                            }
-
-                            acctGoldTotaller.BackpackGold += backpackgold;
-                            acctGoldTotaller.BankGold += bankgold;
-                            acctGoldTotaller.HouseGold += housetotal;
-                            acctGoldTotaller.HouseCount += list.Count;
-                            acctGoldTotaller.CharacterCount += 1;
-                            acctGoldTotaller.HouseDeedCount += housedeedcount;
-                            acctGoldTotaller.HouseDeedWorth += housedeedworth;
-                            acctGoldTotaller.HousesWorth += housesworth;
-                        }
-                    }
-                }
-            }
-
-            foreach (Mobile wm in World.Mobiles.Values)
-            {
-                if (wm == null)
-                    continue;
-
-                if (wm is PlayerVendor)
-                {
-                    PlayerVendor? pv = wm as PlayerVendor;
-                    if (pv != null && pv.Owner != null)
-                    {
-                        Account? thisacct = pv.Owner.Account as Account;
-                        if (thisacct != null)
-                        {
-                            if ((bSupressStaff && thisacct.GetAccessLevel() > AccessLevel.Player) == false)
-                            {
-                                ((GoldTotaller)table[thisacct]).VendorCount += 1;
-                                ((GoldTotaller)table[thisacct]).VendorGold += pv.HoldGold;
-                            }
-                        }
-                    }
-                }
-            }
-
             return table;
         }
+
+        // one account's characters: backpack, bank and houses
+        private static void CountAccount(Account acct, Hashtable table)
+        {
+            TimeSpan timeSpan = TimeSpan.Zero;
+
+            //iterate through characters:
+            for (int i = 0; i < 5; ++i)
+            {
+                if (acct[i] is PlayerMobile player && !player.Deleted)
+                {
+                    Container backpack = player.Backpack;
+                    BankBox bank = player.BankBox;
+                    int backpackgold = 0;
+                    int bankgold = 0;
+
+                    int housedeedcount = 0;
+                    int housedeedworth = 0;
+
+                    int housesworth = 0;
+
+                    // ignore Shard Owner (I own all the static houses in the custom housing area)
+                    if (player == World.GetAdminAcct())
+                        continue;
+
+                    //BACKPACK
+                    backpackgold = GetGoldInContainer(backpack);
+                    housedeedworth = GetHouseDeedsInContainer(backpack, ref housedeedcount);
+
+                    //BANK
+                    bankgold = GetGoldInContainer(bank);
+                    housedeedworth += GetHouseDeedsInContainer(bank, ref housedeedcount);
+
+                    //house?
+                    int housetotal = 0;
+                    ArrayList list = Multis.BaseHouse.GetHouses(player);
+                    for (int j = 0; j < list.Count; ++j)
+                    {
+                        if (list[j] is BaseHouse house)
+                        {
+                            housesworth += (int)house.UpgradeCosts;
+                            housesworth += HouseWorth(house);
+                            housetotal += GetGoldInHouse(house);
+                            housedeedworth += GetHouseDeedWorthInHouse(house, ref housedeedcount);
+                        }
+                    }
+
+                    if (table[acct] is not GoldTotaller acctGoldTotaller)
+                        return;
+
+                    //if the name in acctGoldTotaller is empty or this char's time is larger than the one stored.
+                    if (string.IsNullOrWhiteSpace(acctGoldTotaller.CharacterName) || player.GameTime > timeSpan)
+                    {
+                        acctGoldTotaller.CharacterName = player.Name;
+                        timeSpan = player.GameTime;
+                    }
+
+                    acctGoldTotaller.BackpackGold += backpackgold;
+                    acctGoldTotaller.BankGold += bankgold;
+                    acctGoldTotaller.HouseGold += housetotal;
+                    acctGoldTotaller.HouseCount += list.Count;
+                    acctGoldTotaller.CharacterCount += 1;
+                    acctGoldTotaller.HouseDeedCount += housedeedcount;
+                    acctGoldTotaller.HouseDeedWorth += housedeedworth;
+                    acctGoldTotaller.HousesWorth += housesworth;
+                }
+            }
+        }
+
+        // the player vendors' gold, by their owners' accounts
+        private static void AddVendors(Hashtable table, bool bSupressStaff)
+        {
+            foreach (Mobile wm in World.Mobiles.Values)
+            {
+                if (wm is PlayerVendor pv && pv.Owner != null && pv.Owner.Account is Account thisacct)
+                {
+                    if ((bSupressStaff && thisacct.GetAccessLevel() > AccessLevel.Player) == false && table[thisacct] is GoldTotaller gt)
+                    {
+                        gt.VendorCount += 1;
+                        gt.VendorGold += pv.HoldGold;
+                    }
+                }
+            }
+        }
+
+        #region House worth
+        // What a house would sell back for: its deed's price (RealEstateBroker: Siege's markup; tents are worth nothing).
+        //  The price comes from a deed, and GetDeed makes a real one (an item in the world, deleted at once), so each
+        //  house's price is remembered for an hour (staff may reprice static houses) instead of a deed per house per count.
+        public static readonly TimeSpan HouseWorthKept = TimeSpan.FromHours(1);
+        private static readonly Dictionary<BaseHouse, (int Worth, DateTime Utc)> m_HouseWorth = new Dictionary<BaseHouse, (int, DateTime)>(ReferenceEqualityComparer.Instance);
+
+        /// <summary>Deeds made to price houses since the server started (for harnesses: a remembered price makes none).</summary>
+        public static int DeedsMade { get; private set; }
+
+        public static int HouseWorth(BaseHouse house)
+        {
+            if (m_HouseWorth.TryGetValue(house, out var known) && DateTime.UtcNow - known.Utc < HouseWorthKept)
+                return known.Worth;
+
+            int worth = 0;
+            HouseDeed? hd = house.GetDeed();
+            DeedsMade++;
+            if (hd != null && hd is SiegeTentBag == false && hd is TentBag == false)
+                worth = RealEstateBroker.ComputePriceFor(hd);
+            hd?.Delete();
+            m_HouseWorth[house] = (worth, DateTime.UtcNow);
+            return worth;
+        }
+
+        // houses that are gone, or whose price is old, are forgotten
+        private static void PruneHouseWorth()
+        {
+            DateTime now = DateTime.UtcNow;
+            foreach (BaseHouse house in m_HouseWorth.Where(kv => kv.Key.Deleted || now - kv.Value.Utc >= HouseWorthKept).Select(kv => kv.Key).ToList())
+                m_HouseWorth.Remove(house);
+        }
+        #endregion House worth
+
+        #region WealthPass
+        // The leaderboard's count, a little at a time: a pass counts accounts for at most Budget each Interval, so no
+        //  single count holds the main thread up (counting everything at once took 190 ms on Siege, every 5 minutes, and
+        //  grows with the world). When every account is counted, the vendors are added and the totals sorted: that is
+        //  Last, the board's numbers until the next pass ends. Gold that moves between accounts during a pass may be
+        //  counted twice or missed for that pass: a leaderboard can live with that.
+        public static class WealthPass
+        {
+            public static readonly TimeSpan Budget = TimeSpan.FromMilliseconds(20);
+            public static readonly TimeSpan Interval = TimeSpan.FromMilliseconds(100);
+
+            private static Hashtable? m_Table;
+            private static List<Account> m_Accounts = new List<Account>();
+            private static int m_Next;
+            private static bool m_Suppress;
+            private static Timer? m_Timer;
+            private static int m_Slices;
+            private static double m_WorkMs, m_LongestMs;
+            private static DateTime m_StartedUtc;
+
+            /// <summary>The last completed count, the wealthiest first (null: none yet since the server started).</summary>
+            public static GoldTotaller[]? Last { get; private set; }
+            public static DateTime LastUtc { get; private set; }
+
+            /// <summary>The last completed pass: its slices and the longest one (ms).</summary>
+            public static int LastSlices { get; private set; }
+            public static double LastLongestSliceMs { get; private set; }
+
+            /// <summary>Called when a pass completes (the leaderboard shows the new numbers at once).</summary>
+            public static Action? Completed;
+
+            public static bool Running => m_Table != null;
+
+            /// <summary>Starts a pass, unless one is running. timer false: the caller steps it (harnesses).</summary>
+            public static void Start(bool suppressStaff, bool timer = true)
+            {
+                if (Running)
+                    return;
+                m_Suppress = suppressStaff;
+                m_Table = NewTable(suppressStaff);
+                m_Accounts = Accounts.Table.Values.OfType<Account>().Where(a => m_Table.ContainsKey(a)).ToList();
+                m_Next = 0;
+                m_Slices = 0;
+                m_WorkMs = m_LongestMs = 0;
+                m_StartedUtc = DateTime.UtcNow;
+                if (timer)
+                    m_Timer = Timer.DelayCall(TimeSpan.Zero, Interval, () => Step(Budget.TotalMilliseconds));
+            }
+
+            /// <summary>One slice: accounts counted until 'budgetMs' is used; the pass's end in a slice of its own. True: it completed.</summary>
+            public static bool Step(double budgetMs)
+            {
+                if (m_Table == null)
+                    return true;
+                long start = System.Diagnostics.Stopwatch.GetTimestamp();
+                bool finishing = m_Next >= m_Accounts.Count;
+                try
+                {
+                    if (finishing)
+                    {   // every account counted (in earlier slices): the vendors, the order, the board
+                        AddVendors(m_Table, m_Suppress);
+                        Last = Sorted(m_Table);
+                        LastUtc = DateTime.UtcNow;
+                        PruneHouseWorth();
+                    }
+                    else
+                        while (m_Next < m_Accounts.Count)
+                        {
+                            CountAccount(m_Accounts[m_Next++], m_Table);
+                            if (Elapsed(start) >= budgetMs)
+                                break;
+                        }
+                }
+                catch (Exception ex)
+                {   // a pass that fails is abandoned; the board keeps the last numbers
+                    LogHelper.LogException(ex, "GoldTracker.WealthPass");
+                    Stop();
+                    return true;
+                }
+                double ms = Elapsed(start);
+                m_Slices++;
+                m_WorkMs += ms;
+                m_LongestMs = Math.Max(m_LongestMs, ms);
+                Server.Engines.CronScheduler.Cron.RecordStat("Wealth pass slice", ms);
+                if (!finishing)
+                    return false;
+
+                LastSlices = m_Slices;
+                LastLongestSliceMs = m_LongestMs;
+                Server.Engines.CronScheduler.Cron.RecordStat("Wealth pass (all slices)", m_WorkMs);
+                Console.WriteLine("Wealth pass: {0} accounts in {1} slices ({2:0} ms of work over {3:0.0} s, longest slice {4:0} ms)",
+                    m_Accounts.Count, m_Slices, m_WorkMs, (DateTime.UtcNow - m_StartedUtc).TotalSeconds, m_LongestMs);
+                Stop();
+                try { Completed?.Invoke(); }
+                catch (Exception ex) { LogHelper.LogException(ex, "GoldTracker.WealthPass.Completed"); }
+                return true;
+            }
+
+            private static void Stop()
+            {
+                m_Timer?.Stop();
+                m_Timer = null;
+                m_Table = null;
+                m_Accounts = new List<Account>();
+            }
+
+            private static double Elapsed(long start) => (System.Diagnostics.Stopwatch.GetTimestamp() - start) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+        }
+        #endregion WealthPass
 
         private class GTComparer : System.Collections.IComparer
         {
@@ -498,7 +656,7 @@ namespace Server.Misc
 
             public string CharacterName;
 
-            public bool Banned;
+            public bool? Banned;            // null: not checked (only the staff report asks: see Report)
 
             public int CharacterCount = 0;
 
@@ -524,7 +682,6 @@ namespace Server.Misc
             public GoldTotaller(Account acct)
             {
                 this.AccountName = acct.Username;
-                this.Banned = acct.Banned;
             }
         }
 

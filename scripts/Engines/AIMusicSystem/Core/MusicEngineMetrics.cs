@@ -19,6 +19,10 @@
 
 /* Scripts/Engines/AIMusicSystem/Core/MusicEngineMetrics.cs
  * ChangeLog
+ *  11/14/26, Adam (stall causes)
+ *      A stall line says what caused it: the GC's pause time during it (measured, beside the collection counts) and,
+ *      on Angel Island (#if ANGEL_ISLAND), the slow main-thread work and cron tasks that ended inside it, each with
+ *      its time and length (was: cron's last 5 tasks, whenever they ran).
  *  11/6/26, Adam (2026 modernization, 10/26/26 to 11/6/26)
  *      Created. Measures the music engine without changing playback: note and tick lateness, timer and script
  *      activity, main-thread time, sessions, drift per engine run (actual against scored time) beside a plain 100 ms
@@ -148,6 +152,7 @@ namespace Server.Commands
         private static long s_probeLast;                            // Stopwatch time of the probe's previous tick
         private static int s_probeSaves;
         private static int s_gc0, s_gc1, s_gc2;                     // GC collection counts at the probe's previous tick
+        private static TimeSpan s_gcPause;                          // the GC's total pause time at the probe's previous tick
         public const double StallMs = 150;                          // a probe gap this late is a stall (logged)
         private static int s_saves;                                 // world saves so far (a save stalls every timer)
         // engine timers running per session (by reference: MusicContext is a record); a session can briefly have two
@@ -295,6 +300,7 @@ namespace Server.Commands
                 return;
             s_probeLast = 0;
             s_gc0 = GC.CollectionCount(0); s_gc1 = GC.CollectionCount(1); s_gc2 = GC.CollectionCount(2);
+            s_gcPause = GC.GetTotalPauseDuration();
             s_probe = Timer.DelayCall(ProbeInterval, ProbeInterval, OnProbe);
         }
         private static void StopProbe()
@@ -307,16 +313,19 @@ namespace Server.Commands
             long now = Stopwatch.GetTimestamp();
             bool saved = s_probeSaves != s_saves || World.Saving;
             int gc0 = GC.CollectionCount(0), gc1 = GC.CollectionCount(1), gc2 = GC.CollectionCount(2);
+            TimeSpan gcPause = GC.GetTotalPauseDuration();
             if (s_probeLast != 0)
             {
-                double late = LateMs(s_probeLast) - ProbeInterval.TotalMilliseconds;
+                double gap = LateMs(s_probeLast);
+                double late = gap - ProbeInterval.TotalMilliseconds;
                 if (!saved)
                     s_window.Probe.Add(late);
                 if (late > StallMs)
-                {   // a stall: what was the main thread doing?
+                {   // a stall: what was the main thread doing? (what ran since the previous probe tick)
                     s_window.Stalls++;
-                    AppendLog(string.Format("STALL {0:0} ms: world save {1}; GC during it gen0 +{2}, gen1 +{3}, gen2 +{4}; cron recent tasks (id, time) [{5}]",
-                        late, saved ? "yes" : "no", gc0 - s_gc0, gc1 - s_gc1, gc2 - s_gc2, CronRecentTasks()));
+                    AppendLog(string.Format("STALL {0:0} ms: world save {1}; GC during it gen0 +{2}, gen1 +{3}, gen2 +{4}, paused {5:0} ms; {6}",
+                        late, saved ? "yes" : "no", gc0 - s_gc0, gc1 - s_gc1, gc2 - s_gc2, (gcPause - s_gcPause).TotalMilliseconds,
+                        WhatRan(DateTime.UtcNow - TimeSpan.FromMilliseconds(gap))));
                 }
             }
             int depth;
@@ -331,14 +340,21 @@ namespace Server.Commands
             s_probeLast = now;
             s_probeSaves = s_saves;
             s_gc0 = gc0; s_gc1 = gc1; s_gc2 = gc2;
+            s_gcPause = gcPause;
         }
-        private static string CronRecentTasks()
+        // what ran on the main thread since 'utc' (the stall's start): Angel Island's slow-work record and cron's tasks
+        private static string WhatRan(DateTime utc)
         {
 #if ANGEL_ISLAND
-            try { return Server.Engines.CronScheduler.Cron.GetRecentTasks(); }
-            catch (Exception ex) { return "unavailable: " + ex.Message; }
+            try
+            {
+                return string.Format("slow work during it [{0}]; cron during it [{1}]",
+                    SlowWork.Describe(SlowWork.EndedSince(utc)),
+                    Server.Engines.CronScheduler.Cron.DescribeTasks(Server.Engines.CronScheduler.Cron.RecentTasks(utc)));
+            }
+            catch (Exception ex) { return "what ran: unavailable: " + ex.Message; }
 #else
-            return "unavailable";
+            return "what ran: unavailable";
 #endif
         }
         #endregion Reference probe

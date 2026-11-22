@@ -73,14 +73,16 @@ namespace Server.Misc
             }
 
             // No staff exemption, enforce normal limit.
-            if (list.Count < CoreAI.MaxAccountsPerIP)
+            // the shard's limit, or this address's IP exception here (Engines/Restrictions, 11/18/26)
+            int limit = Server.Engines.Restrictions.AccountLimit(ip);
+            if (list.Count < limit)
                 return true;
 
             // Grab a copy of the illegal accounts sharing this IP for reporting purposes.
             List<Accounting.Account> illegal = new(list);
 
             // Keep only the first N legal accounts (oldest first, per GetAccountsByIP contract).
-            list = list.Take(CoreAI.MaxAccountsPerIP).ToList();
+            list = list.Take(limit).ToList();
 
             // Remove legal accounts from the illegal set.
             foreach (Accounting.Account a in list)

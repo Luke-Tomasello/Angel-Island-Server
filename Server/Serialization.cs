@@ -21,6 +21,8 @@
 
 /* Server\Serialization.cs
  * Changelog
+ *  11/20/26, Adam (world save writer cleanup)
+ *      Allow scoped writer cleanup and release the file even when the final flush fails.
  *  1/8/2026, Adam
  *  Serialization.cs – Corrected and unified DateTime/DeltaTime serialization
    
@@ -285,11 +287,13 @@ namespace Server
         public abstract long Position { get; }
     }
 
-    public abstract class GenericWriter
+    public abstract class GenericWriter : IDisposable
     {
         public GenericWriter() { }
 
         public abstract void Close();
+
+        void IDisposable.Dispose() => Close();
 
         public abstract long Position { get; }
 
@@ -405,8 +409,14 @@ namespace Server
 
         public override void Close()
         {
-            Flush();
-            m_File.Close();
+            try
+            {
+                Flush();
+            }
+            finally
+            {
+                m_File.Dispose();
+            }
         }
 
         public override void WriteEncodedInt(int value)

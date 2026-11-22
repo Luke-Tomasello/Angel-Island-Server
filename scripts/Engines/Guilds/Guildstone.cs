@@ -21,6 +21,8 @@
 
 /* Engines/Guilds/Guildstone.cs
  * ChangeLog:
+ *  11/21/26, Adam (guild bans)
+ *      An accepted player banned since (theirs or a shared account's ban) is refused membership at the stone.
  *  4/30/23, Adam
  *      Added a NoResign property. This keeps the player in the guild indefinitely. 
  *  4/15/23, Yoar
@@ -432,6 +434,14 @@ namespace Server.Items
                 if (guildState != null && targetState != null)
                     targetState.LeaveBegin = guildState.LeaveBegin;
                 #endregion
+
+                // banned since they were accepted (theirs or a shared account's): no membership (11/21/26)
+                if (m_Guild.IsBannedMember(from) != Guild.GuildBanType.None)
+                {
+                    m_Guild.Accepted.Remove(from);
+                    from.SendMessage("You were banned from this guild.");
+                    return;
+                }
 
                 m_Guild.Accepted.Remove(from);
                 m_Guild.AddMember(from);

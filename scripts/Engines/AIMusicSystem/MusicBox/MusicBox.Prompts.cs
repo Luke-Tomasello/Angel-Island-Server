@@ -20,6 +20,8 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Prompts.cs
  * Changelog
+ *  11/15/26, Adam (the library)
+ *      A purchase redraws the buyer's library window, if it is open, so the song shows Owned at once (RefreshLibrary).
  *  11/14/26, Adam
  *      A sale is recorded by RecordSale (the buy prompt's bookkeeping, unchanged, so it can be tested alone). An
  *      imported song ([MusicImport) pays no one: no one here composed it, so its owner gets no gold, credit, sale notice
@@ -319,6 +321,9 @@ namespace Server.Items
                     m_musicBox.Say(string.Format("'{0}', added to your library.", m_rsm), hue: 54);
 
                     m_musicBox.RecordSale(from, m_rsm, m_price);
+
+                    // the library window, if open, shows it Owned now (MusicBox.LibraryGump.cs)
+                    m_musicBox.RefreshLibrary(from);
                 }
                 catch (Exception ex)
                 {

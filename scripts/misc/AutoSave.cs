@@ -21,6 +21,11 @@
 
 /* Script/Misc/AutoSave.cs
  * CHANGELOG:
+ *  11/20/26, Adam (cancel held autosaves)
+ *      Disabling automatic saves also drops an occurrence waiting for a break in playback.
+ *  11/20/26, Adam (stagger automatic world saves)
+ *      Pick a stable UTC slot from the shard name and port across its configured autosave interval.
+ *      Cron owns the interval and its next scheduled save.
  *  8/17/22, Adam
  *      Make Backup() public so we can call it from cron
  *  2/28/22, Adam,
@@ -60,22 +65,23 @@
 */
 
 using Server.Diagnostics;
+using Server.Engines.CronScheduler;
+using Server.Network;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace Server.Misc
 {
-    public class AutoSave : Timer
+    public static class AutoSave
     {
-        private static TimeSpan m_Delay = TimeSpan.FromMinutes(CoreAI.WorldSaveFrequency);
-        private static TimeSpan m_Warning = TimeSpan.Zero;
+        private static uint m_ShardHash;
+        private static bool m_ScheduleInitialized;
 
         public static void Initialize()
         {
-            // 2/28/22, Adam: Moving Auto save to CronTasks.cs
-            //  We keep the framework 'class AutoSave' as it still has useful functionality/checks
-            //new AutoSave().Start();
             CommandSystem.Register("SetSaves", AccessLevel.Administrator, new CommandEventHandler(SetSaves_OnCommand));
             CommandSystem.Register("SetDBSaves", AccessLevel.Administrator, new CommandEventHandler(SetDBSaves_OnCommand));
         }
@@ -104,7 +110,12 @@ namespace Server.Misc
         public static bool SavesEnabled
         {
             get { return m_SavesEnabled; }
-            set { m_SavesEnabled = value; }
+            set
+            {
+                m_SavesEnabled = value;
+                if (!value && m_ScheduleInitialized)
+                    Cron.CancelScheduled("AutoSave");
+            }
         }
 
         public static bool DBSavesEnabled
@@ -119,7 +130,7 @@ namespace Server.Misc
         {
             if (e.Length == 1)
             {
-                m_SavesEnabled = e.GetBoolean(0);
+                SavesEnabled = e.GetBoolean(0);
                 e.Mobile.SendMessage("Saves have been {0}.", m_SavesEnabled ? "enabled" : "disabled");
             }
             else
@@ -143,64 +154,53 @@ namespace Server.Misc
             }
         }
 
-        public AutoSave()
-            : base(m_Delay - m_Warning, m_Delay)
+        public static string ScheduleDescription
         {
-            Priority = TimerPriority.OneMinute;
+            get
+            {
+                Cron.CronJob? schedule = Cron.Find("AutoSave")?.Cronjob;
+                if (schedule?.NextRunUtc is not DateTime due)
+                    return "Unavailable";
+
+                string next = SavesEnabled ? ShardClock.ToShard(due).ToString("MM/dd HH:mm:ss") : "Disabled";
+                return $"{next} (offset +{schedule.IntervalOffset:c})";
+            }
         }
 
-        private static int m_iLastSaveFrequency = CoreAI.WorldSaveFrequency;
-        protected override void OnTick()
+        internal static bool SetInterval(int minutes)
         {
-            if (m_iLastSaveFrequency != CoreAI.WorldSaveFrequency)
-            {
-                // 2/28/22, Adam: Moving Auto save to CronTasks.cs
-                //  We keep the framework 'class AutoSave' as it still has useful functionality/checks
-                //this.Stop();
-                //m_Delay = TimeSpan.FromMinutes(CoreAI.WorldSaveFrequency);
-                //System.Console.WriteLine("Changing worldsave frequency from {0} to {1}", m_iLastSaveFrequency, CoreAI.WorldSaveFrequency);
-                //new AutoSave().Start();
-            }
-            m_iLastSaveFrequency = CoreAI.WorldSaveFrequency;
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minutes);
+            if (!Cron.UpdateInterval("AutoSave", TimeSpan.FromMinutes(minutes), ScheduleOffset(minutes)))
+                return false;
 
-            // don't do a save if he server is backing up
-            bool ServerBusy = false;
-            try
-            {
-                ServerBusy = System.Diagnostics.Process.GetProcessesByName("ntbackup").Length > 0;
-                if (ServerBusy)
-                    Console.WriteLine("World save skipped, server backup in progress.");
-            }
-            catch (Exception e)
-            {
-                LogHelper.LogException(e);
-                Console.WriteLine(e.ToString());
-            }
-
-            // final check to see if we should save
-            if (!m_SavesEnabled || AutoRestart.Restarting || ServerBusy)
-                return;
-
-            if (m_Warning == TimeSpan.Zero)
-            {
-                Save();
-            }
-            else
-            {
-                int s = (int)m_Warning.TotalSeconds;
-                int m = s / 60;
-                s %= 60;
-
-                if (m > 0 && s > 0)
-                    World.Broadcast(0x35, true, "The world will save in {0} minute{1} and {2} second{3}.", m, m != 1 ? "s" : "", s, s != 1 ? "s" : "");
-                else if (m > 0)
-                    World.Broadcast(0x35, true, "The world will save in {0} minute{1}.", m, m != 1 ? "s" : "");
-                else
-                    World.Broadcast(0x35, true, "The world will save in {0} second{1}.", s, s != 1 ? "s" : "");
-
-                Timer.DelayCall(m_Warning, new TimerCallback(Save));
-            }
+            CoreAI.WorldSaveFrequency = minutes;
+            return true;
         }
+
+        internal static void InitializeSchedule()
+        {
+            int port = Listener.EndPoints.FirstOrDefault()?.Port ?? 0;
+            string name = Core.RuleSets.LoginServerRules()
+                ? "Administrative"
+                : ServerList.Shards.FirstOrDefault(shard => shard.Port == port)?.Name ?? Core.PublicName;
+            m_ShardHash = GetShardHash(name, port);
+            m_ScheduleInitialized = true;
+            if (CoreAI.WorldSaveFrequency < 1)
+                CoreAI.WorldSaveFrequency = 30;
+        }
+
+        internal static uint GetShardHash(string name, int port)
+        {
+            // FNV-1a gives the same result across processes and runtime versions.
+            string identity = FormattableString.Invariant($"{name.ToLowerInvariant()}:{port}");
+            uint hash = 2166136261;
+            foreach (byte value in Encoding.UTF8.GetBytes(identity))
+                hash = unchecked((hash ^ value) * 16777619);
+
+            return hash;
+        }
+
+        internal static TimeSpan ScheduleOffset(int minutes) => TimeSpan.FromSeconds(m_ShardHash % (60L * minutes));
 
         public static void Save()
         {

@@ -20,6 +20,10 @@
 
 /* Scripts\Engines\AIMusicSystem\Compiler\MusicCompiler.cs
  * Changelog
+ *  11/16/26, Adam (directives)
+ *      Directive: the one reader of a song's directive lines ('# Song: ...'), for books, playing songs and MidiToAims.
+ *      A directive is named only at the start of its line (they were found anywhere in a line, so a line holding
+ *      'song:' or 'author:' in its text was read as that directive).
  *  10/30/26, Adam (2026 modernization)
  *      Initial creation. The music compiler: a composition book's sections, plays and repeats (gosub) are expanded
  *      into the plain script the player already plays (say '[play ...', wait, # comments) before an RSM is made or a
@@ -369,6 +373,26 @@ namespace Server.Items
             string newline = text.Contains("\r\n") ? "\r\n" : "\n";
             return string.Join(newline, text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None).Where(l => Classify(l, 0).Kind == Kind.Text));
         }
+
+        #region Directives
+        // a directive is a # line that starts with its name and a colon: '# Song: Creep (Radiohead)', '#Tempo:30'
+        private static readonly Regex s_directive = new Regex(@"^\s*#+\s*(?<name>[A-Za-z]+)\s*:(?<value>.*)$", RegexOptions.Compiled);
+
+        /// <summary>
+        /// A song's directive line ('# Song: ...', '# Author: ...', '# Tempo: 30'): its name (lower case, without the colon)
+        /// and its value (trimmed, every character kept: 'Prelude in C# minor'). Only the start of a line names a
+        /// directive, so the rest of it is just its value: '# About: a song: about lost love' is About, never Song. The
+        /// one reader for a book (ManuscriptPaper), a playing song (RazorInstrument) and MidiToAims (linked). False: not a
+        /// directive line. Every name is returned; each reader takes the ones it knows.
+        /// </summary>
+        public static bool Directive(string? line, out string name, out string value)
+        {
+            Match m = s_directive.Match(line ?? "");
+            name = m.Success ? m.Groups["name"].Value.ToLowerInvariant() : "";
+            value = m.Success ? m.Groups["value"].Value.Trim() : "";
+            return m.Success;
+        }
+        #endregion Directives
 
         #region Did you mean
         private static string DidYouMean(string name, IEnumerable<string> names)

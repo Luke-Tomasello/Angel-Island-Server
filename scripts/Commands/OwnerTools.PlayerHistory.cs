@@ -21,6 +21,8 @@
 
 /* Scripts\Commands\OwnerTools.PlayerHistory.cs
  * CHANGELOG
+ *  11/21/2026, Adam (CopyLayers / RestoreLayers)
+ *      CopyLayers and RestoreLayers moved here from Nuke (Nuke keeps only its standing commands).
  *  10/29/2026, Adam (BackpackTypes)
  *      Skip the empty piece after a backpack's last "; " (it reached ScriptCompiler.FindTypeByFullName("") and fired
  *      TypeTable's Debug assert when a Doppelganger died; Release skipped it).
@@ -132,7 +134,7 @@ namespace Server.Commands
             public string GuildAlignment = string.Empty;
             public int Str, Dex, Int;                   // raw (0: unknown)
             public string Skills = string.Empty;        // "Magery 100.0; EvalInt 95.5; " (base above zero)
-            public string Layers = string.Empty;        // Nuke.CopyLayers: "type, hue, layer; "
+            public string Layers = string.Empty;        // CopyLayers: "type, hue, layer; "
             public string Backpack = string.Empty;      // "type, hue, amount; " (containers flattened)
             public Dictionary<string, string> Extra = new();    // fields this version does not know: kept on rewrite
 
@@ -438,7 +440,7 @@ namespace Server.Commands
                 Str = pm.RawStr,
                 Dex = pm.RawDex,
                 Int = pm.RawInt,
-                Layers = Nuke.CopyLayers(pm),
+                Layers = CopyLayers(pm),
             };
 
             if (pm.Guild is Server.Guilds.Guild guild)
@@ -725,6 +727,95 @@ namespace Server.Commands
                 from.SendMessage(line);
                 Console.WriteLine(line);
             }
+        }
+
+        // A player's layers as text, "type, hue, layer; " per item worn (CopyLayers), and back onto a mobile (RestoreLayers).
+        //  Moved here from Nuke (11/21/2026).
+        public static void RestoreLayers(Mobile dest, string layers)
+        {
+            string[] table = layers.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (string sr in table)
+            {
+                string s = sr.Trim();
+                string[] attrs = s.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
+                if (attrs.Length != 3)
+                    continue;
+
+                string item_type = attrs[0].Trim();
+                int hue = int.Parse(attrs[1].Trim());
+                Layer layer = (Layer)Enum.Parse(typeof(Layer), attrs[2].Trim());
+
+                Item? item = null;
+                try
+                {
+                    if (ScriptCompiler.FindTypeByFullName(item_type) == typeof(RingmailGlovesOfMining))
+                        item = new RingmailGlovesOfMining(100);
+                    else if (ScriptCompiler.FindTypeByFullName(item_type) == typeof(StuddedGlovesOfMining))
+                        item = new StuddedGlovesOfMining(100);
+                    else
+                        item = (Item)Activator.CreateInstance(ScriptCompiler.FindTypeByFullName(item_type));
+                }
+                catch
+                {
+                    ;
+                }
+                if (item != null)
+                {
+                    item.Hue = hue;
+                    dest.AddItem(item);
+                }
+            }
+
+        }
+        public static string CopyLayers(Mobile src)
+        {
+            string result = string.Empty;
+            try
+            {
+                Item?[] items = new Item?[21];
+                items[0] = src.FindItemOnLayer(Layer.Shoes);
+                items[1] = src.FindItemOnLayer(Layer.Pants);
+                items[2] = src.FindItemOnLayer(Layer.Shirt);
+                items[3] = src.FindItemOnLayer(Layer.Helm);
+                items[4] = src.FindItemOnLayer(Layer.Gloves);
+                items[5] = src.FindItemOnLayer(Layer.Neck);
+                items[6] = src.FindItemOnLayer(Layer.Waist);
+                items[7] = src.FindItemOnLayer(Layer.InnerTorso);
+                items[8] = src.FindItemOnLayer(Layer.MiddleTorso);
+                items[9] = src.FindItemOnLayer(Layer.Arms);
+                items[10] = src.FindItemOnLayer(Layer.Cloak);
+                items[11] = src.FindItemOnLayer(Layer.OuterTorso);
+                items[12] = src.FindItemOnLayer(Layer.OuterLegs);
+                items[13] = src.FindItemOnLayer(Layer.InnerLegs);
+                items[14] = src.FindItemOnLayer(Layer.Bracelet);
+                items[15] = src.FindItemOnLayer(Layer.Ring);
+                items[16] = src.FindItemOnLayer(Layer.Earrings);
+                items[17] = src.FindItemOnLayer(Layer.OneHanded);
+                items[18] = src.FindItemOnLayer(Layer.TwoHanded);
+                items[19] = src.FindItemOnLayer(Layer.Hair);
+                items[20] = src.FindItemOnLayer(Layer.FacialHair);
+                for (int i = 0; i < items.Length; i++)
+                {
+                    if (items[i] != null)
+                    {
+                        string? item = items[i].GetType().FullName;
+                        string hue = items[i].Hue.ToString();
+                        string layer = items[i].Layer.ToString();
+                        result += string.Format($"{item}, {hue}, {layer}; ");
+                    }
+                }
+            }
+            catch (Exception exc)
+            {
+                LogHelper.LogException(exc);
+                System.Console.WriteLine("Send to Zen please: ");
+                System.Console.WriteLine("Exception caught in PlayerHistory.CopyLayers: " + exc.Message);
+                System.Console.WriteLine(exc.StackTrace);
+            }
+
+            return result;
         }
 
         [Usage("PlayerInfo")]

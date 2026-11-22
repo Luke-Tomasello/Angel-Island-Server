@@ -20,6 +20,13 @@
 
 /* Scripts\Engines\AIMusicSystem\Host\AimsHost.cs
  * Changelog
+ *  11/20/26, Adam (11/19/26 to 11/20/26)
+ *      FullPlays (default false): every library song plays in full for everyone and plays earn nothing.
+ *      Offer the host a turn before a playlist starts its next track.
+ *  11/14/26, Adam (arranged by)
+ *      Arranger: who arranged a library track, named after its author ("by Alice in Chains, arranged by Gud'Gul").
+ *      Default: its owner, the one paid for it, when the Author names someone else (not for an imported track, or one
+ *      SystemMobile holds). SameName and PlainName: names compared trimmed, spaces collapsed, any case.
  *  11/14/26, Adam (11/11/26 to 11/14/26)
  *      OnTrackApproved: a submitted track was approved (first approval or remaster), for a shard's own news.
  *      MusicImportDirectory: where [MusicImport reads song files (default: Data\Music Import). ImportOwner: who owns the
@@ -67,6 +74,9 @@ namespace Server
     public class AimsHost
     {
         private static AimsHost? m_Current;
+
+        /// <summary>Called between autoplay tracks, after the previous performance completes.</summary>
+        public virtual void BeforeAutoplay() { }
 
         /// <summary>The host in use: the shard's class derived from AimsHost if there is one, else the defaults.</summary>
         public static AimsHost Current
@@ -347,6 +357,15 @@ namespace Server
         #endregion Items
 
         #region Settings
+        /// <summary>
+        /// Every library song plays in full for everyone, Napster tracks too (no samples), and a play earns its composer
+        /// nothing: a place for learning music (the Angel Island Music Conservatory). Default: no.
+        /// </summary>
+        public virtual bool FullPlays
+        {
+            get { return false; }
+        }
+
         /// <summary>Is this a test server (staff test commands such as flushall)? Default: no.</summary>
         public virtual bool IsTestCenter
         {
@@ -412,6 +431,35 @@ namespace Server
         public virtual string? TrackNote(Mobile viewer, Misc.RolledUpSheetMusic song, Items.MusicLibrary.MusicInfo? info)
         {
             return null;
+        }
+
+        /// <summary>
+        /// Who arranged this library track, named after its author ("Rooster by Alice in Chains, arranged by Gud'Gul"):
+        /// the Author is credit text, while the gold from its sales goes to its owner, the one who made the sheet music.
+        /// Default: the owner's name, unless the Author already is it (any case and spacing), the Author is blank, the track
+        /// has no owner (or it is gone, or it is SystemMobile, holding it), or it was imported ([MusicImport: its owner only
+        /// keeps the record). Null: no arranger is named. Override to name someone else, or no one.
+        /// </summary>
+        public virtual string? Arranger(Misc.RolledUpSheetMusic song, Items.MusicLibrary.MusicInfo? info)
+        {
+            if (song == null || info == null || info.Imported || string.IsNullOrWhiteSpace(song.Author))
+                return null;
+            Mobile? owner = info.Owner;
+            if (owner == null || owner.Deleted || owner == SystemMobile || string.IsNullOrWhiteSpace(owner.Name) || SameName(owner.Name, song.Author))
+                return null;
+            return PlainName(owner.Name);
+        }
+
+        /// <summary>Two names are the same name: trimmed, runs of spaces as one, any letter case.</summary>
+        public static bool SameName(string? a, string? b)
+        {
+            return string.Equals(PlainName(a), PlainName(b), StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>A name trimmed, with runs of spaces as one.</summary>
+        public static string PlainName(string? name)
+        {
+            return string.Join(" ", (name ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries));
         }
 
         /// <summary>

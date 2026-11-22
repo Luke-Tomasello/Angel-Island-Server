@@ -21,11 +21,56 @@
 
 /* Scripts/Engines/Spawner/Spawner.cs
  * Changelog:
+ *  11/21/26, Adam (spawner history)
+ *      Restore the historical changelog entries to the modules they describe.
  *  5/25/2026, Adam
- * Historical changelog entries from 2004-present
- * have been moved to:
- *
- * Scripts/Engines/Spawner/History.txt
+ *      Consolidated the historical spawner changelog in a separate file.
+ *  12/15/2025, Adam (Nerun's Spawn())
+ *      Nerun mode now uses Classic-style streaming spawns instead of full batch refills.
+ *      Each tick spawns one creature per random interval, producing smoother, natural pacing.
+ *  6/25/2023, Adam (Dupe)
+ *      Unset and restore item's Parent before and after the dupe.
+ *      Duping an item with the parent set results in side effects, including in container overload.
+ *  11/18/22, Adam: (Respawn())
+ *      Add new function ReCalcEnd() to be called after a respawn to recalculate the NextSpawn.
+ *  8/30/22, Adam (Nerun's Distro spawner model)
+ *      Major rework of our spawner to support Nerun's Distro spawner model https://github.com/nerun/runuo-nerun-distro
+ *      Summary:
+ *      Our spawners work as they always have unless you enable the Nerun's compatibility mode.
+ *      When the spawner is operating in Nerun's compatibility mode, these are the differences:
+ *      1. Something from each cell is always spawned. As opposed to AI spawners where a single object from the spawn list is selected at random.
+ *      2. Support for colon delimited cell entries. This means a single spawner gump entry can look like: cat:rat:dog: etc. N of these are spawned, where N is the 'count' for that cell.
+ *      3. A 'per cell' count specifier. classic RunUO spawners have a single 'count' field that applies to every spawned item. Nerun's model has a 'count' for each entry (cell)
+ *  8/22/22, Adam
+ *      Don't try to spawn a template mobile if the m_TemplateMobile has been deleted
+ *  12/12/21, Adam
+ *      Add updating of QuickTables when a spawner is deleted.
+ *  11/8/21, Yoar
+ *      Added calls to Mobile.OnAfterSpawn, Item.OnAfterSpawn
+ *	2/23/10, Adam
+ *		Limit paragons to players using dragons or daemons to farm
+ *	10/28/08, plasma
+ *		Virtualised Spawn()
+ *	10/17/08, Adam
+ *		In OnDelete make sure to delete all templates!
+ *	8/28/07, Adam
+ *		Add a 10% chance to make the spawned creature a Paragon.
+ *		The actual decision is in BaseCreature, the spawner only creates the chance.
+ *  3/21/07, Adam (removed)
+ *      Add DynamicLootTypes for dynamic loot specification.
+ *  3/17/07, Adam
+ *      Split spawn into a Create function and a Move to world portion.
+ *      This is so we can have a public Factory method to create Template Mobiles and Items.
+ *	12/16/05, Adam
+ *		Warn if we're spawning stuff in a house.
+ *		This is a problem because the item will be orphaned by the spawner
+ *		which can lead to excessive item generation.
+ *  12/05/05, Kit
+ *		Spawner now calls Think() for creature if creature has a navdestination set.
+ *	12/29/04, Pix
+ *		Now spawned creatures contain the location of the spawner.
+ *  6/5/04, Pix
+ *		Merged in 1.0RC0 code.
  */
 
 using Server.Diagnostics;

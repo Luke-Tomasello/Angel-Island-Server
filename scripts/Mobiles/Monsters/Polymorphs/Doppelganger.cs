@@ -21,6 +21,8 @@
 
 /* Scripts\Mobiles\Monsters\Polymorphs\Doppelganger.cs
  * ChangeLog
+ *  11/21/2026, Adam
+ *      RestoreLayers moved from Nuke to PlayerHistory.
  *  10/29/2026, Adam
  *      The player history archive (OwnerTools.PlayerHistory.cs, Data\AIPlayerHistory): every Doppelganger is a player of
  *      our shards, past or present, from the archive; no one is copied live. The archive deals them out (well-played
@@ -212,7 +214,7 @@ namespace Server.Mobiles
                 return;     // no one to copy (the archive is empty)
 
             // the clothes, jewelry, everything, made from the record (type and hue)
-            Nuke.RestoreLayers(this, r.Layers);
+            PlayerHistory.RestoreLayers(this, r.Layers);
 
             // make sure they stay on the corpse
             DeNewbieLayers(this);

@@ -21,6 +21,12 @@
 
 /* Items/Deeds/NameChangeDeed.cs
  * ChangeLog:
+ *  11/18/26, Adam (names cleanup)
+ *      The per-shard Reserved Names is retired: no ReplaceName (which also refused a deed when that list didn't hold
+ *      the old name). The registry's claim is the only record.
+ *  11/17/26, Adam (family-wide names)
+ *      Every game shard checks the new name (was Mortalis and Seasons), and a player shard claims it in the family-wide
+ *      registry before the change (NameRegistry.Claim). The old name stays the account's there: names are never freed.
  *	8/26/07, Adam
  *		Double check that a name change is in your backpack when it is applied, this stops
  *		Players from getting the rename prompt and handing the deed to a friend.
@@ -232,14 +238,20 @@ namespace Server.Items
                 return;
             }
 
-            // -------- Mortalis/Seasons uniqueness enforcement --------
-            if (Core.RuleSets.MortalisStyleRules())
+            // -------- uniqueness: every game shard; family-wide on player shards (NameRegistry) --------
+            if (Core.RuleSets.UsesReservedNames())
             {
                 if (NameVerification.IsNameConflict(from, candidate, out var self))
                 {
                     from.SendMessage(self
                         ? "You are already using that name."
                         : "That name is already reserved by another account.");
+                    return;
+                }
+                // claimed before the change (the old name stays this account's: names are never freed)
+                if (NameRegistry.Enforced && NameRegistry.Claim(candidate, acct.Username) != NameRegistry.ClaimResult.Claimed)
+                {
+                    from.SendMessage("That name is already reserved by another account.");
                     return;
                 }
             }
@@ -254,8 +266,8 @@ namespace Server.Items
             }
             catch { } // ignore logging errors
 
-            // Relinquish old name and claim new name
-            ReservedNames.ReplaceName(acct, oldName, candidate);
+            // (the per-shard Reserved Names is retired 11/18/26: the new name was claimed in the registry above, and the
+            //  old one stays this account's there)
 
             // Optional: Update seasonal account
             if (updateSeasonalAccount)

@@ -12,6 +12,8 @@
 
 /* Scripts\Engines\DataRecorder\DataRecorder.cs
  * CHANGELOG:
+ * 11/16/26, Adam (-uomc)
+ *      No gold-sink statistics on the Music Conservatory either (free money; ComposerConveniences).
  *  4/5/2026, Adam
  *      Renamed LootGold → PvMLootGold for clarity (now clearly represents gold earned via PvM activities).
  *  1/27/22, Adam
@@ -314,7 +316,7 @@ namespace Server.Engines.DataRecorder
         }
         public static void GoldSink(Mobile m, object obj, int price)
         {
-            if (!Core.Debug && !Core.GMNTC_CFG)
+            if (!Core.Debug && !Core.RuleSets.ComposerConveniences())
                 if (m != null && m.AccessLevel > AccessLevel.Player)
                     return;
 

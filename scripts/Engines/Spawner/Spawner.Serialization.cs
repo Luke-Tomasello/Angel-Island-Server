@@ -22,8 +22,16 @@
 /* Scripts\Engines\Spawner\Spawner.Serialization.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *  8/25/22, Adam (NeedsReview = 0x04)
+ *      Update the flag value on this enum
+ *  7/16/21, Adam
+ *      Added two new variables (serialized) and one not.
+ *      m_isConcentric (serialized) Tells us if we should try to distribute spawn in concentric circles aound the spawner instead of tossing all spawn out to homerange
+ *      m_concentric (not serialized) The counter that shrinks the radius for spawn
+ *      m_coreSpawn (serialized) spawners listed here https://uo.stratics.com/hunters/spawn/spawnmap.jpg are considered core spawners. By tagging them, we can find them.
+ *  12/01/05, Kit
+ *		Added Serialization for NavDestination
  */
 
 using Server.Items;

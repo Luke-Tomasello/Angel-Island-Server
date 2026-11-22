@@ -19,6 +19,8 @@
 
 /* Scripts/Engines/Music/MusicCompositionBook.cs
  * Changelog
+ *  11/16/26, Adam (directives)
+ *      Paste names the book from the text's # Song: and # Author: lines as a book is read (MusicCompiler.Directive).
  *  11/5/26, Adam (2026 modernization, 10/30/26 to 11/5/26)
  *      Paste (context menu): a whole composition in one bulletin board post, wrapped as the client wraps it. Start /
  *      Stop to preview the book. At most 96 pages (MaxPages; a 300-page book crashed ClassicUO), a documented
@@ -202,11 +204,11 @@ namespace Server.Misc
                 Pages[p].Lines = book.Skip(p * LinesPerPage).Take(LinesPerPage).ToArray();
 
             // the cover, from the text's header (when the book has none of its own)
-            string? Header(string key) => text.Select(l => l.TrimStart('#', ' ', '\t')).Where(l => l.StartsWith(key, StringComparison.OrdinalIgnoreCase))
-                .Select(l => l.Substring(key.Length).Trim()).FirstOrDefault(v => v.Length > 0);
-            if ((string.IsNullOrWhiteSpace(Title) || Title == "Title") && Header("song:") is string song)
+            string? Header(string key) => text.Select(l => MusicCompiler.Directive(l, out string name, out string value) && name == key ? value : "")
+                .FirstOrDefault(v => v.Length > 0);
+            if ((string.IsNullOrWhiteSpace(Title) || Title == "Title") && Header("song") is string song)
                 Title = song;
-            if ((string.IsNullOrWhiteSpace(Author) || Author == "Author") && Header("author:") is string author)
+            if ((string.IsNullOrWhiteSpace(Author) || Author == "Author") && Header("author") is string author)
                 Author = author;
 
             from.SendMessage(0x40, "Wrote {0} lines into the book: it now fills {1} of its {2} pages. If the book is open, close it and open it again to see them.",

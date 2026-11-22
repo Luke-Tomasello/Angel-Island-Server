@@ -20,6 +20,14 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.ContextMenus.cs
  * Changelog
+ *  11/19/26, Adam (11/17/26 to 11/19/26)
+ *      Submit and remaster refuse sheet music with no music on it (RolledUpSheetMusic.HasMusic): nothing written, or
+ *      only '#' lines. Such a sheet's hash is shared by every one like it, so a library took it for another song.
+ *      A Public box offers Name to staff only: its name is how everyone speaks to it.
+ *  11/15/26, Adam (the composer's account; the library)
+ *      A track's composer (IsComposer: any character of their account) already has it: nothing to acquire.
+ *      Browse Library (Look At), for anyone, where the box works (LibraryOpen: locked down, or a minstrel's), as the
+ *      entries above (the library window, MusicBox.LibraryGump.cs: looking is free; its buttons check access).
  *  11/8/26, Adam (2026 modernization, 10/29/26 to 11/8/26)
  *      The context menu: Add Sheet Music (submit or remaster) and Name Music Box, shown only where the box works
  *      (CheckRights, as double-click and speech). A sheet that is playing stops when the box takes it (stored or deleted).
@@ -71,8 +79,15 @@ namespace Server.Items
             if (from.CheckAlive() && CheckRights(from, message: false) == Rights.okay)
             {
                 list.Add(new AddSheetMusicEntry(from, this, remaster: false));
-                list.Add(new NameMusicBoxEntry(from, this));
+                // a public box's name is how everyone speaks to it: only staff rename it
+                if (!Public || from.AccessLevel >= AccessLevel.GameMaster)
+                    list.Add(new NameMusicBoxEntry(from, this));
             }
+
+            // the library window: anyone may look where the box works (locked down; a minstrel's: carried), without the
+            //  access the entries above need (its buttons check access: MusicBox.LibraryGump.cs)
+            if (from.CheckAlive() && LibraryOpen)
+                list.Add(new BrowseLibraryEntry(from, this));
 
             SetSecureLevelEntry.AddTo(from, this, list);
         }
@@ -181,8 +196,8 @@ namespace Server.Items
                         return;
                     }
 
-                    // A songless sheet has no identity of its own: its hash is shared (empty composition) or meaningless.
-                    if (!rsm.HasComposition)
+                    // A songless sheet has no identity of its own: its hash is shared (nothing written, or only '#' lines).
+                    if (!rsm.HasMusic)
                     {
                         buyer.SendMessage("There is no music written on that sheet music.");
                         return;
@@ -240,7 +255,7 @@ namespace Server.Items
                             }
 
                             // If the player already has rights or is the owner, they already have access.
-                            if (m_musicBox.HasRights(buyer, rsm) || info.Owner == buyer)
+                            if (m_musicBox.HasRights(buyer, rsm) || IsComposer(buyer, rsm, info))
                             {
                                 buyer.SendMessage("You already have access to {0}.", rsm.Title);
                                 return;
@@ -371,6 +386,24 @@ namespace Server.Items
             {
                 if (rsm.IsInstancePlaying)
                     rsm.CancelPlayback(from);
+            }
+        }
+        // "Look At": the library window (MusicBox.LibraryGump.cs), for anyone within 5 tiles
+        private class BrowseLibraryEntry : ContextMenuEntry
+        {
+            private readonly Mobile m_From;
+            private readonly MusicBox m_musicBox;
+
+            public BrowseLibraryEntry(Mobile from, MusicBox musicbox)
+                : base(6121/*look at*/, 5)
+            {
+                m_From = from;
+                m_musicBox = musicbox;
+            }
+
+            public override void OnClick()
+            {
+                m_musicBox.OpenLibrary(m_From);
             }
         }
         private class NameMusicBoxEntry : ContextMenuEntry

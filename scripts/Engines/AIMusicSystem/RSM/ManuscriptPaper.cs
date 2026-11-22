@@ -19,6 +19,22 @@
 
 /* Scripts/Engines/Music/ManuscriptPaper.cs
  * Changelog
+ *  11/17/26, Adam (music to play)
+ *      Make refuses a text with no music in it (RolledUpSheetMusic.HasMusicIn: only '#' lines, such as a header): it
+ *      plays nothing, and its hash is every such text's. Its message says why a line of music can vanish: in a book, a
+ *      line that doesn't start with '#', say or wait continues the line before it (book wrap), so '[play ...' right
+ *      after a '#' line becomes part of that comment. A '[say' (a '[' before say, a common slip) is refused with its own
+ *      hint: the player skips a line that doesn't start with '#', say or wait, and after a '#' line it's swallowed too.
+ *      So any line the player would skip is refused, quoted, with the hint: '[play ...' without say played nothing,
+ *      silently, and made a sheet that played nothing.
+ *      A song's title and author are trimmed (a book titled ' Pachelbel' made a library song with a leading space).
+ *      Its graphic note says why it isn't 0xEF3 (the client sends that double-click as an old-scroll command).
+ *  11/16/26, Adam (directives; About and Tags)
+ *      ProcessDirectives reads each line with MusicCompiler.Directive: a directive is named only at the start of its
+ *      line, so text holding 'song:' or 'author:' is never read as one. A value keeps every character (a # in an author
+ *      too). # Price: is read by its own name (the code removed "place:", a typo; the number was found anyway).
+ *      A song's # About: (60 characters at most) and # Tags: (10 tags, 100 characters) are checked as it is made, and
+ *      its tags written back tidied ("rock, 90s"); they stay in its notes (RolledUpSheetMusic.About, Tags).
  *  11/14/26, Adam
  *      Text to sheet music (compile, directives, hash) is one method (Make), shared by a book and a song file
  *      (SheetFromText, for [MusicImport): a file makes exactly what the same text pasted into a book makes, with no Music
@@ -80,7 +96,10 @@ namespace Server.Items
 
         [Constructable]
         public ManuscriptPaper(int amount)
-            : base(0xE34 /*0xEF3 has magically odd behavior*/)
+            // not 0xEF3: the client treats 0xEF3 - 0xEF9 as old-style magic scrolls and sends their double-click as an
+            //  "old scroll" text command (0x12, type 0x2F; PacketHandlers ignores it), never as a double-click (0x06),
+            //  so OnDoubleClick never runs
+            : base(0xE34)
         {
             Stackable = true;
             Weight = 1.0;
@@ -373,6 +392,35 @@ namespace Server.Items
                 directives ??= compiled.Source;
                 lines = compiled.Text;
 
+                // a common slip, '[say '[play ...' (a '[' before say): the player skips the line (it starts with none of
+                //  '#', say, wait), and right after a '#' line it's part of that comment
+                if (lines.IndexOf("[say ", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    say(-1, string.Format("{0}{1} has '[say' in it: write say '[play ...' (no '[' before say).",
+                        char.ToUpper(what[0]), what.Substring(1)));
+                    return null;
+                }
+
+                // a line the player skips (it reads '#', say and wait lines; anything else, silently not): '[play ...'
+                //  without say is the usual one, and played nothing
+                string? skipped = lines.Split('\n').Select(l => l.Trim()).FirstOrDefault(l => l.Length > 0 && !l.StartsWith("#")
+                    && !l.StartsWith("say", StringComparison.OrdinalIgnoreCase) && !l.StartsWith("wait", StringComparison.OrdinalIgnoreCase));
+                if (skipped != null)
+                {
+                    say(-1, string.Format("{0}{1} has a line the player skips: {2}. Write music as say '[play ...' (and pauses as " +
+                        "wait, comments with #).", char.ToUpper(what[0]), what.Substring(1),
+                        skipped.Length > 40 ? skipped.Substring(0, 40) + "..." : skipped));
+                    return null;
+                }
+
+                // nothing to play (only '#' lines: a header, comments): not a song, and its hash would be every such text's
+                if (!RolledUpSheetMusic.HasMusicIn(lines))
+                {
+                    say(-1, string.Format("{0}{1} has no music in it: only '#' lines. A line of music right after a '#' line " +
+                        "needs say in front (say '[play ...'), or it's read as part of that line.", char.ToUpper(what[0]), what.Substring(1)));
+                    return null;
+                }
+
                 // check for constructs not supported by current music karma
                 if (composer && CheckValidKarma(owner, lines) == false)
                 {
@@ -388,6 +436,9 @@ namespace Server.Items
                     title = songTitle;
                 if (!string.IsNullOrEmpty(songAuthor))
                     author = songAuthor;
+                // no spaces around the title or the author (a book titled ' Pachelbel')
+                title = title?.Trim();
+                author = author?.Trim();
                 // underscores read as spaces ('Alice_In_Chains_-_Rooster', a MIDI file's name that older MidiToAims
                 //  used as the title); the same rule as MidiToAims's DefaultSong
                 if (title != null && title.Contains('_'))
@@ -420,6 +471,16 @@ namespace Server.Items
                     say(-1, "You cannot charge for Napster music.");
                     return null;
                 }
+                // # About: and # Tags: (RolledUpSheetMusic.About, Tags: read from the notes, kept there); the tags are
+                //  written back tidied ("rock, 90s")
+                string about = RolledUpSheetMusic.NotesLine(lines, "about"), tags = RolledUpSheetMusic.NotesLine(lines, "tags");
+                if (RolledUpSheetMusic.DescriptionProblem(about, tags) is string problem)
+                {
+                    say(-1, problem);
+                    return null;
+                }
+                if (RolledUpSheetMusic.TidyTags(tags) != tags)
+                    lines = RolledUpSheetMusic.WithNotesLine(lines, "Tags", RolledUpSheetMusic.TidyTags(tags));
 
                 RolledUpSheetMusic rsm = new RolledUpSheetMusic(owner, TonalQuality(instrument), author, title, price, lines);
                 rsm.HashCode = CompileHashCode(lines, false);
@@ -675,94 +736,26 @@ namespace Server.Items
                 prefetch = false;
                 napster = false;
                 concertmode = false;
+                // a directive is named at the start of its line only (MusicCompiler.Directive): the rest is its value
                 foreach (var line in lines.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    if (line.ToLower().Contains("author:"))
+                    if (!MusicCompiler.Directive(line, out string name, out string value))
+                        continue;
+                    switch (name)
                     {
-                        author = line;
-                        author = author.Replace("#", "");
-                        author = author.Replace("author:", "", StringComparison.CurrentCultureIgnoreCase).Trim();
-                    }
-                    else if (line.ToLower().Contains("napster:"))
-                    {
-                        string sx;
-                        sx = line;
-                        sx = sx.Replace("#", "");
-                        sx = sx.Replace("napster:", "", StringComparison.CurrentCultureIgnoreCase).Trim();
-                        string resultString = Regex.Match(sx, @"true", RegexOptions.IgnoreCase).Value;
-                        if (bool.TryParse(resultString, out napster) == false)
-                            napster = false;
-                    }
-                    else if (line.ToLower().Contains("prefetch:"))
-                    {
-                        string sx;
-                        sx = line;
-                        sx = sx.Replace("#", "");
-                        sx = sx.Replace("prefetch:", "", StringComparison.CurrentCultureIgnoreCase).Trim();
-                        string resultString = Regex.Match(sx, @"true", RegexOptions.IgnoreCase).Value;
-                        if (bool.TryParse(resultString, out prefetch) == false)
-                            prefetch = false;
-                    }
-                    else if (line.ToLower().Contains("concertmode:"))
-                    {
-                        string sx;
-                        sx = line;
-                        sx = sx.Replace("#", "");
-                        sx = sx.Replace("concertmode:", "", StringComparison.CurrentCultureIgnoreCase).Trim();
-                        string resultString = Regex.Match(sx, @"true", RegexOptions.IgnoreCase).Value;
-                        if (bool.TryParse(resultString, out concertmode) == false)
-                            concertmode = false;
-                    }
-                    else if (line.ToLower().Contains("newtimer:"))
-                    {
-                        string sx;
-                        sx = line;
-                        sx = sx.Replace("#", "");
-                        sx = sx.Replace("newtimer:", "", StringComparison.CurrentCultureIgnoreCase).Trim();
-                        string resultString = Regex.Match(sx, @"true", RegexOptions.IgnoreCase).Value;
-                        if (bool.TryParse(resultString, out newTimer) == false)
-                            newTimer = false;
-                    }
-                    else if (line.ToLower().Contains("tempo:"))
-                    {
-                        string sx;
-                        sx = line;
-                        sx = sx.Replace("#", "");
-                        sx = sx.Replace("tempo:", "", StringComparison.CurrentCultureIgnoreCase).Trim();
-                        string resultString = Regex.Match(sx, @"\d+").Value;
-                        if (int.TryParse(resultString, out tempo) == false)
-                            tempo = Commands.SystemMusicPlayer.DefaultTempo;
-                    }
-                    else if (line.ToLower().Contains("instrument:"))
-                    {
-                        instrument = line;
-                        instrument = instrument.Replace("#", "");
-                        instrument = instrument.Replace("instrument:", "", StringComparison.CurrentCultureIgnoreCase).Trim();
-                    }
-                    else if (line.ToLower().Contains("price:"))
-                    {
-                        string sx;
-                        sx = line;
-                        sx = sx.Replace("#", "");
-                        sx = sx.Replace("place:", "", StringComparison.CurrentCultureIgnoreCase).Trim();
-                        string resultString = Regex.Match(sx, @"\d+").Value;
-                        if (int.TryParse(resultString, out price) == false)
-                            price = 0;
-                    }
-                    else if (line.ToLower().Contains("song:"))
-                    {   // only the '# Song:' marker goes: a # in the title stays ('Prelude in C# minor')
-                        Match m = s_songTitle.Match(line);
-                        if (m.Success)
-                            title = m.Groups["title"].Value;
-                        else
-                        {
-                            title = line;
-                            title = title.Replace("#", "");
-                            title = title.Replace("song:", "", StringComparison.CurrentCultureIgnoreCase).Trim();
-                        }
+                        case "author": author = value; break;
+                        case "napster": napster = s_true.IsMatch(value); break;
+                        case "prefetch": prefetch = s_true.IsMatch(value); break;
+                        case "concertmode": concertmode = s_true.IsMatch(value); break;
+                        case "newtimer": newTimer = s_true.IsMatch(value); break;
+                        case "tempo": tempo = int.TryParse(Regex.Match(value, @"\d+").Value, out int t) ? t : Commands.SystemMusicPlayer.DefaultTempo; break;
+                        case "instrument": instrument = value; break;
+                        case "price": price = int.TryParse(Regex.Match(value, @"\d+").Value, out int p) ? p : 0; break;
+                        case "song": title = value; break;   // a # in the title stays ('Prelude in C# minor')
                     }
                 }
             }
+            private static readonly Regex s_true = new Regex("true", RegexOptions.IgnoreCase);
             private string TrueLineParser(string text)
             {
                 string trueLines = string.Empty;

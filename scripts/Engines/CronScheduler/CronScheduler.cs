@@ -21,6 +21,22 @@
 
 /* Scripts\Engines\CronScheduler\CronScheduler.cs
  * CHANGELOG:
+ *  11/21/26, Adam (cron console output)
+ *      Use the yellow Cron Slice prefix when no queued work is eligible.
+ *  11/20/26, Adam (music-aware cron)
+ *      Scheduled registrations choose a delay explicitly. Hold eligible work for a playback break until its deadline.
+ *      A break runs the normal priority/task/idle pass and its existing time budget.
+ *  11/20/26, Adam (autosave slots)
+ *      The cron schedule timer also runs fixed UTC intervals with second-level offsets.
+ *  11/15/26, Adam (cron stats)
+ *      Every task's runs, average, longest and last run since the server started: RecordStat (each task as it ends; code
+ *      that isn't a task adds its own lines: LeaderBoard's boards, the wealth pass), Stats, DescribeStats. "[cron stats"
+ *      lists them, the longest run first; "[cron stats reset" clears them. Nothing runs that wouldn't have: the
+ *      numbers are the shard's real ones, hourly and daily tasks included.
+ *  11/14/26, Adam (recent tasks)
+ *      The recent tasks are the last 20 (was 5), each with when it ended and how long it took in ms (was the time
+ *      taken only): RecentTasks(since) and DescribeTasks, so a stall can be matched to the tasks that ran inside it.
+ *      GetRecentTasks (the last 5, for [lag) keeps its name and now gives the times too.
  *  11/7/26, Adam (shard time)
  *      Cron.RegisterShard: a job read in the shard's time zone (ShardClock: -timezone, else the server machine's zone),
  *      for jobs players or staff plan around; Register stays UTC for the rest. RegisterLocal takes Unique and a
@@ -84,6 +100,8 @@
  *		I'm using the system from my shareware product WinCron.
  */
 
+using Server.Commands;
+using Server.Items;
 using Server.Diagnostics;           // log helper
 using Server.Prompts;
 using System;
@@ -95,6 +113,13 @@ using System.Text.RegularExpressions;
 namespace Server.Engines.CronScheduler
 {
     public delegate void CronEventHandler();
+
+    public enum AllowedDelay
+    {
+        OnTime,
+        Short,
+        Normal
+    }
 
     public class Cron
     {
@@ -115,6 +140,7 @@ namespace Server.Engines.CronScheduler
         {
             m.SendMessage("Usage: cron pause <hh:mm:ss>");
             m.SendMessage("Usage: cron resume");
+            m.SendMessage("Usage: cron stats [reset]");
         }
         public static void Cron_OnCommand(CommandEventArgs e)
         {
@@ -129,6 +155,18 @@ namespace Server.Engines.CronScheduler
                 }
                 string command = arg.ToLower();
                 string[] toks = command.Split(' ');
+                if (toks[0] == "stats")
+                {   // every task's runs and times since the server started (or the last reset), the longest first
+                    if (toks.Length > 1 && toks[1] == "reset")
+                    {
+                        ResetStats();
+                        e.Mobile.SendMessage("Cron stats cleared.");
+                        return;
+                    }
+                    foreach (string line in DescribeStats())
+                        e.Mobile.SendMessage(line);
+                    return;
+                }
                 string span = toks.Last();
                 TimeSpan ts = TimeSpan.Zero;
                 // only pause needs a timespan; resume takes none (a trailing one, e.g. "resume 0:0:0", is accepted and ignored)
@@ -414,58 +452,96 @@ namespace Server.Engines.CronScheduler
         #endregion QUEUE MANAGEMENT
 
         #region JOB REGISTRATION
-        // register a new job
-        public static void Register(CronEventHandler handler, string? CronSpec)
+        // Use a named policy for ordinary jobs, or a TimeSpan for a job-specific limit.
+        // Register(Refresh, "*/5 * * * *", allowedDelay: AllowedDelay.Normal);
+        // Register(Check, "*/5 * * * *", allowedDelay: TimeSpan.FromSeconds(30));
+        // Register(Audit, "0 * * * *", allowedDelay: TimeSpan.FromMinutes(2));
+        private static TimeSpan DelayFor(AllowedDelay policy) => policy switch
         {
-            Register(handler, CronSpec, true);
-        }
-        public static void Register(CronEventHandler handler, string? CronSpec, bool Unique)
+            AllowedDelay.OnTime => TimeSpan.Zero,
+            AllowedDelay.Short => TimeSpan.FromMinutes(1),
+            AllowedDelay.Normal => TimeSpan.FromMinutes(5),
+            _ => throw new ArgumentOutOfRangeException(nameof(policy))
+        };
+
+        private static void RegisterJob(CronEventHandler handler, CronJob job, TimeSpan allowedDelay,
+            bool unique, CronLimit? limit, Func<bool>? canSchedule = null)
         {
-            Register(handler, CronSpec, Unique, null);
+            ArgumentOutOfRangeException.ThrowIfLessThan(allowedDelay, TimeSpan.Zero);
+            m_Handlers.Add(new CronEventEntry(null, handler, job, unique, limit)
+            {
+                AllowedDelay = allowedDelay,
+                CanSchedule = canSchedule
+            });
         }
-        public static void Register(CronEventHandler handler, string? CronSpec, bool Unique, CronLimit? limit)
+
+        public static void Register(CronEventHandler handler, string cronSpec, AllowedDelay allowedDelay, bool unique = true, CronLimit? limit = null)
+            => Register(handler, cronSpec, DelayFor(allowedDelay), unique, limit);
+
+        public static void Register(CronEventHandler handler, string cronSpec, TimeSpan allowedDelay, bool unique = true, CronLimit? limit = null)
+            => RegisterLocal(handler, cronSpec, TimeZoneInfo.Utc, allowedDelay, unique, limit);
+
+        public static void RegisterOnDemand(CronEventHandler handler)
+            => RegisterJob(handler, new CronJob(null), TimeSpan.Zero, true, null);
+
+        internal static void RegisterInterval(CronEventHandler handler, TimeSpan interval, TimeSpan offset,
+            AllowedDelay allowedDelay, Func<bool>? canSchedule = null)
+            => RegisterInterval(handler, interval, offset, DelayFor(allowedDelay), canSchedule);
+
+        internal static void RegisterInterval(CronEventHandler handler, TimeSpan interval, TimeSpan offset,
+            TimeSpan allowedDelay, Func<bool>? canSchedule = null)
+            => RegisterJob(handler, new CronJob(interval, offset, DateTime.UtcNow), allowedDelay, true, null, canSchedule);
+
+        internal static bool UpdateInterval(string name, TimeSpan interval, TimeSpan offset)
         {
             lock (m_Handlers.SyncRoot)
             {
-                m_Handlers.Add(new CronEventEntry(null, handler, new CronJob(CronSpec), Unique, limit));
-            }
-        }
-        #region Timezone-Aware Registration (zero impact on existing jobs)
+                CronEventEntry? task = Find(name);
+                if (task == null)
+                    return false;
 
-        public static void RegisterLocal(CronEventHandler handler, string CronSpec, string windowsTimeZoneId)
-        {
-            TimeZoneInfo tz = TimeZoneInfo.FindSystemTimeZoneById(windowsTimeZoneId);
-            RegisterLocal(handler, CronSpec, tz);
-        }
-
-        public static void RegisterLocal(CronEventHandler handler, string CronSpec, TimeZoneInfo tz)
-        {
-            RegisterLocal(handler, CronSpec, tz, true, null);
-        }
-
-        public static void RegisterLocal(CronEventHandler handler, string? CronSpec, TimeZoneInfo tz, bool Unique, CronLimit? limit)
-        {
-            lock (m_Handlers.SyncRoot)
-            {
-                m_Handlers.Add(new CronEventEntry(null, handler, new CronJob(CronSpec, tz), Unique, limit));
+                task.SetSchedule(new CronJob(interval, offset, DateTime.UtcNow));
+                CancelScheduled(task);
+                return true;
             }
         }
 
-        // The shard's time zone (ShardClock: -timezone, else the server machine's zone): for jobs players or staff plan
-        //  around (events, season changes). Machinery nobody plans around stays on Register (UTC).
-        public static void RegisterShard(CronEventHandler handler, string? CronSpec)
-            => RegisterLocal(handler, CronSpec, ShardClock.Zone, true, null);
+        #region Timezone-Aware Registration
+        public static void RegisterLocal(CronEventHandler handler, string cronSpec, TimeZoneInfo zone, AllowedDelay allowedDelay, bool unique = true, CronLimit? limit = null)
+            => RegisterLocal(handler, cronSpec, zone, DelayFor(allowedDelay), unique, limit);
 
-        public static void RegisterShard(CronEventHandler handler, string? CronSpec, bool Unique, CronLimit? limit)
-            => RegisterLocal(handler, CronSpec, ShardClock.Zone, Unique, limit);
+        public static void RegisterLocal(CronEventHandler handler, string cronSpec, TimeZoneInfo zone, TimeSpan allowedDelay, bool unique = true, CronLimit? limit = null)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(cronSpec);
+            RegisterJob(handler, new CronJob(cronSpec, zone), allowedDelay, unique, limit);
+        }
 
-        // Quick helpers if you schedule a lot for one country
-        public static void RegisterNetherlands(CronEventHandler h, string spec)
-            => RegisterLocal(h, spec, "Central European Standard Time");
+        public static void RegisterLocal(CronEventHandler handler, string cronSpec, string windowsTimeZoneId, AllowedDelay allowedDelay)
+            => RegisterLocal(handler, cronSpec, windowsTimeZoneId, DelayFor(allowedDelay));
 
-        public static void RegisterPacific(CronEventHandler h, string spec)
-            => RegisterLocal(h, spec, "Pacific Standard Time");
+        public static void RegisterLocal(CronEventHandler handler, string cronSpec, string windowsTimeZoneId, TimeSpan allowedDelay)
+            => RegisterLocal(handler, cronSpec, TimeZoneInfo.FindSystemTimeZoneById(windowsTimeZoneId), allowedDelay);
+
+        // Use the shard time zone for jobs players or staff plan around.
+        public static void RegisterShard(CronEventHandler handler, string cronSpec, AllowedDelay allowedDelay, bool unique = true, CronLimit? limit = null)
+            => RegisterShard(handler, cronSpec, DelayFor(allowedDelay), unique, limit);
+
+        public static void RegisterShard(CronEventHandler handler, string cronSpec, TimeSpan allowedDelay, bool unique = true, CronLimit? limit = null)
+            => RegisterLocal(handler, cronSpec, ShardClock.Zone, allowedDelay, unique, limit);
+
+        public static void RegisterNetherlands(CronEventHandler handler, string cronSpec, AllowedDelay allowedDelay)
+            => RegisterNetherlands(handler, cronSpec, DelayFor(allowedDelay));
+
+        public static void RegisterNetherlands(CronEventHandler handler, string cronSpec, TimeSpan allowedDelay)
+            => RegisterLocal(handler, cronSpec, "Central European Standard Time", allowedDelay);
+
+        public static void RegisterPacific(CronEventHandler handler, string cronSpec, AllowedDelay allowedDelay)
+            => RegisterPacific(handler, cronSpec, DelayFor(allowedDelay));
+
+        public static void RegisterPacific(CronEventHandler handler, string cronSpec, TimeSpan allowedDelay)
+            => RegisterLocal(handler, cronSpec, "Pacific Standard Time", allowedDelay);
         #endregion
+
         public static bool Update(string name, string cronSpec)
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -478,6 +554,7 @@ namespace Server.Engines.CronScheduler
                     return false;
 
                 cee.SetCronSpec(cronSpec);
+                CancelScheduled(cee);
                 return true;
             }
         }
@@ -519,6 +596,7 @@ namespace Server.Engines.CronScheduler
                     if (cee == null) continue;
 
                     cee.Running = false;        // stop any ones queued in the 'temp' list from running
+                    CancelScheduled(cee);
                     m_Handlers.Remove(cee);     // remove from master list
                 }
 
@@ -610,8 +688,17 @@ namespace Server.Engines.CronScheduler
         private static Utility.LocalTimer CronPauseTimer = new Utility.LocalTimer();    // how long we are to pause
         private static Utility.LocalTimer CronTaskTimer = new Utility.LocalTimer();     // how long our execution slice runs
 
+        private static bool m_Processing;
+        private static bool m_PlaybackWasActive;
+
+        private static bool MusicIsPlaying => RazorInstrument.HasActivePerformances || MusicEngineMetrics.Sessions != 0;
+
         public static void CronProcess()
         {
+            if (m_Processing)
+                return;
+
+            m_Processing = true;
             try
             {
                 // tell the world we're looking for work
@@ -650,47 +737,42 @@ namespace Server.Engines.CronScheduler
 
                     if (CronPaused == false)
                     {
-                        // Avoid TOCTOU: do not check Count outside the lock. Dequeue only while locked.
-                        CronEventEntry? cee = null;
+                        CronEventEntry? job = null;
+                        ScheduledOccurrence? occurrence = null;
 
-                        // Prefer Priority -> Task -> Idle, but make the "is there work" decision
-                        // inside each queue lock so Count and Dequeue are consistent.
-                        if (cee == null)
+                        // Priority -> Task -> Idle. The music gate only filters scheduled occurrences.
+                        lock (m_PriorityQueue.SyncRoot)
                         {
-                            lock (m_PriorityQueue.SyncRoot)
-                            {
-                                if (m_PriorityQueue.Count != 0)
-                                    cee = m_PriorityQueue.Dequeue() as CronEventEntry;
-                            }
+                            if (m_PriorityQueue.Count != 0)
+                                job = m_PriorityQueue.Dequeue() as CronEventEntry;
                         }
 
-                        if (cee == null)
+                        if (job != null && job.Unique)
+                            CancelScheduled(job); // an explicit run also satisfies the pending unique occurrence
+
+                        if (job == null)
                         {
-                            lock (m_TaskQueue.SyncRoot)
-                            {
-                                if (m_TaskQueue.Count != 0)
-                                    cee = m_TaskQueue.Dequeue() as CronEventEntry;
-                            }
+                            object? task = TakeEligibleTask(DateTime.UtcNow, MusicIsPlaying);
+                            occurrence = task as ScheduledOccurrence;
+                            job = occurrence?.Job ?? task as CronEventEntry;
                         }
 
-                        if (cee == null)
+                        if (job == null)
                         {
                             lock (m_IdleQueue.SyncRoot)
                             {
                                 if (m_IdleQueue.Count != 0)
-                                    cee = m_IdleQueue.Dequeue() as CronEventEntry;
+                                    job = m_IdleQueue.Dequeue() as CronEventEntry;
                             }
                         }
 
-                        if (cee != null)
+                        if (job == null)
                         {
-                            CronProcess(cee);
-                        }
-                        else
-                        {
-                            Console.WriteLine("No scheduled work.");
+                            Utility.Monitor.WriteLine("Cron Slice: No eligible scheduled work.", ConsoleColor.Yellow);
                             break;
                         }
+
+                        CronProcess(job, occurrence);
                     }
                     else
                     {
@@ -698,9 +780,7 @@ namespace Server.Engines.CronScheduler
                         break;
                     }
 
-                    // Compute anyWork under locks (no TOCTOU)
-                    GetQueueDepths(out pqDepth, out tqDepth, out iqDepth);
-                    anyWork = (pqDepth + tqDepth + iqDepth) > 0;
+                    anyWork = GetPriorityQueueDepth() != 0 || HasEligibleTask(DateTime.UtcNow, MusicIsPlaying) || GetIdleQueueDepth() != 0;
 
                     if (CronTaskTimer.Triggered == true)
                         Utility.Monitor.WriteLine("Cron Slice: WorkTimer Timed out", ConsoleColor.Red);
@@ -711,13 +791,17 @@ namespace Server.Engines.CronScheduler
 
                 } while (anyWork && CronTaskTimer.Triggered == false);
 
-                CronTaskTimer.Stop();
             }
             catch (Exception ex)
             {
                 LogHelper.LogException(ex);
                 Console.WriteLine("Exception caught in CronProcessor: {0}", ex.Message);
                 Console.WriteLine(ex.StackTrace);
+            }
+            finally
+            {
+                CronTaskTimer.Stop();
+                m_Processing = false;
             }
         }
 
@@ -796,7 +880,169 @@ namespace Server.Engines.CronScheduler
 
             return removed;
         }
-        private static void CronProcess(CronEventEntry cee)
+        private sealed class ScheduledOccurrence
+        {
+            public readonly CronEventEntry Job;
+            public readonly DateTime DueUtc;
+            public readonly bool Precise;
+            public bool DeferredByMusic { get; private set; }
+
+            public ScheduledOccurrence(CronEventEntry job, DateTime dueUtc, bool precise)
+            {
+                Job = job;
+                DueUtc = dueUtc;
+                Precise = precise;
+            }
+
+            public bool HasExpired(DateTime nowUtc) => nowUtc - DueUtc >= Job.AllowedDelay;
+
+            public bool IsEligible(DateTime nowUtc, bool musicPlaying)
+            {
+                if (!Job.Running || !musicPlaying || Job.AllowedDelay == TimeSpan.Zero || HasExpired(nowUtc))
+                    return true;
+
+                DeferredByMusic = true;
+                return false;
+            }
+        }
+
+        private static void QueueScheduled(CronEventEntry job, DateTime dueUtc, bool precise, bool musicPlaying)
+        {
+            if (job.CanSchedule?.Invoke() == false)
+                return;
+
+            lock (m_TaskQueue.SyncRoot)
+            {
+                // Different registrations can share a name and handler (such as seasonal events).
+                foreach (object item in m_TaskQueue)
+                    if (item is ScheduledOccurrence pending && ReferenceEquals(pending.Job, job))
+                        return;
+
+                if (m_TaskQueue.Count >= 128)
+                {
+                    object lost = m_TaskQueue.Dequeue();
+                    Console.WriteLine("Warning: Job queue overflow. Lost job '{0}'", QueuedJob(lost)?.Name);
+                }
+
+                ScheduledOccurrence work = new ScheduledOccurrence(job, dueUtc, precise);
+                work.IsEligible(DateTime.UtcNow, musicPlaying);
+                m_TaskQueue.Enqueue(work);
+            }
+        }
+
+        private static CronEventEntry? QueuedJob(object? item) =>
+            item is ScheduledOccurrence scheduled ? scheduled.Job : item as CronEventEntry;
+
+        private static object? TakeEligibleTask(DateTime nowUtc, bool musicPlaying)
+        {
+            lock (m_TaskQueue.SyncRoot)
+            {
+                if (m_TaskQueue.Count == 0)
+                    return null;
+
+                if (m_TaskQueue.Peek() is not ScheduledOccurrence head || head.IsEligible(nowUtc, musicPlaying))
+                    return m_TaskQueue.Dequeue();
+
+                // Scan past held work while preserving the relative order of everything left in the queue.
+                object? selected = null;
+                int count = m_TaskQueue.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    object item = m_TaskQueue.Dequeue();
+                    if (selected == null && (item is not ScheduledOccurrence work || work.IsEligible(nowUtc, musicPlaying)))
+                        selected = item;
+                    else
+                        m_TaskQueue.Enqueue(item);
+                }
+
+                return selected;
+            }
+        }
+
+        private static bool HasEligibleTask(DateTime nowUtc, bool musicPlaying)
+        {
+            lock (m_TaskQueue.SyncRoot)
+            {
+                foreach (object item in m_TaskQueue)
+                    if (item is not ScheduledOccurrence work || work.IsEligible(nowUtc, musicPlaying))
+                        return true;
+
+                return false;
+            }
+        }
+
+        private static void CancelScheduled(CronEventEntry job) => CancelScheduled(work => ReferenceEquals(work.Job, job));
+
+        internal static void CancelScheduled(string name) =>
+            CancelScheduled(work => StringComparer.OrdinalIgnoreCase.Equals(work.Job.Name, name));
+
+        private static void CancelScheduled(Predicate<ScheduledOccurrence> match)
+        {
+            lock (m_TaskQueue.SyncRoot)
+            {
+                int count = m_TaskQueue.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    object item = m_TaskQueue.Dequeue();
+                    if (item is not ScheduledOccurrence work || !match(work))
+                        m_TaskQueue.Enqueue(item);
+                }
+            }
+        }
+
+        internal static void ProcessPlaybackBreak()
+        {
+            if (MusicIsPlaying)
+                return;
+
+            // Autoplay is already granting a pass. The schedule timer need not grant a second one.
+            m_PlaybackWasActive = false;
+            if (CronPaused && !CronPauseTimer.Triggered)
+                return;
+
+            if (HasEligibleTask(DateTime.UtcNow, musicPlaying: false))
+                CronProcess();
+        }
+
+        private static void ScheduleIntervalJobs(DateTime nowUtc)
+        {
+            bool paused = CronPaused && !CronPauseTimer.Triggered;
+            bool musicPlaying = MusicIsPlaying;
+            bool playbackEnded = m_PlaybackWasActive && !musicPlaying;
+            m_PlaybackWasActive = musicPlaying;
+            lock (m_Handlers.SyncRoot)
+            {
+                foreach (CronEventEntry task in m_Handlers)
+                {
+                    if (task.Cronjob.TakeIntervalSlot(nowUtc) is DateTime due && !paused)
+                        QueueScheduled(task, due, precise: true, musicPlaying);
+                }
+            }
+
+            if (paused)
+                return;
+
+            bool wake = false;
+            lock (m_TaskQueue.SyncRoot)
+            {
+                foreach (object item in m_TaskQueue)
+                {
+                    if (item is ScheduledOccurrence work && work.IsEligible(nowUtc, musicPlaying) &&
+                        (work.Precise || (playbackEnded && work.DeferredByMusic) ||
+                            (work.Job.AllowedDelay > TimeSpan.Zero && work.HasExpired(nowUtc))))
+                    {
+                        wake = true;
+                        break;
+                    }
+                }
+            }
+
+            // The normal pass opens promptly for a precise slot, expired deadline or a break in playback.
+            if (wake)
+                CronProcess();
+        }
+
+        private static void CronProcess(CronEventEntry cee, ScheduledOccurrence? occurrence = null)
         {
             if (cee == null) return;
 
@@ -808,13 +1054,17 @@ namespace Server.Engines.CronScheduler
                 else
                 {
                     // okay, run the scheduled task.
-                    Utility.TimeCheck tc = new Utility.TimeCheck();
                     //Console.Write("{0}: ", cee.Name);
                     Utility.Monitor.Write(string.Format($"{cee.Name}: "), ConsoleColor.Green/*Utility.RandomConsoleColor(Utility.GetStableHashCode(cee.Name))*/);
-                    tc.Start();                 // track the total time for [lag forensics
-                    cee.Handler();              // execute the next task in the queue
-                    tc.End();
-                    AuditTask(cee, tc);         // maintain our list of 5 most recent tasks
+                    DateTime startedUtc = DateTime.UtcNow;
+                    bool deadlineDuringMusic = occurrence != null && cee.AllowedDelay > TimeSpan.Zero &&
+                        occurrence.HasExpired(startedUtc) && MusicIsPlaying;
+                    if (deadlineDuringMusic)
+                        Console.WriteLine("Music delay expired after {0:0.0}s. Running during playback.", (startedUtc - occurrence!.DueUtc).TotalSeconds);
+
+                    long start = Server.Diagnostics.SlowWork.Start();
+                    cee.Handler();
+                    AuditTask(cee, Server.Diagnostics.SlowWork.Since(start), occurrence, startedUtc, deadlineDuringMusic);
                 }
             }
             catch (Exception ex)
@@ -827,91 +1077,126 @@ namespace Server.Engines.CronScheduler
         #endregion
 
         #region TASK AUDIT
-        private static ArrayList m_RecentTasks = new ArrayList();   // to hold last 5 tasks for logging purposes
-        /// <summary>
-        /// Returns a : delemited list of up to the last 5 tasks run
-        /// </summary>
-        /// <returns></returns>
+        // the most recent tasks (oldest first), each with when it ended and how long it took, for [lag and the music
+        //  engine's stall log (plasma's list of 5, for [lag, kept the time taken only)
+        public const int RecentTaskCount = 20;
+        public readonly record struct RecentTask(DateTime EndedUtc, string Name, double Ms);
+        private static readonly List<RecentTask> m_RecentTasks = new List<RecentTask>();
+
+        /// <summary>The recent tasks that ended at or after 'utc' (DateTime.MinValue: all of them), oldest first.</summary>
+        public static List<RecentTask> RecentTasks(DateTime utc)
+        {
+            lock (m_RecentTasks)
+                return m_RecentTasks.Where(t => t.EndedUtc >= utc).ToList();
+        }
+
+        /// <summary>"LeaderBoard 190 ms at 04:07:27Z, ..." (times UTC), or "none".</summary>
+        public static string DescribeTasks(IEnumerable<RecentTask> tasks)
+        {
+            string text = string.Join(", ", tasks.Select(t => string.Format("{0} {1:0} ms at {2:HH:mm:ss}Z", t.Name, t.Ms, t.EndedUtc)));
+            return text.Length > 0 ? text : "none";
+        }
+
+        /// <summary>The last 5 tasks, with when and how long ("LeaderBoard 190 ms at 04:07:27Z, ...").</summary>
         public static string GetRecentTasks()
         {
-            //Plasma:
-            //prevention rather than crash...
-            if (m_RecentTasks == null)
-                return "";
-
-            try
-            {
-                // clear a temp string
-                string temp = "";
-
-                for (int i = 0; i < m_RecentTasks.Count; ++i)
-                {
-                    //add new job description
-                    temp += ((LagStats)m_RecentTasks[i]).ToString();
-                    //stick a : (delimiter) on if not the last item
-                    if (i != m_RecentTasks.Count - 1)
-                        temp += ": ";
-                }
-                return temp;
-            }
-            catch (Exception e)
-            {
-                LogHelper.LogException(e);
-                Console.WriteLine("String error in Heartbeat.GetRecentTasks()");
-                Console.WriteLine(e.Message + " " + e.StackTrace);
-                return "";
-            }
-
+            List<RecentTask> all = RecentTasks(DateTime.MinValue);
+            return DescribeTasks(all.Skip(Math.Max(0, all.Count - 5)));
         }
 
-        /// <summary>
-        /// Holds information for the [lag command
-        /// </summary>
-        private struct LagStats
+        private static void AuditTask(CronEventEntry cee, double ms, ScheduledOccurrence? occurrence, DateTime startedUtc, bool deadlineDuringMusic)
         {
-            //plasma: used to help reporting [lag
-            private string ID;          //task name
-            private string TimeTaken;   //Time elapsed
-
-            public LagStats(string id, string tt)
+            lock (m_RecentTasks)
             {
-                ID = id;
-                // set default string if null (just in case)
-                if (tt == null)
-                    TimeTaken = "00:00";
-                else
-                {
-                    try
-                    {
-                        // remove the "seconds" part of the string to be tidier
-                        TimeTaken = tt.Substring(0, tt.IndexOf(" ")).Trim();
-                    }
-                    catch
-                    {
-                        // just in case
-                        TimeTaken = "Error!";
-                        return;
-                    }
-                }
+                if (m_RecentTasks.Count >= RecentTaskCount)
+                    m_RecentTasks.RemoveAt(0);  // the oldest goes
+                m_RecentTasks.Add(new RecentTask(DateTime.UtcNow, cee.Name ?? "(unnamed)", ms));
             }
+            if (occurrence == null)
+                RecordStat(cee.Name ?? "(unnamed)", ms);
+            else
+                RecordStat(cee.Name, ms, cee.AllowedDelay, Math.Max(0, (startedUtc - occurrence.DueUtc).TotalMilliseconds),
+                    occurrence.DeferredByMusic, deadlineDuringMusic);
+        }
 
-            public override string ToString()
+        // every task's runs and times since the server started (or [cron stats reset): which tasks are the slow ones,
+        //  hourly and daily ones included, under the shard's real load. Code that isn't a task adds its own lines
+        //  (RecordStat: LeaderBoard's boards, the wealth pass's slices).
+        public sealed class TaskStat
+        {
+            public int Runs;
+            public double TotalMs, MaxMs;
+            public DateTime LastUtc;
+            public TimeSpan AllowedDelay;
+            public int ScheduledRuns, MusicDeferrals, MusicDeadlines;
+            public double LastWaitMs, MaxWaitMs;
+            public double AverageMs => Runs == 0 ? 0 : TotalMs / Runs;
+        }
+        private static readonly Dictionary<string, TaskStat> m_Stats = new Dictionary<string, TaskStat>(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>One run of 'name' took 'ms'.</summary>
+        public static void RecordStat(string name, double ms)
+            => RecordStat(name, ms, null, 0, false, false);
+
+        private static void RecordStat(string name, double ms, TimeSpan? allowedDelay, double waitMs, bool deferred, bool deadline)
+        {
+            lock (m_Stats)
             {
-                return ID.ToString() + ", " + TimeTaken;
+                if (!m_Stats.TryGetValue(name, out TaskStat? stat))
+                    m_Stats[name] = stat = new TaskStat();
+                stat.Runs++;
+                stat.TotalMs += ms;
+                if (ms > stat.MaxMs)
+                    stat.MaxMs = ms;
+                stat.LastUtc = DateTime.UtcNow;
+                if (allowedDelay.HasValue)
+                {
+                    stat.AllowedDelay = allowedDelay.Value;
+                    stat.ScheduledRuns++;
+                    stat.LastWaitMs = waitMs;
+                    stat.MaxWaitMs = Math.Max(waitMs, stat.MaxWaitMs);
+                    if (deferred)
+                        stat.MusicDeferrals++;
+                    if (deadline)
+                        stat.MusicDeadlines++;
+                }
             }
         }
 
-        private static void AuditTask(CronEventEntry cee, Utility.TimeCheck tc)
+        /// <summary>A copy of every task's stats, the longest run first.</summary>
+        public static List<(string Name, TaskStat Stat)> Stats()
         {
-            // here we maintain our list of 5 most recent tasks
-            if (m_RecentTasks.Count == 5)
-                m_RecentTasks.RemoveAt(0);  //remove first (oldest) task
-            else if (m_RecentTasks.Count > 5)
-                m_RecentTasks.Clear();      // this shouldn't be possible 
-                                            // but stranger things have happened!
+            lock (m_Stats)
+                return m_Stats.Select(kv => (kv.Key, new TaskStat
+                {
+                    Runs = kv.Value.Runs, TotalMs = kv.Value.TotalMs, MaxMs = kv.Value.MaxMs, LastUtc = kv.Value.LastUtc,
+                    AllowedDelay = kv.Value.AllowedDelay, ScheduledRuns = kv.Value.ScheduledRuns,
+                    MusicDeferrals = kv.Value.MusicDeferrals, MusicDeadlines = kv.Value.MusicDeadlines,
+                    LastWaitMs = kv.Value.LastWaitMs, MaxWaitMs = kv.Value.MaxWaitMs
+                })).OrderByDescending(s => s.Item2.MaxMs).ToList();
+        }
 
-            // add new task and elapsed time as a LagStats struct at bottom of the list
-            m_RecentTasks.Add(new LagStats(cee.Name, tc.TimeTaken));
+        public static void ResetStats()
+        {
+            lock (m_Stats)
+                m_Stats.Clear();
+        }
+
+        /// <summary>[cron stats: a line per task, the longest run first; times in shard time.</summary>
+        public static List<string> DescribeStats()
+        {
+            List<(string Name, TaskStat Stat)> stats = Stats();
+            List<string> lines = new List<string>();
+            lines.Add(stats.Count == 0 ? "Cron stats: nothing has run yet." : string.Format("Cron stats: {0} tasks, the longest run first:", stats.Count));
+            foreach (var (name, s) in stats)
+            {
+                string line = string.Format("  {0}: {1} run{2}, avg {3:0} ms, max {4:0} ms, last {5:HH:mm}", name, s.Runs, s.Runs == 1 ? "" : "s",
+                    s.AverageMs, s.MaxMs, ShardClock.ToShard(s.LastUtc));
+                if (s.ScheduledRuns > 0)
+                    line += $"; allowed {s.AllowedDelay.TotalSeconds:0.###}s, wait last/max {s.LastWaitMs / 1000:0.###}/{s.MaxWaitMs / 1000:0.###}s, music holds {s.MusicDeferrals}, deadlines {s.MusicDeadlines}";
+                lines.Add(line);
+            }
+            return lines;
         }
         #endregion TASK AUDIT
 
@@ -946,6 +1231,8 @@ namespace Server.Engines.CronScheduler
                     if (!HasMinuteRolledOver)
                         break;
 
+                    bool musicPlaying = MusicIsPlaying;
+                    DateTime due = thisTime.AddTicks(-(thisTime.Ticks % TimeSpan.TicksPerMinute));
                     lock (m_Handlers.SyncRoot)
                     {
                         foreach (object o in m_Handlers)
@@ -964,30 +1251,7 @@ namespace Server.Engines.CronScheduler
                                     continue;
                                 }
 
-                                // Queue it!
-                                lock (m_TaskQueue.SyncRoot)
-                                {
-                                    bool Add = true;
-
-                                    // only queue 'unique' tasks
-                                    if (m_TaskQueue.Count > 0 && cee.Unique && m_TaskQueue.Contains(cee))
-                                    {
-                                        Add = false;
-                                        int index = m_TaskQueue.ToArray().ToList().IndexOf(cee);
-                                        Console.WriteLine($"Note: Duplicate Job '{cee.Name}' ignored. {index} tasks ahead of me.");
-                                    }
-
-                                    // max job queue size = 128
-                                    if (Add && m_TaskQueue.Count == 128)
-                                    {   // should probably add an exception here
-                                        CronEventEntry? temp = m_TaskQueue.Dequeue() as CronEventEntry;
-                                        Console.WriteLine("Warning: Job queue overflow. Lost job '{0}'", temp.Name);
-                                    }
-
-                                    // add the task to the queue
-                                    if (Add == true)
-                                        m_TaskQueue.Enqueue(cee);
-                                }
+                                QueueScheduled(cee, due, precise: false, musicPlaying);
                             }
                         }
                     } // lock
@@ -1021,6 +1285,7 @@ namespace Server.Engines.CronScheduler
 
             public CronEventHandler Handler { get { return m_Handler; } }
             public CronJob Cronjob { get { return m_Cronjob; } }
+            internal void SetSchedule(CronJob schedule) => m_Cronjob = schedule;
             public void SetCronSpec(string cronSpec)
             {   // a new schedule in the job's own time zone (a shard-time job stays one)
                 m_Cronjob = new CronJob(cronSpec, m_Cronjob?.TimeZone);
@@ -1029,6 +1294,8 @@ namespace Server.Engines.CronScheduler
             public bool Unique { get { return m_Unique; } }
             public bool Running { get { return m_Running; } set { m_Running = value; } }
             public CronLimit? Limit { get { return m_Limit; } }
+            public TimeSpan AllowedDelay { get; internal init; }
+            internal Func<bool>? CanSchedule { get; init; }
 
             public CronEventEntry(string? Name, CronEventHandler handler, CronJob Cronjob, bool Unique, CronLimit? limit)
             {
@@ -1159,7 +1426,11 @@ namespace Server.Engines.CronScheduler
 
             protected override void OnTick()
             {
-                try { Cron.CronSlice(); }
+                try
+                {
+                    Cron.CronSlice();
+                    ScheduleIntervalJobs(DateTime.UtcNow);
+                }
                 catch (Exception e)
                 {
                     LogHelper.LogException(e);
@@ -1178,6 +1449,44 @@ namespace Server.Engines.CronScheduler
         {
             private readonly string? m_originalSpec;
             private readonly TimeZoneInfo m_TimeZone;
+            private readonly TimeSpan m_Interval;
+
+            public TimeSpan IntervalOffset { get; }
+            public DateTime? NextRunUtc { get; private set; }
+
+            internal CronJob(TimeSpan interval, TimeSpan offset, DateTime nowUtc)
+            {
+                if (interval <= TimeSpan.Zero)
+                    throw new ArgumentOutOfRangeException(nameof(interval));
+                if (offset < TimeSpan.Zero || offset >= interval)
+                    throw new ArgumentOutOfRangeException(nameof(offset));
+
+                m_TimeZone = TimeZoneInfo.Utc;
+                m_Interval = interval;
+                IntervalOffset = offset;
+                NextRunUtc = NextSlotUtc(nowUtc);
+            }
+
+            private DateTime NextSlotUtc(DateTime nowUtc)
+            {
+                long interval = m_Interval.Ticks;
+                long elapsed = nowUtc.Ticks - DateTime.UnixEpoch.Ticks - IntervalOffset.Ticks;
+                long ticksSinceSlot = elapsed % interval;
+                if (ticksSinceSlot < 0)
+                    ticksSinceSlot += interval;
+
+                return nowUtc.AddTicks(interval - ticksSinceSlot);
+            }
+
+            internal DateTime? TakeIntervalSlot(DateTime nowUtc)
+            {
+                if (NextRunUtc is not DateTime due || nowUtc < due)
+                    return null;
+
+                NextRunUtc = NextSlotUtc(nowUtc);
+                // A missed interval is left behind after a suspension or a clock jump.
+                return nowUtc - due < m_Interval ? due : null;
+            }
 
             /// <summary>
             /// Legacy constructor — keeps existing registrations working (pure UTC).
@@ -1197,7 +1506,7 @@ namespace Server.Engines.CronScheduler
             }
             public string? Specification
             {
-                get { return m_originalSpec; }
+                get { return m_Interval == TimeSpan.Zero ? m_originalSpec : $"Every {m_Interval:c} (UTC offset +{IntervalOffset:c})"; }
                 //set { m_originalSpec = value; }
             }
             /// <summary>The time zone the specification is read in (UTC unless registered otherwise).</summary>
@@ -1517,7 +1826,7 @@ namespace Server.Engines.CronScheduler
             while (q.Count > 0)
             {
                 object? o = q.Dequeue();
-                CronEventEntry? cee = o as CronEventEntry;
+                CronEventEntry? cee = QueuedJob(o);
 
                 if (cee != null && StringComparer.OrdinalIgnoreCase.Equals(cee.Name, taskName))
                 {

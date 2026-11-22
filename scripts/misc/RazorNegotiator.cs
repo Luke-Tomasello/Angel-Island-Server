@@ -384,7 +384,7 @@ namespace Server.Misc
             if (m.AccessLevel > AccessLevel.Player)
                 return;
 
-            bool hasException = ClientException.IsException((state as Mobile).NetState.Address);
+            bool hasException = ClientException.IsException(state as Mobile);
             if (!CoreAI.ForceGMNCUO || hasException)
             {
                 string text = string.Format("Player '{0}' failed the Razor 'Code' test{1}.", m, hasException ? ", but has a client exception" : "");

@@ -6,5 +6,6 @@
   "SeasonsPort": 3596,
   "UpheavalPort": 3597,
   "EventShardPort": 3601,
-  "TestCenterPort": 3602
+  "TestCenterPort": 3602,
+  "MusicConservatoryPort": 3603
 }

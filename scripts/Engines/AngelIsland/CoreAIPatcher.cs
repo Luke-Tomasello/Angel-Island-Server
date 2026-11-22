@@ -21,6 +21,12 @@
 
 /* Engines/AngelIsland/CoreAIPatcher.cs
  * ChangeLog
+ *  11/18/26, Adam (PatchV275)
+ *      PatchV275 appended: the per-shard Reserved Names retired (its file renamed .retired).
+ *  11/18/26, Adam (PatchV274)
+ *      PatchV274 appended: Music Conservatory production, before the world loads: empty Logs and LogArchiveQueue.
+ *  11/18/26, Adam (PatchV273)
+ *      PatchV273 appended: Music Conservatory bank claim crates.
  *	1/17/23 Created by Adam;
  *	    You will only add patch IDs here. Nothing else to do.
  *	    Append your patches to the PatchIndex enum, after the last patch id, but just before __last.
@@ -332,6 +338,12 @@ namespace Server
             PatchV268,   // music library: songs credited "by MidiToAims" get their owner's name, titles lose underscores (not Login Server)
             PatchV269,   // Upheaval: bankers' respawn paces the Gypsy Seer's banker heads (running banker spawners x 1 hour, per district); bankers respawned, born armed
             PatchV270,   // Login Server: where each song in the shared music database was composed (Songs.origin, by the shards' lineage)
+            PatchV271,   // server list visibility, every shard: all game shards visible (the Music Conservatory too), Test Center hidden
+            PatchV272,   // family-wide names: seed the shared name registry (each player shard its names; the Login Server the archive's)
+            PatchV273,   // Music Conservatory: each player's bank into a claim crate (claim ticket in the backpack), then the composer's kit
+            PatchV274,   // PreWorldLoad: Music Conservatory production: empty Logs (PatchHistory.log kept) and LogArchiveQueue
+            PatchV275,   // names: retire the per-shard Reserved Names (Saves/Accounts/Reserved Names.json renamed .retired; every shard)
+            PatchV276,   // account restrictions: this shard's bans, firewall, IP and client exceptions into Engines/Restrictions
             __last
         }
         // patch table

@@ -21,6 +21,12 @@
 
 /* Accounting/Firewall.cs
  * CHANGELOG:
+ * 11/18/26, Adam (account restrictions)
+ *  The firewall is Engines/Restrictions: IsBlocked, Add, Remove and GetAllIPs ask it (every shard). firewall.cfg is
+ *  read at world load only for PatchV276 and never written again; the database master's push is gone.
+ * 11/18/26, Adam (one database folder)
+ *  firewalldb.db lives in the one database folder (Server\DatabaseFolder.cs: AI.DBDIR, else <shard>\Databases);
+ *  AI.FIREWALLDB is retired.
  * 7/29/2024, Adam
  *  Initialize database if it does not exist.
  *  6/23/22, Yoar
@@ -39,6 +45,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.IO;
+using System.Linq;
 
 namespace Server
 {
@@ -50,8 +57,7 @@ namespace Server
 
         public static void Configure()
         {
-            EventSink.WorldLoad += EventSink_OnWorldLoad;
-            EventSink.WorldSave += EventSink_OnWorldSave;
+            EventSink.WorldLoad += EventSink_OnWorldLoad;     // read only, for PatchV276: firewall.cfg is never written again
         }
 
         private static void EventSink_OnWorldLoad()
@@ -61,40 +67,24 @@ namespace Server
 
         public static void EventSink_OnWorldSave(WorldSaveEventArgs e)
         {
-            SaveCfg();
+            // nothing: the firewall is Engines/Restrictions (11/18/26)
         }
 
-        public static bool IsBlocked(string ip)
-        {
-            if (Core.UseLoginDB && FirewallDatabase.Contains(ip))
-                return true;
+        public static bool IsBlocked(string ip) =>
+            Server.Engines.Restrictions.IsFirewalled(ip);
 
-            return m_List.Contains(ip);
-        }
-
-        public static void Add(string ip)
-        {
-            if (!m_List.Contains(ip))
-                m_List.Add(ip);
-
-            if (Core.UseLoginDB)
-                FirewallDatabase.Save(ip);
-        }
+        public static void Add(string ip) =>
+            Server.Engines.Restrictions.Add(Server.Engines.Restrictions.Kind.Firewall, ip, Server.Engines.Restrictions.All, 0, "", "", null);
 
         public static void Remove(string ip)
         {
-            m_List.Remove(ip);
-
-            if (Core.UseLoginDB)
-                FirewallDatabase.Remove(ip);
+            Server.Engines.Restrictions.Lift(Server.Engines.Restrictions.Kind.Firewall, ip, null, "");
         }
 
         public static IList GetAllIPs()
         {
-            if (Core.UseLoginDB)
-                return FirewallDatabase.GetAll();
-
-            return m_List;
+            return (Server.Engines.Restrictions.AllRows() ?? new()).Where(r => r.Kind == Server.Engines.Restrictions.Kind.Firewall && r.InForce(DateTime.UtcNow))
+                .Select(r => r.Subject).ToList();
         }
 
         #region Save/Load CFG
@@ -157,9 +147,7 @@ namespace Server
                 EventSink.InvokeLogException(new LogExceptionEventArgs(ex));
             }
 
-            // only if we're the DB master, push our firewalled IPs to the DB
-            if (Core.UseLoginDB && Core.RuleSets.DatabaseMaster)
-                FirewallDatabase.SaveAll();
+            // (the database master's push is gone: PatchV276 moves every shard's firewall.cfg into Restrictions)
         }
 
         #endregion
@@ -171,10 +159,8 @@ namespace Server
 
         public static string GetDatabasePath(ref bool error)
         {
-            string? path = Environment.GetEnvironmentVariable("AI.FIREWALLDB");
-
-            if (string.IsNullOrWhiteSpace(path))
-                path = @"C:\AIDB\firewalldb.db";
+            // the one database folder (AI.DBDIR, else <shard>\Databases): AI.FIREWALLDB is retired
+            string path = DatabaseFolder.PathOf("firewalldb.db");
 
             error = false;
             if (!File.Exists(path))

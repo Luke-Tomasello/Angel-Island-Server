@@ -14,6 +14,10 @@ MidiToAims is a single Windows program. Nothing needs to be installed.
 
 * [https://drive.google.com/uc?export=download&id=1T1Cwe1xYW6lYOcVWll764rvyXGrMSQRt Download MidiToAims.zip]
 
+'''Current version: 2.0''' (November 16, 2026). To see which version you have, type '''version''' at the m2a> prompt; the first line of the window shows it too. If yours is older, or shows no version number, download it again.
+
+New in 2.0: songs on the Classic and Dynamic timers now preview at the speed the game plays them (before, they sounded rushed). Songs on the Anchored timer are unchanged.
+
 Unzip it wherever you like, for example in Documents. The MidiToAims folder contains:
 * '''MidiToAims.exe''', the program.
 * '''Minuet in A minor.mid''', by J. S. Bach (public domain), to try first.
@@ -32,7 +36,7 @@ Double-click '''MidiToAims.exe'''. It opens a window with an '''m2a>''' prompt, 
  m2a> [play preview minuet
  m2a> [play c e g 0.5 c e g
 
-Press the up arrow to bring back an earlier line, change it, and press Enter to run it again. '''help''' lists the commands, and '''exit''' closes the window.
+Press the up arrow to bring back an earlier line, change it, and press Enter to run it again. '''help''' lists the commands, '''version''' says which MidiToAims you have, and '''exit''' closes the window.
 
 The commands are the game's own where the game has one, so you don't learn two sets: '''[play c e g''', '''[play tempo 150''', '''[play config''' and '''[play preview''' work here as they do in game. The '''[''' is optional.
 
@@ -75,6 +79,7 @@ Ctrl+C stops and says where it stopped.
 
 * '''Part of a song:''' ''[play preview minuet --from 0:20 --to 0:35''. --from alone plays to the end; --to alone plays from the start. Times can be 1:10, 1:10.5 or 70 (seconds). The part sounds as it does in the whole song: settings and tempo changes before it still count. When it's done, MidiToAims says the line where it ended.
 * '''A clip of a song:''' add ''-clip'' to a preview with --from / --to, and MidiToAims writes that passage as a song of its own, ''Minuet in A minor.clip1.rzr'' (then clip2 ...), instead of playing it. A clip holds whole phrases (it starts and ends at a wait), the song's own lines, and its settings, so it plays as it does in the song; preview it, paste it, or share it. ''[play preview minuet clip1'' plays it; ''minuet'' alone is still the song.
+* '''A recording:''' add ''--wav "Minuet.wav"'' to a preview, and MidiToAims writes the song to that WAV file instead of playing it. It sounds exactly like the preview: share it, or turn it into an MP3. (The [https://game-master.net/AimsMusic.html music library]'s play buttons are made this way.)
 * '''Which file plays:''' if the song has a .rzr, that's what plays. It's what you'll paste, with any edits you made in it. If the .mid or the .m2a is newer, MidiToAims says so.
 * '''To convert again first''', after changing the .m2a, add .mid: ''[play preview minuet.mid''. This replaces the .rzr, including any edits you made in it.
 * '''--check''' shows the report, in full, without playing.
@@ -346,9 +351,10 @@ At the m2a> prompt, type these as shown. At a command prompt, put ''MidiToAims''
 | debug on / debug off || At the m2a> prompt: show everything MidiToAims does, or only what matters.
 |}
 
-Options (one dash works too: -from, -to, -clip, -check, -debug, -uo, -list):
+Options (one dash works too: -from, -to, -clip, -wav, -check, -debug, -uo, -list):
 * '''--from, --to''' ''time'': play part of a song (preview).
 * '''--clip''': with --from / --to, write that part as ''song''.clip1.rzr instead of playing it.
+* '''--wav''' ''"file"'': write the song to a WAV file instead of playing it (preview).
 * '''--check''': report in full without playing (preview and [play).
 * '''--debug''': show everything MidiToAims does, for one command.
 * '''--list''': list sounds without playing them (sound).

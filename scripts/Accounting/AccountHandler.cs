@@ -42,6 +42,14 @@
 
 /* Scripts/Accounting/AccountHandler.cs
  * ChangeLog:
+ *  11/19/26, Adam (cached ban checks)
+ *      Both logins ask Restrictions.IsBannedNow (a fresh read); other ban checks use the cached copy.
+ *  11/18/26, Adam (account restrictions)
+ *      The account login (the login server's too) refuses a banned account: a ban for every shard stops it at the
+ *      login screen. Bans are Engines/Restrictions.
+ *  11/18/26, Adam (one account, any capitalisation)
+ *      GetBestUNMatch is gone: the accounts database matches usernames in any capitalisation (AccountsDatabase), so
+ *      there is no spelling to guess.
  *  8/26/2024, Adam
  *      Console color Yellow for all client login/out etc. actions.
  *  8/15/2024, Adam (GetBestUNMatch)
@@ -615,34 +623,6 @@ namespace Server.Misc
 
             return grandfathered;
         }
-        private static string GetBestUNMatch(Account acct)
-        {   // unfortunately, SQLite database is case-sensitive.
-            // Example: Create the "Adam Ant" account. Next login is with "adam ant". SQLite won't recognize "adam ant"
-            // We will look for the best match here
-            string cryptPassword = acct.CryptPassword;
-
-            // first see if the remote database matches what's in our local database
-            AccountsDBEntry? dbAccount = AccountsDatabase.GetAccount(acct.Username);
-            if (dbAccount != null && dbAccount.Value.CryptPassword == cryptPassword)
-                return acct.Username;
-
-            // okay, try lowercase
-            dbAccount = AccountsDatabase.GetAccount(acct.Username.ToLower());
-            if (dbAccount != null && dbAccount.Value.CryptPassword == cryptPassword)
-                return acct.Username.ToLower();
-
-            // okay, try uppercase (unusual)
-            dbAccount = AccountsDatabase.GetAccount(acct.Username.ToUpper());
-            if (dbAccount != null && dbAccount.Value.CryptPassword == cryptPassword)
-                return acct.Username.ToUpper();
-
-            // okay, try camelcase 
-            dbAccount = AccountsDatabase.GetAccount(Utility.CamelCase(acct.Username.ToLower()));
-            if (dbAccount != null && dbAccount.Value.CryptPassword == cryptPassword)
-                return Utility.CamelCase(acct.Username.ToLower());
-
-            return acct.Username;
-        }
         public static void EventSink_AccountLogin(AccountLoginEventArgs e)
         {
             string un = e.Username;
@@ -663,9 +643,7 @@ namespace Server.Misc
             // does accounts.xml have an entry for this acct?
             Account acct = Accounts.GetAccount(un);
 
-            // unfortunately, SQLite database is case-sensitive. We will look for the best match
-            if (acct != null && Core.UseLoginDB)
-                un = GetBestUNMatch(acct);
+            // (the accounts database matches usernames in any capitalisation since 11/18/26: no best-match guessing)
 
             // if we have a preexisting SHARD account, and this is not MO or SP, allow it since we don't have working
             //  shard specific IPExceptions
@@ -760,6 +738,12 @@ namespace Server.Misc
                 Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Invalid password for '{1}'", e.State, un));
                 e.RejectReason = ALRReason.BadPass;
             }
+            // a ban here (on the login server: a ban for every shard) is refused at the login screen (11/18/26)
+            else if (Server.Engines.Restrictions.IsBannedNow(acct.Username))
+            {
+                Server.Diagnostics.LogHelper.LogBlockedConnection(string.Format("Login: {0}: Banned account '{1}'", e.State, un));
+                e.RejectReason = ALRReason.Blocked;
+            }
             else
             {   // all good. Setup the account, add the account to the Shard, and send new account email if appropriate
                 Utility.Monitor.WriteLine(string.Format("Login: {0}: Valid credentials for '{1}'", e.State, un), ConsoleColor.Yellow);
@@ -853,9 +837,7 @@ namespace Server.Misc
             // does accounts.xml have an entry for this acct?
             acct = Accounts.GetAccount(un);
 
-            // unfortunately, SQLite database is case-sensitive. We will look for the best match
-            if (acct != null && Core.UseLoginDB)
-                un = GetBestUNMatch(acct);
+            // (the accounts database matches usernames in any capitalisation since 11/18/26: no best-match guessing)
 
             // if we have a preexisting SHARD account, and this is NOT MO or SP, allow it since we don't have working
             //  shard specific IPExceptions
@@ -936,7 +918,7 @@ namespace Server.Misc
                 else if (accessReason != null) Utility.Monitor.WriteLine(accessReason, ConsoleColor.Yellow);
                 checkPassword = acct.CheckPassword(pw);
                 if (!checkPassword) offenses.Add(Account.AccountInfraction.CheckPassword);
-                banned = acct.Banned;
+                banned = Server.Engines.Restrictions.IsBannedNow(acct.Username);
                 if (banned) offenses.Add(Account.AccountInfraction.Banned);
             }
 

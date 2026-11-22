@@ -1,0 +1,102 @@
+<Project>
+  <!-- Directory.Build.targets: the version of every program we build, Major.Minor.Revision.
+       MSBuild imports this file into every project in this folder and below, by itself (no project names it). A copy,
+       the same file, sits in each repository that uses it (Shard.UP, UOAdmin), so a fresh checkout builds on its own.
+
+       The scheme:
+         Major.Minor  set by hand in the project (AppVersion), with a history of what each version brought beside it.
+         Revision     the SVN revision in which the program's source last changed (svnversion -c, the highest
+                      "last changed" revision anywhere in its source; right even before an svn update). A program
+                      built twice from the same source gets the same version, on any machine.
+         -dev         added when the source has uncommitted edits: a test build, not one from committed source.
+
+       Opt-in: a project that sets no AppVersion is left alone. A project names its source with AppVersionSource
+       items (folders or files); without any, its own folder is its source. AppRevision=N (-p:AppRevision=N) gives
+       the revision instead of asking SVN: a build from a git copy, where there is no SVN (the GitHub runtime).
+       Without SVN at all the revision is 0, with a warning; the build still works.
+
+       What .NET gets (Explorer shows the last two on the file's Properties, Details tab):
+         AssemblyVersion       Major.Minor.0.0     what the loader checks: stays put between revisions, so a patch
+                                                   DLL built later ([Nuke Run) or MidiToAims.Core loaded by [m2a still
+                                                   loads into the server that's running
+         FileVersion           Major.Minor.Revision.0
+         InformationalVersion  Major.Minor.Revision[-dev], the "Product version": what the programs print
+       Why not the SDK's own "1.0.*": its build and revision numbers are the date and the time of day, not a count,
+       and a deterministic build (the SDK default) refuses it anyway. MSBuild keeps nothing between builds, so the
+       number has to come from somewhere: here, from SVN.
+
+       11/16/26, Adam: replaces BuildInfo (its build counter in "Core 6.info", and Revision the date's parts added
+       up); MidiToAims and UOAdmin, stamped only with their build date until now, get versions. -->
+
+  <PropertyGroup>
+    <!-- the SDK would add a git commit id to the Product version (SourceLink); ours is the SVN revision -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <!-- the highest "last changed" revision of the sources, and whether any has uncommitted edits -->
+  <UsingTask TaskName="SvnLastChanged" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Sources ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <Revision ParameterType="System.Int32" Output="true" />
+      <Modified ParameterType="System.Boolean" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.Diagnostics" />
+      <Using Namespace="System.Text.RegularExpressions" />
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        foreach (ITaskItem source in Sources)
+        {
+            string path = source.GetMetadata("FullPath").TrimEnd('\\');
+            string output;
+            try
+            {   // svnversion -c prints "low:high" (or one number), then M if there are local edits
+                var start = new ProcessStartInfo("svnversion", "-c \"" + path + "\"")
+                    { RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true };
+                using (Process p = Process.Start(start))
+                {
+                    output = p.StandardOutput.ReadToEnd().Trim();
+                    p.WaitForExit();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.LogWarning("Version: svnversion didn't run ({0}); the revision is 0.", ex.Message);
+                return true;
+            }
+            if (output.StartsWith("Uncommitted local addition"))
+            {   // added (svn add) but not committed yet: an uncommitted edit, so a -dev build
+                Modified = true;
+                continue;
+            }
+            Match m = Regex.Match(output, @"(\d+)([MSP]*)$");
+            if (!m.Success)
+            {
+                Log.LogWarning("Version: {0} isn't in an SVN working copy (svnversion says \"{1}\"); it doesn't count.", path, output);
+                continue;
+            }
+            Revision = Math.Max(Revision, int.Parse(m.Groups[1].Value));
+            Modified |= m.Groups[2].Value.Contains("M");
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="AppVersion" BeforeTargets="GetAssemblyVersion;GenerateNuspec" Condition="'$(AppVersion)' != ''">
+    <ItemGroup>
+      <_AppVersionSource Include="@(AppVersionSource)" />
+      <_AppVersionSource Include="$(MSBuildProjectDirectory)" Condition="'@(AppVersionSource)' == ''" />
+    </ItemGroup>
+    <SvnLastChanged Sources="@(_AppVersionSource)" Condition="'$(AppRevision)' == ''">
+      <Output TaskParameter="Revision" PropertyName="AppRevision" />
+      <Output TaskParameter="Modified" PropertyName="_AppModified" />
+    </SvnLastChanged>
+    <PropertyGroup>
+      <Version>$(AppVersion).$(AppRevision)</Version>
+      <AssemblyVersion>$(AppVersion).0.0</AssemblyVersion>
+      <FileVersion>$(AppVersion).$(AppRevision).0</FileVersion>
+      <InformationalVersion>$(AppVersion).$(AppRevision)</InformationalVersion>
+      <InformationalVersion Condition="'$(_AppModified)' == 'true'">$(AppVersion).$(AppRevision)-dev</InformationalVersion>
+    </PropertyGroup>
+    <Message Importance="high" Text="$(MSBuildProjectName): version $(InformationalVersion)" />
+  </Target>
+</Project>

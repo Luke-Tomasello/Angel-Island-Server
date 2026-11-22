@@ -1,0 +1,55 @@
+__TOC__
+
+== Overview ==
+The '''Angel Island Music Conservatory''' is a shard for musicians: players from the whole Ultima Online community are welcome to come and compose. ''Compose here. Share everywhere.''
+
+Every song approved on the Conservatory joins the music library on every Angel Island shard, and the [https://game-master.net/AimsMusic.html Angel Island Music Library] on the web, where anyone can download it free.
+
+* '''Server list:''' ''Music Conservatory'' (the same download and login as every Angel Island shard: uoangelisland.com, port 2593).
+* '''Rules:''' Publish 15-era play with Trammel rules (PvE): no player killing.
+* '''World:''' the Conservatory's world began as a copy of [[Siege_Perilous_Overview|Siege Perilous]], so its towns, dungeons and houses are Siege's. Since the Conservatory opened (November 18, 2026) the two shards go their own ways: nothing done on one carries over to the other.
+
+This page is a getting-started guide to making music there. For the notes themselves and everything AIMS can do, see [[Music Composition]].
+
+== Your First Character ==
+A new character on the Conservatory starts ready to compose:
+* 75 strength, dexterity and intelligence, and membership in the Bards' Guild.
+* 6 manuscript paper and 3 music composition books in the backpack.
+* A '''composer's cloak''', dyed to match your pants. Put it on and it takes your composer title as its name (''Neophyte Composer'', up to ''Legendary Composer''); it renames itself as your title rises. See [[Music Composition#Composer Titles|Composer Titles]].
+* A bank already stocked: gold, materials, and a '''composer's crate''' with a [[Music Box|music box]], 50 manuscript paper and 5 composition books.
+
+New characters begin at '''Le Conservatoire du Galois''' in Britain.
+
+Composers also get a few conveniences: the ''set'' and ''go'' speech commands (skills and stats; travel), and the house placement tool, so you can have a home for your music box.
+
+=== Coming from Siege Perilous ===
+Your Siege Perilous characters are on the Conservatory too, as they were on November 18, 2026. To make room in your bank for the composer's kit, everything that was in it was packed, as it was, into a crate held in safekeeping, and a gold '''claim ticket''' was put in your backpack.
+
+* Double-click the ticket inside a house you own or co-own: the crate is delivered at your feet.
+* Keep the ticket safe: if it's deleted, its crate is deleted with it.
+* Your bank on Siege Perilous itself is untouched.
+
+== Making Music, Step by Step ==
+# '''Try a few notes.''' Anyone can play: say [play cl 0.4 g 0.4 a 0.4 g 0.8. No skill and no instrument are needed. See [[Music Composition#Getting Started|Getting Started]] and the [[Music Composition#Sample Tunes|Sample Tunes]].
+# '''Write a song''' in a music composition book: [play lines for the notes, say lines for lyrics, wait lines for pauses, and # lines at the top for its name, author and price. Most composers write in a text editor and paste it in. See [[Sheet Music#Composition Book|Composition Book]] and [[Sheet Music#Settings|Settings]].
+# '''Hear it before you commit:''' say [play preview and target the book. See [[Music Composition#Preview Without Using Paper|Preview]].
+# '''Make it into sheet music:''' use manuscript paper on the book. The [[Sheet Music]] plays when double-clicked, and can be given or sold.
+# '''Publish it:''' place your music box in your house, single-click it and choose '''Add''' (or say ''submit''), and target your sheet music. See [[Music Box#Instructions for Composers|Instructions for Composers]].
+# '''Wait for review.''' Staff check songs for offensive content, not quality. You're told the decision at your next visit to any music box; say ''status'' to see all your songs.
+# '''Shared everywhere.''' Once approved, your song is in the library of every Angel Island shard and on the website, credited to you and "composed on Angel Island Music Conservatory".
+
+=== Starting from a MIDI File ===
+[[MidiToAIMS]] is a free Windows tool that turns a MIDI file into an AIMS composition, ready to paste into a book and refine.
+
+== Good to Know ==
+* '''Gold is free here,''' so buying a song on the Conservatory pays its composer nothing and earns no sales credit; songs earn their composers sales on the other shards.
+* '''Character names are unique''' across every Angel Island shard: a name you hold here is yours everywhere, and one taken on another shard can't be used here.
+* '''Every song is free to download''' from the website, ready to paste into a composition book.
+
+== Music Pages ==
+* [[Music Composition]]: playing notes, timers, Music Karma, composer titles, sections, repeats and macros
+* [[Sheet Music]]: composition books, settings, transcribing
+* [[Music Box]]: playing, buying, publishing, review, getting paid
+* [[MidiToAIMS]]: converting MIDI files
+* [[Musicianship]]: the Musicianship skill
+* [[Sound List]]: the sounds you can play

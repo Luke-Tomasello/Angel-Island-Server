@@ -19,6 +19,13 @@
  *
  ***************************************************************************/
 
+/* Scripts/Misc/CurrentExpansion.cs
+ * ChangeLog
+ *  11/17/26, Adam (-uomc)
+ *      The Angel Island Music Conservatory gets its own expansion (Expansion.MusicConservatory), asked before
+ *      UpheavalRules(), which is true there too (it plays by the Upheaval rules).
+ */
+
 using Server.Network;
 
 namespace Server
@@ -38,6 +45,9 @@ namespace Server
 
             else if (Core.RuleSets.SeasonsRules())
                 Core.Expansion = Expansion.Seasons;
+
+            else if (Core.RuleSets.MusicConservatoryRules())     // before UpheavalRules(): true here too
+                Core.Expansion = Expansion.MusicConservatory;
 
             else if (Core.RuleSets.UpheavalRules())
                 Core.Expansion = Expansion.Upheaval;

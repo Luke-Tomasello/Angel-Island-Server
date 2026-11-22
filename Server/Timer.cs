@@ -21,6 +21,9 @@
 
 /* Server/Timer.cs
  * Changelog:
+ *  11/14/26, Adam (slow work)
+ *      Slice times each callback: one that takes SlowWork.ThresholdMs or longer is recorded by name
+ *      (Diagnostics\SlowWork.cs), so a stall can be traced to the timer that caused it.
  *	12/23/08, Adam
  *		Add missing timer synchronization from RunUO 2.0
  *  7/5/08, Adam
@@ -456,7 +459,9 @@ namespace Server
                         prof.Start();
                     }
 
+                    long start = SlowWork.Start();
                     t.OnTick();
+                    SlowWork.Finish(start, t);      // a slow callback is kept by name (ToString), for stalls and [lag
                     t.m_Queued = false;
                     ++index;
 

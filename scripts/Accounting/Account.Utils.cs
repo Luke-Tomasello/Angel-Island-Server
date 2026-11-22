@@ -103,11 +103,13 @@ namespace Server.Accounting
             return null;
         }
 
+        [Obsolete("Bans are Engines/Restrictions: the ban gump sets scope, duration and reason (Restrictions.SetBanDetails).")]
         public void SetUnspecifiedBan(Mobile? from)
         {
-            SetBanTags(from, DateTime.MinValue, TimeSpan.Zero);
+            // nothing: a ban's details are the Restrictions row's (11/18/26)
         }
 
+        [Obsolete("Bans are Engines/Restrictions (Restrictions.SetBanDetails); kept for PatchV276's reading of old tags.")]
         public void SetBanTags(Mobile? from, DateTime banTime, TimeSpan banDuration)
         {
             if (from == null)
@@ -126,7 +128,18 @@ namespace Server.Accounting
                 SetTag("BanDuration", banDuration.ToString());
         }
 
+        /// <summary>The ban in force here, as a start and a duration (the admin gump's display). Before 11/18/26: the tags.</summary>
         public bool GetBanTags(out DateTime banTime, out TimeSpan banDuration)
+        {
+            Server.Engines.Restrictions.Row? ban = Server.Engines.Restrictions.BanOf(Username);
+            banTime = ban?.Utc ?? DateTime.MinValue;
+            banDuration = ban == null ? TimeSpan.Zero : ban.Expires == null ? TimeSpan.MaxValue : ban.Expires.Value - ban.Utc;
+            return ban != null;
+        }
+
+        /// <summary>The ban tags this shard's accounts.xml held before 11/18/26 (PatchV276).</summary>
+        [Obsolete("Bans are Engines/Restrictions; for PatchV276 only.")]
+        public bool GetLegacyBanTags(out DateTime banTime, out TimeSpan banDuration)
         {
             string? tagTime = GetTag("BanTime");
             string? tagDuration = GetTag("BanDuration");

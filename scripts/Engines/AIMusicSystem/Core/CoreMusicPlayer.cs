@@ -19,6 +19,9 @@
 
 /* Scripts\Engines\Music\CoreMusicPlayer.cs
  * Changelog
+ *  11/19/26, Adam (public music boxes; music box range)
+ *      IMusicAudience: a source (a music box) that plays to its listener alone is heard by no one else (PlaySound).
+ *      IMusicAudience.Range: a source that carries less far than usual (a music box's Range) is heard only that far.
  *  11/5/26, Adam (2026 modernization, 10/24/26 to 11/5/26)
  *      PlayNote and PlaySound play on a session (a player's MusicContext, or a music device's own) and take the
  *      instrument type; PlaySound no longer creates a context (and its items) for a missing mobile. Sound and packet
@@ -64,6 +67,14 @@ using System;
 
 namespace Server.Misc
 {
+    /// <summary>A music source that may play to one listener alone (a public music box in a practice room).</summary>
+    public interface IMusicAudience
+    {
+        bool ListenerOnly { get; }
+        Mobile? Listener { get; }
+        int Range { get; }          // tiles; 0: the usual range
+    }
+
     public enum NoteValue
     {
         c_low,
@@ -288,10 +299,17 @@ namespace Server.Misc
                 Packet? p = null;
                 long start = System.Diagnostics.Stopwatch.GetTimestamp(), sendTicks = 0;   // MusicEngineMetrics
 
-                IPooledEnumerable eable = source.Map.GetClientsInRange(source.Location);
+                // a source that carries less far than usual (a music box's Range): only that far
+                int range = (source as IMusicAudience)?.Range ?? 0;
+                IPooledEnumerable eable = range > 0 ? source.Map.GetClientsInRange(source.Location, range) : source.Map.GetClientsInRange(source.Location);
 
+                IMusicAudience? audience = source as IMusicAudience;
                 foreach (NetState state in eable)
-                {   // invisible is okay (music motion controller,) but if it's visible, you need to be able to see it (xmas tree)
+                {
+                    // a source that plays to its listener alone (a practice-room music box): no one else hears it
+                    if (audience != null && audience.ListenerOnly && state.Mobile != audience.Listener)
+                        continue;
+                    // invisible is okay (music motion controller,) but if it's visible, you need to be able to see it (xmas tree)
                     if (!Visible(source) || state.Mobile.CanSee(source))
                     {
                         // If the mobile is a player who has toggled FilterMusic on, don't play.

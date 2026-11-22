@@ -21,6 +21,14 @@
 
 /* Server/World.cs
  * CHANGELOG
+ *  11/21/26, Adam (threaded region index)
+ *      SaveRegions hands the threaded writer a writable copy of the region index: AsyncWriter.MemStream wraps it in a
+ *      BinaryWriter, which throws on a read-only stream. (SaveType is never Threaded today; the path was broken, unused.)
+ *  11/20/26, Adam (world save failure handling)
+ *      Join the item worker on either save failure and release writers and the saving flag on exit.
+ *      Use the same item and mobile collections for the index count and enumeration.
+ *  11/20/26, Adam (runtime world save strategy)
+ *      [SaveStrategy reports or switches between Standard and Dual for subsequent world saves.
  *  10/7/26, Claude (InvokePreWorldLoad)
  *      Fire PreWorldLoad before World.Load sets m_Loaded and m_Loading, so subscribers run against a
  *      genuinely cold world (World.Loading, World.Loaded and World.Saving are all false).
@@ -95,6 +103,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 
 namespace Server
@@ -1031,6 +1040,38 @@ namespace Server
         private static bool m_MultiProcessor = false;
 
         public static bool MultiProcessor { get { return m_MultiProcessor; } set { m_MultiProcessor = value; } }
+        public static string SaveStrategyName => MultiProcessor ? "Dual" : "Standard";
+
+        public static void Initialize()
+        {
+            CommandSystem.Register("SaveStrategy", AccessLevel.Administrator, SaveStrategy_OnCommand);
+        }
+
+        private static void SaveStrategy_OnCommand(CommandEventArgs e)
+        {
+            if (e.Length == 0)
+            {
+                e.Mobile.SendMessage("World save strategy: {0}.", SaveStrategyName);
+                return;
+            }
+
+            string strategy = e.GetString(0);
+            bool dual = strategy.Equals("dual", StringComparison.OrdinalIgnoreCase);
+            if (e.Length != 1 || (!dual && !strategy.Equals("standard", StringComparison.OrdinalIgnoreCase)))
+            {
+                e.Mobile.SendMessage("Usage: [SaveStrategy [Standard|Dual]");
+                return;
+            }
+
+            if (Saving || AsyncWriter.ThreadCount > 0)
+            {
+                e.Mobile.SendMessage("Wait for the current world save to finish.");
+                return;
+            }
+
+            MultiProcessor = dual;
+            e.Mobile.SendMessage("World save strategy: {0}.", SaveStrategyName);
+        }
 
         public static void Save(bool message)
         {
@@ -1047,112 +1088,111 @@ namespace Server
             NetState.FlushAll();
 
             m_Saving = true;
-
-            if (message)
-                Broadcast(0x35, true, "The world is saving, please wait.");
-
-            Console.WriteLine("World: Saving...");
-
-            DateTime startTime = DateTime.UtcNow;
-
-            // Adam: see comments in the function
-            PackMemory(true);
-
-            if (!Directory.Exists("Saves/Mobiles/"))
-                Directory.CreateDirectory("Saves/Mobiles/");
-            if (!Directory.Exists("Saves/Items/"))
-                Directory.CreateDirectory("Saves/Items/");
-            if (!Directory.Exists("Saves/Guilds/"))
-                Directory.CreateDirectory("Saves/Guilds/");
-            if (!Directory.Exists("Saves/Regions/"))
-                Directory.CreateDirectory("Saves/Regions/");
-
-            if (m_MultiProcessor)
-            {
-                Thread saveThread = new Thread(new ThreadStart(SaveItems));
-
-                saveThread.Name = "Item Save Subset";
-                saveThread.Start();
-
-                SaveMobiles();
-                SaveGuilds();
-                SaveRegions();
-
-                saveThread.Join();
-            }
-            else
-            {
-                SaveMobiles();
-                SaveItems();
-                SaveGuilds();
-                SaveRegions();
-            }
-
-            //Accounts.Save();
-
-            //SaveSystem();
-
             try
             {
-                EventSink.InvokeWorldSave(new WorldSaveEventArgs(message));
+                if (message)
+                    Broadcast(0x35, true, "The world is saving, please wait.");
+
+                Console.WriteLine("World: Saving...");
+                long startTime = System.Diagnostics.Stopwatch.GetTimestamp();
+
+                Directory.CreateDirectory("Saves/Mobiles/");
+                Directory.CreateDirectory("Saves/Items/");
+                Directory.CreateDirectory("Saves/Guilds/");
+                Directory.CreateDirectory("Saves/Regions/");
+
+                if (m_MultiProcessor)
+                {
+                    SaveDual(SaveItems, () =>
+                    {
+                        SaveMobiles();
+                        SaveGuilds();
+                        SaveRegions();
+                    });
+                }
+                else
+                {
+                    SaveMobiles();
+                    SaveItems();
+                    SaveGuilds();
+                    SaveRegions();
+                }
+
+                try
+                {
+                    EventSink.InvokeWorldSave(new WorldSaveEventArgs(message));
+                }
+                catch (Exception e)
+                {
+                    throw new Exception("World Save event threw an exception.  Save failed!", e);
+                }
+
+                double seconds = System.Diagnostics.Stopwatch.GetElapsedTime(startTime).TotalSeconds;
+                Console.WriteLine("done in {0:F1} seconds.", seconds);
+
+                if (message)
+                    Broadcast(0x35, true, "World save complete. The entire process took {0:F1} seconds.", seconds);
             }
-            catch (Exception e)
+            finally
             {
-                throw new Exception("World Save event threw an exception.  Save failed!", e);
+                m_Saving = false;
             }
-
-            // Adam: final cleanup
-            PackMemory(false);
-
-            DateTime endTime = DateTime.UtcNow;
-            Console.WriteLine("done in {0:F1} seconds.", (endTime - startTime).TotalSeconds);
-
-            if (message)
-                Broadcast(0x35, true, "World save complete. The entire process took {0:F1} seconds.", (endTime - startTime).TotalSeconds);
-
-            m_Saving = false;
         }
 
-        private static void PackMemory(bool before)
+        private static void SaveDual(Action saveItems, Action saveOtherSections)
         {
-            // Adam: Force a collection of any and all garbage at this time
-            //	as we are freezing the world anyway. Also,I suspect Collect() may
-            //	cause swapping out of data/code which has a significant impact on the 
-            //	next item enumeration that runs. For this reason we do the Collect()
-            //	BEFORE the save (which does a complete enumeration.)
-            /*
-			System.GC.Collect();
-			System.GC.WaitForPendingFinalizers();
-			if (before == true)
-				Console.WriteLine("{0} bytes in allocated memory before save", System.GC.GetTotalMemory(false));
-			else
-				Console.WriteLine("{0} bytes in allocated memory after save", System.GC.GetTotalMemory(false));*/
+            ExceptionDispatchInfo? itemFailure = null;
+            ExceptionDispatchInfo? otherFailure = null;
+            Thread itemWorker = new Thread(() =>
+            {
+                try
+                {
+                    saveItems();
+                }
+                catch (Exception ex)
+                {
+                    itemFailure = ExceptionDispatchInfo.Capture(ex);
+                }
+            }) { Name = "Item Save Subset" };
+
+            itemWorker.Start();
+            try
+            {
+                saveOtherSections();
+            }
+            catch (Exception ex)
+            {
+                otherFailure = ExceptionDispatchInfo.Capture(ex);
+            }
+            finally
+            {
+                itemWorker.Join();
+            }
+
+            if (itemFailure != null && otherFailure != null)
+                throw new AggregateException("Both world save workers failed.", itemFailure.SourceException, otherFailure.SourceException);
+
+            itemFailure?.Throw();
+            otherFailure?.Throw();
+        }
+
+        private static GenericWriter OpenSaveWriter(string path, bool prefixStrings)
+        {
+            return SaveType == SaveOption.Normal
+                ? new BinaryFileWriter(path, prefixStrings)
+                : new AsyncWriter(path, prefixStrings);
         }
 
         private static void SaveMobiles()
         {
-            GenericWriter idx;
-            GenericWriter tdb;
-            GenericWriter bin;
+            using GenericWriter idx = OpenSaveWriter(mobIdxPath, false);
+            using GenericWriter tdb = OpenSaveWriter(mobTdbPath, false);
+            using GenericWriter bin = OpenSaveWriter(mobBinPath, true);
 
-            if (SaveType == SaveOption.Normal)
+            ICollection<Mobile> mobiles = m_Mobiles.Values;
+            idx.Write(mobiles.Count);
+            foreach (Mobile m in mobiles)
             {
-                idx = new BinaryFileWriter(mobIdxPath, false);
-                tdb = new BinaryFileWriter(mobTdbPath, false);
-                bin = new BinaryFileWriter(mobBinPath, true);
-            }
-            else
-            {
-                idx = new AsyncWriter(mobIdxPath, false);
-                tdb = new AsyncWriter(mobTdbPath, false);
-                bin = new AsyncWriter(mobBinPath, true);
-            }
-
-            idx.Write((int)m_Mobiles.Count);
-            foreach (Mobile m in m_Mobiles.Values)
-            {
-                Type t = m.GetType();
-
                 long start = bin.Position;
 
                 idx.Write((int)m.m_TypeRef);
@@ -1169,10 +1209,6 @@ namespace Server
             tdb.Write((int)m_MobileTypes.Count);
             for (int i = 0; i < m_MobileTypes.Count; ++i)
                 tdb.Write(((Type)m_MobileTypes[i]).FullName);
-
-            idx.Close();
-            tdb.Close();
-            bin.Close();
         }
 
         internal static ArrayList m_ItemTypes = new ArrayList();
@@ -1181,25 +1217,13 @@ namespace Server
         private static void SaveItems()
         {
 
-            GenericWriter idx;
-            GenericWriter tdb;
-            GenericWriter bin;
+            using GenericWriter idx = OpenSaveWriter(itemIdxPath, false);
+            using GenericWriter tdb = OpenSaveWriter(itemTdbPath, false);
+            using GenericWriter bin = OpenSaveWriter(itemBinPath, true);
 
-            if (SaveType == SaveOption.Normal)
-            {
-                idx = new BinaryFileWriter(itemIdxPath, false);
-                tdb = new BinaryFileWriter(itemTdbPath, false);
-                bin = new BinaryFileWriter(itemBinPath, true);
-            }
-            else
-            {
-                idx = new AsyncWriter(itemIdxPath, false);
-                tdb = new AsyncWriter(itemTdbPath, false);
-                bin = new AsyncWriter(itemBinPath, true);
-            }
-
-            idx.Write((int)m_Items.Count);
-            foreach (Item item in m_Items.Values)
+            ICollection<Item> items = m_Items.Values;
+            idx.Write(items.Count);
+            foreach (Item item in items)
             {
                 long start = bin.Position;
 
@@ -1217,27 +1241,12 @@ namespace Server
             tdb.Write((int)m_ItemTypes.Count);
             for (int i = 0; i < m_ItemTypes.Count; ++i)
                 tdb.Write(((Type)m_ItemTypes[i]).FullName);
-
-            idx.Close();
-            tdb.Close();
-            bin.Close();
         }
 
         private static void SaveGuilds()
         {
-            GenericWriter idx;
-            GenericWriter bin;
-
-            if (SaveType == SaveOption.Normal)
-            {
-                idx = new BinaryFileWriter(guildIdxPath, false);
-                bin = new BinaryFileWriter(guildBinPath, true);
-            }
-            else
-            {
-                idx = new AsyncWriter(guildIdxPath, false);
-                bin = new AsyncWriter(guildBinPath, true);
-            }
+            using GenericWriter idx = OpenSaveWriter(guildIdxPath, false);
+            using GenericWriter bin = OpenSaveWriter(guildBinPath, true);
 
             idx.Write((int)BaseGuild.List.Count);
             foreach (BaseGuild guild in BaseGuild.List.Values)
@@ -1252,67 +1261,46 @@ namespace Server
 
                 idx.Write((int)(bin.Position - start));
             }
-
-            idx.Close();
-            bin.Close();
         }
 
         private static void SaveRegions()
         {
+            var regions = Region.Regions;
+            using MemoryStream index = new MemoryStream(4 + (20 * regions.Count));
+            using BinaryWriter writer = new BinaryWriter(index);
+            writer.Write(0);
             int count = 0;
-
-            GenericWriter bin;
-
-            if (SaveType == SaveOption.Normal)
-                bin = new BinaryFileWriter(regionBinPath, true);
-            else
-                bin = new AsyncWriter(regionBinPath, true);
-
-            MemoryStream mem = new MemoryStream(4 + (20 * Region.Regions.Count));
-            BinaryWriter memIdx = new BinaryWriter(mem);
-
-            memIdx.Write((int)0);
-
-            for (int i = 0; i < Region.Regions.Count; ++i)
+            using (GenericWriter bin = OpenSaveWriter(regionBinPath, true))
             {
-                Region region = (Region)Region.Regions[i];
-
-                if (region.Saves)
+                foreach (Region region in regions)
                 {
-                    ++count;
+                    if (!region.Saves)
+                        continue;
+                    count++;
                     long start = bin.Position;
-
-                    memIdx.Write((int)0);//typeid
-                    memIdx.Write((int)region.UId);
-                    memIdx.Write((long)start);
-
+                    writer.Write(0); // Regions have no type ID.
+                    writer.Write(region.UId);
+                    writer.Write(start);
                     region.Serialize(bin);
-
-                    memIdx.Write((int)(bin.Position - start));
+                    writer.Write((int)(bin.Position - start));
                 }
             }
-
-            bin.Close();
-
-            memIdx.Seek(0, SeekOrigin.Begin);
-            memIdx.Write((int)count);
-
+            writer.Seek(0, SeekOrigin.Begin);
+            writer.Write(count);
             if (SaveType == SaveOption.Threaded)
             {
-                AsyncWriter asyncIdx = new AsyncWriter(regionIdxPath, false);
-                asyncIdx.MemStream = mem;
-                asyncIdx.Close();
+                using AsyncWriter asyncIndex = new AsyncWriter(regionIdxPath, false);
+                // The background writer owns this copy after the scope closes. It must be writable: the MemStream
+                //  setter wraps it in a BinaryWriter, which refuses a read-only stream.
+                MemoryStream copy = new MemoryStream();
+                index.WriteTo(copy);
+                asyncIndex.MemStream = copy;
             }
             else
             {
-                FileStream fs = new FileStream(regionIdxPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                mem.WriteTo(fs);
-                fs.Close();
-                mem.Close();
+                using FileStream file = new FileStream(regionIdxPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                index.WriteTo(file);
             }
-
-            // mem is closed only in non threaded saves, as its reference is copied to asyncIdx.MemStream
-            memIdx.Close();
         }
 
         public static IEntity? FindEntity(Serial serial)

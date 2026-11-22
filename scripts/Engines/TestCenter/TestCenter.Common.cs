@@ -22,6 +22,14 @@
 
 /* Scripts\Engines\TestCenter\TestCenter.Common.cs
  * CHANGELOG:
+ * 11/17/26, Adam (-uomc go)
+ *      'go' is granted to composers on the Music Conservatory too (with 'set'): the player tree and its limits
+ *      (PlayerMayGo), as for players on Test Center.
+ * 11/16/26, Adam (-uomc)
+ *      A command may be granted to composers on the Music Conservatory (TestCenterCommand.ForComposers): 'set' is;
+ *      tamepet, bondpet, petset, go and the whiff/damage switches stay Test Center only. There (outside a Test Center
+ *      facet: ComposersOnly) only granted commands run, and the help is the Music Conservatory's: what composers
+ *      may say.
  * 4/16/2026, Adam
  *      Introduced unified Test Center command registry, replacing legacy speech handling.
  *      Supports exact and prefix commands, shared across all Test Center variants.
@@ -46,6 +54,14 @@ namespace Server.Engines
     public static class TestCenterCommands
     {
         public delegate bool TestCenterCheck(Mobile m);
+
+        /// <summary>
+        /// On the Music Conservatory (-uomc) a character outside a Test Center facet gets only the commands granted to
+        /// composers (TestCenterCommand.ForComposers) and their help. A Test Center facet keeps every command, as on every
+        /// shard (TestCenterFacet), and so does Test Center itself.
+        /// </summary>
+        public static bool ComposersOnly(Mobile m) =>
+            Core.RuleSets.MusicConservatoryRules() && !TestCenterFacet.IsTestCenter(m);
         // ===================================================================
         // Test Center Command Registry (new - replaces the old mess)
         // ===================================================================
@@ -63,6 +79,8 @@ namespace Server.Engines
             public string Usage { get; }
             public Action<SpeechEventArgs> Handler { get; }
             public CommandMatchType MatchType { get; }
+            /// <summary>Granted to composers on the Music Conservatory (-uomc) too; the rest stay Test Center only.</summary>
+            public bool ForComposers { get; init; }
 
             public TestCenterCommand(string name, string description, string usage,
                 Action<SpeechEventArgs> handler,
@@ -95,13 +113,13 @@ namespace Server.Engines
             /// <summary>
             /// Called from EventSink_Speech. Returns true if a TC command was handled.
             /// </summary>
-            public static bool TryExecute(SpeechEventArgs args)
+            public static bool TryExecute(SpeechEventArgs args, bool composersOnly = false)
             {
                 string lowerSpeech = args.Speech.Trim().ToLowerInvariant();
 
                 // 1. Exact match first (higher priority)
                 if (_commands.TryGetValue(lowerSpeech, out TestCenterCommand? cmd) &&
-                    cmd.MatchType == CommandMatchType.Exact)
+                    cmd.MatchType == CommandMatchType.Exact && (!composersOnly || cmd.ForComposers))
                 {
                     cmd.Handler(args);
                     args.Handled = true;
@@ -114,7 +132,7 @@ namespace Server.Engines
 
                 foreach (var c in _orderedCommands)
                 {
-                    if (c.MatchType == CommandMatchType.StartsWith)
+                    if (c.MatchType == CommandMatchType.StartsWith && (!composersOnly || c.ForComposers))
                     {
                         string command = c.Name;
 
@@ -142,6 +160,9 @@ namespace Server.Engines
             }
 
             public static IReadOnlyList<TestCenterCommand> AllCommands => _orderedCommands.AsReadOnly();
+
+            /// <summary>The commands granted to composers (the Music Conservatory).</summary>
+            public static IReadOnlyList<TestCenterCommand> ComposerCommands => _orderedCommands.Where(c => c.ForComposers).ToList();
         }
 
         // ===================================================================
@@ -248,13 +269,13 @@ namespace Server.Engines
 
             #endregion Target Classes
 
-            public static void EventSink_Speech(SpeechEventArgs args, TestCenterCommands.TestCenterCheck isAllowed)
+            public static void EventSink_Speech(SpeechEventArgs args, TestCenterCommands.TestCenterCheck isAllowed, bool composersOnly = false)
             {
                 try
                 {
                     if (!args.Handled && isAllowed(args.Mobile))
                     {
-                        TestCenterCommands.TestCenterCommandRegistry.TryExecute(args);
+                        TestCenterCommands.TestCenterCommandRegistry.TryExecute(args, composersOnly);
                     }
                 }
                 catch (Exception ex)
@@ -350,7 +371,8 @@ namespace Server.Engines
 
                         CommandHandlers.ExecuteGo(args.Mobile, name);
                     },
-                    TestCenterCommands.CommandMatchType.StartsWith));
+                    TestCenterCommands.CommandMatchType.StartsWith)
+                { ForComposers = true });     // the Music Conservatory: composers travel (the player tree, as on Test Center)
 
                 // petset <stat> <value>
                 TestCenterCommands.TestCenterCommandRegistry.Register(new TestCenterCommands.TestCenterCommand(
@@ -438,7 +460,8 @@ namespace Server.Engines
                             }
                         }
                     },
-                    TestCenterCommands.CommandMatchType.StartsWith));
+                    TestCenterCommands.CommandMatchType.StartsWith)
+                { ForComposers = true });     // the Music Conservatory: composers set their skills (Musicianship) and stats
             }
 
             // ChangeStrength, ChangeDexterity, etc. methods 
@@ -666,14 +689,15 @@ namespace Server.Engines
                 AddBackground(10, 10, 600, 440, 3000);
 
                 // Title
-                AddHtml(20, 20, 580, 40, "<center><big>Test Center Help</big></center>", false, false);
+                bool composers = ComposersOnly(_mobile);     // the Music Conservatory: only what composers are granted
+                AddHtml(20, 20, 580, 40, composers ? "<center><big>Music Conservatory Help</big></center>" : "<center><big>Test Center Help</big></center>", false, false);
 
                 // Tabs
                 AddButton(30, 70, _tab == 0 ? 0xFB0 : 0xFAE, _tab == 0 ? 0xFB0 : 0xFAF, 100, GumpButtonType.Reply, 0);
                 AddLabel(65, 70, 0x34, "Main Menu");
 
                 AddButton(180, 70, _tab == 1 ? 0xFB0 : 0xFAE, _tab == 1 ? 0xFB0 : 0xFAF, 101, GumpButtonType.Reply, 0);
-                AddLabel(215, 70, 0x34, "Test Center Commands");
+                AddLabel(215, 70, 0x34, composers ? "Composer Commands" : "Test Center Commands");
 
                 AddButton(380, 70, _tab == 2 ? 0xFB0 : 0xFAE, _tab == 2 ? 0xFB0 : 0xFAF, 102, GumpButtonType.Reply, 0);
                 AddLabel(415, 70, 0x34, "Normal Commands");
@@ -689,13 +713,14 @@ namespace Server.Engines
 
             private void BuildTestCenterCommandsPage(int currentPage)
             {
-                var commands = TestCenterCommandRegistry.AllCommands;
+                bool composers = ComposersOnly(_mobile);
+                var commands = composers ? TestCenterCommandRegistry.ComposerCommands : TestCenterCommandRegistry.AllCommands;
                 int totalPages = (commands.Count + EntriesPerPage - 1) / EntriesPerPage;
                 currentPage = Math.Max(0, Math.Min(currentPage, totalPages - 1));
 
                 int start = currentPage * EntriesPerPage;
 
-                AddHtml(40, 110, 200, 25, "Test Center Commands", false, false);
+                AddHtml(40, 110, 200, 25, composers ? "Composer Commands" : "Test Center Commands", false, false);
 
                 int y = 140;
                 for (int i = start; i < commands.Count && i < start + EntriesPerPage; i++)
@@ -779,6 +804,20 @@ namespace Server.Engines
             }
             private void BuildMainPage()
             {
+                if (ComposersOnly(_mobile))
+                {   // the Music Conservatory: what composers are granted (TestCenterCommand.ForComposers)
+                    const string composerContent =
+                        "<center><big>Welcome to the Music Conservatory</big></center><br>" +
+                        "Set your skills and stats as you need them, so you can make music straight away, and travel " +
+                        "where you like.<br><br>" +
+                        "Examples:<br>" +
+                        "• set musicianship 100<br>" +
+                        "• set str 60<br>" +
+                        "• go britain (travel; say go alone for the list)<br><br>" +
+                        "Use the tabs above to browse the composer commands and the normal commands.";
+                    AddHtml(40, 110, 540, 280, "<basefont color=\"#000000\">" + composerContent, false, true);
+                    return;
+                }
                 const string content =
                     "<center><big>Getting Around Test Center</big></center><br>" +
 

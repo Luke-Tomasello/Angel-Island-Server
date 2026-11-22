@@ -21,6 +21,13 @@
 
 /* Misc/NameVerification.cs
  * CHANGELOG:
+ *  11/18/26, Adam (names cleanup)
+ *      IsNameConflict no longer asks the per-shard Reserved Names (retired): the family-wide registry and the live-name
+ *      rule (no two live characters on one shard share a name) decide.
+ *  11/17/26, Adam (family-wide names)
+ *      IsNameConflict also asks the family-wide registry (NameRegistry, on player shards): a name another account owns on
+ *      any Angel Island shard, or an old player's from the archive, is refused; an unreadable registry refuses (fail
+ *      closed). The placeholder "Generic Player" is never refused.
  *  3/25/07, Pix
  *		Commented out smerx from the disallowed names list
  *  5/02/06, Kit
@@ -147,14 +154,20 @@ namespace Server.Misc
             // For messaging only: distinguish "your own live name is already in use."
             self = liveOwner != null && liveOwner == acct;
 
-            // Reserved names are ownership-aware and allow reclaim by the owning account.
-            string? reservedOwner = ReservedNames.LookupOwner(candidate);
+            // (the per-shard Reserved Names is retired 11/18/26: the registry below is the only list of names)
 
-            bool reservedBySomeoneElse =
-                !string.IsNullOrWhiteSpace(reservedOwner) &&
-                !string.Equals(reservedOwner, acct.Username, StringComparison.OrdinalIgnoreCase);
+            // Family-wide (NameRegistry, 11/17/26): the name must be free for this account on every Angel Island shard.
+            //  Unreadable registry: refused (fail closed), and logged.
+            bool blockedByRegistry = false;
+            if (NameRegistry.Enforced && !NameRegistry.Placeholder(candidate))
+            {
+                bool? free = NameRegistry.IsFree(candidate, acct.Username);
+                if (free == null)
+                    Utility.Monitor.WriteLine("Names: the name registry can't be read ({0}): '{1}' refused.", ConsoleColor.Red, NameRegistry.DatabasePath, candidate);
+                blockedByRegistry = free != true;
+            }
 
-            return blockedByLive || reservedBySomeoneElse;
+            return blockedByLive || blockedByRegistry;
         }
 
         public enum NameValidationError

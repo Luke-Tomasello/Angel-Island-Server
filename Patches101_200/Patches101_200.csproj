@@ -7,6 +7,15 @@
     <Configurations>Debug;Release;Nullable</Configurations>
   </PropertyGroup>
 
+  <!-- the server's version, 6.1.<revision>: the patch libraries carry GMN Core's (see ..\GMN Core.csproj and
+       ..\Directory.Build.targets). 11/16/26, Adam -->
+  <PropertyGroup>
+    <AppVersion>6.1</AppVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <AppVersionSource Include="..\" />
+  </ItemGroup>
+
   <!-- Nullable: same as Debug, plus full nullable analysis -->
   <PropertyGroup Condition="'$(Configuration)'=='Nullable'">
     <DebugSymbols>true</DebugSymbols>

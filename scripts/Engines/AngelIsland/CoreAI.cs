@@ -22,6 +22,10 @@
 /* Scripts/Engines/AngelIsland/CoreAI.cs
  * ChangeLog
  *
+ * 11/16/26, Adam (-uomc)
+ * MusicConservatoryVisible: shows the Music Conservatory (-uomc) in the server list. Appended: features are saved by
+ * name, so the existing ones keep their places.
+ *
  * 11/7/26, Adam (MusicSharing retired)
  * Retired the MusicSharing dynamic feature (Obsolete; its ordinal is kept): music sharing is the -sharemusic startup switch.
  * 11/7/26, Adam (MusicSharing)
@@ -829,7 +833,8 @@ namespace Server
             TestCenterVisible,
             UpheavalVisible,
             [Obsolete("Retired: music sharing is the -sharemusic startup switch (Core.ShareMusic). Retained for FeatureBits ordinal compatibility; do not reuse.")]
-            MusicSharing            // songs shared between the shards on this machine (Engines\AIMusicShare)
+            MusicSharing,           // songs shared between the shards on this machine (Engines\AIMusicShare)
+            MusicConservatoryVisible    // the Music Conservatory (-uomc) in the server list; appended (saved by name)
         }
 
         internal static bool[] DynamicFeatures = new bool[Enum.GetValues(typeof(FeatureBits)).Length];

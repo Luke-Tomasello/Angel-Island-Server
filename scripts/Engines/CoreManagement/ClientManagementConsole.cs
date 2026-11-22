@@ -21,6 +21,13 @@
 
 /* Engines/CoreManagement/ClientManagementConsole.cs
  * ChangeLog
+ *  11/21/26, Adam (warnings in Release)
+ *      WarnBadGMNCUO and WarnBadGMNRZR exist in Release builds too (they were Debug only, so production's console
+ *      couldn't show or change them), marked [ResetAtStartup] like the rest.
+ *  11/19/26, Adam (ResetAtStartup)
+ *      The settings OwnerTools.ShardInit sets at every start are marked [ResetAtStartup] (ForceGMNCUO, ForceGMNRZR,
+ *      WarnBadGMNCUO, WarnBadGMNRZR, the account limits): settable again, to test in game; staff are told a change lasts
+ *      until the next restart, and the props gump shows them in yellow.
  *	8/26/2023, Adam
  *		Created.
  *  3/18/26, Luke
@@ -44,6 +51,7 @@ namespace Server.Engines.Consoles
 
 #if DEBUG
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public static bool ForceGMNCUO
         {
             get => CoreAI.ForceGMNCUO;
@@ -51,6 +59,7 @@ namespace Server.Engines.Consoles
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public static bool ForceGMNRZR
         {
             get => CoreAI.ForceGMNRZR;
@@ -72,6 +81,7 @@ namespace Server.Engines.Consoles
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public static bool WarnBadGMNCUO
         {
             get => CoreAI.WarnBadGMNCUO;
@@ -79,6 +89,7 @@ namespace Server.Engines.Consoles
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public static bool WarnBadGMNRZR
         {
             get => CoreAI.WarnBadGMNRZR;
@@ -86,6 +97,7 @@ namespace Server.Engines.Consoles
         }
 #else
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public static bool ForceGMNCUO
         {
             get => CoreAI.ForceGMNCUO;
@@ -93,6 +105,7 @@ namespace Server.Engines.Consoles
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public static bool ForceGMNRZR
         {
             get => CoreAI.ForceGMNRZR;
@@ -111,6 +124,22 @@ namespace Server.Engines.Consoles
         {
             get => CoreAI.FakeBadGMNRZR;
             set => CoreAI.FakeBadGMNRZR = value;
+        }
+
+        [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
+        public static bool WarnBadGMNCUO
+        {
+            get => CoreAI.WarnBadGMNCUO;
+            set => CoreAI.WarnBadGMNCUO = value;
+        }
+
+        [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
+        public static bool WarnBadGMNRZR
+        {
+            get => CoreAI.WarnBadGMNRZR;
+            set => CoreAI.WarnBadGMNRZR = value;
         }
 #endif
 
@@ -128,34 +157,38 @@ namespace Server.Engines.Consoles
         }
 
         [CommandProperty(AccessLevel.Owner)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public int MaxConcurrentAddresses
         {
             get => CoreAI.MaxConcurrentAddresses;
-            // configured in ShardInit()
-            //set => CoreAI.MaxConcurrentAddresses = value;
+            // configured in ShardInit() (a change here lasts until the next restart)
+            set => CoreAI.MaxConcurrentAddresses = value;
         }
 
         [CommandProperty(AccessLevel.Owner)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public int MaxCharactersPerAccount
         {
             get => CoreAI.MaxCharactersPerAccount;
-            // configured in ShardInit()
-            //set => CoreAI.MaxCharactersPerAccount = value;
+            // configured in ShardInit() (a change here lasts until the next restart)
+            set => CoreAI.MaxCharactersPerAccount = value;
         }
         [CommandProperty(AccessLevel.Administrator)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public static int MaxAccountsPerIP
         {
             get => CoreAI.MaxAccountsPerIP;
-            // configured in ShardInit()
-            //set => CoreAI.MaxAccountsPerIP = value;
+            // configured in ShardInit() (a change here lasts until the next restart)
+            set => CoreAI.MaxAccountsPerIP = value;
         }
 
         [CommandProperty(AccessLevel.Administrator)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public static int MaxAccountsPerMachine
         {
             get => CoreAI.MaxAccountsPerMachine;
-            // configured in ShardInit()
-            //set => CoreAI.MaxAccountsPerMachine = value;
+            // configured in ShardInit() (a change here lasts until the next restart)
+            set => CoreAI.MaxAccountsPerMachine = value;
         }
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]

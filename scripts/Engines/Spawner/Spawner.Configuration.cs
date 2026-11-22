@@ -21,9 +21,30 @@
 
 /* Scripts\Engines\Spawner\Spawner.Configuration.cs
  * CHANGELOG:
+ *   11/17/26, Adam (-uomc):
+ *      - ShouldShardEnable: the Music Conservatory's world is Siege Perilous's, so it takes Siege's spawners and
+ *        regions (ShardConfig.Siege), though it plays by the Upheaval rules. Asked before UpheavalRules(), which is
+ *        true there too.
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *  8/26/22, Adam
+ *      Add _defaultSpawnMap() to automatically set the UOSpawnMap based on configuration when a spawner is first created.
+ *  8/24/22, Adam (ShouldShardEnable(s))
+ *      Add new ShouldShardEnable(s) which is now used in a couple different places to determine what spawners should be respawned on which shards.
+ *  8/23/22, Adam (core spawners)
+ *      - rename CoreSpawn ==> _CoreSpawn
+ *      - rename IsConcentric ==> _IsConcentric
+ *      - rename OurWorldSize ==> _OurWorldSize
+ *      All of this to have them listed first in the spawner, as they are important to set.
+ *      - add _Shard
+ *          _Shard defines the shard (Core,Siege,AngelIsland,Renaissance,Mortalis,etc.) for which this spawner applies.
+ *          Core is special as it applies to all shards. It is standard OSI spawn
+ *          Mortalis for example would apply to only Mortalis shards.
+ *      - add ShardConfig enum: to what shard this spawner applies: Core=all shards, AngelIsland=angel island only, etc.
+ *      - add _UOSpawnMap: How it was determined this was a 'core' spawner
+ *      - add _NeedsReview: Questionable, needs review (should it be 'core' or not?
+ *      - revamp OnSingleClick() to display name+_UOSpawnMap, then the labels (core, running, etc.)
+ *      - Add SaveFlags to optimize I/O
  */
 
 using System;
@@ -342,6 +363,8 @@ namespace Server.Mobiles
             else if (Core.RuleSets.SiegeRules() && shard.HasFlag(Spawner.ShardConfig.Siege)) return true;
             else if (Core.RuleSets.MortalisRules() && shard.HasFlag(Spawner.ShardConfig.Mortalis)) return true;
             else if (Core.RuleSets.SeasonsRules() && shard.HasFlag(Spawner.ShardConfig.Seasons)) return true;
+            // the Music Conservatory: Siege's world (its spawners and regions), the Upheaval rules; before UpheavalRules()
+            else if (Core.RuleSets.MusicConservatoryRules()) return shard.HasFlag(Spawner.ShardConfig.Siege);
             else if (Core.RuleSets.UpheavalRules() && shard.HasFlag(Spawner.ShardConfig.Upheaval)) return true;
             return false;
         }

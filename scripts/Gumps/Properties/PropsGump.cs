@@ -21,6 +21,8 @@
 
 /* Scripts/Gumps/Properties/PropsGump.cs
  * Changelog:
+ *  11/19/26, Adam (ResetAtStartup)
+ *      A property set at every start ([ResetAtStartup]) shows its name in yellow.
  *  10/27/2026, Adam
  *      A string property marked [StringList] opens a SetListOptionGump of its current names (read when the list opens);
  *      without the attribute, or with an empty list, string properties open SetGump as before.
@@ -250,7 +252,9 @@ namespace Server.Gumps
                     PropertyInfo prop = (PropertyInfo)o;
 
                     AddImageTiled(x, y, NameWidth, EntryHeight, EntryGumpID);
-                    AddLabelCropped(x + TextOffsetX, y, NameWidth - TextOffsetX, EntryHeight, TextHue, prop.Name);
+                    // yellow: set at every start (ResetAtStartup), a change lasts until the next restart
+                    AddLabelCropped(x + TextOffsetX, y, NameWidth - TextOffsetX, EntryHeight,
+                        prop.IsDefined(typeof(ResetAtStartupAttribute), true) ? 0x35 : TextHue, prop.Name);
                     x += NameWidth + OffsetSize;
                     AddImageTiled(x, y, ValueWidth, EntryHeight, EntryGumpID);
                     AddLabelCropped(x + TextOffsetX, y, ValueWidth - TextOffsetX, EntryHeight, TextHue, ValueToString(prop));

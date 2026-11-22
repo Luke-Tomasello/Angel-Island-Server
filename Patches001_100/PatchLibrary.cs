@@ -44,6 +44,8 @@
 
 /* Patches001_100/PatchLibrary.cs
  * ChangeLog
+ *  11/21/26, Adam
+ *      ExpInfo (PatchV92's music library port) moved here from Nuke.
  *  11/6/26, Adam (PatchV22)
  *      A world without data\Patches\Angel Island teleporters.cfg (a new world: the file was never in SVN) has nothing to
  *      remove: say so and finish, instead of throwing on the missing file. The list names teleporters by serial in
@@ -7419,34 +7421,34 @@ namespace Patches001_100
                 if (SiegeStyleShards())
                 {
                     // from Angel Island
-                    Dictionary<int, Nuke.ExpInfo> table = new() {
-                    { 93233347, new Nuke.ExpInfo("Dorundain",2000) },
-                    { 662835438, new Nuke.ExpInfo("Wagdog",2000) },
-                    { -845254843, new Nuke.ExpInfo("Wagdog",0) },
-                    { -1035873931, new Nuke.ExpInfo("Dorundain",5000) },
-                    { -1721352356, new Nuke.ExpInfo("Wagdog",500) },
-                    { -638482194, new Nuke.ExpInfo("Dorundain",5000) },
-                    { -1733046116, new Nuke.ExpInfo("random1",0) },
-                    { -1308563267, new Nuke.ExpInfo("Bravata",200) },
-                    { 1701907019, new Nuke.ExpInfo("Bravata",1000) },
-                    { -1248138449, new Nuke.ExpInfo("Chappelle4life3",6000) },
-                    { 103000142, new Nuke.ExpInfo("Wagdog",0) },
-                    { 2116081743, new Nuke.ExpInfo("Dorundain",1000) },
-                    { 1174944509, new Nuke.ExpInfo("Bravata",5000) },
-                    { 681617492, new Nuke.ExpInfo("Dorundain",5000) },
-                    { -187482132, new Nuke.ExpInfo("Chappelle4life3",500) },
-                    { 992232335, new Nuke.ExpInfo("Dorundain",5000) },
-                    { -1366692645, new Nuke.ExpInfo("Angel2",0) },
-                    { 903223787, new Nuke.ExpInfo("Wagdog",2000) },
-                    { 220431633, new Nuke.ExpInfo("Dorundain",0) },
-                    { -1139706317, new Nuke.ExpInfo("Dorundain",0) },
-                    { 1812409723, new Nuke.ExpInfo("Dorundain",2000) },
-                    { -440882563, new Nuke.ExpInfo("Dorundain",0) },
-                    { 27770559, new Nuke.ExpInfo("Dorundain",1000) },
-                    { 644215459, new Nuke.ExpInfo("Dorundain",2000) },
-                    { 2083146414, new Nuke.ExpInfo("Dorundain",1000) },
-                    { 1784616072, new Nuke.ExpInfo("Dorundain",2000) },
-                    { -832981173, new Nuke.ExpInfo("Dorundain",3000) },
+                    Dictionary<int, ExpInfo> table = new() {
+                    { 93233347, new ExpInfo("Dorundain",2000) },
+                    { 662835438, new ExpInfo("Wagdog",2000) },
+                    { -845254843, new ExpInfo("Wagdog",0) },
+                    { -1035873931, new ExpInfo("Dorundain",5000) },
+                    { -1721352356, new ExpInfo("Wagdog",500) },
+                    { -638482194, new ExpInfo("Dorundain",5000) },
+                    { -1733046116, new ExpInfo("random1",0) },
+                    { -1308563267, new ExpInfo("Bravata",200) },
+                    { 1701907019, new ExpInfo("Bravata",1000) },
+                    { -1248138449, new ExpInfo("Chappelle4life3",6000) },
+                    { 103000142, new ExpInfo("Wagdog",0) },
+                    { 2116081743, new ExpInfo("Dorundain",1000) },
+                    { 1174944509, new ExpInfo("Bravata",5000) },
+                    { 681617492, new ExpInfo("Dorundain",5000) },
+                    { -187482132, new ExpInfo("Chappelle4life3",500) },
+                    { 992232335, new ExpInfo("Dorundain",5000) },
+                    { -1366692645, new ExpInfo("Angel2",0) },
+                    { 903223787, new ExpInfo("Wagdog",2000) },
+                    { 220431633, new ExpInfo("Dorundain",0) },
+                    { -1139706317, new ExpInfo("Dorundain",0) },
+                    { 1812409723, new ExpInfo("Dorundain",2000) },
+                    { -440882563, new ExpInfo("Dorundain",0) },
+                    { 27770559, new ExpInfo("Dorundain",1000) },
+                    { 644215459, new ExpInfo("Dorundain",2000) },
+                    { 2083146414, new ExpInfo("Dorundain",1000) },
+                    { 1784616072, new ExpInfo("Dorundain",2000) },
+                    { -832981173, new ExpInfo("Dorundain",3000) },
                 };
 
                     LogHelper logger = new LogHelper("RolledUpSheetMusicRepair.log", true, true, true);
@@ -8304,7 +8306,17 @@ namespace Patches001_100
 
         #endregion PatchV94
         #region PatchV92
-        private static bool GetOwnerInfo(Nuke.ExpInfo info, out Mobile m, out Server.Accounting.Account acct)
+        public class ExpInfo
+        {
+            public string Username;
+            public int Price;
+            public ExpInfo(string username, int price)
+            {
+                Username = username;
+                Price = price;
+            }
+        }
+        private static bool GetOwnerInfo(ExpInfo info, out Mobile m, out Server.Accounting.Account acct)
         {
             m = null;
             acct = null;

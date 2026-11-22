@@ -21,6 +21,9 @@
 
 /* Scripts/Misc/MapDefinitions.cs
  * ChangeLog
+ *  11/17/26, Adam (-uomc)
+ *      The main maps' Trammel rules (PvE) come from Core.RuleSets.TrammelRules(): Seasons 3 as before, and now the
+ *      Angel Island Music Conservatory.
  *  10/4/22, Adam
  *      Turned off TileMatrixPatch since our map version doesn't require it (see notes), and in fact 
  *          turning it on cause 'holes' in the map (Jhelom small island, and Minax fortress.)
@@ -48,7 +51,7 @@ namespace Server.Misc
 			 * 4) Changing or removing any predefined maps may cause server instability.
 			 */
 
-            MapRules defaultRules = Core.RuleSets.SeasonsRules(3)
+            MapRules defaultRules = Core.RuleSets.TrammelRules()
                 ? MapRules.TrammelRules
                 : MapRules.FeluccaRules;
 

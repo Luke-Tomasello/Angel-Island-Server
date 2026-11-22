@@ -21,6 +21,8 @@
 
 /* Scripts\Commands\Diagnostics.cs
  * ChangeLog
+ *  11/16/26, Adam (version)
+ *      The core version is Utility.BuildVersion(), 6.1.1360 (Major.Minor, then the SVN revision); no [Build n].
  *  3/31/2024, Adam (Push/Pop commands)
  *      Enhanced both Push and Pop commands to support all read/writable properties.
  *      Example: [Push Location, [Push Location, [Push Location, ...
@@ -198,7 +200,7 @@ namespace Server.Commands
             var assembly = System.Reflection.Assembly.GetEntryAssembly();
             var ver = assembly.GetName().Version;
 
-            string version = $"{Utility.BuildMajor()}.{Utility.BuildMinor()} [Build {Utility.BuildBuild()}] [.NET 8, 64-bit]";
+            string version = $"{Utility.BuildVersion()} [.NET 8, 64-bit]";
             string text = $"{Core.Server}, {Core.ReleasePhase} Release, Publish {PublishInfo.Publish}";
             string core = $"GmnUO Core version {version}, launched March 2004.";
 

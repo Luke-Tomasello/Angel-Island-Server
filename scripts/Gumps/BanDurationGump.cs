@@ -19,6 +19,16 @@
  *
  ***************************************************************************/
 
+/* Scripts/Gumps/BanDurationGump.cs
+ * ChangeLog
+ *  11/21/26, Adam (ban details that don't take)
+ *      An account whose ban details couldn't be set is reported (it keeps the ban it had); the success line counts only
+ *      the accounts that changed.
+ *  11/18/26, Adam (account restrictions)
+ *      Also asks the ban's scope (this shard, or every shard) and its reason; the choice goes to the shared restrictions
+ *      (Restrictions.SetBanDetails) instead of the account's ban tags.
+ */
+
 using Server.Accounting;
 using System;
 using System.Collections;
@@ -59,7 +69,7 @@ namespace Server.Gumps
             m_List = list;
 
             int width = 170;
-            int height = 305;
+            int height = 395;
 
             AddPage(0);
 
@@ -79,6 +89,14 @@ namespace Server.Gumps
             AddInput(4, 1, "Hours");
             AddInput(5, 2, "Minutes");
             AddInput(6, 3, "Seconds");
+
+            // the scope and the reason (11/18/26: bans are shared, Engines/Restrictions)
+            AddRadio(15, 300, 0xD2, 0xD3, true, 100);
+            AddHtml(40, 300, 120, 20, "This shard", false, false);
+            AddRadio(15, 322, 0xD2, 0xD3, false, 101);
+            AddHtml(40, 322, 120, 20, "Every shard", false, false);
+            AddHtml(15, 345, 140, 20, "Reason:", false, false);
+            AddTextField(15, 365, 140, 20, 4);
         }
 
         public void AddInput(int bid, int idx, string name)
@@ -88,6 +106,20 @@ namespace Server.Gumps
 
             AddButtonLabeled(x, y, bid, name);
             AddTextField(x + 35, y + 20, 100, 20, idx);
+        }
+
+        private static string Scope(RelayInfo info) =>
+            info.IsSwitched(101) ? Server.Engines.Restrictions.All : Server.Engines.Restrictions.ThisShard;
+
+        private static string Reason(RelayInfo info) =>
+            info.GetTextEntry(4)?.Text?.Trim() ?? "";
+
+        // a ban whose details couldn't be set keeps the ones it had (SetBanDetails changes nothing on failure)
+        private static void ReportUnset(Mobile from, int unset)
+        {
+            if (unset > 0)
+                from.SendMessage(0x22, "Restrictions: {0} not changed (no ban in force, or the accounts database can't be written): each keeps the ban it had. [restrictions <account> shows it.",
+                    unset == 1 ? "1 account" : unset + " accounts");
         }
 
         public override void OnResponse(Server.Network.NetState sender, RelayInfo info)
@@ -111,14 +143,17 @@ namespace Server.Gumps
             {
                 case 0:
                     {
+                        int unset = 0;
                         for (int i = 0; i < m_List.Count; ++i)
                         {
                             Account? a = (Account?)m_List[i];
 
-                            a.SetUnspecifiedBan(from);
+                            if (a != null && !Server.Engines.Restrictions.SetBanDetails(a.Username, Scope(info), null, Reason(info), from.Name))
+                                unset++;
                         }
 
                         from.SendMessage("Duration unspecified.");
+                        ReportUnset(from, unset);
                         return;
                     }
                 case 1: // infinite
@@ -227,17 +262,21 @@ namespace Server.Gumps
 
             if (shouldSet)
             {
+                int unset = 0;
                 for (int i = 0; i < m_List.Count; ++i)
                 {
                     Account? a = (Account?)m_List[i];
 
-                    a.SetBanTags(from, DateTime.UtcNow, duration);
+                    if (a != null && !Server.Engines.Restrictions.SetBanDetails(a.Username, Scope(info),
+                            duration == TimeSpan.MaxValue ? null : DateTime.UtcNow + duration, Reason(info), from.Name))
+                        unset++;
                 }
 
-                if (duration == TimeSpan.MaxValue)
-                    from.SendMessage("Duration is infinite.");
-                else
-                    from.SendMessage("Duration is {0}.", duration);
+                int set = m_List.Count - unset;
+                if (set > 0)
+                    from.SendMessage("Restrictions: {0}{1}, {2}.", duration == TimeSpan.MaxValue ? "banned for good" : "banned for " + duration,
+                        info.IsSwitched(101) ? " on every shard" : " on this shard", set == 1 ? "1 account" : set + " accounts");
+                ReportUnset(from, unset);
             }
             else
             {

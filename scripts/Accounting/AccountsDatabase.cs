@@ -21,6 +21,18 @@
 
 /* Scripts/Accounting/AccountsDatabase.cs
  * CHANGELOG
+ * 11/18/26, Adam (one account, any capitalisation)
+ *  A username's row was matched case-sensitively, so 'Bram' and 'bram' became two rows with their own passwords (81 accounts
+ *  in production's database), and a shard read whichever its own spelling hit. Now: a new table is NOCASE; every lookup and
+ *  save matches NOCASE (a save updates the existing row, in any capitalisation, and inserts only when there's none; an
+ *  older table's duplicates are all updated together until the MergeAccountCase nuke merges them). SaveHardwareHash writes
+ *  only the hardware hash: the Account.HardwareHash setter saved the whole account, so a shard holding an older password in
+ *  memory wrote it back over a newer one. A list save resets its parameters per account. PathOverride for tests.
+ *  SaveCredentials writes only the password columns (password changes, a reset password used up): a full save wrote the
+ *  copy's hardware hash (0 when never loaded) over the recorded one. Each kind of change writes its own columns.
+ * 11/18/26, Adam (one database folder)
+ *  accounts.db lives in the one database folder (Server\DatabaseFolder.cs: AI.DBDIR, else <shard>\Databases);
+ *  AI.LOGINDB is retired. Always on: -usedb is retired.
  * 7/29/2024, Adam
  *  Initialize database if it does not exist.
  * 8/5/22, Adam
@@ -74,12 +86,13 @@ namespace Server.Accounting
     {
         public static bool Verbose = true;
 
+        /// <summary>For tests: an accounts database other than the shard's.</summary>
+        public static string? PathOverride { get; set; }
+
         public static string GetDatabasePath(ref bool error)
         {
-            string? path = Environment.GetEnvironmentVariable("AI.LOGINDB");
-
-            if (string.IsNullOrWhiteSpace(path))
-                path = @"C:\AIDB\accounts.db";
+            // the one database folder (AI.DBDIR, else <shard>\Databases): AI.LOGINDB is retired
+            string path = !string.IsNullOrWhiteSpace(PathOverride) ? PathOverride! : DatabaseFolder.PathOf("accounts.db");
 
             error = false;
             if (!File.Exists(path))
@@ -108,7 +121,9 @@ namespace Server.Accounting
 
         private static void EnsureTable()
         {
-            const string cmdText = "CREATE TABLE IF NOT EXISTS Account (username TEXT PRIMARY KEY, cryptpassword TEXT, plainpassword TEXT, resetpassword TEXT, hardwarehash INT);";
+            // usernames are one account whatever their capitalisation (NOCASE; an older table is converted by the
+            //  MergeAccountCase nuke, and every query below matches NOCASE anyway)
+            const string cmdText = "CREATE TABLE IF NOT EXISTS Account (username TEXT PRIMARY KEY COLLATE NOCASE, cryptpassword TEXT, plainpassword TEXT, resetpassword TEXT, hardwarehash INT);";
 
             using (SQLiteConnection conn = Connect())
             using (SQLiteCommand cmd = new SQLiteCommand(cmdText, conn))
@@ -188,7 +203,8 @@ namespace Server.Accounting
 
             DataTable? table = null;
 
-            const string cmdText = "SELECT cryptpassword, plainpassword, resetpassword, hardwarehash FROM Account WHERE username=@un;";
+            // any capitalisation; an older table may still hold several (until MergeAccountCase): the exact spelling first
+            const string cmdText = "SELECT cryptpassword, plainpassword, resetpassword, hardwarehash FROM Account WHERE username=@un COLLATE NOCASE ORDER BY (username=@un) DESC;";
 
             using (SQLiteConnection conn = Connect())
             using (SQLiteDataAdapter da = new SQLiteDataAdapter(cmdText, conn))
@@ -265,11 +281,15 @@ namespace Server.Accounting
         {
             EnsureTable();
 
-            const string cmdText = "INSERT OR REPLACE INTO Account (username, cryptpassword, plainpassword, resetpassword, hardwarehash) VALUES (@un, @cp, @pp, @rp, @hh);";
+            // the account's row in any capitalisation is updated (every one, in an older table that still has several);
+            //  only an account with no row at all gets a new one: no duplicates by capitalisation
+            const string updateText = "UPDATE Account SET cryptpassword=@cp, plainpassword=@pp, resetpassword=@rp, hardwarehash=@hh WHERE username=@un COLLATE NOCASE;";
+            const string cmdText = "INSERT INTO Account (username, cryptpassword, plainpassword, resetpassword, hardwarehash) VALUES (@un, @cp, @pp, @rp, @hh);";
 
             int count = 0;
 
             using (SQLiteConnection conn = Connect())
+            using (SQLiteCommand update = new SQLiteCommand(updateText, conn))
             using (SQLiteCommand cmd = new SQLiteCommand(cmdText, conn))
             {
                 try
@@ -286,12 +306,17 @@ namespace Server.Accounting
 
                                 account.GetRawCredentials(out cryptPassword, out plainPassword, out resetPassword);
 
-                                cmd.Parameters.AddWithValue("@un", account.Username);
-                                cmd.Parameters.AddWithValue("@cp", cryptPassword);
-                                cmd.Parameters.AddWithValue("@pp", plainPassword);
-                                cmd.Parameters.AddWithValue("@rp", resetPassword);
-                                cmd.Parameters.AddWithValue("@hh", account.HardwareHashRaw);
-                                cmd.ExecuteNonQuery();
+                                foreach (SQLiteCommand c in new[] { update, cmd })
+                                {
+                                    c.Parameters.Clear();     // one account at a time (a list reused them)
+                                    c.Parameters.AddWithValue("@un", account.Username);
+                                    c.Parameters.AddWithValue("@cp", cryptPassword);
+                                    c.Parameters.AddWithValue("@pp", plainPassword);
+                                    c.Parameters.AddWithValue("@rp", resetPassword);
+                                    c.Parameters.AddWithValue("@hh", account.HardwareHashRaw);
+                                }
+                                if (update.ExecuteNonQuery() == 0)
+                                    cmd.ExecuteNonQuery();
 
                                 count++;
                             }
@@ -311,6 +336,66 @@ namespace Server.Accounting
             }
 
             return count;
+        }
+
+        /// <summary>
+        /// Records the account's password columns (crypt, plain, reset), and nothing else: a password change or a reset
+        /// password used up must not write this copy's hardware hash (0 when it never loaded one) over the recorded one.
+        /// An account with no row yet gets one.
+        /// </summary>
+        public static void SaveCredentials(Account account)
+        {
+            EnsureTable();
+            int updated = 0;
+            account.GetRawCredentials(out string cryptPassword, out string plainPassword, out string resetPassword);
+            using (SQLiteConnection conn = Connect())
+            using (SQLiteCommand cmd = new SQLiteCommand("UPDATE Account SET cryptpassword=@cp, plainpassword=@pp, resetpassword=@rp WHERE username=@un COLLATE NOCASE;", conn))
+            {
+                try
+                {
+                    conn.Open();
+                    cmd.Parameters.AddWithValue("@un", account.Username);
+                    cmd.Parameters.AddWithValue("@cp", cryptPassword);
+                    cmd.Parameters.AddWithValue("@pp", plainPassword);
+                    cmd.Parameters.AddWithValue("@rp", resetPassword);
+                    updated = cmd.ExecuteNonQuery();
+                }
+                catch (Exception ex)
+                {
+                    EventSink.InvokeLogException(new LogExceptionEventArgs(ex));
+                    return;
+                }
+            }
+            if (updated == 0)
+                SaveAccount(account);
+        }
+
+        /// <summary>
+        /// Records the account's hardware hash, and nothing else: a shard holding an older password in memory must never
+        /// write it back over a newer one (it did, when this saved the whole account). An account with no row yet gets one.
+        /// </summary>
+        public static void SaveHardwareHash(Account account)
+        {
+            EnsureTable();
+            int updated = 0;
+            using (SQLiteConnection conn = Connect())
+            using (SQLiteCommand cmd = new SQLiteCommand("UPDATE Account SET hardwarehash=@hh WHERE username=@un COLLATE NOCASE;", conn))
+            {
+                try
+                {
+                    conn.Open();
+                    cmd.Parameters.AddWithValue("@un", account.Username);
+                    cmd.Parameters.AddWithValue("@hh", account.HardwareHashRaw);
+                    updated = cmd.ExecuteNonQuery();
+                }
+                catch (Exception ex)
+                {
+                    EventSink.InvokeLogException(new LogExceptionEventArgs(ex));
+                    return;
+                }
+            }
+            if (updated == 0)
+                SaveAccount(account);
         }
 
         public static void SeedAccounts()

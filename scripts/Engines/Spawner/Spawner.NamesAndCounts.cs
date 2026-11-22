@@ -22,8 +22,12 @@
 /* Scripts\Engines\Spawner\Spawner.NamesAndCounts.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *  5/14/2023, Adam (Count)
+ *      Refactor how spawners use Count.
+ *          The old (RunUO) style used m_Count to denote how many creatures this spawner would spawn
+ *          Nerun style spawners have a count per spawner gump entry, (Nerun spawners can contain > 1 creatures on a spawner gump entry)
+ *      The refactor does away with the m_Count, and replaces it with a list of counts per spawner gump entry
  */
 
 using System;

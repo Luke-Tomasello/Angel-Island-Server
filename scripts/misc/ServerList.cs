@@ -21,6 +21,14 @@
 
 /* Scripts/Misc/ServerList.cs
  * Changelog:
+ *  11/17/26, Adam (list name)
+ *      The Angel Island Music Conservatory is "Music Conservatory" in the list (Core.MusicConservatoryListName): its full
+ *      name ran over the client's Latency and Packet Loss columns. The shard still calls itself by its full name.
+ *  11/17/26, Adam (shard order)
+ *      The list is in the shards' order, oldest first: Angel Island, Siege Perilous, Mortalis, UO Seasons, Upheaval
+ *      (and its Test Center), the Angel Island Music Conservatory, then Administrative (Owner only).
+ *  11/16/26, Adam (-uomc)
+ *      "Angel Island Music Conservatory" (-uomc, MusicConservatoryPort), shown when MusicConservatoryVisible is set.
  *  11/8/26, Adam (login server owner)
  *      Hidden shards and the "Administrative" entry are for Owner accounts (the account is known: the list is sent after
  *      login), not owner IPs (127.0.0.1 or CoreAI.OwnerIP): an address can be anyone's, and a proxy in front of the
@@ -149,8 +157,11 @@ namespace Server.Misc
             new("Siege Perilous",   SocketOptions.SiegePerilousPort,   CoreAI.FeatureBits.SiegePerilousVisible),
             new("Mortalis",         SocketOptions.MortalisPort,         CoreAI.FeatureBits.MortalisVisible),
             new("UO Seasons",       SocketOptions.SeasonsPort,          CoreAI.FeatureBits.SeasonsVisible),
+            new("Upheaval",         SocketOptions.UpheavalPort,         CoreAI.FeatureBits.UpheavalVisible),
             new("Upheaval Test",    SocketOptions.TestCenterPort,       CoreAI.FeatureBits.TestCenterVisible),
-            new("Upheaval",         SocketOptions.UpheavalPort,         CoreAI.FeatureBits.UpheavalVisible)
+            // the Music Conservatory (-uomc), by its short list name: the full name (31 characters, the packet holds 32)
+            //  runs over the client's Latency and Packet Loss columns
+            new(Core.MusicConservatoryListName, SocketOptions.MusicConservatoryPort, CoreAI.FeatureBits.MusicConservatoryVisible),
         };
 
         /// <summary>

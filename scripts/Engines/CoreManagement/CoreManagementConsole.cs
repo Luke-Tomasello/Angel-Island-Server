@@ -21,6 +21,11 @@
 
 /* Engines/CoreManagement/CoreManagementConsole.cs
  * ChangeLog
+ *  11/20/26, Adam (autosave schedule display)
+ *      Show the read-only next autosave and offset directly below WorldSaveFrequency.
+ *  11/19/26, Adam (ResetAtStartup)
+ *      PostTeleportMoveLockMs, NewPlayerStartingArea and NewPlayerGuild are marked [ResetAtStartup] (OwnerTools.ShardInit
+ *      sets them at every start): staff are told a change lasts until the next restart.
  *  11/26/2023, Adam (RandomizeDecay())
  *      When we are turning off the global FreezeHouseDecay, we now RandomizeDecay for each house 
  *          so that we don't get 50 houses all dropping at exactly the same time. (since they all would have been at 15 days.)
@@ -223,7 +228,6 @@
  */
 
 using Server.Diagnostics;
-using Server.Engines.CronScheduler;
 using Server.Misc;
 using Server.Multis;
 using System;
@@ -260,6 +264,7 @@ namespace Server.Engines.Consoles
             set => CoreAI.StatsThreshold = value;
         }
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Owner)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public double PostTeleportMoveLockMs
         {
             get => CoreAI.PostTeleportMoveLockMs;
@@ -380,6 +385,7 @@ namespace Server.Engines.Consoles
         }
 
         [CommandProperty(AccessLevel.Administrator)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public bool NewPlayerStartingArea
         {
             get => CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.NewPlayerStartingArea);
@@ -393,6 +399,7 @@ namespace Server.Engines.Consoles
         }
 
         [CommandProperty(AccessLevel.Administrator)]
+        [ResetAtStartup("OwnerTools.ShardInit")]
         public bool NewPlayerGuild
         {
             get => CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.NewPlayerGuild);
@@ -504,21 +511,11 @@ namespace Server.Engines.Consoles
                         return;
                     }
 
-                    if (value <= 0)
-                        throw new ArgumentOutOfRangeException(nameof(WorldSaveFrequency), "WorldSaveFrequency must be >= 1 minute.");
-
-                    if (!Cron.TryBuildCronSpecForMinutes(value, out string spec))
-                        throw new ArgumentException($"WorldSaveFrequency={value} cannot be expressed as a stable cron schedule. Try values that divide 60 (minutes), divide 24 (hours), or are whole days.");
-
-                    if (!Cron.Update("AutoSave", spec))
-                        throw new InvalidOperationException("Failed to update cron job \"AutoSave\". Is it registered?");
-
-                    CoreAI.WorldSaveFrequency = value;
+                    if (!AutoSave.SetInterval(value))
+                        throw new InvalidOperationException("The auto-save cron job is unavailable.");
 
                     if (!AutoSave.SavesEnabled)
                         SendMessageToMe("Notice: auto saves are currently disabled; the new schedule will take effect when saves are re-enabled.");
-
-                    Cron.Flush("AutoSave");
 
                     SendMessageToMe($"WorldSaveFrequency set to {value} minute{(value == 1 ? "" : "s")}.");
                 }
@@ -529,6 +526,9 @@ namespace Server.Engines.Consoles
                 }
             }
         }
+
+        [CommandProperty(AccessLevel.GameMaster, true)]
+        public string WorldSaveSchedule => AutoSave.ScheduleDescription;
 
         [CommandProperty(AccessLevel.GameMaster, AccessLevel.Administrator)]
         public bool HelpStuckDisabled

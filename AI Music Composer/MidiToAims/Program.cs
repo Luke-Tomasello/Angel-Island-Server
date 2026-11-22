@@ -34,6 +34,7 @@
  *                          a song's clips are found only when named: preview golden clip1
  *          --uo <folder>   where the Ultima Online client's sounds are (remembered; normally found by itself)
  *          --check         report what the game will do (each line's skipped notes ...), without playing
+ *          --wav <file>    write it to a WAV file instead of playing it (a recording; the music catalog's audio)
  *      MidiToAims play <words>                       a [play line, as typed in the game: c e g 0.5 +81 -c; a setting
  *                                                     (instrument lute, tempo 150, timer anchored, newtimer true,
  *                                                     prefetch true) is remembered for the next; config; reset
@@ -65,6 +66,12 @@
 
 /* AI Music Composer\MidiToAims\Program.cs
  * ChangeLog
+ *  11/16/26, Adam (version)
+ *      A version number, Major.Minor.Revision (2.0.1360): Major.Minor and its history in ..\MidiToAims.Version.props,
+ *      the revision the SVN revision its source last changed (..\..\Directory.Build.targets). The banner shows it with
+ *      the build date; "version" (MidiToAims version, --version) prints it.
+ *  11/15/26, Adam (--wav)
+ *      preview --wav <file> (also -wav): the song is written to a WAV file instead of played (Player.Hear).
  *  11/8/26, Adam
  *      Changelog added. The m2a> prompt opens with a banner, at most 79 characters a line: the build date (stamped by
  *      MidiToAims.csproj), the copyright (Tomasello Software LLC, GNU GPL), the Angel Island Music System's GitHub
@@ -80,6 +87,11 @@ namespace MidiToAims
         // --debug (MidiToAims --debug, the m2a> prompt's debug on, or one command's --debug): the details too (the files
         //  found and played, each line's skipped notes, notes cut short); else a line for what matters
         public static bool Debug;
+
+        // MidiToAims's version, 2.0.1360 (-dev: built with uncommitted edits); see ..\MidiToAims.Version.props
+        public static string Version =>
+            typeof(Program).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion ?? "unknown";
 
         // the date this exe was built (MidiToAims.csproj stamps it: AssemblyMetadata "BuildDate"), for the m2a> banner
         private static string BuildDate =>
@@ -98,7 +110,7 @@ namespace MidiToAims
         }
 
         // the options that may be typed with one dash (-from 1:10, -debug): none of them is a [play word
-        private static readonly string[] s_options = { "debug", "from", "to", "check", "uo", "list", "clip" };
+        private static readonly string[] s_options = { "debug", "from", "to", "check", "uo", "list", "clip", "wav" };
         private static string[] Options(string[] args) =>
             args.Select(a => a.Length > 1 && a[0] == '-' && a[1] != '-' && s_options.Contains(a.Substring(1).ToLowerInvariant()) ? "-" + a.ToLowerInvariant() : a).ToArray();
 
@@ -110,7 +122,7 @@ namespace MidiToAims
             // the banner: at most 79 characters a line, so it fits an 80-column console
             string border = new string('*', 79);
             Console.WriteLine(border);
-            Console.WriteLine("* MidiToAims (build {0})", BuildDate);
+            Console.WriteLine("* MidiToAims {0} (built {1})", Version, BuildDate);
             Console.WriteLine("* A composer's workbench for the Angel Island Music System (AIMS)");
             Console.WriteLine("* Copyright (C) 2026 Tomasello Software LLC.");
             Console.WriteLine("* Free software under the GNU GPL; no warranty.");
@@ -159,10 +171,11 @@ namespace MidiToAims
         private static void Usage()
         {
             Console.WriteLine("Usage: MidiToAims init <song.mid> | MidiToAims <song.mid> [<out.rzr>] [--notes N] [--bars N] [--pages N] [--song \"...\"] [--composer \"...\"] [--arranger \"...\"] [--format post|whole]");
-            Console.WriteLine("       MidiToAims preview <song.mid|song.rzr> [the same options] [--from m:ss] [--to m:ss] [--clip] [--uo <client folder>] [--check]");
+            Console.WriteLine("       MidiToAims preview <song.mid|song.rzr> [the same options] [--from m:ss] [--to m:ss] [--clip] [--wav <file>] [--uo <client folder>] [--check]");
             Console.WriteLine("       MidiToAims [play <as in the game: c e g 0.5 +81 | tempo 150 | instrument lute | timer anchored | config | reset> [--uo <client folder>] [--check]");
             Console.WriteLine("       MidiToAims sound <number | from-to | part of a name | percussion> ... [--list] [--uo <client folder>]");
             Console.WriteLine("       MidiToAims waits <song>: set each wait in the song's .rzr to how long its block plays");
+            Console.WriteLine("       MidiToAims version: which MidiToAims this is (also --version)");
             Console.WriteLine("       MidiToAims (nothing): the m2a> prompt, where you type these without \"MidiToAims\"");
             Console.WriteLine("       --debug (on any command, or debug on|off at the prompt): the details too");
         }
@@ -183,6 +196,12 @@ namespace MidiToAims
                 // [play ... as typed in the game: the commands are the same with or without the '['
                 if (args.Length > 0 && args[0].StartsWith("["))
                     args = args[0] == "[" ? args.Skip(1).ToArray() : args.Select((a, i) => i == 0 ? a.Substring(1) : a).ToArray();
+
+                if (args.Length == 1 && args[0].ToLowerInvariant() is "version" or "--version" or "-version")
+                {
+                    Console.WriteLine("MidiToAims {0} (built {1})", Version, BuildDate);
+                    return 0;
+                }
 
                 if (args.Length >= 2 && args[0].Equals("init", StringComparison.OrdinalIgnoreCase))
                 {
@@ -212,6 +231,13 @@ namespace MidiToAims
                     }
                     int uoAt = Array.IndexOf(rest, "--uo");
                     string? uo = uoAt >= 0 && uoAt + 1 < rest.Length ? rest[uoAt + 1] : null;
+                    int wavAt = Array.IndexOf(rest, "--wav");
+                    string? wav = wavAt >= 0 && wavAt + 1 < rest.Length && !rest[wavAt + 1].StartsWith("--") ? rest[wavAt + 1] : null;
+                    if (wavAt >= 0 && wav == null)
+                    {
+                        Console.WriteLine("--wav takes the file to write: --wav \"song.wav\"");
+                        return 1;
+                    }
 
                     // --from 1:10 --to 1:40: the part to play
                     double? from = null, to = null;
@@ -252,7 +278,7 @@ namespace MidiToAims
                     }
                     if (Debug || !song.EndsWith(".rzr", StringComparison.OrdinalIgnoreCase))
                         Console.WriteLine();
-                    return Player.Run(files, uo, rest.Contains("--check"), from, to);
+                    return Player.Run(files, uo, rest.Contains("--check"), from, to, wav);
                 }
 
                 // play <the words of a [play line>

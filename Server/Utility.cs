@@ -21,6 +21,10 @@
 
 /* Server/Utility.cs
  * ChangeLog:
+ *  11/16/2026, Adam (version)
+ *      BuildVersion() and BuildRevision() read the version stamped into GMN Core at build (Directory.Build.targets:
+ *      Major.Minor from GMN Core.csproj, then the SVN revision), not "Core 6.info": BuildInfo is retired, and
+ *      BuildBuild(), BuildMajor() and BuildMinor() with it.
  *  11/8/2026, Adam
  *      GameTimeFileStamp uses the shard's time (ShardClock.Now) instead of AdjustedDateTime.GameTime.
  *  11/7/2026, Adam
@@ -2886,104 +2890,23 @@ namespace Server
             if (selected == ConsoleColor.Black) selected = ConsoleColor.White;
             return selected;
         }
-        public static int BuildBuild()
-        {
-            try
-            {
-                // open our version info file
-                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "Core 6.info");
-                StreamReader sr = new StreamReader(buildInfoFile);
-                //the first line of text will be the version
-                string? line = sr.ReadLine();
-                sr.Close();
-                int result = 0;
-                int.TryParse(line, out result);
-                return result;
+        // The server's version, stamped into GMN Core at build (Directory.Build.targets): Major.Minor from GMN Core.csproj,
+        //  then the SVN revision of the last change. 11/16/26: replaces reading "Core 6.info" (BuildInfo, retired).
+        private static readonly System.Reflection.Assembly s_core = typeof(Core).Assembly;
 
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Exception: " + e.Message);
-            }
-            return 0;
+        /// <summary>The server's version as it reports it: 6.1.1360, or 6.1.1360-dev when built with uncommitted edits.</summary>
+        public static string BuildVersion()
+        {
+            return System.Reflection.CustomAttributeExtensions
+                .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(s_core)?.InformationalVersion ?? "0.0.0";
         }
 
+        /// <summary>The build's SVN revision (the file version's third number): it picks the console colour.</summary>
         public static int BuildRevision()
         {
-            try
-            {
-                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "Core 6.info");
-                // open our version info file
-                StreamReader sr = new StreamReader(buildInfoFile);
-                //the first line of text will be the build
-                sr.ReadLine();
-                //the next line of text will be the revision
-                string? line = sr.ReadLine();
-                sr.Close();
-                int result = 0;
-                int.TryParse(line, out result);
-                return result;
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Exception: " + e.Message);
-            }
-            return 0;
-        }
-
-        public static int BuildMajor()
-        {
-            try
-            {
-                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "Core 6.info");
-                // open our version info file
-                StreamReader sr = new StreamReader(buildInfoFile);
-                //the first line of text will be the build
-                sr.ReadLine();
-                //the next line of text will be the revision
-                sr.ReadLine();
-                //the next line of text will be the major version
-                string? line = sr.ReadLine();
-                sr.Close();
-                int result = 0;
-                int.TryParse(line, out result);
-                return result;
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Exception: " + e.Message);
-            }
-            return 0;
-        }
-
-        public static int BuildMinor()
-        {
-            try
-            {
-                string buildInfoFile = Path.Combine(Core.BuildInfoDir, "Core 6.info");
-                // open our version info file
-                StreamReader sr = new StreamReader(buildInfoFile);
-                //the first line of text will be the build
-                sr.ReadLine();
-                //the next line of text will be the revision
-                sr.ReadLine();
-                //the next line of text will be the major version
-                sr.ReadLine();
-                //the next line of text will be the minor version
-                string? line = sr.ReadLine();
-                sr.Close();
-                int result = 0;
-                int.TryParse(line, out result);
-                return result;
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Exception: " + e.Message);
-            }
-            return 0;
+            string? file = System.Reflection.CustomAttributeExtensions
+                .GetCustomAttribute<System.Reflection.AssemblyFileVersionAttribute>(s_core)?.Version;
+            return file != null && System.Version.TryParse(file, out System.Version? v) ? v.Build : 0;
         }
         #endregion Build & Version Info
 

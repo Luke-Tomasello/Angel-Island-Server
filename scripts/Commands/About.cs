@@ -21,6 +21,10 @@
 
 /* Scripts/Commands/About.cs
  * 	CHANGELOG:
+ *  11/16/26, Adam (-uomc)
+ *      [about names the Music Conservatory (Core.PublicName), not Upheaval, whose rules it runs on.
+ * 	11/16/26, Adam (version)
+ *	    Version 6.1.1360: Major.Minor, then the SVN revision (Utility.BuildVersion); no ", Build n".
  * 	11/13/22, Adam
  *	    Initial Version
  */
@@ -44,7 +48,7 @@ namespace Server.Commands
             try
             {
 
-                string serverName = Core.Server;
+                string serverName = Core.PublicName;      // the Music Conservatory says its own name
 
                 if (Core.ServerID == ServerID.Seasons)
                     serverName = string.Format("{0} S{1}", serverName, Core.SeasonVariant);
@@ -55,14 +59,11 @@ namespace Server.Commands
 
                 string testCenter = Core.GMNTC_CFG ? " (Test Center)" : "";
 
-                string output = string.Format("{0}{1}{2} - Version {3}.{4}.{5}, Build {6}",
+                string output = string.Format("{0}{1}{2} - Version {3}",
                     serverName,
                     phase,
                     testCenter,
-                    Utility.BuildMajor(),
-                    Utility.BuildMinor(),
-                    Utility.BuildRevision(),
-                    Utility.BuildBuild());
+                    Utility.BuildVersion());
 
                 e.Mobile.SendMessage(0x35, output);
 

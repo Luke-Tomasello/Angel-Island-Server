@@ -12,6 +12,8 @@
   <ItemGroup>
     <ProjectReference Include="..\MidiToAims.Core\MidiToAims.Core.csproj" />
   </ItemGroup>
+  <!-- its version (Major.Minor and the history are in there; the revision comes from SVN) -->
+  <Import Project="..\MidiToAims.Version.props" />
   <!-- the date this exe was built, for the m2a> banner (Program.BuildDate) -->
   <ItemGroup>
     <AssemblyMetadata Include="BuildDate" Value="$([System.DateTime]::Now.ToString('M/d/yyyy'))" />

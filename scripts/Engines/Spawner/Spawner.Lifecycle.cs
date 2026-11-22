@@ -22,8 +22,9 @@
 /* Scripts\Engines\Spawner\Spawner.Lifecycle.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *	02/28/05, erlein
+ *		Now also logs addition and deletion of spawners.
  */
 
 using Server.Diagnostics;

@@ -21,6 +21,9 @@
 
 /* Engines/Township/TSNPC.cs
  * CHANGELOG:
+ *  11/15/2026, Adam (TSMinstrel stays when dismissed)
+ *      TSMinstrel.VanishWhenDismissed = false: a dismissed township minstrel goes back to wandering; like every township
+ *      NPC it leaves only by Redeed (the plain HireMinstrel now vanishes when dismissed: BaseHire).
  *  9/3/2023, Adam (OnSpeech)
  *      allow Township vendors to be 'turned' with the 'cycle' keyword just like PlayerVendors
  * 6/4/2023, Adam
@@ -2636,6 +2639,9 @@ namespace Server.Mobiles
     public class TSMinstrel : HireMinstrel, ITownshipNPC
     {
         public int WanderRange { get; set; } = 10;
+        // the township's minstrel: dismissed, it goes back to wandering (HireMinstrel.OnBeforeRelease restores
+        //  WanderRange); like every township NPC it leaves only by Redeed
+        public override bool VanishWhenDismissed => false;
         public override bool CanOpenDoors { get { return false; } }
         public override bool IsInvulnerable { get { return true; } }
 

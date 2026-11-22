@@ -22,8 +22,35 @@
 /* Scripts\Engines\Spawner\Spawner.Defrag.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *  6/25/2023, Adam (Defrag())
+ *      since players can places houses on top of spawners, and since spawners, when they cannot find 
+ *          a good spawn location, default to the location of a spawner, you can get a scenario where 
+ *          all the creatures are spawning in the players house!
+ *          To solve this, in Defrag() we check to see if a house has been dropped on us. If so,
+ *          we move the spawner to the houses 'ban location'
+ *	10/18/06, Adam
+ *		- Remove notion of 'Fixed' non-decaying objects
+ *		- Refresh() items still on a spawner before decaying (called by ItemDecay in Heartbeat)
+ *	3/9/05, Adam
+ *		In Defrag() we now check to see if the spawned item is in a HouseRegion.
+ *		items in a HouseRegion are assumed to be 'freed' from the spawner and may therefore
+ *		be removed from the spawners list of managed items.
+ *		We needed this new check because putting an item in your house leaves the parent null which prevents 
+ *		the 'fixed' item from decaying and a new item from being spawned. (See previous change)
+ *	02/28/05, Adam
+ *		1. Add new FreezeDecay property to freeze the decay on spawned items.
+ *		2. When someone picks something up, parent is set to non-null. When this happens
+ *			We can clear the 'Fixed' flag (item.Fixed = false).
+ *		Detailed explanation: 
+ *			Items are removed from the spawners list of spawned items during the Defrag() run. 
+ *			This Defrag() run is roughly the frequency of the spawner. In the case of daily rares, 
+ *			this respawn rate can be days long.
+ *			Because spawned rares must necessarily sit on the ground for days and not decay, 
+ *			they have a special 'fixed' attribute that prevents them from decaying.
+ *			When a player gets a rare home, it will still be fixed until the spawner next runs and 
+ *			defrags. When this happens, the 'fixed' attribute will be cleared, and the item will 
+ *			decay as usual.
  */
 
 using Server.Items;

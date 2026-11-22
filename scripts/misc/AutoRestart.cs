@@ -29,6 +29,10 @@
 
 /* Scripts/Misc/AutoRestart.cs
  * CHANGELOG
+ *  11/20/26, Adam (show staggered autosave schedule)
+ *      Report the next autosave and accept any positive whole-minute interval.
+ *  11/20/26, Adam (autosave frequency)
+ *      [AutoSave accepts an optional interval in minutes. [AutoSaves is an alias.
  *	11/8/26, Adam (shard time)
  *		RestartTime is UTC (was AdjustedDateTime.GameTime: a fixed UTC-8 clock with the machine's daylight saving).
  *		[restart hh:mm:ss and the 2 AM default are shard time, converted with ShardClock (daylight-saving days
@@ -108,6 +112,7 @@ namespace Server.Misc
             // superseed by SetverWard in Maintenance.cs
             //CommandSystem.Register("ServerWars", AccessLevel.GameMaster, new CommandEventHandler(ServerWars_OnCommand));
             CommandSystem.Register("AutoSave", AccessLevel.Administrator, new CommandEventHandler(AutoSave_OnCommand));
+            CommandSystem.Register("AutoSaves", AccessLevel.Administrator, AutoSave_OnCommand);
             CommandSystem.Register("Restart", AccessLevel.Administrator, new CommandEventHandler(Restart_OnCommand));
             CommandSystem.Register("RestartTime", AccessLevel.Administrator, new CommandEventHandler(RestartTime_OnCommand));
             new AutoRestart().Start();
@@ -135,6 +140,8 @@ namespace Server.Misc
                     "Auto saves are {0}.",
                     AutoSave.SavesEnabled ? "enabled" : "disabled"
                 );
+                e.Mobile.SendMessage("Auto-save interval: {0} minute(s).", CoreAI.WorldSaveFrequency);
+                e.Mobile.SendMessage("Auto-save schedule: {0}.", AutoSave.ScheduleDescription);
 
                 if (Maintenance.Scheduled)
                     e.Mobile.SendMessage("Notice: maintenance is scheduled or Server Wars are active; auto-save changes are locked.");
@@ -158,10 +165,23 @@ namespace Server.Misc
             else if (arg == "off" || arg == "false" || arg == "0")
                 newState = false;
 
-            if (newState == null)
+            int minutes = 0;
+            if (newState == null || e.Length > 2 ||
+                (e.Length == 2 && (!int.TryParse(e.GetString(1), out minutes) || minutes < 1)))
             {
-                e.Mobile.SendMessage("Usage: [AutoSave [on|off]");
+                e.Mobile.SendMessage("Usage: [AutoSave <true|false> [minutes]");
                 return;
+            }
+
+            if (e.Length == 2)
+            {
+                if (!AutoSave.SetInterval(minutes))
+                {
+                    e.Mobile.SendMessage("Auto-save cron job is unavailable.");
+                    return;
+                }
+
+                e.Mobile.SendMessage("Auto-save interval set to {0} minute(s).", minutes);
             }
 
             AutoSave.SavesEnabled = newState.Value;

@@ -37,11 +37,13 @@ A book holds at most 96 pages. A longer song can be written across several books
 Before using any paper, you can hear the book as its sheet music will play: see [[Music Composition#Preview Without Using Paper|Preview Without Using Paper]].
 
 == Settings ==
-Settings go at the top of the composition, one per line, each starting with #. All are optional. Any other # line is a comment, so the first line is a good place to credit the original composer:
+Settings go at the top of the composition, one per line, each starting with #. All are optional. A setting is its name at the start of the line (''# Tempo: 100''); the rest of the line is its value, so a comment that mentions ''tempo:'' or ''song:'' changes nothing. Any other # line is a comment, so the first line is a good place to credit the original composer:
 
  # Douce Dame Jolie, by Guillaume de Machaut (14th century)
- # Song: Douce Dame Jolie
+ # Song: Douce Dame Jolie (Guillaume de Machaut)
  # Author: Mira
+ # About: a 14th-century virelai
+ # Tags: medieval, early music, love song
  # Instrument: LapHarp
  # Timer: Anchored
  # Tempo: 100
@@ -53,7 +55,11 @@ Settings go at the top of the composition, one per line, each starting with #. A
 |-
 | # Song: ''title'' || the book's title || The song's name, as the [[Music Box]] lists it. Underscores read as spaces (''Alice_In_Chains_-_Rooster'' becomes ''Alice In Chains - Rooster''); a # in a title is kept (''Prelude in C# minor'').
 |-
-| # Author: ''name'' || the book's author || Who to credit. This is informational: payment goes to the character who made the sheet music, not to this name.
+| # Author: ''name'' || the book's author || Who to credit. This is informational: payment goes to the character who made the sheet music, not to this name. A music box won't take a song that names another player as its author (see [[Music Box#Instructions for Composers|Instructions for Composers]]).
+|-
+| # About: ''text'' || (none) || A few words about the song, up to 60 characters: ''# About: the Tetris theme''. Shown when the sheet music is clicked, and found by a music box's ''list'' (see [[Music Box#List of Commands|list]]).
+|-
+| # Tags: ''word, word'' || (none) || Words to find the song by, separated by commas, up to 10 of them (100 characters): ''# Tags: rock, alternative rock, 90s''. Not shown with the song: only searched, so ''list rock'' finds it. A tag can be several words.
 |-
 | # Instrument: Harp, LapHarp or Lute || Harp || The instrument the song starts on. A song can change instrument as it plays (see [[Music Composition#Instruments and Note Offsets|Instruments]]).
 |-

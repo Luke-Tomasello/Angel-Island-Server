@@ -21,6 +21,15 @@
 
 /* Scripts/Commands/Abstracted/Commands/Commands.cs
  * CHANGELOG
+ *  11/18/26, Adam (account restrictions)
+ *      [ban and [firewall are registered by Engines/Restrictions now (shared, scoped, name forms); KickCommand(true)
+ *      and FirewallCommand are no longer registered.
+ *  11/18/26, Adam (names: take from [set name)
+ *      [set name refused because another account holds the name: an Owner gets a confirmation (who owns it, last login,
+ *      the characters here that would be renamed); Yes takes it for the player's account (NameRegistry.ConfirmTake).
+ *  11/17/26, Adam (family-wide names)
+ *      [set name on a player claims the name for the player's account in the family-wide registry (NameRegistry), after
+ *      the usual conflict check (now every game shard: Core.RuleSets.UsesReservedNames).
  *  5/6/2024, Adam (Tele)
  *      Add FDRegionControls as targets for [tele.
  *      Doing so takes you either to the regions 'go location', and if that's not set, to the center of the first defined rectangle.
@@ -89,9 +98,9 @@ namespace Server.Commands
             Register(new KillCommand(false));
             Register(new HideCommand(true));
             Register(new HideCommand(false));
-            Register(new KickCommand(true));
+            // [ban is Engines/Restrictions (RestrictionsCommands) since 11/18/26: shared, scoped, with a name form
             Register(new KickCommand(false));
-            Register(new FirewallCommand());
+            // [firewall is Engines/Restrictions (RestrictionsCommands) since 11/18/26
             Register(new TeleCommand());
             Register(new SetCommand());
             Register(new CatCommand()); // like Set, but concatenates the strings
@@ -788,6 +797,20 @@ namespace Server.Commands
             Description = "Sets a property value by name of a targeted object.";
         }
 
+        // [set name refused because another account holds the name: an Owner is offered the take (NameRegistry: the name
+        //  becomes the player's account's alone; other accounts' characters with it are renamed 'Generic Player' with a
+        //  name change deed, here now and elsewhere at startup or login). False: not offered (the usual refusal).
+        private static bool OfferTake(Mobile from, Mobile target, string name)
+        {
+            if (from.AccessLevel < AccessLevel.Owner || !Server.Engines.NameRegistry.Enforced || target.Account is not Account acct
+                || Server.Engines.NameRegistry.Placeholder(name))
+                return false;
+            from.SendGump(new WarningGump(1060637, 30720, Server.Engines.NameRegistry.TakePreview(name, acct.Username), 0xFFC000, 420, 320,
+                new WarningGumpCallback(Server.Engines.NameRegistry.ConfirmTake), new object[] { target, name }));
+            from.SendMessage("Names: '{0}' is reserved by another account: confirm or cancel the take.", name);
+            return true;
+        }
+
         public override void Execute(CommandEventArgs e, object obj)
         {
             if (e.Length >= 2)
@@ -823,9 +846,17 @@ namespace Server.Commands
                         {
                             if (self)
                                 LogFailure("That account is already using that name.");
-                            else
+                            else if (!OfferTake(from, targetMobile, propValue))
                                 LogFailure("That name is already reserved by another account.");
 
+                            continue;
+                        }
+                        // family-wide: the name is the player's account's from now on (NameRegistry)
+                        if (Server.Engines.NameRegistry.Enforced && targetMobile.Account is Server.Accounting.Account targetAccount
+                            && Server.Engines.NameRegistry.Claim(propValue, targetAccount.Username) != Server.Engines.NameRegistry.ClaimResult.Claimed)
+                        {
+                            if (!OfferTake(from, targetMobile, propValue))
+                                LogFailure("That name is already reserved by another account.");
                             continue;
                         }
                     }

@@ -21,6 +21,9 @@
 
 /* Scripts/Misc/SocketOptions.cs
  * ChangeLog
+ *  11/16/26, Adam (-uomc)
+ *      The Music Conservatory (-uomc) listens on its own port, MusicConservatoryPort (Ports.json; 3603 if it isn't
+ *      there, so an older Ports.json still starts every shard).
  *	8/13/21, Adam
  *	    Add support for a dedicated LoginServer.
  *	    The only publically known listening port is the standard 2593. Should we come under a DoS attack, I will publish other ports.
@@ -125,6 +128,25 @@ namespace Server
                 return portsTable["TestCenterPort"];
             }
         }
+        // the Music Conservatory (-uomc): Ports.json's MusicConservatoryPort, else 3603. Not required (PortsCheck): a
+        //  Ports.json from before the Conservatory still starts every shard
+        public const int DefaultMusicConservatoryPort = 3603;
+        public static int MusicConservatoryPort
+        {
+            get
+            {
+                try
+                {
+                    string json = File.ReadAllText("Ports.json");
+                    Dictionary<string, int>? portsTable = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+                    return portsTable != null && portsTable.TryGetValue("MusicConservatoryPort", out int port) ? port : DefaultMusicConservatoryPort;
+                }
+                catch
+                {
+                    return DefaultMusicConservatoryPort;
+                }
+            }
+        }
 
 
         private static IPEndPoint[] m_ListenerEndPoints;
@@ -166,7 +188,13 @@ namespace Server
                 // Core TestCenter can be turned on with Core.UOSP giving us a SP TC
                 //  otherwise it is the usual AI TC
                 //  but whatever the test center mode, it always gets its own port
-                if (Core.GMNTC_CFG)
+                // the Music Conservatory (-uomc, its own production shard on the Upheaval rules) has its own port,
+                //  ahead of UpheavalRules() below, which is true there too
+                if (Core.GMNMC_CFG)
+                {
+                    m_ListenerEndPoints[0] = new IPEndPoint(IPAddress.Any, MusicConservatoryPort);
+                }
+                else if (Core.GMNTC_CFG)
                 {
 #if CORE_UOBETA
                     m_ListenerEndPoints[0] = new IPEndPoint(IPAddress.Any, AngelIslandPort);

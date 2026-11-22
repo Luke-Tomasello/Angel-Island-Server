@@ -44,6 +44,42 @@
 
 /* Patches201_300/PatchLibrary.cs
  * ChangeLog
+ *  11/21/26, Adam (PatchV276: nothing lost on a failed write)
+ *      PatchV276 counts restrictions the accounts database refused: any at all and it keeps the old files, has accounts.xml
+ *      keep the ban flag and tags (Account.KeepLegacyBans), and returns null so it runs again at the next start. A world
+ *      save before then lost the bans it couldn't move.
+ *  11/18/26, Adam (PatchV276)
+ *      Add PatchV276: account restrictions move into the shared Engines/Restrictions, on each shard before its first world
+ *      save (the server no longer writes the old ban flag): this shard's banned accounts (with their duration and who
+ *      banned them; scoped to this shard), firewall.cfg and the old firewall database (every shard), ipexception.xml
+ *      (this shard), ClientException.xml's addresses (this shard) and the four accounts once hard-coded (every shard).
+ *      The old files are renamed .retired. Not Test Center or event shards (copies). Running it twice adds nothing.
+ *  11/18/26, Adam (PatchV275)
+ *      Add PatchV275: the per-shard Reserved Names is retired (the family-wide registry is the only list of names, and
+ *      PatchV272 copied every entry into it): each shard's Saves/Accounts/Reserved Names.json is renamed Reserved
+ *      Names.retired.json (kept, not deleted). Every shard; one without the file has nothing to do.
+ *  11/18/26, Adam (PatchV274)
+ *      Add PatchV274 (before the world loads): the Music Conservatory in production starts without Siege Perilous's
+ *      logs: Logs (PatchHistory.log kept: the readable record of the patches this world has had) and
+ *      LogArchiveQueue are emptied. A file the server already holds open is skipped and counted. Not on development
+ *      machines (Core.Development).
+ *  11/18/26, Adam (PatchV273)
+ *      Add PatchV273: the Music Conservatory's opening: each player's bank (staff skipped, and any bank box not worn by
+ *      its player) goes, as it is, into a crate held in internal storage, a claim ticket (ClaimTicket) goes in the
+ *      backpack, and the bank gets the composer's kit (CharacterCreation.FillBankbox). The ticket delivers the crate
+ *      inside a house its owner owns or co-owns. Logged to Bank Claims.log.
+ *  11/17/26, Adam (PatchV272)
+ *      Add PatchV272: family-wide names: seeds the shared name registry (NameRegistry) with the names as they are,
+ *      grandfathered (every owner keeps its name): each player shard its accounts' characters and reserved names, the
+ *      Login Server the player history archive's (owner unknown: blocked until staff assign them); the placeholder and
+ *      the approved junk left out; Test Center and event shards don't take part. Unwritable: tried at the next start.
+ *  11/17/26, Adam (-uomc world)
+ *      PatchV269 asks Upheaval() (Upheaval's world: never the Music Conservatory's, which plays by its rules) instead of
+ *      UpheavalRules().
+ *  11/17/26, Adam (PatchV271)
+ *      Add PatchV271: server list visibility, the same on every shard: Angel Island, Siege Perilous, Mortalis, UO
+ *      Seasons, Upheaval and the Angel Island Music Conservatory visible; Test Center hidden (-uotc stays available,
+ *      unadvertised); Administrative unchanged (no bit, Owner only). Owner accounts see every shard regardless.
  *  11/14/26, Adam (PatchV270)
  *      Add PatchV270: where each song in the shared music database was composed (Songs.origin, for the website's music
  *      catalog), by [MusicShare origins' rule (the oldest shard in the lineage whose collected library held it). Login
@@ -144,6 +180,7 @@
 using Server;
 using Server.Accounting;
 using Server.Commands;
+using Server.Diagnostics;
 using Server.Engines;
 using Server.Engines.Alignment;
 using Server.Engines.ChampionSpawn;
@@ -243,6 +280,12 @@ namespace Patches201_300
             PatchV268,   // music library: songs credited "by MidiToAims" get their owner's name, titles lose underscores (not Login Server)
             PatchV269,   // Upheaval: bankers' respawn paces the Gypsy Seer's banker heads (running banker spawners x 1 hour, per district); bankers respawned, born armed
             PatchV270,   // Login Server: where each song in the shared music database was composed (Songs.origin, by the shards' lineage)
+            PatchV271,   // server list visibility, every shard: all game shards visible (the Music Conservatory too), Test Center hidden
+            PatchV272,   // family-wide names: seed the shared name registry (each player shard its names; the Login Server the archive's)
+            PatchV273,   // Music Conservatory: each player's bank into a claim crate (claim ticket in the backpack), then the composer's kit
+            PatchV274,   // PreWorldLoad: Music Conservatory production: empty Logs (PatchHistory.log kept) and LogArchiveQueue
+            PatchV275,   // names: retire the per-shard Reserved Names (Saves/Accounts/Reserved Names.json renamed .retired; every shard)
+            PatchV276,   // account restrictions: this shard's bans, firewall, IP and client exceptions into Engines/Restrictions
         };
 
         public static int GetLastPatch()
@@ -3763,7 +3806,7 @@ namespace Patches201_300
             //  another player approaches", which would undo a long respawn. It doesn't apply here: BaseVendor.OnDeath skips it
             //  under MortalisStyleRules (Upheaval among them), and the spawner's memory for it (Spawner.BadGuys) exists only on
             //  Siege (PUBLISH_4_SIEGE). If either changes, bankers come back early and banker heads lose their pace.
-            if (LoginServer(quiet: true) || !Core.RuleSets.UpheavalRules() || PublishInfo.Publish < 4)
+            if (LoginServer(quiet: true) || !Upheaval(quiet: true) || PublishInfo.Publish < 4)     // Upheaval's world (never the Music Conservatory's)
                 return null;
 
             // the districts are known once the territory system has loaded; until then, try again at the next start
@@ -3839,6 +3882,313 @@ namespace Patches201_300
             return patched;
         }
         #endregion PatchV270
+        #region PatchV271
+        private static int? PatchV271(int patchid)
+        {
+            // Server list visibility, the same on every shard (11/17/26): the login server's bits decide what players are
+            //  offered, and every shard keeps the same settings so any of them can serve the list. Every game shard is
+            //  visible, the Angel Island Music Conservatory among them; Test Center is hidden (-uotc stays available, it is
+            //  just not advertised). Administrative has no visibility bit: it stays Owner only, as it always was
+            //  (ServerList.EventSink_ServerList). Owner accounts see every shard whatever the bits say.
+            //  Replaces PatchV242's starting settings (Test Center and Upheaval hidden) on shards where it ran.
+            if (!AllShards())
+                return null;
+
+            int patched = 0;
+            #region Begin Implementation
+
+            CoreAI.FeatureBits[] visible =
+            {
+                CoreAI.FeatureBits.AngelIslandVisible,
+                CoreAI.FeatureBits.SiegePerilousVisible,
+                CoreAI.FeatureBits.MortalisVisible,
+                CoreAI.FeatureBits.SeasonsVisible,
+                CoreAI.FeatureBits.UpheavalVisible,
+                CoreAI.FeatureBits.MusicConservatoryVisible,
+            };
+            foreach (CoreAI.FeatureBits bit in visible)
+            {
+                if (!CoreAI.IsDynamicFeatureSet(bit))
+                {
+                    CoreAI.SetDynamicFeature(bit);
+                    patched++;
+                }
+            }
+            if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.TestCenterVisible))
+            {
+                CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.TestCenterVisible);
+                patched++;
+            }
+
+            EchoOut(string.Format("PatchV271: server list visibility: Angel Island, Siege Perilous, Mortalis, UO Seasons, " +
+                "Upheaval and the Angel Island Music Conservatory visible; Test Center hidden; Administrative Owner only " +
+                "({0} changed).", patched), ConsoleColor.Magenta);
+
+            #endregion End Implementation
+            return patched;
+        }
+        #endregion PatchV271
+        #region PatchV272
+        private static int? PatchV272(int patchid)
+        {
+            // Family-wide names (11/17/26): the shared registry (NameRegistry, C:\AIDB\names.db) starts with the names as
+            //  they are, every owner keeping its own, even where several accounts have the same name (grandfathered). Each
+            //  player shard adds its own (its accounts' characters and reserved names); the Login Server adds the player
+            //  history archive's (old players, owner unknown: nobody may take those names until staff assign them). The
+            //  placeholder ("Generic Player") and the junk Adam approved are left out. Test Center and event shards don't
+            //  take part. A registry that can't be written: not done, tried at the next start (new names are refused
+            //  meanwhile: the check fails closed).
+            List<NameRegistry.AuditRow> rows;
+            string from;
+            if (LoginServer(quiet: true))
+            {
+                rows = NameRegistry.ArchiveNames();
+                from = "the player history archive";
+            }
+            else if (NameRegistry.Enforced)
+            {
+                rows = NameRegistry.ShardNames();
+                from = Core.Server;
+            }
+            else
+                return null;
+
+            #region Begin Implementation
+            int added = NameRegistry.Seed(rows);
+            if (added < 0)
+            {
+                EchoOut(string.Format("PatchV272: the name registry ({0}) couldn't be written: names not seeded (next start).", NameRegistry.DatabasePath), ConsoleColor.Red);
+                return null;
+            }
+            EchoOut(string.Format("PatchV272: family-wide names: {0} name rows from {1} added to {2} ({3} seen; the placeholder and junk left out).",
+                added, from, NameRegistry.DatabasePath, rows.Count), ConsoleColor.Magenta);
+            #endregion End Implementation
+            return added;
+        }
+        #endregion PatchV272
+        #region PatchV273
+        private static int? PatchV273(int patchid)
+        {
+            // The Music Conservatory's opening (11/18/26): its world is a copy of Siege Perilous's, and its players' banks
+            //  are full, so the composer's kit (CharacterCreation.FillBankbox, what a new character gets here) wouldn't
+            //  fit. Each player's bank (staff skipped, and any bank box not worn by its player) goes, as it is, into a
+            //  crate held in internal storage (IsIntMapStorage: the cron's cleanup leaves it alone), a claim ticket for
+            //  it goes in the backpack, and the bank gets the kit. The ticket, used inside a house its owner owns or
+            //  co-owns, delivers the crate there (ClaimTicket). Each crate is logged (Bank Claims.log).
+            if (!MusicConservatory())
+                return null;
+
+            int patched = 0;
+            #region Begin Implementation
+            int crates = 0, items = 0;
+            using (LogHelper logger = new LogHelper(ClaimTicket.LogName, false, true))
+            {
+                foreach (Mobile m in World.Mobiles.Values.ToArray())
+                {
+                    if (m is not PlayerMobile pm || pm.Deleted || pm.AccessLevel > AccessLevel.Player)
+                        continue;
+                    if (pm.FindItemOnLayer(Layer.Bank) is not BankBox bank || bank.Parent != pm)
+                        continue;
+
+                    if (bank.Items.Count > 0)
+                    {
+                        LargeCrate crate = new LargeCrate();
+                        crate.Name = string.Format("the contents of {0}'s bank", pm.Name);
+                        foreach (Item item in bank.Items.ToArray())
+                            crate.DropItem(item);
+                        crate.MoveToIntStorage();
+
+                        ClaimTicket ticket = new ClaimTicket(pm, crate);
+                        if (pm.Backpack != null)
+                            pm.Backpack.DropItem(ticket);
+                        else
+                            pm.AddToBackpack(ticket);
+
+                        crates++;
+                        items += crate.TotalItems;
+                        logger.Log(LogType.Text, string.Format("PatchV273: {0} ({1}): {2} items into crate {3}, ticket {4}",
+                            pm.Name, (pm.Account as Account)?.Username ?? "no account",
+                            crate.TotalItems, crate.Serial, ticket.Serial));
+                    }
+
+                    CharacterCreation.FillBankbox(pm);
+                    patched++;
+                }
+            }
+            EchoOut(string.Format("PatchV273: Music Conservatory banks: {0} players given the composer's kit; {1} banks ({2} items) " +
+                "held in claim crates, a claim ticket in each backpack (log: {3}).", patched, crates, items, ClaimTicket.LogName), ConsoleColor.Magenta);
+            #endregion End Implementation
+            return patched;
+        }
+        #endregion PatchV273
+        #region PatchV274
+        private static int? PatchV274(int patchid)
+        {
+            // Before the world loads (11/18/26): the Music Conservatory's world is a copy of Siege Perilous's, and so is
+            //  its folder: it starts without Siege's logs. Logs is emptied, PatchHistory.log kept (the readable record of
+            //  the patches this world has had; the patch state itself is in CoreAI.xml), and LogArchiveQueue (production's
+            //  log rotation) too. Runs before PatchV273, so its Bank Claims.log stays. Production only: never on a
+            //  development machine (Core.Development).
+            if (Core.Development || !MusicConservatory())
+                return null;
+
+            int patched = 0;
+            #region Begin Implementation
+            string[] keep = { "PatchHistory.log" };
+            foreach (string folder in new[] { Core.LogsDirectory, Path.Combine(Core.ExeDirectory, "LogArchiveQueue") })
+            {
+                int files = 0, skipped = 0;
+                long bytes = 0;
+                if (Directory.Exists(folder))
+                {
+                    foreach (string file in Directory.GetFiles(folder, "*", SearchOption.AllDirectories))
+                    {
+                        if (string.Equals(Path.GetDirectoryName(file), folder.TrimEnd('\\'),StringComparison.OrdinalIgnoreCase)
+                            && keep.Contains(Path.GetFileName(file), StringComparer.OrdinalIgnoreCase))
+                            continue;
+                        try
+                        {
+                            long size = new FileInfo(file).Length;
+                            File.Delete(file);
+                            files++;
+                            bytes += size;
+                        }
+                        catch (Exception)
+                        {
+                            skipped++;      // held open by the server
+                        }
+                    }
+                    // the emptied subfolders (deepest first)
+                    foreach (string dir in Directory.GetDirectories(folder, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length))
+                    {
+                        try
+                        {
+                            if (!Directory.EnumerateFileSystemEntries(dir).Any())
+                                Directory.Delete(dir);
+                        }
+                        catch (Exception) { }
+                    }
+                }
+                patched += files;
+                EchoOut(string.Format("PatchV274: {0}: {1} files deleted ({2:N1} MB){3}.", folder, files, bytes / 1048576.0,
+                    skipped > 0 ? string.Format(", {0} held open and skipped", skipped) : ""), ConsoleColor.Magenta);
+            }
+            #endregion End Implementation
+            return patched;
+        }
+        #endregion PatchV274
+        #region PatchV275
+        private static int? PatchV275(int patchid)
+        {
+            // Names cleanup (11/18/26): the family-wide registry (NameRegistry, C:/AIDB/names.db) is the only list of
+            //  names. The per-shard Reserved Names (ReservedNames.cs) is no longer loaded, saved or asked, and PatchV272
+            //  already copied every entry into the registry. Its file is renamed, not deleted, so it can be read again.
+            if (!AllShards())
+                return null;
+
+            int patched = 0;
+            #region Begin Implementation
+            string folder = Path.Combine(Core.ExeDirectory, "Saves", "Accounts");
+            string file = Path.Combine(folder, "Reserved Names.json");
+            if (File.Exists(file))
+            {
+                string retired = Path.Combine(folder, "Reserved Names.retired.json");
+                if (File.Exists(retired))
+                    retired = Path.Combine(folder, string.Format("Reserved Names.retired-{0:yyyyMMdd-HHmmss}.json", DateTime.UtcNow));
+                long bytes = new FileInfo(file).Length;
+                File.Move(file, retired);
+                patched = 1;
+                EchoOut(string.Format("PatchV275: the per-shard Reserved Names is retired: {0} ({1:N0} bytes) renamed {2}; names are kept family-wide.",
+                    file, bytes, Path.GetFileName(retired)), ConsoleColor.Magenta);
+            }
+            else
+                EchoOut("PatchV275: no per-shard Reserved Names here; names are kept family-wide.", ConsoleColor.Magenta);
+            #endregion End Implementation
+            return patched;
+        }
+        #endregion PatchV275
+        #region PatchV276
+#pragma warning disable CS0618 // the old ban flag and tags: read here once, never again
+        private static int? PatchV276(int patchid)
+        {
+            // Account restrictions (11/18/26): what each shard kept for itself becomes rows in the shared Restrictions table
+            //  (Engines/Restrictions). It runs before the world can save, because the server no longer writes the old ban
+            //  flag: a save first would lose this shard's bans. Test Center and event shards are copies: they import nothing.
+            if (Core.GMNTC_CFG || Core.GMNEV_CFG || !AllShards())
+                return null;
+
+            int patched = 0;
+            #region Begin Implementation
+            string here = Restrictions.ThisShard, by = "PatchV276";
+            int bans = 0, firewall = 0, ipex = 0, client = 0, failed = 0;
+            DateTime now = DateTime.UtcNow;
+            foreach (Account acct in Accounts.Table.Values.OfType<Account>())
+            {
+                if (!acct.LegacyBanFlag || Restrictions.IsBanned(acct.Username))
+                    continue;
+                DateTime? expires = null;
+                if (acct.GetLegacyBanTags(out DateTime start, out TimeSpan duration) && duration != TimeSpan.MaxValue)
+                {
+                    if (start + duration <= now)
+                        continue;       // already over
+                    expires = start + duration;
+                }
+                string dealer = acct.GetTag("BanDealer") ?? "";
+                if (Restrictions.Add(Restrictions.Kind.Ban, acct.Username, here, 0, "from accounts.xml" + (dealer.Length > 0 ? ", banned by " + dealer : ""), by, expires) != null)
+                    bans++;
+                else
+                    failed++;
+            }
+            foreach (string ip in Firewall.List.Concat(FirewallDatabase.GetAll().Cast<object>().Select(o => o?.ToString() ?? "")).Where(s => s.Length > 0).Distinct())
+                if (!Restrictions.IsFirewalled(ip))
+                {
+                    if (Restrictions.Add(Restrictions.Kind.Firewall, ip, Restrictions.All, 0, "from the old firewall", by, null) != null)
+                        firewall++;
+                    else
+                        failed++;
+                }
+            foreach (KeyValuePair<string, int> kv in IPException.Table)
+                if (kv.Value > 0)
+                {
+                    if (Restrictions.Add(Restrictions.Kind.IpException, kv.Key, here, kv.Value, "from ipexception.xml", by, null) != null)
+                        ipex++;
+                    else
+                        failed++;
+                }
+            foreach (string ip in ClientException.Table.Distinct())
+                if (Restrictions.Add(Restrictions.Kind.ClientException, ip, here, 0, "from ClientException.xml", by, null) != null)
+                    client++;
+                else
+                    failed++;
+            foreach (string account in new[] { "databreaker", "Demonous", "alupton", "cooper144" })
+                if (Restrictions.Add(Restrictions.Kind.ClientException, account, Restrictions.All, 0, "Mac player (was hard-coded)", by, null) != null)
+                    client++;
+                else
+                    failed++;
+            if (failed > 0)
+            {
+                // the accounts database couldn't take everything: keep the old flag, tags and files, and try again at the next
+                //  start (null: not complete). What did go in is renewed, not doubled, by the next run.
+                Account.KeepLegacyBans = true;
+                EchoOut(string.Format("PatchV276: {0} restriction(s) could not be written to the accounts database. The old bans and files are kept; PatchV276 runs again at the next start.",
+                    failed), ConsoleColor.Red);
+                return null;
+            }
+            foreach (string file in new[] { "firewall.cfg", Path.Combine("Saves", "Accounts", "ipexception.xml"), Path.Combine("Saves", "Accounts", "ClientException.xml") })
+                try
+                {
+                    if (File.Exists(file) && !File.Exists(file + ".retired"))
+                        File.Move(file, file + ".retired");
+                }
+                catch (Exception ex) { LogHelper.LogException(ex, "PatchV276 " + file); }
+            patched = bans + firewall + ipex + client;
+            EchoOut(string.Format("PatchV276: account restrictions moved in: {0} bans (this shard), {1} firewalled addresses (every shard), {2} IP exceptions, {3} client exceptions; old files .retired. [restrictions report shows what's in force.",
+                bans, firewall, ipex, client), ConsoleColor.Magenta);
+            #endregion End Implementation
+            return patched;
+        }
+#pragma warning restore CS0618
+        #endregion PatchV276
         #region Helpers
         #region PatchV212
         private static bool HasLeadingOrTrailingWhitespace(string s)

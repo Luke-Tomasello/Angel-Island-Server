@@ -21,6 +21,8 @@
 
 /* Scripts/Multis/StaticHousing/StaticHouseHelper.cs
  *  Changelog:
+ * 11/16/26, Adam (-uomc)
+ *      House foundations on the Music Conservatory too (ComposerConveniences); the test blueprint database stays Test Center only.
  *  8/16/22, Adam
  *      Add string.IsNullOrEmpty checks for the XML convert functions .. saves always using exceptions to handle it.
  *  6/10/22, Yoar
@@ -110,7 +112,7 @@ namespace Server.Multis.StaticHousing
         /// If enabled, we can place house foundations using the house placement tool.
         /// But, if this is not an AOS server, we can only build house foundations in the green acres.
         /// </summary>
-        public static bool HouseFoundationsEnabled { get { return Core.GMNTC_CFG || Core.RuleSets.AOSRules(); } }
+        public static bool HouseFoundationsEnabled { get { return Core.RuleSets.ComposerConveniences() || Core.RuleSets.AOSRules(); } }
 
         public static void Configure()
         {

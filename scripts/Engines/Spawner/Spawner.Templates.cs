@@ -22,8 +22,48 @@
 /* Scripts\Engines\Spawner\Spawner.Templates.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *  3/14/2024, Adam (CustomMobile())
+ *      Disallow custom mobiles from being tamed.
+ *  12/10/1023, Adam
+ *      Undo Christmas event hack to spawner template model.
+ *      Hack: Was leaving orphaned template mobiles/items if they are on one map vs another
+ *      Fix: Add reference counting on template mobiles/items/loot packs, and carve packs. Now all of these can be shared across multiple spawners.
+ *      Note: When the last linking spawner is deleted, the template is deleted, regardless of map.
+ *  5/23/22, Adam (CopyLayers)
+ *      Make sure the item to copy has a Parameterless Constructor
+ *      i.e., StuddedGlovesOfMining don't have such a constructor
+ *	6/27/2021, Adam
+ *		Rewrite all the template stuff to actually work and not be crappy-buggy.
+ *	11/1/07, Adam
+ *		When using target mode to setup a Template Item or Mobile, set/clear the SpawnerTempMob or SpawnerTempItem for the template
+ *		We need to clear it for the old Template so that it will decay as per usual, and set it for the new one so that it does not 
+ *		decay. 
+ *		Caution: Don't use anything spawned by a spawner (still on the spawner list) as a template as the spawner will delete it
+ *		during a defrag.
+ *  10/19/06, Kit
+ *		Made template mobs spawner property be set to spawner they are on.
+ *	9/15/06, Adam
+ *		Add function to create a template object only if the Type of the existing template
+ *			object has changed. The prevents complex templates from being lost when someone
+ *			simply hits 'OK' on the Spawner gump
+ *  8/16/06, Kit
+ *		Made static copy of mobs copy layers and property of those layers to new destination mob.
+ *  7/02/06, Kit
+ *		Added, property DynamicCopy, if enabled call InitOutfit/InitBody routines of mob.
+ *		Added set NameHue to -1(use notoriety) for vendors spawned with invulnerability turned off.
+ *		Fixed bug with namehue being set on all spawners.
+ *		Added call to InitOutfit() for normal template spawns to prevent cross dressing.
+ *	6/30/06, Adam
+ *		- remove evil code nulling templates on every spawn if Enable is not set
+ *		- Have TemplateEnable invoke appropriate Template Creation / Destruction code
+ *		- Propagate Lifespan for Mobiles and LastMove for items (manages decay/cleanup)
+ *		- move template creation/management into Spawner class.
+ *		- make sure template is only created on the first object specified.
+ *		- make TemplateEnable readable by GMs, but writable by Seers
+ *  06/27/06, Kit
+ *		Added templated ability to spawners, full range of props setting for spawner entry.
+ *		Set via TemplateMobile -> view props, or TemplateItem -> view props, packed out old data.
  */
 
 using System;

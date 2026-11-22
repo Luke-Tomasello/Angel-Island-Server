@@ -106,6 +106,48 @@
 
 /* Server\Main.cs
  * ChangeLog:
+ *  11/20/26, Adam (world save strategy at startup)
+ *      Select Dual on multicore machines and Standard on single-core machines, and show the mode.
+ *  11/19/26, Adam (Music Conservatory mounts)
+ *      AllowMountRules: the Music Conservatory allows mounts (it refused them as an Upheaval-rules shard).
+ *  11/18/26, Adam (account restrictions)
+ *      RuleSets.DatabaseMaster is retired: nothing pushes per-shard lists into the shared databases any more.
+ *  11/18/26, Adam (one database folder)
+ *      The accounts and music databases are always on (UseLoginDB, ShareMusic: true), in one folder (DatabaseFolder:
+ *      AI.DBDIR, else <shard>\Databases). -usedb and -sharemusic are retired: given, the server stops with what to do
+ *      (a leftover switch would look meaningful later), as do the retired per-database variables, an AI.DBDIR that
+ *      doesn't exist or can't be written, and the guard (C:\AIDB holds the family's databases and AI.DBDIR isn't it). The
+ *      login database's "continue without it" prompt is gone: one that can't be created stops the server. The banner
+ *      says where the databases are.
+ *  11/18/26, Adam (Development)
+ *      Core.Development: a development machine, a Debug build or -nosaves (production is neither). Scripts ask it
+ *      instead of NoSaves when what they mean is "not production".
+ *  11/17/26, Adam (-uomc standalone)
+ *      The Music Conservatory is its own shard: -uomc alone selects it (ServerID.MusicConservatory, Core.Server
+ *      "Angel Island Music Conservatory"), it plays by the Upheaval rules (RuleSets.UpheavalRules() is true there) but
+ *      carries none of Upheaval's identity. -uomc with another server switch, -uotc or -uoev halts startup. Its world
+ *      began as Upheaval's, so at first start its Saves\Upheaval folder (CoreAI.xml: settings and patch history) moves
+ *      to Saves\<its name>; a world with neither halts rather than rerun every patch.
+ *      The shards are in their order everywhere in RuleSets, oldest first: Angel Island, Siege Perilous, Mortalis,
+ *      Seasons, Upheaval, the Music Conservatory, then the Login Server (switches, fields, properties, rules).
+ *      RuleSets.TrammelRules(): Trammel rules (PvE) on the main maps, Seasons 3 and now the Music Conservatory.
+ *      MusicConservatoryListName "Music Conservatory": its name in the client's server list (the full name is too long).
+ *  11/17/26, Adam (family-wide names)
+ *      RuleSets.UsesReservedNames() is every game shard (was Mortalis, Seasons and Upheaval): one name rule for the family.
+ *  11/16/26, Adam (-uomc)
+ *      -uomc: the Angel Island Music Conservatory (AIMC), a persistent production shard for composers, run on the
+ *      Upheaval rules (-uoup, required) with its own port (MusicConservatoryPort) and server list entry. It is not a
+ *      Test Center: GMNTC_CFG and TestCenterServer stay Test Center only, and the conveniences it shares with Test
+ *      Center are granted one by one (RuleSets.ComposerConveniences). -uomc with -uotc or -uoev halts startup, and so
+ *      does -uomc without -uoup.
+ *  11/16/26, Adam (version)
+ *      The version is stamped into GMN Core at build (Directory.Build.targets: Major.Minor from GMN Core.csproj, then
+ *      the SVN revision): the banner says "Version 6.1.1360" (no ", Build n"), its colour one per revision. BuildInfo
+ *      is retired: no "Core 6.info", so no BuildInfoDir (AI.BuildInfoDir), no "[Reading build.info" line and no boot
+ *      error when the file is missing.
+ *  11/14/26, Adam (slow work)
+ *      The main loop times each of its steps (updates, timers, incoming packets, sending, Core.Slice): one that takes
+ *      SlowWork.ThresholdMs or longer is recorded (Diagnostics\SlowWork.cs), so a stall can be traced to its cause.
  *  11/13/26, Adam (-publishmusic)
  *      -publishmusic=<folder>: this server publishes the music catalog (the shared music database's approved songs,
  *      as .rzr files and catalog.json) into that folder for the website (Engines\AIMusicShare\MusicCatalog.cs; the
@@ -172,7 +214,8 @@ namespace Server
         Mortalis,
         Seasons,
         Upheaval,
-        LoginServer
+        LoginServer,
+        MusicConservatory   // its own shard, on the Upheaval rules (RuleSets.GMNMC_SVR)
     }
     public class Core
     {
@@ -224,15 +267,16 @@ namespace Server
             set { m_Patching = value; }
         }
 
-        private static bool m_useLoginDB = false;
+        private static bool m_useLoginDB = true;                    // always on (11/18/26): -usedb is retired
+        private static readonly List<string> m_RetiredSwitches = new List<string>();   // -usedb, -sharemusic given: halt
         public static bool UseLoginDB
         {
             get { return m_useLoginDB; }
             set { m_useLoginDB = value; }
         }
 
-        // -sharemusic: this shard shares its music with the other shards (Engines\AIMusicShare)
-        private static bool m_ShareMusic = false;
+        // this shard shares its music with the other shards (Engines\AIMusicShare)
+        private static bool m_ShareMusic = true;                    // always on (11/18/26): -sharemusic is retired
         public static bool ShareMusic
         {
             get { return m_ShareMusic; }
@@ -293,6 +337,8 @@ namespace Server
 
         // -nosaves: a development machine (production never has it)
         public static bool NoSaves { get { return m_NoSaves; } }
+        // a development machine: a Debug build or -nosaves (production is neither)
+        public static bool Development { get { return Debug || m_NoSaves; } }
         // Disabling developer mode for now (for custom house building)
         //public static bool Developer { get { return m_Developer; } }                                    //Disallow direct logins to other servers if we are not a developer
         internal static bool HaltOnWarning { get { return m_HaltOnWarning; } }
@@ -693,11 +739,12 @@ namespace Server
             private static bool m_OSISE_SVR;
             private static bool m_OSIML_SVR;
             // GMN
-            private static bool m_GMNSP_SVR;                 // Siege
             private static bool m_GMNAI_SVR;                 // Angel Island
+            private static bool m_GMNSP_SVR;                 // Siege
             private static bool m_GMNMO_SVR;                 // Mortalis
             private static bool m_GMNSE_SVR;                 // Seasons
-            private static bool m_GMNUP_SVR;                 // Upheaval   
+            private static bool m_GMNUP_SVR;                 // Upheaval
+            private static bool m_GMNMC_SVR;                 // Music Conservatory (AIMC): its own shard, Upheaval rules
             private static bool m_GMNLS_SVR;                 // Login Server
             #endregion SERVERS
 
@@ -718,31 +765,8 @@ namespace Server
                     return GMNLS_SVR;
                 }
             }
-            public static bool DatabaseMaster
-            {
-                get
-                {   // used only for dedicated a database master 
-                    // since the *_CFG options can be applied to any *, we exclude this as
-                    // a valid database master.
-                    return Core.RuleSets.AngelIslandRules() && !GMNEV_CFG && !GMNTC_CFG;
-                    // Note: UOBETA_CFG is special since it can be applied to beta versions of the DatabaseMaster.
-                }
-            }
-            public static bool GMNLS_SVR
-            {
-                get { return m_GMNLS_SVR; }
-                set
-                {
-                    if (value)
-                    {
-                        m_Server = "Login Server";
-                        m_serverID = ServerID.LoginServer;
-                        m_releasePhase = ReleasePhase.Production;
-                        PublishInfo.Publish = 15;
-                    }
-                    m_GMNLS_SVR = value;
-                }
-            }
+            // DatabaseMaster retired 11/18/26: its only job, pushing Angel Island's firewall and IP exception lists into
+            //  the shared databases at load, ended when those lists became Engines/Restrictions (PatchV276)
             public static bool GMNAI_SVR
             {   // January 9, 2002: killing shopkeepers in Felucca will now give a murder count, etc.
                 // https://www.uoguide.com/Publish_15
@@ -837,6 +861,40 @@ namespace Server
                     m_GMNUP_SVR = value;
                 }
             }
+            public static bool GMNMC_SVR
+            {
+                // The Angel Island Music Conservatory: its own shard (name, ServerID, Saves folder, music key) that plays
+                //  by the Upheaval rules, so UpheavalRules() and the rules built on it hold here too. Upheaval's
+                //  identity (Core.Server, ServerID.Upheaval) is never set.
+                get { return m_GMNMC_SVR; }
+                set
+                {
+                    if (value)
+                    {
+                        m_Server = MusicConservatoryName;
+                        m_serverID = ServerID.MusicConservatory;
+                        m_releasePhase = ReleasePhase.Production;
+                        PublishInfo.Publish = 15;
+                        m_GMNUP_SVR = true;     // the rules only
+                    }
+                    m_GMNMC_SVR = value;
+                }
+            }
+            public static bool GMNLS_SVR
+            {
+                get { return m_GMNLS_SVR; }
+                set
+                {
+                    if (value)
+                    {
+                        m_Server = "Login Server";
+                        m_serverID = ServerID.LoginServer;
+                        m_releasePhase = ReleasePhase.Production;
+                        PublishInfo.Publish = 15;
+                    }
+                    m_GMNLS_SVR = value;
+                }
+            }
             #region OSI Servers
             public static bool OSIAOS_SVR
             {
@@ -895,11 +953,7 @@ namespace Server
                     // OSI Servers (don't really care about these as we never run them)
                     (m_OSIAOS_SVR || m_OSISE_SVR || m_OSIML_SVR) ||
                     // GMN Servers
-                    (m_GMNAI_SVR || m_GMNSP_SVR || m_GMNMO_SVR || m_GMNSE_SVR || m_GMNUP_SVR);
-            }
-            public static bool LoginServerRules()
-            {
-                return (GMNLS_SVR);
+                    (m_GMNAI_SVR || m_GMNSP_SVR || m_GMNMO_SVR || m_GMNSE_SVR || m_GMNUP_SVR || m_GMNMC_SVR);
             }
             public static bool AngelIslandRules()
             {
@@ -944,6 +998,14 @@ namespace Server
             {   // GMN Upheaval
                 return (GMNUP_SVR);
             }
+            public static bool MusicConservatoryRules()
+            {   // the Angel Island Music Conservatory (on the Upheaval rules: UpheavalRules() is true there too)
+                return GMNMC_CFG;
+            }
+            public static bool LoginServerRules()
+            {
+                return (GMNLS_SVR);
+            }
             #region GMN Server Modes
             public static bool TestCenterRules()
             {
@@ -953,11 +1015,29 @@ namespace Server
             {
                 return GMNEV_CFG;
             }
+            /// <summary>
+            /// The Test Center conveniences the Music Conservatory shares (character funding, set-skills, housing): Test
+            /// Center or the Conservatory. Only the sites granted to composers ask this; every other Test Center behavior
+            /// stays Test Center only (GMNTC_CFG, TestCenterServer.Enabled).
+            /// </summary>
+            public static bool ComposerConveniences()
+            {
+                return GMNTC_CFG || GMNMC_CFG;
+            }
             #endregion GMN Server Modes
 
 
             #endregion Server Enablement
             #region Enabled Server Rules
+            /// <summary>
+            /// Trammel rules (PvE) on the main maps (MapDefinitions): free movement, no harmful or beneficial acts
+            /// between players. Seasons 3, and the Angel Island Music Conservatory (a home for composers, not a battlefield).
+            /// </summary>
+            public static bool TrammelRules()
+            {
+                return SeasonsRules(3) || MusicConservatoryRules();
+            }
+
             public static bool CanTeach()
             {
                 return !(SiegeRules() || SeasonsRules(2));
@@ -991,8 +1071,9 @@ namespace Server
             }
 
             public static bool UsesReservedNames()
-            {
-                return MortalisRules() || SeasonsRules() || UpheavalRules();
+            {   // names belong to accounts on every game shard (11/17/26: family-wide, NameRegistry; it was Mortalis,
+                //  Seasons and Upheaval only, so Angel Island and Siege Perilous didn't check names at all)
+                return !LoginServerRules();
             }
             public static bool AIPrisonSystem()
             {
@@ -1356,7 +1437,7 @@ namespace Server
             /// </summary>
             public static bool StaticHousingRules()
             {
-                return GMNTC_CFG || AngelIslandRules() || SiegeRules();
+                return ComposerConveniences() || AngelIslandRules() || SiegeRules();    // the production catalog on the Music Conservatory
             }
             public static bool UseToggleSpecialAbility()
             {   // not sure what the cutoff is here. Angel Island is 15 and uses the toggle, Siege does not
@@ -1373,8 +1454,8 @@ namespace Server
             {
                 Region region = from.Region;
 
-                // Angel Island never allows mounts anywhere.
-                if (AngelIslandRules() || UpheavalRules())
+                // Angel Island and Upheaval never allow mounts anywhere; the Music Conservatory (on Upheaval's rules) does
+                if (AngelIslandRules() || (UpheavalRules() && !MusicConservatoryRules()))
                     return false;
 
                 // On other shards, region-level NoMounts overrides general allowance.
@@ -1454,6 +1535,23 @@ namespace Server
             get
             {
                 return m_GMNTC_CFG;
+            }
+        }
+        // -uomc: the Angel Island Music Conservatory (AIMC); its own production shard, never a Test Center
+        public const string MusicConservatoryName = "Angel Island Music Conservatory";
+        public const string MusicConservatoryShortName = "AIMC";
+        // its name in the client's server list: the full name (31 characters) runs over the list's Latency and Packet
+        //  Loss columns. Also the name admin tools (UOAdmin) know it by.
+        public const string MusicConservatoryListName = "Music Conservatory";
+        /// <summary>The shard's name as players and the outside world see it (Core.Server: the Music Conservatory is its
+        /// own shard now, so the two agree everywhere).</summary>
+        public static string PublicName => Server;
+        /// <summary>The Music Conservatory (-uomc), the shard itself (RuleSets.GMNMC_SVR).</summary>
+        public static bool GMNMC_CFG
+        {
+            get
+            {
+                return RuleSets.GMNMC_SVR;
             }
         }
         public static bool Tribute_CFG
@@ -1760,6 +1858,7 @@ namespace Server
                 return;
 
             SetSwitches(args);
+            AdoptConservatorySaves();
 
             // Arguments is now only a display/restart representation
             // of the authoritative argument array.
@@ -1857,12 +1956,12 @@ namespace Server
                 ? " (Crashed)"
                 : (m_Restarted ? " (Restarted)" : string.Empty);
 
-            string version = $"{Utility.BuildMajor()}.{Utility.BuildMinor()}.{Utility.BuildRevision()}";
+            string version = Utility.BuildVersion();    // 6.1.1360: Major.Minor, then the SVN revision (Directory.Build.targets)
 
             string text =
-                $"{m_Server}{seasonSuffix}{stateSuffix} - [www.game-master.net] Version {version}, Build {Utility.BuildBuild()}";
+                $"{m_Server}{seasonSuffix}{stateSuffix} - [www.game-master.net] Version {version}";
 
-            ConsoleColor color = Utility.BuildColor(Utility.BuildRevision()); // same color selection behavior as before
+            ConsoleColor color = Utility.BuildColor(Utility.BuildRevision()); // one color per revision: all servers on it match
 
             Utility.Monitor.WriteLine($"{phase} {text}".TrimStart(), color);
             #endregion Header
@@ -1927,13 +2026,6 @@ namespace Server
             }
             #endregion Ports
 
-            #region BuildInfo 
-            if (BuildInfoCheck() == true)
-                Utility.Monitor.WriteLine($"[Reading build.info from {Utility.GetShortPath(BuildInfoDir, raw: true)}.]", ConsoleColorInformational());
-            else
-                Utility.Monitor.WriteLine($"[Reading build.info from default location {BuildInfoDir}.]", ConsoleColorWarning());
-            #endregion BuildInfo
-
             #region GeoIP
             if (GeoIPCheck() == true)
                 Utility.Monitor.WriteLine("[Geo IP Configured.]", ConsoleColorInformational());
@@ -1945,11 +2037,8 @@ namespace Server
             if (Directory.Exists(Path.Combine(Core.DataDirectory)) == false)
                 Core.LoggerShortcuts.BootError(string.Format("Configuration error \"{0}\" is missing.", Core.DataDirectory));
 
-            if (File.Exists(Path.Combine(Core.BuildInfoDir, "Core 6.info")) == false)
-                Core.LoggerShortcuts.BootError(string.Format("Configuration error \"{0}\" is missing.", Path.Combine(Core.BuildInfoDir, "Core 6.info")));
-
             #region Check Login DB
-            if (m_useLoginDB)
+            // always on (11/18/26): a login database that can't be created stops the server (there's no running without it)
             {
                 bool adError = false;
                 bool ipeError = false;
@@ -1958,36 +2047,9 @@ namespace Server
                 string ipePath = IPExceptionDatabase.GetDatabasePath(ref ipeError);
                 string fwPath = FirewallDatabase.GetDatabasePath(ref fwError);
                 if (adError || ipeError || fwError)
-                {
-                    if (adError)
-                        Console.WriteLine($"Unable to create {adPath}");
-
-                    if (ipeError)
-                        Console.WriteLine($"Unable to create {ipePath}");
-
-                    if (fwError)
-                        Utility.Monitor.WriteLine($"Unable to create {fwPath}", ConsoleColor.Red);
-
-                    Utility.Monitor.WriteLine($"Use the following environment variables to relocate the database(s)", ConsoleColor.Yellow);
-                    Utility.Monitor.WriteLine("AI.IPEXCEPTIONDB, AI.FIREWALLDB, AI.LOGINDB", ConsoleColor.Yellow);
-
-                    while (true)
-                    {
-                        Utility.Monitor.WriteLine("Insufficient privileges to create one or more databases.", ConsoleColor.Yellow);
-                        Utility.Monitor.WriteLine("Press 'c' to continue without axillary database support, or 'q' to quit.", ConsoleColor.Yellow);
-
-                        string input = Console.ReadLine().ToLower();
-                        if (input.StartsWith("c"))
-                        {
-                            m_useLoginDB = false;
-                            break;
-                        }
-                        else if (input.StartsWith("q"))
-                        {
-                            return;
-                        }
-                    }
-                }
+                    Core.Halt(string.Format("Unable to create {0} in {1}. Set {2} to a folder this server can write to.",
+                        string.Join(", ", new[] { adError ? adPath : null, ipeError ? ipePath : null, fwError ? fwPath : null }.Where(p => p != null).Select(p => Path.GetFileName(p))),
+                        DatabaseFolder.Path, DatabaseFolder.Variable));
             }
             #endregion Check Login DB
 
@@ -2022,21 +2084,8 @@ namespace Server
                 AutoSave.SavesEnabled = false;
             state = AutoSave.SavesEnabled;
             Utility.Monitor.WriteLine("[Saves are {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
-            state = m_useLoginDB;
-            if (state)
-            {
-                bool ignored = false;
-                Utility.Monitor.WriteLine("[Using login database {0} is {1}.]", ConsoleColorEnabled(state),
-                    Utility.GetShortPath(AccountsDatabase.GetDatabasePath(ref ignored)), TextEnabled(state));
-            }
-            else
-                Utility.Monitor.WriteLine("[Using login database {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
-            state = m_ShareMusic;
-            if (state)
-                Utility.Monitor.WriteLine("[Sharing music from {0} is {1}.]", ConsoleColorEnabled(state),
-                    Utility.GetShortPath(Engines.MusicShare.MusicShareDatabase.DatabasePath), TextEnabled(state));
-            else
-                Utility.Monitor.WriteLine("[Sharing music is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            Utility.Monitor.WriteLine("[Databases (accounts, names, music) are in {0}{1}.]", ConsoleColorInformational(),
+                DatabaseFolder.Path, string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(DatabaseFolder.Variable)) ? " (this shard's own)" : "");
             state = !string.IsNullOrWhiteSpace(m_PublishMusic);
             if (state)
                 Utility.Monitor.WriteLine("[Publishing the music catalog to {0} is {1}.]", ConsoleColorEnabled(state),
@@ -2048,6 +2097,8 @@ namespace Server
             Utility.Monitor.WriteLine("[Resource Pool is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = Core.GMNTC_CFG;
             Utility.Monitor.WriteLine("[Test Center functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
+            state = Core.GMNMC_CFG;
+            Utility.Monitor.WriteLine("[Music Conservatory (AIMC) is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = Core.RuleSets.LoginServerRules();
             Utility.Monitor.WriteLine("[Login Server functionality is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
             state = Core.GMNBETA_CFG;
@@ -2068,7 +2119,7 @@ namespace Server
             Utility.Monitor.WriteLine("[T2A is {0}.]", ConsoleColorEnabled(state), TextEnabled(state));
 
             #region Map Rules
-            if (Core.RuleSets.SeasonsRules(3))
+            if (Core.RuleSets.TrammelRules())
                 Utility.Monitor.WriteLine("[Default map configuration: Trammel rules (PvE).]", ConsoleColorInformational());
             else
                 Utility.Monitor.WriteLine("[Default map configuration: Felucca rules (PvP).]", ConsoleColorInformational());
@@ -2079,11 +2130,13 @@ namespace Server
 
             m_ProcessorCount = Environment.ProcessorCount;
 
-            if (m_ProcessorCount > 1)
-                m_MultiProcessor = true;
+            m_MultiProcessor = m_ProcessorCount > 1;
+            World.MultiProcessor = m_MultiProcessor;
 
             if (m_MultiProcessor || Is64Bit)
                 Console.WriteLine("Core: Optimizing for {0} {2}processor{1}", m_ProcessorCount, m_ProcessorCount == 1 ? "" : "s", Is64Bit ? "64-bit " : "");
+
+            Console.WriteLine("Core: World save strategy: {0}", World.SaveStrategyName);
 
             int platform = (int)Environment.OSVersion.Platform;
             if ((platform == 4) || (platform == 128))
@@ -2135,17 +2188,31 @@ namespace Server
             {
                 m_Signal.WaitOne();
 
+                // each step is timed: a slow one is kept (Diagnostics\SlowWork.cs), for stalls and [lag
+                long step = SlowWork.Start();
                 Mobile.ProcessDeltaQueue();
                 Item.ProcessDeltaQueue();
+                SlowWork.Finish(step, "main loop: mobile and item updates");
 
+                step = SlowWork.Start();
                 Timer.Slice();
-                m_MessagePump.Slice();
+                SlowWork.Finish(step, "main loop: timers (all of this pass)");
 
+                step = SlowWork.Start();
+                m_MessagePump.Slice();
+                SlowWork.Finish(step, "main loop: incoming packets (all of this pass)");
+
+                step = SlowWork.Start();
                 NetState.FlushAll();
                 NetState.ProcessDisposedQueue();
+                SlowWork.Finish(step, "main loop: sending packets and disconnects");
 
                 if (Slice != null)
+                {
+                    step = SlowWork.Start();
                     Slice();
+                    SlowWork.Finish(step, "main loop: Core.Slice");
+                }
             }
 #if !DEBUG
             }
@@ -2182,7 +2249,7 @@ namespace Server
                 ConsoleColorWarning());
 
             Console.Write(
-                "Enter server (-uoai / -uosp [-Siege[1|2]] / -uomo / -uols / -uose [-Season[1|2|...]] / -uoup): ");
+                "Enter server (-uoai / -uosp [-Siege[1|2]] / -uomo / -uose [-Season[1|2|...]] / -uoup / -uomc / -uols): ");
 
             string input = Console.ReadLine()?.Trim() ?? string.Empty;
 
@@ -2424,6 +2491,7 @@ namespace Server
         /// </summary>
         private static void SetSwitches(string[] tokens)
         {
+            bool sawUpheaval = false;
             foreach (string raw in tokens)
             {
                 // Normalize to lowercase for comparison, but keep original for appending
@@ -2439,8 +2507,8 @@ namespace Server
                 else if (lower == "-haltonwarning") m_HaltOnWarning = true;
                 else if (lower == "-vb") m_VBdotNET = true;
                 else if (lower == "-migratepatchhistory") MigratePatchHistory = true;
-                else if (lower == "-usedb") m_useLoginDB = true;
-                else if (lower == "-sharemusic") m_ShareMusic = true;
+                // retired 11/18/26: the databases are always on (DatabaseFolder); given, the server stops (below)
+                else if (lower == "-usedb" || lower == "-sharemusic") m_RetiredSwitches.Add(token);
                 else if (lower.StartsWith("-publishmusic=")) m_PublishMusic = token.Substring("-publishmusic=".Length).Trim('"');
                 else if (lower.StartsWith("-timezone=")) ShardClock.SetFromSwitch(token.Substring("-timezone=".Length));
                 else if (lower == "-uotc") m_GMNTC_CFG = true;
@@ -2466,10 +2534,6 @@ namespace Server
                 }
 
                 // ── Servers (only count real server selection) ─────────────────
-                else if (clean == "uols" || lower == "-uols")
-                {
-                    RuleSets.GMNLS_SVR = true;
-                }
                 else if (clean == "uoai" || lower == "-uoai")
                 {
                     RuleSets.GMNAI_SVR = true;
@@ -2488,7 +2552,17 @@ namespace Server
                 }
                 else if (clean == "uoup" || lower == "-uoup")
                 {
-                    RuleSets.GMNUP_SVR = true;
+                    sawUpheaval = true;
+                    if (!RuleSets.GMNMC_SVR)
+                        RuleSets.GMNUP_SVR = true;
+                }
+                else if (clean == "uomc" || lower == "-uomc")
+                {
+                    RuleSets.GMNMC_SVR = true;
+                }
+                else if (clean == "uols" || lower == "-uols")
+                {
+                    RuleSets.GMNLS_SVR = true;
                 }
             }
 
@@ -2496,6 +2570,51 @@ namespace Server
             //  launch stops here rather than guessing which was meant
             if (m_EnableDbgSaves && m_NoSaves)
                 Core.Halt("-saves and -nosaves contradict each other: give one or the other.");
+            // retired switches: a leftover one would look meaningful a year from now, so it stops the server
+            if (m_RetiredSwitches.Count > 0)
+                Core.Halt(string.Format("{0}: no longer used. The accounts and music databases are always on, in one folder " +
+                    "(AI.DBDIR). Remove {1} from this shard's command line.",
+                    string.Join(" ", m_RetiredSwitches), m_RetiredSwitches.Count == 1 ? "it" : "them"));
+            // the database folder: AI.DBDIR (checked), else <shard>\Databases; the retired variables and the C:\AIDB guard
+            string? databases = DatabaseFolder.Check();
+            if (databases != null)
+                Core.Halt(databases);
+            // -uomc is the Music Conservatory: its own production shard (on the Upheaval rules), never a Test Center or
+            //  event shard, and never another shard's identity
+            if (RuleSets.GMNMC_SVR && (m_GMNTC_CFG || m_GMNEV_CFG))
+                Core.Halt("-uomc (the Music Conservatory) is a production shard: it can't be combined with -uotc or -uoev.");
+            if (RuleSets.GMNMC_SVR && sawUpheaval)
+                Core.Halt("-uomc (the Music Conservatory) is its own shard: start it with -uomc alone, not with -uoup.");
+        }
+        /// <summary>
+        /// The Music Conservatory's world began as Upheaval's: at its first start, its Saves\Upheaval folder (CoreAI.xml,
+        /// the shard's settings and patch history, among others) becomes Saves\&lt;its name&gt;. A world (Saves\Mobiles)
+        /// with neither folder halts: without its patch history every patch would run again.
+        /// </summary>
+        private static void AdoptConservatorySaves()
+        {
+            if (!RuleSets.GMNMC_SVR)
+                return;
+
+            string mine = Path.Combine(m_SavesDirectory, m_Server);
+            string inherited = Path.Combine(m_SavesDirectory, "Upheaval");
+            if (Directory.Exists(mine))
+            {
+                if (Directory.Exists(inherited))
+                    Utility.Monitor.WriteLine("[Saves\\Upheaval is left alone: this shard's settings are in Saves\\{0}.]",
+                        ConsoleColor.Yellow, m_Server);
+                return;
+            }
+            if (Directory.Exists(inherited))
+            {
+                Directory.Move(inherited, mine);
+                Utility.Monitor.WriteLine("[Saves\\Upheaval is now Saves\\{0}: the world's settings and patch history.]",
+                    ConsoleColor.Green, m_Server);
+                return;
+            }
+            if (Directory.Exists(Path.Combine(m_SavesDirectory, "Mobiles")))
+                Core.Halt(string.Format("This world has no Saves\\{0} (or Saves\\Upheaval) folder: its settings and patch " +
+                    "history (CoreAI.xml) are missing, and every patch would run again. Restore the folder first.", m_Server));
         }
         private static int CountServers(string[] tokens)
         {
@@ -2505,12 +2624,13 @@ namespace Server
             {
                 string clean = raw.Trim().TrimStart('-').ToLowerInvariant();
 
-                if (clean == "uols" ||
-                    clean == "uoai" ||
+                if (clean == "uoai" ||
                     clean == "uosp" ||
                     clean == "uomo" ||
                     clean == "uose" ||
-                    clean == "uoup")
+                    clean == "uoup" ||
+                    clean == "uomc" ||
+                    clean == "uols")
                 {
                     serverCount++;
                 }
@@ -2544,22 +2664,6 @@ namespace Server
         {
             object[] aState = (object[])state;
             Utility.Monitor.WriteLine("Timers initialized", ConsoleColor.Green);
-        }
-        public static string BuildInfoDir
-        {
-            get
-            {
-                if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AI.BuildInfoDir")))
-                    return Environment.GetEnvironmentVariable("AI.BuildInfoDir");
-                return "./";
-            }
-        }
-        public static bool BuildInfoCheck()
-        {
-            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AI.BuildInfoDir")))
-                return true;
-            else
-                return false;
         }
         public static bool DefaultPorts()
         {

@@ -21,6 +21,9 @@
 
 /* Server\Network\MessagePump.cs
  * CHANGELOG:
+ *  11/14/26, Adam (slow work)
+ *      Each packet handler is timed: one that takes SlowWork.ThresholdMs or longer is recorded with the packet ID and
+ *      who sent it (Diagnostics\SlowWork.cs). Speech packets carry [commands, so a slow command shows here.
  *  8/1/22, Adam
  *      Update Console messages to Yellow for "Client:" messages.
  *	12/23/08, Adam
@@ -289,7 +292,11 @@ namespace Server.Network
 
                         PacketReader r = new PacketReader(packetBuffer, packetLength, handler.Length != 0);
 
+                        long start = SlowWork.Start();
                         handler.OnReceive(ns, r);
+                        double slowMs = SlowWork.Since(start);
+                        if (slowMs >= SlowWork.ThresholdMs)     // named only when slow (no allocation per packet)
+                            SlowWork.Record(string.Format("packet 0x{0:X2} from {1}", packetID, ns.Mobile != null ? ns.Mobile.Name : ns.ToString()), slowMs);
                         length = buffer.Length;
 
                         if (BufferSize >= packetLength)

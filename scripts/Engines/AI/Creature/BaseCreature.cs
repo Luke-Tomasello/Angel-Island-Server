@@ -21,6 +21,9 @@
 
 /* Scripts/Engines/AI/Creature/BaseCreature.cs
  * ChangeLog
+ *  11/15/2026, Adam (HireDismissed)
+ *      CreatureBoolTable.HireDismissed: a hireling dismissed by its master, waiting to vanish when no player can see it
+ *      (BaseHire.VanishWhenDismissed). Saved with the other creature bools, so it survives a restart.
  *  11/10/2026, Adam (PatchLootTick, KeepsWeaponPacked)
  *      PatchLootTick, Publish 4 and later: a vendor's newbied items aren't loot (they never go to the corpse), so a pack
  *      holding one keeps it and the pack; only the rest goes. A pack with none is deleted as before. (Upheaval's
@@ -998,6 +1001,7 @@ namespace Server.Mobiles
         AlwaysInnocent = 0x100000000,   // overrides notoriety
         DropsSterling = 0x200000000,    // we drop sterling
         IsPrisonPet = 0x400000000,      // special creatures tamed in prison, killed on exit
+        HireDismissed = 0x800000000,    // a hireling dismissed by its master, waiting to vanish unseen (BaseHire.VanishWhenDismissed)
     }
     /* SIEGE NOTE: Freshly tamed pets are in a state of "confusion". If you try to command them before you feed them, they will most likely go wild with the first command (depending on their taming difficulty and your skill level). Use Animal Lore on your pet to find out what it likes to eat, if you don't know already. One piece of food will be sufficient in most cases to make your pet "wonderfully happy".
      * If your mount stops and refuses to carry you any further because it is too fatigued to move, one piece of food will replenish 30% of it's stamina, with a maximum of 90%. Just make sure you feed three pieces, one at a time.

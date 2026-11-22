@@ -21,6 +21,13 @@
 
 /* Scripts\Accounting\IPException.cs
  *	CHANGELOG
+ * 11/18/26, Adam (account restrictions)
+ *  IP exceptions work again, per shard: Engines/Restrictions (GetLimit, SetLimit, Remove, GetAllIPs ask it; the
+ *  account limiter uses Restrictions.AccountLimit). ipexception.xml is read at world load only for PatchV276 and never
+ *  written again; the database master's push is gone.
+ * 11/18/26, Adam (one database folder)
+ *  ipexception.db lives in the one database folder (Server\DatabaseFolder.cs: AI.DBDIR, else <shard>\Databases);
+ *  AI.IPEXCEPTIONDB is retired.
  * 7/29/2024, Adam
  *  Initialize database if it does not exist.
  *	8/5/22, Adam
@@ -64,6 +71,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.IO;
+using System.Linq;
 using System.Xml;
 
 namespace Server.Accounting
@@ -76,8 +84,7 @@ namespace Server.Accounting
 
         public static void Configure()
         {
-            EventSink.WorldLoad += EventSink_OnWorldLoad;
-            EventSink.WorldSave += EventSink_OnWorldSave;
+            EventSink.WorldLoad += EventSink_OnWorldLoad;     // read only, for PatchV276: ipexception.xml is never written again
         }
 
         private static void EventSink_OnWorldLoad()
@@ -90,17 +97,9 @@ namespace Server.Accounting
             SaveXml();
         }
 
-        public static int GetLimit(string ip)
-        {
-            int limit = _GetLimit(ip);
-            if (limit != 0)
-            {
-                Utility.Monitor.WriteLine(string.Format("IPException of {0} found for {1} ... Ignoring", limit, ip), ConsoleColor.Red);
-                return 0;
-            }
-
-            return limit;
-        }
+        /// <summary>This address's account limit here (Engines/Restrictions: its IP exception, else the shard's limit).</summary>
+        public static int GetLimit(string ip) =>
+            System.Net.IPAddress.TryParse(ip, out System.Net.IPAddress? a) ? Server.Engines.Restrictions.AccountLimit(a) : CoreAI.MaxAccountsPerIP;
         private static int _GetLimit(string ip)
         {
             if (Core.UseLoginDB)
@@ -121,26 +120,18 @@ namespace Server.Accounting
 
         public static void SetLimit(string ip, int limit)
         {
-            m_Table[ip] = limit;
-
-            if (Core.UseLoginDB)
-                IPExceptionDatabase.SaveLimit(ip, limit);
+            Server.Engines.Restrictions.Add(Server.Engines.Restrictions.Kind.IpException, ip, Server.Engines.Restrictions.ThisShard, limit, "", "", null);
         }
 
         public static void Remove(string ip)
         {
-            m_Table.Remove(ip);
-
-            if (Core.UseLoginDB)
-                IPExceptionDatabase.Remove(ip);
+            Server.Engines.Restrictions.Lift(Server.Engines.Restrictions.Kind.IpException, ip, Server.Engines.Restrictions.ThisShard, "");
         }
 
         public static ICollection GetAllIPs()
         {
-            if (Core.UseLoginDB)
-                return IPExceptionDatabase.GetAllIPs();
-
-            return m_Table.Keys;
+            return (Server.Engines.Restrictions.AllRows() ?? new()).Where(r => r.Kind == Server.Engines.Restrictions.Kind.IpException && r.InForce(DateTime.UtcNow)
+                && r.Applies(Server.Engines.Restrictions.ThisShard)).Select(r => r.Subject).ToList();
         }
 
         #region Save/Load XML
@@ -234,7 +225,7 @@ namespace Server.Accounting
             }
 
             // only if we're the DB master, push our IP exceptions to the DB
-            if (Core.UseLoginDB && Core.RuleSets.DatabaseMaster)
+            if (false)     // the database master's push is gone (11/18/26): PatchV276 moves ipexception.xml into Restrictions
                 IPExceptionDatabase.SaveAllLimits();
         }
 
@@ -247,10 +238,8 @@ namespace Server.Accounting
 
         public static string GetDatabasePath(ref bool error)
         {
-            string? path = Environment.GetEnvironmentVariable("AI.IPEXCEPTIONDB");
-
-            if (string.IsNullOrWhiteSpace(path))
-                path = @"C:\AIDB\ipexception.db";
+            // the one database folder (AI.DBDIR, else <shard>\Databases): AI.IPEXCEPTIONDB is retired
+            string path = DatabaseFolder.PathOf("ipexception.db");
 
             error = false;
             if (!File.Exists(path))

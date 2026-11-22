@@ -19,6 +19,8 @@
 
 /* Scripts\Engines\Music\SystemMusicPlayer.cs
  * Changelog
+ *  11/21/26, Adam
+ *      Removed the sampled listening and composing messages from the console.
  *  11/6/26, Adam (2026 modernization, 10/24/26 to 11/6/26)
  *      Sessions: ReleaseContext is the one way a context leaves MusicConfig, and the timers stop when their context is
  *      released or replaced (a [play reset left a second timer running); a music device plays on its own session
@@ -1318,13 +1320,6 @@ namespace Server.Commands
         // session: a music device's own session (m == null), or null to use (and create if needed) m's context
         public static void PlaySession(MusicContext? session, Mobile? m, string musicString, bool IsCommandLine = false, bool bSilent = false)
         {
-            // lets see who's using the music system
-            if (Utility.Random(10) == 0)
-                if (IsCommandLine)
-                    AimsLog.DebugOut(string.Format("{0} composing music.", m?.ToString() ?? "a music device"), ConsoleColor.Cyan);
-                else
-                    AimsLog.DebugOut(string.Format("{0} is listening to music.", m?.ToString() ?? "a music device"), ConsoleColor.Cyan);
-
             // Allows dynamic control through the CoreManagementConsole.
             if ((m?.AccessLevel ?? AccessLevel.Player) < AimsHost.Current.PlayAccessLevel)
             {

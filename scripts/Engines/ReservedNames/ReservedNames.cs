@@ -22,6 +22,11 @@
 
 /* Scripts\Engines\ReservedNames\ReservedNames.cs
  * CHANGELOG:
+ *  11/18/26, Adam (names cleanup)
+ *      Retired: the family-wide registry (NameRegistry, C:\AIDB\names.db) is the only list of names. Reserved Names.json
+ *      is no longer loaded or saved (PatchV275 renames each shard's to Reserved Names.retired.json); nothing reads or
+ *      writes this list any more, and [SeedReservedNames says so. The class stays for PatchV239 (a protected patch
+ *      entry), whose Seed now only fills memory. Every entry was copied into the registry by PatchV272.
  *  4/22/2026, Adam
  */
 
@@ -43,27 +48,16 @@ namespace Server.Engines
         }
         public static void Configure()
         {
-            EventSink.WorldLoad += new WorldLoadEventHandler(Load);
-            EventSink.WorldSave += new WorldSaveEventHandler(Save);
+            // retired 11/18/26: no longer loaded or saved (NameRegistry is the only list of names)
         }
         [Usage("SeedReservedNames")]
         [Description("Seeds the Reserved Names registry from account data and saves it to disk.")]
         public static void SeedReservedNames_OnCommand(CommandEventArgs e)
         {
-            if (e.Mobile == null)
-                return;
-
-            try
-            {
-                int records = ReservedNames.Seed();
-
-                e.Mobile.SendMessage($"{records} Reserved Names added to registry.");
-            }
-            catch (Exception ex)
-            {
-                e.Mobile.SendMessage("Seeding Reserved Names failed: {0}", ex.Message);
-            }
+            e.Mobile?.SendMessage("Reserved Names is retired: names are kept family-wide ([Names who, [Names assign).");
         }
+        // retired 11/18/26: NameRegistry (C:\AIDB\names.db) is the only list of names
+        public static readonly bool Retired = true;
         private const string FileName = "Reserved Names.json";
         private static string FilePath => Path.Combine(Core.ExeDirectory, "Saves", "Accounts", FileName);
 
@@ -226,6 +220,8 @@ namespace Server.Engines
 
         public static void Save(WorldSaveEventArgs? e)
         {
+            if (Retired)
+                return;     // retired 11/18/26: never written again (NameRegistry is the only list of names)
             Console.WriteLine("Reserved Names saving...");
             EnsureDataDirectory();
 

@@ -1,0 +1,21 @@
+<Project>
+  <!-- MidiToAims's version, for both MidiToAims.exe and MidiToAims.Core.dll (the converter the shard's [m2a loads): one
+       tool, one version. Major.Minor is set here; the revision is the last SVN change to its source, the folders
+       below plus the shard's music compiler, which MidiToAims compiles in (see ..\..\Directory.Build.targets).
+
+       Version history:
+         1.0  11/1/26 (r1245)   MIDI to AIMS conversion, preview through the UO client's own instruments
+         1.1  11/15/26 (r1350)  preview's wav option: a song as a recording (the music catalog's play buttons)
+              1.0 and 1.1 had no version number, only the build date in the banner.
+         2.0  11/15/26 (r1360)  the game's timing: Classic and Dynamic timer songs play at the game's speed
+              (the shard's timers run late, and on those timers it adds up); Anchored unchanged -->
+  <PropertyGroup>
+    <AppVersion>2.0</AppVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <AppVersionSource Include="$(MSBuildThisFileDirectory)MidiToAims" />
+    <AppVersionSource Include="$(MSBuildThisFileDirectory)MidiToAims.Core" />
+    <AppVersionSource Include="$(MSBuildThisFileDirectory)..\Scripts\Engines\AIMusicSystem\Compiler\MusicCompiler.cs" />
+    <AppVersionSource Include="$(MSBuildThisFileDirectory)MidiToAims.Version.props" />
+  </ItemGroup>
+</Project>

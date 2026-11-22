@@ -21,6 +21,12 @@
 
 /* scripts\Mobiles\Hirables\BaseHire.cs
  * ChangeLog
+ *  11/15/2026, Adam (vanish when dismissed)
+ *      VanishWhenDismissed (virtual, default false): a spawned hireling dismissed by its master (released, or out of
+ *      pay: both come through OnBeforeRelease) is marked HireDismissed and leaves the world once no player can see it
+ *      (18 tiles; hidden staff don't count) and it isn't busy (BusyBeforeVanish: a minstrel's song); its spawner makes
+ *      a new one back home. Checked every 15 seconds, no deadline; the mark survives a restart; rehiring clears it.
+ *      A hireling with no spawner (placed by hand, a township's) stays. TryVanish is the check (harnesses call it).
  *  1/10/24, Adam
  *      Now hirelings will remain until ALL gold is consumed, not just a multiple of their required pay.
  *      Cleanup timers on delete (it's been a timer leak forever.)
@@ -128,6 +134,8 @@ namespace Server.Mobiles
                 m_PayTimer = new PayTimer(this);
                 m_PayTimer.Start();
             }
+            else if (Dismissed)
+                StartVanishTimer();     // dismissed before the restart: still waiting to vanish
 
             Registry.Add(this);
         }
@@ -140,6 +148,8 @@ namespace Server.Mobiles
                 m_PayTimer.Stop();
 
             m_PayTimer = null;
+
+            StopVanishTimer();
 
             if (Registry.Contains(this)) ;
             Registry.Remove(this);
@@ -260,6 +270,10 @@ namespace Server.Mobiles
         {
             m_HoldGold += dropped.Amount;
             dropped.Delete();
+
+            // hired again before it vanished: it stays
+            SetCreatureBool(CreatureBoolTable.HireDismissed, false);
+            StopVanishTimer();
 
             SayDaysPaid(from);
 
@@ -386,8 +400,100 @@ namespace Server.Mobiles
 
             HoldGold = 0;
 
+            // a spawned hireling that vanishes when dismissed: its spawner makes a new one back home. One with no spawner
+            //  (placed by hand, a township's) stays: nothing would replace it.
+            if (VanishWhenDismissed && Spawner != null)
+            {
+                SetCreatureBool(CreatureBoolTable.HireDismissed, true);
+                StartVanishTimer();
+            }
+
             return base.OnBeforeRelease(controlMaster);
         }
+
+        #region Vanish when dismissed
+        /// <summary>
+        /// Dismissed (released, or out of pay), this hireling leaves the world once no player can see it, instead of
+        /// lingering wherever its master left it. Default false: the fighter keeps his own exit (DoFighterDeath).
+        /// </summary>
+        public virtual bool VanishWhenDismissed => false;
+
+        /// <summary>Something that should finish before the hireling vanishes (a minstrel's song).</summary>
+        public virtual bool BusyBeforeVanish => false;
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool Dismissed => GetCreatureBool(CreatureBoolTable.HireDismissed);
+
+        private Timer? m_VanishTimer;
+        private static readonly TimeSpan VanishCheck = TimeSpan.FromSeconds(15);
+        public const int VanishSightRange = 18;
+
+        private void StartVanishTimer()
+        {
+            StopVanishTimer();
+            m_VanishTimer = Timer.DelayCall(VanishCheck, VanishCheck, new TimerCallback(VanishTick));
+        }
+        private void StopVanishTimer()
+        {
+            if (m_VanishTimer != null)
+                m_VanishTimer.Stop();
+            m_VanishTimer = null;
+        }
+        private void VanishTick()
+        {
+            TryVanish();
+        }
+
+        /// <summary>
+        /// The vanish check (the timer's tick; harnesses call it directly): a dismissed hireling no player can see, and
+        /// not busy, is deleted. Rehired or no longer dismissed: the timer stops. True when it vanished.
+        /// </summary>
+        public bool TryVanish()
+        {
+            if (Deleted || Controlled || !Dismissed)
+            {
+                StopVanishTimer();
+                return false;
+            }
+
+            if (PlayerCanSee(this) || BusyBeforeVanish)
+                return false;
+
+            StopVanishTimer();
+            Delete();
+            return true;
+        }
+
+        /// <summary>A player within sight of m (hidden staff don't count; visible staff do).</summary>
+        public static bool PlayerCanSee(Mobile m)
+        {
+            if (m == null || m.Map == null || m.Map == Map.Internal)
+                return false;
+
+            IPooledEnumerable eable = m.GetClientsInRange(VanishSightRange);
+            try
+            {
+                foreach (Network.NetState ns in eable)
+                {
+                    Mobile who = ns.Mobile;
+
+                    if (who == null || who.Deleted)
+                        continue;
+
+                    if (who.AccessLevel > AccessLevel.Player && who.Hidden)
+                        continue;
+
+                    return true;
+                }
+            }
+            finally
+            {
+                eable.Free();
+            }
+
+            return false;
+        }
+        #endregion Vanish when dismissed
         public override void OnDelete()
         {
             if (m_PayTimer != null && m_PayTimer.Running)

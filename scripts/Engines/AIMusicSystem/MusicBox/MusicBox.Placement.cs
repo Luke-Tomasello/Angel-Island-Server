@@ -20,6 +20,22 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Placement.cs
  * Changelog
+ *  11/21/26, Adam (public music boxes, 11/19/26 to 11/21/26)
+ *      A Public box in the world needs no house: CheckRights asks Attend instead. It hears only someone within
+ *      PublicRange (2) tiles, and serves one person at a time: whoever used it last keeps it while they stay near and
+ *      use it within AttentionTime (2 minutes); a person is served by one public box at a time (another box taking them
+ *      releases this one).
+ *      A public box keeps serving its listener while it plays for them (and they stay near), however long the song or
+ *      playlist; the 2-minute rule applies again once it stops.
+ *      Say (what a box announces and answers) follows its audience: a Listener box speaks to the person it serves alone,
+ *      and a box with a Range speaks only that far.
+ *      A Listener box still playing for someone another public box takes stops (it played on to no one), and who is
+ *      served by which box forgets deleted people and boxes.
+ *      Instead of stopping it: a public box still playing for someone holds them, wherever they've walked (they still
+ *      hear it), and another public box refuses them ("You are already using <name>. Stop it there, or let it
+ *      finish.") until it stops, finishes or someone else takes it; an idle box lets them go. Someone taking a box
+ *      whose listener walked away while it played stops that song first (it plays on the listener's own music context:
+ *      it went on to the newcomer, and kept its listener from playing anywhere else).
  *  11/8/26, Adam (2026 modernization, 10/30/26 to 11/8/26)
  *      Where a music box is (in the world, carried by a hired minstrel, elsewhere) decides whom it serves and how it
  *      answers; every rule that depends on it is here (speech, rights, access, replies, range, the listener check). A
@@ -98,6 +114,66 @@ namespace Server.Items
 
         // may this speaker use the box here? (World: locked down, and the speaker has access; Carried: yes, the carrier
         //  decides who speaks to it; Elsewhere: no)
+        public const int PublicRange = 2;
+        public static readonly TimeSpan AttentionTime = TimeSpan.FromMinutes(2);
+        private Mobile? m_Attending;                // whom a public box serves (kept after a lapse: a Listener box plays to them)
+        private DateTime m_AttendedAt;
+        private static readonly System.Collections.Generic.Dictionary<Mobile, MusicBox> s_Attended = new System.Collections.Generic.Dictionary<Mobile, MusicBox>();
+
+        // who is served by which public box: deleted people and boxes, and boxes serving someone else now, drop out
+        private static void PruneAttended()
+        {
+            System.Collections.Generic.List<Mobile>? stale = null;
+            foreach (System.Collections.Generic.KeyValuePair<Mobile, MusicBox> kv in s_Attended)
+                if (kv.Key.Deleted || kv.Value.Deleted || kv.Value.m_Attending != kv.Key)
+                    (stale ??= new System.Collections.Generic.List<Mobile>()).Add(kv.Key);
+            if (stale != null)
+                foreach (Mobile m in stale)
+                    s_Attended.Remove(m);
+        }
+
+        // a public box: near enough, and not serving someone else who is still here and still using it
+        private Rights Attend(Mobile from, bool message)
+        {
+            if (!from.InRange(GetWorldLocation(), PublicRange))
+            {
+                if (message)
+                    from.SendMessage("Come closer to use this music box.");
+                return Rights.access;
+            }
+            Mobile? other = m_Attending;
+            if (other != null && other != from && !other.Deleted && other.NetState != null
+                && other.InRange(GetWorldLocation(), PublicRange) && (DateTime.UtcNow - m_AttendedAt < AttentionTime || IsThisDevicePlaying()))
+            {
+                if (message)
+                    from.SendMessage("This music box is helping {0} right now: try another, or wait a moment.", other.Name);
+                return Rights.access;
+            }
+            // one public box at a time. A box still playing for them holds them, wherever they've walked (they still hear
+            //  it): this one refuses until they stop it there or it finishes, or someone else takes it. An idle box lets
+            //  them go.
+            if (s_Attended.TryGetValue(from, out MusicBox? previous) && previous != this && previous.m_Attending == from)
+            {
+                if (!previous.Deleted && previous.IsThisDevicePlaying())
+                {
+                    if (message)
+                        from.SendMessage("You are already using {0}. Stop it there, or let it finish.",
+                            string.IsNullOrWhiteSpace(previous.Name) ? "another music box" : previous.Name);
+                    return Rights.access;
+                }
+                previous.m_Attending = null;
+            }
+            // taking a box from someone who walked away while it played for them: their song stops first (it plays on
+            //  their own music context: it would go on to this newcomer, and keep them from playing anywhere else)
+            if (m_Attending != null && m_Attending != from && IsThisDevicePlaying())
+                StopPlaying();
+            PruneAttended();
+            s_Attended[from] = this;
+            m_Attending = from;
+            m_AttendedAt = DateTime.UtcNow;
+            return Rights.okay;
+        }
+
         private Rights CheckRights(Mobile from, bool message = true)
         {
             try
@@ -108,6 +184,9 @@ namespace Server.Items
 
                 switch (Placement)
                 {
+                    case BoxPlacement.World when m_Public:
+                        return Attend(from, message);
+
                     case BoxPlacement.World:
                         // must be locked down to operate
                         if (!IsLockedDown)
@@ -200,6 +279,18 @@ namespace Server.Items
         {
             if (Placement == BoxPlacement.Carried)
                 Carrier!.PublicOverheadMessage(Network.MessageType.Regular, hue, true, text);
+            else if (Placement == BoxPlacement.World && ListenerOnly)
+            {   // a practice-room box speaks to the person it serves alone (what it plays, its replies)
+                if (m_Attending?.NetState != null)
+                    m_Attending.NetState.Send(new Network.AsciiMessage(Serial, ItemID, Network.MessageType.Regular, hue, 3, Name ?? "", text));
+            }
+            else if (Placement == BoxPlacement.World && Range > 0 && Map != null)
+            {   // a box that carries less far than usual: its words too
+                IPooledEnumerable clients = Map.GetClientsInRange(GetWorldLocation(), Range);
+                foreach (Network.NetState ns in clients)
+                    ns.Send(new Network.AsciiMessage(Serial, ItemID, Network.MessageType.Regular, hue, 3, Name ?? "", text));
+                clients.Free();
+            }
             else if (Placement == BoxPlacement.World)
                 this.PublicOverheadMessage(Network.MessageType.Regular, hue, true, text);
         }

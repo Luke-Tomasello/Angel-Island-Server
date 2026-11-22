@@ -19,6 +19,8 @@
 
 /* Scripts\Items\Triggers\MusicController.cs
  *	ChangeLog :
+ *	11/19/26, Adam (private cancel)
+ *		"*you cancel what you were playing*" is shown to the player alone (it was an emote everyone nearby saw).
  *	11/5/26, Adam (portable AIMS)
  *	    The play lock is an AimsUtil.LocalTimer (the music system's copy of Utility.LocalTimer). No behavior change.
  *	10/25/26, Adam (AIMusicSystem Phase 4 Step 1: shared device playback)
@@ -194,7 +196,7 @@ namespace Server.Items.Triggers
                     {
                         if (UOMusicLoop && UOMusicLoopPlaying)
                         {
-                            from.Emote("*you cancel what you were playing*");
+                            from.PrivateOverheadMessage(Network.MessageType.Emote, from.EmoteHue, false, "*you cancel what you were playing*", from.NetState);
                             UOMusicLoop = !UOMusicLoop; // turn off
                             StopUOPlayTimer(from);
                             UOMusicLoop = !UOMusicLoop; // turn on
@@ -203,7 +205,7 @@ namespace Server.Items.Triggers
                         }
                         else if (IsUOPlayTimerRunning())
                         {
-                            from.Emote("*you cancel what you were playing*");
+                            from.PrivateOverheadMessage(Network.MessageType.Emote, from.EmoteHue, false, "*you cancel what you were playing*", from.NetState);
                             StopUOPlayTimer(from);
                             NextMusicTime.Start(0); // okay to play now
                         }
@@ -221,7 +223,7 @@ namespace Server.Items.Triggers
                         {
                             m_MusicPlayer.CancelPerformance();
                             if (m_MusicPlayer.MusicContextMobile != from)
-                                from.Emote("*you cancel what you were playing*");
+                                from.PrivateOverheadMessage(Network.MessageType.Emote, from.EmoteHue, false, "*you cancel what you were playing*", from.NetState);
                         }
                         else if (!blocked)
                             m_MusicPlayer.StartPerformance(from, this, music, m_range_exit, () => m_time_between);

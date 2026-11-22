@@ -21,6 +21,8 @@
 
 /* Scripts/Commands/Handlers.cs
  * CHANGELOG
+ *  11/16/26, Adam (-uomc)
+ *      [shard names the Music Conservatory (Core.PublicName).
  *  11/11/2026, Adam ([go sextant)
  *      [go takes sextant coordinates exactly as [where prints them again ("5° 26'S, 8° 9'E", as the 5/26/2021
  *      patch did; lost in the 10/22/2026 rewrite of ExecuteGo): text of exactly that shape (degree sign, the old
@@ -1831,7 +1833,7 @@ namespace Server.Commands
             {
                 e.Mobile.SendMessage(
                     "You are on {0}{1}{2} ({3}).",
-                    Core.Server,
+                    Core.PublicName,
                     Core.GMNTC_CFG ? " Test Center" : "",
                     Core.GMNEV_CFG ? " Event Shard" : "",
                     Environment.MachineName);

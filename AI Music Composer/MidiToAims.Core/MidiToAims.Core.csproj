@@ -13,4 +13,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
   </PropertyGroup>
+
+  <!-- MidiToAims's version: one tool, one version -->
+  <Import Project="..\MidiToAims.Version.props" />
 </Project>

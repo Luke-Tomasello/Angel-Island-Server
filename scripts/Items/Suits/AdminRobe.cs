@@ -21,6 +21,10 @@
 
 /* Scripts/Items/Suits/AdminRobe.cs
  * ChangeLog
+ *  11/17/26, Adam (-uomc standalone)
+ *      The Music Conservatory is its own shard: the title is [AIMC] (its full name is too long for a title).
+ *  11/16/26, Adam (-uomc)
+ *      The robe says AIMC on the Music Conservatory.
  *  7/21/06, Rhiannon
  *		Added Owner access level to Godly robe
  *	6/27/06, Adam
@@ -123,7 +127,7 @@ namespace Server.Items
 
             // Set title based on current server (e.g. [Seasons], [Seasons TC], [Seasons EV])
             string subServer = GetSubserver();
-            from.Title = "[" + Core.Server + subServer + "]";
+            from.Title = "[" + (Core.GMNMC_CFG ? Core.MusicConservatoryShortName : Core.Server) + subServer + "]";
 
             // Clear fame and karma so only the server tag is shown
             from.Fame = 0;

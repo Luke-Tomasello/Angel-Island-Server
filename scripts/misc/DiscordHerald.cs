@@ -17,6 +17,10 @@
 
 /* Scripts/Misc/DiscordHerald.cs
  * ChangeLog:
+ *  11/18/26, Adam (Development)
+ *      A development machine is Core.Development (a Debug build or -nosaves), not NoSaves alone.
+ *  11/16/26, Adam (-uomc)
+ *      The Music Conservatory posts, and finds its webhook, as "Angel Island Music Conservatory".
  *  11/11/2026, Adam
  *      First version. The Herald's Discord subscriber: events go to Discord channels through webhooks, by
  *      route. Data\discord.json (the same on every shard; in the private SVN, and "never discord.json" in every
@@ -61,8 +65,9 @@ namespace Server.Misc
 {
     public sealed class DiscordHerald : IHeraldSubscriber
     {
-        // this shard's name for Discord: Test Center runs as Upheaval (Core.Server), so it says so
-        public static string ShardName => Core.Server + (Core.GMNTC_CFG ? " Test Center" : "");
+        // this shard's name for Discord (and its discord.json webhook key): Test Center runs as Upheaval (Core.Server), so
+        //  it says so; the Music Conservatory says its own name (Core.PublicName)
+        public static string ShardName => Core.GMNMC_CFG ? Core.PublicName : Core.Server + (Core.GMNTC_CFG ? " Test Center" : "");
 
         public static string ConfigPath => Path.Combine(Core.DataDirectory, "discord.json");
         private const string Placeholder = "<paste the channel's webhook URL here>";
@@ -205,9 +210,9 @@ namespace Server.Misc
                 if (e.Audience == Audience.Staff && !m_Private.Contains(channel))
                     continue;   // staff events only to channels only staff can read
 
-                // a development machine (-nosaves) never posts where players read: a test death, conquest or
+                // a development machine never posts where players read: a test death, conquest or
                 //  announcement on a local shard must not reach the live channels (echo still shows what would go)
-                if (Core.NoSaves && !m_Private.Contains(channel))
+                if (Core.Development && !m_Private.Contains(channel))
                 {
                     if (Echo)
                         CommandHandlers.BroadcastMessage(AccessLevel.Administrator, 0x482,
@@ -335,8 +340,8 @@ namespace Server.Misc
                 default:
                     e.Mobile.SendMessage("Herald: {0} ({1})", h.m_LoadResult, ConfigPath);
                     e.Mobile.SendMessage("Herald: posts as '{0}'; echo {1}", h.m_Name, Echo ? "on" : "off");
-                    if (Core.NoSaves)
-                        e.Mobile.SendMessage("Herald: development machine (-nosaves): private channels only; public ones are never posted to");
+                    if (Core.Development)
+                        e.Mobile.SendMessage("Herald: development machine: private channels only; public ones are never posted to");
                     foreach (string channel in h.m_Webhooks.Keys)
                         e.Mobile.SendMessage("Herald: channel {0}{1}: last {2}", channel, h.m_Private.Contains(channel) ? " (private)" : "",
                             h.m_LastResult.TryGetValue(channel, out string? last) ? last : "nothing posted yet");

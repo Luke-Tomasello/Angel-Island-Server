@@ -21,6 +21,10 @@
 
 /* Server\Attributes.cs
  * ChangeLog:
+ *  11/19/26, Adam (ResetAtStartup)
+ *      ResetAtStartupAttribute: a property that startup code sets at every start (OwnerTools.ShardInit, say). It can still
+ *      be changed in game, to test; [set and the props gumps warn that the change lasts until the next restart, and the
+ *      props gump shows its name in yellow.
  *  10/27/2026, Adam
  *		Add StringListAttribute: [props offers a string property's values as a pick list, read from a public static
  *		string[] property or field each time the list opens (e.g. names loaded from a data file, which CustomEnum's
@@ -36,6 +40,7 @@
 
 using System;
 using System.Collections;
+using System.Linq;
 using System.Reflection;
 
 namespace Server
@@ -243,6 +248,25 @@ namespace Server
     {
         public ConstructableAttribute()
         {
+        }
+    }
+
+    /// <summary>Set at every start by the code named (e.g. "OwnerTools.ShardInit"): a change in game lasts until the next restart.</summary>
+    [AttributeUsage(AttributeTargets.Property)]
+    public class ResetAtStartupAttribute : Attribute
+    {
+        public string By { get; }
+        public ResetAtStartupAttribute(string by) { By = by; }
+
+        /// <summary>The attribute on the property 'name' (its last part, for a path like a.b) of o's type, or null.</summary>
+        public static ResetAtStartupAttribute? Of(object? o, string? name)
+        {
+            if (o == null || string.IsNullOrEmpty(name))
+                return null;
+            string last = name.Substring(name.LastIndexOf('.') + 1);
+            System.Reflection.PropertyInfo? p = o.GetType().GetProperty(last,
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.IgnoreCase);
+            return p?.GetCustomAttributes(typeof(ResetAtStartupAttribute), true).FirstOrDefault() as ResetAtStartupAttribute;
         }
     }
 

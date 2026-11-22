@@ -22,8 +22,17 @@
 /* Scripts\Engines\Spawner\Spawner.PostSpawn.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *  7/26/2023, Adam (SetSkill)
+ *      Like the SetProp below, SetSkill allows you to assign skills via the spawner.
+ *          Anatomy 600.66 ; Swords ; 100.2
+ *          Combined with SetProp, these properties allow you to create 'template' mobiles via the spawner
+ *          as opposed to the 'template mobile' model.
+ *  7/11/2023, Adam (SetProp)
+ *      You can now set a string of properties to set in the spawned object. For example:
+ *          movable false ; hue 33
+ *	01/14/09, plasma
+ *		Added OnAfterMobileSpawn( Mobile )
  */
 
 using Server.Diagnostics;

@@ -21,6 +21,23 @@
 
 /* Scripts\Engines\CronScheduler\CronTasks.cs
  * CHANGELOG:
+ *  11/20/2026, Adam (cron playback delay policies)
+ *      Choose OnTime, Short, Normal or a custom TimeSpan on every scheduled job.
+ *  11/20/2026, Adam (stagger automatic world saves)
+ *      Register AutoSave as a fixed cron interval with the shard-derived UTC offset.
+ *  11/20/2026, Adam (autosave schedule)
+ *      Use the same cron interval rules at startup as the runtime frequency controls.
+ *  11/20/2026, Adam (MusicShare cron timing)
+ *      Show the elapsed time for the MusicShare cron dispatch in the console.
+ *  11/18/2026, Adam (family-wide names)
+ *      CNamesTaken, every 5 minutes on every shard but the Login Server: characters online whose names staff took from
+ *      their accounts (on any shard) are renamed 'Generic Player' with a name change deed (NameRegistry.ApplyTakenOnline;
+ *      it does nothing where names aren't enforced: Test Center, event shards).
+ *  11/15/2026, Adam (leaderboard timing; wealth a little at a time)
+ *      Each leaderboard is timed (Cron.RecordStat "LeaderBoard: <board>", in [cron stats; one of 50 ms or more is slow
+ *      work too, for [lag and stall lines). Wealthiest shows the last completed count of GoldTracker.WealthPass, which
+ *      counts a few accounts at a time instead of all of them in this task; a completed pass updates the board at once
+ *      (only once the board exists, so the tabs keep their order), and the first pass starts 30 s after startup.
  *  11/13/2026, Adam (music catalog)
  *      CMusicCatalog (login server, when it starts with -publishmusic=<folder>): at startup, then every 15 minutes, the
  *      shared music database's approved songs are published for the website (Engines\AIMusicShare\MusicCatalog).
@@ -312,15 +329,17 @@ namespace Server.Engines.CronScheduler
         // Add your scheduled task here and implementation below
         public static void Initialize()
         {
+            // The listener configuration is available by ServerStarted.
+            EventSink.ServerStarted += CAutoSave.Register;
+
             if (!Core.RuleSets.LoginServerRules())
             {
                 // make sure all our champ engines are present and accounted for
                 Cron.QueuePriorityTask(new CCheckChamps().CheckChamps); // once on startup, and...
-                Cron.Register(new CCheckChamps().CheckChamps, "? 6 * * *"); // random minute of 6 o'clock hour (UTC)
+                Cron.Register(new CCheckChamps().CheckChamps, "? 6 * * *", allowedDelay: AllowedDelay.Normal); // random minute of 6 o'clock hour (UTC)
 
                 // command for resetting all champs ([run resetchamps)
-                Cron.Register(new CResetChamps().ResetChamps,
-                    null); // a NULL cron spec never runs, but is available for [Run <command>
+                Cron.RegisterOnDemand(new CResetChamps().ResetChamps); // a NULL cron spec never runs, but is available for [Run <command>
             }
 
             // LoginServer special tasks
@@ -331,69 +350,66 @@ namespace Server.Engines.CronScheduler
                 // We do it here since we have no ability to log in, and the 'shard' is likely a clone of some game-server
                 Utility.Monitor.WriteLine("Shard wipe in progress. This may take several minutes...", ConsoleColor.Red);
                 new CWipeShard().WipeShard(); // ASAP
-                Cron.Register(new CWipeShard().WipeShard, "0 3 * * *"); // 3 AM UTC (was "* 3 * * *": every minute 3:00-3:59)
+                Cron.Register(new CWipeShard().WipeShard, "0 3 * * *", allowedDelay: AllowedDelay.OnTime); // 3 AM UTC (was "* 3 * * *": every minute 3:00-3:59)
                 /*
                  * 9/4/22, Adam
                  *   resuming normal saves for login in server.
                  *   since the shard is empty(no mobiles/ items,) this is very fast.
                  *   Why: some systems like FreezeDry, Recycle bin, music, file cleanup database, write bin files, but since these are not getting saved, we get startup complaints.
                  */
-                // shard AutoSave
-                double minutes = TimeSpan.FromMinutes(CoreAI.WorldSaveFrequency).TotalMinutes;
-                string autoSaveDelay = string.Format("*/{0} * * * *", (int)minutes);
-                Cron.Register(new CAutoSave().AutoSave, autoSaveDelay);
-
                 // Backup database cleanup - on demand
-                Cron.Register(new CBackupDatabaseCleanup().BackupDatabaseCleanup, null);
+                Cron.RegisterOnDemand(new CBackupDatabaseCleanup().BackupDatabaseCleanup);
 
                 // the music catalog for the website (-publishmusic=<folder>) - at startup, then every 15 minutes
                 if (Server.Engines.MusicShare.MusicCatalog.Enabled)
                 {
                     Cron.QueuePriorityTask(new CMusicCatalog().MusicCatalog);
-                    Cron.Register(new CMusicCatalog().MusicCatalog, "*/15 * * * *");
+                    Cron.Register(new CMusicCatalog().MusicCatalog, "*/15 * * * *", allowedDelay: AllowedDelay.Normal);
                 }
             }
             else
             {
                 // Cleanup wild creatures in houses - random minute of every hour
-                Cron.Register(new CHouseCreatureCleanup().HouseCreatureCleanup, "? * * * *"); // random minute of every hour
+                Cron.Register(new CHouseCreatureCleanup().HouseCreatureCleanup, "? * * * *", allowedDelay: AllowedDelay.Normal); // random minute of every hour
 
                 // Cleanup our Substitute mobiles - every 30 minutes
-                Cron.Register(new CSubstituteCleanup().SubstituteCleanup, "*/30 * * * *");
+                Cron.Register(new CSubstituteCleanup().SubstituteCleanup, "*/30 * * * *", allowedDelay: AllowedDelay.Normal);
 
                 // kick players that are in violation of our machine limit (HardwareInfo,) but were able to slip through
                 //  due to the MachineInfo coming in after login, and during character creation - every 5 minutes
-                Cron.Register(new CKickPlayers().KickPlayers, "*/5 * * * *");
+                Cron.Register(new CKickPlayers().KickPlayers, "*/5 * * * *", allowedDelay: AllowedDelay.Short);
+
+                // family-wide names: a character online when staff took its name elsewhere is renamed (NameRegistry;
+                //  startup and login cover the rest) - every 5 minutes
+                Cron.Register(new CNamesTaken().NamesTaken, "*/5 * * * *", allowedDelay: AllowedDelay.Short);
 
                 // jail player clones that have somehow exited the TestCenter region
                 //   - every 5 minutes
-                Cron.Register(new CJailClones().JailClones, "*/5 * * * *");
+                Cron.Register(new CJailClones().JailClones, "*/5 * * * *", allowedDelay: AllowedDelay.Short);
 
                 // Prison players that come to our shard over a Tor Exit Node.
                 //  Anonymous access like a VPN, Proxy, or other  anonymous access mechanism gets you watch listed.
-                Cron.Register(new CHandleIPCheaters().HandleIPCheaters, "*/3 * * * *");
-
-                // shard AutoSave
-                double minutes = TimeSpan.FromMinutes(CoreAI.WorldSaveFrequency).TotalMinutes;
-                string autoSaveDelay = string.Format("*/{0} * * * *", (int)minutes);
-                Cron.Register(new CAutoSave().AutoSave, autoSaveDelay);
+                Cron.Register(new CHandleIPCheaters().HandleIPCheaters, "*/3 * * * *", allowedDelay: AllowedDelay.Short);
 
                 // Backup database cleanup - on demand
-                Cron.Register(new CBackupDatabaseCleanup().BackupDatabaseCleanup, null);
+                Cron.RegisterOnDemand(new CBackupDatabaseCleanup().BackupDatabaseCleanup);
 
                 // Unusual Container Spawner defrag - every 5 minutes
-                Cron.Register(new CUnusualContainerDefrag().UnusualContainerDefrag, "*/5 * * * *");
+                Cron.Register(new CUnusualContainerDefrag().UnusualContainerDefrag, "*/5 * * * *", allowedDelay: AllowedDelay.Normal);
 
                 // Unusual Container Spawner total respawn - on demand only
-                Cron.Register(new CUnusualContainerTotalRespawn().UnusualContainerTotalRespawn, null);
+                Cron.RegisterOnDemand(new CUnusualContainerTotalRespawn().UnusualContainerTotalRespawn);
 
                 // Leader board update - every 5 minutes
-                Cron.Register(new CLeaderBoard().LeaderBoard, "*/5 * * * *");
+                Cron.Register(new CLeaderBoard().LeaderBoard, "*/5 * * * *", allowedDelay: AllowedDelay.Normal);
+                // Wealthiest: counted a little at a time (GoldTracker.WealthPass); the board shows each completed count
+                GoldTracker.WealthPass.Completed = () => CLeaderBoard.FillWealthBoard(createTab: false);
+                Timer.DelayCall(TimeSpan.FromSeconds(30), () => GoldTracker.WealthPass.Start(CLeaderBoard.SuppressStaff));
 
                 // Stable Charges - every 10 minutes
                 if (Core.RuleSets.AngelIslandRules())
                 {
-                    Cron.Register(new CStableCharge().StableCharge, "? 3 * * *"); // random minute of 3 o'clock hour (UTC)
+                    Cron.Register(new CStableCharge().StableCharge, "? 3 * * *", allowedDelay: AllowedDelay.Normal); // random minute of 3 o'clock hour (UTC)
                 }
                 // Auto add players to Fight Broker - every 10 minutes
                 // remove auto fightbroker feature as it's just too damn harsh
@@ -401,16 +417,13 @@ namespace Server.Engines.CronScheduler
                 //Cron.Register(new CAutoFightBroker().AutoFightBroker, "*/10 * * * *");
 
                 // Vendor Restock - every 30 minutes
-                Cron.Register(new CVendorRestock().VendorRestock, "*/30 * * * *");
+                Cron.Register(new CVendorRestock().VendorRestock, "*/30 * * * *", allowedDelay: AllowedDelay.Normal);
 
-                // Recieve Message - once per year
-                //  Because of the way cron works, we need to put something in here, so I picked the 12th month of the year.
-                //  ReceiveMessage has no usual work to do, so this is really a placeholder to include it into the system.
-                //  When a developer uses the Cron.PostMessage() function, that real message is placed in the Priority Queue for immediate execution.
-                Cron.Register(new CReceiveMessage().ReceiveMessage, "* * * 12 *");
+                // Real messages arrive through PostMessage and use the priority queue.
+                Cron.RegisterOnDemand(new CReceiveMessage().ReceiveMessage);
 
                 // Item Decay - every 30 minutes
-                Cron.Register(new CItemDecay().ItemDecay, "*/30 * * * *");
+                Cron.Register(new CItemDecay().ItemDecay, "*/30 * * * *", allowedDelay: AllowedDelay.Normal);
 
                 // Check NPCWork - every 15 minutes
                 //	6/22/2021, adam: we don't to enum all mobiles to call this function.
@@ -418,58 +431,58 @@ namespace Server.Engines.CronScheduler
                 //Cron.Register(new CNPCWork().NPCWork, "*/15 * * * *");
 
                 // Town Crier - every 10 minutes
-                Cron.Register(new CTownCrier().TownCrier, "*/10 * * * *");
+                Cron.Register(new CTownCrier().TownCrier, "*/10 * * * *", allowedDelay: AllowedDelay.Short);
 
                 #region Cleanup functions
 
                 // Account cleanup - daily (7:? AM)
-                Cron.Register(new CAccountCleanup().AccountCleanup, "? 7 * * *"); // random minute the 7th hour (UTC)
+                Cron.Register(new CAccountCleanup().AccountCleanup, "? 7 * * *", allowedDelay: AllowedDelay.Normal); // random minute the 7th hour (UTC)
 
                 // internal map mobile/item cleanup - every 60 minutes
                 Cron.Register(new CIntMapMobileCleanup().IntMapMobileCleanup,
-                    "? * * * *"); // random minute of every hour
+                    "? * * * *", allowedDelay: AllowedDelay.Normal); // random minute of every hour
 
-                Cron.Register(new CIntMapItemCleanup().IntMapItemCleanup, "? * * * *"); // random minute of every hour
+                Cron.Register(new CIntMapItemCleanup().IntMapItemCleanup, "? * * * *", allowedDelay: AllowedDelay.Normal); // random minute of every hour
 
                 // expire old mobiles - every 10 minutes
-                Cron.Register(new CMobileLifespanCleanup().MobileLifespanCleanup, "*/10 * * * *"); // every 10 minutes
+                Cron.Register(new CMobileLifespanCleanup().MobileLifespanCleanup, "*/10 * * * *", allowedDelay: AllowedDelay.Normal); // every 10 minutes
 
                 // remove deleted mobiles from music config database - every 60 minutes
-                Cron.Register(new CMusicConfigCleanup().MusicConfigCleanup, "? * * * *"); // random minute of every hour
+                Cron.Register(new CMusicConfigCleanup().MusicConfigCleanup, "? * * * *", allowedDelay: AllowedDelay.Normal); // random minute of every hour
 
-                // music shared between shards (-sharemusic) - every 5 minutes
+                // music shared between shards (always on) - every 5 minutes
                 if (Server.Engines.MusicShare.MusicShare.Enabled)
-                    Cron.Register(new CMusicShare().MusicShare, "*/5 * * * *");
+                    Cron.Register(new CMusicShare().MusicShare, "*/5 * * * *", allowedDelay: AllowedDelay.Normal);
 
                 // every 24 hours cleanup orphaned guildstones (6:00 AM)
                 Cron.Register(new CGuildstoneCleanup().GuildstoneCleanup,
-                    "0 6 * * *"); // at exactly 6 UTC (because players depend on this to loot the township.)
+                    "0 6 * * *", allowedDelay: AllowedDelay.OnTime); // at exactly 6 UTC (because players depend on this to loot the township.)
 
                 // every 24 hours cleanup orphaned Player NPCs (6:? AM)
                 Cron.Register(new CPlayerNPCCleanup().PlayerNPCCleanup,
-                    "? 6 * * *"); // random minute of the 6 o'clock hour (UTC)
+                    "? 6 * * *", allowedDelay: AllowedDelay.Normal); // random minute of the 6 o'clock hour (UTC)
 
                 // every 24 hours 'standard' cleanup (6:? AM)
                 Cron.Register(new CStandardCleanup().StandardCleanup,
-                    "? 6 * * *"); // random minute of the 6 o'clock hour (UTC)
+                    "? 6 * * *", allowedDelay: AllowedDelay.Normal); // random minute of the 6 o'clock hour (UTC)
 
                 // every 24 hours Strongbox cleanup (6:? AM)
                 Cron.Register(new CStrongboxCleanup().StrongboxCleanup,
-                    "? 6 * * *"); // random minute of the 6 o'clock hour (UTC)
+                    "? 6 * * *", allowedDelay: AllowedDelay.Normal); // random minute of the 6 o'clock hour (UTC)
 
                 #endregion Cleanup functions
 
                 // find players using the robot skills - every 60 minutes
-                Cron.Register(new CFindSkill().FindSkill, "? * * * *"); // random minute of every hour
+                Cron.Register(new CFindSkill().FindSkill, "? * * * *", allowedDelay: AllowedDelay.Short); // random minute of every hour
 
                 // Killer time cleanup - every 30 minutes
-                Cron.Register(new CKillerTimeCleanup().KillerTimeCleanup, "*/30 * * * *");
+                Cron.Register(new CKillerTimeCleanup().KillerTimeCleanup, "*/30 * * * *", allowedDelay: AllowedDelay.Normal);
 
                 // House Decay - every 10 minutes
-                Cron.Register(new CHouseDecay().HouseDecay, "*/10 * * * *");
+                Cron.Register(new CHouseDecay().HouseDecay, "*/10 * * * *", allowedDelay: AllowedDelay.Normal);
 
                 // Murder Count Decay - every 15 minutes
-                Cron.Register(new CMurderCountDecay().MurderCountDecay, "*/15 * * * *");
+                Cron.Register(new CMurderCountDecay().MurderCountDecay, "*/15 * * * *", allowedDelay: AllowedDelay.Normal);
 
                 if (Core.RuleSets.PlantSystem())
                 {
@@ -477,29 +490,29 @@ namespace Server.Engines.CronScheduler
                     if (Plants.PlantSystem.Enabled)
                     {
                         Utility.Monitor.WriteLine("Plant System Enabled.", ConsoleColor.Green);
-                        Cron.Register(new CPlantGrowth().PlantGrowth, "0 0 * * *"); // every night at exactly midnight (UTC)
+                        Cron.Register(new CPlantGrowth().PlantGrowth, "0 0 * * *", allowedDelay: AllowedDelay.Normal); // every night at exactly midnight (UTC)
                     }
                 }
 
                 if (Apiculture.ApicultureSystem.Enabled)
-                    Cron.Register(new CHiveGrowth().HiveGrowth, "0 0 * * *"); // every night at exactly midnight (UTC)
+                    Cron.Register(new CHiveGrowth().HiveGrowth, "0 0 * * *", allowedDelay: AllowedDelay.Normal); // every night at exactly midnight (UTC)
 
                 // Overland Merchant CHANCE - every hour
                 //  10/15/22 Adam: Allowing this for all shards. I don't think it hurts the Siege experience.
                 //  4/28/23, Adam. Lets save this for a content patch. Loot will need to be adjusted.
                 if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.AllShards)
                 {
-                    Cron.Register(new COverlandSystem().OverlandSystem, "? * * * *"); // random minute of every hour
-                    Cron.Register(new CCountGems().CountGems, "0 */4 * * *"); // every 4 hours
+                    Cron.Register(new COverlandSystem().OverlandSystem, "? * * * *", allowedDelay: AllowedDelay.Normal); // random minute of every hour
+                    Cron.Register(new CCountGems().CountGems, "0 */4 * * *", allowedDelay: AllowedDelay.Normal); // every 4 hours
                 }
 
                 // track staff owned items
-                Cron.Register(new CTrackStaffOwned().TrackStaffOwned, "0 */4 * * *"); // every 4 hours
+                Cron.Register(new CTrackStaffOwned().TrackStaffOwned, "0 */4 * * *", allowedDelay: AllowedDelay.Normal); // every 4 hours
 
                 // Dynamic camps - every 30 minutes
                 if (!Core.RuleSets.AngelIslandRules())
                 {
-                    Cron.Register(new CDynamicCampSystem().DynamicCampSystem, "*/30 * * * *"); // every 30 minutes
+                    Cron.Register(new CDynamicCampSystem().DynamicCampSystem, "*/30 * * * *", allowedDelay: AllowedDelay.Normal); // every 30 minutes
                 }
 
                 // Reload the Spawner Cache - daily (6:19 AM)
@@ -515,7 +528,7 @@ namespace Server.Engines.CronScheduler
 
                 // email a report of weapon distribution among players
                 Cron.Register(new CWeaponDistribution().WeaponDistribution,
-                    "? 3 * * *"); // now random minute of 3 o'clock hour (UTC)
+                    "? 3 * * *", allowedDelay: AllowedDelay.Normal); // now random minute of 3 o'clock hour (UTC)
 
                 #region Automated Event System (Not on Siege, yet)
 
@@ -528,18 +541,18 @@ namespace Server.Engines.CronScheduler
                     //if (Core.UOAI || Core.UOAR)
                     //Cron.Register(null, new CServerWarsAES().ServerWarsAES, "0 12 * * 6",
                     //  true, new Cron.CronLimit(5, DayOfWeek.Saturday, Cron.CronLimit.IsLastDayOfMonth.must_not_be_ldom)/*, useGameTime: true*/);
-                    Cron.Register(new CServerWarsAES().ServerWarsAES, null); // on demand
+                    Cron.RegisterOnDemand(new CServerWarsAES().ServerWarsAES); // on demand
 
                     // Town Invasion - Automated Event System (12:00 noon on 3rd Sunday, shard time)
                     // Note: set 24 hour advance notice
-                    Cron.RegisterShard(new CTownInvasionAES().TownInvasionAES, "0 12 * * 6",
+                    Cron.RegisterShard(new CTownInvasionAES().TownInvasionAES, "0 12 * * 6", allowedDelay: AllowedDelay.OnTime,
                         true,
                         new Cron.CronLimit(3, DayOfWeek.Saturday,
                             Cron.CronLimit.IsLastDayOfMonth.must_not_be_ldom));
 
                     // Crazy Map Day - Automated Event System (12:00 noon on 5th Sunday, shard time)
                     // Note: set 24 hour advance notice
-                    Cron.RegisterShard(new CCrazyMapDayAES().CrazyMapDayAES, "0 12 * * 6",
+                    Cron.RegisterShard(new CCrazyMapDayAES().CrazyMapDayAES, "0 12 * * 6", allowedDelay: AllowedDelay.OnTime,
                         true,
                         new Cron.CronLimit(5, DayOfWeek.Saturday,
                             Cron.CronLimit.IsLastDayOfMonth.must_not_be_ldom));
@@ -548,31 +561,31 @@ namespace Server.Engines.CronScheduler
                 #endregion Automated Event System
 
                 // every 10 minutes collect account statistics
-                Cron.Register(new CAccountStatistics().AccountStatistics, "*/10 * * * *");
+                Cron.Register(new CAccountStatistics().AccountStatistics, "*/10 * * * *", allowedDelay: AllowedDelay.Normal);
 
                 // every hour run through guild fealty checks
-                Cron.Register(new CGuildFealty().GuildFealty, "? * * * *"); // random minute of each hour
+                Cron.Register(new CGuildFealty().GuildFealty, "? * * * *", allowedDelay: AllowedDelay.Normal); // random minute of each hour
 
                 // every hour run through PlayerQuestCleanup checks
                 //  10/15/22 Adam: Allowing this for all shards. I don't think it hurts the Siege experience.
                 if (Core.RuleSets.AngelIslandRules() || true)
                 {
                     Cron.Register(new CPlayerQuestCleanup().PlayerQuestCleanup,
-                        "? * * * *"); // random minute of each hour
+                        "? * * * *", allowedDelay: AllowedDelay.Normal); // random minute of each hour
                 }
 
                 //  10/15/22 Adam: Allowing this for all shards. I don't think it hurts the Siege experience.
                 if (Core.RuleSets.AngelIslandRules() || true)
                 {
                     // every 5 minutes run through PlayerQuest announcements				        // every 5 minutes
-                    Cron.Register(new CPlayerQuestAnnounce().PlayerQuestAnnounce, "*/5 * * * *");
+                    Cron.Register(new CPlayerQuestAnnounce().PlayerQuestAnnounce, "*/5 * * * *", allowedDelay: AllowedDelay.Short);
                 }
 
                 // every 24 hours rotate player command logs (12 AM - midnight)
-                Cron.Register(new CLogRotation().LogRotation, "0 0 * * *"); // every night at exactly midnight (UTC)
+                Cron.Register(new CLogRotation().LogRotation, "0 0 * * *", allowedDelay: AllowedDelay.Normal); // every night at exactly midnight (UTC)
 
                 // every month archive logs (12 AM - midnight)
-                Cron.Register(new CLogArchive().LogArchive, "0 0 1 * *"); // every month at exactly midnight (UTC)
+                Cron.Register(new CLogArchive().LogArchive, "0 0 1 * *", allowedDelay: AllowedDelay.Normal); // every month at exactly midnight (UTC)
 
                 // 8/21/21, Adam: not using any more. All backups are done server-side now.
                 // at 2AM backup the complete RunUO directory (~8min)
@@ -587,17 +600,17 @@ namespace Server.Engines.CronScheduler
                 //Townships
                 {
                     Cron.Register(new CTownshipCharges().TownshipCharges,
-                        "0 0 * * *"); // 12:00 AM UTC - midnight (visits rollover weekly, so we want to be as close as possible to the change in weeks)
-                    Cron.Register(new CTownshipWallDecay().TownshipWallDecay, "5 9 * * *"); // 9:05 AM UTC every day
-                    Cron.Register(new CTownshipItemDefrag().TownshipItemDefrag, "10 9 * * *"); // 9:10 AM UTC every day
+                        "0 0 * * *", allowedDelay: AllowedDelay.OnTime); // 12:00 AM UTC - midnight (visits rollover weekly, so we want to be as close as possible to the change in weeks)
+                    Cron.Register(new CTownshipWallDecay().TownshipWallDecay, "5 9 * * *", allowedDelay: AllowedDelay.Normal); // 9:05 AM UTC every day
+                    Cron.Register(new CTownshipItemDefrag().TownshipItemDefrag, "10 9 * * *", allowedDelay: AllowedDelay.Normal); // 9:10 AM UTC every day
                 }
 
                 // WealthTracker - 3 AM daily
-                Cron.Register(new CWealthTracker().WealthTracker, "? 3 * * *"); // random minute of the 3AM hour (UTC)
+                Cron.Register(new CWealthTracker().WealthTracker, "? 3 * * *", allowedDelay: AllowedDelay.Normal); // random minute of the 3AM hour (UTC)
 
                 // ConsumerPriceIndex - 3 AM daily
                 Cron.Register(new CConsumerPriceIndex().ConsumerPriceIndex,
-                    "? 3 * * *"); // random minute of the 3AM hour (UTC)
+                    "? 3 * * *", allowedDelay: AllowedDelay.Normal); // random minute of the 3AM hour (UTC)
 
                 // need to ask Yoar about this. Didn't know we had Kin Factions!
                 //  if so, we'll probably want this for Siege as well
@@ -607,10 +620,10 @@ namespace Server.Engines.CronScheduler
 
 #if KIN_FACTIONS
 			// Kin Sigils - bi-hourly 
-			Cron.Register(new CKinFactions().KinFactions, "0 */2 * * *");			// every 2 hours
+			Cron.Register(new CKinFactions().KinFactions, "0 */2 * * *", allowedDelay: AllowedDelay.Normal);			// every 2 hours
 
 			// Kin Logging - 1AM daily (shard time)
-			Cron.RegisterShard(new CKinFactionsLogging().KinFactionsLogging, "0 1 * * *");		// 1 AM Every day
+			Cron.RegisterShard(new CKinFactionsLogging().KinFactionsLogging, "0 1 * * *", allowedDelay: AllowedDelay.Normal);		// 1 AM Every day
 #endif
 
                     #endregion KIN_FACTIONS
@@ -621,27 +634,27 @@ namespace Server.Engines.CronScheduler
                     // http://www.infoplease.com/ce6/weather/A0844225.html
                     //  season changes at midnight, shard time
                     Cron.RegisterShard(new CSpringChamp().SpringChamp,
-                        "0 0 21 3 *"); // spring (vamp), about Mar. 21, (12:00 AM)
+                        "0 0 21 3 *", allowedDelay: AllowedDelay.OnTime); // spring (vamp), about Mar. 21, (12:00 AM)
                     Cron.RegisterShard(new CSummerChamp().SummerChamp,
-                        "0 0 22 6 *"); // summer (pirate), about June 22, (12:00 AM)
+                        "0 0 22 6 *", allowedDelay: AllowedDelay.OnTime); // summer (pirate), about June 22, (12:00 AM)
                     Cron.RegisterShard(new CAutumnChamp().AutumnChamp,
-                        "0 0 23 9 *"); // autumn (bob), about Sept. 23, (12:00 AM)
+                        "0 0 23 9 *", allowedDelay: AllowedDelay.OnTime); // autumn (bob), about Sept. 23, (12:00 AM)
                     Cron.RegisterShard(new CWinterChamp().WinterChamp,
-                        "0 0 22 12 *"); // winter (Azothu), about Dec. 22, (12:00 AM)
+                        "0 0 22 12 *", allowedDelay: AllowedDelay.OnTime); // winter (Azothu), about Dec. 22, (12:00 AM)
 
                     // Halloween 2026: The Pumpkin King, every 5 hours from Oct 28 8:00 AM through Oct 31 (shard time)
-                    Cron.RegisterShard(new CThePumpkinKing().ThePumpkinKingShell, "0 * * 10 *"); // hourly in October; the shell gates the window
-                    Cron.Register(new CThePumpkinKing().ThePumpkinKing, null); // on demand only ([Run ThePumpkinKing), no gating
-                    Cron.RegisterShard(new CThePumpkinKing().ThePumpkinKingCrier, "55 * * 10 *"); // 5 minutes before each start: town criers, 25 minutes
-            Cron.RegisterShard(new CThePumpkinKing().ThePumpkinKingShutdownShell, "0 3 1 11 *"); // Nov 1, 3:00 AM shard time: the event ends (gated to 2026)
-            Cron.Register(new CThePumpkinKing().ThePumpkinKingShutdown, null); // on demand only ([Run ThePumpkinKingShutdown), no gating
+                    Cron.RegisterShard(new CThePumpkinKing().ThePumpkinKingShell, "0 * * 10 *", allowedDelay: AllowedDelay.OnTime); // hourly in October; the shell gates the window
+                    Cron.RegisterOnDemand(new CThePumpkinKing().ThePumpkinKing); // on demand only ([Run ThePumpkinKing), no gating
+                    Cron.RegisterShard(new CThePumpkinKing().ThePumpkinKingCrier, "55 * * 10 *", allowedDelay: AllowedDelay.OnTime); // 5 minutes before each start: town criers, 25 minutes
+            Cron.RegisterShard(new CThePumpkinKing().ThePumpkinKingShutdownShell, "0 3 1 11 *", allowedDelay: AllowedDelay.OnTime); // Nov 1, 3:00 AM shard time: the event ends (gated to 2026)
+            Cron.RegisterOnDemand(new CThePumpkinKing().ThePumpkinKingShutdown); // on demand only ([Run ThePumpkinKingShutdown), no gating
                 }
 
                 if ((Core.RuleSets.SeasonsRules(2, 3) || Core.RuleSets.UpheavalRules()))
                 {
                     Cron.Register(
                         new COrcEnemies().OrcEnemies,
-                        Core.Debug ? "*/5 * * * *" : "*/30 * * * *");
+                        Core.Debug ? "*/5 * * * *" : "*/30 * * * *", allowedDelay: AllowedDelay.Normal);
                 }
 
                 // seasonal wipe
@@ -649,13 +662,13 @@ namespace Server.Engines.CronScheduler
                 {
                     //  at midnight, shard time
                     Cron.RegisterShard(new CSeasonalWipe().SeasonalWipe,
-                        "0 0 21 3 *"); // spring, Mar. 21, (12:00 AM)
+                        "0 0 21 3 *", allowedDelay: AllowedDelay.OnTime); // spring, Mar. 21, (12:00 AM)
                     Cron.RegisterShard(new CSeasonalWipe().SeasonalWipe,
-                        "0 0 22 6 *"); // summer, June 22, (12:00 AM)
+                        "0 0 22 6 *", allowedDelay: AllowedDelay.OnTime); // summer, June 22, (12:00 AM)
                     Cron.RegisterShard(new CSeasonalWipe().SeasonalWipe,
-                        "0 0 23 9 *"); // autumn, Sept. 23, (12:00 AM)
+                        "0 0 23 9 *", allowedDelay: AllowedDelay.OnTime); // autumn, Sept. 23, (12:00 AM)
                     Cron.RegisterShard(new CSeasonalWipe().SeasonalWipe,
-                        "0 0 22 12 *"); // winter,Dec. 22, (12:00 AM)
+                        "0 0 22 12 *", allowedDelay: AllowedDelay.OnTime); // winter,Dec. 22, (12:00 AM)
 
 
                     //// Fires at 11:10 AM Pacific time (direct – using Pacific helper)
@@ -675,13 +688,13 @@ namespace Server.Engines.CronScheduler
                     // Pre-announcement / reminder at 6:30 PM shard time every Friday
                     Cron.RegisterShard(
                         new CServerWars().Notification,
-                        "30 18 * * 5" // 18:30 = 6:30 PM
+                        "30 18 * * 5", allowedDelay: AllowedDelay.OnTime // 18:30 = 6:30 PM
                     );
 
                     // Main Server Wars start at 7:00 PM shard time every Friday
                     Cron.RegisterShard(
                         new CServerWars().ServerWars,
-                        "0 19 * * 5" // 19:00 = 7:00 PM
+                        "0 19 * * 5", allowedDelay: AllowedDelay.OnTime // 19:00 = 7:00 PM
                     );
 
 
@@ -690,13 +703,13 @@ namespace Server.Engines.CronScheduler
                     // Pre-announcement / reminder at 6:30 PM Netherlands local every Friday
                     Cron.RegisterNetherlands(
                         new CServerWars().Notification,
-                        "30 18 * * 5" // 18:30 local NL time
+                        "30 18 * * 5", allowedDelay: AllowedDelay.OnTime // 18:30 local NL time
                     );
 
                     // Main Server Wars start at 7:00 PM Netherlands local every Friday
                     Cron.RegisterNetherlands(
                         new CServerWars().ServerWars,
-                        "0 19 * * 5" // 19:00 local NL time
+                        "0 19 * * 5", allowedDelay: AllowedDelay.OnTime // 19:00 local NL time
                     );
 
                     //// Fires **immediately-ish** (or next minute after registration) — 35-minute warning / pre-announcement
@@ -714,7 +727,7 @@ namespace Server.Engines.CronScheduler
 
                 // Check InmateManagement - every 15 minutes
                 if (Core.RuleSets.AngelIslandRules() || Core.RuleSets.MortalisStyleRules())
-                    Cron.Register(new CInmateManagement().InmateManagement, "*/15 * * * *");
+                    Cron.Register(new CInmateManagement().InmateManagement, "*/15 * * * *", allowedDelay: AllowedDelay.Short);
 
             } // if not LoginServer
         }
@@ -989,6 +1002,22 @@ namespace Server.Engines.CronScheduler
     }
     #endregion Handle IP Cheaters
     #region KickPlayers
+    class CNamesTaken
+    {
+        public void NamesTaken()
+        {
+            try
+            {
+                int renamed = Server.Engines.NameRegistry.ApplyTakenOnline();
+                if (renamed > 0)
+                    Console.WriteLine("Names: {0} character(s) online renamed: their names were taken from their accounts (Names.log).", renamed);
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex, "CNamesTaken");
+            }
+        }
+    }
     class CKickPlayers
     {
         public void KickPlayers()
@@ -1064,9 +1093,19 @@ namespace Server.Engines.CronScheduler
     #region AutoSave
     class CAutoSave
     {
+        public static void Register()
+        {
+            Server.Misc.AutoSave.InitializeSchedule();
+            int minutes = CoreAI.WorldSaveFrequency;
+            Cron.RegisterInterval(new CAutoSave().AutoSave, TimeSpan.FromMinutes(minutes), Server.Misc.AutoSave.ScheduleOffset(minutes), allowedDelay: AllowedDelay.Normal,
+                canSchedule: () => Server.Misc.AutoSave.SavesEnabled);
+            Console.WriteLine("AutoSave schedule: every {0} minute(s), {1} ({2}).",
+                minutes, Server.Misc.AutoSave.ScheduleDescription, ShardClock.ZoneName);
+        }
+
         public void AutoSave()
         {
-            System.Console.WriteLine("AutoSave: ");
+            Console.WriteLine("AutoSave running...");
             Utility.TimeCheck tc = new Utility.TimeCheck();
             tc.Start();
             bool saved = AutoSaveWorker();
@@ -1074,12 +1113,13 @@ namespace Server.Engines.CronScheduler
             if (saved)
                 Console.WriteLine("AutoSave in {0}", tc.TimeTaken);
             else
-                Console.WriteLine("AutoSave disabled.");
+                Console.WriteLine("AutoSave skipped.");
         }
         private bool AutoSaveWorker()
         {
             // final check to see if we should save
-            if (!Server.Misc.AutoSave.SavesEnabled || AutoRestart.Restarting)
+            if (!Server.Misc.AutoSave.SavesEnabled || AutoRestart.Restarting ||
+                World.SaveType == World.SaveOption.NoSaves || World.Saving || AsyncWriter.ThreadCount > 0)
                 return false;
 
             Server.Misc.AutoSave.Save();
@@ -1241,6 +1281,7 @@ namespace Server.Engines.CronScheduler
                 if (!ShouldRunLeaderboard(job))
                     continue;
 
+                long started = SlowWork.Start();
                 try
                 {
                     bool wasPopulated = job switch
@@ -1266,6 +1307,11 @@ namespace Server.Engines.CronScheduler
                     LogHelper.LogException(ex);
                     Console.WriteLine($"Exception in LeaderBoardJob.{job}: {ex.Message}");
                 }
+                // each board's time: [cron stats, and [lag / stall lines when slow
+                double ms = SlowWork.Since(started);
+                Cron.RecordStat("LeaderBoard: " + job, ms);
+                if (ms >= SlowWork.ThresholdMs)
+                    SlowWork.Record("LeaderBoard: " + job, ms);
             }
         }
         private static bool ShouldRunLeaderboard(LeaderBoardJob job)
@@ -1341,15 +1387,25 @@ namespace Server.Engines.CronScheduler
 
             return rank > 0;
         }
+        public static bool SuppressStaff => (Core.Debug || Core.GMNTC_CFG) ? false : true;
+
+        // the last completed count (GoldTracker.WealthPass); a new pass starts unless one is running. The board keeps
+        //  its lines until a count is complete: it never empties mid-count.
         private bool BuildAccountWealthLeaderboard()
         {
-            const string title = "Wealthiest";
-            LeaderboardTab? tab = LeaderboardTracker.GetTab(title) ?? LeaderboardTracker.AddTab(title);
-            tab.Clear();
+            GoldTracker.WealthPass.Start(SuppressStaff);
+            return FillWealthBoard(createTab: true);
+        }
 
-            GoldTracker.GoldTotaller[] gt = GoldTracker.GetSortedWealthArray((Core.Debug || Core.GMNTC_CFG) ? false : true);
-            if (gt == null || gt.Length == 0)
+        /// <summary>The Wealthiest board from the last completed count. createTab false (a pass completing): only if the board exists, so the tabs keep their order.</summary>
+        public static bool FillWealthBoard(bool createTab)
+        {
+            const string title = "Wealthiest";
+            LeaderboardTab? tab = createTab ? LeaderboardTracker.GetTab(title) ?? LeaderboardTracker.AddTab(title) : LeaderboardTracker.GetTab(title);
+            GoldTracker.GoldTotaller[]? gt = GoldTracker.WealthPass.Last;
+            if (tab == null || gt == null || gt.Length == 0)
                 return false;
+            tab.Clear();
 
             int rank = 0;
             foreach (var gte in gt)
@@ -2854,6 +2910,9 @@ namespace Server.Engines.CronScheduler
     {
         public void MusicShare()
         {
+            Console.WriteLine("MusicShare running...");
+            Utility.TimeCheck tc = new Utility.TimeCheck();
+            tc.Start();
             try
             {
                 MusicShareWorker();
@@ -2861,6 +2920,11 @@ namespace Server.Engines.CronScheduler
             catch (Exception ex)
             {
                 LogHelper.LogException(ex);
+            }
+            finally
+            {
+                tc.End();
+                Console.WriteLine("MusicShare in {0}", tc.TimeTaken);
             }
         }
 

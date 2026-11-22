@@ -29,20 +29,25 @@
  *  repeats: MusicCompiler, the shard's own source, linked). Its directives as the sheet music takes them
  *  (ManuscriptPaper.ProcessDirectives; '# Timer:' as RazorInstrument reads it).
  *
- *  Then the performance, worked out in advance on an exact clock:
+ *  Then the performance, worked out in advance on the game's clock (The game's timing, below):
  *  - the script (RazorInstrument): say '[play ...' queues its notes, another say is shown as text, wait N waits N ms;
  *  - the engine (SystemMusicPlayer.PlaySession, DynamicTimer and ClassicTimer): a [play line's first word may be a
  *    setting (instrument, tempo, prefetch, timer, newtimer); otherwise every word must be a note, a sound (+NNN), an
  *    instrument offset (-e, ++c), a volume (v15) or a pause, or the game ignores the line from that word on.
  *    Dynamic and Anchored: a note waits for its pause (Prefetch, or a negative pause) or else the tempo; a run starts
  *    a tempo after its line arrives, and an Anchored one continues where the last run ended when its line arrives
- *    within 100 ms of that (ReanchorMs). Classic: one element per 100 ms tick, a pause holding to the tick after it.
- *    (The shard's timers are late now and then; Dynamic about 10% slow. Here every timer is exactly on time.)
+ *    within 100 ms of that (ReanchorMs). Classic: one element per tick, a pause holding to the tick after it.
+ *    The shard's timers run late, and on the Classic and Dynamic timers the lateness adds up, so those songs play
+ *    slower in the game than written; here they do too (GameLateMs, ClassicTickMs). Anchored keeps written time.
  *  - the client (ClassicUO Sound.Play): a sound played again within its lockout (about half its length: 0.2 s for the
  *    harps, 0.15 s for the lute) is skipped; played later while still sounding, it starts over.
  *  Sound effects (+NNN) play here whatever the composer's music karma (making sheet music from them needs 1000, except
  *  percussion: Percussion.Sounds).
  *  Volume (v0-v20) only matters in concert mode; here every sound plays at full volume.
+ *
+ *  --wav <file> writes the performance to a WAV file instead of playing it (16-bit mono at the client's rate: the
+ *  music catalog's audio for the website, or a recording to share). Everything else is the same: the warnings, the
+ *  client's skips, --from / --to.
  *
  *  Plays through Windows (winmm PlaySound) from memory; nothing is written. While it plays, a status line rewritten
  *  in place (\r): the time in the song of its length, and the line playing (book1.post2 line 140); Ctrl+C says where
@@ -54,6 +59,22 @@
  *  says whether it is free or needs 1000 music karma.
  *
  ***************************************************************************/
+
+/* AI Music Composer\MidiToAims\Player.cs
+ * ChangeLog
+ *  11/16/26, Adam (directives)
+ *      A song's directives are read as the game reads them now (MusicCompiler.Directive, linked): named only at the
+ *      start of a line, so a line holding 'tempo:' or 'song:' in its text no longer changes the tempo or the name.
+ *  11/15/26, Adam (game timing)
+ *      Songs on the Classic and Dynamic timers play as slowly as the game plays them (they played on an exact clock,
+ *      faster than the game: the catalog's Dead Man's Party took 1:27; as the game plays it, about 1:38).
+ *      A Dynamic step, and each script line of a song not on the Anchored timer, is GameLateMs late, measured
+ *      on the shards; a Classic tick is ClassicTickMs, worked out from the shard's timer. Anchored songs are
+ *      unchanged: the game keeps them on time. Every use follows: preview, --wav, clips, the m2a> prompt.
+ *  11/15/26, Adam (--wav)
+ *      Changelog added. preview --wav <file>: the performance is written to a WAV file instead of played (Hear), for
+ *      the music catalog's audio (the login server renders each song, then makes an MP3 of it) or a recording to share.
+ */
 
 using System.Diagnostics;
 using System.Globalization;
@@ -81,6 +102,34 @@ namespace MidiToAims
         private static readonly string[] s_instruments = { "harp", "lap harp", "lute" };
         private const int DefaultTempo = 100;           // SystemMusicPlayer.DefaultTempo
         private const double ReanchorMs = 100;          // SystemMusicPlayer.ReanchorMs
+
+        #region The game's timing
+        // The game doesn't keep written time on two of its three timers; MidiToAims plays as the game does, or every
+        //  older song would sound rushed beside the game (and composers set those songs' waits by ear to the game).
+        //
+        // Why the game is late: the shard's timer thread (Server\Timer.cs) waits with WaitOne(1), and Windows wakes it
+        //  only on its clock tick, about 15.6 ms (the shard never asks for a finer one, timeBeginPeriod). A timer fires at
+        //  the first wake after it's due, then waits for the main loop to run its callback.
+        //
+        // GameLateMs: how late each timer call runs. The Dynamic timer (SystemMusicPlayer.DynamicTimer) schedules each
+        //  note from when the last one ran, so every step adds this, and a song's lateness grows with its notes. So does
+        //  the script of a song not on the Anchored timer: each line is a timer call (RazorInstrument.BabyRazor), and a
+        //  wait one of its length. The Anchored timer schedules from when each note was due, so its lateness never adds
+        //  up: it keeps written time, and here gets none of this. Measured by MusicEngineMetrics ("dynamic note
+        //  lateness" in Logs\MusicEngine.log), 11/14-15/26: 12.7 ms on TC, 11.6 to 12.6 ms on Siege; its plain 100 ms
+        //  probe timer, doing nothing, 9.2 to 10.7 ms (the lateness is the shard's, not the music's). A Dynamic song
+        //  with this model: Dead Man's Party, 1:27.5 written, 1:38 as the game plays it.
+        //
+        // ClassicTickMs: the Classic timer (SystemMusicPlayer.ClassicTimer) is a repeating 100 ms timer in the 50 ms
+        //  priority bucket. The bucket is checked at the first wake 50 ms after its last check, 62.5 ms on the 15.6 ms
+        //  clock, and the timer's next tick is due 100 ms after it fired; the first check past that is the second, so a
+        //  tick every 125 ms. Worked out, not yet measured (no Classic song is in the logs): MusicEngineMetrics' "classic
+        //  tick lateness" is each tick's gap less 100 ms, so this is 100 plus that.
+        //
+        // Measure again with [MusicMetrics report after a song plays, if the shard's machine or timer changes.
+        private const double GameLateMs = 12.5;
+        private const double ClassicTickMs = 125;
+        #endregion The game's timing
         private const int MaxSoundId = 0x5CF;           // CoreMusicPlayer: +NNN from 0 to 1487
 
         private enum Timer { Classic, Dynamic, Anchored }
@@ -120,7 +169,8 @@ namespace MidiToAims
             return (string.Join("\r\n", joined.Select(j => j.Text.ToString())) + "\r\n", joined.Select(j => j.Where).ToList());
         }
 
-        // ManuscriptPaper.ProcessDirectives (each line: the first of these words it contains), and '# Timer:'
+        // ManuscriptPaper.ProcessDirectives, and '# Timer:' as RazorInstrument reads it: a directive is named at the start
+        //  of its line (MusicCompiler.Directive, the shard's own reader, linked)
         private sealed class Directives
         {
             public string Song = "", Author = "", Instrument = "";
@@ -133,27 +183,23 @@ namespace MidiToAims
             {
                 foreach (string line in source.Split("\r\n", StringSplitOptions.RemoveEmptyEntries))
                 {
-                    string lower = line.ToLowerInvariant();
-                    string Value(string key) => Regex.Replace(line.Replace("#", ""), Regex.Escape(key), "", RegexOptions.IgnoreCase).Trim();
-                    bool True(string key) => Regex.IsMatch(Value(key), "true", RegexOptions.IgnoreCase);
-
-                    string directive = lower.TrimStart('#', ' ', '\t');
-                    if (directive.StartsWith("timer:"))
+                    if (!MusicCompiler.Directive(line, out string name, out string value))
+                        continue;
+                    bool True() => Regex.IsMatch(value, "true", RegexOptions.IgnoreCase);
+                    switch (name)
                     {
-                        string v = directive.Substring("timer:".Length).Trim();
-                        if (!int.TryParse(v, out _) && Enum.TryParse(v, true, out Timer t) && Enum.IsDefined(t))
-                            TimerHeader = t;
+                        case "timer":
+                            if (!int.TryParse(value, out _) && Enum.TryParse(value, true, out Timer t) && Enum.IsDefined(t))
+                                TimerHeader = t;
+                            break;
+                        case "author": Author = value; break;
+                        case "prefetch": Prefetch = True(); break;
+                        case "concertmode": ConcertMode = True(); break;
+                        case "newtimer": NewTimer = True(); break;
+                        case "tempo": Tempo = int.TryParse(Regex.Match(value, @"\d+").Value, out int n) ? n : DefaultTempo; break;
+                        case "instrument": Instrument = value; break;
+                        case "song": Song = value; break;
                     }
-
-                    if (lower.Contains("author:")) Author = Value("author:");
-                    else if (lower.Contains("napster:")) { }
-                    else if (lower.Contains("prefetch:")) Prefetch = True("prefetch:");
-                    else if (lower.Contains("concertmode:")) ConcertMode = True("concertmode:");
-                    else if (lower.Contains("newtimer:")) NewTimer = True("newtimer:");
-                    else if (lower.Contains("tempo:")) Tempo = int.TryParse(Regex.Match(Value("tempo:"), @"\d+").Value, out int n) ? n : DefaultTempo;
-                    else if (lower.Contains("instrument:")) Instrument = Value("instrument:");
-                    else if (lower.Contains("price:")) { }
-                    else if (lower.Contains("song:")) Song = Value("song:");
                 }
             }
         }
@@ -199,7 +245,7 @@ namespace MidiToAims
             public double End;
         }
 
-        // the performance, on an exact clock (see the header)
+        // the performance, on the game's clock (see the header, and The game's timing)
         private static Performance Perform(string text, List<Origin>? origins, Directives d, string unnamed = "the song")
         {
             Performance p = new();
@@ -211,9 +257,10 @@ namespace MidiToAims
             bool prefetch = d.Prefetch;
             Queue<(object Item, Origin? Where)> queue = new();
 
-            // the engine: a run of the timer, its tempo and prefetch fixed when it starts
+            // the engine: a run of the timer, its tempo and prefetch fixed when it starts; runLate, how late each of its
+            //  steps runs in the game (The game's timing: Dynamic only)
             bool playing = false, classic = false;
-            double next = 0, anchorNext = double.NaN, pauseUntil = 0;
+            double next = 0, anchorNext = double.NaN, pauseUntil = 0, runLate = 0;
             int runTempo = 0;
             bool runPrefetch = false;
 
@@ -225,6 +272,7 @@ namespace MidiToAims
                 runTempo = tempo;
                 runPrefetch = prefetch;
                 classic = timer == Timer.Classic;
+                runLate = timer == Timer.Dynamic ? GameLateMs : 0;
                 if (classic)
                 {
                     next = now;
@@ -233,7 +281,7 @@ namespace MidiToAims
                 else if (timer == Timer.Anchored && !double.IsNaN(anchorNext) && now - anchorNext <= ReanchorMs)
                     next = Math.Max(anchorNext, now);
                 else
-                    next = now + runTempo;
+                    next = now + runTempo + runLate;
             }
 
             void Play(double now, string token, int instrument, Origin? where)
@@ -256,7 +304,7 @@ namespace MidiToAims
                 double now = next;
                 if (classic && now < pauseUntil)
                 {
-                    next = now + 100;
+                    next = now + ClassicTickMs;
                     return;
                 }
                 while (true)
@@ -270,7 +318,7 @@ namespace MidiToAims
                     }
                     var (item, where) = queue.Dequeue();
                     int instrument = selector;
-                    double delay = classic ? 100 : runTempo;
+                    double delay = classic ? ClassicTickMs : runTempo;
 
                     if (item is Instrument change)
                     {
@@ -285,7 +333,7 @@ namespace MidiToAims
                         if (target < 0 || target > 2)
                         {
                             p.Problems.Add(string.Format("{0}: '{1}' - there is no instrument there (harp, lap harp, lute, from the {2})", where?.ToString() ?? unnamed, sel, s_instruments[selector]));
-                            next = now + delay;
+                            next = now + delay + runLate;
                             return;
                         }
                         instrument = target;
@@ -293,7 +341,7 @@ namespace MidiToAims
                         if (!IsNote((string)item))
                         {
                             p.Problems.Add(string.Format("{0}: '{1}' is not a note", where?.ToString() ?? unnamed, sel));
-                            next = now + delay;
+                            next = now + delay + runLate;
                             return;
                         }
                     }
@@ -314,7 +362,7 @@ namespace MidiToAims
                         else
                             delay = Math.Max(0, pause * 1000);
                     }
-                    next = now + delay;
+                    next = now + delay + runLate;
                     return;
                 }
             }
@@ -376,8 +424,11 @@ namespace MidiToAims
                 Start(now);
             }
 
-            // the script, with the engine running beside it
+            // the script, with the engine running beside it. Each line is a timer call in the game (a wait, one of its
+            //  length), late by GameLateMs; an Anchored song's waits end on schedule, so its lines take no time
+            //  (The game's timing)
             double script = 0;
+            double scriptLate = d.Timer == Timer.Anchored ? 0 : GameLateMs;
             int at = 0;
             Regex waitNumber = new(@"^[0-9]*(?:\.[0-9]*)?$");
             while (at < lines.Length || playing)
@@ -391,6 +442,8 @@ namespace MidiToAims
                 string line = lines[at].Trim();
                 Origin? where = origins != null && at < origins.Count ? origins[at] : null;
                 at++;
+                if (line.Length > 0)
+                    script += scriptLate;
                 string lower = line.ToLowerInvariant();
                 if (lower.StartsWith("#"))
                     continue;
@@ -423,7 +476,7 @@ namespace MidiToAims
         //  A block plays as long as the engine takes over its queue (Cost); a wait shorter than that queues the next
         //  block's notes behind it (and its lyrics come early), a longer one leaves a silence. Blocks without notes (a
         //  wait for an intro, between lyrics) are rests, not checked. Only on the Anchored timer, which keeps exact
-        //  time: the Dynamic timer runs about 10% slow in the game, and its composers set their waits by ear for that
+        //  time: the Dynamic timer runs slow in the game (GameLateMs a step), and its composers set their waits by ear for that
         //  (Galois's 76 songs: 57 have waits that don't match the written length, all right in the game); waits fitted
         //  to the written length would be short there, and the lyrics would drift ahead. text, origins: the song as
         //  read (Read), not compiled: the waits as written, where they are written.
@@ -878,8 +931,9 @@ namespace MidiToAims
         }
 
         // plays the song (its .rzr pieces, in order); uo: --uo, or null to find the client files; check: report only;
-        //  from, to: the part of the song to play (--from 1:10 --to 1:40, ms; null: its start, its end)
-        public static int Run(IReadOnlyList<string> files, string? uo, bool check = false, double? from = null, double? to = null)
+        //  from, to: the part of the song to play (--from 1:10 --to 1:40, ms; null: its start, its end); wavFile: write
+        //  it there instead of playing it (--wav)
+        public static int Run(IReadOnlyList<string> files, string? uo, bool check = false, double? from = null, double? to = null, string? wavFile = null)
         {
             ClientSounds? client = FindClient(uo, "preview \"song.rzr\"");
             if (client == null)
@@ -900,14 +954,15 @@ namespace MidiToAims
             Directives d = new(compiled.Source);
             ReportWaits(CheckWaits(text, origins, d), check || Program.Debug);
             Performance perf = Perform(compiled.Text, compiled.Structured ? null : origins, d);
-            return Hear(perf, d, client, d.Song.Length > 0 ? d.Song : Path.GetFileNameWithoutExtension(files[0]), "song", check, from, to);
+            return Hear(perf, d, client, d.Song.Length > 0 ? d.Song : Path.GetFileNameWithoutExtension(files[0]), "song", check, from, to, wavFile);
         }
 
         // what the game will do differently from what is written, then the performance played (check: a summary).
         //  from, to: the part to play (ms; null: the start, the end); the client's skips are worked out over the whole
         //  performance (a note just before the part can skip one in it), then the part is cut out. The details (each
         //  line's skips, notes cut short, the files) only with --check or debug (Program.Debug); else a line.
-        private static int Hear(Performance perf, Directives d, ClientSounds client, string song, string what, bool check, double? from = null, double? to = null)
+        //  wavFile: the performance is written there (a WAV) instead of played (--wav).
+        private static int Hear(Performance perf, Directives d, ClientSounds client, string song, string what, bool check, double? from = null, double? to = null, string? wavFile = null)
         {
             var (allHeard, allSkipped, restarted) = Client(perf.Sounds, client);
             double total = allHeard.Count == 0 ? perf.End : Math.Max(perf.End, allHeard.Max(h => h.StopMs));
@@ -965,6 +1020,15 @@ namespace MidiToAims
             if (check)
             {
                 Console.WriteLine("{0}: {1}, {2} timer, {3} notes and sounds, {4} heard{5}.", char.ToUpper(song[0]) + song.Substring(1), span, d.Timer, notes, heard.Count, folder);
+                return 0;
+            }
+            if (wavFile != null)
+            {   // --wav: written whole beside it, then moved into place (a reader never sees half a file)
+                string full = Path.GetFullPath(wavFile);
+                Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+                File.WriteAllBytes(full + ".new", wav);
+                File.Move(full + ".new", full, overwrite: true);
+                Console.WriteLine("Wrote {0} ({1}, {2} timer{3}).", full, span, d.Timer, folder);
                 return 0;
             }
             Console.WriteLine("Playing {0} ({1}, {2} timer{3}). Ctrl+C stops.", song, span, d.Timer, folder);

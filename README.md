@@ -36,6 +36,7 @@ Every shard is the same program, started with a flag. With no flag, it asks whic
 | `-uomo` | Mortalis | 3595 |
 | `-uose` | Seasons (`-Season1`, `-Season2`, ... for a season) | 3596 |
 | `-uoup` | Upheaval | 3597 |
+| `-uomc` | The Angel Island Music Conservatory: a shard for musicians, on Upheaval's rules with Trammel (PvE) play | 3603 |
 | `-uotc` | Test Center: add to a shard's flag to run it as its test center | 3602 |
 | `-uoev` | Event shard: add to a shard's flag to run it as an event shard | 3601 |
 
@@ -43,21 +44,38 @@ The ports are in `Ports.json`. Other flags you may want:
 
 | Flag | What it does |
 |---|---|
-| `-usedb` | Share accounts and passwords between servers (a common SQLite database) |
-| `-sharemusic` | Share player-composed music between the shards on one machine (a common SQLite database, `C:\AIDB\music.db` unless `AI.MUSICDB` says otherwise). A Test Center or event shard only reads it |
 | `-timezone=<zone>` | The shard's time zone, for events and scheduled jobs: an IANA name (`-timezone=America/Los_Angeles`) or `UTC`, `UTC-5`, `UTC+5:30`. Not given: the server machine's zone. An unknown zone stops startup |
 | `-nopatch` | Skip the startup patcher (one-time patches for existing worlds) |
 | `-nosaves` | No automatic saves, for a development or test world you don't want to keep. A manual `[save` still saves |
 | `-saves` | Automatic saves in a Debug build, which otherwise never saves automatically. Given with `-nosaves`, the server won't start |
 
 The startup banner shows what's in effect: `[Saves are Enabled.]` or `[Saves are Disabled.]`, the time zone, and
-where accounts and music are shared from.
+where the databases are.
 
 ```
-"GMN Core.exe" -uols -usedb          the login server
-"GMN Core.exe" -uoai -usedb          Angel Island
-"GMN Core.exe" -uosp -uotc -usedb    Siege Perilous Test Center
+"GMN Core.exe" -uols                 the login server
+"GMN Core.exe" -uoai                 Angel Island
+"GMN Core.exe" -uosp -uotc           Siege Perilous Test Center
 ```
+
+`-usedb` and `-sharemusic` are retired: accounts and music sharing are always on (see Databases). A server given one
+stops at startup and says so.
+
+## Databases
+
+Accounts and passwords, character names, the shared music library and the firewall lists are SQLite databases, kept in
+one folder:
+
+- `AI.DBDIR` set (a Windows environment variable): that folder. It must exist and be writable, or the server stops.
+- Not set: `Databases` in the shard's own folder, created at the first start. A shard on its own needs nothing more.
+
+Shards that use the same folder share their accounts, character names and music. To run several shards as one family,
+set `AI.DBDIR` to one folder for all of them. (The Angel Island shards use `C:\AIDB`: a machine that keeps databases
+there must have `AI.DBDIR=C:\AIDB`, or its shards stop at startup rather than start on empty databases of their own.)
+
+The databases live outside `Saves`, so back them up as well as your world. After restoring an older world, the
+databases are kept as they are: they hold accounts, names and the music library, never the world's items, characters
+or gold, so the newer copy is the right one. (The design note is in `Server/DatabaseFolder.cs`.)
 
 To run several shards, give each its own folder (for example `ShardAI`, `ShardSP`, `ShardLS`), start the login server
 and the shards, and connect your client to the login server on port 2593. To try one shard alone, connect to its own
@@ -77,9 +95,14 @@ The server runs without any of these; each turns on a feature. They are Windows 
 |---|---|
 | `AI.NOREPLY.ADDRESS`, `AI.NOREPLY.PASSWORD`, `AI.EMAIL.HOST`, `AI.EMAIL.HOST.PORT`, `AI.EMAIL.USER`, `AI.EMAIL.ACCOUNTING`, `AI.EMAIL.ANNOUNCEMENTS`, `AI.EMAIL.DEVNOTIFY`, `AI.EMAIL.DISTLIST.PASSWORD`, `AI.EMAIL.SHARDOWNER` | Email: account notices, announcements, crash reports (see `scripts/Engines/email/smtp.cs`) |
 | `AI.MMAccountId`, `AI.MMlicenseKey` | GeoIP lookups with your own MaxMind account (see `scripts/Accounting/AccountHandler.cs`) |
-| `AI.LOGINDB`, `AI.IPEXCEPTIONDB`, `AI.FIREWALLDB` | Where the shared databases live (`-usedb`) |
-| `AI.MUSICDB` | Where the shared music database lives (`-sharemusic`; default `C:\AIDB\music.db`) |
-| `AI.BuildInfoDir` | Where the build number file, `Core 6.info`, is kept |
+| `AI.DBDIR` | The database folder (see Databases). `AI.LOGINDB`, `AI.IPEXCEPTIONDB`, `AI.FIREWALLDB`, `AI.MUSICDB` and `AI.NAMESDB` are retired: a server that finds one set stops |
+
+## The version
+
+The server reports its version at startup: `Version 6.1.1360`. The first two numbers are set by hand in
+`GMN Core.csproj`; the last is the SVN revision of the source, the number in this repository's tags (`svn-r1360`).
+`Directory.Build.targets` explains how. A clone of this repository has no SVN to ask, so it builds as `6.1.0` (with a
+warning) unless you name the revision: `dotnet build "GMN Core.sln" -p:AppRevision=1360`.
 
 ## World files
 

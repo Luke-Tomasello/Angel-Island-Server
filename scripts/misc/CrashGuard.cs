@@ -21,6 +21,8 @@
 
 /* Scripts/Misc/CrashGuard.cs
  * CHANGELOG:
+ *  11/16/26, Adam (-uomc)
+ *      A crash report from the Music Conservatory says so in its subject.
  *  3/10/07, Adam
  *      Replace old hardcoded email list with new distribution list: devnotify@game-master.net
  *  12/19/06, Adam
@@ -102,6 +104,10 @@ namespace Server.Misc
                 if (Server.Engines.TestCenterServer.Enabled)
                 {
                     message.Subject += " (Test Center)";
+                }
+                else if (Core.GMNMC_CFG)
+                {
+                    message.Subject += " (" + Core.MusicConservatoryName + ")";
                 }
                 message.From = new MailAddress(SmtpDirect.FromEmailAddress);
                 message.To.Add(SmtpDirect.ClassicList(Emails));

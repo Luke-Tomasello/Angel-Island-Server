@@ -20,6 +20,15 @@
 
 /* Scripts\Engines\AIMusicSystem\Library\MusicLibrary.cs
  * Changelog
+ *  11/16/26, Adam (About and Tags)
+ *      KeepDescription: a remaster takes its book's # About: and # Tags:, or keeps the song's when the book has none.
+ *      Describe: staff set a library song's About and Tags (its notes' lines; the composer isn't told).
+ *  11/16/26, Adam (song renames)
+ *      A library song can be renamed (Rename): its title and author everywhere the sheet keeps them, the '# Song:' line
+ *      in its notes included (the instrument reads it as it plays), and never its hash (its notes only). MusicInfo
+ *      version 6 keeps the names it had before (FormerNames), the title its composer knew and staff's note: the composer
+ *      hears of it once (TellComposer, status), and their remaster from a book with an old name is still the song
+ *      (SameTrack).
  *  11/14/26, Adam
  *      A record knows it was imported ([MusicImport: the Imported flag, saved with the others, no format change), and
  *      its submission date can be set, so a record rebuilt from elsewhere keeps the day the song was submitted.
@@ -72,6 +81,110 @@ namespace Server.Items
         // takes a track off the review queue (approved, denied or deleted); nothing if it is not waiting there
         internal static void Unqueue(RolledUpSheetMusic track) => UnpublishedNeedsReview.Remove(track);
         #endregion The library
+
+        #region Renames
+        /// <summary>
+        /// Renames a library song: its title (and author, when one is given): the sheet's Title and SongName, and the
+        /// '# Song:' (and '# Author:') lines in its notes, which the instrument reads as it plays. The song stays the same
+        /// song: its hash is its notes only, never the # lines. The record keeps the old names (FormerNames), so its
+        /// composer's remaster from a book with an old name is still this song (SameTrack), and the composer hears of it
+        /// once, with the note (TellComposer), unless 'news' is false. False if nothing changed.
+        /// </summary>
+        public static bool Rename(RolledUpSheetMusic sheet, string newTitle, string? newAuthor = null, string? note = null, bool news = true)
+        {
+            if (sheet == null || sheet.Deleted || string.IsNullOrWhiteSpace(newTitle))
+                return false;
+            string title = newTitle.Trim();
+            string author = string.IsNullOrWhiteSpace(newAuthor) ? sheet.Author ?? "" : newAuthor.Trim();
+            string oldTitle = sheet.Title ?? "", oldAuthor = sheet.Author ?? "";
+            if (title == oldTitle && author == oldAuthor)
+                return false;
+
+            if (Repository.TryGetValue(sheet, out MusicInfo? info) && info != null)
+            {
+                info.AddFormerName(oldTitle, oldAuthor);
+                if (news)
+                    info.RenameIsNews(oldTitle, note);
+            }
+            SetNames(sheet, title, author);
+            return true;
+        }
+
+        /// <summary>
+        /// The sheet's title and author everywhere it keeps them: Title, SongName, Author and its notes' '# Song:' line
+        /// (and '# Author:', when the author changes) (lines that start with #, which the hash skips: it doesn't change).
+        /// </summary>
+        public static void SetNames(RolledUpSheetMusic sheet, string title, string author)
+        {
+            bool newAuthor = author != (sheet.Author ?? "");
+            sheet.Title = title;
+            sheet.SongName = title;
+            sheet.Author = author;
+            if (sheet.HasComposition)
+            {
+                string notes = SetHeaderLine(sheet.Composition, "Song", title);
+                sheet.Composition = newAuthor ? SetHeaderLine(notes, "Author", author) : notes;
+            }
+        }
+
+        // every "# <name>: ..." line (starting with #) says the value; other lines, and the line ends, as they were
+        private static string SetHeaderLine(string notes, string name, string value)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(notes, @"(?im)^#[ \t]*" + name + @"[ \t]*:[^\r\n]*",
+                m => "# " + name + ": " + value);
+        }
+
+        /// <summary>
+        /// A library song's About and Tags (null: as it is; "": none), staff's: the '# About:' and '# Tags:' lines in its
+        /// notes (RolledUpSheetMusic.WithNotesLine; the tags tidied). The hash skips them: it stays the same song. The
+        /// composer isn't told (a rename is news; a description isn't). False if nothing changed.
+        /// </summary>
+        public static bool Describe(RolledUpSheetMusic sheet, string? about, string? tags)
+        {
+            if (sheet == null || sheet.Deleted || !sheet.HasComposition)
+                return false;
+            string notes = sheet.Composition;
+            if (about != null && about.Trim() != sheet.About)
+                notes = RolledUpSheetMusic.WithNotesLine(notes, "About", about.Trim());
+            if (tags != null && RolledUpSheetMusic.TidyTags(tags) != sheet.Tags)
+                notes = RolledUpSheetMusic.WithNotesLine(notes, "Tags", RolledUpSheetMusic.TidyTags(tags));
+            if (notes == sheet.Composition)
+                return false;
+            sheet.Composition = notes;
+            return true;
+        }
+
+        /// <summary>
+        /// A remaster's About and Tags: the new book's, or, where it has none, the song's before it ('before'), so a book
+        /// without them doesn't clear them. They are lines in its notes (RolledUpSheetMusic.About, Tags).
+        /// </summary>
+        public static void KeepDescription(RolledUpSheetMusic sheet, RolledUpSheetMusic before)
+        {
+            if (sheet == null || before == null || !sheet.HasComposition)
+                return;
+            if (sheet.About.Length == 0 && before.About.Length > 0)
+                sheet.Composition = RolledUpSheetMusic.WithNotesLine(sheet.Composition, "About", before.About);
+            if (sheet.Tags.Length == 0 && before.Tags.Length > 0)
+                sheet.Composition = RolledUpSheetMusic.WithNotesLine(sheet.Composition, "Tags", before.Tags);
+        }
+
+        /// <summary>
+        /// The library song 'existing' (its record 'info') is the track 'trackID' (RolledUpSheetMusic.TrackID): by its
+        /// name now, or by a name it had before it was renamed.
+        /// </summary>
+        public static bool SameTrack(RolledUpSheetMusic existing, MusicInfo? info, int trackID)
+        {
+            if (existing == null)
+                return false;
+            if (existing.TrackID == trackID)
+                return true;
+            if (info != null)
+                foreach ((string title, string author) in info.FormerNames)
+                    if (RolledUpSheetMusic.TrackIDOf(title, author, existing.Owner) == trackID)
+                        return true;
+            return false;
+        }
+        #endregion Renames
 
         #region Music Database Format
         public enum SubmissionStatus
@@ -146,6 +259,7 @@ namespace Server.Items
             Remastered = 0x02,
             ComposerTold = 0x04,    // the composer has heard the latest review decision (TellComposer, status)
             Imported = 0x08,        // added from a song file by [MusicImport (MusicImport.cs), not submitted at a music box
+            RenameNews = 0x10,      // renamed (MusicLibrary.Rename) and the composer hasn't heard yet (TellComposer, status)
         }
         public record MusicInfo
         {
@@ -164,7 +278,32 @@ namespace Server.Items
             RejectionReason m_rejectionReason;  // why rejected
             MusicInfoFlags m_flags = MusicInfoFlags.None;
             string? m_note;                     // staff's note to the composer on a rejection (version 5)
+            // the song's names before it was renamed (MusicLibrary.Rename), oldest first: its composer's remaster from a
+            //  book with an old name is still this song (MusicLibrary.SameTrack) (version 6)
+            readonly List<(string Title, string Author)> m_former = new List<(string Title, string Author)>();
+            string? m_renamedFrom;              // the title the composer last knew, until they hear of the rename (version 6)
+            string? m_renameNote;               // staff's note to the composer on the rename (version 6)
             public List<PurchaserInfo> Purchasers => m_purchasers;
+            public IReadOnlyList<(string Title, string Author)> FormerNames => m_former;
+            public string? RenamedFrom => m_renamedFrom;
+            public string? RenameNote => m_renameNote;
+            public bool RenameNews { get { return m_flags.HasFlag(MusicInfoFlags.RenameNews); } set { m_flags = value ? m_flags | MusicInfoFlags.RenameNews : m_flags & ~MusicInfoFlags.RenameNews; } }
+
+            /// <summary>A name the song had (kept once, oldest first).</summary>
+            public void AddFormerName(string title, string author)
+            {
+                if (!m_former.Any(f => f.Title == title && f.Author == author))
+                    m_former.Add((title, author));
+            }
+
+            /// <summary>The rename is news for the composer: they hear the title they knew and the note (TellComposer).</summary>
+            public void RenameIsNews(string oldTitle, string? note)
+            {
+                if (!RenameNews)
+                    m_renamedFrom = oldTitle;   // renamed again before they heard: they still knew the first
+                m_renameNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+                RenameNews = true;
+            }
             // a new decision (approved or rejected) is news for the composer: TellComposer tells them once
             public SubmissionStatus Status
             {
@@ -228,6 +367,15 @@ namespace Server.Items
 
                 switch (version)
                 {
+                    case 6:
+                        {
+                            int formers = reader.ReadEncodedInt();
+                            for (int ix = 0; ix < formers; ix++)
+                                m_former.Add((reader.ReadString() ?? "", reader.ReadString() ?? ""));
+                            m_renamedFrom = reader.ReadString();
+                            m_renameNote = reader.ReadString();
+                            goto case 5;
+                        }
                     case 5:
                         {
                             m_note = reader.ReadString();
@@ -284,10 +432,22 @@ namespace Server.Items
             }
             public void Serialize(GenericWriter writer)
             {
-                int version = 5;
+                int version = 6;
                 writer.WriteEncodedInt(version);
                 switch (version)
                 {
+                    case 6:
+                        {
+                            writer.WriteEncodedInt(m_former.Count);
+                            foreach ((string title, string author) in m_former)
+                            {
+                                writer.Write(title);
+                                writer.Write(author);
+                            }
+                            writer.Write(m_renamedFrom);
+                            writer.Write(m_renameNote);
+                            goto case 5;
+                        }
                     case 5:
                         {
                             writer.Write(m_note);

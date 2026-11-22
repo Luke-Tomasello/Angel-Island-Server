@@ -20,6 +20,19 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Commands.cs
  * Changelog
+ *  11/19/26, Adam (full plays)
+ *      PlayTrack plays every song in full, Napster tracks too, where the host allows (AimsHost.FullPlays).
+ *  11/16/26, Adam (About and Tags)
+ *      'list' help: words are found in a track's title, composer, About or tags.
+ *  11/15/26, Adam (arranged by; the composer's account; the library)
+ *      'library' (or 'browse'): every song in a window (MusicBox.LibraryGump.cs), for anyone near the box. Play and
+ *      buy share their work with it: PlayTrack (full or sample) and BuyTrack (playlist or the price prompt), after the
+ *      song is named; NewReleases is shared by 'new' and the window's New tab, so they always agree.
+ *      A track's author is said with its arranger when someone else made it and is paid for it (By, from
+ *      AimsHost.Arranger): "Rooster by Alice in Chains, arranged by Gud'Gul." Play, the samples, what's playing, what
+ *      was that, add, what's new, and your purchases; mid-sentence it closes with a comma ("Added X by Y, arranged by
+ *      Z, to your library."). Lists of matches (with serials) still give the author alone.
+ *      Buy: a track's composer (IsComposer: any character of their account) already has it, and isn't charged.
  *  11/14/26, Adam
  *      Play, add, remove and buy name their song through PickSong: a name that matches nothing is "I don't know a song
  *      called '...'"; play, add and remove take the closest of several and say so; buy, which costs gold, considers only
@@ -111,7 +124,8 @@ namespace Server.Items
             Cmd(TextCommands.Next, "next", "Next, next song", (b, e, t) => b.HandleNext(e), Gate.StartsPlayback),
             Cmd(TextCommands.Repeat, "repeat", "Repeat, repeat last song", (b, e, t) => b.HandleRepeat(e), Gate.StartsPlayback),
             Cmd(TextCommands.Loop, "loop", "Loop, loop playlist", (b, e, t) => b.HandleLoop()),
-            Cmd(TextCommands.List, "list", "List [words | by <composer>], list all tracks, the tracks whose titles have those words, or a composer's tracks", (b, e, t) => b.HandleList(e, t)),
+            Cmd(TextCommands.List, "list", "List [words | by <composer>], list all tracks, the tracks whose title, composer, about or tags have those words, or a composer's tracks", (b, e, t) => b.HandleList(e, t)),
+            Cmd(TextCommands.Library, "library browse", "Library (or browse), every song in a window: play, sample or buy them (anyone may look)", (b, e, t) => b.OpenLibrary(e.Mobile)),
             Cmd(TextCommands.Add, "add", "Add [song], add track (previously removed); Add alone, add music to the music box", (b, e, t) => b.HandleAdd(e, t)),
             Cmd(TextCommands.Remove, "remove ignore", "Remove, add a global track to the ignore list", (b, e, t) => b.HandleRemove(e, t)),
             Cmd(TextCommands.Refresh, "refresh", "Refresh, adds any new global (free) tracks to your library", (b, e, t) => b.HandleRefresh()),
@@ -230,70 +244,75 @@ namespace Server.Items
                 OnDoubleClick(e.Mobile);
             }
             else if (PickSong(e.Mobile, tokens, "play", mustBeOne: false, null, out RolledUpSheetMusic track, out _))
+                PlayTrack(e.Mobile, track);
+            // else PickSong said why
+        }
+
+        // plays a track the player named (play <song>) or pressed in the library (MusicBox.LibraryGump.cs): in full when
+        //  they may (free, in their playlist, bought or composed, staff), else a 10-second sample
+        private void PlayTrack(Mobile m, RolledUpSheetMusic track)
+        {
+            // Re-check play context (some flows can change who "owns" the context).
+            RefreshPlayContext(m);
+
+            if (m_playContext == null)
+                return;
+
+            // Robustness: track can be null if repository is inconsistent.
+            if (track == null)
             {
-                // Re-check play context (some flows can change who "owns" the context).
-                RefreshPlayContext(e.Mobile);
+                Say("Hmm, I don't know that.", hue: 54);
+                return;
+            }
 
-                if (m_playContext == null)
-                    return;
+            bool approved = Approved(track);
+            // staff (GM and up) hear any track by title; the one who submitted a pending track hears it too
+            bool staff = m.AccessLevel >= AccessLevel.GameMaster;
 
-                // Robustness: track can be null if repository is inconsistent.
-                if (track == null)
+            if (staff || Playable(m, track))
+            {
+                // Ignore list is not consulted here since the user explicitly requested a song.
+                if (IsFree(track) ||
+                    m_playContext.Playlist.Contains(track) ||
+                    PurchasedOrOwned(m, track) ||
+                    staff || AimsHost.Current.FullPlays)
                 {
-                    Say("Hmm, I don't know that.", hue: 54);
-                    return;
-                }
-
-                bool approved = Approved(track);
-                // staff (GM and up) hear any track by title; the one who submitted a pending track hears it too
-                bool staff = e.Mobile.AccessLevel >= AccessLevel.GameMaster;
-
-                if (staff || Playable(e.Mobile, track))
-                {
-                    // Ignore list is not consulted here since the user explicitly requested a song.
-                    if (IsFree(track) ||
-                        m_playContext.Playlist.Contains(track) ||
-                        PurchasedOrOwned(e.Mobile, track) ||
-                        staff)
+                    // Napster restrictions: must have Napster access to play full track.
+                    if (!track.Napster || AimsHost.Current.FullPlays || (track.Napster && HasNapsterAccess(m, track)))
                     {
-                        // Napster restrictions: must have Napster access to play full track.
-                        if (!track.Napster || (track.Napster && HasNapsterAccess(e.Mobile, track)))
-                        {
-                            if (approved)   // an unapproved track is announced by PlayMusic, as pending
-                                Say(string.Format("{0} by {1}.", track, track.Author), hue: 54);
-                            PlayMusic(e.Mobile, m_playContext.NowPlaying(track));
-                        }
-                        else
-                        {
-                            // Napster without access: play a short sample.
-                            SendMessage(e.Mobile,
-                                string.Format(
-                                    "'{0}' is a Napster track. You will need to get a copy directly from {1}.",
-                                    track, track.Owner != null ? track.Owner.Name : "(unknown)"));
-
-                            Say(string.Format("Here is a sample of {0} by {1}.", track, track.Author), hue: 54);
-                            PlayMusic(e.Mobile, m_playContext.NowPlaying(track));
-
-                            Timer.DelayCall(TimeSpan.FromSeconds(10), new TimerStateCallback(EndSample),
-                                new object[] { this, e.Mobile });
-                        }
+                        if (approved)   // an unapproved track is announced by PlayMusic, as pending
+                            Say(string.Format("{0} by {1}.", track, By(track)), hue: 54);
+                        PlayMusic(m, m_playContext.NowPlaying(track));
                     }
                     else
                     {
-                        // Not owned: play a sample.
-                        Say(string.Format("Here is a sample of {0} by {1}.", track, track.Author), hue: 54);
-                        PlayMusic(e.Mobile, m_playContext.NowPlaying(track));
+                        // Napster without access: play a short sample.
+                        SendMessage(m,
+                            string.Format(
+                                "'{0}' is a Napster track. You will need to get a copy directly from {1}.",
+                                track, track.Owner != null ? track.Owner.Name : "(unknown)"));
+
+                        Say(string.Format("Here is a sample of {0} by {1}.", track, By(track)), hue: 54);
+                        PlayMusic(m, m_playContext.NowPlaying(track));
 
                         Timer.DelayCall(TimeSpan.FromSeconds(10), new TimerStateCallback(EndSample),
-                            new object[] { this, e.Mobile });
+                            new object[] { this, m });
                     }
                 }
                 else
                 {
-                    Say(string.Format("'{0}' is still pending approval", track), hue: 54);
+                    // Not owned: play a sample.
+                    Say(string.Format("Here is a sample of {0} by {1}.", track, By(track)), hue: 54);
+                    PlayMusic(m, m_playContext.NowPlaying(track));
+
+                    Timer.DelayCall(TimeSpan.FromSeconds(10), new TimerStateCallback(EndSample),
+                        new object[] { this, m });
                 }
             }
-            // else PickSong said why
+            else
+            {
+                Say(string.Format("'{0}' is still pending approval", track), hue: 54);
+            }
         }
 
         private void HandleCancel(SpeechEventArgs e)
@@ -329,7 +348,7 @@ namespace Server.Items
                 RolledUpSheetMusic now = m_playContext.NowPlaying();
                 if (now != null)
                 {
-                    Say(string.Format("This is {0} by {1}{2}.", now, now.Author, Approved(now) ? "" : " (pending approval)"), hue: 54);
+                    Say(string.Format("This is {0} by {1}{2}.", now, By(now), Approved(now) ? "" : " (pending approval)"), hue: 54);
                     TellFinder(asker, now);
                 }
                 else
@@ -340,7 +359,7 @@ namespace Server.Items
                 RolledUpSheetMusic? prev = m_playContext.PeekPrev();
                 if (prev != null)
                 {
-                    Say(string.Format("That was {0} by {1}.", prev, prev.Author), hue: 54);
+                    Say(string.Format("That was {0} by {1}.", prev, By(prev)), hue: 54);
                     TellFinder(asker, prev);
                 }
                 else
@@ -467,7 +486,7 @@ namespace Server.Items
                 {
                     if (!m_playContext.Playlist.Contains(track))
                     {
-                        Say(string.Format("Added {0} by {1} to your library.", track, track.Author), hue: 54);
+                        Say(string.Format("Added {0} by {1} to your library.", track, By(track, midSentence: true)), hue: 54);
 
                         if (m_playContext.IgnoreList.Contains(track))
                         {
@@ -477,7 +496,7 @@ namespace Server.Items
                     }
                     else
                     {
-                        Say(string.Format("Your library already contains {0} by {1}.", track, track.Author), hue: 54);
+                        Say(string.Format("Your library already contains {0} by {1}.", track, By(track)), hue: 54);
                     }
                 }
                 else
@@ -485,14 +504,14 @@ namespace Server.Items
                     if (!m_playContext.Playlist.Contains(track))
                     {
                         Say(string.Format("{0} by {1} is a premium track. You will need to buy it.",
-                            track, track.Author), hue: 54);
+                            track, By(track, midSentence: true)), hue: 54);
 
                         if (m_playContext.IgnoreList.Contains(track))
                             m_playContext.IgnoreList.Remove(track);
                     }
                     else
                     {
-                        Say(string.Format("Your library already contains {0} by {1}.", track, track.Author), hue: 54);
+                        Say(string.Format("Your library already contains {0} by {1}.", track, By(track)), hue: 54);
                     }
                 }
             }
@@ -596,6 +615,30 @@ namespace Server.Items
             if (!PickSong(e.Mobile, tokens, "buy", mustBeOne: true, (s, i) => i.Status == SubmissionStatus.Approved, out RolledUpSheetMusic rsm, out MusicInfo mi))
                 return;     // PickSong said why
 
+            BuyTrack(e.Mobile, rsm, mi);
+        }
+
+        // buys a track the player named (buy <song>) or pressed in the library (MusicBox.LibraryGump.cs): a free one joins
+        //  their playlist; a premium one asks them to confirm the price (BuyMusicBoxPrompt)
+        private void BuyTrack(Mobile m, RolledUpSheetMusic rsm, MusicInfo mi)
+        {
+            // Staff restriction on production shard.
+            if (m.AccessLevel > AccessLevel.Player && !AimsHost.Current.IsTestCenter)
+            {
+                SendMessage(m, "Staff cannot buy music on the production shard.");
+                return;
+            }
+
+            // A carried box (a minstrel's) has no shop.
+            if (CheckEmbedded(m, message: true))
+                return;
+
+            if (m_playContext == null)
+            {
+                Say("Hmm, I don't know that.", hue: 54);
+                return;
+            }
+
             // Robustness: validate repository entry.
             if (rsm == null || rsm.Deleted || mi == null)
             {
@@ -639,16 +682,16 @@ namespace Server.Items
 
             // Premium track: if already owned or has rights, do not prompt.
             // NOTE: Use TryGetValue to avoid ContainsKey+index races.
-            if (HasRights(e.Mobile, rsm) ||
-                (MusicLibrary.Repository.TryGetValue(rsm, out MusicInfo? repoInfo) && repoInfo != null && repoInfo.Owner == e.Mobile))
+            if (HasRights(m, rsm) ||
+                (MusicLibrary.Repository.TryGetValue(rsm, out MusicInfo? repoInfo) && repoInfo != null && IsComposer(m, rsm, repoInfo)))
             {
-                SendMessage(e.Mobile, string.Format("You already have access to {0}.", rsm.Title));
+                SendMessage(m, string.Format("You already have access to {0}.", rsm.Title));
                 return;
             }
 
             // Prompt for purchase confirmation.
-            e.Mobile.Prompt = new BuyMusicBoxPrompt(e.Mobile, rsm, this, price);
-            SendMessage(e.Mobile,
+            m.Prompt = new BuyMusicBoxPrompt(m, rsm, this, price);
+            SendMessage(m,
                 string.Format("The cost to buy '{0}' is {1} gold. Are you sure you wish to buy this track?", rsm, price));
         }
 
@@ -664,6 +707,25 @@ namespace Server.Items
         //  NewReleaseDays days, at least NewReleaseMin songs, at most NewReleaseMax lines
         private const int NewReleaseDays = 7, NewReleaseMin = 5, NewReleaseMax = 10;
 
+        // the approved songs by release (approved, or remastered since), newest first; recent: how many in the last
+        //  NewReleaseDays days; show: how many are new releases (recent, at least NewReleaseMin). Shared by 'new' and the
+        //  library's New tab (MusicBox.LibraryGump.cs), so they always agree.
+        private List<(RolledUpSheetMusic Track, MusicInfo Info, bool Remastered, DateTime When)> NewReleases(out int recent, out int show)
+        {
+            DateTime now = DateTime.UtcNow;
+            var releases = MusicLibrary.Repository
+                .Where(kvp => Approved(kvp.Key))
+                .Select(kvp => (Track: kvp.Key, Info: kvp.Value,
+                    Remastered: kvp.Value.Remastered && kvp.Value.DateRemastered > kvp.Value.DateApproved,
+                    When: kvp.Value.Remastered && kvp.Value.DateRemastered > kvp.Value.DateApproved ? kvp.Value.DateRemastered : kvp.Value.DateApproved))
+                .Where(r => r.When > DateTime.MinValue)
+                .OrderByDescending(r => r.When)
+                .ToList();
+            recent = releases.Count(r => (now - r.When).TotalDays < NewReleaseDays);
+            show = Math.Min(Math.Max(recent, NewReleaseMin), releases.Count);
+            return releases;
+        }
+
         private void HandleNew(SpeechEventArgs e, string[] tokens)
         {
             Mobile m = e.Mobile;
@@ -674,14 +736,7 @@ namespace Server.Items
             }
 
             DateTime now = DateTime.UtcNow;
-            var releases = MusicLibrary.Repository
-                .Where(kvp => Approved(kvp.Key))
-                .Select(kvp => (Track: kvp.Key, Info: kvp.Value,
-                    Remastered: kvp.Value.Remastered && kvp.Value.DateRemastered > kvp.Value.DateApproved,
-                    When: kvp.Value.Remastered && kvp.Value.DateRemastered > kvp.Value.DateApproved ? kvp.Value.DateRemastered : kvp.Value.DateApproved))
-                .Where(r => r.When > DateTime.MinValue)
-                .OrderByDescending(r => r.When)
-                .ToList();
+            var releases = NewReleases(out int recent, out int show);
 
             if (releases.Count == 0)
             {
@@ -689,8 +744,6 @@ namespace Server.Items
                 return;
             }
 
-            int recent = releases.Count(r => (now - r.When).TotalDays < NewReleaseDays);
-            int show = Math.Min(Math.Max(recent, NewReleaseMin), releases.Count);
             if (recent == 0)
                 SendMessage(m, 54, "Nothing new this week. The latest releases:");
 
@@ -700,7 +753,7 @@ namespace Server.Items
                 string tags = (m_playContext.IgnoreList.Contains(r.Track) ? " (ignored)" : "")
                     + (r.Track.Napster ? " (Napster)" : "") + (r.Info.Price > 0 ? " (Premium)" : "");
                 SendMessage(m, locked ? 33 : 54, string.Format("{0} by {1}{2}, {3} {4}",
-                    r.Track, r.Track.Author, tags, r.Remastered ? "remastered" : "approved", WhenSaid(now, r.When)));
+                    r.Track, By(r.Track), tags, r.Remastered ? "remastered" : "approved", WhenSaid(now, r.When)));
             }
 
             if (show > NewReleaseMax)
@@ -712,6 +765,20 @@ namespace Server.Items
         {
             int days = (int)(now.Date - when.Date).TotalDays;
             return days <= 0 ? "today" : days == 1 ? "yesterday" : days < 60 ? days + " days ago" : "on " + when.ToString("M/d/yy");
+        }
+
+        // who a track is by, as the box says it: its author, and its arranger when someone else made it and is paid for
+        //  it (AimsHost.Arranger): "Alice in Chains, arranged by Gud'Gul". Mid-sentence ('Added X by Y to your library'),
+        //  an arranger is closed with a comma: "Added Rooster by Alice in Chains, arranged by Gud'Gul, to your library."
+        public static string By(RolledUpSheetMusic track, bool midSentence = false)
+        {
+            if (track == null)
+                return "";
+            MusicLibrary.Repository.TryGetValue(track, out MusicInfo? info);
+            string? arranger = null;
+            try { arranger = AimsHost.Current.Arranger(track, info); }
+            catch (Exception ex) { AimsLog.LogException(ex); }
+            return string.IsNullOrWhiteSpace(arranger) ? track.Author ?? "" : string.Format("{0}, arranged by {1}{2}", track.Author, arranger, midSentence ? "," : "");
         }
 
         private void HandleHelp(SpeechEventArgs e)
@@ -797,7 +864,7 @@ namespace Server.Items
                     {
                         SendMessage(e.Mobile,
                             string.Format("On {0}, you purchased {1} by {2} for {3} gold.",
-                                lml.PurchaseDate, track, track.Author, lml.Price));
+                                lml.PurchaseDate, track, By(track, midSentence: true), lml.Price));
 
                         if (info.Price != lml.Price)
                         {

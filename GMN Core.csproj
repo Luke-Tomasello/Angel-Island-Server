@@ -12,6 +12,42 @@
 		<DefineConstants>$(DefineConstants);ANGEL_ISLAND</DefineConstants>
 	</PropertyGroup>
 
+	<!-- The server's version, Major.Minor.Revision (6.1.1360): Major.Minor here; the revision is the SVN revision of the
+	     last change anywhere in this folder (Directory.Build.targets, beside this file, explains the scheme). The patch
+	     libraries carry the same version. The server reports it at startup ([about, [diag and the welcome too).
+	     11/16/26, Adam: moved here from BuildInfo\Program.cs (BuildInfo retired), its history with it:
+
+	     8/30/2024, Adam
+	         Reverting major version to 6. This reflects our actual Core version.
+	     7/28/2024, Adam
+	         Bump the major version to 7. This will be our new GitHub version
+	     12/26/21, Adam
+	         Add Major and Minor version numbers
+
+	     Version History:
+	         10/29/22, Adam
+	         Minor 1:
+	             RunUO 2.6 networking.
+	             Add Renaissance server support
+	             Convert all Angel Island 'servers' to 'rule sets' so as not to conflict with RunUO's
+	                 notion of Expansion's
+	         7/3/22, Adam
+	         Major 6: (Minor 0)
+	             New map and client 6.0.1.10
+	             Upgrade Map.cs, Sector.cs, and Tile modules to RunUO 2.6
+	         Minor 2:
+	             Move to .NET 6
+	         Major 5:
+	             Move to 64bit code
+	             Move to .NET 5
+	         Minor 1:
+	             New Intelligent Dialog System
+	             replaced Dictionary<> with ConcurrentDictionary<> for World Items and Mobiles.
+	     If you change AppVersion, add to the Version History above. -->
+	<PropertyGroup>
+		<AppVersion>6.1</AppVersion>
+	</PropertyGroup>
+
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<WarningsAsErrors>$(WarningsAsErrors);NU1605;CS0108</WarningsAsErrors>
@@ -221,12 +257,13 @@
 		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
 	</PropertyGroup>
 
-	<!-- BuildInfo.exe (the BuildInfo project, built into this folder) writes "Core 6.info", the build number. Called by its
+	<!-- BuildInfo.exe's post-build step (it wrote "Core 6.info", the build number) is gone: the version comes from
+	     Directory.Build.targets now. 11/16/26, Adam. The BuildInfo removes above stay: a shard folder updated from SVN
+	     keeps BuildInfo's built files (its obj\ folder's .cs among them), which mustn't become part of GMN Core.
+	     Its history, kept:
+	     BuildInfo.exe (the BuildInfo project, built into this folder) writes "Core 6.info", the build number. Called by its
 	     full path: cmd won't run a bare name from the current folder when NoDefaultCurrentDirectoryInExePath is set (exit
 	     9009, MSB3073), and that failure marked GMN Core failed, so a fresh clone never built the Patches DLLs. Skipped
 	     until BuildInfo.exe exists (the server starts without "Core 6.info": version 0.0.0). 11/6/26, Adam -->
-	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-	  <Exec Command="&quot;$(MSBuildProjectDirectory)\BuildInfo.exe&quot;" Condition="Exists('$(MSBuildProjectDirectory)\BuildInfo.exe')" />
-	</Target>
 
 </Project>

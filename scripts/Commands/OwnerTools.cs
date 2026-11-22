@@ -21,6 +21,15 @@
 
 /* Scripts/Commands/OwnerTools.cs
  * CHANGELOG:
+ *  11/19/26, Adam (clients)
+ *      ShardInit: every shard warns about a client or Razor that isn't ours and never disconnects for it (ForceGMNCUO and
+ *      ForceGMNRZR off, WarnBadGMNCUO and WarnBadGMNRZR on), whatever the saved settings say.
+ *  11/18/26, Adam (names cleanup)
+ *      [ResolveReservedName is retired with the per-shard Reserved Names: it only points to [Names assign <account>
+ *      <name> take, which does the same family-wide (renames other accounts' characters with the name to the
+ *      placeholder with a personal name change deed, and moves the Seasons leaderboard name).
+ *  11/17/26, Adam (-uomc standalone)
+ *      ShardInit: the Music Conservatory (its own ServerID, on the Upheaval rules) takes Upheaval's account limits.
  *  11/8/26, Adam (login server owner)
  *      IsOwnerIP removed (see 8/5/22): owner access comes from the account, not the address. Character creation gives a
  *      character its account's access level, and the server list shows hidden shards and "Administrative" to Owner
@@ -627,230 +636,14 @@ namespace Server.Commands
 
         #region ResolveReservedName
 
-        [Usage("ResolveReservedName <name> <fromAccount|auto> <toAccount>")]
-        [Description("Transfers a reserved name from one Seasons account to another. Specify 'auto' to resolve the current owner from the reserved-name database. Repairs live holders of that name and issues rename deeds where needed.")]
+        // retired 11/18/26 with the per-shard Reserved Names: [Names assign <account> <name> take does this, family-wide
+        //  (the name becomes that account's alone; other accounts' characters with it are renamed 'Generic Player' with a
+        //  personal name change deed, never deleted; the Seasons leaderboard name follows)
+        [Usage("ResolveReservedName (retired: use [Names assign <account> <name> take)")]
+        [Description("Retired: the per-shard reserved names are gone. Use [Names assign <account> <name> take: the name becomes that account's alone, on every shard, and other accounts' characters with it are renamed 'Generic Player' with a name change deed.")]
         public static void ResolveReservedName_OnCommand(CommandEventArgs e)
         {
-            if (e.Mobile == null)
-                return;
-
-            if (e.Length != 3)
-            {
-                e.Mobile.SendMessage("Usage: ResolveReservedName <name> <fromAccount> <toAccount>");
-                return;
-            }
-
-            string? reservedName = e.GetString(0)?.Trim();
-            string? fromUsername = e.GetString(1)?.Trim();
-            string? toUsername = e.GetString(2)?.Trim();
-
-            if (string.IsNullOrWhiteSpace(reservedName))
-            {
-                e.Mobile.SendMessage("Name is required.");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(fromUsername))
-            {
-                e.Mobile.SendMessage("fromAccount is required.");
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(toUsername))
-            {
-                e.Mobile.SendMessage("toAccount is required.");
-                return;
-            }
-
-            if (string.Equals(reservedName, CharacterCreation.DefaultName, StringComparison.OrdinalIgnoreCase))
-            {
-                e.Mobile.SendMessage("You may not transfer the default character name.");
-                return;
-            }
-
-            if (string.Equals(fromUsername, toUsername, StringComparison.OrdinalIgnoreCase))
-            {
-                e.Mobile.SendMessage("fromAccount and toAccount must be different.");
-                return;
-            }
-
-            if (fromUsername.Equals("auto", StringComparison.OrdinalIgnoreCase))
-            {
-                fromUsername = ReservedNames.LookupOwner(reservedName);
-
-                if (string.IsNullOrWhiteSpace(fromUsername))
-                {
-                    e.Mobile.SendMessage("Name '{0}' is not currently reserved.", reservedName);
-                    return;
-                }
-
-                e.Mobile.SendMessage("Resolved current owner to '{0}'.", fromUsername);
-            }
-
-            Account? fromAcct = Accounts.FindAccount(fromUsername);
-            bool sourceAccountExists = (fromAcct != null);
-
-            if (!sourceAccountExists)
-            {
-                e.Mobile.SendMessage("Warning: Source account '{0}' was not found. Continuing using the reserved-name database as authority.", fromUsername);
-            }
-
-            Account? toAcct = Accounts.FindAccount(toUsername);
-            if (toAcct == null)
-            {
-                e.Mobile.SendMessage("Target account '{0}' was not found.", toUsername);
-                return;
-            }
-
-            string? owner = ReservedNames.LookupOwner(reservedName);
-            if (string.IsNullOrWhiteSpace(owner))
-            {
-                e.Mobile.SendMessage("Name '{0}' is not currently reserved.", reservedName);
-                return;
-            }
-
-            if (!string.Equals(owner, fromUsername, StringComparison.OrdinalIgnoreCase))
-            {
-                e.Mobile.SendMessage("Name '{0}' is currently reserved by '{1}', not '{2}'.", reservedName, owner, fromUsername);
-                return;
-            }
-
-            try
-            {
-                // Remove the right from the losing account and add it to the winning account.
-                // The source account may no longer exist; the ReservedNames database is the authority here.
-                RemoveReservedName(fromUsername, reservedName);
-                ReservedNames.Add(toUsername, reservedName);
-
-                int renamed = 0;
-                int deedsIssued = 0;
-                int deedFailures = 0;
-                int displayNamesReset = 0;
-                int displayNamesAwarded = 0;
-
-                LogHelper logger = new LogHelper("reserved name manual reassignment.log", overwrite: false, sline: true);
-
-                if (!sourceAccountExists)
-                {
-                    logger.Log(LogType.Text,
-                        $"ResolveReservedName: source account '{fromUsername}' was not found; proceeding using ReservedNames database ownership.");
-                }
-
-                foreach (PlayerMobile pm in PlayerMobile.Instances)
-                {
-                    if (pm == null || pm.Deleted)
-                        continue;
-
-                    Account? acct = pm.Account as Account;
-                    if (acct == null)
-                        continue;
-
-                    SeasonalAccount? sa = null;
-                    if (Core.RuleSets.SeasonsRules())
-                        sa = SeasonalAccounts.GetAccount(acct);
-
-                    bool isLosingAccount = string.Equals(acct.Username, fromUsername, StringComparison.OrdinalIgnoreCase);
-                    bool isWinningAccount = string.Equals(acct.Username, toUsername, StringComparison.OrdinalIgnoreCase);
-
-                    // If a live character on the losing account currently holds the disputed name,
-                    // force it to the default name and issue a deed.
-                    if (isLosingAccount && string.Equals(pm.Name, reservedName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        string oldName = pm.Name;
-                        pm.Name = CharacterCreation.DefaultName;
-                        renamed++;
-
-                        PersonalNameChangeDeed deed = new PersonalNameChangeDeed();
-                        deed.OwnerSerial = pm.Serial;
-
-                        if (pm.Backpack != null && pm.Backpack.TryDropItem(pm, deed, false))
-                        {
-                            deedsIssued++;
-                        }
-                        else if (pm.BankBox != null && pm.BankBox.TryDropItem(pm, deed, false))
-                        {
-                            deedsIssued++;
-                        }
-                        else
-                        {
-                            deed.Delete();
-                            deedFailures++;
-                        }
-
-                        logger.Log(LogType.Text,
-                            $"ResolveReservedName: renamed '{oldName}' ({pm.Serial}) on losing account '{fromUsername}' to '{CharacterCreation.DefaultName}'.");
-                    }
-
-                    // If the losing account's DisplayName is the disputed name, clear it.
-                    if (isLosingAccount && sa != null &&
-                        string.Equals(sa.DisplayName, reservedName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        sa.DisplayName = CharacterCreation.DefaultName;
-                        displayNamesReset++;
-
-                        logger.Log(LogType.Text,
-                            $"ResolveReservedName: reset DisplayName '{reservedName}' on losing account '{fromUsername}' to '{CharacterCreation.DefaultName}'.");
-                    }
-
-                    // If the winning account's DisplayName is blank/default, award the disputed name.
-                    if (isWinningAccount && sa != null &&
-                        (string.IsNullOrWhiteSpace(sa.DisplayName) ||
-                         string.Equals(sa.DisplayName, CharacterCreation.DefaultName, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        sa.DisplayName = reservedName;
-                        displayNamesAwarded++;
-
-                        logger.Log(LogType.Text,
-                            $"ResolveReservedName: awarded DisplayName '{reservedName}' to winning account '{toUsername}'.");
-                    }
-                }
-
-                ReservedNames.Save(null);
-                logger.Finish();
-
-                e.Mobile.SendMessage("Reserved name '{0}' transferred from '{1}' to '{2}'.", reservedName, fromUsername, toUsername);
-                e.Mobile.SendMessage("Renamed: {0}, Deeds issued: {1}, Deed failures: {2}, DisplayNames reset: {3}, DisplayNames awarded: {4}.",
-                    renamed, deedsIssued, deedFailures, displayNamesReset, displayNamesAwarded);
-            }
-            catch (Exception ex)
-            {
-                e.Mobile.SendMessage("ResolveReservedName failed: {0}", ex.Message);
-            }
-        }
-
-        private static void RemoveReservedName(string username, string name)
-        {
-            if (string.IsNullOrWhiteSpace(username))
-                throw new ArgumentException("username is required");
-
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("name is required");
-
-            if (!ReservedNames.Database.TryGetValue(username, out List<string>? names) || names == null)
-                throw new InvalidOperationException($"Account '{username}' does not own any reserved names.");
-
-            string normalized = ReservedNames.Normalize(name);
-
-            int index = -1;
-
-            for (int i = 0; i < names.Count; i++)
-            {
-                if (ReservedNames.Normalize(names[i]) == normalized)
-                {
-                    index = i;
-                    break;
-                }
-            }
-
-            if (index < 0)
-                throw new InvalidOperationException($"Account '{username}' does not own reserved name '{name}'.");
-
-            names.RemoveAt(index);
-
-            if (names.Count == 0)
-                ReservedNames.Database.Remove(username);
-
-            ReservedNames.Rebuild();
+            e.Mobile?.SendMessage("ResolveReservedName is retired: use [Names assign <account> <name> take (the name becomes that account's alone; other accounts' characters with it are renamed 'Generic Player' with a name change deed).");
         }
 
         #endregion ResolveReservedName
@@ -4254,6 +4047,7 @@ namespace Server.Commands
                     }
                     break;
                 case ServerID.Upheaval:
+                case ServerID.MusicConservatory:    // its own shard on the Upheaval rules: Upheaval's limits
                     CoreAI.MaxAccountsPerIP = 1;
                     CoreAI.MaxAccountsPerMachine = 1;
                     CoreAI.MaxConcurrentAddresses = 1;
@@ -4270,6 +4064,13 @@ namespace Server.Commands
                     CoreAI.ClearDynamicFeature(CoreAI.FeatureBits.NewPlayerStartingArea);
                     break;
             }
+            // Clients (every shard, 11/19/26): a client or Razor that isn't ours is warned about, never disconnected. The saved
+            //  settings had both forced on; set here, they're the same on every shard at every start.
+            CoreAI.ForceGMNCUO = false;
+            CoreAI.ForceGMNRZR = false;
+            CoreAI.WarnBadGMNCUO = true;
+            CoreAI.WarnBadGMNRZR = true;
+
             // During development testing, we want actual configuration
             if (Core.RuleSets.TestCenterRules() && !Core.Debug)
             {

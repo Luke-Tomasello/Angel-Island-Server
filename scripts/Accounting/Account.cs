@@ -21,6 +21,20 @@
 
 /* Scripts/Accounting/Account.cs
  * CHANGELOG
+ *  11/21/26, Adam (bans kept until moved)
+ *      KeepLegacyBans: while PatchV276 hasn't moved every ban into Restrictions (the accounts database couldn't be
+ *      written), accounts.xml keeps the Banned flag and ban tags, so a world save can't lose a ban; the patch runs again
+ *      at the next start.
+ *  11/18/26, Adam (account restrictions)
+ *      Banned asks the shared restrictions (Engines/Restrictions); setting it bans here, clearing it lifts every ban. The
+ *      Banned flag and the ban tags (BanDealer, BanTime, BanDuration) are never written to accounts.xml again;
+ *      LegacyBanFlag reads the old flag for PatchV276, which moves the bans in.
+ *  11/18/26, Adam (hardware hash)
+ *      Setting HardwareHash records only the hardware hash in the accounts database (AccountsDatabase.SaveHardwareHash):
+ *      it saved the whole account, so a shard holding an older password in memory wrote it back over a newer one.
+ *      Likewise SetPassword, SetResetPassword and CheckPassword record only the password columns
+ *      (AccountsDatabase.SaveCredentials): CheckPassword clearing a reset password saved the whole account, writing a
+ *      hardware hash of 0 over the recorded one. Each kind of change writes its own columns.
  *  12/18/25, Adam
  *  Mortalis: reworked death item handling and identity persistence.
  *   
@@ -401,8 +415,9 @@ namespace Server.Accounting
                 SetHardwareHashAcquired(value);
                 // initialize the last known good hardware hash
                 m_HardwareHash = value;
+                // the hardware hash alone: this shard's copy of the password may be older than the database's
                 if (Core.UseLoginDB)
-                    AccountsDatabase.SaveAccount(this);
+                    AccountsDatabase.SaveHardwareHash(this);
                 // now add this hash to the list of 'machines' this user has access to.
                 if (!m_Machines.Contains(value))
                     m_Machines.Add(value);
@@ -669,32 +684,31 @@ namespace Server.Accounting
         {
             get
             {
-                bool isBanned = GetFlag(AccountFlags.Banned); //GetFlag( 0 );
-
-                if (!isBanned)
-                    return false;
-
-                DateTime banTime;
-                TimeSpan banDuration;
-
-                if (GetBanTags(out banTime, out banDuration))
-                {
-                    if (banDuration != TimeSpan.MaxValue && DateTime.UtcNow >= (banTime + banDuration))
-                    {
-                        SetUnspecifiedBan(null); // clear
-                        Banned = false;
-                        return false;
-                    }
-                }
-
-                return true;
+                // the shared restrictions (Engines/Restrictions): a ban for every shard, or this one
+                return Server.Engines.Restrictions.IsBanned(m_Username);
             }
             set
             {
-                //SetFlag( 0, value ); 
-                SetFlag(AccountFlags.Banned, value);
+                // banned here (the ban gump then sets its scope, duration and reason); false lifts every ban on the account
+                if (value && !Server.Engines.Restrictions.IsBanned(m_Username))
+                    Server.Engines.Restrictions.Add(Server.Engines.Restrictions.Kind.Ban, m_Username, Server.Engines.Restrictions.ThisShard, 0, "", "", null);
+                else if (!value)
+                    Server.Engines.Restrictions.Lift(Server.Engines.Restrictions.Kind.Ban, m_Username, null, "");
             }
         }
+
+        /// <summary>The ban this shard's accounts.xml held before 11/18/26 (PatchV276 moves it to Restrictions; never written again).</summary>
+        [Obsolete("Bans are Engines/Restrictions; this is the old accounts.xml flag, for PatchV276 only.")]
+        public bool LegacyBanFlag
+        {
+            get { return GetFlag(AccountFlags.Banned); }
+        }
+
+        /// <summary>
+        /// PatchV276 couldn't move every ban into Restrictions: accounts.xml keeps the old flag and ban tags until it can
+        /// (the patch runs again at the next start). Never set otherwise.
+        /// </summary>
+        public static bool KeepLegacyBans { get; set; }
 
         /// <summary>
         /// The date and time of when this account was created.
@@ -801,7 +815,7 @@ namespace Server.Accounting
             }
 
             if (saveDbAccount && Core.UseLoginDB)
-                AccountsDatabase.SaveAccount(this);
+                AccountsDatabase.SaveCredentials(this);     // the password columns only
         }
 
         public void SetResetPassword(string resetPassword)
@@ -813,7 +827,7 @@ namespace Server.Accounting
             m_ResetPassword = resetPassword;
 
             if (Core.UseLoginDB)
-                AccountsDatabase.SaveAccount(this);
+                AccountsDatabase.SaveCredentials(this);     // the password columns only
         }
 
         public bool CheckPassword(string plainPassword)
@@ -870,7 +884,7 @@ namespace Server.Accounting
             }
 
             if (saveDbAccount && Core.UseLoginDB)
-                AccountsDatabase.SaveAccount(this);
+                AccountsDatabase.SaveCredentials(this);     // the password columns only
 
             return passwordValid;
         }
@@ -1300,10 +1314,13 @@ namespace Server.Accounting
                 xml.WriteEndElement();
             }
 
-            if (m_Flags != 0)
+            // the Banned flag is never written (bans are Engines/Restrictions since 11/18/26), unless PatchV276 couldn't
+            //  move every ban in yet (KeepLegacyBans: it tries again at the next start)
+            AccountFlags flags = KeepLegacyBans ? m_Flags : m_Flags & ~AccountFlags.Banned;
+            if (flags != 0)
             {
                 xml.WriteStartElement("flags");
-                xml.WriteString(XmlConvert.ToString((int)m_Flags));
+                xml.WriteString(XmlConvert.ToString((int)flags));
                 xml.WriteEndElement();
             }
 
@@ -1349,7 +1366,13 @@ namespace Server.Accounting
                 xml.WriteStartElement("tags");
 
                 for (int i = 0; i < m_Tags.Count; ++i)
+                {
+                    // the ban tags are never written (bans are Engines/Restrictions since 11/18/26), unless KeepLegacyBans
+                    string tagName = ((AccountTag)m_Tags[i]).Name;
+                    if (!KeepLegacyBans && (tagName == "BanDealer" || tagName == "BanTime" || tagName == "BanDuration"))
+                        continue;
                     ((AccountTag)m_Tags[i]).Save(xml);
+                }
 
                 xml.WriteEndElement();
             }

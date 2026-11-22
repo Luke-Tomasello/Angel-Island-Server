@@ -26,6 +26,21 @@ https://game-master.net/images/wiki/musicbox/musicbox2.png
 
 Yellow titles are yours to play: free songs, songs you have bought, and songs you composed. Red titles are premium songs, which cost gold.
 
+===Browsing the Library===
+With many songs, a list scrolls by quickly. To browse them all in a window instead, say ''library'' (or ''browse''), or choose '''Look At''' from the music box's context menu:
+
+ Alexa, library
+
+The window shows every song, 11 to a page, with tabs:
+* '''All''': every song.
+* '''Mine''': the songs you can play in full: ones you bought or composed, and free ones.
+* '''Free''': free songs, including Napster tracks.
+* '''Premium''': songs that cost gold.
+* '''New''': the latest releases, the same ones ''new'' lists.
+The authors are listed on the left: choose one to see only their songs. Each song shows its instrument and what it is to you: '''Owned''', '''Free''', '''Napster''', or its price.
+
+Press the arrow beside a song to play it: in full if it is yours or free, otherwise a short sample. Press '''Buy''' beside a premium song to buy it (you are asked to confirm the price), and '''Stop''' to stop the music. Anyone near a music box may browse its library, but playing and buying need access to the house, just like speaking to the box.
+
 To hear a premium song before buying it, ask the music box to play it:
 
  Alexa, play strut
@@ -74,7 +89,9 @@ Say the music box's name, then the command. Several commands have a second word 
 |-
 | shuffle || Shuffles your playlist.
 |-
-| list || Lists the songs. ''list'' with words lists the songs whose titles have all of them (''list christmas''); ''list by'' with a name lists that composer's songs.
+| list || Lists the songs. ''list'' with words lists the songs that have all of them in their title, composer, About or tags (''list christmas'', ''list rock'' finds a song tagged ''classic rock''); ''list by'' with a name lists that composer's songs.
+|-
+| library (or browse) || Opens the library window: every song by tab and author, with play, buy and stop buttons (see Browsing the Library).
 |-
 | new (or what's new) || Lists the latest releases, newest first, with when each was approved or remastered: everything from the last week, and always at least the five most recent.
 |-
@@ -116,6 +133,8 @@ https://game-master.net/images/wiki/musicbox/musicbox8.png
 
 https://game-master.net/images/wiki/musicbox/musicbox9.png
 
+The song's # Author: is the credit its listeners see, and the gold from its sales goes to you. So the author may be your own name, any of your characters (on any of your accounts, or someone who plays from your home), or credit such as ''Beethoven'' or a band, but not another player: the box refuses a song that names another player's character as its author. An author's name is at most 40 characters. When the author isn't you or another of your characters, the box names you too, as its arranger: ''Rooster by Alice in Chains, arranged by Gud'Gul.''
+
 Your song is now in the shard-wide library, not just your own music box, and goes into a review queue. Staff review songs to keep out offensive content, not to judge their quality (songs can have lyrics). While it waits, you can still play it on your own music box: it is in your playlist, and the box says it is pending approval. Once approved, it appears for every player: free songs in their libraries, premium songs as red titles they can sample and buy.
 
 Each approved song earns you [[Music Composition#Music Karma|Music Karma]], and so does every sale and every play.
@@ -127,7 +146,9 @@ You're told what staff decided the next time you use a music box, any music box 
 
 Each song is listed as waiting for review, approved (with the date), or not approved with the reason staff gave. Your sales follow. A long list scrolls by quickly: ''status rejected'' shows only the songs that weren't approved, with their reasons (''status pending'' and ''status approved'' work the same way).
 
-To publish a new version of an approved song, say ''remaster''.
+Staff may rename a song in the library, so that every title says whose music it is: ''Creep (Radiohead)'', ''Dungeon Strut (Original)'', ''Greensleeves (Traditional)''. You're told at your next music box visit, or by ''status'': ''Your song Radiohead_-_Creep is now listed in the music library as Creep (Radiohead).'' It's still your song, with its sales and its sheet music; only the name changed. Staff may also set or tidy a song's # About: and # Tags: (see [[Sheet Music#Settings|Settings]]); that changes only how it's described and found, and isn't news.
+
+To publish a new version of an approved song, say ''remaster''. A book that still has the song's old name works: the new version takes the name the library uses now.
 
 The library is permanent and not tied to your account: once a song is in, it stays available to other players. If the character who composed a song is deleted, the song becomes free.
 

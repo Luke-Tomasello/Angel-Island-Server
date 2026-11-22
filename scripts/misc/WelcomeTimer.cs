@@ -21,6 +21,10 @@
 
 /* Scripts/Misc/WelcomeTimer.cs
  *  ChangeLog
+ *  11/16/26, Adam (-uomc)
+ *      The welcome names the Music Conservatory (Core.PublicName), not Upheaval.
+ *  11/16/26, Adam (version)
+ *      The core version is Utility.BuildVersion(), 6.1.1360 (Major.Minor, then the SVN revision); no [Build n].
  *  12/9/2025, Adam
  *      Complete refactor.
  *      Add APIs so that messages can be replaced, or appended
@@ -377,8 +381,7 @@ namespace Server.Misc
         public static void Initialize()
         {
             // versio info
-            string version = string.Format("{0}.{1} [Build {2}]",
-                Utility.BuildMajor(), Utility.BuildMinor(), Utility.BuildBuild());
+            string version = Utility.BuildVersion();      // 6.1.1360: Major.Minor, then the SVN revision
 
             // For each ruleset, define three segments:
             //  1) Header (non-negotiable, never replaced)
@@ -397,7 +400,7 @@ namespace Server.Misc
                 isEvent ? " Event Shard" :
                 "";
 
-            header.Add(string.Format("Welcome to {0}{1}.", Core.Server, shardSuffix));
+            header.Add(string.Format("Welcome to {0}{1}.", Core.PublicName, shardSuffix));
 
             if (Core.ReleasePhase < ReleasePhase.Production)
             {
@@ -469,7 +472,7 @@ namespace Server.Misc
             }
             else
             {
-                lines.Add(new WelcomeLine($"Welcome, {{0}}, to {Core.Server}. {{1}}", 0x3B2));
+                lines.Add(new WelcomeLine($"Welcome, {{0}}, to {Core.PublicName}. {{1}}", 0x3B2));
             }
 
             if (Core.RuleSets.SeasonsRules())

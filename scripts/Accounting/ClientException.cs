@@ -21,6 +21,10 @@
 
 /* Scripts/Accounting/ClientException.cs
  *	CHANGELOG
+ *	11/18/26, Adam (account restrictions)
+ *		Client exceptions are Engines/Restrictions (by account or address, scoped): IsException, Add/RemoveClientException
+ *		ask it; the hard-coded account list is four rows now (PatchV276). ClientException.xml is read at world load only for
+ *		PatchV276 and never written again.
  *	9/30/2023, Adam
  *		Initial Version.
  */
@@ -42,7 +46,7 @@ namespace Server.Accounting
         public static void Configure()
         {
             EventSink.WorldLoad += EventSink_OnWorldLoad;
-            EventSink.WorldSave += EventSink_OnWorldSave;
+            // ClientException.xml is read at world load only for PatchV276 and never written again (11/18/26)
         }
         public static void Initialize()
         {
@@ -91,14 +95,13 @@ namespace Server.Accounting
         {
             try
             {
-                if (!m_Table.Contains(sip, StringComparer.OrdinalIgnoreCase))
+                if (Server.Engines.Restrictions.Lift(Server.Engines.Restrictions.Kind.ClientException, sip, null, "") <= 0)
                 {
                     status = string.Format("RemoveClientException: {0} is not whitelisted.", sip);
                     return false;
                 }
                 else
                 {
-                    m_Table.Remove(sip);
                     status = string.Format("{0} removed from whitelisted.", sip);
                     return true;
                 }
@@ -110,14 +113,14 @@ namespace Server.Accounting
         {
             try
             {
-                if (m_Table.Contains(sip, StringComparer.OrdinalIgnoreCase))
+                if (Server.Engines.Restrictions.ClientExempt(null, IPAddress.TryParse(sip, out IPAddress? parsed) ? parsed : null))
                 {
                     status = string.Format("AddClientException: {0} is already white listed.", sip);
                     return false;
                 }
                 else
                 {
-                    m_Table.Add(sip);
+                    Server.Engines.Restrictions.Add(Server.Engines.Restrictions.Kind.ClientException, sip, Server.Engines.Restrictions.All, 0, "", "", null);
                     status = string.Format("{0} white listed.", sip);
                     return true;
                 }
@@ -159,7 +162,7 @@ namespace Server.Accounting
 
                         //"adam ant"
                     };
-            if (exemptAccounts.Contains(userName, StringComparer.OrdinalIgnoreCase))
+            if (false)     // 11/18/26: these accounts are client exceptions in Engines/Restrictions (PatchV276)
             {
                 if (ClientException.AddClientException(ns.Address.ToString(), ref status))
                     Utility.Monitor.WriteLine(status, ConsoleColor.Green);
@@ -169,13 +172,12 @@ namespace Server.Accounting
 
             return true;
         }
-        public static bool IsException(IPAddress address)
-        {
-            foreach (string sip in m_Table)
-                if (Utility.IPMatch(sip, address))
-                    return true;
-            return false;
-        }
+        public static bool IsException(IPAddress address) =>
+            Server.Engines.Restrictions.ClientExempt(null, address);
+
+        /// <summary>This player's account, or address, is excused from the code tests (Engines/Restrictions).</summary>
+        public static bool IsException(Mobile m) =>
+            Server.Engines.Restrictions.ClientExempt((m?.Account as Server.Accounting.Account)?.Username, m?.NetState?.Address);
         private static void EventSink_OnWorldLoad()
         {
             LoadXml();

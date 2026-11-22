@@ -20,6 +20,12 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.StaffCommands.cs
  * Changelog
+ *  11/16/26, Adam (find)
+ *      'find' shows a track's About and Tags, when it has them (staff only).
+ *  11/16/26, Adam (About and Tags)
+ *      Review shows the reviewer a track's About and Tags, when it has them.
+ *  11/14/26, Adam (arranged by)
+ *      Review names a track's arranger, when it has one (By).
  *  11/14/26, Adam
  *      Approve, deny and delete name their song through PickSong and never guess: several matches are listed, with
  *      serials, and nothing is done; a name that matches nothing is said so (it matched any title sharing a letter or two:
@@ -114,8 +120,13 @@ namespace Server.Items
             if (rsm.Owner == null)
                 SendMessage(e.Mobile, 33, string.Format("Warning: {0} by {1} has no Owner.", rsm.Title, rsm.Author));
 
+            // its About and Tags, for the reviewer to check (players see the About; the tags are only searched)
+            if (rsm.About.Length > 0 || rsm.Tags.Length > 0)
+                SendMessage(e.Mobile, 54, string.Format("About: {0}. Tags: {1}.", rsm.About.Length > 0 ? rsm.About : "none",
+                    rsm.Tags.Length > 0 ? rsm.Tags : "none"));
+
             if (Approved(rsm))  // an unapproved track (the usual case here) is announced by PlayMusic, as pending
-                Say(string.Format("{0} by {1}.", rsm.Title, rsm.Author), hue: 54);
+                Say(string.Format("{0} by {1}.", rsm.Title, By(rsm)), hue: 54);
 
             if (m_playContext == null)
                 return;
@@ -384,12 +395,14 @@ namespace Server.Items
         private static string TrackLine(Mobile viewer, RolledUpSheetMusic track, MusicInfo? info)
         {
             string? note = AimsHost.Current.TrackNote(viewer, track, info);
-            return string.Format("{0}, Owner: {1}, Serial: {2:X}, Hash Code: {3:X}{4}",
+            return string.Format("{0}, Owner: {1}, Serial: {2:X}, Hash Code: {3:X}{4}{5}{6}",
                 ShownTitle(track),                                  // 0
                 track.Owner != null ? track.Owner : "(null)",       // 1
                 track.Serial,                                       // 2
                 track.HashCode,                                     // 3
-                string.IsNullOrEmpty(note) ? "" : ", " + note);     // 4
+                string.IsNullOrEmpty(note) ? "" : ", " + note,      // 4
+                track.About.Length > 0 ? ", About: " + track.About : "",    // 5 (staff only: players see the About on the sheet)
+                track.Tags.Length > 0 ? ", Tags: " + track.Tags : "");      // 6 (staff only: players never see tags)
         }
 
         // the name a track goes by everywhere (list, play, who, announcements): its title, else the item's name. find and

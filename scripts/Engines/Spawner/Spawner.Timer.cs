@@ -22,8 +22,10 @@
 /* Scripts\Engines\Spawner\Spawner.Timer.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *  2/26/07, Adam
+ *      Make sure to call m_Timer.Flush() to remove any queued ticks.
+ *      This is important when setting NextSpawn and there is already a queued tick.
  */
 
 using System;

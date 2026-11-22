@@ -19,6 +19,15 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.cs
  * Changelog
+ *  11/19/26, Adam (public music boxes; music box range)
+ *      Public (staff): anyone may use the box, in the world, without a house: it serves one person at a time (Attend, in
+ *      MusicBox.Placement.cs). Audience: Room (everyone in range hears it, as before) or Listener (only the person it
+ *      serves: a practice room; IMusicAudience, asked by PlaySound and the lyrics). Saved: version 2.
+ *      Range (staff): how far a box carries, notes and lyrics (0: the usual 18 tiles); so a hall's box needn't spill into
+ *      the next room. Saved: version 3.
+ *  11/16/26, Adam (song renames)
+ *      GMLHasTrackID finds a renamed song by a name it had too (MusicLibrary.SameTrack): its composer's remaster from a
+ *      book with the old name is found, and the same book can't add it again as a new song.
  *  11/5/26, Adam (2026 modernization: the music box cleanup, 10/29/26 to 11/5/26)
  *      MusicBox is a partial class in several files (ContextMenus, PlayContext, Playback, Speech, Commands,
  *      StaffCommands, CommandHelpers, Prompts, Notifications, Placement); the library moved to Library\MusicLibrary.cs.
@@ -131,7 +140,7 @@ namespace Server.Items
         }
     }
     [Flipable(0x2AF9, 0x2AFD)]
-    public partial class MusicBox : Item, ISecurable
+    public partial class MusicBox : Item, ISecurable, IMusicAudience
     {
         private Dictionary<Mobile, MusicBoxProfile> Profiles = new();
         #region Utilities
@@ -170,6 +179,28 @@ namespace Server.Items
             }
         }
         private SecureLevel m_Level;
+
+        public enum BoxAudience { Room, Listener }
+        private bool m_Public;
+        private BoxAudience m_Audience = BoxAudience.Room;
+
+        /// <summary>Anyone may use it (a conservatory, a tavern): no house needed, one person served at a time.</summary>
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool Public { get { return m_Public; } set { m_Public = value; InvalidateProperties(); } }
+
+        /// <summary>Who hears it: the Room (everyone in range) or only its Listener (the person it serves).</summary>
+        [CommandProperty(AccessLevel.GameMaster)]
+        public BoxAudience Audience { get { return m_Audience; } set { m_Audience = value; } }
+
+        // IMusicAudience: a Listener box plays to the person it serves, no one else
+        public bool ListenerOnly => m_Audience == BoxAudience.Listener;
+        public Mobile? Listener => m_Attending;
+
+        private int m_Range;
+
+        /// <summary>How far the box carries, in tiles (0: the usual range, 18).</summary>
+        [CommandProperty(AccessLevel.GameMaster)]
+        public int Range { get { return m_Range; } set { m_Range = Math.Max(0, value); } }
         [CommandProperty(AccessLevel.GameMaster)]
         public SecureLevel Level
         {
@@ -190,12 +221,12 @@ namespace Server.Items
                 if (MusicLibrary.Repository.Count == 0)
                     return false;
 
-                // Iterate repository keys and look for a matching TrackID.
-                // Fail fast on first match.
+                // Iterate repository keys and look for a matching TrackID (by the track's name now, or a name it had
+                //  before it was renamed). Fail fast on first match.
                 foreach (var kvp in MusicLibrary.Repository)
                 {
                     // Defensive: kvp.Key may theoretically be null depending on how the repository is built.
-                    if (kvp.Key != null && kvp.Key.TrackID == trackID)
+                    if (kvp.Key != null && MusicLibrary.SameTrack(kvp.Key, kvp.Value, trackID))
                         return true;
                 }
 
@@ -293,11 +324,22 @@ namespace Server.Items
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            int version = 1;
+            int version = 3;
             writer.WriteEncodedInt(version);
 
             switch (version)
             {
+                case 3:
+                    {
+                        writer.WriteEncodedInt(m_Range);
+                        goto case 2;
+                    }
+                case 2:
+                    {
+                        writer.Write(m_Public);
+                        writer.WriteEncodedInt((int)m_Audience);
+                        goto case 1;
+                    }
                 case 1:
                     {
                         writer.WriteEncodedInt(Profiles.Count);
@@ -337,6 +379,17 @@ namespace Server.Items
 
             switch (version)
             {
+                case 3:
+                    {
+                        m_Range = reader.ReadEncodedInt();
+                        goto case 2;
+                    }
+                case 2:
+                    {
+                        m_Public = reader.ReadBool();
+                        m_Audience = (BoxAudience)reader.ReadEncodedInt();
+                        goto case 1;
+                    }
                 case 1:
                     {
                         int musicConfigCount = reader.ReadEncodedInt();

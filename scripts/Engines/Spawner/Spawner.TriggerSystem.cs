@@ -22,8 +22,11 @@
 /* Scripts\Engines\Spawner\Spawner.TriggerSystem.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *  9/7/22, Adam (SpawnedMobileKilled)
+ *      Add public virtual void SpawnedMobileKilled(Mobile m)
+ *      Notifies the spawner of this mobile of the death.
+ *      This is used by our special 'champ level' PushBackSpawners
  */
 
 using Server.Diagnostics;

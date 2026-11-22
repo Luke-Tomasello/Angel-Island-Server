@@ -23,7 +23,6 @@
  * Changelog:
  *  5/24/2026, Adam
  *      Add updated Facade to Spawner.cs
- *      - See Spawner.History.txt for a historical record
  */
 
 using System;

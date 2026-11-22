@@ -20,6 +20,9 @@
  ***************************************************************************/
 
 /*	Scripts/Commands/Logging.cs
+ *	11/19/26, Adam (ResetAtStartup)
+ *	    LogChangeProperty warns staff when the property is set at every start ([ResetAtStartup]): the change lasts
+ *	    until the next restart. Every [set and props gump change comes through here.
  *	8/19/21, Adam,
  *	    Add the shard name into the log tree so that we know if a staff is doing something 'wrong' on the production
  *	    server vs, say, Test Center
@@ -237,6 +240,10 @@ namespace Server.Commands
             if (o is Item item)
                 item.LogChange(from, name, was, value);
             #endregion Logging
+
+            // set at every start (11/19/26): say so, so a test change isn't mistaken for a lasting one
+            if (ResetAtStartupAttribute.Of(o, name) is ResetAtStartupAttribute reset)
+                from.SendMessage(0x35, "{0} is set by {1} at every start: this change lasts until the next restart.", name, reset.By);
         }
 
         // wea: added to log players logging in & out of the game

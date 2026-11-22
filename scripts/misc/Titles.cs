@@ -21,6 +21,8 @@
 
 /* Scripts\Misc\Titles.cs
  * ChangeLog
+ *  11/17/26, Adam (-uomc composer start)
+ *      ComposerTitle: the composer title on its own, for the composer's cloak.
  *  4/19/23, Yoar
  *      Added paperdoll alignment title.
  *  7/30/22, Adam
@@ -456,6 +458,19 @@ namespace Server.Misc
             }
             else
                 return 0;
+        }
+
+        /// <summary>
+        /// The composer title on its own ("Neophyte Composer" .. "Legendary Composer"), or null for a character who
+        /// isn't a composer (not in the bards' guild). The composer's cloak takes it as its name.
+        /// </summary>
+        public static string? ComposerTitle(Mobile m)
+        {
+            int skill = ComputeComposerSkill(m);
+            if (skill < 300)
+                return null;
+
+            return string.Format("{0} Composer", (string)Utility.GetArrayCap(m_Levels, (skill - 300) / 100));
         }
 
         private static Skill? ComposerSkill(Mobile m)

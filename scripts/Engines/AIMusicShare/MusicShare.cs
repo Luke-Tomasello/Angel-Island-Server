@@ -19,6 +19,56 @@
 
 /* Scripts\Engines\AIMusicShare\MusicShare.cs
  * ChangeLog
+ *  11/18/26, Adam (sales acknowledged on save)
+ *      A sale elsewhere of this shard's song (a Music Sales point, Music Karma, a notice) was marked recognized in the
+ *      database as soon as it was given, before the world saved: a crash or rollback lost the points while the database
+ *      said done. Now it's acknowledged on save: the sale ids given are kept in Saves/MusicShare/Recognized.txt with the
+ *      world, the database is told only after a world save has finished, and a sale already given is never given again.
+ *      A world that never saved them finds them still open and gives them again. (Server/DatabaseFolder.cs: the rule.)
+ *      Sharing is always on: -sharemusic is retired.
+ *  11/18/26, Adam (Development)
+ *      flush asks Core.Development (a Debug build or -nosaves) instead of NoSaves.
+ *  11/17/26, Adam (flush)
+ *      [MusicShare flush [yes] (Owners; the Music Conservatory on a development machine only: -uomc with -nosaves, which
+ *      production never has): before the world built here is copied to production, the test and demo songs made on it
+ *      go. flush lists them (songs homed here in the database, and library songs the database doesn't know); flush yes
+ *      deletes them from the library with their sheet music, marks their database rows deleted (the other shards drop
+ *      their copies at their next sync), clears the export list (Exported.txt) and saves the world. The rows are marked,
+ *      not just the library cleared: a sync rebuilds an approved home song its world doesn't have.
+ *  11/17/26, Adam (decisions written at once)
+ *      A sync that applies decisions or renames at a song's home starts a follow-up sync once they are marked applied,
+ *      so the database has the song's new status (or title) at once. It was a sync late (about 5 minutes): a sync
+ *      writes its rows before it reads the decisions, so a song approved elsewhere was written Pending once more.
+ *  11/16/26, Adam (-uomc)
+ *      The Music Conservatory (-uomc) is its own shard in the database, AIMC (ConservatoryShard), never Upheaval, whose
+ *      rules it runs on, named "Angel Island Music Conservatory" (ShardName: "composed on ..."). It starts held: it reads
+ *      only until an Owner releases its writes ([MusicShare release; the mark in the database, read at every sync;
+ *      missing or unreadable is held, and a restart is held until the first sync reads it; [MusicShare hold takes it
+ *      back). The release asks for a dry run first ([MusicShare sync dryrun: Logs\AIMC-dryrun.csv, nothing written:
+ *      known songs, new approved, pending, rejected, dropped, and suspect test material: staff-owned, ownerless, a
+ *      title another song has), and clears the export list a copied world brings (another shard's; harmless, since only
+ *      songs homed here are acted on). Its purchases record nothing for composers elsewhere (its players have free
+ *      money). A song whose composer's character is gone keeps the last name the database knew, not the Author.
+ *  11/16/26, Adam (About and Tags)
+ *      The titles file sets songs' About and Tags too: [MusicShare titles writes each song's About and Tags, with empty
+ *      NewAbout and NewTags columns; titles apply records them with the renames (an About of 60 characters at most, 10
+ *      tags of 100; '-' clears one; the file's About and Tags must still be the song's), and each home applies them at its
+ *      sync (MusicLibrary.Describe: the notes' # About: and # Tags: lines; not news for the composer). Its notes then
+ *      reach every shard as a rename's do. "N changes recorded" (was "N renames").
+ *  11/16/26, Adam (song renames)
+ *      Library songs are renamed from a reviewed file, for the library's 'Title (Artist)' names: [MusicShare titles
+ *      writes Logs\titles-review.csv (every song: its home, composer, author and title, with empty NewTitle, NewAuthor and
+ *      Note columns); staff fill in the renames; [MusicShare titles apply [file] records them (all or nothing: every line
+ *      a known song whose title is still the file's, a new title ending in its attribution in brackets, an author of 40
+ *      characters at most, a note of 100, no rename already waiting). Nothing changes yet: each song's home applies its
+ *      renames at its next sync, as review decisions are (MusicLibrary.Rename: the title everywhere the sheet keeps it,
+ *      the names it had kept for its composer's remasters, and the composer told once), and writes the new name at the
+ *      sync after; a database title is never set directly, or the home's next sync would write the old one back. A copy
+ *      on another shard follows its home's title, author and notes (Mirror; the notes only when they are the same song).
+ *      A home song rebuilt from the database keeps the names it had (Renames, GetRenameHistory).
+ *  11/14/26, Adam (arranged by)
+ *      Remember keeps each song's composer too (ComposerOf), and the names each account has composed under (ComposedAs),
+ *      for the arranger of a song held for its composer (AngelIslandAimsHost.Arranger).
  *  11/14/26, Adam (submitted date)
  *      A library copy built from the database (an import, or a home song the world lost) keeps the song's submitted date
  *      (MusicInfo.DateSubmitted can be set now); it was the day it was built, which the home's next sync then wrote over
@@ -137,18 +187,37 @@ namespace Server.Engines.MusicShare
 
         // the hashes of this shard's songs it has written to the database (a world save keeps it: a rollback restores it)
         private static HashSet<int> m_Exported = new HashSet<int>();
+
+        // sales elsewhere this world has recognized (points and karma given) that the database hasn't been told of yet:
+        //  saved with the world (Recognized.txt), and the database is told only after a world save completes (acknowledged
+        //  on save, never on apply: a world that never saved them finds them still open, and gives them again)
+        private static readonly string RecognizedFile = Path.Combine("Saves", "MusicShare", "Recognized.txt");
+        private static HashSet<long> m_Applied = new HashSet<long>();
         private static bool m_Busy;
         private static string? m_LastFailure;
 
         #region Identity and switches
-        /// <summary>This shard in the database: its ServerID; a Test Center or event instance is its own (read-only) shard.</summary>
+        /// <summary>This shard in the database: its ServerID; a Test Center or event instance is its own (read-only) shard;
+        /// the Music Conservatory (-uomc, on the Upheaval rules) is AIMC, never Upheaval.</summary>
         public static string ThisShard =>
-            Core.ServerID.ToString() + (Core.GMNTC_CFG ? "-TC" : Core.GMNEV_CFG ? "-EV" : "");
+            Core.GMNMC_CFG ? ConservatoryShard : Core.ServerID.ToString() + (Core.GMNTC_CFG ? "-TC" : Core.GMNEV_CFG ? "-EV" : "");
 
-        /// <summary>Test Center and event shards only read the database.</summary>
-        public static bool CanWrite => !Core.GMNTC_CFG && !Core.GMNEV_CFG;
+        /// <summary>The Music Conservatory's key in the database (-uomc).</summary>
+        public const string ConservatoryShard = Core.MusicConservatoryShortName;
 
-        /// <summary>Sharing is on: the shard started with -sharemusic (never on the login server).</summary>
+        /// <summary>Test Center and event shards only read the database. The Music Conservatory reads only until staff
+        /// release its writes ([MusicShare release, after its dry run): the release is read from the database at every
+        /// sync, and a missing or unreadable one means held (fail closed); a restart starts held until the first sync reads
+        /// it.</summary>
+        public static bool CanWrite => !Core.GMNTC_CFG && !Core.GMNEV_CFG && (!Core.GMNMC_CFG || m_Released);
+
+        /// <summary>A shard that starts held (the Music Conservatory) until staff release its writes.</summary>
+        public static bool StartsHeld => Core.GMNMC_CFG;
+
+        private static bool m_Released;         // a held shard's release, as the last sync read it (game thread)
+        private static bool m_DryRunDone;       // [MusicShare sync dryrun has run since startup (release asks for it)
+
+        /// <summary>Sharing is on: always, but never on the login server (Core.ShareMusic is always true: -sharemusic is retired).</summary>
         public static bool Enabled =>
             Core.ShareMusic && !Core.RuleSets.LoginServerRules();
         #endregion Identity and switches
@@ -159,6 +228,8 @@ namespace Server.Engines.MusicShare
             EventSink.WorldLoad += LoadExported;
             EventSink.WorldLoad += LoadHomes;
             EventSink.WorldSave += SaveExported;
+            EventSink.WorldLoad += LoadRecognized;
+            EventSink.WorldSave += SaveRecognized;
         }
 
         // the sync every 5 minutes is a cron task (CronTasks: CMusicShare)
@@ -202,6 +273,44 @@ namespace Server.Engines.MusicShare
             }
         }
 
+        private static void LoadRecognized()
+        {
+            try
+            {
+                if (File.Exists(RecognizedFile))
+                    m_Applied = new HashSet<long>(File.ReadAllLines(RecognizedFile).Where(l => long.TryParse(l, out _)).Select(long.Parse));
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex, "MusicShare: reading " + RecognizedFile);
+            }
+        }
+
+        // the world save keeps the recognized sales; once it has finished, the database is told (then they're forgotten here)
+        private static void SaveRecognized(WorldSaveEventArgs e)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(RecognizedFile)!);
+                File.WriteAllLines(RecognizedFile, m_Applied.Select(id => id.ToString()));
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex, "MusicShare: writing " + RecognizedFile);
+                return;     // not saved: the database isn't told
+            }
+            if (m_Applied.Count == 0)
+                return;
+            List<long> saved = m_Applied.ToList();
+            Timer.DelayCall(TimeSpan.Zero, () =>       // after the save has finished
+                Task.Run(() =>
+                {
+                    if (MusicShareDatabase.MarkRecognized(saved))
+                        Timer.DelayCall(TimeSpan.Zero, () => { foreach (long id in saved) m_Applied.Remove(id); });
+                    // a failed mark: they stay here (and in the file), are never given twice, and are told after the next save
+                }));
+        }
+
         private static void SaveExported(WorldSaveEventArgs e)
         {
             try
@@ -237,6 +346,7 @@ namespace Server.Engines.MusicShare
             public SongRow? Row;
             public string Why = "";
             public string Note = "";            // Adopt, a denial: its note to the composer (the latest applied decision's)
+            public List<(string Title, string Author)>? FormerNames;    // Rebuild: the names it had (its applied renames)
         }
 
         public sealed class SyncPlan
@@ -347,13 +457,15 @@ namespace Server.Engines.MusicShare
         {
             if (!Enabled || m_Busy)
             {
-                from?.SendMessage(m_Busy ? "MusicShare: a sync is already running." : "MusicShare: sharing is off on this shard (start it with -sharemusic).");
+                from?.SendMessage(m_Busy ? "MusicShare: a sync is already running." : "MusicShare: sharing is off here (the login server holds no music).");
                 return;
             }
 
             m_Busy = true;
             string shard = ThisShard;
             bool canWrite = CanWrite;
+            bool held = StartsHeld;
+            bool released = false;
             List<LocalSong> locals = Snapshot();
             HashSet<int> exported = new HashSet<int>(m_Exported);
 
@@ -362,6 +474,7 @@ namespace Server.Engines.MusicShare
                 SyncPlan? plan = null;
                 List<SaleRow>? sales = null;
                 List<DecisionRow>? decisions = null;
+                List<RenameRow>? renames = null;
                 Dictionary<int, DecisionRow>? waiting = null;
                 List<ReviewerRow>? reviewers = null;
                 List<SongRow>? rows = null;
@@ -377,14 +490,21 @@ namespace Server.Engines.MusicShare
                         failure = "the shared music database couldn't be read";
                     else
                     {
+                        if (held)
+                        {   // a held shard writes only once released, as the database says now (unreadable: held)
+                            released = MusicShareDatabase.IsReleased(shard) == true;
+                            canWrite = released;
+                        }
                         plan = Plan(locals, rows, shard, canWrite, exported);
                         AddDenialNotes(plan);
+                        AddFormerNames(plan);
                         if (plan.Save.Count > 0 && MusicShareDatabase.SaveSongs(plan.Save, shard) < 0)
                             failure = "the shared music database couldn't be written";
                         else if (canWrite)
                         {
                             sales = MusicShareDatabase.GetOpenSales(shard);
                             decisions = MusicShareDatabase.GetOpenDecisions(shard);
+                            renames = MusicShareDatabase.GetOpenRenames(shard);
                             waiting = MusicShareDatabase.GetWaitingDecisions();     // the review notice
                             reviewers = MusicShareDatabase.GetReviewers();
                         }
@@ -411,17 +531,32 @@ namespace Server.Engines.MusicShare
                         if (m_LastFailure != null)
                             Log("syncing again");
                         m_LastFailure = null;
+                        if (held && m_Released != released)
+                            Log(released ? "writes released: this shard writes its songs now" : "held: this shard reads only");
+                        if (held)
+                            m_Released = released;
                         foreach (int h in plan.ExportedAdd) m_Exported.Add(h);
                         foreach (int h in plan.ExportedRemove) m_Exported.Remove(h);
                         List<string> lines = Apply(plan);
                         foreach (SongRow r in plan.Save.Where(r => r.Deleted))
                             lines.Add(string.Format("deleted here, so everywhere: '{0}' (hash {1})", r.Title, r.Hash));
-                        lines.AddRange(Recognize(sales, rows!, out List<long> recognized));
-                        if (recognized.Count > 0)
-                            Task.Run(() => MusicShareDatabase.MarkRecognized(recognized));
+                        // sales this world already gave (saved, the database not yet told) are never given twice; the
+                        //  rest are given now, and the database is told after the next world save (SaveRecognized)
+                        lines.AddRange(Recognize(sales?.Where(sale => !m_Applied.Contains(sale.Id)).ToList(), rows!, out List<long> recognized));
+                        foreach (long id in recognized)
+                            m_Applied.Add(id);
                         lines.AddRange(ApplyDecisions(decisions, rows!, out List<long> decided));
-                        if (decided.Count > 0)
-                            Task.Run(() => MusicShareDatabase.MarkDecisionsApplied(decided));
+                        lines.AddRange(ApplyRenames(renames, out List<long> renamed));
+                        if (decided.Count > 0 || renamed.Count > 0)
+                            Task.Run(() =>
+                            {   // marked applied, then a follow-up sync writes what they changed (a decision's status, a
+                                //  rename's title) now: this sync wrote its rows before it read them, so the database would
+                                //  otherwise wait for the next sync. Not when the marks fail (no loop).
+                                bool marked = (decided.Count == 0 || MusicShareDatabase.MarkDecisionsApplied(decided))
+                                    & (renamed.Count == 0 || MusicShareDatabase.MarkRenamesApplied(renamed));
+                                if (marked)
+                                    Timer.DelayCall(TimeSpan.Zero, () => Sync(null));
+                            });
                         Remember(rows!);
                         NotifyPending(rows!, plan.Save, waiting, reviewers);
                         if (lines.Count > 0)
@@ -451,6 +586,18 @@ namespace Server.Engines.MusicShare
             foreach (Act a in denials)
                 if (notes != null && notes.TryGetValue(a.Row!.Hash, out string? note))
                     a.Note = note;
+        }
+
+        /// <summary>A home song rebuilt from the database gets the names it had from its applied renames (off the game thread).</summary>
+        public static void AddFormerNames(SyncPlan plan)
+        {
+            List<Act> rebuilds = plan.Acts.Where(a => a.Kind == ActKind.Rebuild).ToList();
+            if (rebuilds.Count == 0)
+                return;
+            Dictionary<int, List<(string Title, string Author)>>? history = MusicShareDatabase.GetRenameHistory(rebuilds.Select(a => a.Row!.Hash));
+            foreach (Act a in rebuilds)
+                if (history != null && history.TryGetValue(a.Row!.Hash, out List<(string Title, string Author)>? names))
+                    a.FormerNames = names;
         }
 
         // this shard's library, as rows (game thread)
@@ -491,7 +638,10 @@ namespace Server.Engines.MusicShare
                 Status = (int)info.Status,
                 Reason = (int)info.Reason,
                 ComposerGuid = info.OwnerGUID != 0 ? info.OwnerGUID : AimsHost.Current.AccountGuid(info.Owner),
-                ComposerName = info.Owner != null && !info.Owner.Deleted ? info.Owner.Name : rsm.Author ?? "",
+                // the composer's name; when the character is gone, the last name the database knew (an archive keeps who
+                //  made a song), else the Author
+                ComposerName = info.Owner != null && !info.Owner.Deleted ? info.Owner.Name
+                    : ComposerOf(rsm.HashCode) is (string known, uint _) && known.Length > 0 ? known : rsm.Author ?? "",
                 DateSubmitted = info.DateSubmitted.Ticks,
                 DateApproved = info.DateApproved.Ticks,
                 DateRemastered = info.DateRemastered.Ticks,
@@ -520,7 +670,7 @@ namespace Server.Engines.MusicShare
                             if (FindLocal(a.Row!.Hash) == null)
                             {
                                 Mobile? composer = FindCharacter(a.Row.ComposerGuid);
-                                Build(a.Row, composer ?? system, foreign: false);
+                                Build(a.Row, composer ?? system, foreign: false, a.FormerNames);
                                 lines.Add(string.Format("rebuilt home song '{0}' ({1}), held by {2}", a.Row.Title, a.Why, composer?.Name ?? "the system account"));
                             }
                             break;
@@ -553,6 +703,9 @@ namespace Server.Engines.MusicShare
                                 }
                                 a.Local.Info.Napster = false;
                                 a.Local.Sheet.Napster = false;
+                                string? names = FollowNames(a.Local.Sheet, a.Row);
+                                if (names != null)
+                                    lines.Add(names);
                             }
                             break;
                         case ActKind.Adopt:
@@ -657,8 +810,33 @@ namespace Server.Engines.MusicShare
             return rsm;
         }
 
-        // a library copy of a database song: the sheet (in internal storage, as a submitted one) and its record
-        private static void Build(SongRow r, Mobile? owner, bool foreign)
+        // a copy of another shard's song takes its home's names (a rename there): title, author and the notes, whose
+        //  '# Song:' line the instrument reads as it plays (the notes only when they are the same song: they differ in #
+        //  lines alone). Its log line, or null: nothing changed.
+        public static string? FollowNames(RolledUpSheetMusic sheet, SongRow row)
+        {
+            string title = sheet.Title ?? "", author = sheet.Author ?? "", notes = sheet.Composition ?? "";
+            bool sameNotes = notes == row.Composition || row.Composition.Length == 0;
+            if (title == row.Title && author == row.Author && sameNotes)
+                return null;
+            sheet.Title = row.Title;
+            sheet.SongName = row.Title;
+            sheet.Author = row.Author;
+            if (!sameNotes)
+            {
+                ManuscriptPaper.LocationTarget hasher = new ManuscriptPaper.LocationTarget(null!);
+                if (hasher.CompileHashCode(row.Composition) == hasher.CompileHashCode(notes))
+                    sheet.Composition = row.Composition;
+                else
+                    return string.Format("'{0}': named as at home; its notes differ from home's in more than names, kept", row.Title);
+            }
+            return title == row.Title ? string.Format("'{0}': author or notes as at home", row.Title)
+                : string.Format("'{0}' is '{1}' now (renamed at home)", title, row.Title);
+        }
+
+        // a library copy of a database song: the sheet (in internal storage, as a submitted one) and its record; a home
+        //  song keeps the names it had (formerNames: its applied renames)
+        private static void Build(SongRow r, Mobile? owner, bool foreign, List<(string Title, string Author)>? formerNames = null)
         {
             bool napster = r.Napster && !foreign;               // a Napster song is free elsewhere, not passed hand to hand
             int price = r.Napster && foreign ? 0 : r.Price;
@@ -673,6 +851,9 @@ namespace Server.Engines.MusicShare
             if (r.DateSubmitted > 0) info.DateSubmitted = new DateTime(r.DateSubmitted, DateTimeKind.Utc);  // not today's
             if (r.DateApproved > 0) info.DateApproved = new DateTime(r.DateApproved, DateTimeKind.Utc);
             if (r.DateRemastered > 0) info.DateRemastered = new DateTime(r.DateRemastered, DateTimeKind.Utc);
+            if (formerNames != null)
+                foreach ((string title, string author) in formerNames)
+                    info.AddFormerName(title, author);
             MusicLibrary.Repository.Add(rsm, info);
         }
 
@@ -692,6 +873,10 @@ namespace Server.Engines.MusicShare
         public static void OnPurchase(Mobile buyer, RolledUpSheetMusic song, MusicLibrary.MusicInfo info, int price)
         {
             if (!Enabled || !CanWrite || buyer == null || song == null || info == null || info.Owner != AimsHost.Current.SystemMobile)
+                return;
+            // the Music Conservatory's players have free money: its purchases are its own, and earn composers nothing
+            //  elsewhere (no Music Sales points, no Music Karma)
+            if (Core.GMNMC_CFG)
                 return;
 
             SaleRow sale = new SaleRow
@@ -755,22 +940,49 @@ namespace Server.Engines.MusicShare
         // a note to the composer: as the music box's note prompt (MusicBox RejectionNotePrompt.MaxLength, ClassicUO's chat box)
         private const int NoteMaxLength = 100;
 
-        /// <summary>Remembers each song's home (the database's rows: at startup, then each sync's).</summary>
+        // each song's composer (by hash), and the composer names each account has had (for the arranger of a song held
+        //  for its composer: AngelIslandAimsHost.Arranger)
+        private static Dictionary<int, (string Name, uint Guid)> m_Composers = new Dictionary<int, (string Name, uint Guid)>();
+        private static Dictionary<uint, HashSet<string>> m_AccountComposers = new Dictionary<uint, HashSet<string>>();
+
+        /// <summary>Remembers each song's home and composer (the database's rows: at startup, then each sync's).</summary>
         public static void Remember(IEnumerable<SongRow> rows)
         {
             Dictionary<int, string> homes = new Dictionary<int, string>();
+            Dictionary<int, (string Name, uint Guid)> composers = new Dictionary<int, (string Name, uint Guid)>();
+            Dictionary<uint, HashSet<string>> accounts = new Dictionary<uint, HashSet<string>>();
             foreach (SongRow r in rows)
                 if (!r.Deleted)
+                {
                     homes[r.Hash] = r.HomeShard;
+                    string name = AimsHost.PlainName(r.ComposerName);
+                    if (name.Length == 0)
+                        continue;
+                    composers[r.Hash] = (name, r.ComposerGuid);
+                    if (!accounts.TryGetValue(r.ComposerGuid, out HashSet<string>? names))
+                        accounts[r.ComposerGuid] = names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    names.Add(name);
+                }
             m_Homes = homes;
+            m_Composers = composers;
+            m_AccountComposers = accounts;
         }
 
         /// <summary>The home shard of the song with this hash, as of the last sync (null: unknown).</summary>
         public static string? HomeOf(int hash) => m_Homes.TryGetValue(hash, out string? home) ? home : null;
 
+        /// <summary>The composer of the song with this hash (their character's name, and account), as of the last sync.</summary>
+        public static (string Name, uint Guid)? ComposerOf(int hash) => m_Composers.TryGetValue(hash, out var c) ? c : null;
+
+        /// <summary>Is this one of the names this account has composed under, on any shard (as of the last sync)?</summary>
+        public static bool ComposedAs(uint account, string? name) =>
+            account != 0 && m_AccountComposers.TryGetValue(account, out HashSet<string>? names) && names.Contains(AimsHost.PlainName(name));
+
         /// <summary>A shard as players know it: "SiegePerilous" -> "Siege Perilous", "Upheaval-TC" -> "Upheaval Test Center".</summary>
         public static string ShardName(string shard)
         {
+            if (shard == ConservatoryShard)
+                return Core.MusicConservatoryName;      // "composed on Angel Island Music Conservatory"
             string name = shard.EndsWith("-TC") ? shard[..^3] + " Test Center" : shard.EndsWith("-EV") ? shard[..^3] + " event shard" : shard;
             return System.Text.RegularExpressions.Regex.Replace(name, "(?<=[a-z])(?=[A-Z])", " ");
         }
@@ -868,6 +1080,44 @@ namespace Server.Engines.MusicShare
                     lines.Add(string.Format("rejected '{0}', {1}{2} (decided by {3})", title, info.Reason,
                         string.IsNullOrEmpty(info.Note) ? "" : ": " + info.Note, by));
                 }
+            }
+            return lines;
+        }
+
+        /// <summary>
+        /// Staff renames of this shard's songs ([MusicShare titles apply), applied in the order made (game thread): the
+        /// library's own rename (MusicLibrary.Rename: the composer hears of it), and its About and Tags when the rename sets
+        /// them (MusicLibrary.Describe: not news). The next sync writes the new names and notes. A song
+        /// not in this library sets its rename aside. Returns its log lines; 'done' the renames to mark applied.
+        /// </summary>
+        public static List<string> ApplyRenames(List<RenameRow>? renames, out List<long> done)
+        {
+            List<string> lines = new List<string>();
+            done = new List<long>();
+            if (renames == null || renames.Count == 0)
+                return lines;
+
+            foreach (RenameRow n in renames)
+            {
+                done.Add(n.Id);
+                RolledUpSheetMusic? local = FindLocal(n.SongHash);
+                if (local == null)
+                {
+                    lines.Add(string.Format("rename by {0} of '{1}' set aside: the song isn't in this library", n.Staff, n.OldTitle));
+                    continue;
+                }
+                string was = local.Title ?? "";
+                bool renamed = MusicLibrary.Rename(local, n.NewTitle, n.NewAuthor, n.Note);
+                if (renamed)
+                    lines.Add(string.Format("renamed '{0}' to '{1}'{2} (by {3})", was, local.Title,
+                        n.NewAuthor.Length > 0 ? ", author " + local.Author : "", n.Staff));
+                // its About and Tags (the notes' lines; not news for the composer)
+                bool described = (n.NewAbout != null || n.NewTags != null) && MusicLibrary.Describe(local, n.NewAbout, n.NewTags);
+                if (described)
+                    lines.Add(string.Format("'{0}': about '{1}', tags '{2}' (by {3})", local.Title, local.About, local.Tags, n.Staff));
+                if (!renamed && !described)
+                    lines.Add(string.Format("rename by {0} of '{1}': it already has that name{2}", n.Staff, was,
+                        n.NewAbout != null || n.NewTags != null ? ", about and tags" : ""));
             }
             return lines;
         }
@@ -1459,15 +1709,454 @@ namespace Server.Engines.MusicShare
         }
         #endregion Origins
 
+        #region Release (a shard that starts held: the Music Conservatory)
+        /// <summary>A song of this shard's library, as a held shard's dry run sees it.</summary>
+        public sealed class DryRunLine
+        {
+            public string Category = "";    // known, new, pending, rejected, dropped
+            public string Flags = "";       // staff-owned, no owner, duplicate title (; between)
+            public SongRow Row = null!;
+            public string Owner = "";
+            public string Home = "";        // a known song's home in the database
+        }
+
+        /// <summary>
+        /// What this shard's first writes would do, touching nothing: every song in its library, sorted into known (the
+        /// database has it: it stays a copy, never written), new (approved, a player's: would be written as this shard's),
+        /// pending and rejected (would be written with that status), and dropped (held for a composer elsewhere, but the
+        /// database doesn't have it). Suspect test material is flagged: owned by a staff character, no owner, or a title
+        /// another song already has under another hash.
+        /// </summary>
+        public static List<DryRunLine> DryRun(IList<LocalSong> locals, IList<SongRow> rows)
+        {
+            Dictionary<int, SongRow> byHash = rows.GroupBy(r => r.Hash).ToDictionary(g => g.Key, g => g.First());
+            Dictionary<string, HashSet<int>> titles = new Dictionary<string, HashSet<int>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var t in rows.Where(r => !r.Deleted).Select(r => (r.Title, r.Hash)).Concat(locals.Select(l => (l.Row.Title, l.Row.Hash))))
+            {
+                if (!titles.TryGetValue(t.Title ?? "", out HashSet<int>? set))
+                    titles[t.Title ?? ""] = set = new HashSet<int>();
+                set.Add(t.Hash);
+            }
+
+            List<DryRunLine> lines = new List<DryRunLine>();
+            foreach (LocalSong l in locals)
+            {
+                DryRunLine d = new DryRunLine { Row = l.Row, Owner = l.Info.Owner == null || l.Info.Owner.Deleted ? "" : l.Info.Owner.Name ?? "" };
+                if (byHash.TryGetValue(l.Row.Hash, out SongRow? r))
+                {
+                    d.Category = "known";
+                    d.Home = r.HomeShard;
+                }
+                else if (l.Holder == Holder.System)
+                    d.Category = "dropped";
+                else
+                    d.Category = l.Row.Status == Approved ? "new" : l.Row.Status == PendingStatus ? "pending" : "rejected";
+
+                List<string> flags = new List<string>();
+                if (d.Category != "known" && d.Category != "dropped")
+                {
+                    if (l.Holder == Holder.Gone)
+                        flags.Add("no owner");
+                    else if (l.Info.Owner != null && l.Info.Owner.AccessLevel > AccessLevel.Player)
+                        flags.Add("staff-owned");
+                    if (titles.TryGetValue(l.Row.Title ?? "", out HashSet<int>? same) && same.Count > 1)
+                        flags.Add("duplicate title");
+                }
+                d.Flags = string.Join("; ", flags);
+                lines.Add(d);
+            }
+            return lines.OrderBy(d => Array.IndexOf(new[] { "new", "pending", "rejected", "dropped", "known" }, d.Category))
+                .ThenBy(d => d.Row.Title, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        // [MusicShare sync dryrun: Logs\<shard>-dryrun.csv, and nothing written
+        private static void DryRunReport(Mobile from)
+        {
+            if (!Enabled)
+            {
+                from.SendMessage("MusicShare: sharing is off here (the login server holds no music).");
+                return;
+            }
+            List<LocalSong> locals = Snapshot();
+            string shard = ThisShard;
+            int inherited = m_Exported.Count;
+            Task.Run(() =>
+            {
+                string text;
+                List<SongRow>? rows = MusicShareDatabase.GetSongs();
+                if (rows == null)
+                    text = "dry run failed: the shared music database couldn't be read";
+                else
+                {
+                    List<DryRunLine> lines = DryRun(locals, rows);
+                    string path = Path.Combine(Core.LogsDirectory, shard + "-dryrun.csv");
+                    List<string> csv = new List<string> { "Category,Flags,Hash,Title,Author,Composer,Status,Owner,Home" };
+                    foreach (DryRunLine d in lines)
+                        csv.Add(string.Join(",", d.Category, Csv(d.Flags), d.Row.Hash.ToString(), Csv(d.Row.Title), Csv(d.Row.Author), Csv(d.Row.ComposerName),
+                            ((MusicLibrary.SubmissionStatus)d.Row.Status).ToString(), Csv(d.Owner), Csv(d.Home)));
+                    File.WriteAllLines(path, csv);
+                    int Count(string c) => lines.Count(d => d.Category == c);
+                    // the export list (songs this shard has written): a held shard has written none; one copied from
+                    //  another shard's world carries that shard's (harmless: only songs homed here are acted on), and
+                    //  the release clears it
+                    text = string.Format("dry run ({0}, nothing written): {1} songs: {2} known, {3} new approved, {4} pending, {5} rejected, {6} dropped; {7} suspect; export list {8} (the release clears it): {9}",
+                        shard, lines.Count, Count("known"), Count("new"), Count("pending"), Count("rejected"), Count("dropped"),
+                        lines.Count(d => d.Flags.Length > 0), inherited, path);
+                }
+                Timer.DelayCall(TimeSpan.Zero, () =>
+                {
+                    m_DryRunDone = rows != null;
+                    Log(text);
+                    from.SendMessage("MusicShare: " + text);
+                });
+            });
+        }
+
+        // [MusicShare release | hold (Owners, a held shard): release its writes after its dry run (the inherited export
+        //  list is cleared), or hold them again
+        private static void Release(Mobile from, bool release)
+        {
+            if (from.AccessLevel < AccessLevel.Owner)
+            {
+                from.SendMessage("MusicShare: releasing a shard's writes is for Owners.");
+                return;
+            }
+            if (!StartsHeld)
+            {
+                from.SendMessage("MusicShare: this shard isn't held: only the Music Conservatory starts held.");
+                return;
+            }
+            if (release && !m_DryRunDone)
+            {
+                from.SendMessage("MusicShare: run [MusicShare sync dryrun first, and review its report.");
+                return;
+            }
+            string shard = ThisShard;
+            string by = string.Format("{0} {1:yyyy-MM-dd HH:mm}Z", from.Name, DateTime.UtcNow);
+            Task.Run(() =>
+            {
+                bool ok = MusicShareDatabase.SetReleased(shard, release ? by : null);
+                Timer.DelayCall(TimeSpan.Zero, () =>
+                {
+                    if (!ok)
+                    {
+                        from.SendMessage("MusicShare: the shared music database couldn't be written: still held.");
+                        return;
+                    }
+                    if (release)
+                    {   // it has written nothing yet: the export list it carries is another shard's (a copied world)
+                        m_Exported.Clear();
+                        SaveExported(null!);
+                    }
+                    m_Released = release;
+                    string text = release ? string.Format("{0}'s writes released by {1}: its songs are written at the next sync", shard, by)
+                        : string.Format("{0} held again by {1}: it reads only", shard, from.Name);
+                    Log(text);
+                    from.SendMessage("MusicShare: " + text);
+                });
+            });
+        }
+        #endregion Release
+
+        #region Flush (development)
+        // [MusicShare flush [yes] (Owners, the Music Conservatory on a development machine): before its world is copied to
+        //  production, the songs made on it while it was built and tested are deleted. flush lists them; flush yes deletes
+        //  them from this library (with their sheet music), marks their database rows deleted (each other shard drops its
+        //  copy at its next sync: "deleted at home"), clears the export list, and saves the world (-nosaves keeps nothing
+        //  until a save). The database rows are marked, not just the library cleared: a sync would otherwise rebuild an
+        //  approved home song the world no longer has.
+        private static void Flush(Mobile from, bool yes)
+        {
+            if (from.AccessLevel < AccessLevel.Owner)
+            {
+                from.SendMessage("MusicShare: flushing songs is for Owners.");
+                return;
+            }
+            if (!Core.GMNMC_CFG || !Core.Development)
+            {
+                from.SendMessage("MusicShare: flush is only for the Music Conservatory on a development machine: never production.");
+                return;
+            }
+            if (!Enabled || m_Busy)
+            {
+                from.SendMessage(m_Busy ? "MusicShare: a sync is running; try again in a moment." : "MusicShare: sharing is off here (the login server holds no music).");
+                return;
+            }
+
+            string shard = ThisShard;
+            List<LocalSong> locals = Snapshot();
+            m_Busy = true;
+            Task.Run(() =>
+            {
+                List<SongRow>? rows = MusicShareDatabase.GetSongs();
+                List<SongRow> home = rows?.Where(r => r.HomeShard == shard && !r.Deleted).ToList() ?? new List<SongRow>();
+                int written = 0;
+                if (rows != null && yes && home.Count > 0)
+                {
+                    foreach (SongRow r in home)
+                        r.Deleted = true;
+                    written = MusicShareDatabase.SaveSongs(home, shard);
+                }
+
+                Timer.DelayCall(TimeSpan.Zero, () =>
+                {
+                    try
+                    {
+                        if (rows == null)
+                        {
+                            from.SendMessage("MusicShare: flush: the shared music database couldn't be read: nothing changed.");
+                            return;
+                        }
+                        // this library's songs made here: homed here in the database, or not in it at all (a song made here
+                        //  before the release; this world's other songs all came from the database)
+                        HashSet<int> homed = new HashSet<int>(home.Select(r => r.Hash));
+                        HashSet<int> known = new HashSet<int>(rows.Select(r => r.Hash));
+                        List<LocalSong> mine = locals.Where(l => homed.Contains(l.Row.Hash) || !known.Contains(l.Row.Hash)).ToList();
+
+                        if (!yes)
+                        {
+                            from.SendMessage("MusicShare: flush would delete {0} song{1} made here ({2} in this library, {3} homed here in the database) and clear the export list ({4}):",
+                                Math.Max(mine.Count, home.Count), Math.Max(mine.Count, home.Count) == 1 ? "" : "s", mine.Count, home.Count, m_Exported.Count);
+                            foreach (string title in mine.Select(l => l.Row.Title).Concat(home.Where(r => !mine.Any(l => l.Row.Hash == r.Hash)).Select(r => r.Title)))
+                                from.SendMessage("  '{0}'", title);
+                            from.SendMessage("MusicShare: [MusicShare flush yes to delete them (and save the world).");
+                            return;
+                        }
+                        if (written < 0)
+                        {
+                            from.SendMessage("MusicShare: flush: the shared music database couldn't be written: nothing changed.");
+                            return;
+                        }
+
+                        List<string> lines = new List<string>();
+                        foreach (LocalSong l in mine)
+                        {
+                            RolledUpSheetMusic rsm = l.Sheet;
+                            MusicLibrary.Unqueue(rsm);
+                            MusicLibrary.Repository.Remove(rsm);
+                            if (!rsm.Deleted)
+                                rsm.Delete();
+                            lines.Add(string.Format("flushed (development): '{0}' (hash {1})", l.Row.Title, l.Row.Hash));
+                        }
+                        foreach (SongRow r in home.Where(r => !mine.Any(l => l.Row.Hash == r.Hash)))
+                            lines.Add(string.Format("flushed (development): '{0}' (hash {1}), database only", r.Title, r.Hash));
+                        m_Exported.Clear();
+                        lines.Add(string.Format("flush by {0}: {1} song(s) deleted here and marked deleted in the database; export list cleared", from.Name, lines.Count));
+                        Log(lines.ToArray());
+                        foreach (string line in lines)
+                            from.SendMessage("MusicShare: " + line);
+
+                        World.Save();       // writes the export list too (SaveExported)
+                    }
+                    finally
+                    {
+                        m_Busy = false;
+                    }
+                });
+            });
+        }
+        #endregion Flush (development)
+
+        #region Titles
+        public const int RenameAuthorMax = 40;      // as the Author rule (AngelIslandAimsHost.RefuseSubmission)
+        public const int RenameNoteMax = 100;       // as a denial's note
+
+        // a library title: the song's name, then its attribution (an artist or composer, Original, Traditional or Unknown)
+        //  in brackets at the end, the last bracketed part (a title may have its own: "(Sittin' On) The Dock of the Bay")
+        private static readonly System.Text.RegularExpressions.Regex AttributedTitle =
+            new System.Text.RegularExpressions.Regex(@"^(?<title>.*\S)\s*\((?<by>[^()]*\S[^()]*)\)$");
+
+        /// <summary>Why this isn't a library title ("Title (Attribution)"), or null if it is.</summary>
+        public static string? TitleProblem(string title)
+        {
+            title = title.Trim();
+            if (title.Length == 0)
+                return "no title";
+            if (!AttributedTitle.IsMatch(title))
+                return "doesn't end with its attribution in brackets: Title (Artist), (Original), (Traditional) or (Unknown)";
+            return null;
+        }
+
+        // [MusicShare titles: Logs\titles-review.csv, every song, for staff to fill in the renames
+        private static void TitlesReview(Mobile from)
+        {
+            Task.Run(() =>
+            {
+                string text;
+                List<SongRow>? songs = MusicShareDatabase.GetSongs();
+                if (songs == null)
+                    text = "failed (database error)";
+                else
+                {
+                    string path = Path.Combine(Core.LogsDirectory, "titles-review.csv");
+                    List<SongRow> live = songs.Where(r => !r.Deleted).OrderBy(r => r.Title, StringComparer.OrdinalIgnoreCase).ToList();
+                    List<string> lines = new List<string> { "Hash,Home,Composer,Status,Author,Title,About,Tags,NewTitle,NewAuthor,NewAbout,NewTags,Note" };
+                    foreach (SongRow r in live)
+                        lines.Add(string.Join(",", r.Hash.ToString(), Csv(r.HomeShard), Csv(r.ComposerName),
+                            ((MusicLibrary.SubmissionStatus)r.Status).ToString(), Csv(r.Author), Csv(r.Title),
+                            Csv(RolledUpSheetMusic.NotesLine(r.Composition, "about")), Csv(RolledUpSheetMusic.NotesLine(r.Composition, "tags")),
+                            "", "", "", "", ""));
+                    File.WriteAllLines(path, lines);
+                    text = string.Format("{0} songs, {1} not named Title (Attribution), {2} without tags: {3}; fill in NewTitle (NewAuthor, Note), NewAbout or NewTags ('-' clears one) for each change, then [MusicShare titles apply",
+                        live.Count, live.Count(r => TitleProblem(r.Title) != null), live.Count(r => RolledUpSheetMusic.NotesLine(r.Composition, "tags").Length == 0), path);
+                }
+                Timer.DelayCall(TimeSpan.Zero, () => from.SendMessage("MusicShare: titles: " + text));
+            });
+        }
+
+        // [MusicShare titles apply [file]: the reviewed file's renames -> Renames, all or nothing; each home applies its own
+        private static void TitlesApply(Mobile from, string path)
+        {
+            string staff = from.Name;
+            Task.Run(() =>
+            {
+                string text;
+                try
+                {
+                    text = TitlesFrom(path, staff);
+                }
+                catch (Exception ex)
+                {
+                    LogHelper.LogException(ex, "MusicShare.TitlesApply");
+                    text = "titles failed: " + ex.Message;
+                }
+                Timer.DelayCall(TimeSpan.Zero, () =>
+                {
+                    Log(text + " (by " + staff + ")");
+                    from.SendMessage("MusicShare: " + text);
+                });
+            });
+        }
+
+        /// <summary>
+        /// The reviewed file's renames -> Renames, all or nothing: every line a song in the database, its Title (and About
+        /// and Tags) still the database's (else the file is out of date), a NewTitle that is a library title, a NewAuthor
+        /// of 40 characters at most, a Note of 100, a NewAbout of 60 and NewTags of 10 tags (100 characters; '-' clears
+        /// either), and no rename of it already waiting. A line with none of NewTitle, NewAuthor, NewAbout and NewTags is no
+        /// change. Nothing is renamed here: each song's home applies its renames at its next sync. Returns what it did.
+        /// </summary>
+        public static string TitlesFrom(string path, string staff)
+        {
+            if (!File.Exists(path))
+                return "no such file: " + path;
+            List<SongRow>? songs = MusicShareDatabase.GetSongs();
+            List<RenameRow>? waiting = MusicShareDatabase.GetOpenRenames(null);
+            if (songs == null || waiting == null)
+                return "the database couldn't be read";
+            Dictionary<int, SongRow> byHash = songs.Where(s => !s.Deleted).ToDictionary(s => s.Hash);
+            HashSet<int> pending = new HashSet<int>(waiting.Select(w => w.SongHash));
+
+            List<RenameRow> renames = new List<RenameRow>();
+            List<string> problems = new List<string>();
+            HashSet<int> seen = new HashSet<int>();
+            using (Microsoft.VisualBasic.FileIO.TextFieldParser csv = new Microsoft.VisualBasic.FileIO.TextFieldParser(path))
+            {
+                csv.SetDelimiters(",");
+                csv.HasFieldsEnclosedInQuotes = true;
+                csv.TrimWhiteSpace = false;
+                string[]? header = csv.ReadFields();
+                int Col(string name) => header == null ? -1 : Array.FindIndex(header, h => h.Trim().Equals(name, StringComparison.OrdinalIgnoreCase));
+                int cHash = Col("Hash"), cTitle = Col("Title"), cNewTitle = Col("NewTitle"), cNewAuthor = Col("NewAuthor"), cNote = Col("Note");
+                int cAbout = Col("About"), cTags = Col("Tags"), cNewAbout = Col("NewAbout"), cNewTags = Col("NewTags");     // a file before 11/16/26 has none
+                if (cHash < 0 || cTitle < 0 || cNewTitle < 0)
+                    return "titles: nothing recorded; the file needs the columns Hash, Title and NewTitle ([MusicShare titles writes them)";
+                while (!csv.EndOfData)
+                {
+                    string[]? f = csv.ReadFields();
+                    if (f == null || f.All(string.IsNullOrWhiteSpace))
+                        continue;
+                    string Field(int c) => c >= 0 && c < f.Length ? f[c].Trim() : "";
+                    string title = Field(cTitle), newTitle = Field(cNewTitle), newAuthor = Field(cNewAuthor), note = Field(cNote);
+                    string newAbout = Field(cNewAbout), newTags = Field(cNewTags);
+                    if (newTitle.Length == 0 && newAuthor.Length == 0 && newAbout.Length == 0 && newTags.Length == 0)
+                        continue;   // no change
+                    string what = "'" + (title.Length > 0 ? title : Field(cHash)) + "'";
+                    if (!int.TryParse(Field(cHash), out int hash) || !byHash.TryGetValue(hash, out SongRow? song))
+                    {
+                        problems.Add(what + ": not a song in the database");
+                        continue;
+                    }
+                    if (!seen.Add(hash))
+                    {
+                        problems.Add(what + ": in the file twice");
+                        continue;
+                    }
+                    if (song.Title != title)
+                    {
+                        problems.Add(string.Format("{0}: the database calls it '{1}' now (the file is out of date: write it again)", what, song.Title));
+                        continue;
+                    }
+                    if (pending.Contains(hash))
+                    {
+                        problems.Add(what + ": a rename of it is already waiting for its home to apply");
+                        continue;
+                    }
+                    // About and Tags: the file's (its About and Tags columns) must still be the song's; '-' clears one
+                    string about = RolledUpSheetMusic.NotesLine(song.Composition, "about"), tags = RolledUpSheetMusic.NotesLine(song.Composition, "tags");
+                    if (cAbout >= 0 && cTags >= 0 && (newAbout.Length > 0 || newTags.Length > 0) && (Field(cAbout) != about || Field(cTags) != tags))
+                    {
+                        problems.Add(string.Format("{0}: its About or Tags changed since the file was written (the file is out of date: write it again)", what));
+                        continue;
+                    }
+                    string? setAbout = newAbout.Length == 0 ? null : newAbout == "-" ? "" : newAbout;
+                    string? setTags = newTags.Length == 0 ? null : newTags == "-" ? "" : RolledUpSheetMusic.TidyTags(newTags);
+                    if (RolledUpSheetMusic.DescriptionProblem(setAbout ?? "", setTags ?? "") is string described)
+                    {
+                        problems.Add(string.Format("{0}: {1}", what, described.Replace("The # About: line", "the About").Replace("The # Tags: line", "the Tags")));
+                        continue;
+                    }
+                    if (setAbout == about)
+                        setAbout = null;
+                    if (setTags == tags)
+                        setTags = null;
+                    string finalTitle = newTitle.Length > 0 ? newTitle : song.Title;
+                    if (newTitle.Length > 0 && TitleProblem(newTitle) is string why)
+                    {
+                        problems.Add(string.Format("{0}: '{1}' {2}", what, newTitle, why));
+                        continue;
+                    }
+                    if (newAuthor.Length > RenameAuthorMax)
+                    {
+                        problems.Add(string.Format("{0}: the author is {1} characters ({2} at most)", what, newAuthor.Length, RenameAuthorMax));
+                        continue;
+                    }
+                    if (note.Length > RenameNoteMax)
+                    {
+                        problems.Add(string.Format("{0}: the note is {1} characters ({2} at most)", what, note.Length, RenameNoteMax));
+                        continue;
+                    }
+                    if (finalTitle == song.Title && (newAuthor.Length == 0 || newAuthor == song.Author) && setAbout == null && setTags == null)
+                        continue;   // already so
+                    renames.Add(new RenameRow
+                    {
+                        SongHash = hash, OldTitle = song.Title, OldAuthor = song.Author, NewTitle = finalTitle,
+                        NewAuthor = newAuthor == song.Author ? "" : newAuthor, Note = note, Staff = staff, Utc = DateTime.UtcNow.Ticks,
+                        NewAbout = setAbout, NewTags = setTags,
+                    });
+                }
+            }
+            if (problems.Count > 0)
+                return string.Format("titles: nothing recorded; {0} problems: {1}{2}", problems.Count, string.Join("; ", problems.Take(5)),
+                    problems.Count > 5 ? " (and more)" : "");
+            if (renames.Count == 0)
+                return "titles: no changes in the file";
+
+            if (MusicShareDatabase.AddRenames(renames) < 0)
+                return "titles failed (database error): nothing recorded";
+            return string.Format("titles: {0} changes recorded; each song's home applies them at its next sync ({1})", renames.Count,
+                string.Join(", ", renames.GroupBy(n => byHash[n.SongHash].HomeShard).OrderBy(g => g.Key).Select(g => ShardName(g.Key) + " " + g.Count())));
+        }
+        #endregion Titles
+
         #region Command and log
-        [Usage("MusicShare status|sync|pending|listen <n>|approve <n>|deny <n> [reason] [note]|collect|review|seed [file]|origins [apply [file]]|export")]
-        [Description("The music shared between shards (on when the shard starts with -sharemusic): its state, a sync now; every shard's songs awaiting review (listen, approve, deny: the song's home applies the decision); first-time seeding: collect, review, seed; origins: where each song was composed (write Logs\\origins-review.csv, check it, then origins apply); export: publish the music catalog for the website now (a server started with -publishmusic=<folder>).")]
+        [Usage("MusicShare status|sync [dryrun]|release|hold|pending|listen <n>|approve <n>|deny <n> [reason] [note]|collect|review|seed [file]|origins [apply [file]]|titles [apply [file]]|export|flush [yes]")]
+        [Description("The music shared between shards (always on; not on the login server): its state, a sync now; every shard's songs awaiting review (listen, approve, deny: the song's home applies the decision); first-time seeding: collect, review, seed; origins: where each song was composed (write Logs\\origins-review.csv, check it, then origins apply); sync dryrun / release / hold: a shard that starts held (the Music Conservatory) writes nothing until an Owner reviews its dry run (Logs\\AIMC-dryrun.csv) and releases it; titles: rename library songs and set their About and Tags (write Logs\\titles-review.csv, fill in NewTitle, NewAbout or NewTags, then titles apply: each song's home applies it at its next sync); export: publish the music catalog for the website now (a server started with -publishmusic=<folder>); flush [yes]: the Music Conservatory on a development machine only, before its world is copied to production: list (yes: delete) the songs made on it, everywhere, clear its export list and save.")]
         private static void MusicShare_OnCommand(CommandEventArgs e)
         {
             string arg = e.Arguments.Length > 0 ? e.Arguments[0].ToLowerInvariant() : "status";
             if (arg is "pending" or "listen" or "approve" or "deny" && !Enabled)
             {
-                e.Mobile.SendMessage("MusicShare: sharing is off on this shard (start it with -sharemusic).");
+                e.Mobile.SendMessage("MusicShare: sharing is off here (the login server holds no music).");
                 return;
             }
             switch (arg)
@@ -1508,10 +2197,20 @@ namespace Server.Engines.MusicShare
                         break;
                     }
                 case "sync":
-                    Sync(e.Mobile);
+                    if (e.Arguments.Length > 1 && e.Arguments[1].ToLowerInvariant() == "dryrun")
+                        DryRunReport(e.Mobile);
+                    else
+                        Sync(e.Mobile);
+                    break;
+                case "release":
+                case "hold":
+                    Release(e.Mobile, arg == "release");
                     break;
                 case "export":
                     MusicCatalog.Publish(e.Mobile);
+                    break;
+                case "flush":
+                    Flush(e.Mobile, e.Arguments.Length > 1 && e.Arguments[1].ToLowerInvariant() == "yes");
                     break;
                 case "origins":
                     if (e.Arguments.Length < 2)
@@ -1522,6 +2221,19 @@ namespace Server.Engines.MusicShare
                     {   // as seed: Logs\origins-review.csv, a file name in Logs, or a full path
                         string file = e.Arguments.Length < 3 ? "origins-review.csv" : string.Join(" ", e.Arguments.Skip(2));
                         OriginsApply(e.Mobile, Path.IsPathRooted(file) ? file : Path.Combine(Core.LogsDirectory, file));
+                    }
+                    break;
+                case "titles":
+                    if (e.Arguments.Length < 2)
+                        TitlesReview(e.Mobile);
+                    else if (e.Arguments[1].ToLowerInvariant() != "apply")
+                        e.Mobile.SendMessage("MusicShare: titles (write Logs\\titles-review.csv) or titles apply [file].");
+                    else if (e.Mobile.AccessLevel < AccessLevel.Owner)
+                        e.Mobile.SendMessage("MusicShare: renaming music is for Owners, as approving it is.");
+                    else
+                    {   // as origins: Logs\titles-review.csv, a file name in Logs, or a full path
+                        string file = e.Arguments.Length < 3 ? "titles-review.csv" : string.Join(" ", e.Arguments.Skip(2));
+                        TitlesApply(e.Mobile, Path.IsPathRooted(file) ? file : Path.Combine(Core.LogsDirectory, file));
                     }
                     break;
                 default:

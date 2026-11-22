@@ -23,6 +23,9 @@
  * ChangeLog
  *  2/4/2024, Adam
  *      initial creation
+ *  11/21/26, Adam (guild robustness)
+ *      I resign: nothing happens if they left the guild while the warning was open. The unused dismiss branch no
+ *      longer removes and bans the one who clicked OKAY.
  */
 
 using Server.Diagnostics;
@@ -119,14 +122,17 @@ namespace Server.Gumps
                             {
                                 case GuildWarning.IResign:
                                     {
+                                        // they may have left the guild while the warning was open
+                                        if (guild == null || !guild.IsMember(from))
+                                            break;
                                         logger.Log(string.Format("{0} used phrase \"i resign from my guild\" ({1}) and accepted delete township warning.", from, guild));
                                         guild.ResignMember(from);
                                         break;
                                     }
                                 default:
-                                    {   // dismiss member
-                                        guild.RemoveMember(from);
-                                        guild.BanMember(from);
+                                    {   // dismiss member: not used (only IResign opens this gump). It removed and banned the
+                                        //  one who clicked OKAY, not the member being dismissed: it does nothing until a
+                                        //  caller passes that member (11/21/26)
                                         break;
                                     }
                             }

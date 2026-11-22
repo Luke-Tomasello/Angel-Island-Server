@@ -21,6 +21,8 @@
 
 /* Scripts/Mobiles/Vendors/NPC/RealEstateBroker.cs
  *  Changelog:
+ *  11/16/26, Adam (-uomc)
+ *      The housing exception log names the Music Conservatory (Core.PublicName).
  *  1/5/2025, Adam
  *      RealEstateBroker: filter out TentBag/SiegeTentBag deeds
  *      Prevent TentBag from being treated as a refundable/valid HouseDeed.
@@ -214,7 +216,7 @@ namespace Server.Mobiles
             {
                 LogHelper logger = new LogHelper("HousingExceptions.log", false);
                 logger.Log(LogType.Text, string.Format("House price 0 on {0}",
-                    Core.GMNTC_CFG ? "Test Center" : Core.Server));
+                    Core.GMNTC_CFG ? "Test Center" : Core.PublicName));
                 logger.Finish();
             }
 

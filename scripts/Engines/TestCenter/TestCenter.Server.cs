@@ -32,6 +32,9 @@
 
 /* Scripts\Engines\TestCenter\TestCenter.Server.cs
  * CHANGELOG
+ *  11/16/26, Adam (-uomc)
+ *      The Music Conservatory (-uomc) is not a Test Center, but its composers get the commands granted to them
+ *      (TestCenterCommand.ForComposers: set) and their help, outside a Test Center facet.
  *	3/27/23, Yoar
  *	    Added bondpet
  *	6/30/21, Adam
@@ -100,6 +103,17 @@ namespace Server.Engines
 
                 EventSink.Speech += new SpeechEventHandler(
                     args => TestCenterCommands.TCSetSkills.EventSink_Speech(args, m => TestCenterServer.Enabled));
+            }
+            else if (Core.RuleSets.MusicConservatoryRules())
+            {
+                // the Music Conservatory (-uomc) is not a Test Center: its composers get only the commands granted to them
+                //  (TestCenterCommand.ForComposers: set) and their help. A Test Center facet keeps every command
+                //  (TestCenterFacet), as on every shard.
+                EventSink.Speech += new SpeechEventHandler(
+                    args => TestCenterCommands.TCHelpGump.EventSink_Speech(args, TestCenterCommands.ComposersOnly));
+
+                EventSink.Speech += new SpeechEventHandler(
+                    args => TestCenterCommands.TCSetSkills.EventSink_Speech(args, TestCenterCommands.ComposersOnly, composersOnly: true));
             }
         }
 

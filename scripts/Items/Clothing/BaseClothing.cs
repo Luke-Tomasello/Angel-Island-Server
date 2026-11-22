@@ -21,6 +21,9 @@
 
 /* Scripts/Items/Clothing/BaseClothing.cs
  * CHANGELOG
+ *  11/17/26, Adam (title change)
+ *      OnWearerTitleChanged: the wearer's title changed level (PlayerMobile tells the clothing it wears). Does
+ *      nothing here; the composer's cloak renames itself.
  *  9/18/23, Yoar
  *      Blessed clothing can no longer be damaged (SP only). Trammies rejoice!
  *  4/20/23, Yoar
@@ -643,6 +646,14 @@ namespace Server.Items
             }
 
             return damageTaken;
+        }
+
+        /// <summary>
+        /// The wearer's title changed level (a composer from Neophyte to Novice, say). Called by PlayerMobile on the
+        /// clothing it wears. Nothing by default; the composer's cloak renames itself.
+        /// </summary>
+        public virtual void OnWearerTitleChanged(Mobile wearer)
+        {
         }
 
         // erl: Added to prevent worn out clothing from being equipped

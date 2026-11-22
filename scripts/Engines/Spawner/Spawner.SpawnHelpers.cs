@@ -22,8 +22,16 @@
 /* Scripts\Engines\Spawner\Spawner.SpawnHelpers.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *  4/12/2024, Adam (Spawner.ClearPath()))
+ *      Renamed to Spawner.ClearPathLand() since it only works for land navigation.
+ *  12/7/22, Adam (CanOverrideAI)
+ *      Add a new CanOverrideAI property to BaseCreature which tells at least the 'Exhibit' Spawner
+ *      if this creature may have its AI overridden. By default, the Exhibit spawner
+ *          sets the AI to Animal.
+ *  11/13/21, Adam (ClearPath())
+ *      Add 'clear path' checking to an spawn position. 
+ *      This prevents spawned creatures from being spawned in areas where thay could not return to the spawner (inaccessable locations.)
  */
 
 using Server.Engines.Alignment;

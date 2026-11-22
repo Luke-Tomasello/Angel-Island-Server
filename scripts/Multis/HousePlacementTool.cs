@@ -21,6 +21,8 @@
 
 /* Scripts/Multis/HousePlacementTool.cs
  * CHANGELOG
+ * 11/16/26, Adam (-uomc)
+ *      Players may use the tool on the Music Conservatory too (ComposerConveniences); the GMs' "Under Review" list stays Test Center only.
  * 12/29/2021, Adam (GetBalance() GetCombinedBalance())
  *      Replace calls to GetBalance() with GetCombinedBalance() so as to support the new shared bankbox system
  *  9/17/21, Yoar
@@ -66,7 +68,7 @@ namespace Server.Items
         {
             if (IsChildOf(from.Backpack))
             {
-                if (Core.GMNTC_CFG || from.AccessLevel > AccessLevel.GameMaster)
+                if (Core.RuleSets.ComposerConveniences() || from.AccessLevel > AccessLevel.GameMaster)
                     from.SendGump(new HousePlacementCategoryGump(from));
                 else
                     from.SendMessage("This tool cannot be used on the Angel Island Live server.");

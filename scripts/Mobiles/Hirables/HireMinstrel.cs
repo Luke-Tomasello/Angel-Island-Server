@@ -21,6 +21,10 @@
 
 /* Scripts\Mobiles\Hirables\HireMinstrel.cs
  * ChangeLog
+ *  11/15/2026, Adam (vanish when dismissed)
+ *      VanishWhenDismissed: dismissed, a spawned minstrel leaves once no player can see it and its song has ended
+ *      (BusyBeforeVanish), instead of lingering where its master left it; its spawner makes a new one back home.
+ *      GetMusicBoxName: the box takes the minstrel's name (it read a null box's name when the box was missing).
  *  1/3/2024, Adam
  *		Initial Version.
  */
@@ -158,11 +162,14 @@ namespace Server.Mobiles
         }
         private string GetMusicBoxName(MusicBox? mx = null)
         {
-            MusicBox? mb = mx ?? GetMusicBox();
-            if (mb != null)
-                return Name;
-            return mb.Name;
+            // the box is named after its minstrel (it was: box missing -> mb.Name on a null box)
+            return Name;
         }
+
+        // dismissed, a minstrel bows and leaves once no one is watching (no fighter's poison: an invulnerable minstrel
+        //  has nothing to farm), after its song ends; its spawner sends a new one home
+        public override bool VanishWhenDismissed => true;
+        public override bool BusyBeforeVanish => RazorInstrument.PerformanceOf(this) != null;
         public override void OnSpeech(SpeechEventArgs e)
         {
             if (ControlMaster == e.Mobile && !e.Handled && !IsBaseCommand(e))

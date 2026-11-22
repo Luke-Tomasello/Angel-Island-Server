@@ -22,8 +22,9 @@
 /* Scripts\Engines\Spawner\Spawner.Timer.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *	9/3/06, Adam
+ *		Add function to get the Creature List
  */
 
 using System;

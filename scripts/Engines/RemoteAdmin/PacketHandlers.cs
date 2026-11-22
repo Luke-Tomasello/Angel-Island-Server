@@ -21,6 +21,9 @@
 
 /* Scripts/Engines/RemoteAdmin/PacketHandler.cs
  * Changelog:
+ *  11/21/26, Adam (shared bans)
+ *      UpdateAccount sets Banned only when it changes: clearing it lifts every shard's bans (Engines/Restrictions), and an
+ *      account update repeating "not banned here" lifted a ban another shard held.
  *  6/5/04, Pix
  *		Merged in 1.0RC0 code.
  */
@@ -170,7 +173,11 @@ namespace Server.Admin
             if (a != state.Account)
             {
                 a.AccessLevel = (AccessLevel)pvSrc.ReadByte();
-                a.Banned = pvSrc.ReadBoolean();
+                // only a change: clearing Banned lifts every ban, every shard's (Engines/Restrictions), so an update that
+                //  merely repeats "not banned here" must not lift a ban another shard holds
+                bool banned = pvSrc.ReadBoolean();
+                if (banned != a.Banned)
+                    a.Banned = banned;
             }
             else
             {

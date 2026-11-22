@@ -21,6 +21,27 @@
 
 /* Scripts/Misc/CharacterCreation.cs
  * ChangeLog
+ * 11/18/26, Adam (names cleanup)
+ *      A new character's name is no longer added to the per-shard Reserved Names (retired): the family-wide registry's
+ *      claim is the only record.
+ * 11/17/26, Adam (-uomc composer start)
+ *      On the Music Conservatory a new character starts at 75 strength, dexterity and intelligence, joins the bards'
+ *      guild (the composers' guild: the composer title), and gets 6 manuscript paper and 3 music composition books in
+ *      the backpack and a newbied composer's cloak (ComposersCloak) dyed to match the chosen pants hue, which takes
+ *      the composer title as its name. A new character starts at a random spot in the rectangle (1449, 1561) to
+ *      (1461, 1568), z 30, Felucca (ConservatoryStartLocation).
+ * 11/17/26, Adam (family-wide names)
+ *      Every game shard checks a new character's name (was Mortalis, Seasons and Upheaval: Angel Island and Siege Perilous
+ *      took any name), and a player shard claims it in the family-wide registry (NameRegistry.Claim); taken meanwhile:
+ *      the placeholder, as for any name that isn't available.
+ * 11/17/26, Adam (-uomc orc mask)
+ *      No Orcish Kin Mask for a new character on the Music Conservatory (it plays by the Upheaval rules, without the orc war).
+ * 11/17/26, Adam (-uomc welcome)
+ *      On the Music Conservatory a new character's bank also gets the composer's crate (ComposersCrate: a small
+ *      magenta crate with a music box, 50 manuscript paper and 5 music composition books), and the Conservatory's own
+ *      welcome gump (MusicConservatoryGump) instead of none.
+ * 11/16/26, Adam (-uomc)
+ *      A new character's bank is filled on the Music Conservatory too (ComposerConveniences), as on Test Center.
  *  11/8/2026, Adam (login server owner)
  *      A character always has its account's access level. Removed the Login Server administrator rule (8/5/22): a
  *      character created on the Login Server from an owner IP (127.0.0.1 or CoreAI.OwnerIP) was made Owner, whatever
@@ -427,7 +448,7 @@ namespace Server.Misc
             #endregion Mortalis
 
             // Fill bank box
-            if (TestCenterServer.Enabled && !Core.GMNBETA_CFG)
+            if (Core.RuleSets.ComposerConveniences() && !Core.GMNBETA_CFG)
             {
                 if (Core.RuleSets.MortalisRules())
                 {
@@ -564,8 +585,8 @@ namespace Server.Misc
                     }
                 }
 
-                // provide and enforce the OrcishKinMask.
-                if ((Core.RuleSets.SeasonsRules(2) || Core.RuleSets.UpheavalRules()))
+                // provide and enforce the OrcishKinMask (not on the Music Conservatory: no orc war there)
+                if ((Core.RuleSets.SeasonsRules(2) || Core.RuleSets.UpheavalRules()) && !Core.RuleSets.MusicConservatoryRules())
                 {
                     Item? helm = newChar.FindItemOnLayer(Layer.Helm);
 
@@ -607,6 +628,31 @@ namespace Server.Misc
 
             #endregion Seasons 2 / Upheaval - finalize character
 
+            #region Music Conservatory - composer start
+
+            if (Core.RuleSets.MusicConservatoryRules())
+            {
+                // every composer starts at 75 strength, dexterity and intelligence, whatever was chosen
+                newChar.InitStats(75, 75, 75);
+
+                // and in the bards' guild: the guild of composers (the composer title starts at Neophyte Composer)
+                if (player.NpcGuild != NpcGuild.BardsGuild)
+                    player.OnNpcGuildJoin(NpcGuild.BardsGuild);
+
+                PackItem(MakeNewbie(new ManuscriptPaper(6)), unique: false);
+                for (int i = 0; i < 3; ++i)
+                    PackItem(MakeNewbie(new MusicCompositionBook()), unique: false);
+
+                // after the guild: the cloak takes its wearer's composer title when put on
+                // dyed to match the pants (or skirt or kilt) the player chose
+                ComposersCloak cloak = new ComposersCloak(Utility.ClipDyedHue(args.PantsHue & 0x3FFF));
+                cloak.LootType = LootType.Newbied;
+                if (!newChar.EquipItem(cloak))
+                    PackItem(cloak, unique: false);
+            }
+
+            #endregion Music Conservatory - composer start
+
             #region Starting Area
             string spawnTag = String.Empty;
             Point3D spawnLoc = Point3D.Zero;
@@ -637,7 +683,13 @@ namespace Server.Misc
 
                 if (doDefaultSpawn)
                 {
-                    if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.NewPlayerStartingArea))
+                    if (Core.RuleSets.MusicConservatoryRules())
+                    {
+                        spawnTag = "Music Conservatory";
+                        spawnLoc = ConservatoryStartLocation();
+                        spawnMap = Map.Felucca;
+                    }
+                    else if (CoreAI.IsDynamicFeatureSet(CoreAI.FeatureBits.NewPlayerStartingArea))
                     {
                         spawnTag = "New Player Starting Area";
                         spawnLoc = new Point3D(5731, 953, 0);
@@ -674,6 +726,9 @@ namespace Server.Misc
             #region Test Center Gump
             if (Core.RuleSets.TestCenterRules())
                 Timer.DelayCall(TimeSpan.FromSeconds(5), new TimerStateCallback(LaunchTestCenterGump), player);
+            // the Music Conservatory's own welcome, for composers
+            else if (Core.RuleSets.MusicConservatoryRules())
+                Timer.DelayCall(TimeSpan.FromSeconds(5), new TimerStateCallback(LaunchMusicConservatoryGump), player);
             #endregion Test Center Gump
 
         }
@@ -681,6 +736,45 @@ namespace Server.Misc
         {
             if (state is PlayerMobile pm)
                 pm.SendGump(new TestCenterGump(pm));
+        }
+        /// <summary>
+        /// Where a new composer starts on the Music Conservatory: a random spot in the rectangle (1449, 1561) to
+        /// (1461, 1568), z 30, on Felucca, where a mobile can stand (else its first corner).
+        /// </summary>
+        private static Point3D ConservatoryStartLocation()
+        {
+            const int x1 = 1449, y1 = 1561, x2 = 1461, y2 = 1568, z = 30;
+
+            for (int i = 0; i < 20; ++i)
+            {
+                int x = Utility.RandomMinMax(x1, x2), y = Utility.RandomMinMax(y1, y2), pz = z;
+                if (Utility.CanSpawnMobile(Map.Felucca, x, y, ref pz))
+                    return new Point3D(x, y, pz);
+            }
+
+            return new Point3D(x1, y1, z);
+        }
+        private static void LaunchMusicConservatoryGump(object state)
+        {
+            if (state is PlayerMobile pm)
+                pm.SendGump(new MusicConservatoryGump(pm));
+        }
+        /// <summary>
+        /// The composer's crate (Music Conservatory): a small magenta crate with a music box, 50 sheets of manuscript
+        /// paper and 5 music composition books.
+        /// </summary>
+        public static Container ComposersCrate()
+        {
+            Container crate = new SmallCrate();
+            crate.Hue = 0x486;      // magenta
+            crate.Name = "Composer's Crate";
+
+            PlaceItemIn(crate, 40, 50, new MusicBox());
+            PlaceItemIn(crate, 70, 50, MakeNewbie(new ManuscriptPaper(50)));
+            for (int i = 0; i < 5; ++i)
+                PlaceItemIn(crate, 40 + (i * 12), 75, MakeNewbie(new MusicCompositionBook()));
+
+            return crate;
         }
         // 5/5/23, Yoar: Siege starter gear customization. New characters always start with pre-Pub13 skill gear.
         public static bool CustomSiegeGear { get { return Core.RuleSets.SiegeRules(); } }
@@ -882,6 +976,10 @@ namespace Server.Misc
 
             PlaceItemIn(bank, 78, 169, cont);
             // End bag of spell casting stuff
+
+            // the composer's crate, on the Music Conservatory
+            if (Core.RuleSets.MusicConservatoryRules())
+                PlaceItemIn(bank, 18, 124, ComposersCrate());
         }
         private static void AddShirt(Mobile m, int shirtHue)
         {
@@ -1291,8 +1389,8 @@ namespace Server.Misc
                 name = DefaultName;
             }
 
-            // Mortalis/Seasons
-            if (Core.RuleSets.MortalisStyleRules())
+            // names belong to accounts (every game shard; family-wide on player shards: NameRegistry)
+            if (Core.RuleSets.UsesReservedNames())
             {
                 var acct = m.Account as Server.Accounting.Account;
                 if (acct == null)
@@ -1312,8 +1410,13 @@ namespace Server.Misc
                 }
                 else if (name != DefaultName && !string.IsNullOrEmpty(name))
                 {
-                    // Assign or reaffirm reservation in the shared reserved-name registry.
-                    ReservedNames.Add(acct.Username, name);
+                    // claim it family-wide (one transaction: another shard may have taken it a moment ago)
+                    //  (the per-shard Reserved Names is retired 11/18/26: the registry is the only list)
+                    if (NameRegistry.Enforced && NameRegistry.Claim(name, acct.Username) != NameRegistry.ClaimResult.Claimed)
+                    {
+                        QueueWelcomeMessage(m, $"The name '{name}' is already reserved by another account.");
+                        name = DefaultName;
+                    }
                 }
             }
 

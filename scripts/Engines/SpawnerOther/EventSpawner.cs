@@ -2,6 +2,12 @@
  * ChangeLog
  *  11/8/26, Adam (shard time)
  *      Changelog added. OffsetFromUTC marked obsolete; EventTimeZone added (an event's own time zone for typing and showing its times: see Event.cs).
+ *  10/17/21, Adam (EventSpawner)
+ *      convert to using GameTime instead of ServerTime.
+ *      Also, don't delete the EventSpawner when the event is over, just delete the creatures and disable the spawner.
+ *	3/30/10. adam
+ *		1. Add EventSpawner class
+ *		2. Force a recalc of NextSpawn if Min or Max are changed
  */
 
 using Server.Engines;

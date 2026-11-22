@@ -21,6 +21,8 @@
 
 /* Scripts/Engines/DRDT/StaticRegion.cs
  * CHANGELOG
+ * 11/16/26, Adam (-uomc)
+ *      Green Acres house placement on the Music Conservatory too (ComposerConveniences).
  *  10/18/2026, Adam (AllowHarmful message)
  *      AllowHarmful now overrides the message-aware Region.AllowHarmful(from, target, message): "You may not do that in
  *      jail." and the staff "transcend" notice are sent only when the caller asked for messages. A silent check (the
@@ -822,7 +824,7 @@ namespace Server.Regions
                 return false;
 
             if (IsGreenAcresRules)
-                return Server.Engines.TestCenterServer.Enabled; // we allow players to place houses on Green Acres on Test Center
+                return Core.RuleSets.ComposerConveniences(); // Test Center and the Music Conservatory: we allow players to place houses on Green Acres on Test Center
 
             return EnableHousing;
         }

@@ -44,6 +44,8 @@
 
 /* Patches101_200/PatchLibrary.cs
  * ChangeLog
+ *  11/21/26, Adam
+ *      SetAllSkills (PatchV126) and RemoveAllStaff (PatchV172) moved here from Nuke. Same code.
  *  10/29/26, Adam (MusicLibrary)
  *      Type names only: the music library moved out of MusicBox (MusicBox.GlobalMusicRepository is MusicLibrary.Repository,
  *      MusicBox.MusicInfo is MusicLibrary.MusicInfo; MusicBox.FindSong is unchanged). No patch changes what it does.
@@ -1867,6 +1869,15 @@ namespace Patches101_200
         #endregion PatchV125
 
         #region PatchV126
+        public static void SetAllSkills(Mobile target, double skill)
+        {
+            if (target is PlayerMobile player)
+            {
+                Server.Skills skills = player.Skills;
+                for (int i = 0; i < skills.Length; ++i)
+                    skills[i].Base = skill;
+            }
+        }
 
         private static int? PatchV126(int patchid)
         {
@@ -1886,10 +1897,10 @@ namespace Patches101_200
                             Mobile sysact = World.GetSystemAcct();
                             if (sysact != null)
                             {
-                                Nuke.SetAllSkills(sysact, 70.1);
+                                SetAllSkills(sysact, 70.1);
                                 SmallBOD bo = lb.System.ConstructSBOD(0, false, BulkMaterialType.None, 0, null, 0, 0);
                                 bo.Randomize(sysact);
-                                Nuke.SetAllSkills(sysact, 100.0);
+                                SetAllSkills(sysact, 100.0);
                                 Utility.ReplaceItem(newItem: bo, oldItem: item, copyProperties: false);
                                 item.Delete();
                                 patched++;
@@ -7968,6 +7979,37 @@ namespace Patches101_200
         #endregion PatchV171
 
         #region PatchV172
+        public static void RemoveAllStaff(CommandEventArgs e)
+        {
+            if (e.Mobile.AccessLevel < AccessLevel.Owner)
+            {
+                e.Mobile.SendMessage("Not authorized.");
+                Utility.Monitor.WriteLine("RemoveAllStaff: Not authorized.", ConsoleColor.Red);
+                return;
+            }
+            int removed = 0;
+            foreach (Mobile m in World.Mobiles.Values)
+                if (m is PlayerMobile pm && pm.AccessLevel != AccessLevel.Player && pm.AccessLevel != AccessLevel.Owner)
+                {   // kick them
+                    if (pm.NetState != null)
+                        pm.NetState.Dispose();
+
+                    // report
+                    string text = string.Format($"Removing {CommandLogging.Format(pm)}");
+                    e.Mobile.SendMessage(text);
+                    Utility.Monitor.WriteLine(text, ConsoleColor.Red);
+
+                    Account? acct = pm.Account as Account;
+                    if (acct != null)
+                        acct.Delete();
+                    else
+                        ;
+                    removed++;
+                }
+
+            e.Mobile.SendMessage($"{removed} staff members removed.");
+            Utility.Monitor.WriteLine($"{removed} staff members removed.", ConsoleColor.Red);
+        }
 
         private static int? PatchV172(int patchid)
         {
@@ -7979,7 +8021,7 @@ namespace Patches101_200
                 #region Remove all Staff Accounts
                 if (AllShards())
                 {
-                    Nuke.RemoveAllStaff(new CommandEventArgs(World.GetSystemAcct(),
+                    RemoveAllStaff(new CommandEventArgs(World.GetSystemAcct(),
                         command: "RemoveAllStaff",
                         argString: string.Empty,
                         arguments: new string[] { string.Empty }));

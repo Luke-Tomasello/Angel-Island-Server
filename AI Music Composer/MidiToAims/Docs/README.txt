@@ -42,6 +42,8 @@ commands:
 
 Press the up arrow to bring back an earlier line, change it, and press Enter
 to run it again. "help" lists the commands; "exit" closes the window.
+"version" says which MidiToAims you have (2.0.1360, say): the window's
+first line shows it too. Mention it when you report a problem.
 
 Every command also works from a command prompt (type cmd in the folder's
 address bar and press Enter), with MidiToAims in front:
@@ -129,10 +131,20 @@ a song of its own, with whole phrases and the song's settings, ready to
 preview or paste. Hear it with [play preview minuet clip1. ("minuet" alone is
 still the song.)
 
+To save a song as a recording instead of playing it, add --wav and a file
+name. The WAV sounds exactly like the preview, so you can share it or turn it
+into an MP3:
+
+    m2a> [play preview minuet --wav "Minuet.wav"
+
 It also tells you what the game will do differently from what is written:
 for example, the game skips the same note on the same instrument played
 again within about 0.2 seconds, so you'll hear those notes missing here too.
-Add --check to see the details, line by line, without playing. Add --debug
+And it plays at the game's speed: songs on the older Classic and Dynamic
+timers play a little slower in the game than written (the shard's timers
+run a few milliseconds late on every note, and on those timers it adds up),
+so they do here too. Songs on the Anchored timer, as MidiToAims writes them,
+keep their written time in both. Add --check to see the details, line by line, without playing. Add --debug
 to any command (or type "debug on" at the prompt) to see everything
 MidiToAims does, such as which files it found and plays.
 

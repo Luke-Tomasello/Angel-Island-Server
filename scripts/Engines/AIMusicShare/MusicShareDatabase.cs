@@ -19,6 +19,20 @@
 
 /* Scripts\Engines\AIMusicShare\MusicShareDatabase.cs
  * ChangeLog
+ *  11/18/26, Adam (one database folder)
+ *      music.db lives in the one database folder (Server\DatabaseFolder.cs: AI.DBDIR, else <shard>\Databases); AI.MUSICDB
+ *      is retired, and sharing is always on (-sharemusic is retired).
+ *  11/16/26, Adam (-uomc)
+ *      IsReleased / SetReleased: a held shard's writes (the Music Conservatory) are released by staff, the mark kept in
+ *      Meta ("released:AIMC"); unreadable is reported as null, which the caller treats as held.
+ *  11/16/26, Adam (About and Tags)
+ *      A rename may set a song's About and Tags too (Renames.newAbout, newTags; NULL: as they are, '': none), added to an
+ *      existing database when it's opened.
+ *  11/16/26, Adam (song renames)
+ *      Renames: staff renames of library songs ([MusicShare titles apply), recorded with the names before and after, for
+ *      each song's home to apply at its next sync (MusicLibrary.Rename), as review decisions are (table Renames, created
+ *      in an existing database when it's opened). GetRenameHistory: a song's names before its applied renames, for a
+ *      home song rebuilt from the database.
  *  11/14/26, Adam (a synced decision is final)
  *      GetDenialNotes: the note of a song's latest applied denial, so a home world that lost the denial to a crash or
  *      rollback can restore it (MusicShare: ActKind.Adopt).
@@ -99,6 +113,19 @@ namespace Server.Engines.MusicShare
         public long Utc;
     }
 
+    /// <summary>A staff rename of a library song ([MusicShare titles apply), for the song's home to apply.</summary>
+    public sealed class RenameRow
+    {
+        public long Id;
+        public int SongHash;
+        public string OldTitle = "", OldAuthor = "";
+        public string NewTitle = "", NewAuthor = "";    // NewAuthor "": the author stays
+        public string? NewAbout, NewTags;               // null: as they are; "": none (the song's # About: / # Tags: lines)
+        public string Note = "";            // staff's note to the composer
+        public string Staff = "";
+        public long Utc;
+    }
+
     /// <summary>An account that may review music on every shard ([MusicReview).</summary>
     public sealed class ReviewerRow
     {
@@ -131,8 +158,8 @@ namespace Server.Engines.MusicShare
             {
                 if (!string.IsNullOrWhiteSpace(PathOverride))
                     return PathOverride!;
-                string? path = Environment.GetEnvironmentVariable("AI.MUSICDB");
-                return string.IsNullOrWhiteSpace(path) ? @"C:\AIDB\music.db" : path;
+                // the one database folder (AI.DBDIR, else <shard>\Databases): AI.MUSICDB is retired
+                return DatabaseFolder.PathOf("music.db");
             }
         }
 
@@ -174,6 +201,10 @@ CREATE TABLE IF NOT EXISTS Sales (
     id INTEGER PRIMARY KEY AUTOINCREMENT, songHash INTEGER NOT NULL, soldOnShard TEXT NOT NULL, buyerName TEXT NOT NULL,
     buyerGuid INTEGER NOT NULL, price INTEGER NOT NULL, utc INTEGER NOT NULL, recognized INTEGER NOT NULL);
 CREATE INDEX IF NOT EXISTS SalesOpen ON Sales (recognized, songHash);
+CREATE TABLE IF NOT EXISTS Renames (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, songHash INTEGER NOT NULL, oldTitle TEXT NOT NULL, oldAuthor TEXT NOT NULL,
+    newTitle TEXT NOT NULL, newAuthor TEXT NOT NULL, note TEXT NOT NULL, staff TEXT NOT NULL, utc INTEGER NOT NULL,
+    applied INTEGER NOT NULL);
 CREATE TABLE IF NOT EXISTS Decisions (
     id INTEGER PRIMARY KEY AUTOINCREMENT, songHash INTEGER NOT NULL, approve INTEGER NOT NULL, reason INTEGER NOT NULL,
     staff TEXT NOT NULL, onShard TEXT NOT NULL, utc INTEGER NOT NULL, applied INTEGER NOT NULL,
@@ -194,6 +225,12 @@ INSERT OR IGNORE INTO Meta (key, value) VALUES ('schema', '" + SchemaVersion + "
                 //  until [MusicShare origins apply)
                 if (!HasColumn(conn, "Songs", "origin"))
                     Execute(conn, null, "ALTER TABLE Songs ADD COLUMN origin TEXT NOT NULL DEFAULT ''");
+                // a database made before renames could set a song's About and Tags (11/16/26): add the columns (NULL: as
+                //  they are)
+                if (!HasColumn(conn, "Renames", "newAbout"))
+                    Execute(conn, null, "ALTER TABLE Renames ADD COLUMN newAbout TEXT");
+                if (!HasColumn(conn, "Renames", "newTags"))
+                    Execute(conn, null, "ALTER TABLE Renames ADD COLUMN newTags TEXT");
                 m_SchemaReadyFor = path;
             }
         }
@@ -590,6 +627,138 @@ SELECT note FROM Decisions WHERE songHash = @hash AND applied = 1 AND approve = 
         }
         #endregion Review decisions
 
+        #region Renames
+        /// <summary>Records these renames, all or none (one transaction). The number recorded; -1 on failure.</summary>
+        public static int AddRenames(IList<RenameRow> renames)
+        {
+            try
+            {
+                using SQLiteConnection conn = Open();
+                using SQLiteTransaction tx = conn.BeginTransaction();
+                foreach (RenameRow n in renames)
+                {
+                    using SQLiteCommand cmd = new SQLiteCommand(@"
+INSERT INTO Renames (songHash, oldTitle, oldAuthor, newTitle, newAuthor, note, staff, utc, applied, newAbout, newTags)
+VALUES (@hash, @oldTitle, @oldAuthor, @newTitle, @newAuthor, @note, @staff, @utc, 0, @newAbout, @newTags)", conn, tx);
+                    cmd.Parameters.AddWithValue("@hash", n.SongHash);
+                    cmd.Parameters.AddWithValue("@oldTitle", n.OldTitle);
+                    cmd.Parameters.AddWithValue("@oldAuthor", n.OldAuthor);
+                    cmd.Parameters.AddWithValue("@newTitle", n.NewTitle);
+                    cmd.Parameters.AddWithValue("@newAuthor", n.NewAuthor);
+                    cmd.Parameters.AddWithValue("@note", n.Note);
+                    cmd.Parameters.AddWithValue("@staff", n.Staff);
+                    cmd.Parameters.AddWithValue("@utc", n.Utc);
+                    cmd.Parameters.AddWithValue("@newAbout", (object?)n.NewAbout ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@newTags", (object?)n.NewTags ?? DBNull.Value);
+                    cmd.ExecuteNonQuery();
+                }
+                tx.Commit();
+                return renames.Count;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex, "MusicShareDatabase.AddRenames");
+                return -1;
+            }
+        }
+
+        private static RenameRow ReadRename(SQLiteDataReader r) => new RenameRow
+        {
+            Id = Convert.ToInt64(r["id"]),
+            SongHash = Convert.ToInt32(r["songHash"]),
+            OldTitle = Convert.ToString(r["oldTitle"]) ?? "",
+            OldAuthor = Convert.ToString(r["oldAuthor"]) ?? "",
+            NewTitle = Convert.ToString(r["newTitle"]) ?? "",
+            NewAuthor = Convert.ToString(r["newAuthor"]) ?? "",
+            Note = Convert.ToString(r["note"]) ?? "",
+            Staff = Convert.ToString(r["staff"]) ?? "",
+            Utc = Convert.ToInt64(r["utc"]),
+            NewAbout = r["newAbout"] is DBNull ? null : Convert.ToString(r["newAbout"]),
+            NewTags = r["newTags"] is DBNull ? null : Convert.ToString(r["newTags"]),
+        };
+
+        /// <summary>Renames not yet applied: of songs whose home is this shard, or (homeShard null) every one; oldest first. Null on failure.</summary>
+        public static List<RenameRow>? GetOpenRenames(string? homeShard)
+        {
+            try
+            {
+                using SQLiteConnection conn = Open();
+                using SQLiteCommand cmd = new SQLiteCommand(homeShard == null
+                    ? "SELECT * FROM Renames WHERE applied = 0 ORDER BY id"
+                    : @"SELECT Renames.* FROM Renames JOIN Songs ON Songs.hash = Renames.songHash
+WHERE Renames.applied = 0 AND Songs.homeShard = @home ORDER BY Renames.id", conn);
+                if (homeShard != null)
+                    cmd.Parameters.AddWithValue("@home", homeShard);
+                using SQLiteDataReader r = cmd.ExecuteReader();
+                List<RenameRow> list = new List<RenameRow>();
+                while (r.Read())
+                    list.Add(ReadRename(r));
+                return list;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex, "MusicShareDatabase.GetOpenRenames");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// The names each of these songs had before its applied renames, oldest first (a song never renamed isn't in it;
+        /// null on failure): a home song rebuilt from the database keeps them (MusicInfo.FormerNames).
+        /// </summary>
+        public static Dictionary<int, List<(string Title, string Author)>>? GetRenameHistory(IEnumerable<int> hashes)
+        {
+            try
+            {
+                using SQLiteConnection conn = Open();
+                Dictionary<int, List<(string, string)>> history = new Dictionary<int, List<(string, string)>>();
+                foreach (int hash in hashes)
+                {
+                    using SQLiteCommand cmd = new SQLiteCommand("SELECT * FROM Renames WHERE songHash = @hash AND applied = 1 ORDER BY id", conn);
+                    cmd.Parameters.AddWithValue("@hash", hash);
+                    using SQLiteDataReader r = cmd.ExecuteReader();
+                    List<(string, string)> names = new List<(string, string)>();
+                    while (r.Read())
+                    {
+                        RenameRow n = ReadRename(r);
+                        names.Add((n.OldTitle, n.OldAuthor));
+                    }
+                    if (names.Count > 0)
+                        history[hash] = names;
+                }
+                return history;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex, "MusicShareDatabase.GetRenameHistory");
+                return null;
+            }
+        }
+
+        /// <summary>Marks these renames applied (or set aside: the song isn't in the home's library). False on failure.</summary>
+        public static bool MarkRenamesApplied(IEnumerable<long> ids)
+        {
+            try
+            {
+                using SQLiteConnection conn = Open();
+                using SQLiteTransaction tx = conn.BeginTransaction();
+                foreach (long id in ids)
+                {
+                    using SQLiteCommand cmd = new SQLiteCommand("UPDATE Renames SET applied = 1 WHERE id = @id", conn, tx);
+                    cmd.Parameters.AddWithValue("@id", id);
+                    cmd.ExecuteNonQuery();
+                }
+                tx.Commit();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex, "MusicShareDatabase.MarkRenamesApplied");
+                return false;
+            }
+        }
+        #endregion Renames
+
         #region Reviewers
         /// <summary>Is this account a music reviewer (any letter case)? Null: the database couldn't be read.</summary>
         public static bool? IsReviewer(string account)
@@ -791,6 +960,51 @@ VALUES (@shard, @hash, @composition, @title, @author, @instrument, @newTimer, @p
             {
                 LogHelper.LogException(ex, "MusicShareDatabase.IsSeeded");
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// May this shard write to the database (its writes released by staff: [MusicShare release)? Only a shard that
+        /// starts held asks (the Music Conservatory). False when it isn't released; null when that can't be read: the
+        /// caller treats both as held (fail closed).
+        /// </summary>
+        public static bool? IsReleased(string shard)
+        {
+            try
+            {
+                if (!File.Exists(DatabasePath))
+                    return null;
+                using SQLiteConnection conn = Open();
+                using SQLiteCommand cmd = new SQLiteCommand("SELECT value FROM Meta WHERE key = @key", conn);
+                cmd.Parameters.AddWithValue("@key", "released:" + shard);
+                object? value = cmd.ExecuteScalar();
+                return value != null && value != DBNull.Value && Convert.ToString(value)!.Length > 0;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex, "MusicShareDatabase.IsReleased");
+                return null;
+            }
+        }
+
+        /// <summary>Releases (who and when: "Adam Ant 2026-11-16 21:50Z") or holds again (null) this shard's writes. False on failure.</summary>
+        public static bool SetReleased(string shard, string? byWhom)
+        {
+            try
+            {
+                using SQLiteConnection conn = Open();
+                using SQLiteCommand cmd = new SQLiteCommand(byWhom == null ? "DELETE FROM Meta WHERE key = @key"
+                    : "INSERT OR REPLACE INTO Meta (key, value) VALUES (@key, @value)", conn);
+                cmd.Parameters.AddWithValue("@key", "released:" + shard);
+                if (byWhom != null)
+                    cmd.Parameters.AddWithValue("@value", byWhom);
+                cmd.ExecuteNonQuery();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogHelper.LogException(ex, "MusicShareDatabase.SetReleased");
+                return false;
             }
         }
 

@@ -22,8 +22,22 @@
 /* Scripts\Engines\Spawner\Spawner.SpawnPosition.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *  12/4/2023, Adam (mobiles getting stuck or spawning underwater)
+ *      sometimes, the map lays water tiles over gullies/ditches in dungeons (lakes).
+ *          Example (5228, 911, -45) / (5228, 911, -65) (Destard)
+ *      For land-only mobiles, we avoid these completely. For water capable mobs, we exclude the land tiles under the water
+ *  5/31/2023, Adam (ChangingDungeons)
+ *      Add is changing dungeons rule. I.e., don't allow Shame spawn to end up in Wind
+ *  3/27/23, Adam (RandomPointAdjust)
+ *      Modify RandomPointAdjust (used in concentric spawners) to apply gravity to outer edge.
+ *      Basically, we don't want a smooth distribution of objects from spawner to the edge (of the spawn radius.)
+ *      We want to 'pull' some fraction of objects away from the spawner and distribute them in the outer two bands.
+ *      See Also comments: RandomPointAdjust()
+ *  10/11/21, Adam
+ *      Add support for spawning on a boat
+ *	4/20/08, Adam
+ *		Make GetSpawnPosition() a public function
  */
 
 using Server.Items;

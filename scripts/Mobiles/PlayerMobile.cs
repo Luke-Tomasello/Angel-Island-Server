@@ -21,6 +21,10 @@
 
 /* Scripts/Mobiles/PlayerMobile.cs
  * ChangeLog:
+ *  11/17/2026, Adam (title change)
+ *      Every change to the NPC guild points (NpcGuildPoints, ComposerPoints, ShopkeeperPoints, joining or leaving
+ *      the guild) tells the clothing the player wears when the composer title changes level
+ *      (BaseClothing.OnWearerTitleChanged): the composer's cloak renames itself.
  *  11/11/2026, Adam (death killer)
  *      DeathKiller (not saved): OnDeath keeps the last mobile to damage the player, before the damage entries are
  *      cleared, so the death announcement names the real killer (it used to name the last aggressor, which can be
@@ -947,7 +951,7 @@ namespace Server.Mobiles
         public double ShopkeeperPoints
         {
             get { return m_NpcGuildPoints; }
-            set { m_NpcGuildPoints = value; }
+            set { SetNpcGuildPoints(value); }
         }
         // [view this property through the NpcGuild property]
         public bool Shopkeeper
@@ -957,7 +961,7 @@ namespace Server.Mobiles
         public double ComposerPoints
         {
             get { return m_NpcGuildPoints; }
-            set { m_NpcGuildPoints = value; }
+            set { SetNpcGuildPoints(value); }
         }
         // [view this property through the NpcGuild property]
         public bool Composer
@@ -2023,7 +2027,30 @@ namespace Server.Mobiles
         public double NpcGuildPoints
         {
             get { return m_NpcGuildPoints; }
-            set { m_NpcGuildPoints = value; }
+            set { SetNpcGuildPoints(value); }
+        }
+
+        // every change to the guild points comes here, so worn clothing hears when the title they earn changes
+        private void SetNpcGuildPoints(double value)
+        {
+            string? before = Titles.ComposerTitle(this);
+            m_NpcGuildPoints = value;
+            NotifyTitleChange(before);
+        }
+
+        /// <summary>
+        /// Tells the clothing this player wears that their title changed (BaseClothing.OnWearerTitleChanged), when
+        /// the composer title now differs from 'before' (a new level: Neophyte to Novice, say; joining or leaving the
+        /// bards' guild). A change within a level does nothing.
+        /// </summary>
+        private void NotifyTitleChange(string? before)
+        {
+            if (Deleted || before == Titles.ComposerTitle(this))
+                return;
+
+            foreach (Item item in Items.ToArray())
+                if (item is BaseClothing clothing && !clothing.Deleted)
+                    clothing.OnWearerTitleChanged(this);
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -2048,6 +2075,8 @@ namespace Server.Mobiles
         }
         public void OnNpcGuildJoin(NpcGuild newGuild)
         {
+            string? title = Titles.ComposerTitle(this);
+
             // set membership
             m_NpcGuildPoints = 0;
             NpcGuild = newGuild;
@@ -2059,15 +2088,21 @@ namespace Server.Mobiles
                 int sales, plays, publications;
                 m_NpcGuildPoints = MusicLibrary.GetPublishingPoints(this, out sales, out plays, out publications);
             }
+
+            NotifyTitleChange(title);
         }
         // called by the NPC guild master when a player resigns
         public void OnNpcGuildResign()
         {
+            string? title = Titles.ComposerTitle(this);
+
             // clear membership
             m_NpcGuildPoints = 0;
             NpcGuild = NpcGuild.None;
             NpcGuildJoinTime = DateTime.MinValue;
             NpcGuildGameTime = TimeSpan.Zero;
+
+            NotifyTitleChange(title);
         }
         #endregion NpcGuild
 

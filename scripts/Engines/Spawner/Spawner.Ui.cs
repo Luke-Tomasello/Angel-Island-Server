@@ -22,8 +22,11 @@
 /* Scripts\Engines\Spawner\Spawner.Ui.cs
  * CHANGELOG:
  *   5/22/2026, Adam:
- *      - Initial checkin
- *      - See Spawner.History.txt for a historical record
+ *      - New Module checkin
+ *	3/6/16, Adam
+ *		1. Comment out the *display* of the OurWorldSize stuff... not sure why it's here and atleast makes the display ugly
+ *		We will look into this later and try and track down the reasoning.
+ *		2. Make our event spawners print more useful information, and allow them to take an expiration date.
  */
 
 using System.Collections.Generic;

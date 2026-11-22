@@ -21,6 +21,21 @@
 
 /* Engines/Guilds/Guild.cs
  * CHANGELOG:
+ *  11/21/26, Adam (guildmaster vote, bans)
+ *      The vote: a member who hasn't logged in for 14 days abstains (InactiveVoterAfter); their fealty is no longer
+ *      overwritten to themselves (each became a candidate with one vote: ties, an inactive member elected, their
+ *      choice lost). The purpose of 10/12/21 stays: once the members keeping a leader in power stop playing, the
+ *      active members decide. A tie keeps the current leader if tied, else the tied member who joined first (it went
+ *      to the first in a Hashtable, so leadership could change between counts by itself). CalculateMemberVote sets
+ *      the member's own fealty to self (it wrote candidate.GuildFealty: a null fealty threw and the vote was lost;
+ *      a stale one changed that person's fealty). A shard guild's member titles skip a non-player member and a title
+ *      that isn't a date (it threw).
+ *      RemoveMember resets fealties pointing at the departed member before the new count (they were reset after it,
+ *      and never on the fixed-guildmaster path), drops them from candidates and accepted, and disbands once.
+ *      Bans: BanExpiry finds the ban that applies (a shared account's threw); IsBannedMember and GetBannedMember are
+ *      one check, safe for a mobile without an account, and a shared account's characters after an empty slot count;
+ *      banned again restarts the 14 days and clears candidate/accepted. [BanMember asks again at the target that the
+ *      caller still leads that same guild (it compared guild names) and refuses the system account and higher staff.
  *  5/29/23, Yoar (GuildBanClear)
  *      Added [GuildBanClear to clear the guild-ban status
  *  5/6/23, Adam (BanMember)
@@ -345,9 +360,11 @@ namespace Server.Guilds
         }
         public TimeSpan BanExpiry(Mobile m)
         {
-            if (IsBannedMember(m) == GuildBanType.None)
+            // the ban that applies: theirs, or a shared account's (it read m_Banned[m], which threw for a shared one)
+            Mobile? banned = GetBannedMember(m);
+            if (banned == null || !m_Banned.TryGetValue(banned, out DateTime expiry))
                 return TimeSpan.Zero;
-            return m_Banned[m] - DateTime.UtcNow;
+            return expiry - DateTime.UtcNow;
         }
 
         private void TidyBanList()
@@ -365,40 +382,26 @@ namespace Server.Guilds
 
         public GuildBanType IsBannedMember(Mobile m)
         {
-            TidyBanList();
-
-            if (m_Banned.ContainsKey(m))
-                return GuildBanType.Self;           // you were banned
-
-            // okay, see if this guy is using the same IP address of a banned account
-            ArrayList list = Utility.GetSharedAccounts(((Server.Accounting.Account)m.Account).LoginIPs);
-
-            foreach (Server.Accounting.Account acct in list)
-            {
-                if (acct == null)
-                    continue;
-
-                for (int charndx = 0; charndx < acct.Limit; charndx++)
-                {
-                    if (acct[charndx] == null)
-                        break;                      // no more characters on this account
-
-                    if (m_Banned.ContainsKey(acct[charndx]))
-                        return GuildBanType.Friend; // this shared account's guy was banned, so you will be too!
-                }
-            }
-
-            return GuildBanType.None;               // not banned
+            Mobile? banned = GetBannedMember(m);
+            return banned == null ? GuildBanType.None
+                : banned == m ? GuildBanType.Self       // you were banned
+                : GuildBanType.Friend;                  // this shared account's guy was banned, so you will be too!
         }
         public Mobile? GetBannedMember(Mobile m)
         {
             TidyBanList();
 
+            if (m == null)
+                return null;
+
             if (m_Banned.ContainsKey(m))
                 return m;                           // you were banned
 
-            // okay, see if this guy is using the same IP address of a banned account
-            ArrayList list = Utility.GetSharedAccounts(((Server.Accounting.Account)m.Account).LoginIPs);
+            // okay, see if this guy is using the same IP address of a banned account (a mobile without an account, such
+            //  as the system account or a test character, has none: it threw)
+            if (m.Account is not Server.Accounting.Account own || own.LoginIPs == null)
+                return null;
+            ArrayList list = Utility.GetSharedAccounts(own.LoginIPs);
 
             foreach (Server.Accounting.Account acct in list)
             {
@@ -407,8 +410,9 @@ namespace Server.Guilds
 
                 for (int charndx = 0; charndx < acct.Limit; charndx++)
                 {
+                    // an empty slot isn't the end: characters after a deleted one were skipped (it said break)
                     if (acct[charndx] == null)
-                        break;                      // no more characters on this account
+                        continue;
 
                     if (m_Banned.ContainsKey(acct[charndx]))
                         return acct[charndx];       // this shared account's guy was banned
@@ -418,9 +422,14 @@ namespace Server.Guilds
             return null;                            // not banned
         }
         public void BanMember(Mobile m)
-        {   //  14 day ban
-            if (!m_Banned.ContainsKey(m))
-                m_Banned.Add(m, DateTime.UtcNow + TimeSpan.FromDays(14));
+        {   //  14 day ban; banned again, the 14 days start again (it kept the first ban's expiry)
+            if (m == null)
+                return;
+            DateTime expiry = DateTime.UtcNow + TimeSpan.FromDays(14);
+            if (!m_Banned.TryGetValue(m, out DateTime had) || had < expiry)
+                m_Banned[m] = expiry;
+            m_Candidates?.Remove(m);
+            m_Accepted?.Remove(m);
         }
         public void RemoveMember(Mobile m)
         {
@@ -430,6 +439,21 @@ namespace Server.Guilds
                 m.Guild = null;
 
                 m.SendLocalizedMessage(1018028); // You have been dismissed from your guild.
+
+                // no longer a candidate or accepted here either (a kicked member can't walk back in through the stone)
+                m_Candidates?.Remove(m);
+                m_Accepted?.Remove(m);
+
+                // update guild fealty first: those who followed the member who left follow themselves (11/21/26: this ran
+                //  after the new count, so a departed leader's followers counted, and on the fixed-guildmaster path not at all)
+                foreach (Mobile n in m_Members)
+                {
+                    if (n == null || n.Deleted || n.Guild != this)
+                        continue;
+
+                    if (n.GuildFealty == m)
+                        n.GuildFealty = n; //set guild fealty to self
+                }
 
                 if (m == m_Leader)
                 {
@@ -447,21 +471,14 @@ namespace Server.Guilds
                     CalculateGuildmaster();
 
                     if (m_Leader == null)
+                    {
                         Disband();
+                        return;     // once (it also ran again below when the guild was empty)
+                    }
                 }
 
                 if (m_Members.Count == 0)
                     Disband();
-
-                //update guild feality
-                foreach (Mobile n in m_Members)
-                {
-                    if (n == null || n.Deleted || n.Guild != this)
-                        continue;
-
-                    if (n.GuildFealty == m)
-                        n.GuildFealty = n; //set guild fealty to self
-                }
             }
         }
 
@@ -777,6 +794,18 @@ namespace Server.Guilds
             return count;
         }
 
+        /// <summary>A player who hasn't logged in for this long abstains from the guildmaster vote (their fealty is kept).</summary>
+        public static readonly TimeSpan InactiveVoterAfter = TimeSpan.FromDays(14);
+
+        // a member who still plays: a player character whose account logged in within InactiveVoterAfter (others, such
+        //  as the system account, always count, as before)
+        private static bool ActiveVoter(Mobile member)
+        {
+            if (member is Mobiles.PlayerMobile pm && pm.Account is Accounting.Account acct)
+                return DateTime.UtcNow - acct.LastLogin <= InactiveVoterAfter;
+            return true;
+        }
+
         private Mobile? CalculateMemberVote(Mobile? member)
         {
             try
@@ -786,7 +815,7 @@ namespace Server.Guilds
                     return null;
                 }
 
-                Mobile candidate = member.GuildFealty;
+                Mobile? candidate = member.GuildFealty;
 
                 if (candidate == null || candidate.Deleted || candidate.Guild != this)
                 {
@@ -795,8 +824,9 @@ namespace Server.Guilds
                         candidate = m_Leader;
                     }
                     else
-                    {   // set fealty to self
-                        candidate.GuildFealty = member;
+                    {   // set fealty to self (it wrote candidate.GuildFealty: with no fealty that threw and the vote was
+                        //  lost; with one pointing at someone gone, it changed that person's fealty instead)
+                        member.GuildFealty = member;
                         candidate = member;
                     }
                 }
@@ -830,10 +860,11 @@ namespace Server.Guilds
                     // now update member titles if 1) they've been in this guild longer than two weeks, and 2) their title hasn't changed
                     for (int i = 0; m_Members != null && i < m_Members.Count; ++i)
                     {
-                        if ((m_Members[i] as Server.Mobiles.PlayerMobile).GuildTitle == null)
+                        // a member that isn't a player character (the system account) has no title to read
+                        if (m_Members[i] is not Server.Mobiles.PlayerMobile titled || titled.GuildTitle == null)
                             continue;
 
-                        string[] split = (m_Members[i] as Server.Mobiles.PlayerMobile).GuildTitle.Split(new char[] { '/' });
+                        string[] split = titled.GuildTitle.Split(new char[] { '/' });
                         if (split.Length != 2)
                             continue;
 
@@ -847,58 +878,67 @@ namespace Server.Guilds
                         if (result == false)
                             continue;
 
+                        // a title that isn't a real date ("8/29" read day/month) is skipped: it threw, and the exception
+                        //  ended the loop for every member after it
+                        if (month < 1 || month > 12 || day < 1 || day > DateTime.DaysInMonth(DateTime.UtcNow.Year, month))
+                            continue;
                         DateTime join = new DateTime(DateTime.UtcNow.Year, month, day);
                         TimeSpan ts = join - DateTime.UtcNow;
                         if (ts.TotalDays >= 14)
                         {   // two weeks. Update: 4/28/23, no more self updating titles.
                             //  I left the code here in case we change our minds, but for now they are Citizens!
-                            (m_Members[i] as Server.Mobiles.PlayerMobile).GuildTitle = "Citizen"; // "Guildmember";
+                            titled.GuildTitle = "Citizen"; // "Guildmember";
                         }
                     }
                     // no more FixedGuildmaster processing
                     return;
                 }
 
-                Hashtable votes = new Hashtable();
-
-                // tally votes
+                // tally votes. A member who hasn't logged in for 14 days abstains (11/21/26): the members still playing
+                //  decide, so those who kept a leader in power stop counting once they stop playing, and the active
+                //  members can vote the leader out. Their fealty is left as it is and counts again when they return.
+                //  (Until 11/21/26 their fealty was overwritten to themselves: each became a candidate with one vote,
+                //  which made ties, could elect someone who had stopped playing, and erased their choice.)
+                Dictionary<Mobile, int> votes = new Dictionary<Mobile, int>();
                 for (int i = 0; m_Members != null && i < m_Members.Count; ++i)
                 {
-                    // don't allow members that have not logged in for 14 days to vote
-                    if (m_Members[i] as Mobile is Mobiles.PlayerMobile pm && pm != null && pm.Account as Accounting.Account != null)
-                    {
-                        Accounting.Account? acct = pm.Account as Accounting.Account;
-                        TimeSpan delta = DateTime.UtcNow - acct.LastLogin;
-                        if (delta.TotalDays > 14)
-                        {   // can't vote / set guild fealty to self
-                            if (pm.GuildFealty != pm)
-                                pm.GuildFealty = pm;
-                        }
-                    }
+                    if (m_Members[i] is not Mobile member || member.Deleted || !ActiveVoter(member))
+                        continue;
 
-                    Mobile? v = CalculateMemberVote(m_Members[i] as Mobile);
-
+                    Mobile? v = CalculateMemberVote(member);
                     if (v == null)
                         continue;
-                    if (votes[v] == null)
-                        votes[v] = (int)1;
-                    else
-                        votes[v] = (int)(votes[v]) + 1;
+                    votes[v] = votes.TryGetValue(v, out int had) ? had + 1 : 1;
                 }
 
                 Mobile? winner = null;
                 int highVotes = 0;
 
-                // find winner
-                foreach (DictionaryEntry de in votes)
+                // find winner: the most votes. A tie keeps the current leader if they're among the tied; otherwise the
+                //  tied member who joined first (the member list's order). It went to whichever came first in a
+                //  Hashtable, so leadership could change between counts with nobody doing anything.
+                foreach (KeyValuePair<Mobile, int> de in votes)
+                    if (!de.Key.Deleted && de.Value > highVotes)
+                        highVotes = de.Value;
+                if (highVotes > 0)
                 {
-                    if (de.Key is Mobile m && m != null && m.Deleted == false)
+                    List<Mobile> tied = new List<Mobile>();
+                    foreach (KeyValuePair<Mobile, int> de in votes)
+                        if (!de.Key.Deleted && de.Value == highVotes)
+                            tied.Add(de.Key);
+                    if (m_Leader != null && tied.Contains(m_Leader))
+                        winner = m_Leader;
+                    else
                     {
-                        int val = (int)de.Value;
-                        if (winner == null || val > highVotes)
+                        int first = int.MaxValue;
+                        foreach (Mobile t in tied)
                         {
-                            winner = m;
-                            highVotes = val;
+                            int at = m_Members.IndexOf(t);
+                            if (at >= 0 && at < first)
+                            {
+                                first = at;
+                                winner = t;
+                            }
                         }
                     }
                 }
@@ -1580,17 +1620,26 @@ namespace Server.Guilds
                 if (them != null)
                 {
                     Guild? targeted_guild = them.Guild as Guild;
-                    if (targeted_guild == null)
+                    // asked again at the target: the guild, or the leadership, may have changed since the command
+                    if (my_guild == null || my_guild.Disbanded || my_guild.Leader != me)
+                    {
+                        me.SendMessage("You must be the guildmaster to use this command.");
+                    }
+                    else if (targeted_guild == null)
                     {
                         me.SendMessage("They are not in a guild.");
                     }
-                    else if (!targeted_guild.Name.Equals(my_guild.Name, StringComparison.OrdinalIgnoreCase))
+                    else if (targeted_guild != my_guild)       // the same guild, not one with the same name
                     {
                         me.SendMessage("They are not in your guild.");
                     }
                     else if (them == me)
                     {
                         me.SendMessage("You cannot ban yourself.");
+                    }
+                    else if (them == World.GetSystemAcct() || them.AccessLevel > me.AccessLevel)
+                    {
+                        me.SendMessage("You cannot ban them.");
                     }
                     else
                     {

@@ -116,6 +116,14 @@
 
 /* Server/Patcher.cs
  * ChangeLog:
+ *  11/18/26, Adam (PatchV274)
+ *      PatchV274 runs before the world loads (Music Conservatory production: Siege's logs emptied).
+ *  11/18/26, Adam (PatchV273)
+ *      MusicConservatory(): a patch for the Music Conservatory alone.
+ *  11/17/26, Adam (-uomc)
+ *      Upheaval() is false on the Music Conservatory: it plays by the Upheaval rules, but its world isn't Upheaval's (it
+ *      began as Siege Perilous's), so Upheaval's world patches (V200 Initialize Upheaval, creature allegiance, orc
+ *      masks, music ownership, breeding, banker heads...) never run on it.
  *  11/8/2026, Adam
  *      Changelog added. PatchComplete stamps the shard's time (ShardClock.Now) instead of AdjustedDateTime.GameTime.
  */
@@ -263,6 +271,7 @@ namespace Server
                     PatchIndex.PatchV245,
                     PatchIndex.PatchV246,
                     PatchIndex.PatchV248,
+                    PatchIndex.PatchV274,
                 };
 
                 foreach (PatchIndex bits in preWorldLoadPatches)
@@ -938,7 +947,9 @@ namespace Server
         public static bool Mortalis(bool quiet = false) { if (!quiet) return Patching(Core.RuleSets.MortalisRules()); else return Core.RuleSets.MortalisRules(); }
         public static bool Seasons(bool quiet = false) { if (!quiet) return Patching(Core.RuleSets.SeasonsRules()); else return Core.RuleSets.SeasonsRules(); }
         public static bool Seasons(int season, bool quiet = false) { if (!quiet) return Patching(Core.RuleSets.SeasonsRules(season)); else return Core.RuleSets.SeasonsRules(season); }
-        public static bool Upheaval(bool quiet = false) { if (!quiet) return Patching(Core.RuleSets.UpheavalRules()); else return Core.RuleSets.UpheavalRules(); }
+        // Upheaval's world patches: never on the Music Conservatory (Upheaval's rules, not its world)
+        public static bool Upheaval(bool quiet = false) { bool up = Core.RuleSets.UpheavalRules() && !Core.RuleSets.MusicConservatoryRules(); if (!quiet) return Patching(up); else return up; }
+        public static bool MusicConservatory(bool quiet = false) { if (!quiet) return Patching(Core.RuleSets.MusicConservatoryRules()); else return Core.RuleSets.MusicConservatoryRules(); }
         public static bool LoginServer(bool quiet = false) { if (!quiet) return Patching(Core.RuleSets.LoginServerRules()); else return Core.RuleSets.LoginServerRules(); }
         public static bool TestCenterShards(bool quiet = false)
         {

@@ -21,6 +21,9 @@
 
 /* CHANGELOG
  * Server\ExpansionInfo.cs
+ * 11/17/26, Adam (-uomc)
+ *      The Angel Island Music Conservatory has its own expansion, like every shard: Expansion.MusicConservatory (table
+ *      entry 15), with FeatureFlags and CharacterListFlags of its own, the same as Upheaval's (whose rules it plays by).
  * 11/27/22, Adam
  *      RunUO used the 'table order' of these expansions to determine Expansion Features, i.e., does Expansion Y Support X, is table[UOR] >= table[ML]?
  *      This model breaks down when a shard administrator tries to add an expansion. At first you may try to reorder the list to fit your new expansion.
@@ -51,6 +54,7 @@ namespace Server
         Mortalis,       // Mortalis
         Seasons,        // Seasons shard
         Upheaval,       // Upheaval shard
+        MusicConservatory,  // Angel Island Music Conservatory (on the Upheaval rules)
     }
 
     [Flags]
@@ -122,6 +126,7 @@ namespace Server
         Mortalis = ExpansionT2A,        // Mortalis
         Seasons = ExpansionT2A,         // Seasons
         Upheaval = ExpansionT2A,        // Upheaval
+        MusicConservatory = ExpansionT2A,   // Angel Island Music Conservatory (as Upheaval)
     }
 
     [Flags]
@@ -174,6 +179,7 @@ namespace Server
         Mortalis = ExpansionLBR | OneCharacterSlot,
         Seasons = ExpansionLBR,
         Upheaval = ExpansionLBR | OneCharacterSlot,
+        MusicConservatory = ExpansionLBR | OneCharacterSlot,    // as Upheaval
     }
 
     public class ExpansionInfo
@@ -221,6 +227,9 @@ namespace Server
 
             new ExpansionInfo( 14, "Upheaval",new DateTime(2000, 5, 4),               ClientFlags.Felucca,
                 FeatureFlags.Upheaval,  CharacterListFlags.Upheaval,        0x2E0 ),
+
+            new ExpansionInfo( 15, "Angel Island Music Conservatory",new DateTime(2000, 5, 4),   ClientFlags.Felucca,
+                FeatureFlags.MusicConservatory,  CharacterListFlags.MusicConservatory,        0x2E0 ),
         };
 
         private string m_Name;

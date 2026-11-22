@@ -19,7 +19,7 @@
  *
  ***************************************************************************/
 
-/* Scripts/Commands/Nuke.cs
+/* Scripts\Items\Skill Items\Magical\misc\BlankScroll.cs
  * CHANGELOG:
  *  7/6/2023, Adam
  *      Comment out bogus double click message
@@ -28,8 +28,10 @@
  *  1/12/22, Adam (BlankScroll patch)
  *      0xE34 is the flipped blank scroll graphic (we're using this now)
  *      the old itemID 0xEF3 has magically odd behavior. 
- *      the odd behavior includes not being able to override OnDoubleClick. It's seems to be handled by the client.
- *      See also: Nuke BlankScrollPatch()
+ *      the odd behavior includes not being able to override OnDoubleClick: the client treats 0xEF3 - 0xEF9 as old-style
+ *      magic scrolls and sends their double-click as an "old scroll" text command (0x12, type 0x2F), which the server
+ *      ignores (PacketHandlers), never as a double-click (0x06).
+ *      See also: Nuke BlankScrollPatch() (svn r1428 and earlier)
  */
 
 namespace Server.Items
@@ -49,7 +51,10 @@ namespace Server.Items
 
         [Constructable]
         public BlankScroll(int amount)
-            : base(0xE34 /*0xEF3 has magically odd behavior*/)
+            // not 0xEF3: the client treats 0xEF3 - 0xEF9 as old-style magic scrolls and sends their double-click as an
+            //  "old scroll" text command (0x12, type 0x2F; PacketHandlers ignores it), never as a double-click (0x06),
+            //  so OnDoubleClick never runs
+            : base(0xE34)
         {
             Stackable = true;
             Weight = 1.0;
