@@ -46,8 +46,8 @@ The ports are in `Ports.json`. Other flags you may want:
 |---|---|
 | `-timezone=<zone>` | The shard's time zone, for events and scheduled jobs: an IANA name (`-timezone=America/Los_Angeles`) or `UTC`, `UTC-5`, `UTC+5:30`. Not given: the server machine's zone. An unknown zone stops startup |
 | `-nopatch` | Skip the startup patcher (one-time patches for existing worlds) |
-| `-nosaves` | No automatic saves, for a development or test world you don't want to keep. A manual `[save` still saves |
-| `-saves` | Automatic saves in a Debug build, which otherwise never saves automatically. Given with `-nosaves`, the server won't start |
+| `-nosaves` | Starts with saves off, for a development or test world you don't want to keep: no automatic saves, and a `[Maintenance` shutdown or restart doesn't save first. `[AutoSave on` turns saves back on (then both save again); a manual `[save` always saves |
+| `-saves` | This launch saves, like a production shard. A Debug build must be given `-saves` or `-nosaves` (neither, or both, and the server won't start); in a Release build, which saves unless told `-nosaves`, it changes nothing |
 
 The startup banner shows what's in effect: `[Saves are Enabled.]` or `[Saves are Disabled.]`, the time zone, and
 where the databases are.

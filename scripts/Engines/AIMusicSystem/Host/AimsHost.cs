@@ -20,6 +20,8 @@
 
 /* Scripts\Engines\AIMusicSystem\Host\AimsHost.cs
  * Changelog
+ *  11/22/26, Adam (listening in)
+ *      Overhears (default false): does someone hear a source that plays to its listener alone (staff listening in)?
  *  11/20/26, Adam (11/19/26 to 11/20/26)
  *      FullPlays (default false): every library song plays in full for everyone and plays earn nothing.
  *      Offer the host a turn before a playlist starts its next track.
@@ -270,6 +272,15 @@ namespace Server
         public virtual void SetMusicKarma(Mobile m, double value)
         {
             AimsPlayerData.GetOrCreate(m).Karma = value;
+        }
+
+        /// <summary>
+        /// Does m, near a source that plays to its listener alone (IMusicAudience), hear it too (staff listening in)? Asked
+        /// for each note and each client in range: answer quickly. Default: no one but the listener hears it.
+        /// </summary>
+        public virtual bool Overhears(Mobile m, Mobile? listener)
+        {
+            return false;
         }
 
         /// <summary>Has the player turned off other players' music ([FilterMusic)? Default: kept by AIMS.</summary>

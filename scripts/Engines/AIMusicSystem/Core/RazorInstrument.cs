@@ -19,6 +19,8 @@
 
 /* Scripts/Skill Items/Musical Instruments/RazorInstrument.cs
  * ChangeLog
+ *  11/22/26, Adam (listening in)
+ *      Lyrics from a source that plays to its listener alone also reach whoever overhears them (MusicAudience).
  *  11/21/26, Adam (11/19/26 to 11/21/26)
  *      Lyrics from a source that plays to its listener alone (IMusicAudience) are shown over it to that listener only.
  *      Lyrics from a source with a Range (IMusicAudience) reach only that far.
@@ -1369,9 +1371,8 @@ namespace Server.Items
                 try
                 {
                     if (Source is Server.Misc.IMusicAudience audience && audience.ListenerOnly && Source is Item quiet)
-                    {   // a practice room: the listener alone sees the words
-                        if (audience.Listener?.NetState != null)
-                            audience.Listener.NetState.Send(new Network.AsciiMessage(quiet.Serial, quiet.ItemID, Network.MessageType.Regular, 0x32, 3, quiet.Name ?? "", line));
+                    {   // a practice room: the listener alone sees the words (and staff listening in)
+                        Server.Misc.MusicAudience.SendWords(quiet, audience, 0x32, line);
                     }
                     else if (Source is Server.Misc.IMusicAudience near && near.Range > 0 && Source is Item ranged && ranged.Map != null)
                     {   // a box that carries less far than usual: its words too

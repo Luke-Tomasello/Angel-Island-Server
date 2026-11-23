@@ -21,11 +21,18 @@
 
 /* Scripts/Commands/Listen.cs
  * CHANGELOG:
+ *  11/22/26, Adam (Listener music boxes)
+ *      [listen by an Administrator also turns on (or off, the second time) listening to the Listener music boxes serving
+ *      that player: near such a box they hear its notes and see its lyrics and replies, as the player does (AIMS asks
+ *      AimsHost.Overhears). It follows the player, not the box; the player isn't told; nothing is saved. Party and guild
+ *      listening are unchanged (GameMaster).
  *	7/11/05 - Pix
  *		Initial Version
  */
 
+using Server.Mobiles;
 using Server.Targeting;
+using System.Collections.Generic;
 
 namespace Server.Commands
 {
@@ -51,8 +58,45 @@ namespace Server.Commands
             {
                 Server.Engines.PartySystem.Party.ListenToParty_OnTarget(from, obj);
                 Server.Guilds.Guild.ListenToGuild_OnTarget(from, obj);
+
+                if (from.AccessLevel >= AccessLevel.Administrator && obj is PlayerMobile player && player != from)
+                    from.SendMessage(ToggleMusic(from, player)
+                        ? "You are now listening to their Listener music boxes (stay near the box to hear it)."
+                        : "You are no longer listening to their Listener music boxes.");
             }
         }
+
+        #region Listener music boxes
+        // staff -> the players whose Listener music boxes they hear; not saved
+        private static readonly Dictionary<Mobile, HashSet<Mobile>> m_Music = new();
+
+        /// <summary>Turns listening to the player's Listener music boxes on or off; true when it's on now.</summary>
+        public static bool ToggleMusic(Mobile staff, Mobile player)
+        {
+            // forget the deleted (staff and players)
+            foreach (Mobile gone in new List<Mobile>(m_Music.Keys))
+                if (gone.Deleted)
+                    m_Music.Remove(gone);
+
+            if (!m_Music.TryGetValue(staff, out HashSet<Mobile>? players))
+                m_Music[staff] = players = new HashSet<Mobile>();
+            players.RemoveWhere(m => m.Deleted);
+
+            bool on = players.Add(player);
+            if (!on)
+                players.Remove(player);
+            if (players.Count == 0)
+                m_Music.Remove(staff);
+            return on;
+        }
+
+        /// <summary>Does staff hear a Listener music box serving the player? Asked for every note: nothing to look up unless someone is listening.</summary>
+        public static bool Overhears(Mobile staff, Mobile? player)
+        {
+            return m_Music.Count > 0 && player != null && staff.AccessLevel >= AccessLevel.Administrator
+                && m_Music.TryGetValue(staff, out HashSet<Mobile>? players) && players.Contains(player);
+        }
+        #endregion Listener music boxes
 
     }
 }

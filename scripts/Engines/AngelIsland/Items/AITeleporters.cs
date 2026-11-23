@@ -21,6 +21,9 @@
 
 /* Scripts/Engines/AngelIsland/AITeleporters.cs
  * ChangeLog
+ *  11/22/26, Adam (Server Wars test)
+ *      CheckParole: Server Wars is AutoRestart.Restarting (the restart no longer turns saves off; it asked "saves off
+ *      and restarting").
  *  10/18/26, Adam (confinement Stage 5)
  *      AIParoleExit and AIEscapeExit ask the release vetoes (ConfinementVetoes.RefuseAutomated) before anything moves or is
  *      checked out: in OnMoveOver, and again in DoTeleport (a delayed exit; the prison's parole kick calls it directly).
@@ -584,7 +587,7 @@ namespace Server.Items
                 return ParoleDenial.None;
 
             // prisoners get out free during server wars.
-            bool bServerWars = (Server.Misc.AutoSave.SavesEnabled == false && Server.Misc.AutoRestart.Restarting == true);
+            bool bServerWars = Server.Misc.AutoRestart.Restarting;
             if (bServerWars == true)
                 return ParoleDenial.ServerWars;
 

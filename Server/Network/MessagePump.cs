@@ -21,6 +21,12 @@
 
 /* Server\Network\MessagePump.cs
  * CHANGELOG:
+ *  11/22/26, Adam (login key soak test removed)
+ *      No longer logged to LoginKey.log: the soak test is done, and PacketHandlers.GenerateAuthID no longer issues such keys.
+ *  11/22/26, Adam (login key soak test)
+ *      "Encrypted client detected, disconnecting" also goes to Logs\LoginKey.log, with the packet ID and the seed. Dropped
+ *      because its key started with 0xEF, the seed is the rest of that key and the login packet's ID: key 0xEF123456
+ *      gives seed 0x12345691 (PacketHandlers logs the key). Logging only.
  *  11/14/26, Adam (slow work)
  *      Each packet handler is timed: one that takes SlowWork.ThresholdMs or longer is recorded with the packet ID and
  *      who sent it (Diagnostics\SlowWork.cs). Speech packets carry [commands, so a slow command shows here.

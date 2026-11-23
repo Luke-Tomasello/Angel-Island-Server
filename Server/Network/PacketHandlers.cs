@@ -21,6 +21,19 @@
 
 /* Server\Network\PacketHandlers.cs
  *	ChangeLog:
+ *  11/22/26, Adam (login key soak test removed)
+ *      LoginKey.log is gone: the soak test is done. After the fix: 1,792 logins, 9 such keys drawn and thrown away, none
+ *      issued, no login dropped. (The before count was 2,617 logins in the end, not 2,174: the same 8 keys, all 8 dropped.)
+ *  11/22/26, Adam (login key)
+ *      GenerateAuthID never issues a key that starts with 0xEF: it draws again. The client sends its key back as the first
+ *      4 bytes of the game connection, and a connection starting with 0xEF is taken for a 6.0.5.0+ client's 21-byte seed
+ *      packet (MessagePump.HandleSeed), so 1 login in 256 was dropped ("Encrypted client detected, disconnecting") and
+ *      the next try worked. Soak test before: 2,174 logins, 8 such keys, all 8 dropped, no other login refused.
+ *      LoginKey.log: each such key drawn and thrown away.
+ *  11/22/26, Adam (login key soak test)
+ *      Logs\LoginKey.log: each login key issued that starts with 0xEF. A game server reads a connection starting with
+ *      0xEF as a newer client's seed packet, not a key, and drops it: "Encrypted client detected" (MessagePump logs that
+ *      to the same file). Logging only, to see the two together: nothing about a login changes.
  *  11/24/22. Adam: crash log #1
  *  Still researching this.
  *      I believe one of IAccount a or CityInfo[] info was somehow null. Maybe he closed the client at the city list
@@ -2680,12 +2693,17 @@ namespace Server.Network
 
                 if (Utility.RandomBool())
                     authID |= 1 << 31;
-            } while (m_AuthIDWindow.ContainsKey(authID));
+
+                // the client sends the key back as the first 4 bytes of the game connection; one starting with 0xEF is
+                //  taken for a 6.0.5.0+ client's seed packet (MessagePump.HandleSeed) and dropped
+            } while (IsSeedPacketID(authID) || m_AuthIDWindow.ContainsKey(authID));
 
             m_AuthIDWindow[authID] = new AuthIDPersistence(state.Version);
 
             return authID;
         }
+        // does the key's first byte read as the seed packet's ID?
+        private static bool IsSeedPacketID(int authID) => ((authID >> 24) & 0xFF) == 0xEF;
         #region RunUO2.6 Port compatibility functions
         private static bool IsValidAuthID(NetState state, int authID)
         {

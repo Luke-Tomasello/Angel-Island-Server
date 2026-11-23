@@ -21,6 +21,10 @@
 
 /* Script/Misc/AutoSave.cs
  * CHANGELOG:
+ *  11/21/26, Adam (no backup when saves are off)
+ *      Save() does nothing under World.SaveOption.NoSaves (Server Wars). Its backup moves the Saves folder away before
+ *      World.Save refuses, which would leave the shard with no Saves folder (a restart would load an empty world).
+ *      Every caller checked it first; now Save() does.
  *  11/20/26, Adam (cancel held autosaves)
  *      Disabling automatic saves also drops an occurrence waiting for a break in playback.
  *  11/20/26, Adam (stagger automatic world saves)
@@ -207,6 +211,14 @@ namespace Server.Misc
 
             if (AutoRestart.Restarting)
                 return;
+
+            // no saves from any source (Server Wars): the backup below moves the Saves folder away, and World.Save would
+            //  then refuse, leaving no Saves folder at all
+            if (World.SaveType == World.SaveOption.NoSaves)
+            {
+                Console.WriteLine("AutoSave: skipped (World.SaveOption.NoSaves: no saves from any source).");
+                return;
+            }
 
             if (Maintenance.FinalSave)  // final save before shutdown
                 // broadcasts 'shutting down' message 

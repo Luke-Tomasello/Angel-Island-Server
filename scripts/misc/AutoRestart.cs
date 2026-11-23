@@ -29,6 +29,10 @@
 
 /* Scripts/Misc/AutoRestart.cs
  * CHANGELOG
+ *  11/22/26, Adam (one source of truth for saves)
+ *      The last save before Server Wars asks AutoSave.SavesEnabled, like every other automatic save, and the restart no
+ *      longer turns saves off: Restarting already holds the automatic save (CronTasks), and the scripts that asked
+ *      "saves off and restarting" to mean Server Wars ask Restarting (AITeleporters, AutomatedEventSystem).
  *  11/20/26, Adam (show staggered autosave schedule)
  *      Report the next autosave and accept any positive whole-minute interval.
  *  11/20/26, Adam (autosave frequency)
@@ -340,10 +344,11 @@ namespace Server.Misc
             // if World.SaveOption.NoSaves is on, don't call AutoSave.Save() as it will still move the directories around
             if (World.SaveType == World.SaveOption.NoSaves)
                 Console.WriteLine("Note: AutoSave.Save() skipped because: World.SaveOption.NoSaves");
+            else if (!AutoSave.SavesEnabled)
+                Console.WriteLine("Note: AutoSave.Save() skipped because: saves are disabled");
             else
                 AutoSave.Save();            // last save before "Server Wars"
-            AutoSave.SavesEnabled = false;  // disable saves now
-            m_Restarting = true;            // okay, all set
+            m_Restarting = true;            // okay, all set (holds the automatic save: CronTasks)
 
             Timer.DelayCall(RestartDelay, new TimerCallback(Restart_Callback));
         }

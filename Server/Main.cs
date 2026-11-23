@@ -106,6 +106,26 @@
 
 /* Server\Main.cs
  * ChangeLog:
+ *  11/22/26, Adam (one source of truth for saves)
+ *      -nosaves only sets AutoSave.SavesEnabled off at startup; nothing reads the switch afterwards (Core.NoSaves is gone;
+ *      Core.Development, "a development machine", still counts it). Whether this world saves on its own, automatically
+ *      and at a maintenance, is AutoSave.SavesEnabled alone: [AutoSave on/off changes it (Maintenance.cs, AutoSave.cs).
+ *  11/22/26, Adam (startup banner order)
+ *      RunUO's "Core: ..." startup lines are banner lines like the rest ([...], informational color), each where it
+ *      belongs: the command line right under the header, above everything it decides (Siege II, the time zone, saves);
+ *      the processors with the machine (after the cron time line); the world save strategy just before "[Saves are
+ *      ...]". The processor count is taken there too, before the save strategy reads it. No behavior changed.
+ *  11/22/26, Adam (Halt without a console)
+ *      Halt, and the missing Ports.json exit, wait for a key only when a console can give one (WaitForKey): with no
+ *      console, or input redirected (a script's start check, a service), Console.ReadKey threw, so a Halt crashed instead
+ *      of exiting, and the crash handler then failed on the message pump, which doesn't exist yet at startup. The handler
+ *      skips the pump when it is null. The \GMN\switches.txt prompt (AddGMNSwitches) asks only when a console can answer;
+ *      without one it says so and skips the switches (nobody chose Apply); its ReadKey threw, logged as an exception.
+ *  11/21/26, Adam (a Debug build says -saves or -nosaves)
+ *      A Debug build given neither -saves nor -nosaves stops at startup: it quietly ran without saves, a guess. Every
+ *      launch now says what it means, so the Debug build's own "saves off" step is gone: -nosaves alone turns saves off,
+ *      in any build. -saves is the statement "this launch saves" (a Debug build standing in for production); in Release
+ *      it changes nothing. Both together still stop the server.
  *  11/20/26, Adam (world save strategy at startup)
  *      Select Dual on multicore machines and Standard on single-core machines, and show the mode.
  *  11/19/26, Adam (Music Conservatory mounts)
@@ -253,8 +273,8 @@ namespace Server
 
         // Disabling developer mode for now (for custom house building)
         //private static bool m_Developer;              // developers machine, allows derect login to any server
-        private static bool m_EnableDbgSaves = false;   // normally debug turns off saves. this enables saves for debug
-        private static bool m_NoSaves = false;          // -nosaves: no automatic saves in any build (a Debug build's default, for Release)
+        private static bool m_EnableDbgSaves = false;   // -saves: this launch saves (a Debug build must give -saves or -nosaves; in Release it changes nothing)
+        private static bool m_NoSaves = false;          // -nosaves: the shard starts with saves off (AutoSave.SavesEnabled), in any build
 
         private static bool m_Profiling;
         private static DateTime m_ProfileStart;
@@ -335,8 +355,6 @@ namespace Server
 
         public static bool Service { get { return m_Service; } }
 
-        // -nosaves: a development machine (production never has it)
-        public static bool NoSaves { get { return m_NoSaves; } }
         // a development machine: a Debug build or -nosaves (production is neither)
         public static bool Development { get { return Debug || m_NoSaves; } }
         // Disabling developer mode for now (for custom house building)
@@ -1698,10 +1716,11 @@ namespace Server
                 {
                     try
                     {
-                        for (int i = 0; i < m_MessagePump.Listeners.Length; i++)
-                        {
-                            m_MessagePump.Listeners[i].Dispose();
-                        }
+                        if (m_MessagePump != null)                              // null: a crash before the server listens
+                            for (int i = 0; i < m_MessagePump.Listeners.Length; i++)
+                            {
+                                m_MessagePump.Listeners[i].Dispose();
+                            }
                     }
                     catch (Exception ex) { EventSink.InvokeLogException(new LogExceptionEventArgs(ex)); }
 
@@ -1966,6 +1985,10 @@ namespace Server
             Utility.Monitor.WriteLine($"{phase} {text}".TrimStart(), color);
             #endregion Header
 
+            // the command line first: everything below it (Siege II, the time zone, saves) follows from it
+            if (Arguments.Length > 0)
+                Utility.Monitor.WriteLine("[Running with arguments: {0}]", ConsoleColorInformational(), Arguments);
+
             if (RuleSets.SiegeRules())
                 Utility.Monitor.WriteLine("[Siege II is {0}.]", ConsoleColorEnabled(Core.RuleSets.SiegeRules(2)), TextEnabled(Core.RuleSets.SiegeRules(2)));
 
@@ -1976,6 +1999,14 @@ namespace Server
             //Utility.Monitor.WriteLine("[Shared Directory: {0}]", ConsoleColorInformational(), Utility.GetShortPath(SharedDirectory));
             Utility.Monitor.WriteLine("[Shard time zone: {0}]", ConsoleColorInformational(), ShardClock.ZoneName);
             Utility.Monitor.WriteLine("[Cron time: UTC; shard-time jobs: {0}]", ConsoleColorInformational(), ShardClock.Zone.Id);
+
+            // the machine (the world save strategy, below, is chosen from the processor count)
+            m_ProcessorCount = Environment.ProcessorCount;
+            m_MultiProcessor = m_ProcessorCount > 1;
+            World.MultiProcessor = m_MultiProcessor;
+            if (m_MultiProcessor || Is64Bit)
+                Utility.Monitor.WriteLine("[Optimizing for {0} {2}processor{1}.]", ConsoleColorInformational(),
+                    m_ProcessorCount, m_ProcessorCount == 1 ? "" : "s", Is64Bit ? "64-bit " : "");
 
             #region ZLib
             bool zlib_loaded = false;
@@ -2019,8 +2050,8 @@ namespace Server
                 Utility.Monitor.WriteLine("[Ports not configured. Using defaults.]", ConsoleColorWarning());
                 if (DefaultPorts() == false)
                 {
-                    Utility.Monitor.WriteLine("Unable to find Ports.json. Press return to exit.", ConsoleColorWarning());
-                    Console.ReadKey();
+                    Utility.Monitor.WriteLine("Unable to find Ports.json.", ConsoleColorWarning());
+                    WaitForKey();
                     return;
                 }
             }
@@ -2075,11 +2106,10 @@ namespace Server
             Utility.Monitor.WriteLine("[Release Build Enabled]", ConsoleColorInformational());
 #endif
 
-#if DEBUG
-            //  Turn off saves for DEBUG builds
-            AutoSave.SavesEnabled = m_EnableDbgSaves;
-#endif
-            //  -nosaves: the same in any build (a development machine running Release). A manual [save still saves.
+            //  -nosaves, in any build: saves start off. AutoSave.SavesEnabled is the one source of truth from here on (automatic
+            //  saves and the maintenance final save ask it; [AutoSave on/off changes it); nothing reads the switch again.
+            //  (A Debug build must say -saves or -nosaves: SetSwitches.) A manual [save still saves.
+            Utility.Monitor.WriteLine("[World save strategy: {0}.]", ConsoleColorInformational(), World.SaveStrategyName);
             if (m_NoSaves)
                 AutoSave.SavesEnabled = false;
             state = AutoSave.SavesEnabled;
@@ -2124,19 +2154,6 @@ namespace Server
             else
                 Utility.Monitor.WriteLine("[Default map configuration: Felucca rules (PvP).]", ConsoleColorInformational());
             #endregion Map Rules
-
-            if (Arguments.Length > 0)
-                Console.WriteLine("Core: Running with arguments: {0}", Arguments);
-
-            m_ProcessorCount = Environment.ProcessorCount;
-
-            m_MultiProcessor = m_ProcessorCount > 1;
-            World.MultiProcessor = m_MultiProcessor;
-
-            if (m_MultiProcessor || Is64Bit)
-                Console.WriteLine("Core: Optimizing for {0} {2}processor{1}", m_ProcessorCount, m_ProcessorCount == 1 ? "" : "s", Is64Bit ? "64-bit " : "");
-
-            Console.WriteLine("Core: World save strategy: {0}", World.SaveStrategyName);
 
             int platform = (int)Environment.OSVersion.Platform;
             if ((platform == 4) || (platform == 128))
@@ -2357,6 +2374,16 @@ namespace Server
                     "",
                     ConsoleColor.Yellow);
 
+                // no one to ask (no console, or input redirected): skip them, as if (S)kip; applying needs someone to say so
+                if (!ConsoleCanAnswer)
+                {
+                    Utility.Monitor.WriteLine(
+                        "No console to ask (A)pply, (S)kip, or (D)elete: these startup switches will NOT be applied.",
+                        ConsoleColor.Yellow);
+
+                    return tokens;
+                }
+
                 Utility.Monitor.WriteLine(
                     "(A)pply, (S)kip, or (D)elete these startup switches?",
                     ConsoleColor.Yellow);
@@ -2570,6 +2597,9 @@ namespace Server
             //  launch stops here rather than guessing which was meant
             if (m_EnableDbgSaves && m_NoSaves)
                 Core.Halt("-saves and -nosaves contradict each other: give one or the other.");
+            // a Debug build says which it is: it used to run without saves by default, a guess this launch shouldn't make
+            if (Core.Debug && !m_EnableDbgSaves && !m_NoSaves)
+                Core.Halt("A Debug build must say -saves (it saves, like production) or -nosaves (it doesn't).");
             // retired switches: a leftover one would look meaningful a year from now, so it stops the server
             if (m_RetiredSwitches.Count > 0)
                 Core.Halt(string.Format("{0}: no longer used. The accounts and music databases are always on, in one folder " +
@@ -2905,14 +2935,25 @@ namespace Server
         public static void Halt(string message, int exitCode = 1)
         {
             Core.LoggerShortcuts.BootError(string.Format(message));
-
-            if (Environment.UserInteractive)
-            {
-                Utility.Monitor.WriteLine("Press any key to exit...", ConsoleColor.Red);
-                Console.ReadKey(true);
-            }
-
+            WaitForKey();
             Environment.Exit(exitCode);
+        }
+
+        /// <summary>True when someone can press a key: an interactive console whose input is the keyboard.</summary>
+        public static bool ConsoleCanAnswer => Environment.UserInteractive && !Console.IsInputRedirected;
+
+        /// <summary>
+        /// "Press any key to exit...", and wait for it, when someone can press one: an interactive console whose input is
+        /// the keyboard. With no console, or input redirected (a script's start check, a service), it returns at once:
+        /// Console.ReadKey would throw, and the exit would become a crash.
+        /// </summary>
+        public static void WaitForKey()
+        {
+            if (!ConsoleCanAnswer)
+                return;
+            Utility.Monitor.WriteLine("Press any key to exit...", ConsoleColor.Red);
+            try { Console.ReadKey(true); }
+            catch (InvalidOperationException) { }                              // no console after all: exit anyway
         }
     }
 

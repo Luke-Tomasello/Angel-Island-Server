@@ -19,6 +19,9 @@
 
 /* Scripts\Engines\Music\CoreMusicPlayer.cs
  * Changelog
+ *  11/22/26, Adam (listening in)
+ *      MusicAudience: who hears a source that plays to its listener alone (the listener, and whoever the host says
+ *      overhears them: AimsHost.Overhears), for its notes (PlaySound) and its words (RazorInstrument, MusicBox).
  *  11/19/26, Adam (public music boxes; music box range)
  *      IMusicAudience: a source (a music box) that plays to its listener alone is heard by no one else (PlaySound).
  *      IMusicAudience.Range: a source that carries less far than usual (a music box's Range) is heard only that far.
@@ -73,6 +76,33 @@ namespace Server.Misc
         bool ListenerOnly { get; }
         Mobile? Listener { get; }
         int Range { get; }          // tiles; 0: the usual range
+    }
+
+    /// <summary>Who hears a music source: everyone in range, or (ListenerOnly) its listener and whoever overhears them.</summary>
+    public static class MusicAudience
+    {
+        public static bool Hears(IMusicAudience? audience, Mobile m)
+        {
+            return audience == null || !audience.ListenerOnly || m == audience.Listener || AimsHost.Current.Overhears(m, audience.Listener);
+        }
+
+        /// <summary>The words of a source that plays to its listener alone: to the listener, and to whoever overhears them in range.</summary>
+        public static void SendWords(Item source, IMusicAudience audience, int hue, string text)
+        {
+            Mobile? listener = audience.Listener;
+            if (listener?.NetState != null)
+                listener.NetState.Send(new AsciiMessage(source.Serial, source.ItemID, MessageType.Regular, hue, 3, source.Name ?? "", text));
+
+            if (listener == null || source.Map == null)
+                return;
+
+            Point3D where = source.GetWorldLocation();
+            IPooledEnumerable clients = audience.Range > 0 ? source.Map.GetClientsInRange(where, audience.Range) : source.Map.GetClientsInRange(where);
+            foreach (NetState ns in clients)
+                if (ns.Mobile != null && ns.Mobile != listener && AimsHost.Current.Overhears(ns.Mobile, listener))
+                    ns.Send(new AsciiMessage(source.Serial, source.ItemID, MessageType.Regular, hue, 3, source.Name ?? "", text));
+            clients.Free();
+        }
     }
 
     public enum NoteValue
@@ -306,8 +336,8 @@ namespace Server.Misc
                 IMusicAudience? audience = source as IMusicAudience;
                 foreach (NetState state in eable)
                 {
-                    // a source that plays to its listener alone (a practice-room music box): no one else hears it
-                    if (audience != null && audience.ListenerOnly && state.Mobile != audience.Listener)
+                    // a source that plays to its listener alone (a practice-room music box): no one else hears it (but staff listening in)
+                    if (!MusicAudience.Hears(audience, state.Mobile))
                         continue;
                     // invisible is okay (music motion controller,) but if it's visible, you need to be able to see it (xmas tree)
                     if (!Visible(source) || state.Mobile.CanSee(source))

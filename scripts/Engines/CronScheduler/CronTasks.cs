@@ -21,6 +21,10 @@
 
 /* Scripts\Engines\CronScheduler\CronTasks.cs
  * CHANGELOG:
+ *  11/22/2026, Adam (no autosave during a maintenance)
+ *      The automatic save doesn't run while a maintenance is scheduled (Maintenance.Scheduled): the maintenance makes
+ *      its own final save. Maintenance turned saves off for its countdown, which made AutoSave.SavesEnabled mean two
+ *      things; it no longer touches it (one source of truth: Maintenance.cs).
  *  11/20/2026, Adam (cron playback delay policies)
  *      Choose OnTime, Short, Normal or a custom TimeSpan on every scheduled job.
  *  11/20/2026, Adam (stagger automatic world saves)
@@ -1118,7 +1122,7 @@ namespace Server.Engines.CronScheduler
         private bool AutoSaveWorker()
         {
             // final check to see if we should save
-            if (!Server.Misc.AutoSave.SavesEnabled || AutoRestart.Restarting ||
+            if (!Server.Misc.AutoSave.SavesEnabled || AutoRestart.Restarting || Server.Misc.Maintenance.Scheduled ||
                 World.SaveType == World.SaveOption.NoSaves || World.Saving || AsyncWriter.ThreadCount > 0)
                 return false;
 

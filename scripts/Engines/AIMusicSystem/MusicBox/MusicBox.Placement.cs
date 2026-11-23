@@ -20,6 +20,8 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\MusicBox.Placement.cs
  * Changelog
+ *  11/22/26, Adam (listening in)
+ *      What a Listener box says also reaches whoever overhears the person it serves (MusicAudience).
  *  11/21/26, Adam (public music boxes, 11/19/26 to 11/21/26)
  *      A Public box in the world needs no house: CheckRights asks Attend instead. It hears only someone within
  *      PublicRange (2) tiles, and serves one person at a time: whoever used it last keeps it while they stay near and
@@ -280,9 +282,8 @@ namespace Server.Items
             if (Placement == BoxPlacement.Carried)
                 Carrier!.PublicOverheadMessage(Network.MessageType.Regular, hue, true, text);
             else if (Placement == BoxPlacement.World && ListenerOnly)
-            {   // a practice-room box speaks to the person it serves alone (what it plays, its replies)
-                if (m_Attending?.NetState != null)
-                    m_Attending.NetState.Send(new Network.AsciiMessage(Serial, ItemID, Network.MessageType.Regular, hue, 3, Name ?? "", text));
+            {   // a practice-room box speaks to the person it serves alone (what it plays, its replies), and to staff listening in
+                Server.Misc.MusicAudience.SendWords(this, this, hue, text);
             }
             else if (Placement == BoxPlacement.World && Range > 0 && Map != null)
             {   // a box that carries less far than usual: its words too

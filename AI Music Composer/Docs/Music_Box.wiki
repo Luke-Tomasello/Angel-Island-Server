@@ -33,11 +33,11 @@ With many songs, a list scrolls by quickly. To browse them all in a window inste
 
 The window shows every song, 11 to a page, with tabs:
 * '''All''': every song.
-* '''Mine''': the songs you can play in full: ones you bought or composed, and free ones.
+* '''Mine''': the songs you can play in full: ones you bought or composed, and free ones. Songs you submitted that are waiting for review are here too, marked '''Pending''' in red; only you see them here until they are approved.
 * '''Free''': free songs, including Napster tracks.
 * '''Premium''': songs that cost gold.
 * '''New''': the latest releases, the same ones ''new'' lists.
-The authors are listed on the left: choose one to see only their songs. Each song shows its instrument and what it is to you: '''Owned''', '''Free''', '''Napster''', or its price.
+The authors are listed on the left: choose one to see only their songs. Each song shows what it is to you: '''Owned''', '''Free''', '''Napster''', its price, or '''Pending'''.
 
 Press the arrow beside a song to play it: in full if it is yours or free, otherwise a short sample. Press '''Buy''' beside a premium song to buy it (you are asked to confirm the price), and '''Stop''' to stop the music. Anyone near a music box may browse its library, but playing and buying need access to the house, just like speaking to the box.
 

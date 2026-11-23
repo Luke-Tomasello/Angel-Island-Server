@@ -19,6 +19,10 @@
 
 /* Scripts\Engines\AIMusicSystem\MusicBox\Gumps\MusicBox.LibraryGump.cs
  * Changelog
+ *  11/22/26, Adam (songs waiting for review)
+ *      Mine also lists the songs you submitted (from any character of your account) that are waiting for review, marked
+ *      Pending, in red. They could be played by name, but the window didn't show them. The other tabs list approved
+ *      songs only, as before.
  *  11/19/26, Adam (public music boxes)
  *      A Public box's library is open (Look At) without a house: it can't be locked down outside one.
  *  11/15/26, Adam (the library)
@@ -98,7 +102,7 @@ namespace Server.Items
             public RolledUpSheetMusic Track = null!;
             public MusicInfo Info = null!;
             public string Author = "";
-            public bool Owned, Napster, NapsterAccess;
+            public bool Owned, Napster, NapsterAccess, Pending;
             public int Price;
             public bool Full => Owned || (Napster ? NapsterAccess : Price == 0);     // plays in full for this player
         }
@@ -107,12 +111,13 @@ namespace Server.Items
         private static bool OwnsTrack(Mobile m, RolledUpSheetMusic rsm, MusicInfo info) =>
             IsComposer(m, rsm, info) || info.Purchasers.Any(p => p.Purchaser == m);
 
-        // the approved songs on a tab, by title (New: newest first), as rows for this player
+        // the approved songs on a tab, by title (New: newest first), as rows for this player; Mine: theirs waiting for
+        //  review too (Playable: the same rule as "play <song>")
         private List<LibraryRow> LibraryRows(Mobile m, LibraryTab tab)
         {
             IEnumerable<(RolledUpSheetMusic Track, MusicInfo Info)> songs = tab == LibraryTab.New
                 ? NewReleases(out _, out int show).Take(show).Select(r => (r.Track, r.Info))
-                : MusicLibrary.Repository.Where(kvp => kvp.Key != null && !kvp.Key.Deleted && kvp.Value != null && Approved(kvp.Key))
+                : MusicLibrary.Repository.Where(kvp => kvp.Key != null && !kvp.Key.Deleted && kvp.Value != null && (tab == LibraryTab.Mine ? Playable(m, kvp.Key) : Approved(kvp.Key)))
                     .Select(kvp => (kvp.Key, kvp.Value))
                     .OrderBy(s => s.Key.Title ?? "", StringComparer.OrdinalIgnoreCase);
 
@@ -129,6 +134,7 @@ namespace Server.Items
                     Owned = owned,
                     Napster = napster,
                     NapsterAccess = napster && owned,
+                    Pending = PendingReview(track),
                     Price = napster ? 0 : info.Price,
                 };
                 bool keep = tab switch
@@ -177,7 +183,7 @@ namespace Server.Items
         {
             public const int RowsPerPage = 11;
             private const int Width = 620, Height = 430, Left = 170, RowHeight = 22, AuthorHeight = 17, MaxAuthors = 14, Top = 96;
-            private const int HueText = 1152, HueMuted = 946, HueActive = 53, HueOwned = 68, HuePrice = 1161, HueNapster = 88;
+            private const int HueText = 1152, HueMuted = 946, HueActive = 53, HueOwned = 68, HuePrice = 1161, HueNapster = 88, HuePending = 33;
 
             // button IDs
             private const int ButtonTab = 10, ButtonPrev = 20, ButtonNext = 21, ButtonStop = 30, ButtonAuthor = 100,
@@ -268,7 +274,9 @@ namespace Server.Items
                     catch (Exception ex) { AimsLog.LogException(ex); }
                     string by = r.Author.Length == 0 ? "" : " by " + r.Author + (arranger.Length > 0 ? ", arr. " + arranger : "");
                     AddLabelCropped(Left + 35, y + 1, 260, 20, HueText, (r.Track.Title ?? "") + by);
-                    if (r.Owned)
+                    if (r.Pending)
+                        AddLabel(Left + 300, y + 1, HuePending, "Pending");
+                    else if (r.Owned)
                         AddLabel(Left + 300, y + 1, HueOwned, "Owned");
                     else if (r.Napster)
                         AddLabel(Left + 300, y + 1, HueNapster, "Napster");

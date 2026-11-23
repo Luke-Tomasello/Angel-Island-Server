@@ -29,6 +29,9 @@
 
 /* Scripts/Engines/AutomatedEventSystem/AutomatedEventSystem.cs
  * CHANGELOG:
+ *  11/22/26, Adam (Server Wars test)
+ *      FinalSaveComplete is AutoRestart.Restarting (the restart no longer turns saves off; it asked "saves off and
+ *      restarting").
  *  11/8/26, Adam (shard time)
  *      All times are UTC (DateTime.UtcNow) instead of AdjustedDateTime.GameTime (a fixed UTC-8 clock with the machine's
  *      daylight saving). Game time values weren't marked UTC, so a save converted them as the machine's local time and
@@ -1296,7 +1299,7 @@ namespace Server
 
         private bool FinalSaveComplete()
         {
-            return (Server.Misc.AutoSave.SavesEnabled == false && Server.Misc.AutoRestart.Restarting == true);
+            return Server.Misc.AutoRestart.Restarting;
         }
 
         // setup NoSaves so that the global Server.Misc.TestCenter.ServerWars() == true

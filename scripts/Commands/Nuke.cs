@@ -24,6 +24,21 @@
  * CHANGELOG:
  *  History before 11/21/2026 (the one-time patches, reports and tests Nuke carried since 2005): svn r1428 and earlier,
  *      or this file's GitHub history.
+ *  11/22/2026, Adam (DressAdam: already dressed)
+ *      DressAdam does nothing when the caller already wears the whole outfit (each piece's type, and its hue where the
+ *      outfit sets one: AdamOutfit); a partial outfit is replaced as before.
+ *  11/22/2026, Adam (AssumeAdam)
+ *      Add [Nuke AssumeAdam (Owner only, no target): the caller becomes a clone of Adam Ant, the first character named
+ *      "Adam Ant" on the "adam ant" account. The caller's worn and held gear goes into its backpack and the backpack into
+ *      its bank box; the remaining layers (hair, beard) are wiped; Adam's hair and beard are duped onto the caller, his
+ *      backpack deep-duped (as [Dupe deep) and given to the caller; DressAdam dresses it; then name, skin hue, body,
+ *      gender, skills and stats (fame and karma with them) are copied. The mount is left alone. The name: where the
+ *      family-wide name registry applies (NameRegistry.Enforced) and "Adam Ant" isn't free for the caller's account, the
+ *      account is added as one more owner ([Names assign): Adam keeps it, nobody is renamed.
+ *      The gear and the old backpack are put in with AddItem, not DropItem: DropItem sends anything over a container's
+ *      item or weight limit to a RecycleBin (its overflow guard), so with a full bank box the old backpack would have
+ *      been archived, not banked, while the report said it was in the bank. AssumeAdam moves the caller's own things
+ *      (it makes nothing new for them), so the limits are sidestepped on purpose; the bank may end up over its limit.
  *  11/21/2026, Adam (standing commands only)
  *      Nuke keeps its standing commands; the one-time patches, reports and tests (about 230) are gone:
  *          Run <dll> [args]    run a dynamic patch from Patches\ against the live world
@@ -76,6 +91,7 @@ namespace Server.Commands
         {
             { "Run", e => LoadDll(e) },
             { nameof(DressAdam), DressAdam },
+            { nameof(AssumeAdam), AssumeAdam },
             { nameof(BuildAdam), BuildAdam },
             { nameof(BuildWarrior), BuildWarrior },
             { nameof(BuildMage), BuildMage },
@@ -160,6 +176,12 @@ namespace Server.Commands
             if (m.AccessLevel < AccessLevel.Owner)
             {
                 m.SendMessage("DressAdam is for the Owner.");
+                return;
+            }
+
+            if (WearsAdamOutfit(m))
+            {
+                m.SendMessage("Adam is already dressed.");
                 return;
             }
 
@@ -249,6 +271,126 @@ namespace Server.Commands
             }
 
             m.SendMessage("Adam is dressed. Previous gear: {0} to the backpack, {1} to the bank box, {2} deleted (no room).", packed, banked, deleted);
+        }
+        // into the container whatever its limits: AddItem, not DropItem (DropItem sends what's over a limit to a RecycleBin),
+        //  at a random spot inside it, as DropItem places things
+        private static void PutIn(Container container, Item item)
+        {
+            container.AddItem(item);
+            Rectangle2D area = container.Bounds;
+            item.Location = new Point3D(area.X + Utility.Random(Math.Max(1, area.Width)), area.Y + Utility.Random(Math.Max(1, area.Height)), 0);
+        }
+
+        // the outfit DressAdam makes: each piece's type, and its hue (-1: the outfit doesn't set one)
+        private static readonly (Type Type, int Hue)[] AdamOutfit =
+        {
+            (typeof(Katana), 2219), (typeof(Sandals), 1644), (typeof(ChainLegs), 2213), (typeof(BloodDrenchedBandana), -1),
+            (typeof(ChainChest), 2213), (typeof(RingmailArms), 2213), (typeof(Kilt), 1),
+        };
+
+        /// <summary>True when every piece of Adam's outfit is worn (type, and hue where the outfit sets one).</summary>
+        private static bool WearsAdamOutfit(Mobile m) =>
+            AdamOutfit.All(p => m.Items.Any(i => i != null && !i.Deleted && i.GetType() == p.Type && (p.Hue < 0 || i.Hue == p.Hue)));
+
+        // [Nuke AssumeAdam: the caller (Owner only, no target) becomes a clone of Adam Ant (see the changelog, 11/22/2026)
+        private const string AdamAccount = "adam ant";
+        private const string AdamName = "Adam Ant";
+        private static void AssumeAdam(CommandEventArgs e)
+        {
+            Mobile dest = e.Mobile;
+            if (dest.AccessLevel < AccessLevel.Owner)
+            {
+                dest.SendMessage("AssumeAdam is for the Owner.");
+                return;
+            }
+
+            // the source: the first "Adam Ant" on the "adam ant" account
+            Server.Accounting.Account? account = Server.Accounting.Accounts.GetAccount(AdamAccount);
+            if (account == null)
+            {
+                dest.SendMessage("AssumeAdam: there is no '{0}' account on this shard.", AdamAccount);
+                return;
+            }
+            Mobile? src = null;
+            for (int i = 0; i < account.Length && src == null; i++)
+                if (account[i] is Mobile m && !m.Deleted && string.Equals(m.Name?.Trim(), AdamName, StringComparison.OrdinalIgnoreCase))
+                    src = m;
+            if (src == null)
+            {
+                dest.SendMessage("AssumeAdam: the '{0}' account has no character named {1}.", AdamAccount, AdamName);
+                return;
+            }
+            if (src == dest)
+            {
+                dest.SendMessage("AssumeAdam: you are {0} already.", AdamName);
+                return;
+            }
+            if (dest.Backpack == null || dest.BankBox == null)
+            {
+                dest.SendMessage("AssumeAdam: you need a backpack and a bank box (your gear is kept in them).");
+                return;
+            }
+
+            // the name: where the registry applies, the caller's account must be able to use it (one more owner; Adam keeps it)
+            string username = (dest.Account as Server.Accounting.Account)?.Username ?? string.Empty;
+            string registry = "not used here";
+            if (Server.Engines.NameRegistry.Enforced && username.Length > 0)
+            {
+                var owners = Server.Engines.NameRegistry.Owners(src.Name);
+                if (owners == null)
+                    registry = "unreadable (the name is set anyway; [Names assign it later)";
+                else if (Server.Engines.NameRegistry.FreeFor(owners.Select(o => o.Owner), username))
+                    registry = "already yours";
+                else if (Server.Engines.NameRegistry.Assign(src.Name, username))
+                    registry = string.Format("{0} added as an owner (Adam keeps it)", username);
+                else
+                    registry = "couldn't be written (the name is set anyway; [Names assign it later)";
+            }
+
+            // 1. everything worn or held in the hands (not the backpack, bank box, hair, beard or mount) into the backpack
+            int packed = 0;
+            foreach (Item item in dest.Items.Where(i => i != null && !i.Deleted && i.Layer != Layer.Backpack && i.Layer != Layer.Bank
+                && i.Layer != Layer.Hair && i.Layer != Layer.FacialHair && i.Layer != Layer.Mount).ToList())
+            {
+                PutIn(dest.Backpack, item);
+                packed++;
+            }
+
+            // 2. the backpack into the bank box
+            Container oldPack = dest.Backpack;
+            PutIn(dest.BankBox, oldPack);
+
+            // 3. wipe the layers: what's left is the hair and beard
+            Utility.WipeLayers(dest);
+
+            // 4. Adam's hair and beard
+            foreach (Item? hair in new[] { src.Hair, src.Beard })
+                if (hair != null && Utility.Dupe(hair) is Item copy)
+                    dest.AddItem(copy);
+
+            // 5. a deep copy of Adam's backpack (as [Dupe deep)
+            int carried = 0;
+            if (src.Backpack != null && DupeUtility.Dupe(src.Backpack, DupeUtility.DupeFlags.AddonToStatic | DupeUtility.DupeFlags.Deep) is Container pack)
+            {
+                pack.Layer = Layer.Backpack;
+                dest.AddItem(pack);
+                carried = pack.TotalItems;
+            }
+            else
+                dest.AddItem(new Backpack());   // so DressAdam has somewhere to put things
+
+            // 6. Adam's outfit
+            DressAdam(e);
+
+            // 7. skin, body, name; skills and stats (fame and karma too)
+            dest.Hue = src.Hue;
+            dest.Female = src.Female;
+            dest.BodyValue = src.BodyValue;
+            dest.Name = src.Name;
+            Utility.CopySkills(dest, src, include_stats: true);
+
+            dest.SendMessage("You are {0} ({1}). Your gear ({2} worn or held) is in your old backpack, in your bank box; his backpack " +
+                "({3} items) is yours. The name in the registry: {4}.", src.Name, src.Serial, packed, carried, registry);
         }
         private static void BuildMage(CommandEventArgs e)
         {

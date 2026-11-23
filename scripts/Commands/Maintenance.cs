@@ -21,6 +21,40 @@
 
 /* Scripts/Commands/Maintenance.cs
  * CHANGELOG
+ *  11/22/26, Adam (the saves-disabled warning)
+ *      Scheduling a maintenance while saves are disabled says how to save: cancel it, [AutoSave on, schedule it again. It
+ *      said "[AutoSave on before it ends", which is refused: [AutoSave is locked while a maintenance is scheduled. The
+ *      skipped final save no longer suggests it either (it's too late by then).
+ *  11/22/26, Adam (one source of truth for saves)
+ *      Whether this world saves is AutoSave.SavesEnabled alone. The final save (shutdown, restart, rebuild, the save
+ *      before Server Wars) happens when saves are enabled and is skipped, and said, when they're not: a -nosaves shard
+ *      starts with them off, and [AutoSave on turns them back on (a development world can then be kept with a shutdown).
+ *      It read the launch switch (Core.NoSaves, now gone), so [AutoSave on was ignored. Maintenance no longer turns
+ *      automatic saves off for its countdown, or remembers and restores them (SuspendAutoSaves / RestoreAutoSaves are
+ *      gone): the cron autosave simply doesn't run while a maintenance is scheduled (CronTasks). Scheduling one while
+ *      saves are disabled warns the caller that it won't save.
+ *  11/22/26, Adam (nothing to cancel)
+ *      cancel with nothing scheduled (no restart, shutdown, rebuild or Server Wars) says "There is no maintenance to
+ *      cancel." to the caller and changes nothing; it told everyone "Server maintenance has been canceled." every time.
+ *  11/22/26, Adam (shutting down)
+ *      A shutdown's countdown says so: "Server shutting down in N minutes for maintenance...", "Server shutting down
+ *      now..." (it said restarting for both). A restart still says restarting. "The server is already restarting", when
+ *      maintenance is already scheduled, names which it is too.
+ *  11/22/26, Adam (now)
+ *      restart, shutdown, rebuild and serverwars take "now" as well as a datetime: no countdown, the timer's first tick
+ *      does it (the final save, unless -nosaves, then the restart or shutdown). Players get no warning. Works on every
+ *      shard. The usage says what no time means (5 minutes from now), and cancel no longer shows a datetime (it never
+ *      took one).
+ *  11/21/26, Adam (no final save on a server launched without saves)
+ *      The final save (shutdown, restart, rebuild, and the one before Server Wars) is skipped when the server was
+ *      launched with -nosaves (Core.NoSaves), and the console and staff are told. A development server's world on disk
+ *      is its baseline: a maintenance shutdown no longer writes over it (and moves the old one into Backups).
+ *      Production never has -nosaves; a Debug build with -saves (a stand-in for production) still saves. [save still
+ *      saves: save first to keep a development world.
+ *  11/21/26, Adam (automatic saves restored, not forced on)
+ *      Scheduling a maintenance (restart, shutdown, rebuild, Server Wars) remembers whether automatic saves were on;
+ *      cancelling it, or a rebuild that fails to start, puts that back. Both turned them on: on a -nosaves shard
+ *      (or after a staff [SetSaves false) a cancelled maintenance left automatic saves running until a restart.
  *  1/4/22, Adam
  *      Have output to console be red
  *	12/23/08, Adam
@@ -56,6 +90,13 @@ namespace Server.Misc
         private static DateTime m_When;
         private static int m_Countdown;
 
+        // scheduled with saves disabled: tell the caller this one won't save (and how to make it)
+        private static void WarnIfNoSave(CommandEventArgs e, string what)
+        {
+            if (!AutoSave.SavesEnabled)
+                e.Mobile.SendMessage("Saves are disabled: this {0} will not save. To save: [Maintenance cancel, [AutoSave on, then schedule it again.", what);
+        }
+
         // Server Wars state
         private static bool m_ServerWarsScheduled; // "this maintenance run is server wars flavored"
         private static bool m_InServerWars;        // "final save has happened; wars are in progress"
@@ -87,16 +128,23 @@ namespace Server.Misc
         private static void Usage(CommandEventArgs e)
         {
             e.Mobile.SendMessage("Usage:");
-            e.Mobile.SendMessage("[Maintenance restart|shutdown|rebuild|cancel [datetime]");
-            e.Mobile.SendMessage("[Maintenance serverwars [restart] [datetime]");
-            e.Mobile.SendMessage("[Maintenance serverwars cancel");
+            e.Mobile.SendMessage("[Maintenance restart|shutdown|rebuild [now|datetime]   (no time: in 5 minutes)");
+            e.Mobile.SendMessage("[Maintenance serverwars [restart] [now|datetime]");
+            e.Mobile.SendMessage("[Maintenance cancel");
             e.Mobile.SendMessage("Datetime examples: \"2026-02-27 22:30\" or \"2026-02-27 22:30Z\" or \"2026-02-27 22:30 -0800\"");
         }
 
         // Normalized datetime parsing: treat inputs as server-local unless an offset/UTC is explicitly present.
+        //  "now" is now: no countdown (NormalizeCountdown gives 0).
         private static bool TryParseWhenLocal(string sx, out DateTime whenLocal)
         {
             whenLocal = DateTime.MinValue;
+
+            if (sx.Trim().Equals("now", StringComparison.OrdinalIgnoreCase))
+            {
+                whenLocal = DateTime.Now;
+                return true;
+            }
 
             // Prefer DateTimeOffset to honor offsets/zulu if provided.
             DateTimeOffset dto;
@@ -163,6 +211,13 @@ namespace Server.Misc
         }
         private static void CancelMaintenance(CommandEventArgs e)
         {
+            // nothing scheduled: say so, to the caller alone (no broadcast about nothing)
+            if (!m_Scheduled && !m_ServerWarsScheduled && !m_InServerWars && !m_Rebuild)
+            {
+                e.Mobile.SendMessage("There is no maintenance to cancel.");
+                return;
+            }
+
             bool wasServerWars = m_ServerWarsScheduled || m_InServerWars;
 
             m_Scheduled = false;
@@ -190,8 +245,6 @@ namespace Server.Misc
                     e.Mobile.SendMessage("Error closing rebuild.exe!!!");
                 }
             }
-
-            AutoSave.SavesEnabled = true;
 
             e.Mobile.SendMessage("Maintenance has been canceled.");
             World.Broadcast(0x482, true, "Server maintenance has been canceled.");
@@ -259,9 +312,8 @@ namespace Server.Misc
                     m_InServerWars = false;
                     m_ServerWarsEndLocal = DateTime.MinValue;
 
-                    AutoSave.SavesEnabled = false;
-
                     e.Mobile.SendMessage("You have initiated a server rebuild.");
+                    WarnIfNoSave(e, "rebuild");
                     m_Maintenance.Start();
 
                     if (!StartRebuild(Engines.TestCenterServer.Enabled))
@@ -272,7 +324,6 @@ namespace Server.Misc
                         Scheduled = false;
                         Shutdown = false;
 
-                        AutoSave.SavesEnabled = true;
                         m_Maintenance.Stop();
                     }
 
@@ -300,7 +351,7 @@ namespace Server.Misc
 
                     if (m_Scheduled)
                     {
-                        e.Mobile.SendMessage("The server is already restarting.");
+                        e.Mobile.SendMessage("The server is already {0}.", m_Shutdown ? "shutting down" : "restarting");
                         return;
                     }
 
@@ -360,12 +411,11 @@ namespace Server.Misc
                     m_InServerWars = false;
                     m_ServerWarsEndLocal = DateTime.MinValue;
 
-                    AutoSave.SavesEnabled = false;
-
                     e.Mobile.SendMessage(
                         "You have initiated Server Wars ({0} after wars).",
                         restart ? "restart" : "shutdown"
                     );
+                    WarnIfNoSave(e, "Server Wars");
 
                     m_Maintenance.Start();
                     return;
@@ -378,7 +428,7 @@ namespace Server.Misc
                 {
                     if (m_Scheduled)
                     {
-                        e.Mobile.SendMessage("The server is already restarting.");
+                        e.Mobile.SendMessage("The server is already {0}.", m_Shutdown ? "shutting down" : "restarting");
                         return;
                     }
 
@@ -407,12 +457,11 @@ namespace Server.Misc
                     m_InServerWars = false;
                     m_ServerWarsEndLocal = DateTime.MinValue;
 
-                    AutoSave.SavesEnabled = false;
-
                     e.Mobile.SendMessage(
                         "You have initiated server {0}.",
                         m_Shutdown ? "shutdown" : "restart"
                     );
+                    WarnIfNoSave(e, m_Shutdown ? "shutdown" : "restart");
 
                     m_Maintenance.Start();
                     return;
@@ -491,6 +540,20 @@ namespace Server.Misc
         }
         internal static void DoFinalSave()
         {
+            // NO FINAL SAVE WHEN SAVES ARE DISABLED. One source of truth: AutoSave.SavesEnabled ("this world saves on its
+            //  own"), read now, as the maintenance ends. A -nosaves shard starts with it off (its world on disk is a
+            //  baseline: a development shutdown doesn't write over it); [AutoSave on, before the maintenance is scheduled
+            //  ([AutoSave is locked while one is), turns it on, and then this saves.
+            //  Production saves unless staff turned saves off (scheduling a maintenance then warns that it won't save).
+            //  This covers every maintenance (shutdown, restart, rebuild) and the save before Server Wars.
+            if (!AutoSave.SavesEnabled)
+            {
+                string text = "Maintenance: final save skipped: saves are disabled.";
+                Utility.Monitor.WriteLine(text, ConsoleColor.Yellow);
+                Server.Commands.CommandHandlers.BroadcastMessage(AccessLevel.Counselor, 0x482, text);
+                return;
+            }
+
             try
             {
                 FinalSave = true;
@@ -632,12 +695,13 @@ namespace Server.Misc
                 }
                 else
                 {
+                    string doing = Maintenance.Shutdown ? "shutting down" : "restarting";
                     if (Maintenance.Countdown > 1)
-                        text = $"Server restarting in {Maintenance.Countdown} minutes for maintenance...";
+                        text = $"Server {doing} in {Maintenance.Countdown} minutes for maintenance...";
                     else if (Maintenance.Countdown == 1)
-                        text = "Server restarting in 1 minute for maintenance...";
+                        text = $"Server {doing} in 1 minute for maintenance...";
                     else
-                        text = "Server restarting now...";
+                        text = $"Server {doing} now...";
 
                     if (PlayerMessageGiven.Recall(text) == null)
                     {

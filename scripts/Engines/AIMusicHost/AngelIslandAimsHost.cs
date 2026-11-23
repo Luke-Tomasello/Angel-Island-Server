@@ -20,6 +20,8 @@
 
 /* Scripts\Engines\AIMusicHost\AngelIslandAimsHost.cs
  * Changelog
+ *  11/22/26, Adam (listening in)
+ *      Overhears: an Administrator who used [listen on a player hears the Listener music boxes serving them (Listen.cs).
  *  11/20/26, Adam (cron playback break)
  *      Let Cron take a normal processing pass between autoplay tracks.
  *  11/19/26, Adam (full plays)
@@ -175,6 +177,11 @@ namespace Server
         {
             if (m is PlayerMobile pm)
                 pm.NpcGuildPoints = value;
+        }
+
+        public override bool Overhears(Mobile m, Mobile? listener)
+        {
+            return Server.Commands.Listen.Overhears(m, listener);
         }
 
         public override bool GetFilterMusic(Mobile m)
